@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description Database migration and seeder initializing Teacher & Staff Management tables, profiles, assignments, attendance, leaves, and documents.
 #  */
@@ -81,14 +81,16 @@ async def initialize_staff_module():
             },
         ]
 
+        staff_role_id = (await session.execute(text("SELECT id FROM roles WHERE name = 'staff';"))).scalar() or 12
+
         for u in additional_users:
             existing = (await session.execute(text("SELECT id FROM users WHERE username = :u;"), {"u": u["username"]})).scalar()
             if not existing:
                 h_pass = get_password_hash("staff123")
                 await session.execute(text("""
-                    INSERT INTO users (institution_id, username, email, hashed_password, first_name, last_name, phone, role, staff_code, designation, is_active, created_at, updated_at)
-                    VALUES (1, :username, :email, :hashed_password, :first_name, :last_name, :phone, :role, :staff_code, :designation, true, NOW(), NOW());
-                """), {**u, "hashed_password": h_pass})
+                    INSERT INTO users (institution_id, username, email, hashed_password, first_name, last_name, phone, role, role_id, staff_code, designation, is_active, created_at, updated_at)
+                    VALUES (1, :username, :email, :hashed_password, :first_name, :last_name, :phone, 'staff', :role_id, :staff_code, :designation, true, NOW(), NOW());
+                """), {**u, "role_id": staff_role_id, "hashed_password": h_pass})
                 print(f"  -> Created staff user: {u['username']} ({u['designation']})")
 
         await session.commit()

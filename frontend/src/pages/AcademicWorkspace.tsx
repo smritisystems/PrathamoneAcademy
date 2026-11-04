@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -26,11 +26,11 @@ import {
   AlertTriangle, CheckCircle2, UserCheck, BarChart2, Settings as SettingsIcon,
   CalendarDays, ArrowUpRight, School, X, ShieldAlert, Sparkles,
   ExternalLink, User, Download, RefreshCw, ArrowRightLeft, UserPlus,
-  Filter, Check, ShieldCheck, AlertCircle, Trash2, Power
+  Filter, Check, ShieldCheck, AlertCircle, Trash2, Power, Sliders
 } from 'lucide-react'
 import {
   standardsApi, divisionsApi, boardsApi, academicYearsApi, usersApi,
-  subjectsApi, timetableApi, enrollmentsApi, academicReportsApi
+  subjectsApi, timetableApi, enrollmentsApi, academicReportsApi, settingsApi
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import Modal from '../components/Modal'
@@ -182,17 +182,34 @@ export default function AcademicWorkspace() {
     }
   })
 
-  // Sync settings from server
+  // Sync settings from central server
   useQuery({
     queryKey: ['academic-settings'],
     queryFn: async () => {
       try {
-        const res = await standardsApi.getSettings()
-        if (res.data) {
-          setAcademicSettings(res.data)
-          localStorage.setItem('prashant_academic_settings', JSON.stringify(res.data))
+        const [standardsRes, allSettingsRes] = await Promise.allSettled([
+          standardsApi.getSettings(),
+          settingsApi.getAll(),
+        ])
+        const stdData = standardsRes.status === 'fulfilled' ? standardsRes.value.data : null
+        const allData = allSettingsRes.status === 'fulfilled' ? allSettingsRes.value.data?.academic : null
+
+        if (stdData || allData) {
+          const merged = {
+            ...academicSettings,
+            ...(stdData || {}),
+            ...(allData ? {
+              defaultBatchCapacity: allData.batch_capacity_warning ?? academicSettings.defaultBatchCapacity,
+              enforceCapacityStrict: allData.enforce_capacity_strict ?? academicSettings.enforceCapacityStrict,
+              preventTimetableConflicts: allData.prevent_timetable_conflicts ?? academicSettings.preventTimetableConflicts,
+              autoRollNumberFormat: allData.auto_roll_number_format ?? academicSettings.autoRollNumberFormat,
+            } : {}),
+          }
+          setAcademicSettings(merged)
+          localStorage.setItem('prashant_academic_settings', JSON.stringify(merged))
+          return merged
         }
-        return res.data
+        return null
       } catch (err) {
         return null
       }
@@ -203,10 +220,19 @@ export default function AcademicWorkspace() {
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      await Promise.allSettled([
+        standardsApi.updateSettings(academicSettings),
+        settingsApi.updateBatch('academic', {
+          batch_capacity_warning: academicSettings.defaultBatchCapacity,
+          enforce_capacity_strict: academicSettings.enforceCapacityStrict,
+          prevent_timetable_conflicts: academicSettings.preventTimetableConflicts,
+          auto_roll_number_format: academicSettings.autoRollNumberFormat,
+        }, 'Updated via Academic Workspace'),
+      ])
       localStorage.setItem('prashant_academic_settings', JSON.stringify(academicSettings))
-      await standardsApi.updateSettings(academicSettings)
-      toast.success('Academic workspace settings saved successfully!')
+      toast.success('Academic workspace settings synchronized with central institute settings!')
     } catch (err) {
+      localStorage.setItem('prashant_academic_settings', JSON.stringify(academicSettings))
       toast.error('Failed to save settings on server, saved locally.')
     }
   }
@@ -2804,10 +2830,22 @@ export default function AcademicWorkspace() {
       {activeTab === 'settings' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200/80">
-            <h2 className="text-lg font-bold text-gray-900">Academic & Batch Operational Settings</h2>
-            <p className="text-xs text-gray-500">
-              Configure institute rules for batch capacities, automated conflict checks, and roll numbers
-            </p>
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Academic & Batch Operational Settings</h2>
+                <p className="text-xs text-gray-500">
+                  Configure institute rules for batch capacities, automated conflict checks, and roll numbers
+                </p>
+              </div>
+              <Link
+                to="/settings?category=academic"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50/80 hover:bg-blue-100/80 px-3 py-1.5 rounded-xl border border-blue-200/60 shadow-2xs transition-colors"
+              >
+                <Sliders className="w-3.5 h-3.5 text-blue-600" />
+                <span>Full Institute Settings</span>
+                <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+              </Link>
+            </div>
 
             <form
               onSubmit={handleSaveSettings}

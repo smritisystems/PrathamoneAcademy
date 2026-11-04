@@ -224,3 +224,4 @@ def downgrade() -> None:
     op.drop_table("shared_document_tokens")
     op.drop_table("communication_logs")
     op.drop_table("message_templates")
+

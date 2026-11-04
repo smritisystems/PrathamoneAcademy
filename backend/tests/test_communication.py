@@ -192,3 +192,4 @@ async def test_diagnostics_endpoints(client: AsyncClient, admin_user: User, test
     )
     assert test_res.status_code == 200
     assert test_res.json()["status"] == "success"
+

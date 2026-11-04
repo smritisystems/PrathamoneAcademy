@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Comprehensive Teacher & Staff Management workspace with Directory, Academic Assignments, Attendance, Leaves, and 28 Printable Documents.
  */
@@ -22,7 +22,8 @@ import {
   Users, UserPlus, Briefcase, Calendar, Clock, Award,
   CheckCircle2, XCircle, AlertCircle, Search, Filter,
   FileText, Printer, ChevronRight, Eye, Edit3, Trash2,
-  Download, RefreshCw, Shield, Layers, BookOpen, AlertTriangle
+  Download, RefreshCw, Shield, Layers, BookOpen, AlertTriangle,
+  Copy, Key
 } from 'lucide-react'
 import { staffApi, boardsApi, standardsApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
@@ -58,11 +59,20 @@ export default function StaffManagement() {
   // Attendance Date
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split('T')[0])
 
+  // Secure Created Credentials Modal State
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    username: string
+    temporary_password?: string
+    employee_id?: string
+    name?: string
+  } | null>(null)
+  const [copied, setCopied] = useState(false)
+
   // New Staff Form State
   const [newStaff, setNewStaff] = useState({
     username: '',
     email: '',
-    password: 'Prashant@2026',
+    password: '',
     first_name: '',
     last_name: '',
     phone: '',
@@ -171,10 +181,36 @@ export default function StaffManagement() {
   // Create Staff Mutation
   const createStaffMutation = useMutation({
     mutationFn: (payload: any) => staffApi.create(payload),
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ['staff-list'] })
       setShowCreateModal(false)
-      alert('Staff member registered successfully!')
+      const data = res?.data || res
+      if (data?.temporary_password) {
+        setCreatedCredentials({
+          username: data.username || newStaff.username,
+          temporary_password: data.temporary_password,
+          employee_id: data.employee_id,
+          name: `${newStaff.first_name} ${newStaff.last_name}`,
+        })
+      } else {
+        alert('Staff member registered successfully!')
+      }
+      setNewStaff({
+        username: '',
+        email: '',
+        password: '',
+        first_name: '',
+        last_name: '',
+        phone: '',
+        role: 'teacher',
+        staff_type: 'Teacher',
+        department: 'Teaching & Academics',
+        qualification: 'M.Sc., B.Ed.',
+        specialization: 'Senior Mathematics & Calculus',
+        experience_years: 5.0,
+        employment_type: 'full_time',
+        basic_salary: 65000,
+      })
     },
     onError: (err: any) => {
       alert(err.response?.data?.detail || 'Failed to register staff member')
@@ -987,6 +1023,21 @@ export default function StaffManagement() {
                     placeholder="+91 98200 12345"
                   />
                 </div>
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">
+                    Temporary Password <span className="text-slate-400 font-normal">(Leave blank to auto-generate)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newStaff.password}
+                    onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Leave empty for secure auto-generated temporary password"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    If left empty, a secure 10-character random password is generated and displayed on submission.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1003,6 +1054,74 @@ export default function StaffManagement() {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-xs disabled:opacity-50"
               >
                 Create Staff Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: CREATED CREDENTIALS DISPLAY ────────────────────────────── */}
+      {createdCredentials && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-emerald-50/50">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-bold text-slate-900 text-sm">Staff Account Created</h3>
+              </div>
+              <button
+                onClick={() => setCreatedCredentials(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600">
+                A new staff account has been provisioned. Please securely provide these temporary login credentials to <strong className="text-slate-900">{createdCredentials.name}</strong>.
+              </p>
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2 text-xs">
+                {createdCredentials.employee_id && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Employee ID:</span>
+                    <span className="font-mono font-semibold text-slate-800">{createdCredentials.employee_id}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Username:</span>
+                  <span className="font-mono font-semibold text-slate-800">{createdCredentials.username}</span>
+                </div>
+                {createdCredentials.temporary_password && (
+                  <div className="flex justify-between items-center pt-1 border-t border-slate-200">
+                    <span className="text-slate-500">Temporary Password:</span>
+                    <span className="font-mono font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                      {createdCredentials.temporary_password}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[11px] text-amber-800">
+                <strong>Security Notice:</strong> The temporary password will only be displayed once. Copy and share it via a secure onboarding channel.
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  const credText = `PrathamOne Academy Staff Credentials\nName: ${createdCredentials.name}\nEmployee ID: ${createdCredentials.employee_id || 'N/A'}\nUsername: ${createdCredentials.username}\nTemporary Password: ${createdCredentials.temporary_password || 'N/A'}`;
+                  navigator.clipboard.writeText(credText);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+              >
+                {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                <span>{copied ? 'Copied!' : 'Copy Credentials'}</span>
+              </button>
+              <button
+                onClick={() => setCreatedCredentials(null)}
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-xs"
+              >
+                Done
               </button>
             </div>
           </div>

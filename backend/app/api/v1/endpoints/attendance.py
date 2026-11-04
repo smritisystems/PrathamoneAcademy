@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for student attendance tracking, session marking, and absenteeism reporting.
 #  */
@@ -21,8 +21,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from typing import Optional, List
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import (
+    get_current_active_user,
+    enforce_institution_access,
+    is_sysadmin,
+)
 from app.models.attendance import Attendance
+from app.models.student import Student
 from pydantic import BaseModel
 from datetime import date
 
@@ -47,6 +52,25 @@ async def mark_attendance_bulk(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    if not is_sysadmin(current_user) and data.entries:
+        student_ids = [entry.student_id for entry in data.entries]
+        foreign_students = (
+            await db.execute(
+                select(Student.id).where(
+                    and_(
+                        Student.id.in_(student_ids),
+                        Student.institution_id != user_inst_id,
+                    )
+                )
+            )
+        ).scalars().all()
+        if foreign_students:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: You cannot mark attendance for students outside your institution.",
+            )
+
     for entry in data.entries:
         existing = await db.execute(
             select(Attendance).where(
@@ -79,10 +103,13 @@ async def get_attendance(
     student_id: Optional[int] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    query = select(Attendance)
+    query = select(Attendance).join(Student, Attendance.student_id == Student.id)
+    if effective_inst_id:
+        query = query.where(Student.institution_id == effective_inst_id)
     if student_id:
         query = query.where(Attendance.student_id == student_id)
     if date_from:

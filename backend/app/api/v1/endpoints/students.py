@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -23,7 +23,13 @@ from sqlalchemy import select, func, or_, and_, desc
 from sqlalchemy.orm import selectinload
 from typing import Optional, List, Dict, Any
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import (
+    get_current_active_user,
+    require_role,
+    enforce_institution_access,
+    check_institution_access,
+    is_sysadmin,
+)
 from app.models.student import Student, Guardian
 from app.models.enrollment import StudentEnrollment
 from app.models.fee import FeeInvoice, FeeInstallment, FeeInvoiceItem
@@ -56,8 +62,8 @@ class GuardianCreate(BaseModel):
 
 
 class StudentCreate(BaseModel):
-    institution_id: int
-    admission_number: str
+    institution_id: Optional[int] = None
+    admission_number: Optional[str] = None
     first_name: str
     last_name: str
     middle_name: Optional[str] = None
@@ -76,6 +82,10 @@ class StudentCreate(BaseModel):
     email: Optional[str] = None
     admission_date: date
     guardians: List[GuardianCreate] = []
+    guardian: Optional[Dict[str, Any]] = None
+    standard_id: Optional[int] = None
+    division_id: Optional[int] = None
+    academic_year_id: Optional[int] = None
 
 
 class GuardianUpdate(BaseModel):
@@ -141,23 +151,17 @@ class EnrollmentCreate(BaseModel):
 
 @router.get("/")
 async def list_students(
-    institution_id: Optional[int] = None,
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
     search: Optional[str] = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, le=100),
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     query = select(Student).where(Student.is_active == True)
-
-    effective_inst_id = institution_id
-    if institution_id:
-        inst_has_students = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
-        if inst_has_students == 0:
-            effective_inst_id = None
 
     if effective_inst_id:
         query = query.where(Student.institution_id == effective_inst_id)
@@ -227,16 +231,55 @@ async def create_student(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal", "staff")),
 ):
-    existing = await db.execute(
-        select(Student).where(Student.admission_number == data.admission_number)
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=400, detail="Admission number already exists"
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    if not is_sysadmin(current_user):
+        if data.institution_id is not None and data.institution_id != user_inst_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: You cannot create students outside your assigned institution.",
+            )
+        data.institution_id = user_inst_id
+    elif not data.institution_id:
+        data.institution_id = user_inst_id
+
+    # Auto-generate admission_number if missing
+    if not data.admission_number:
+        adm_year = data.admission_date.year if data.admission_date else 2026
+        prefix = f"PA-{adm_year}-"
+        count_stmt = select(func.count(Student.id)).where(Student.institution_id == data.institution_id)
+        inst_count = (await db.execute(count_stmt)).scalar() or 0
+        seq = inst_count + 1
+        candidate_adm = f"{prefix}{seq:06d}"
+        while (await db.execute(select(Student.id).where(Student.admission_number == candidate_adm))).scalar_one_or_none():
+            seq += 1
+            candidate_adm = f"{prefix}{seq:06d}"
+        data.admission_number = candidate_adm
+    else:
+        existing = await db.execute(
+            select(Student).where(Student.admission_number == data.admission_number)
+        )
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=400, detail="Admission number already exists"
+            )
+
+    guardians_data = list(data.guardians)
+    if not guardians_data and data.guardian:
+        g = data.guardian
+        guardians_data.append(
+            GuardianCreate(
+                relation=g.get("relationship") or g.get("relation") or "Father",
+                first_name=g.get("first_name") or (g.get("full_name", "").split()[0] if g.get("full_name") else "Guardian"),
+                last_name=g.get("last_name") or (" ".join(g.get("full_name", "").split()[1:]) if g.get("full_name") and len(g.get("full_name", "").split()) > 1 else "Parent"),
+                phone=g.get("phone"),
+                email=g.get("email"),
+                occupation=g.get("occupation"),
+                annual_income=g.get("annual_income"),
+                is_primary=True,
+            )
         )
 
-    guardians_data = data.guardians
-    student_data = data.model_dump(exclude={"guardians"})
+    student_data = data.model_dump(exclude={"guardians", "guardian", "standard_id", "division_id", "academic_year_id"})
     student = Student(**student_data)
     db.add(student)
     await db.flush()
@@ -244,6 +287,18 @@ async def create_student(
     for g_data in guardians_data:
         guardian = Guardian(student_id=student.id, **g_data.model_dump())
         db.add(guardian)
+
+    # Initial enrollment if standard and academic year provided
+    if data.standard_id and data.academic_year_id:
+        enrollment = StudentEnrollment(
+            student_id=student.id,
+            academic_year_id=data.academic_year_id,
+            standard_id=data.standard_id,
+            division_id=data.division_id,
+            enrollment_date=data.admission_date,
+            status="active",
+        )
+        db.add(enrollment)
 
     await db.commit()
     await db.refresh(student)
@@ -272,6 +327,10 @@ async def get_student(
     student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
+
+    check_institution_access(student.institution_id, current_user)
+
+    check_institution_access(student.institution_id, current_user)
 
     fee_result = await db.execute(
         select(
@@ -357,6 +416,8 @@ async def update_student_profile(
     student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
+
+    check_institution_access(student.institution_id, current_user)
 
     # Capture snapshot of old state for audit
     old_state = {
@@ -556,6 +617,8 @@ async def enroll_student(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
+    check_institution_access(student.institution_id, current_user)
+
     enrollment = StudentEnrollment(student_id=student_id, **data.model_dump())
     db.add(enrollment)
     await db.commit()
@@ -597,6 +660,8 @@ async def get_student_admin_profile(
     student = res.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
+
+    check_institution_access(student.institution_id, current_user)
 
     # 2. Active Enrollment details (Board, Standard, Division, Academic Year)
     enr_stmt = (
@@ -931,6 +996,8 @@ async def add_student_document(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
+    check_institution_access(student.institution_id, current_user)
+
     doc = StudentDocument(
         student_id=student_id,
         title=data.title,
@@ -960,6 +1027,11 @@ async def delete_student_document(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
+    student = await db.scalar(select(Student).where(Student.id == student_id))
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    check_institution_access(student.institution_id, current_user)
+
     doc = await db.scalar(
         select(StudentDocument).where(
             and_(

@@ -123,3 +123,4 @@ class ChannelAdapter:
 
         message_id = f"SMS-{secrets.token_hex(6).upper()}"
         return True, "DELIVERED", message_id
+

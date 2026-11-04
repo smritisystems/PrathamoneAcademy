@@ -100,3 +100,4 @@ class SettingAuditLog(Base):
     )
 
     institution = relationship("Institution", back_populates="setting_audit_logs")
+

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description Database master seeder initializing superadmin account, demo batches, and curriculum subjects.
 #  */
@@ -110,6 +110,7 @@ async def seed():
             first_name="Admin",
             last_name="User",
             role="admin",
+            role_id=roles["admin"].id,
         )
         session.add(admin_user)
 
@@ -121,6 +122,7 @@ async def seed():
             first_name="Rajesh",
             last_name="Sharma",
             role="accountant",
+            role_id=roles["accountant"].id,
         )
         session.add(accountant_user)
         await session.flush()

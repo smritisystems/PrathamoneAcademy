@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for exam creation, marks entry, grading formulas, and report card generation.
 #  */
@@ -23,7 +23,11 @@ from typing import Optional, List
 from datetime import date
 from pydantic import BaseModel
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import (
+    get_current_active_user,
+    enforce_institution_access,
+    check_institution_access,
+)
 from app.models.exam import Examination, ExamMark
 from app.models.standard import Standard
 
@@ -45,6 +49,7 @@ class ExamCreate(BaseModel):
 async def list_examinations(
     academic_year_id: Optional[int] = None,
     standard_id: Optional[int] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -53,6 +58,8 @@ async def list_examinations(
         .join(Standard, Examination.standard_id == Standard.id)
         .where(Examination.is_active == True)
     )
+    if effective_inst_id:
+        query = query.where(Standard.institution_id == effective_inst_id)
     if academic_year_id:
         query = query.where(Examination.academic_year_id == academic_year_id)
     if standard_id:
@@ -84,6 +91,11 @@ async def create_examination(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    std = await db.scalar(select(Standard).where(Standard.id == data.standard_id))
+    if not std:
+        raise HTTPException(status_code=404, detail="Standard not found")
+    check_institution_access(std.institution_id, current_user)
+
     exam = Examination(**data.model_dump())
     db.add(exam)
     await db.commit()

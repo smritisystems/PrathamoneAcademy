@@ -112,3 +112,4 @@ class SharedDocumentToken(Base):
 
     institution = relationship("Institution")
     created_by = relationship("User", foreign_keys=[created_by_id])
+

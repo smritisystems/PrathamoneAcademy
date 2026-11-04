@@ -1133,7 +1133,6 @@ export default function Communication() {
                 {/* Diagnostics Overview Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {diagnostics &&
-                    diagnostics.channels &&
                     Object.entries(diagnostics.channels).map(([key, ch]) => (
                       <div
                         key={key}
@@ -1458,3 +1457,4 @@ export default function Communication() {
     </div>
   )
 }
+

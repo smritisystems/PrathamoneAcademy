@@ -11,12 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description FastAPI dependency injection providers for database sessions and authenticated user context.
 #  */
 
-from fastapi import Depends, HTTPException, status
+from typing import Optional
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -93,4 +94,45 @@ def require_sysadmin(
             status_code=403, detail="System Administrator (SysAdmin) privileges required"
         )
     return current_user
+
+
+def enforce_institution_access(
+    institution_id: Optional[int] = Query(None, description="Target institution ID"),
+    current_user=Depends(get_current_active_user),
+) -> Optional[int]:
+    """
+    Enforces multi-tenant data isolation.
+    - If user is a SysAdmin/Superadmin or has no assigned tenant: allows querying target institution_id.
+    - If user is assigned to an institution:
+      - If institution_id is provided and differs from current_user.institution_id: raises HTTP 403 Forbidden.
+      - Otherwise returns current_user.institution_id.
+    """
+    user_inst_id = getattr(current_user, "institution_id", None)
+
+    if is_sysadmin(current_user) or user_inst_id is None:
+        return institution_id or user_inst_id
+
+    if institution_id is not None and institution_id != user_inst_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: You cannot access data outside your assigned institution.",
+        )
+
+    return user_inst_id
+
+
+def check_institution_access(target_institution_id: Optional[int], current_user) -> None:
+    """
+    Raises HTTP 403 if current_user is assigned to an institution and target_institution_id differs from current_user's institution.
+    """
+    if is_sysadmin(current_user):
+        return
+    user_inst_id = getattr(current_user, "institution_id", None)
+    if user_inst_id is not None and target_institution_id is not None and target_institution_id != user_inst_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: You cannot access data outside your assigned institution.",
+        )
+
+
 

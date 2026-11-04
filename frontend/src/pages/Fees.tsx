@@ -25,7 +25,7 @@ import {
   XCircle, Printer, Eye, RotateCcw, Plus, Search, Shield,
   ArrowRight, Calendar, Info, Clock, AlertTriangle, Settings, FileText,
   ChevronRight, ChevronDown, Coins, Bell, Percent, Award, Trash2,
-  ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap
+  ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap, Sliders
 } from 'lucide-react'
 import {
   ComposedChart, Bar, Line, PieChart, Pie, Cell, XAxis, YAxis,
@@ -34,7 +34,7 @@ import {
 import {
   feesApi, paymentsApi, feeCategoriesApi, feeStructuresApi,
   studentsApi, invoicesApi, reportsApi, academicYearsApi, boardsApi,
-  standardsApi, divisionsApi
+  standardsApi, divisionsApi, settingsApi
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import Modal from '../components/Modal'
@@ -1135,7 +1135,7 @@ export default function Fees() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // TAB 8: SETTINGS (FINANCIAL PREFERENCES)
+  // TAB 8: SETTINGS (FINANCIAL PREFERENCES) - Centralized Settings Sync
   // ─────────────────────────────────────────────────────────────────────────────
   const [settingsState, setSettingsState] = useState(() => {
     try {
@@ -1159,10 +1159,47 @@ export default function Fees() {
     }
   })
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  // Synchronize settings from central /settings/all API
+  useQuery({
+    queryKey: ['central-fees-settings'],
+    queryFn: async () => {
+      try {
+        const res = await settingsApi.getAll()
+        const feesConf = res.data?.fees
+        if (feesConf) {
+          setSettingsState((prev: any) => ({
+            ...prev,
+            receiptPrefix: feesConf.receipt_prefix ? `${feesConf.receipt_prefix}-` : prev.receiptPrefix,
+            startingSequence: feesConf.next_receipt_number || prev.startingSequence,
+            gracePeriodDays: feesConf.grace_days !== undefined ? feesConf.grace_days : prev.gracePeriodDays,
+            lateFeeDailyAmount: feesConf.late_fine_per_day !== undefined ? feesConf.late_fine_per_day : prev.lateFeeDailyAmount,
+            receiptFooterTerms: feesConf.receipt_footer_terms || prev.receiptFooterTerms,
+          }))
+        }
+        return res.data
+      } catch (e) {
+        return null
+      }
+    },
+    refetchOnWindowFocus: false,
+  })
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault()
-    localStorage.setItem('prashant_financial_settings', JSON.stringify(settingsState))
-    toast.success('Financial preferences and receipt rules saved successfully')
+    try {
+      await settingsApi.updateBatch('fees', {
+        receipt_prefix: settingsState.receiptPrefix.replace(/-$/, ''),
+        next_receipt_number: settingsState.startingSequence,
+        grace_days: settingsState.gracePeriodDays,
+        late_fine_per_day: settingsState.lateFeeDailyAmount,
+        receipt_footer_terms: settingsState.receiptFooterTerms,
+      }, 'Updated via Fees & Payments workspace')
+      localStorage.setItem('prashant_financial_settings', JSON.stringify(settingsState))
+      toast.success('Financial preferences synchronized with central institute settings!')
+    } catch (err) {
+      localStorage.setItem('prashant_financial_settings', JSON.stringify(settingsState))
+      toast.success('Financial preferences saved locally')
+    }
   }
 
   // Active filter label for metrics
@@ -2701,9 +2738,19 @@ export default function Fees() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'settings' && (
         <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs max-w-3xl space-y-5">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900">Financial Preferences & Receipt Rules</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Configure institute receipt numbering, methods, and late fee rules.</p>
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-sm font-extrabold text-slate-900">Financial Preferences & Receipt Rules</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Configure institute receipt numbering, methods, and late fee rules.</p>
+            </div>
+            <Link
+              to="/settings?category=fees"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50/80 hover:bg-blue-100/80 px-3 py-1.5 rounded-xl border border-blue-200/60 shadow-2xs transition-colors"
+            >
+              <Sliders className="w-3.5 h-3.5 text-blue-600" />
+              <span>Full Institute Settings</span>
+              <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
+            </Link>
           </div>
 
           <form onSubmit={handleSaveSettings} className="space-y-4">

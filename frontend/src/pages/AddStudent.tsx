@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Multi-step student admission form capturing personal details, parent info, and initial enrollment.
  */
@@ -26,6 +26,7 @@ import toast from 'react-hot-toast';
 const STEPS = ['Personal Info', 'Guardian Info', 'Academic Info', 'Review'];
 
 interface StudentFormData {
+  admission_number: string;
   full_name: string;
   date_of_birth: string;
   gender: string;
@@ -55,6 +56,7 @@ interface StudentFormData {
 }
 
 const initialForm: StudentFormData = {
+  admission_number: '',
   full_name: '',
   date_of_birth: '',
   gender: '',
@@ -147,19 +149,45 @@ export default function AddStudent() {
 
   const handleSubmit = () => {
     if (!validateStep()) return;
-    mutation.mutate({
-      ...form,
+    const nameParts = form.full_name.trim().split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0] || '';
+
+    const payload: Record<string, unknown> = {
       institution_id: selectedInstitutionId,
+      admission_number: form.admission_number.trim() || undefined,
+      first_name: firstName,
+      last_name: lastName,
+      date_of_birth: form.date_of_birth,
+      gender: form.gender.toLowerCase(),
+      blood_group: form.blood_group || undefined,
+      religion: form.religion || undefined,
+      caste: form.caste || undefined,
+      aadhar_number: form.aadhar_number || undefined,
+      address: [form.address_line1, form.address_line2].filter(Boolean).join(', ') || undefined,
+      city: form.city || undefined,
+      state: form.state || undefined,
+      pincode: form.pincode || undefined,
+      phone: form.phone || undefined,
+      email: form.email || undefined,
+      admission_date: form.admission_date,
+      standard_id: form.standard_id ? parseInt(form.standard_id, 10) : undefined,
+      division_id: form.division_id ? parseInt(form.division_id, 10) : undefined,
       academic_year_id: selectedAcademicYearId,
-      guardian: {
-        full_name: form.guardian_name,
-        relationship: form.guardian_relationship,
-        phone: form.guardian_phone,
-        email: form.guardian_email || undefined,
-        occupation: form.guardian_occupation || undefined,
-        annual_income: form.guardian_annual_income ? parseFloat(form.guardian_annual_income) : undefined,
-      },
-    });
+      guardians: form.guardian_name ? [
+        {
+          relation: form.guardian_relationship,
+          first_name: form.guardian_name.trim().split(/\s+/)[0],
+          last_name: form.guardian_name.trim().split(/\s+/).slice(1).join(' ') || 'Parent',
+          phone: form.guardian_phone,
+          email: form.guardian_email || undefined,
+          occupation: form.guardian_occupation || undefined,
+          annual_income: form.guardian_annual_income ? parseFloat(form.guardian_annual_income) : undefined,
+          is_primary: true,
+        }
+      ] : [],
+    };
+    mutation.mutate(payload);
   };
 
   const Field = ({
@@ -255,6 +283,19 @@ export default function AddStudent() {
         {/* Step 0: Personal Info */}
         {step === 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Admission Number <span className="text-xs text-gray-400 font-normal">(Leave blank to auto-generate)</span>
+              </label>
+              <input
+                type="text"
+                value={form.admission_number}
+                onChange={(e) => update('admission_number', e.target.value)}
+                placeholder="e.g. PA-2026-000040 (Leave blank for automatic sequential number)"
+                className="input"
+              />
+              <p className="text-xs text-slate-500 mt-1">If left blank, the system automatically assigns the next official sequence (e.g. PA-2026-000040).</p>
+            </div>
             <div className="md:col-span-2">
               <Field label="Full Name" field="full_name" required placeholder="As per records" />
             </div>
@@ -366,6 +407,7 @@ export default function AddStudent() {
           <div className="space-y-4 text-sm">
             <h3 className="font-semibold text-gray-900">Review Student Information</h3>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+              <ReviewRow label="Admission No." value={form.admission_number || "Auto-generated upon save"} />
               <ReviewRow label="Full Name" value={form.full_name} />
               <ReviewRow label="Date of Birth" value={form.date_of_birth} />
               <ReviewRow label="Gender" value={form.gender} />

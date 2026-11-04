@@ -140,3 +140,4 @@ def downgrade() -> None:
         batch_op.drop_column("institute_type")
         batch_op.drop_column("tagline")
         batch_op.drop_column("short_name")
+

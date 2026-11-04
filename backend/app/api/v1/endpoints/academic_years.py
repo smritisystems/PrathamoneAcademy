@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for academic year lifecycle, current session selection, and validation.
 #  */
@@ -21,7 +21,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import (
+    get_current_active_user,
+    enforce_institution_access,
+    check_institution_access,
+)
 from app.models.academic_year import AcademicYear
 from pydantic import BaseModel
 from datetime import date
@@ -46,19 +50,19 @@ class AcademicYearUpdate(BaseModel):
 
 @router.get("/")
 async def list_academic_years(
-    institution_id: Optional[int] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     query = select(AcademicYear).where(AcademicYear.is_active == True)
-    if institution_id:
-        query = query.where(AcademicYear.institution_id == institution_id)
+    if effective_inst_id:
+        query = query.where(AcademicYear.institution_id == effective_inst_id)
     result = await db.execute(query.order_by(AcademicYear.start_date.desc()))
     years = result.scalars().all()
 
     # Resilient fallback: If filtering by institution_id returned 0 years (e.g. stale client localStorage),
     # return active academic years so client UI never renders a blank academic year dropdown
-    if not years and institution_id:
+    if not years and effective_inst_id:
         fallback_query = select(AcademicYear).where(AcademicYear.is_active == True).order_by(AcademicYear.start_date.desc())
         fallback_res = await db.execute(fallback_query)
         years = fallback_res.scalars().all()
@@ -66,7 +70,7 @@ async def list_academic_years(
     # Emergency auto-bootstrap: if table is empty, auto-create current AY 2026-27
     if not years:
         default_ay = AcademicYear(
-            institution_id=institution_id or 1,
+            institution_id=effective_inst_id or 1,
             name="2026-27",
             start_date=date(2026, 4, 1),
             end_date=date(2027, 3, 31),
@@ -97,6 +101,7 @@ async def create_academic_year(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    check_institution_access(data.institution_id, current_user)
     if data.is_current:
         await db.execute(
             update(AcademicYear)

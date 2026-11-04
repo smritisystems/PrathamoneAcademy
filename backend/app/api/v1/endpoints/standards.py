@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for standards/classes management, board associations, and settings.
 #  */
@@ -29,6 +29,7 @@ from app.models.enrollment import StudentEnrollment
 from app.models.student import Student
 from app.models.portal import TimetableEntry
 from app.models.subject import Subject
+from app.models.settings import InstitutionSetting
 import json
 from pathlib import Path
 from pydantic import BaseModel
@@ -56,8 +57,36 @@ class AcademicSettingsSchema(BaseModel):
 
 @router.get("/academic-settings")
 async def get_academic_settings(
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    # Check database institution_settings first
+    rows = (await db.execute(
+        select(InstitutionSetting).where(
+            and_(
+                InstitutionSetting.institution_id == user_inst_id,
+                InstitutionSetting.category == "academic",
+            )
+        )
+    )).scalars().all()
+
+    if rows:
+        conf = {**DEFAULT_ACADEMIC_SETTINGS}
+        for r in rows:
+            if r.key == "batch_capacity_warning" and r.value:
+                try:
+                    conf["defaultBatchCapacity"] = int(r.value)
+                except ValueError:
+                    pass
+            elif r.key == "enforce_capacity_strict" and r.value:
+                conf["enforceCapacityStrict"] = r.value.lower() in ("true", "1")
+            elif r.key == "prevent_timetable_conflicts" and r.value:
+                conf["preventTimetableConflicts"] = r.value.lower() in ("true", "1")
+            elif r.key == "auto_roll_number_format" and r.value:
+                conf["autoRollNumberFormat"] = r.value
+        return conf
+
     if SETTINGS_FILE.exists():
         try:
             with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
@@ -70,14 +99,49 @@ async def get_academic_settings(
 @router.put("/academic-settings")
 async def update_academic_settings(
     data: AcademicSettingsSchema,
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     settings_dict = data.model_dump()
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+
+    # Persist to database institution_settings
+    key_map = {
+        "batch_capacity_warning": str(data.defaultBatchCapacity),
+        "enforce_capacity_strict": str(data.enforceCapacityStrict).lower(),
+        "prevent_timetable_conflicts": str(data.preventTimetableConflicts).lower(),
+        "auto_roll_number_format": data.autoRollNumberFormat,
+    }
+    for k, v in key_map.items():
+        existing = (await db.execute(
+            select(InstitutionSetting).where(
+                and_(
+                    InstitutionSetting.institution_id == user_inst_id,
+                    InstitutionSetting.key == k,
+                )
+            )
+        )).scalar_one_or_none()
+        if existing:
+            existing.value = v
+            existing.category = "academic"
+            existing.updated_by_id = current_user.id
+        else:
+            db.add(InstitutionSetting(
+                institution_id=user_inst_id,
+                category="academic",
+                key=k,
+                value=v,
+                data_type="number" if k == "batch_capacity_warning" else ("boolean" if "strict" in k or "conflicts" in k else "string"),
+                updated_by_id=current_user.id,
+            ))
+    await db.commit()
+
     try:
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
             json.dump(settings_dict, f, indent=2)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to persist settings: {str(e)}")
+    except Exception:
+        pass
+
     return {
         "settings": settings_dict,
         "message": "Academic workspace settings saved successfully",

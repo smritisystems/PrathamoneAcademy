@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description Comprehensive API endpoints for Teacher & Staff Management, assignments, attendance, leaves, and documents.
 #  */
@@ -24,9 +24,16 @@ from pydantic import BaseModel, Field
 from datetime import datetime, date
 from decimal import Decimal
 import json
+import secrets
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, is_sysadmin
+from app.core.deps import (
+    get_current_active_user,
+    require_role,
+    is_sysadmin,
+    enforce_institution_access,
+    check_institution_access,
+)
 from app.core.security import get_password_hash
 from app.models.user import User, Role, Permission, AuditLog
 from app.models.staff import (
@@ -56,7 +63,7 @@ FINANCIAL_ROLES = ("sysadmin", "superadmin", "super_admin", "admin", "accountant
 class StaffCreateRequest(BaseModel):
     username: str
     email: str
-    password: Optional[str] = "Prashant@2026"
+    password: Optional[str] = None
     first_name: str
     last_name: str
     phone: Optional[str] = None
@@ -168,13 +175,17 @@ async def list_staff_members(
     status: Optional[str] = Query(None, description="active, on_leave, resigned, inactive"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
+    effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """
     Returns paginated directory of faculty and staff with full filtering and workload aggregation.
     """
-    conditions = [User.role.in_(["teacher", "staff", "accountant", "admin", "principal", "sysadmin"])]
+    conditions = [
+        User.role.in_(["teacher", "staff", "accountant", "admin", "principal", "sysadmin"]),
+        StaffProfile.institution_id == effective_inst_id,
+    ]
 
     if status:
         conditions.append(StaffProfile.status == status)
@@ -297,7 +308,10 @@ async def create_staff_member(
     if existing:
         raise HTTPException(status_code=400, detail="Username or Email already registered in system")
 
-    # 2. Generate Next Employee ID (e.g. TCH-005, STF-001)
+    # 2. Determine target institution ID
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+
+    # 3. Generate Next Employee ID (e.g. TCH-005, STF-001)
     prefix = "TCH" if data.staff_type == "Teacher" else ("ACC" if data.staff_type == "Accountant" else "STF")
     count_existing = (
         await db.execute(
@@ -306,22 +320,35 @@ async def create_staff_member(
     ).scalar() or 0
     employee_id = f"{prefix}-{count_existing + 1:03d}"
 
-    # 3. Find matching Role ID
+    # 4. Find matching Role ID (safely falling back to 'staff' if role is not recognized)
+    target_role = (data.role or "staff").strip().lower()
     role_obj = (
-        await db.execute(select(Role).where(Role.name == data.role))
+        await db.execute(select(Role).where(Role.name == target_role))
     ).scalar_one_or_none()
-    role_id = role_obj.id if role_obj else None
+    if not role_obj:
+        role_obj = (
+            await db.execute(select(Role).where(Role.name == "staff"))
+        ).scalar_one_or_none()
+    if not role_obj:
+        role_obj = Role(name="staff", description="Staff Member")
+        db.add(role_obj)
+        await db.flush()
+    role_id = role_obj.id
+    actual_role_name = role_obj.name
 
-    # 4. Create User
+    # 5. Generate secure random temporary credentials if password omitted
+    temp_password = data.password.strip() if (data.password and data.password.strip()) else secrets.token_urlsafe(10)
+
+    # 6. Create User
     new_user = User(
-        institution_id=1,
+        institution_id=user_inst_id,
         username=data.username.strip().lower(),
         email=data.email.strip().lower(),
-        hashed_password=get_password_hash(data.password or "Prashant@2026"),
+        hashed_password=get_password_hash(temp_password),
         first_name=data.first_name.strip(),
         last_name=data.last_name.strip(),
         phone=data.phone,
-        role=data.role,
+        role=actual_role_name,
         role_id=role_id,
         scope_type="institute",
         staff_code=employee_id,
@@ -331,10 +358,10 @@ async def create_staff_member(
     db.add(new_user)
     await db.flush()
 
-    # 5. Create Staff Profile
+    # 7. Create Staff Profile
     profile = StaffProfile(
         user_id=new_user.id,
-        institution_id=1,
+        institution_id=user_inst_id,
         employee_id=employee_id,
         staff_type=data.staff_type,
         department=data.department or "Academics",
@@ -365,18 +392,35 @@ async def create_staff_member(
     )
     db.add(profile)
 
-    # 6. Initialize Leave Balance
-    leave_bal = StaffLeaveBalance(
-        user_id=new_user.id,
-        academic_year_id=1,
-        casual_leave_total=12.0,
-        casual_leave_used=0.0,
-        sick_leave_total=10.0,
-        sick_leave_used=0.0,
-        earned_leave_total=15.0,
-        earned_leave_used=0.0,
+    # 8. Initialize Leave Balance
+    ay_res = await db.execute(
+        select(AcademicYear.id).where(
+            and_(
+                AcademicYear.institution_id == user_inst_id,
+                AcademicYear.is_active == True,
+            )
+        ).order_by(AcademicYear.is_current.desc(), AcademicYear.id.desc()).limit(1)
     )
-    db.add(leave_bal)
+    ay_id = ay_res.scalars().first()
+
+    if not ay_id:
+        ay_fallback_res = await db.execute(
+            select(AcademicYear.id).where(AcademicYear.is_active == True).order_by(AcademicYear.is_current.desc()).limit(1)
+        )
+        ay_id = ay_fallback_res.scalars().first()
+
+    if ay_id:
+        leave_bal = StaffLeaveBalance(
+            user_id=new_user.id,
+            academic_year_id=ay_id,
+            casual_leave_total=12.0,
+            casual_leave_used=0.0,
+            sick_leave_total=10.0,
+            sick_leave_used=0.0,
+            earned_leave_total=15.0,
+            earned_leave_used=0.0,
+        )
+        db.add(leave_bal)
 
     await db.commit()
     await db.refresh(profile)
@@ -386,6 +430,8 @@ async def create_staff_member(
         "message": f"Staff profile created for {new_user.first_name} {new_user.last_name}",
         "user_id": new_user.id,
         "employee_id": employee_id,
+        "username": new_user.username,
+        "temporary_password": temp_password,
     }
 
 
@@ -410,6 +456,9 @@ async def get_staff_profile(
     profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
     if not profile:
         raise HTTPException(status_code=404, detail="Staff profile not found for this user")
+
+    if not is_self:
+        check_institution_access(profile.institution_id, current_user)
 
     # Assignments
     assignments_res = await db.execute(
@@ -505,6 +554,8 @@ async def update_staff_profile(
     profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
     if not profile:
         raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
 
     if data.first_name is not None:
         user.first_name = data.first_name.strip()
@@ -1043,6 +1094,8 @@ async def render_staff_document(
     profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
     if not profile:
         raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
 
     # Fetch institution
     inst = (await db.execute(select(Institution).where(Institution.id == 1))).scalar_one_or_none()
