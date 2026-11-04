@@ -94,3 +94,4 @@ Write-Host "--------------------------------------------------------------------
 Write-Host "Web Application: http://localhost:80" -ForegroundColor Cyan
 Write-Host "Default Login:   admin@prashantacademy.edu.in / admin123" -ForegroundColor Yellow
 Write-Host "======================================================================`n" -ForegroundColor Blue
+

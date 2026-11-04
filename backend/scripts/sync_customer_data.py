@@ -104,3 +104,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     asyncio.run(preview_and_sync(execute=args.execute, force=args.force))
+

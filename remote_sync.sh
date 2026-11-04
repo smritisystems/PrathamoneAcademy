@@ -69,3 +69,4 @@ SELECT 'Announcements: ' || count(*) FROM announcements;
 echo -e "\nWeb Application: http://localhost:80"
 echo "Default Login:   admin@prashantacademy.edu.in / admin123"
 echo "======================================================================"
+
