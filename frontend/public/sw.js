@@ -11,12 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Production service worker with strategic caching, network-only API security, and offline fallback.
  */
 
-const CACHE_VERSION = 'prathamone-cache-v1.0.0';
+const CACHE_VERSION = 'prathamone-cache-v1.1.0';
 const STATIC_CACHE_NAME = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `dynamic-${CACHE_VERSION}`;
 

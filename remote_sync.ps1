@@ -54,7 +54,12 @@ try {
 Write-Host "[2/3] Importing complete production records into database..." -ForegroundColor Cyan
 try {
     docker cp "$tempSql" "${ContainerName}:/tmp/remote_sync.sql"
-    docker exec -i $ContainerName psql -U $DbUser -d $DbName -f /tmp/remote_sync.sql | Out-Null
+    $res = docker exec -i $ContainerName psql -U $DbUser -d $DbName -v ON_ERROR_STOP=1 -f /tmp/remote_sync.sql 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] PostgreSQL import failed with exit code $LASTEXITCODE" -ForegroundColor Red
+        Write-Host ($res | Select-Object -Last 10 | Out-String) -ForegroundColor Red
+        exit 1
+    }
     docker exec -i $ContainerName rm -f /tmp/remote_sync.sql
     Remove-Item -Path $tempSql -Force -ErrorAction SilentlyContinue
     Write-Host "[OK] Complete production dataset loaded into $DbName." -ForegroundColor Green

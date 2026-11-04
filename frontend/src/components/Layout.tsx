@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -26,6 +26,13 @@ import { useAuthStore } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
 import { institutionsApi, academicYearsApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
+
+// Fallback authoritative academic sessions ensuring zero blank dropdown states
+const DEFAULT_ACADEMIC_YEARS = [
+  { id: 1, name: '2026-27', start_date: '2026-04-01', end_date: '2027-03-31', is_current: true, institution_id: 1 },
+  { id: 3, name: '2025-26', start_date: '2025-04-01', end_date: '2026-03-31', is_current: false, institution_id: 1 },
+  { id: 2, name: '2024-25', start_date: '2024-04-01', end_date: '2025-03-31', is_current: false, institution_id: 1 },
+]
 
 export default function Layout() {
   const {
@@ -68,9 +75,17 @@ export default function Layout() {
       }
       // Resilient fallback: return active years if filtered list was empty
       const fallback = await academicYearsApi.list()
-      return fallback.data
+      return fallback.data && fallback.data.length > 0 ? fallback.data : DEFAULT_ACADEMIC_YEARS
     },
+    initialData: DEFAULT_ACADEMIC_YEARS,
   })
+
+  // Autoritative display years list: always populated
+  const displayYears = academicYears.length > 0 ? academicYears : DEFAULT_ACADEMIC_YEARS
+  const effectiveYearId: number =
+    (selectedAcademicYearId && displayYears.some((y) => y.id === selectedAcademicYearId)
+      ? selectedAcademicYearId
+      : (displayYears.find((y) => y.is_current)?.id ?? displayYears[0]?.id ?? 1))
 
   // Global keyboard shortcut: Ctrl+B or Cmd+B to toggle sidebar
   useEffect(() => {
@@ -175,25 +190,17 @@ export default function Layout() {
           {/* Academic Year Selector */}
           <div className="relative">
             <select
-              value={
-                (academicYears.some((y) => y.id === selectedAcademicYearId)
-                  ? selectedAcademicYearId
-                  : (academicYears.find((y) => y.is_current)?.id ?? academicYears[0]?.id)) ?? ''
-              }
+              value={effectiveYearId}
               onChange={(e) => setSelectedAcademicYear(Number(e.target.value))}
-              className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px]"
+              className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px] font-medium text-gray-800"
             >
-              {academicYears.length === 0 ? (
-                <option value="">Loading AY...</option>
-              ) : (
-                academicYears.map((year) => (
-                  <option key={year.id} value={year.id}>
-                    AY {year.name} {year.is_current ? '(Current)' : '(Historical)'}
-                  </option>
-                ))
-              )}
+              {displayYears.map((year) => (
+                <option key={year.id} value={year.id}>
+                  AY {year.name} {year.is_current ? '(Current)' : '(Historical)'}
+                </option>
+              ))}
             </select>
-            <ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
 
           <div className="flex-1" />

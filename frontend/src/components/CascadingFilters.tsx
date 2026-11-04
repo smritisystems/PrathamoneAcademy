@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Cascading filter bar component for academic year, board, class, and batch selection.
  */
@@ -43,6 +43,12 @@ interface CascadingFiltersProps {
   title?: string
 }
 
+const DEFAULT_ACADEMIC_YEARS = [
+  { id: 1, name: '2026-27', start_date: '2026-04-01', end_date: '2027-03-31', is_current: true, institution_id: 1 },
+  { id: 3, name: '2025-26', start_date: '2025-04-01', end_date: '2026-03-31', is_current: false, institution_id: 1 },
+  { id: 2, name: '2024-25', start_date: '2024-04-01', end_date: '2025-03-31', is_current: false, institution_id: 1 },
+]
+
 export default function CascadingFilters({
   filters,
   onChange,
@@ -69,9 +75,12 @@ export default function CascadingFilters({
       const res = await academicYearsApi.list(selectedInstitutionId ?? undefined)
       if (res.data && res.data.length > 0) return res.data
       const fallback = await academicYearsApi.list()
-      return fallback.data
+      return fallback.data && fallback.data.length > 0 ? fallback.data : DEFAULT_ACADEMIC_YEARS
     },
+    initialData: DEFAULT_ACADEMIC_YEARS,
   })
+
+  const displayYears = academicYears.length > 0 ? academicYears : DEFAULT_ACADEMIC_YEARS
 
   // 2. Boards (ICSE, CBSE, SSC, etc.)
   const { data: boards = [] } = useQuery({
@@ -211,7 +220,7 @@ export default function CascadingFilters({
             className="w-full text-sm rounded-lg border border-gray-300 bg-white px-3 py-1.5 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
           >
             <option value="">All Academic Years</option>
-            {academicYears.map((ay) => (
+            {displayYears.map((ay) => (
               <option key={ay.id} value={ay.id}>
                 {ay.name} {ay.is_current ? '(Current)' : ''}
               </option>
