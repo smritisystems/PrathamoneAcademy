@@ -1576,3 +1576,229 @@ export interface FacultyLoadReportRow {
 
 
 
+
+
+// ─── Staff & Faculty Management ──────────────────────────────────────────────
+
+export interface StaffMember {
+  profile_id: number
+  user_id: number
+  employee_id: string
+  first_name: string
+  last_name: string
+  full_name: string
+  username: string
+  email: string
+  phone?: string
+  role: string
+  staff_type: string
+  department?: string
+  qualification?: string
+  specialization?: string
+  experience_years?: number
+  employment_type: string
+  joining_date?: string
+  status: string
+  is_active: boolean
+  profile_photo_url?: string
+  basic_salary?: number
+  assignments_count: number
+  total_weekly_hours: number
+}
+
+export interface StaffProfileDetail extends StaffMember {
+  gender?: string
+  date_of_birth?: string
+  blood_group?: string
+  emergency_contact_name?: string
+  emergency_contact_phone?: string
+  emergency_contact_relation?: string
+  current_address?: string
+  permanent_address?: string
+  city?: string
+  state?: string
+  pincode?: string
+  notes?: string
+  pan_number?: string
+  aadhar_number?: string
+  bank_name?: string
+  bank_account_number?: string
+  bank_ifsc?: string
+  assignments: Array<{
+    id: number
+    board: string
+    standard: string
+    batch: string
+    subject: string
+    weekly_hours: number
+    is_class_teacher: boolean
+    notes?: string
+  }>
+  leave_balance?: {
+    casual_total: number
+    casual_used: number
+    sick_total: number
+    sick_used: number
+    earned_total: number
+    earned_used: number
+  }
+}
+
+export interface TeacherAssignmentItem {
+  id: number
+  teacher_user_id: number
+  teacher_name: string
+  board_id: number
+  board_name: string
+  standard_id: number
+  standard_name: string
+  division_id: number
+  batch_name: string
+  subject_id: number
+  subject_name: string
+  weekly_hours: number
+  is_class_teacher: boolean
+  notes?: string
+}
+
+export interface StaffAttendanceItem {
+  user_id: number
+  employee_id: string
+  full_name: string
+  staff_type: string
+  department?: string
+  date: string
+  status: string
+  check_in_time?: string
+  check_out_time?: string
+  hours_worked?: number
+  remarks?: string
+  is_marked: boolean
+}
+
+export interface StaffDailyAttendanceResponse {
+  date: string
+  total_staff: number
+  present_count: number
+  absent_count: number
+  late_count: number
+  half_day_count: number
+  leave_count: number
+  records: StaffAttendanceItem[]
+}
+
+export interface StaffLeaveItem {
+  id: number
+  user_id: number
+  staff_name: string
+  email: string
+  leave_type: string
+  start_date: string
+  end_date: string
+  days_count: number
+  reason: string
+  status: string
+  action_remarks?: string
+  action_date?: string
+  applied_at?: string
+}
+
+export interface StaffDocumentTemplate {
+  id: string
+  category: string
+  title: string
+  code: string
+  description: string
+}
+
+export interface StaffDocumentRenderResponse {
+  form_id: string
+  title: string
+  category: string
+  reference_number: string
+  staff_name: string
+  employee_id: string
+  html_content: string
+}
+
+// ─── SysAdmin Superuser Governance ───────────────────────────────────────────
+
+export interface SysAdminOverview {
+  status: string
+  timestamp: string
+  current_sysadmin: {
+    id: number
+    username: string
+    email: string
+    role: string
+  }
+  users_summary: {
+    total_accounts: number
+    active_accounts: number
+    active_sysadmins: number
+    roles_breakdown: Record<string, number>
+  }
+  academic_summary: {
+    active_students: number
+    active_faculty_staff: number
+    active_batches: number
+  }
+  financial_summary: {
+    total_invoiced: number
+    total_collected: number
+    total_outstanding: number
+  }
+  security_audit_summary: {
+    total_logs: number
+    security_audits: number
+    critical_events: number
+  }
+}
+
+export interface SecurityAuditLogItem {
+  id: number
+  user_id?: number
+  actor_username?: string
+  actor_name?: string
+  actor_role?: string
+  action: string
+  resource_type: string
+  resource_id?: number
+  old_data?: string
+  new_data?: string
+  details?: string
+  severity: string
+  is_system_audit: boolean
+  ip_address?: string
+  user_agent?: string
+  created_at: string
+}
+
+export interface SecurityAuditLogsResponse {
+  items: SecurityAuditLogItem[]
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+export interface UniversalEditPayload {
+  model_name: string
+  record_id: number
+  fields: Record<string, any>
+  reason?: string
+}
+
+export interface SystemSettings {
+  institution_name: string
+  institution_code: string
+  contact_phone: string
+  contact_email: string
+  maintenance_mode: boolean
+  session_timeout_minutes: number
+  enable_mfa_requirement: boolean
+  allow_self_registration: boolean
+  security_audit_logging_active: boolean
+  system_version: string
+  app_environment: string
+}

@@ -33,6 +33,9 @@ import type {
   UserCreatePayload, UserUpdatePayload,
   AcademicSubject, AcademicTimetableEntry, EnrollmentRecord, EnrollmentStats,
   UnassignedStudent, BatchCapacityReportRow, AcademicDistributionReportRow, FacultyLoadReportRow,
+  StaffMember, StaffProfileDetail, TeacherAssignmentItem, StaffAttendanceItem,
+  StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
+  SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -744,3 +747,136 @@ export const formsApi = {
 
 
 
+
+
+// ─── Staff & Faculty Management ──────────────────────────────────────────────
+
+export const staffApi = {
+  list: (params?: {
+    search?: string
+    staff_type?: string
+    department?: string
+    employment_type?: string
+    status?: string
+    page?: number
+    limit?: number
+  }) =>
+    apiClient.get<{
+      items: StaffMember[]
+      total: number
+      page: number
+      limit: number
+      pages: number
+    }>('/staff/', { params }),
+
+  get: (userId: number | string) =>
+    apiClient.get<StaffProfileDetail>(`/staff/${userId}`),
+
+  create: (data: any) =>
+    apiClient.post<{ success: boolean; message: string; user_id: number; employee_id: string }>(
+      '/staff/',
+      data
+    ),
+
+  update: (userId: number | string, data: any) =>
+    apiClient.put<{ success: boolean; message: string }>(`/staff/${userId}`, data),
+
+  assignmentsList: (params?: {
+    teacher_id?: number
+    division_id?: number
+    standard_id?: number
+    subject_id?: number
+    academic_year_id?: number
+  }) => apiClient.get<TeacherAssignmentItem[]>('/staff/assignments/list', { params }),
+
+  createAssignment: (data: {
+    teacher_user_id: number
+    academic_year_id: number
+    board_id: number
+    standard_id: number
+    division_id: number
+    subject_id: number
+    weekly_hours?: number
+    is_class_teacher?: boolean
+    notes?: string
+  }) => apiClient.post<{ success: boolean; message: string; id: number }>('/staff/assignments/create', data),
+
+  deleteAssignment: (assignmentId: number) =>
+    apiClient.delete<{ success: boolean; message: string }>(`/staff/assignments/${assignmentId}`),
+
+  dailyAttendance: (params?: { attendance_date?: string; staff_type?: string }) =>
+    apiClient.get<StaffDailyAttendanceResponse>('/staff/attendance/daily', { params }),
+
+  markAttendance: (data: {
+    date: string
+    records: Array<{
+      user_id: number
+      status: string
+      check_in_time?: string
+      check_out_time?: string
+      hours_worked?: number
+      remarks?: string
+    }>
+  }) => apiClient.post<{ success: boolean; message: string }>('/staff/attendance/mark', data),
+
+  leavesList: (params?: { status?: string; user_id?: number }) =>
+    apiClient.get<StaffLeaveItem[]>('/staff/leaves/list', { params }),
+
+  applyLeave: (data: {
+    leave_type: string
+    start_date: string
+    end_date: string
+    days_count?: number
+    reason: string
+  }) => apiClient.post<{ success: boolean; message: string; id: number }>('/staff/leaves/apply', data),
+
+  actionLeave: (leaveId: number, data: { action: 'approve' | 'reject'; action_remarks?: string }) =>
+    apiClient.post<{ success: boolean; message: string }>(`/staff/leaves/${leaveId}/action`, data),
+
+  dashboardStats: () =>
+    apiClient.get<Record<string, any>>('/staff/dashboard/stats'),
+
+  documentCatalogue: (params?: { category?: string }) =>
+    apiClient.get<StaffDocumentTemplate[]>('/staff/documents-forms/catalogue', { params }),
+
+  renderDocument: (formId: string, params: { user_id: number | string; period_month?: string }) =>
+    apiClient.get<StaffDocumentRenderResponse>(`/staff/documents-forms/render/${formId}`, { params }),
+}
+
+// ─── SysAdmin Superuser Governance ───────────────────────────────────────────
+
+export const sysadminApi = {
+  getOverview: () =>
+    apiClient.get<SysAdminOverview>('/sysadmin/overview'),
+
+  getSecurityAuditLogs: (params?: {
+    user_id?: number
+    resource_type?: string
+    severity?: string
+    is_system_only?: boolean
+    search?: string
+    from_date?: string
+    to_date?: string
+    page?: number
+    limit?: number
+  }) => apiClient.get<SecurityAuditLogsResponse>('/sysadmin/security-audit-logs', { params }),
+
+  executeUniversalEdit: (data: UniversalEditPayload) =>
+    apiClient.post<{
+      success: boolean
+      message: string
+      model_name: string
+      record_id: number
+      updated_fields: string[]
+      audit_id: number
+    }>('/sysadmin/universal-edit', data),
+
+  getSystemSettings: () =>
+    apiClient.get<SystemSettings>('/sysadmin/system-settings'),
+
+  updateSystemSettings: (data: Partial<SystemSettings>) =>
+    apiClient.put<{ success: boolean; message: string; data: Partial<SystemSettings> }>(
+      '/sysadmin/system-settings',
+      data
+    ),
+}

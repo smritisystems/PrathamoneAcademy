@@ -21,9 +21,10 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
-  Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download
+  Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
+  Briefcase, Terminal
 } from 'lucide-react'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
 
 interface NavItem {
@@ -51,6 +52,7 @@ const academicSubItems = [
 ]
 
 const secondaryNavItems: NavItem[] = [
+  { to: '/staff', label: 'Teacher & Staff', icon: Briefcase },
   { to: '/attendance', label: 'Attendance', icon: ClipboardList },
   { to: '/examinations', label: 'Tests & Results', icon: Award },
   { to: '/fees', label: 'Fees & Payments', icon: CreditCard },
@@ -233,7 +235,35 @@ export default function Sidebar() {
                 </div>
               )}
             </div>
-          </nav>
+            {/* SysAdmin Superuser Link (only for sysadmin / superadmin) */}
+          {isUserSysAdmin(user) && (
+            <div className={`relative group mt-2 pt-2 border-t border-slate-800 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to="/sysadmin"
+                aria-label="SysAdmin Center"
+                className={`flex items-center ${
+                  isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  location.pathname === '/sysadmin'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-indigo-400 bg-indigo-950/40 hover:bg-indigo-900/60 hover:text-white border border-indigo-800/40'
+                }`}
+              >
+                <Terminal className="w-4 h-4 flex-shrink-0 text-indigo-400" />
+                {!isCollapsed && <span className="truncate">SysAdmin Center</span>}
+              </NavLink>
+
+              {isCollapsed && (
+                <div
+                  role="tooltip"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-indigo-950 text-indigo-200 text-xs font-semibold rounded-lg shadow-xl border border-indigo-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                >
+                  SysAdmin Center
+                </div>
+              )}
+            </div>
+          )}
+        </nav>
 
           {/* Footer User Card */}
           <div className="px-3 py-4 border-t border-slate-800 bg-slate-950/40">
@@ -556,6 +586,34 @@ export default function Sidebar() {
               </div>
             )
           })}
+          {/* SysAdmin Superuser Link (only for sysadmin / superadmin) */}
+          {isUserSysAdmin(user) && (
+            <div className={`relative group mt-2 pt-2 border-t border-slate-800 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to="/sysadmin"
+                aria-label="SysAdmin Center"
+                className={`flex items-center ${
+                  isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  location.pathname === '/sysadmin'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-indigo-400 bg-indigo-950/40 hover:bg-indigo-900/60 hover:text-white border border-indigo-800/40'
+                }`}
+              >
+                <Terminal className="w-4 h-4 flex-shrink-0 text-indigo-400" />
+                {!isCollapsed && <span className="truncate">SysAdmin Center</span>}
+              </NavLink>
+
+              {isCollapsed && (
+                <div
+                  role="tooltip"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-indigo-950 text-indigo-200 text-xs font-semibold rounded-lg shadow-xl border border-indigo-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                >
+                  SysAdmin Center
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* User Profile Footer Card */}

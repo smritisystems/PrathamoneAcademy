@@ -48,6 +48,8 @@ const AcademicWorkspacePage = React.lazy(() => import('./pages/AcademicWorkspace
 const ImportExportPage = React.lazy(() => import('./pages/ImportExport'))
 const FormsDocumentsPage = React.lazy(() => import('./pages/FormsDocuments'))
 const InstallAppPage = React.lazy(() => import('./pages/InstallApp'))
+const StaffManagementPage = React.lazy(() => import('./pages/StaffManagement'))
+const SysAdminWorkspacePage = React.lazy(() => import('./pages/SysAdminWorkspace'))
 
 function PageLoader() {
   return (
@@ -147,6 +149,8 @@ export default function App() {
           <Route path="reports" element={<Suspense fallback={<PageLoader />}><ReportsPage /></Suspense>} />
           <Route path="users" element={<Suspense fallback={<PageLoader />}><UsersPage /></Suspense>} />
           <Route path="users/:id" element={<Suspense fallback={<PageLoader />}><UserProfilePage /></Suspense>} />
+          <Route path="staff" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="sysadmin" element={<Suspense fallback={<PageLoader />}><SysAdminWorkspacePage /></Suspense>} />
           <Route path="import-export" element={<Suspense fallback={<PageLoader />}><ImportExportPage /></Suspense>} />
           <Route path="forms" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="forms-documents" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />

@@ -40,6 +40,8 @@ docker compose ps
 
 echo -e "\nSynchronizing schema, academic years, and production datasets..."
 docker compose exec -T backend python scripts/normalize_academic_and_institution.py || true
+docker compose exec -T backend python scripts/init_staff_module.py || true
+docker compose exec -T backend python scripts/bootstrap_sysadmin.py || true
 
 echo -e "\n[SUCCESS] PrathamOne Academy updated successfully without data loss."
 

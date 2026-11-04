@@ -39,6 +39,8 @@ from app.api.v1.endpoints import (
     timetable,
     enrollments,
     forms,
+    staff,
+    sysadmin,
 )
 
 api_router = APIRouter()
@@ -82,4 +84,6 @@ api_router.include_router(timetable.router, prefix="/timetable", tags=["timetabl
 api_router.include_router(enrollments.router, prefix="/enrollments", tags=["enrollments"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(forms.router, prefix="/forms", tags=["forms"])
+api_router.include_router(staff.router, prefix="/staff", tags=["staff"])
+api_router.include_router(sysadmin.router, prefix="/sysadmin", tags=["sysadmin"])
 

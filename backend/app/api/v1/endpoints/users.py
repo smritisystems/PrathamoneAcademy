@@ -44,7 +44,7 @@ from app.models.payment import Payment, PaymentReceipt
 
 router = APIRouter()
 
-ADMIN_ROLES = ("super_admin", "superadmin", "admin", "principal")
+ADMIN_ROLES = ("sysadmin", "super_admin", "superadmin", "admin", "principal")
 
 
 # ─── Pydantic Schemas ──────────────────────────────────────────────────────────
@@ -593,16 +593,20 @@ async def get_user_profile_workspace(
             })
         academic_data["assigned_batches"] = assigned_list
 
-    # 3. Activity / Audit Log
+    # 3. Activity / Audit Log (Security audit logs excluded for non-sysadmins)
+    log_filters = [
+        or_(
+            and_(AuditLog.resource_type == "user", AuditLog.resource_id == user.id),
+            AuditLog.user_id == user.id,
+        )
+    ]
+    if current_user.role not in ("sysadmin", "superadmin", "super_admin"):
+        log_filters.append(AuditLog.is_system_audit == False)
+
     logs = (
         await db.execute(
             select(AuditLog)
-            .where(
-                or_(
-                    and_(AuditLog.resource_type == "user", AuditLog.resource_id == user.id),
-                    AuditLog.user_id == user.id,
-                )
-            )
+            .where(and_(*log_filters))
             .order_by(desc(AuditLog.created_at))
             .limit(40)
         )
@@ -805,6 +809,14 @@ async def update_user(
     if data.scope_id is not None:
         user.scope_id = data.scope_id if data.scope_id > 0 else None
     if data.is_active is not None:
+        if data.is_active is False and user.is_active and user.role in ("sysadmin", "superadmin", "super_admin"):
+            super_count = (
+                await db.execute(
+                    select(func.count(User.id)).where(User.role.in_(["sysadmin", "superadmin", "super_admin"]), User.is_active == True)
+                )
+            ).scalar() or 0
+            if super_count <= 1:
+                raise HTTPException(status_code=400, detail="Cannot deactivate the last remaining active System Administrator")
         user.is_active = data.is_active
 
     # Audit log
@@ -892,6 +904,15 @@ async def toggle_user_status(
     if not user:
         raise HTTPException(status_code=404, detail="User account not found")
 
+    if user.is_active and user.role in ("sysadmin", "superadmin", "super_admin"):
+        super_count = (
+            await db.execute(
+                select(func.count(User.id)).where(User.role.in_(["sysadmin", "superadmin", "super_admin"]), User.is_active == True)
+            )
+        ).scalar() or 0
+        if super_count <= 1:
+            raise HTTPException(status_code=400, detail="Cannot deactivate the last remaining active System Administrator")
+
     old_status = user.is_active
     user.is_active = not old_status
 
@@ -964,14 +985,14 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.role in ("super_admin", "superadmin"):
+    if user.role in ("sysadmin", "super_admin", "superadmin"):
         super_count = (
             await db.execute(
-                select(func.count(User.id)).where(User.role.in_(["super_admin", "superadmin"]), User.is_active == True)
+                select(func.count(User.id)).where(User.role.in_(["sysadmin", "super_admin", "superadmin"]), User.is_active == True)
             )
         ).scalar() or 0
         if super_count <= 1:
-            raise HTTPException(status_code=400, detail="Cannot delete the only remaining active super administrator")
+            raise HTTPException(status_code=400, detail="Cannot delete the last remaining active System Administrator")
 
     if permanent:
         # Unlink divisions where class teacher

@@ -122,6 +122,9 @@ class AuditLog(Base):
     new_data: Mapped[str] = mapped_column(Text, nullable=True)
     ip_address: Mapped[str] = mapped_column(String(50), nullable=True)
     user_agent: Mapped[str] = mapped_column(String(500), nullable=True)
+    is_system_audit: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", index=True)
+    severity: Mapped[str] = mapped_column(String(20), default="info", server_default="info")
+    details: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -58,3 +58,22 @@ export const useAuthStore = create<AuthState>()(
   )
 )
 
+
+
+export const isUserSysAdmin = (user: User | null): boolean => {
+  if (!user || !user.role) return false
+  const r = user.role.toLowerCase()
+  return r === 'sysadmin' || r === 'superadmin' || r === 'super_admin'
+}
+
+export const isUserAdmin = (user: User | null): boolean => {
+  if (!user || !user.role) return false
+  const r = user.role.toLowerCase()
+  return (
+    r === 'sysadmin' ||
+    r === 'superadmin' ||
+    r === 'super_admin' ||
+    r === 'admin' ||
+    r === 'principal'
+  )
+}

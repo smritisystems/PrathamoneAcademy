@@ -73,7 +73,9 @@ if ($isHealthy) {
     Write-Host "`nSynchronizing schema, academic years, and production datasets..." -ForegroundColor Cyan
     try {
         docker compose exec -T backend python scripts/normalize_academic_and_institution.py
-        Write-Host "[OK] Academic years and institution schema normalized successfully." -ForegroundColor Green
+        docker compose exec -T backend python scripts/init_staff_module.py
+        docker compose exec -T backend python scripts/bootstrap_sysadmin.py
+        Write-Host "[OK] Academic years, staff module, and SysAdmin superuser synchronized successfully." -ForegroundColor Green
     } catch {
         Write-Host "[WARN] Schema normalization encountered an error: $_" -ForegroundColor Yellow
     }
