@@ -1253,3 +1253,4 @@ async def render_staff_document(
         "employee_id": profile.employee_id,
         "html_content": html_content,
     }
+
