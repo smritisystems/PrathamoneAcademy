@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Student fee collection terminal for recording payments against outstanding installments.
  */
@@ -28,6 +28,7 @@ import {
 import type { FeeInvoice, FeeInstallment } from '../types';
 import { InstallmentStatusBadge } from '../components/Badge';
 import Modal from '../components/Modal';
+import PaymentReceiptView from '../components/PaymentReceiptView';
 import { printReceiptElement } from '../utils/printReceipt';
 
 const PAYMENT_METHODS = ['cash', 'upi', 'bank_transfer', 'cheque', 'other'] as const;
@@ -540,82 +541,18 @@ export default function FeeCollection() {
           setShowReceiptModal(false);
           setLastReceiptNumber('');
         }}
-        title="Payment Receipt"
+        title={`Official Fee Receipt #${lastReceiptNumber}`}
         size="lg"
       >
         {receipt ? (
-          <div id="receipt-print-area" className="receipt-content">
-            <div className="text-center mb-6 border-b pb-4">
-              <h2 className="text-xl font-bold text-blue-900">Prashant Academy</h2>
-              <p className="text-gray-500 text-sm">Official Fee Receipt</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Receipt No: <strong>{receipt.receipt_number}</strong>
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-6">
-              <div>
-                <span className="text-gray-500">Student:</span>
-                <span className="ml-2 font-medium">{studentName}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Admission No:</span>
-                <span className="ml-2 font-medium">{student?.admission_number}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Invoice:</span>
-                <span className="ml-2 font-medium">{selectedInvoice?.invoice_number}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Date:</span>
-                <span className="ml-2 font-medium">
-                  {new Date(receipt.generated_at || Date.now()).toLocaleDateString('en-IN', {
-                    day: '2-digit',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Method:</span>
-                <span className="ml-2 font-medium capitalize">
-                  {receipt.payment_method?.replace('_', ' ')}
-                </span>
-              </div>
-              {receipt.transaction_reference && (
-                <div>
-                  <span className="text-gray-500">Reference:</span>
-                  <span className="ml-2 font-medium">{receipt.transaction_reference}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-4 text-center">
-              <p className="text-sm text-blue-700">Amount Received</p>
-              <p className="text-3xl font-bold text-blue-900">
-                ₹{parseFloat(String(receipt.amount)).toLocaleString('en-IN')}
-              </p>
-            </div>
-
-            <div className="mt-6 flex gap-3 justify-end">
-              <button onClick={handlePrint} className="btn-secondary">
-                🖨️ Print Receipt
-              </button>
-              <button
-                onClick={() => {
-                  setShowReceiptModal(false);
-                  setLastReceiptNumber('');
-                }}
-                className="btn-primary"
-              >
-                Done
-              </button>
-            </div>
-
-            <p className="text-center text-xs text-gray-400 mt-4">
-              This is a computer-generated receipt and does not require a signature.
-            </p>
-          </div>
+          <PaymentReceiptView
+            receipt={receipt}
+            showPrintActions={true}
+            onClose={() => {
+              setShowReceiptModal(false);
+              setLastReceiptNumber('');
+            }}
+          />
         ) : (
           <div className="flex items-center justify-center h-32">
             <svg className="animate-spin h-8 w-8 text-blue-600" viewBox="0 0 24 24" fill="none">

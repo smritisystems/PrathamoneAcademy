@@ -11,13 +11,17 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Unit and DOM integration tests for isolated fee receipt printing and container isolation.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { printReceiptElement, directPrintReceipt } from '../utils/printReceipt';
+import PaymentReceiptView from '../components/PaymentReceiptView';
+import type { DetailedPaymentReceipt } from '../types';
 
 describe('Receipt Printing Specification & Container Isolation', () => {
   let originalPrint: () => void;
@@ -106,6 +110,138 @@ describe('Receipt Printing Specification & Container Isolation', () => {
     expect(receipt.textContent).toContain('Aarav Sharma');
     expect(receipt.textContent).toContain('₹25,000.00');
     expect(receipt.textContent).toContain('Authorized Signatory');
+  });
+
+  describe('PaymentReceiptView Component Specification', () => {
+    const mockReceiptWithHistory: DetailedPaymentReceipt = {
+      receipt_number: 'RCP-2026-0146',
+      payment_id: 146,
+      student_id: 149,
+      student_name: 'Johan Iyer',
+      admission_number: 'PA-2024-000021',
+      standard: 'Class IV',
+      division: 'Batch A (Morning)',
+      batch: 'Batch A (Morning)',
+      amount: 8500.0,
+      payment_date: '2026-10-07',
+      payment_method: 'bank_transfer',
+      transaction_reference: 'TXN-2026-0146',
+      invoice_number: 'INV-2026-0149',
+      status: 'completed',
+      collected_by: 'Staff Accountant',
+      generated_at: '2026-10-07T10:30:00Z',
+      historical_payments: [
+        {
+          payment_id: 1,
+          receipt_number: 'RCP-2026-0001',
+          date: '2026-03-06',
+          payment_method: 'bank_transfer',
+          amount: 8500.0,
+          transaction_reference: 'TXN-2026-0001',
+        },
+        {
+          payment_id: 6,
+          receipt_number: 'RCP-2026-0006',
+          date: '2026-04-04',
+          payment_method: 'upi',
+          amount: 8500.0,
+          transaction_reference: 'UPI-2026-0006',
+        },
+      ],
+      fee_summary: {
+        total_fee_amount: 85000.0,
+        previous_payments_total: 17000.0,
+        current_payment_amount: 8500.0,
+        total_paid_to_date: 25500.0,
+        outstanding_balance: 59500.0,
+      },
+    };
+
+    it('renders current payment details, student metadata, and amount in words', () => {
+      render(<PaymentReceiptView receipt={mockReceiptWithHistory} />);
+
+      expect(screen.getByText('RCP-2026-0146')).toBeDefined();
+      expect(screen.getByText('Johan Iyer')).toBeDefined();
+      expect(screen.getByText('PA-2024-000021')).toBeDefined();
+      expect(screen.getByText(/Class IV/)).toBeDefined();
+      expect(screen.getByText('INV-2026-0149')).toBeDefined();
+      expect(screen.getByText('TXN-2026-0146')).toBeDefined();
+      expect(screen.getAllByText(/₹8,500/i).length).toBeGreaterThan(0);
+      expect(screen.getByText(/Rupees Eight Thousand Five Hundred Only/i)).toBeDefined();
+    });
+
+    it('displays historical payment records in chronological order excluding the current payment', () => {
+      render(<PaymentReceiptView receipt={mockReceiptWithHistory} />);
+
+      // Historical payments table headers
+      expect(screen.getByText(/Historical Payment Details/i)).toBeDefined();
+      expect(screen.getByText('RCP-2026-0001')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0006')).toBeDefined();
+
+      // Subtotal of previous payments
+      expect(screen.getByText('Previous Payments Total:')).toBeDefined();
+      expect(screen.getAllByText('₹17,000').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('displays "No previous payments." when historical_payments array is empty (first installment)', () => {
+      const firstPaymentReceipt: DetailedPaymentReceipt = {
+        ...mockReceiptWithHistory,
+        receipt_number: 'RCP-2026-0001',
+        payment_id: 1,
+        historical_payments: [],
+        fee_summary: {
+          total_fee_amount: 85000.0,
+          previous_payments_total: 0.0,
+          current_payment_amount: 8500.0,
+          total_paid_to_date: 8500.0,
+          outstanding_balance: 76500.0,
+        },
+      };
+
+      render(<PaymentReceiptView receipt={firstPaymentReceipt} />);
+
+      expect(screen.getByText(/No previous payments/i)).toBeDefined();
+      expect(screen.getByText('₹76,500')).toBeDefined();
+    });
+
+    it('renders reconciled fee summary metrics including total fee, total paid, and outstanding balance', () => {
+      render(<PaymentReceiptView receipt={mockReceiptWithHistory} />);
+
+      expect(screen.getByText('Total Fee')).toBeDefined();
+      expect(screen.getByText('₹85,000')).toBeDefined();
+      expect(screen.getByText('Previous Paid')).toBeDefined();
+      expect(screen.getByText('Current Paid')).toBeDefined();
+      expect(screen.getByText('Total Paid to Date')).toBeDefined();
+      expect(screen.getByText('₹25,500')).toBeDefined();
+      expect(screen.getByText('Outstanding Balance')).toBeDefined();
+      expect(screen.getByText('₹59,500')).toBeDefined();
+    });
+
+    it('displays prominent reversal banner when receipt status is reversed', () => {
+      const reversedReceipt: DetailedPaymentReceipt = {
+        ...mockReceiptWithHistory,
+        status: 'reversed',
+        is_reversed: true,
+        reversal_reason: 'Cheque bounced by bank',
+        reversed_at: '2026-10-08T14:00:00Z',
+      };
+
+      render(<PaymentReceiptView receipt={reversedReceipt} />);
+
+      expect(screen.getByText(/VOIDED \/ REVERSED TRANSACTION/i)).toBeDefined();
+      expect(screen.getByText(/Cheque bounced by bank/i)).toBeDefined();
+    });
+
+    it('allows toggling between A4 Portrait and A5 Compact format and triggers printing', () => {
+      render(<PaymentReceiptView receipt={mockReceiptWithHistory} />);
+
+      const a5Btn = screen.getByText('A5 Compact');
+      fireEvent.click(a5Btn);
+
+      const printBtn = screen.getByText(/Print Receipt \(A5\)/i);
+      expect(printBtn).toBeDefined();
+      fireEvent.click(printBtn);
+    });
   });
 });
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -1801,4 +1801,67 @@ export interface SystemSettings {
   security_audit_logging_active: boolean
   system_version: string
   app_environment: string
+}
+
+
+export interface HistoricalPaymentItem {
+  id?: number
+  payment_id?: number
+  receipt_number: string
+  amount: number
+  payment_date?: string
+  date?: string
+  payment_method: string
+  transaction_reference?: string | null
+  status?: string
+  installment_number?: number | null
+}
+
+export interface ReceiptFeeSummary {
+  total_fee_amount: number
+  previous_payments_total: number
+  current_payment_amount: number
+  total_paid_to_date: number
+  outstanding_balance: number
+}
+
+export interface DetailedPaymentReceipt {
+  receipt_number: string
+  payment_id: number
+  student_id: number
+  student_name: string
+  admission_number: string
+  standard?: string
+  division?: string
+  batch?: string
+  board?: string
+  amount: number
+  payment_date: string
+  payment_method: string
+  transaction_reference?: string | null
+  bank_name?: string | null
+  cheque_number?: string | null
+  cheque_date?: string | null
+  notes?: string | null
+  status?: string
+  is_reversed?: boolean
+  reversed_at?: string | null
+  reversal_reason?: string | null
+  invoice_id?: number | null
+  invoice_number?: string | null
+  historical_payments?: HistoricalPaymentItem[]
+  fee_summary?: ReceiptFeeSummary
+  allocations?: Array<{
+    id?: number
+    invoice_id?: number
+    installment_id?: number | null
+    installment_number?: number | null
+    amount: number
+  }>
+  collected_by?: string
+  generated_at?: string
+  total_fees?: number
+  total_paid?: number
+  outstanding_after?: number
+  previous_paid?: number
 }

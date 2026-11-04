@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -38,6 +38,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import Modal from '../components/Modal'
+import PaymentReceiptView from '../components/PaymentReceiptView'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import { printReceiptElement } from '../utils/printReceipt'
@@ -2784,78 +2785,11 @@ export default function Fees() {
               Loading receipt details...
             </div>
           ) : detailedReceipt ? (
-            <div className="space-y-4">
-              {/* Printable Receipt Canvas */}
-              <div id="receipt-print-area" className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                {/* Institute Header */}
-                <div className="text-center border-b-2 border-blue-600 pb-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-2xl text-white font-black text-xl flex items-center justify-center mx-auto shadow-md mb-2">
-                    PA
-                  </div>
-                  <h2 className="text-lg font-black text-slate-900">PRASHANT ACADEMY</h2>
-                  <p className="text-xs text-slate-500 font-medium">Coaching Institute Management System • Official Fee Voucher</p>
-                  <div className="mt-2 inline-block px-4 py-1 bg-blue-50 border border-blue-200 rounded-lg text-xs font-extrabold text-blue-900">
-                    Receipt #{detailedReceipt.receipt_number}
-                  </div>
-                </div>
-
-                {/* Metadata Grid */}
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <p className="text-slate-400 font-bold uppercase text-[10px]">Student Details</p>
-                    <p className="font-extrabold text-slate-900 text-sm mt-0.5">{detailedReceipt.student_name}</p>
-                    <p className="text-slate-600">Admission No: <span className="font-mono font-semibold">{detailedReceipt.admission_number}</span></p>
-                    <p className="text-slate-600">Standard / Batch: {detailedReceipt.standard || '—'} ({detailedReceipt.division || '—'})</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-slate-400 font-bold uppercase text-[10px]">Payment Details</p>
-                    <p className="font-extrabold text-slate-900 text-sm mt-0.5">{detailedReceipt.payment_date}</p>
-                    <p className="text-slate-600">Mode: <span className="font-bold capitalize">{METHOD_LABELS[detailedReceipt.payment_method] || detailedReceipt.payment_method}</span></p>
-                    <p className="text-slate-600">Ref: <span className="font-mono">{detailedReceipt.transaction_reference || 'N/A'}</span></p>
-                  </div>
-                </div>
-
-                {/* Amount Box */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs font-bold text-slate-500 uppercase">Amount Received</span>
-                    <p className="text-xs italic text-slate-600 mt-0.5">
-                      {numberToWordsINR(Number(detailedReceipt.amount))}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-2xl font-black text-emerald-700">
-                      {fmt(detailedReceipt.amount)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Signatory / Verification */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <p>Computer Generated Receipt • Valid without physical signature</p>
-                  <p className="font-bold text-slate-800">Authorized Signatory</p>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => printReceiptElement('receipt-print-area', `Official Fee Receipt #${detailedReceipt.receipt_number}`)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print Receipt</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveReceiptModalNumber(null)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
+            <PaymentReceiptView
+              receipt={detailedReceipt}
+              showPrintActions={true}
+              onClose={() => setActiveReceiptModalNumber(null)}
+            />
           ) : null}
         </Modal>
       )}

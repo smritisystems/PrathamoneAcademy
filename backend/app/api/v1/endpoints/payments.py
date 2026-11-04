@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for transaction recording, payment reversals, audit logs, and receipt vouchers.
 #  */
@@ -34,6 +34,7 @@ from app.models.enrollment import StudentEnrollment
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.board import Board
+from app.models.user import User
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -487,6 +488,217 @@ async def reverse_payment(
     return {"message": "Payment reversed successfully", "payment_id": payment_id}
 
 
+async def build_receipt_response(
+    db: AsyncSession,
+    receipt: PaymentReceipt,
+    payment: Optional[Payment] = None,
+) -> dict:
+    """
+    Constructs an authoritative receipt payload containing current transaction details,
+    historical successful payments for the same fee obligation, and reconciled fee ledger summary.
+    """
+    if not payment:
+        pay_res = await db.execute(
+            select(Payment)
+            .options(
+                selectinload(Payment.allocations).selectinload(PaymentAllocation.installment),
+                selectinload(Payment.student),
+            )
+            .where(Payment.id == receipt.payment_id)
+        )
+        payment = pay_res.scalar_one_or_none()
+
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment record for receipt not found")
+
+    receipt_data = json.loads(receipt.receipt_data) if receipt.receipt_data else {}
+
+    # Scope to the same fee obligation (invoice)
+    target_invoice_id = None
+    if payment.allocations:
+        target_invoice_id = payment.allocations[0].invoice_id
+    elif "invoice_id" in receipt_data:
+        target_invoice_id = receipt_data["invoice_id"]
+    elif "invoice_number" in receipt_data:
+        inv_by_num = (await db.execute(
+            select(FeeInvoice.id).where(FeeInvoice.invoice_number == receipt_data["invoice_number"])
+        )).scalar_one_or_none()
+        target_invoice_id = inv_by_num
+
+    # Fallback to active invoice for student & academic year
+    if not target_invoice_id:
+        inv_active = (await db.execute(
+            select(FeeInvoice.id).where(
+                FeeInvoice.student_id == payment.student_id,
+                FeeInvoice.academic_year_id == payment.academic_year_id,
+            ).order_by(FeeInvoice.id.desc()).limit(1)
+        )).scalar_one_or_none()
+        target_invoice_id = inv_active
+
+    invoice = None
+    historical_payments = []
+    previous_payments_total = Decimal("0.00")
+    total_fee_amount = Decimal(str(receipt_data.get("total_fees") or payment.amount))
+
+    if target_invoice_id:
+        inv_res = await db.execute(
+            select(FeeInvoice).where(FeeInvoice.id == target_invoice_id)
+        )
+        invoice = inv_res.scalar_one_or_none()
+        if invoice:
+            total_fee_amount = invoice.total_amount
+
+        # Query all completed previous payments allocated to this same invoice
+        # Exclude current payment (Payment.id != payment.id)
+        # Exclude failed, reversed, pending transactions
+        # Sort chronologically, oldest to newest (payment_date ASC, id ASC)
+        hist_stmt = (
+            select(Payment, PaymentReceipt)
+            .join(PaymentAllocation, PaymentAllocation.payment_id == Payment.id)
+            .outerjoin(PaymentReceipt, PaymentReceipt.payment_id == Payment.id)
+            .where(
+                PaymentAllocation.invoice_id == target_invoice_id,
+                Payment.status == "completed",
+                Payment.id != payment.id,
+                or_(
+                    Payment.payment_date < payment.payment_date,
+                    and_(
+                        Payment.payment_date == payment.payment_date,
+                        Payment.id < payment.id,
+                    ),
+                ),
+            )
+            .distinct()
+            .order_by(Payment.payment_date.asc(), Payment.id.asc())
+        )
+        hist_rows = (await db.execute(hist_stmt)).all()
+
+        seen_payment_ids = set()
+        for p_hist, pr_hist in hist_rows:
+            if p_hist.id in seen_payment_ids:
+                continue
+            seen_payment_ids.add(p_hist.id)
+
+            hist_receipt_no = pr_hist.receipt_number if pr_hist else f"RCP-{p_hist.id:06d}"
+            p_amt = Decimal(str(p_hist.amount))
+            previous_payments_total += p_amt
+            historical_payments.append({
+                "payment_id": p_hist.id,
+                "receipt_number": hist_receipt_no,
+                "date": str(p_hist.payment_date),
+                "payment_method": p_hist.payment_method,
+                "amount": float(p_amt),
+                "transaction_reference": p_hist.transaction_reference,
+            })
+
+    current_payment_amount = Decimal(str(payment.amount))
+    if payment.status == "completed":
+        total_paid_to_date = previous_payments_total + current_payment_amount
+    else:
+        total_paid_to_date = previous_payments_total
+
+    outstanding_balance = max(Decimal("0.00"), total_fee_amount - total_paid_to_date)
+
+    # Student demographic metadata
+    student = payment.student
+    student_name = receipt_data.get("student_name") or (f"{student.first_name} {student.last_name}" if student else "")
+    admission_number = receipt_data.get("admission_number") or (student.admission_number if student else "")
+
+    standard_name = receipt_data.get("standard")
+    division_name = receipt_data.get("batch") or receipt_data.get("division")
+    if not standard_name or not division_name:
+        enr_stmt = (
+            select(StudentEnrollment)
+            .options(
+                selectinload(StudentEnrollment.standard),
+                selectinload(StudentEnrollment.division),
+            )
+            .where(
+                StudentEnrollment.student_id == payment.student_id,
+                StudentEnrollment.academic_year_id == payment.academic_year_id,
+            )
+            .order_by(StudentEnrollment.id.desc())
+            .limit(1)
+        )
+        enr = (await db.execute(enr_stmt)).scalar_one_or_none()
+        if enr:
+            if not standard_name and enr.standard:
+                standard_name = enr.standard.name
+            if not division_name and enr.division:
+                division_name = enr.division.name
+
+    collected_by = receipt_data.get("collected_by")
+    if not collected_by and payment.collected_by_id:
+        user_res = await db.execute(select(User).where(User.id == payment.collected_by_id))
+        collector_user = user_res.scalar_one_or_none()
+        if collector_user:
+            collected_by = f"{collector_user.first_name or ''} {collector_user.last_name or ''}".strip()
+    if not collected_by:
+        collected_by = "Staff"
+
+    invoice_number = (
+        (invoice.invoice_number if invoice else None)
+        or receipt_data.get("invoice_number")
+        or (f"INV-{payment.academic_year_id}-{payment.student_id:04d}")
+    )
+
+    fee_summary = {
+        "total_fee_amount": float(total_fee_amount),
+        "previous_payments_total": float(previous_payments_total),
+        "current_payment_amount": float(current_payment_amount),
+        "total_paid_to_date": float(total_paid_to_date),
+        "outstanding_balance": float(outstanding_balance),
+    }
+
+    allocations_list = []
+    if payment.allocations:
+        for a in payment.allocations:
+            allocations_list.append({
+                "id": a.id,
+                "invoice_id": a.invoice_id,
+                "installment_id": a.installment_id,
+                "installment_number": getattr(a.installment, "installment_number", None) if a.installment else None,
+                "amount": float(a.allocated_amount),
+            })
+    elif "allocations" in receipt_data:
+        allocations_list = receipt_data["allocations"]
+
+    return {
+        "receipt_number": receipt.receipt_number,
+        "payment_id": payment.id,
+        "student_id": payment.student_id,
+        "student_name": student_name,
+        "admission_number": admission_number,
+        "standard": standard_name or "—",
+        "division": division_name or "—",
+        "batch": division_name or "—",
+        "amount": float(current_payment_amount),
+        "payment_date": str(payment.payment_date),
+        "payment_method": payment.payment_method,
+        "transaction_reference": payment.transaction_reference,
+        "bank_name": payment.bank_name,
+        "cheque_number": payment.cheque_number,
+        "cheque_date": str(payment.cheque_date) if payment.cheque_date else None,
+        "notes": payment.notes,
+        "status": payment.status,
+        "is_reversed": payment.status == "reversed",
+        "reversed_at": payment.reversed_at.isoformat() if payment.reversed_at else None,
+        "reversal_reason": payment.reversal_reason,
+        "invoice_id": invoice.id if invoice else target_invoice_id,
+        "invoice_number": invoice_number,
+        "historical_payments": historical_payments,
+        "fee_summary": fee_summary,
+        "allocations": allocations_list,
+        "collected_by": collected_by,
+        "generated_at": receipt.generated_at.isoformat(),
+        # Backward compatibility aliases
+        "total_fees": float(total_fee_amount),
+        "total_paid": float(total_paid_to_date),
+        "outstanding_after": float(outstanding_balance),
+        "previous_paid": float(previous_payments_total),
+    }
+
+
 @router.get("/receipts/{receipt_number}")
 async def get_receipt(
     receipt_number: str,
@@ -499,19 +711,17 @@ async def get_receipt(
         )
     )
     receipt = result.scalar_one_or_none()
+
+    if not receipt and receipt_number.isdigit():
+        result = await db.execute(
+            select(PaymentReceipt).where(
+                PaymentReceipt.payment_id == int(receipt_number)
+            )
+        )
+        receipt = result.scalar_one_or_none()
+
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
-    receipt_data = json.loads(receipt.receipt_data) if receipt.receipt_data else {}
-
-    return {
-        "receipt_number": receipt.receipt_number,
-        "payment_id": receipt.payment_id,
-        "student_id": receipt.student_id,
-        "amount": float(receipt.amount),
-        "payment_date": str(receipt.payment_date),
-        "payment_method": receipt.payment_method,
-        "generated_at": receipt.generated_at.isoformat(),
-        **receipt_data,
-    }
+    return await build_receipt_response(db, receipt)
 
