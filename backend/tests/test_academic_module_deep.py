@@ -179,11 +179,11 @@ async def test_enrollments_listing_and_transfer(auth_headers):
         assert stats["total_active_enrollments"] >= 35
 
         # 2. List enrollments
-        list_res = await ac.get("/api/v1/enrollments/", headers=auth_headers)
+        list_res = await ac.get("/api/v1/enrollments/?status=active", headers=auth_headers)
         assert list_res.status_code == 200
         data = list_res.json()
         assert data["total"] >= 35
-        first_enr = data["items"][0]
+        first_enr = next(e for e in data["items"] if e.get("status") == "active")
         assert "admission_number" in first_enr
         assert "division_name" in first_enr
 

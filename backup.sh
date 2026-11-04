@@ -57,3 +57,4 @@ echo "File Path: $BACKUP_FILE"
 echo "File Size: ${FILE_SIZE} bytes"
 echo "To restore: ./restore.sh '$BACKUP_FILE'"
 echo "======================================================================"
+

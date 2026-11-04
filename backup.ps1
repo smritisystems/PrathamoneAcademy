@@ -16,13 +16,18 @@
 
 [CmdletBinding()]
 param(
-    [string]$BackupDir = $(Join-Path (if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }) "backups"),
+    [string]$BackupDir = "",
     [string]$ContainerName = "prashant_academy_db",
     [string]$DbUser = "postgres",
     [string]$DbName = "prashant_academy"
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $BackupDir) {
+    $basePath = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
+    $BackupDir = Join-Path $basePath "backups"
+}
 
 Write-Host "======================================================================" -ForegroundColor Blue
 Write-Host "       PrathamOne Academy - Automated Database Backup Utility          " -ForegroundColor Cyan

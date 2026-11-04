@@ -16,7 +16,7 @@
 #  * @description SQLAlchemy model defining academic curriculum subjects and standard associations.
 #  */
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from app.core.database import Base
@@ -24,6 +24,15 @@ from app.core.database import Base
 
 class Subject(Base):
     __tablename__ = "subjects"
+    __table_args__ = (
+        Index(
+            "uq_subjects_standard_code",
+            "standard_id",
+            "code",
+            unique=True,
+            postgresql_where=text("is_active = true"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     standard_id: Mapped[int] = mapped_column(

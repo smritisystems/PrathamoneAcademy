@@ -40,6 +40,7 @@ import { useAuthStore } from '../store/authStore'
 import Modal from '../components/Modal'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
+import { printReceiptElement } from '../utils/printReceipt'
 import type {
   FeeRegisterEntry, FeeRegisterInstallment, PaymentReceiptListItem,
   PaymentTransactionItem, FeeCategory, FeeStructure, Student, FeeInvoice,
@@ -2780,7 +2781,7 @@ export default function Fees() {
           ) : detailedReceipt ? (
             <div className="space-y-4">
               {/* Printable Receipt Canvas */}
-              <div id="official-receipt-print" className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+              <div id="receipt-print-area" className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                 {/* Institute Header */}
                 <div className="text-center border-b-2 border-blue-600 pb-4">
                   <div className="w-12 h-12 bg-blue-600 rounded-2xl text-white font-black text-xl flex items-center justify-center mx-auto shadow-md mb-2">
@@ -2835,8 +2836,8 @@ export default function Fees() {
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs"
+                  onClick={() => printReceiptElement('receipt-print-area', `Official Fee Receipt #${detailedReceipt.receipt_number}`)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print Receipt</span>

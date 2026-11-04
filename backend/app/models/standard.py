@@ -16,7 +16,7 @@
 #  * @description SQLAlchemy model defining standard/class levels associated with education boards.
 #  */
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from app.core.database import Base
@@ -24,6 +24,15 @@ from app.core.database import Base
 
 class Standard(Base):
     __tablename__ = "standards"
+    __table_args__ = (
+        Index(
+            "uq_standards_institution_level",
+            "institution_id",
+            "level",
+            unique=True,
+            postgresql_where=text("is_active = true"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     institution_id: Mapped[int] = mapped_column(

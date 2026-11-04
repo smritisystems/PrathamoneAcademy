@@ -39,3 +39,4 @@ sleep 5
 docker compose ps
 
 echo -e "\n[SUCCESS] PrathamOne Academy updated successfully without data loss."
+

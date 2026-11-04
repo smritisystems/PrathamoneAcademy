@@ -76,6 +76,7 @@ export function resolvePageTitle(pathname: string, search: string): string {
     '/reports': 'Reports',
     '/import-export': 'Import & Export',
     '/forms': 'Print Forms & KYC',
+    '/install': 'Install App (PWA)',
     '/users': 'Users & Roles',
     '/login': 'Sign In',
   }

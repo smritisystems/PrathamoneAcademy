@@ -26,6 +26,7 @@ from sqlalchemy import (
     Numeric,
     Text,
     Integer,
+    Index,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, date
@@ -126,6 +127,9 @@ class Scholarship(Base):
 
 class StudentFeeAssignment(Base):
     __tablename__ = "student_fee_assignments"
+    __table_args__ = (
+        Index("uq_student_fee_assignment_ay", "student_id", "academic_year_id", unique=True),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     student_id: Mapped[int] = mapped_column(

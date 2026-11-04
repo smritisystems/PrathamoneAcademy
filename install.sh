@@ -128,3 +128,4 @@ echo -e "  Stop system:        docker compose down"
 echo -e "${BLUE}======================================================================${NC}\n"
 
 docker compose ps
+

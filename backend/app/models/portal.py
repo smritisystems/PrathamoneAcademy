@@ -16,7 +16,7 @@
 #  * @description SQLAlchemy models defining student portal credentials, announcements, and study material links.
 #  */
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer, Text, Date
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer, Text, Date, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, date
 from app.core.database import Base
@@ -24,6 +24,16 @@ from app.core.database import Base
 
 class TimetableEntry(Base):
     __tablename__ = "timetable_entries"
+    __table_args__ = (
+        Index(
+            "uq_timetable_division_slot",
+            "division_id",
+            "day_of_week",
+            "start_time",
+            unique=True,
+            postgresql_where=text("is_active = true"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     division_id: Mapped[int] = mapped_column(

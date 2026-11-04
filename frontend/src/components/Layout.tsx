@@ -16,15 +16,16 @@
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
 
-import { Outlet } from 'react-router-dom'
+import { Outlet, Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, Menu, PanelLeft, PanelLeftOpen } from 'lucide-react'
+import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download } from 'lucide-react'
 import Sidebar from './Sidebar'
 import Footer from './Footer'
 import { useAuthStore } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
 import { institutionsApi, academicYearsApi } from '../api/endpoints'
+import { usePWA } from '../hooks/usePWA'
 
 export default function Layout() {
   const {
@@ -40,6 +41,8 @@ export default function Layout() {
     expandSidebar,
     toggleMobileOpen,
   } = useSidebarStore()
+
+  const { isInstalled } = usePWA()
 
   const { data: institutions = [] } = useQuery({
     queryKey: ['institutions'],
@@ -172,6 +175,17 @@ export default function Layout() {
           </div>
 
           <div className="flex-1" />
+
+          {!isInstalled && (
+            <Link
+              to="/install"
+              title="Install PrathamOne Academy Desktop & Mobile App"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors shadow-2xs"
+            >
+              <Download className="w-3.5 h-3.5 text-blue-600" />
+              <span>Install App</span>
+            </Link>
+          )}
 
           <p className="text-sm font-medium text-gray-600 hidden sm:block">
             Prashant Academy Coaching Institute

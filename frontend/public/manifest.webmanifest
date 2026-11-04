@@ -1,0 +1,74 @@
+{
+  "name": "PrathamOne Academy – Coaching Institute Management System",
+  "short_name": "PrathamOne",
+  "description": "Enterprise-grade Coaching Institute & Academic Management System for Prashant Academy.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e40af",
+  "categories": [
+    "education",
+    "productivity",
+    "management"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Students Directory",
+      "short_name": "Students",
+      "description": "View and manage active student admissions and profiles",
+      "url": "/students",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Fees & Payments",
+      "short_name": "Fees",
+      "description": "Fee collection, receipts register, and payment tracking",
+      "url": "/fees",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Attendance Register",
+      "short_name": "Attendance",
+      "description": "Mark and monitor daily student and batch attendance",
+      "url": "/attendance",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Academic Structure",
+      "short_name": "Academic",
+      "description": "Manage boards, standards, subjects, batches, and timetable",
+      "url": "/academic",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
+

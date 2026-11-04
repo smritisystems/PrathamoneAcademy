@@ -47,6 +47,7 @@ const StudentDashboardPage = React.lazy(() => import('./pages/StudentDashboard')
 const AcademicWorkspacePage = React.lazy(() => import('./pages/AcademicWorkspace'))
 const ImportExportPage = React.lazy(() => import('./pages/ImportExport'))
 const FormsDocumentsPage = React.lazy(() => import('./pages/FormsDocuments'))
+const InstallAppPage = React.lazy(() => import('./pages/InstallApp'))
 
 function PageLoader() {
   return (
@@ -149,6 +150,7 @@ export default function App() {
           <Route path="import-export" element={<Suspense fallback={<PageLoader />}><ImportExportPage /></Suspense>} />
           <Route path="forms" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="forms-documents" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
           {/* 404 within authenticated shell */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

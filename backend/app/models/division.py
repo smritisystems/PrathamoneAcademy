@@ -16,7 +16,7 @@
 #  * @description SQLAlchemy model defining batch/division sections, classroom capacity, and assigned faculty.
 #  */
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from app.core.database import Base
@@ -24,6 +24,16 @@ from app.core.database import Base
 
 class Division(Base):
     __tablename__ = "divisions"
+    __table_args__ = (
+        Index(
+            "uq_divisions_standard_board_code",
+            "standard_id",
+            "board_id",
+            "code",
+            unique=True,
+            postgresql_where=text("is_active = true AND code IS NOT NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     standard_id: Mapped[int] = mapped_column(

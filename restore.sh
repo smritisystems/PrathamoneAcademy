@@ -57,3 +57,4 @@ docker compose start backend frontend
 echo -e "\n======================================================================"
 echo "             DATABASE RESTORE COMPLETED SUCCESSFULLY                  "
 echo "======================================================================"
+

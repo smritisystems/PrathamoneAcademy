@@ -90,6 +90,22 @@ async def create_subject(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if data.code:
+        existing = (
+            await db.execute(
+                select(Subject).where(
+                    Subject.standard_id == data.standard_id,
+                    Subject.code.ilike(data.code),
+                    Subject.is_active == True,
+                )
+            )
+        ).scalar_one_or_none()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Subject with code '{data.code}' already exists for this standard",
+            )
+
     subject = Subject(**data.model_dump())
     db.add(subject)
     await db.commit()

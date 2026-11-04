@@ -19,6 +19,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { getPaymentReceipt } from '../api/endpoints';
+import { printReceiptElement } from '../utils/printReceipt';
 
 export default function Receipt() {
   const { paymentId, receiptNumber } = useParams<{ paymentId?: string; receiptNumber?: string }>();
@@ -30,7 +31,12 @@ export default function Receipt() {
     enabled: !!identifier,
   });
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    printReceiptElement(
+      'receipt-print-area',
+      receipt?.receipt_number ? `Official Fee Receipt #${receipt.receipt_number}` : 'Official Fee Receipt'
+    );
+  };
 
   if (isLoading) {
     return (
@@ -70,7 +76,7 @@ export default function Receipt() {
       </div>
 
       {/* Receipt Card */}
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-8 shadow-lg print:shadow-none print:border-gray-300">
+      <div id="receipt-print-area" className="bg-white border-2 border-gray-200 rounded-xl p-8 shadow-lg print:shadow-none print:border-gray-300">
         {/* Header */}
         <div className="text-center border-b-2 border-blue-600 pb-6 mb-6">
           <div className="flex justify-center mb-3">

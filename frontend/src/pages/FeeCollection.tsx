@@ -28,6 +28,7 @@ import {
 import type { FeeInvoice, FeeInstallment } from '../types';
 import { InstallmentStatusBadge } from '../components/Badge';
 import Modal from '../components/Modal';
+import { printReceiptElement } from '../utils/printReceipt';
 
 const PAYMENT_METHODS = ['cash', 'upi', 'bank_transfer', 'cheque', 'other'] as const;
 type PaymentMethod = (typeof PAYMENT_METHODS)[number];
@@ -166,7 +167,7 @@ export default function FeeCollection() {
   };
 
   const handlePrint = () => {
-    window.print();
+    printReceiptElement('receipt-print-area', receipt?.receipt_number ? `Official Fee Receipt #${receipt.receipt_number}` : 'Fee Receipt');
   };
 
   const studentName = student?.full_name || (student ? `${student.first_name} ${student.last_name}` : '');
@@ -543,7 +544,7 @@ export default function FeeCollection() {
         size="lg"
       >
         {receipt ? (
-          <div className="receipt-content">
+          <div id="receipt-print-area" className="receipt-content">
             <div className="text-center mb-6 border-b pb-4">
               <h2 className="text-xl font-bold text-blue-900">Prashant Academy</h2>
               <p className="text-gray-500 text-sm">Official Fee Receipt</p>

@@ -114,6 +114,7 @@
   aside,
   header,
   nav,
+  footer,
   .print-controls-panel {
     display: none !important;
   }
@@ -132,6 +133,72 @@
   .page-break-after {
     break-after: page !important;
     page-break-after: always !important;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────────── */
+  /* RECEIPT-ONLY PRINTING RULES (#receipt-print-area)                         */
+  /* Hide all application UI, modal overlays, backdrops, tables, and buttons   */
+  /* ────────────────────────────────────────────────────────────────────────── */
+  body.printing-receipt *:not(#receipt-print-area):not(#receipt-print-area *),
+  body:has(#receipt-print-area) aside,
+  body:has(#receipt-print-area) header,
+  body:has(#receipt-print-area) nav,
+  body:has(#receipt-print-area) footer,
+  body:has(#receipt-print-area) table,
+  body:has(#receipt-print-area) button,
+  body:has(#receipt-print-area) input,
+  body:has(#receipt-print-area) select,
+  body:has(#receipt-print-area) .modal-backdrop {
+    display: none !important;
+  }
+
+  /* When body has .printing-receipt or printing modal with #receipt-print-area */
+  body.printing-receipt #root,
+  body:has(#receipt-print-area) .fixed.inset-0 {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  body:has(#receipt-print-area) [role="dialog"],
+  body:has(#receipt-print-area) .bg-white.rounded-xl {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: transparent !important;
+  }
+
+  #receipt-print-area {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 185mm !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    border: 2px solid #94a3b8 !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  #receipt-print-area * {
+    visibility: visible !important;
+  }
+
+  #receipt-print-area button {
+    display: none !important;
   }
 }
 

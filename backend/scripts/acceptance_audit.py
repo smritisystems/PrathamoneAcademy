@@ -239,13 +239,22 @@ async def run_audit():
     assert len(students) >= 3, "Need at least 3 students in DB"
     s1, s2, s3 = students[0]["id"], students[1]["id"], students[2]["id"]
 
-    # Clear any previous active test enrollments for these students to make audit clean
+    # Record legitimate active enrollment IDs to restore after test completes
+    orig_active_ids = []
     async with session_maker() as session:
-        await session.execute(
-            text("UPDATE student_enrollments SET status = 'completed' WHERE student_id IN (:s1, :s2, :s3) AND academic_year_id = 1 AND status = 'active'"),
+        cur_active = await session.execute(
+            text("SELECT id FROM student_enrollments WHERE student_id IN (:s1, :s2, :s3) AND academic_year_id = 1 AND status = 'active' AND roll_number NOT LIKE 'AUD%'"),
             {"s1": s1, "s2": s2, "s3": s3}
         )
-        await session.commit()
+        orig_active_ids = [r[0] for r in cur_active.fetchall()]
+
+        # Temporarily set to 'completed' for test duration
+        if orig_active_ids:
+            await session.execute(
+                text("UPDATE student_enrollments SET status = 'completed' WHERE id = ANY(:ids)"),
+                {"ids": orig_active_ids}
+            )
+            await session.commit()
 
     # 3.1 Enroll Student 1 into Batch Alpha (capacity=2)
     e1_res = await client.post("/enrollments/", json={
@@ -514,6 +523,41 @@ async def run_audit():
         record("RBAC 2: Student Role Batch Create Blocked", stu_res.status_code in (401, 403), f"Rejected with {stu_res.status_code}")
     else:
         record("RBAC 2: Student Role Batch Create Blocked", True, "Student user credentials secured")
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # TEARDOWN: Clean up test artifacts and restore student enrollments
+    # ═══════════════════════════════════════════════════════════════════════
+    try:
+        async with session_maker() as session:
+            # Delete test timetable entries
+            await session.execute(text("DELETE FROM timetable_entries WHERE room_number IN ('Lab 99', 'Room 501')"))
+            
+            # Delete or archive audit test enrollments
+            await session.execute(
+                text("DELETE FROM student_enrollments WHERE roll_number IN ('AUD-01', 'AUD-02', 'BETA-01') OR remarks LIKE 'E2E Audit%'")
+            )
+            # Restore original active enrollments
+            if orig_active_ids:
+                await session.execute(
+                    text("UPDATE student_enrollments SET status = 'active' WHERE id = ANY(:ids)"),
+                    {"ids": orig_active_ids}
+                )
+
+            # Delete test divisions
+            await session.execute(text("DELETE FROM divisions WHERE name ILIKE '%audit%' OR code IN ('AUD-13-A', 'AUD-13-B')"))
+
+            # Delete test subjects
+            await session.execute(text("DELETE FROM subjects WHERE code IN ('QR-13', 'ROBO-10')"))
+
+            # Delete test standards
+            await session.execute(text("DELETE FROM standards WHERE name ILIKE '%audit%' OR level = 13"))
+
+            # Delete test boards
+            await session.execute(text("DELETE FROM boards WHERE code = 'IB-AUDIT'"))
+
+            await session.commit()
+    except Exception as te:
+        print(f"Teardown note: {te}")
 
     # ═══════════════════════════════════════════════════════════════════════
     # SUMMARY

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1e3a8a" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect x="24" y="24" width="464" height="464" rx="100" fill="url(#blueGrad)" stroke="#60a5fa" stroke-width="8" />
+  
+  <!-- Graduation Cap / Scholar Icon -->
+  <polygon points="256,100 320,135 256,155 192,135" fill="url(#goldGrad)" />
+  <circle cx="320" cy="145" r="4" fill="#fbbf24" />
+  <line x1="320" y1="135" x2="320" y2="175" stroke="#fbbf24" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Monogram: 'P' -->
+  <path d="M 140 180 L 195 180 C 235 180 250 205 250 235 C 250 265 235 290 195 290 L 180 290 L 180 370 L 140 370 Z" fill="#ffffff" />
+  <path d="M 180 220 L 192 220 C 205 220 212 226 212 235 C 212 244 205 250 192 250 L 180 250 Z" fill="#1e3a8a" />
+
+  <!-- Monogram: 'A' -->
+  <path d="M 330 180 L 372 370 L 332 370 L 322 320 L 278 320 L 268 370 L 228 370 L 270 180 Z" fill="#ffffff" />
+  <polygon points="300,225 316,290 284,290" fill="#1e3a8a" />
+</svg>
+

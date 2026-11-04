@@ -21,7 +21,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
-  Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer
+  Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -58,6 +58,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/reports', label: 'Reports', icon: BarChart2 },
   { to: '/forms', label: 'Print Forms & KYC', icon: Printer },
   { to: '/import-export', label: 'Import & Export', icon: FileSpreadsheet },
+  { to: '/install', label: 'Install App (PWA)', icon: Download },
   { to: '/users', label: 'Users & Roles', icon: Shield },
   { to: '/academic?tab=settings', label: 'Settings', icon: Settings },
 ]

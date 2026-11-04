@@ -62,4 +62,5 @@ pnpm-debug.log*
 .coverage
 htmlcov/
 .vitest_cache/
+scratch/
 

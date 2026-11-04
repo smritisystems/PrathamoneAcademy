@@ -16,7 +16,7 @@
 #  * @description SQLAlchemy model defining student enrollment in classes, batches, and academic years.
 #  */
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Date
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Date, Index, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, date
 from app.core.database import Base
@@ -24,6 +24,15 @@ from app.core.database import Base
 
 class StudentEnrollment(Base):
     __tablename__ = "student_enrollments"
+    __table_args__ = (
+        Index(
+            "uq_active_student_academic_year",
+            "student_id",
+            "academic_year_id",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     student_id: Mapped[int] = mapped_column(

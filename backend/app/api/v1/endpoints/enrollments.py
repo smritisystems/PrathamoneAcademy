@@ -358,6 +358,12 @@ async def transfer_batch(
     if not enr:
         raise HTTPException(status_code=404, detail="Enrollment record not found")
 
+    if enr.status != "active":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot transfer an enrollment with status '{enr.status}'. Only active enrollments can be transferred.",
+        )
+
     if enr.division_id == req.new_division_id:
         raise HTTPException(status_code=400, detail="Student is already in this batch")
 
@@ -388,6 +394,7 @@ async def transfer_batch(
     # Close old enrollment as transferred to preserve history
     enr.status = "transferred"
     enr.remarks = f"Transferred to {target_div.name}. Reason: {req.transfer_reason or 'Batch re-allocation'}"
+    await db.flush()
 
     # Create new active enrollment
     new_enr = StudentEnrollment(

@@ -277,6 +277,23 @@ async def create_standard(
     d = data.model_dump()
     if not d.get("institution_id") or d.get("institution_id") == 1:
         d["institution_id"] = getattr(current_user, "institution_id", None) or 2
+
+    # Check duplicate level per institution
+    existing = (
+        await db.execute(
+            select(Standard).where(
+                Standard.institution_id == d["institution_id"],
+                Standard.level == d["level"],
+                Standard.is_active == True,
+            )
+        )
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Class with level '{data.level}' already exists",
+        )
+
     standard = Standard(**d)
     db.add(standard)
     await db.commit()
