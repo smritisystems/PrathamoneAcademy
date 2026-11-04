@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Main executive dashboard displaying institute KPIs, admissions trend, upcoming batches, and fee status.
  */
@@ -69,6 +69,7 @@ export default function DashboardPage() {
       'dashboard-stats',
       filters.academicYearId,
       selectedInstitutionId,
+      filters.boardId,
       filters.standardId,
       filters.divisionId,
     ],
@@ -77,6 +78,7 @@ export default function DashboardPage() {
         .getStats({
           academic_year_id: filters.academicYearId ?? undefined,
           institution_id: selectedInstitutionId ?? undefined,
+          board_id: filters.boardId ?? undefined,
           standard_id: filters.standardId ?? undefined,
           division_id: filters.divisionId ?? undefined,
         })

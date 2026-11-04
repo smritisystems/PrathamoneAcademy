@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for administrative and coaching institute executive dashboard analytics.
 #  */
@@ -28,6 +28,10 @@ from app.models.fee import FeeInvoice
 from app.models.enrollment import StudentEnrollment
 from app.models.standard import Standard
 from app.models.division import Division
+from app.services.student_metrics import (
+    get_authoritative_student_count,
+    get_student_reconciliation_diagnostic,
+)
 
 router = APIRouter()
 
@@ -38,12 +42,13 @@ async def get_dashboard_stats(
     institution_id: Optional[int] = None,
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
+    board_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     """
     Get dashboard metrics with filters:
-    - Active student count
+    - Authoritative active student count
     - Total fees, collected fees, outstanding fees, and collection rate
     - Monthly collection trend
     - Recent payments with receipt, student, batch, method, and date
@@ -55,21 +60,15 @@ async def get_dashboard_stats(
         if inst_count == 0:
             effective_inst_id = None
 
-    # 1. Total Active Students
-    student_query = select(func.count(func.distinct(Student.id))).where(Student.is_active == True)
-    if effective_inst_id:
-        student_query = student_query.where(Student.institution_id == effective_inst_id)
-    if academic_year_id or standard_id or division_id:
-        student_query = student_query.join(
-            StudentEnrollment, Student.id == StudentEnrollment.student_id
-        )
-        if academic_year_id:
-            student_query = student_query.where(StudentEnrollment.academic_year_id == academic_year_id)
-        if standard_id:
-            student_query = student_query.where(StudentEnrollment.standard_id == standard_id)
-        if division_id:
-            student_query = student_query.where(StudentEnrollment.division_id == division_id)
-    total_students = (await db.execute(student_query)).scalar() or 0
+    # 1. Authoritative Total Active Students
+    total_students = await get_authoritative_student_count(
+        db=db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+        board_id=board_id,
+        standard_id=standard_id,
+        division_id=division_id,
+    )
 
     # 2. Fee Stats (Total Fees, Total Collected, Outstanding)
     invoice_query = select(
@@ -84,12 +83,16 @@ async def get_dashboard_stats(
         )
     if academic_year_id:
         invoice_query = invoice_query.where(FeeInvoice.academic_year_id == academic_year_id)
-    if standard_id or division_id:
+    if board_id or standard_id or division_id:
         invoice_query = invoice_query.join(
             StudentEnrollment,
             (FeeInvoice.student_id == StudentEnrollment.student_id)
             & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
         )
+        if board_id:
+            invoice_query = invoice_query.join(
+                Division, StudentEnrollment.division_id == Division.id
+            ).where(Division.board_id == board_id)
         if standard_id:
             invoice_query = invoice_query.where(StudentEnrollment.standard_id == standard_id)
         if division_id:
@@ -114,16 +117,20 @@ async def get_dashboard_stats(
     )
     if academic_year_id:
         trend_query = trend_query.where(Payment.academic_year_id == academic_year_id)
-    if effective_inst_id or standard_id or division_id:
+    if effective_inst_id or board_id or standard_id or division_id:
         trend_query = trend_query.join(Student, Payment.student_id == Student.id)
         if effective_inst_id:
             trend_query = trend_query.where(Student.institution_id == effective_inst_id)
-        if standard_id or division_id:
+        if board_id or standard_id or division_id:
             trend_query = trend_query.join(
                 StudentEnrollment,
                 (Payment.student_id == StudentEnrollment.student_id)
                 & (Payment.academic_year_id == StudentEnrollment.academic_year_id),
             )
+            if board_id:
+                trend_query = trend_query.join(
+                    Division, StudentEnrollment.division_id == Division.id
+                ).where(Division.board_id == board_id)
             if standard_id:
                 trend_query = trend_query.where(StudentEnrollment.standard_id == standard_id)
             if division_id:
@@ -160,6 +167,8 @@ async def get_dashboard_stats(
         recent_query = recent_query.where(Payment.academic_year_id == academic_year_id)
     if effective_inst_id:
         recent_query = recent_query.where(Student.institution_id == effective_inst_id)
+    if board_id:
+        recent_query = recent_query.where(Division.board_id == board_id)
     if standard_id:
         recent_query = recent_query.where(StudentEnrollment.standard_id == standard_id)
     if division_id:
@@ -199,3 +208,26 @@ async def get_dashboard_stats(
         "monthly_trends": monthly_trends,
         "recent_payments": recent_payments,
     }
+
+
+@router.get("/reconciliation")
+async def get_dashboard_reconciliation(
+    academic_year_id: Optional[int] = None,
+    institution_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Produce student count diagnostic reconciliation comparing active enrollments against fee records.
+    """
+    effective_inst_id = institution_id
+    if institution_id:
+        inst_count = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
+        if inst_count == 0:
+            effective_inst_id = None
+
+    return await get_student_reconciliation_diagnostic(
+        db=db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+    )

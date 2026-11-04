@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -41,6 +41,12 @@ from app.models.standard import Standard
 from app.models.division import Division
 from app.models.academic_year import AcademicYear
 from app.models.payment import Payment, PaymentReceipt
+from app.services.student_metrics import (
+    get_authoritative_student_count,
+    get_authoritative_student_counts_by_board,
+    get_authoritative_student_counts_by_batch,
+    get_student_reconciliation_diagnostic,
+)
 from pydantic import BaseModel
 from datetime import date
 from decimal import Decimal
@@ -589,7 +595,17 @@ async def get_fees_overview(
     total_obligation = float(stats.total_obligation)
     total_collected = float(stats.total_collected)
     total_outstanding = float(stats.total_outstanding)
-    student_count = stats.student_count or 0
+    
+    # Authoritative student count: distinct active students with active enrollments
+    authoritative_student_count = await get_authoritative_student_count(
+        db=db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+        board_id=board_id,
+        standard_id=standard_id,
+        division_id=division_id,
+    )
+    student_count = authoritative_student_count
     collection_rate = (
         round((total_collected / total_obligation) * 100, 1)
         if total_obligation > 0
@@ -628,13 +644,23 @@ async def get_fees_overview(
 
     board_query = board_query.group_by(Board.name).order_by(desc("total_fees"))
     board_rows = (await db.execute(board_query)).all()
+
+    board_student_counts = await get_authoritative_student_counts_by_board(
+        db=db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+        board_id=board_id,
+        standard_id=standard_id,
+        division_id=division_id,
+    )
+
     board_breakdown = [
         {
             "board_name": r.board_name,
             "total_fees": float(r.total_fees),
             "collected": float(r.collected),
             "outstanding": float(r.outstanding),
-            "student_count": r.student_count,
+            "student_count": board_student_counts.get(r.board_name, r.student_count),
             "rate": (
                 round((float(r.collected) / float(r.total_fees)) * 100, 1)
                 if float(r.total_fees) > 0
@@ -679,6 +705,16 @@ async def get_fees_overview(
 
     batch_query = batch_query.group_by(Division.name, Standard.name, Board.name).order_by(desc("total_fees"))
     batch_rows = (await db.execute(batch_query)).all()
+
+    batch_student_counts = await get_authoritative_student_counts_by_batch(
+        db=db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+        board_id=board_id,
+        standard_id=standard_id,
+        division_id=division_id,
+    )
+
     batch_breakdown = [
         {
             "batch_name": r.batch_name,
@@ -687,7 +723,9 @@ async def get_fees_overview(
             "total_fees": float(r.total_fees),
             "collected": float(r.collected),
             "outstanding": float(r.outstanding),
-            "student_count": r.student_count,
+            "student_count": batch_student_counts.get(
+                (r.batch_name, r.standard_name, r.board_name), r.student_count
+            ),
             "rate": (
                 round((float(r.collected) / float(r.total_fees)) * 100, 1)
                 if float(r.total_fees) > 0

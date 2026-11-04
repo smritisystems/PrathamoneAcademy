@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -62,9 +62,14 @@ export const dashboardApi = {
   getStats: (params?: {
     academic_year_id?: number | string
     institution_id?: number | string
+    board_id?: number | string
     standard_id?: number | string
     division_id?: number | string
   }) => apiClient.get<DashboardStats>('/dashboard/stats', { params }),
+  getReconciliation: (params?: {
+    academic_year_id?: number | string
+    institution_id?: number | string
+  }) => apiClient.get<any[]>('/dashboard/reconciliation', { params }),
 }
 
 // ─── Institutions ─────────────────────────────────────────────────────────────
