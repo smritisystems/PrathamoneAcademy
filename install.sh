@@ -124,6 +124,7 @@ echo -e "  View logs:          docker compose logs -f"
 echo -e "  Update system:      ./update.sh"
 echo -e "  Create backup:      ./backup.sh"
 echo -e "  Restore backup:     ./restore.sh <backup_file.sql>"
+echo -e "  Load 39 students:   ./add_39_students.sh"
 echo -e "  Stop system:        docker compose down"
 echo -e "${BLUE}======================================================================${NC}\n"
 

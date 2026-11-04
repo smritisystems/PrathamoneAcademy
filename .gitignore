@@ -28,6 +28,7 @@ wheels/
 *.sqlite3
 *.db
 *.sql
+!data/prashant_academy_production_39_students.sql
 pgdata/
 backups/
 

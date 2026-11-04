@@ -286,6 +286,7 @@ Write-Host "  View live logs:      docker compose logs -f" -ForegroundColor Whit
 Write-Host "  Update system:       .\update.ps1" -ForegroundColor White
 Write-Host "  Create DB backup:    .\backup.ps1" -ForegroundColor White
 Write-Host "  Restore DB backup:   .\restore.ps1 -BackupFile <path>" -ForegroundColor White
+Write-Host "  Load 39 students:    .\add_39_students.ps1" -ForegroundColor White
 Write-Host "  Stop system:         docker compose down" -ForegroundColor White
 Write-Host "======================================================================`n" -ForegroundColor Blue
 
