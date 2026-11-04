@@ -42,6 +42,7 @@ from app.api.v1.endpoints import (
     staff,
     sysadmin,
     settings,
+    communication,
 )
 
 api_router = APIRouter()
@@ -88,4 +89,5 @@ api_router.include_router(forms.router, prefix="/forms", tags=["forms"])
 api_router.include_router(staff.router, prefix="/staff", tags=["staff"])
 api_router.include_router(sysadmin.router, prefix="/sysadmin", tags=["sysadmin"])
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
+api_router.include_router(communication.router, prefix="/communication", tags=["communication"])
 

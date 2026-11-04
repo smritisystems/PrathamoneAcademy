@@ -1938,6 +1938,109 @@ export interface SettingAuditLogItem {
 
 export type AllSettingsState = Record<string, Record<string, any>>
 
+// ─── Centralized Communication & Sharing Module ──────────────────────────────
 
+export interface MessageTemplateItem {
+  id: number
+  name: string
+  code: string
+  category: string
+  channel: string
+  subject?: string
+  body: string
+  variables?: string[]
+  is_active: boolean
+  is_system: boolean
+  created_at: string
+  updated_at: string
+}
 
+export interface CommunicationLogItem {
+  id: number
+  channel: string
+  recipient_type: string
+  recipient_name: string
+  recipient_destination: string
+  template_code?: string
+  subject?: string
+  content: string
+  status: string
+  error_message?: string
+  sender_name?: string
+  created_at: string
+  sent_at?: string
+}
 
+export interface CommunicationLogsResponse {
+  items: CommunicationLogItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface ShareDocumentPayload {
+  document_type: string
+  record_id: number
+  recipient_name?: string
+  recipient_phone?: string
+  recipient_email?: string
+  expires_in_hours?: number
+  access_key?: string
+}
+
+export interface ShareDocumentResponse {
+  status: string
+  token: string
+  share_url: string
+  expires_at: string
+  whatsapp_share_url: string
+  document_type: string
+  record_id: number
+}
+
+export interface RecipientItem {
+  id?: number
+  type: string
+  name: string
+  subtitle?: string
+  phone?: string
+  email?: string
+  admission_number?: string
+  employee_id?: string
+  batch_code?: string
+  destination?: string
+  variables?: Record<string, any>
+}
+
+export interface SendMessagePayload {
+  channel: string
+  template_code?: string
+  subject?: string
+  message: string
+  recipients: Array<{
+    recipient_type: string
+    recipient_id?: number
+    name: string
+    destination: string
+    variables?: Record<string, any>
+  }>
+  document_attachment?: {
+    document_type: string
+    record_id: number
+    title: string
+  }
+  scheduled_at?: string
+}
+
+export interface ChannelDiagnostics {
+  status: string
+  channels: Record<
+    string,
+    {
+      name: string
+      adapter: string
+      status: string
+      features: string[]
+    }
+  >
+}

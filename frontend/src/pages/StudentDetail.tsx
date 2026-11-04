@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -23,8 +23,9 @@ import {
   ArrowLeft, CreditCard, User, BookOpen, Receipt, FileText,
   ClipboardCheck, Award, Activity, Upload, Trash2, Eye,
   CheckCircle, PlusCircle, Calendar, Phone, Mail, MapPin, ExternalLink,
-  Edit3, AlertTriangle, X, Check, Save, Shield, Users, Printer
+  Edit3, AlertTriangle, X, Check, Save, Shield, Users, Printer, Share2
 } from 'lucide-react'
+import ShareModal from '../components/ShareModal'
 import { studentsApi, standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { StatusBadge } from '../components/Badge'
@@ -57,6 +58,9 @@ export default function StudentDetailPage() {
     currentUser?.role === 'superadmin' ||
     currentUser?.role === 'admin' ||
     currentUser?.role === 'principal'
+
+  // Share Modal State
+  const [showShareModal, setShowShareModal] = useState(false)
 
   // Full Profile Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false)
@@ -379,6 +383,13 @@ export default function StudentDetailPage() {
           >
             <Printer className="w-4 h-4" /> Print Form / KYC
           </Link>
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="px-3.5 py-2 rounded-lg border border-primary-600 bg-white text-primary-700 hover:bg-primary-50 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
+            title="Share student profile via WhatsApp, Email, SMS or Secure Link"
+          >
+            <Share2 className="w-4 h-4" /> Share Profile
+          </button>
           {canEdit && (
             <button
               onClick={openEditModal}
@@ -1526,6 +1537,20 @@ export default function StudentDetailPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {showShareModal && (
+        <ShareModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          documentType="STUDENT_PROFILE"
+          recordId={studentId}
+          title={`Student Profile - ${overview.full_name}`}
+          recipientName={overview.full_name}
+          recipientPhone={overview.phone || (overview.guardians && overview.guardians[0]?.phone) || ''}
+          recipientEmail={overview.email || (overview.guardians && overview.guardians[0]?.email) || ''}
+          defaultMessage={`Dear Parent/Student,\n\nPlease find the student academic profile and enrollment summary for ${overview.full_name} (${overview.admission_number}) at PrathamOne Academy.`}
+        />
       )}
     </div>
   )

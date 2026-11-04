@@ -34,7 +34,9 @@ import {
   Mail,
   X,
   FileCheck2,
+  Share2,
 } from 'lucide-react'
+import ShareModal from './ShareModal'
 import { DetailedPaymentReceipt, Receipt } from '../types'
 import { printReceiptElement } from '../utils/printReceipt'
 import { numberToWordsINR } from '../pages/Fees'
@@ -164,6 +166,7 @@ export default function PaymentReceiptView({
 }: PaymentReceiptViewProps) {
   const branding = useBranding()
   const [paperSize, setPaperSize] = useState<'A5' | 'A4'>(initialPaperSize)
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false)
 
   const isReversed = receipt.status === 'reversed' || receipt.is_reversed
 
@@ -267,6 +270,14 @@ export default function PaymentReceiptView({
               <Printer className="w-4 h-4" />
               <span>Print Receipt ({paperSize})</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setIsShareModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Share Receipt</span>
+            </button>
             {onClose && (
               <button
                 type="button"
@@ -280,7 +291,20 @@ export default function PaymentReceiptView({
         </div>
       )}
 
-      {/* Printable Receipt Canvas Container */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        documentType="RECEIPT"
+        recordId={receipt.payment_id || receipt.id || 1}
+        title={`Official Fee Receipt #${receipt.receipt_number || ''}`}
+        recipientName={receipt.student_name}
+        recipientPhone={receipt.student_contact || receipt.parent_phone}
+        recipientEmail={receipt.student_email}
+        defaultMessage={`Dear Parent, official fee receipt #${receipt.receipt_number || ''} for ${receipt.student_name || ''} has been issued by ${branding.appName}.`}
+        onPrint={handlePrint}
+      />
+
+      {/* Printable Receipt Container */}
       <div
         id={containerId}
         className={`bg-white border border-slate-300 rounded-[20px] p-4 sm:p-5 shadow-sm print:shadow-none print:border-none print:p-0 mx-auto relative overflow-hidden transition-all ${

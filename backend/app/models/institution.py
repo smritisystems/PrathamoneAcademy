@@ -77,4 +77,10 @@ class Institution(Base):
     setting_audit_logs: Mapped[list["SettingAuditLog"]] = relationship(
         "SettingAuditLog", back_populates="institution", cascade="all, delete-orphan"
     )
+    message_templates: Mapped[list["MessageTemplate"]] = relationship(
+        "MessageTemplate", back_populates="institution", cascade="all, delete-orphan"
+    )
+    communication_logs: Mapped[list["CommunicationLog"]] = relationship(
+        "CommunicationLog", back_populates="institution", cascade="all, delete-orphan"
+    )
 

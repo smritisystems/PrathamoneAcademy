@@ -37,6 +37,8 @@ import type {
   StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
   SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
+  MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
+  ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -919,4 +921,50 @@ export const settingsApi = {
 
   resetDefaults: (category: string) =>
     apiClient.post<{ status: string; message: string }>(`/settings/reset-defaults?category=${category}`),
+}
+
+// ─── Centralized Communication & Sharing Module ──────────────────────────────
+
+export const communicationApi = {
+  getTemplates: (params?: { category?: string; channel?: string }) =>
+    apiClient.get<MessageTemplateItem[]>('/communication/templates', { params }),
+
+  createTemplate: (data: Omit<MessageTemplateItem, 'id' | 'is_system' | 'created_at' | 'updated_at'>) =>
+    apiClient.post<{ status: string; message: string; template: MessageTemplateItem }>('/communication/templates', data),
+
+  updateTemplate: (id: number, data: Partial<MessageTemplateItem>) =>
+    apiClient.put<{ status: string; message: string }>(`/communication/templates/${id}`, data),
+
+  deleteTemplate: (id: number) =>
+    apiClient.delete<{ status: string; message: string }>(`/communication/templates/${id}`),
+
+  shareDocument: (data: ShareDocumentPayload) =>
+    apiClient.post<ShareDocumentResponse>('/communication/share-document', data),
+
+  getSharedDocument: (token: string, pin?: string) =>
+    apiClient.get<any>(`/communication/shared-doc/${token}`, { params: pin ? { pin } : {} }),
+
+  sendMessage: (data: SendMessagePayload) =>
+    apiClient.post<{ status: string; message: string; dispatched_count: number; results: any[]; whatsapp_links: any[] }>(
+      '/communication/send',
+      data
+    ),
+
+  searchRecipients: (params: { query?: string; target_type?: string }) =>
+    apiClient.get<RecipientItem[]>('/communication/recipients/search', { params }),
+
+  getLogs: (params?: { channel?: string; status?: string; recipient_type?: string; search?: string; page?: number; limit?: number }) =>
+    apiClient.get<CommunicationLogsResponse>('/communication/logs', { params }),
+
+  retryLog: (id: number) =>
+    apiClient.post<{ status: string; message: string }>(`/communication/logs/${id}/retry`),
+
+  getDiagnostics: () =>
+    apiClient.get<ChannelDiagnostics>('/communication/diagnostics'),
+
+  testChannel: (data: { channel: string; destination: string; message?: string }) =>
+    apiClient.post<{ status: string; channel: string; destination: string; dispatch_status: string; reference_id?: string }>(
+      '/communication/diagnostics/test',
+      data
+    ),
 }

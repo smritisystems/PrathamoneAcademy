@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Standalone payment transactions ledger and audit log page.
  */
@@ -21,8 +21,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   DollarSign, CheckCircle, AlertTriangle, Printer, RotateCcw,
-  Download, CreditCard, ArrowRight, FileText
+  Download, CreditCard, ArrowRight, FileText, Share2
 } from 'lucide-react'
+import ShareModal from '../components/ShareModal'
 import { paymentsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
@@ -61,6 +62,7 @@ export default function Payments() {
   const [reversalModalOpen, setReversalModalOpen] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<PaymentTransactionItem | null>(null)
   const [reversalReason, setReversalReason] = useState('')
+  const [sharingPayment, setSharingPayment] = useState<PaymentTransactionItem | null>(null)
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['payments-page', filters],
@@ -332,6 +334,15 @@ export default function Payments() {
                           <Printer className="w-3.5 h-3.5 text-primary-600" />
                           <span>Receipt</span>
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => setSharingPayment(p)}
+                          className="btn-secondary text-xs py-1 px-2.5 inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800"
+                          title="Share Receipt via WhatsApp, Email or Link"
+                        >
+                          <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Share</span>
+                        </button>
                         {p.status !== 'reversed' && (
                           <button
                             type="button"
@@ -405,6 +416,18 @@ export default function Payments() {
           </div>
         </form>
       </Modal>
+
+      {sharingPayment && (
+        <ShareModal
+          isOpen={!!sharingPayment}
+          onClose={() => setSharingPayment(null)}
+          documentType="RECEIPT"
+          recordId={sharingPayment.id}
+          title={`Fee Receipt #${sharingPayment.receipt_number}`}
+          recipientName={sharingPayment.student_name}
+          defaultMessage={`Dear Parent, official fee receipt #${sharingPayment.receipt_number} for ${sharingPayment.student_name} (Amount: ₹${sharingPayment.amount?.toLocaleString('en-IN')}) is ready.`}
+        />
+      )}
     </div>
   )
 }

@@ -43,6 +43,9 @@ from app.models.staff import (
 from app.models.settings import (
     InstitutionSetting, LookupItem, SettingAuditLog
 )
+from app.models.communication import (
+    MessageTemplate, CommunicationLog, SharedDocumentToken
+)
 
 __all__ = [
     "Institution",
@@ -88,6 +91,9 @@ __all__ = [
     "InstitutionSetting",
     "LookupItem",
     "SettingAuditLog",
+    "MessageTemplate",
+    "CommunicationLog",
+    "SharedDocumentToken",
 ]
 
 

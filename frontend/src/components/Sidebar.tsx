@@ -22,7 +22,7 @@ import {
   LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
-  Briefcase, Terminal
+  Briefcase, Terminal, MessageSquare
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -60,6 +60,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/courses', label: 'Study Materials', icon: BookOpen },
   { to: '/reports', label: 'Reports', icon: BarChart2 },
   { to: '/forms', label: 'Print Forms & KYC', icon: Printer },
+  { to: '/communication', label: 'Communication Center', icon: MessageSquare },
   { to: '/import-export', label: 'Import & Export', icon: FileSpreadsheet },
   { to: '/install', label: 'Install App (PWA)', icon: Download },
   { to: '/users', label: 'Users & Roles', icon: Shield },

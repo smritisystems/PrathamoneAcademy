@@ -51,6 +51,7 @@ const InstallAppPage = React.lazy(() => import('./pages/InstallApp'))
 const StaffManagementPage = React.lazy(() => import('./pages/StaffManagement'))
 const SysAdminWorkspacePage = React.lazy(() => import('./pages/SysAdminWorkspace'))
 const SettingsPage = React.lazy(() => import('./pages/Settings'))
+const CommunicationPage = React.lazy(() => import('./pages/Communication'))
 
 function PageLoader() {
   return (
@@ -157,6 +158,7 @@ export default function App() {
           <Route path="forms-documents" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
+          <Route path="communication" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           {/* 404 within authenticated shell */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>
