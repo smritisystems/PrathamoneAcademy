@@ -919,7 +919,7 @@ async def get_fees_overview(
     recent_payments = [
         {
             "id": p.id,
-            "receipt_number": r_num or f"RCP-{p.id:06d}",
+            "receipt_number": r_num or f"RCP-2026-{p.id:04d}",
             "student_id": p.student_id,
             "student_name": f"{s.first_name} {s.last_name}".strip(),
             "admission_number": s.admission_number,

@@ -36,6 +36,7 @@ from app.models.division import Division
 from app.models.board import Board
 from app.models.user import User
 from app.models.academic_year import AcademicYear
+from app.services.sequence import generate_next_receipt_number
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -165,8 +166,13 @@ async def create_payment(
                 elif installment.paid_amount > Decimal("0"):
                     installment.status = "partial"
 
-    # Generate receipt with UUID-based number to avoid race conditions
-    receipt_number = f"RCP-{data.academic_year_id}-{uuid.uuid4().hex[:8].upper()}"
+    # Generate sequential receipt number conforming to institute settings (e.g. RCP-2026-0171)
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+    receipt_number = await generate_next_receipt_number(
+        db,
+        institution_id=effective_inst_id,
+        academic_year_id=data.academic_year_id,
+    )
 
     student_result = await db.execute(
         select(Student).where(Student.id == data.student_id)
@@ -285,7 +291,7 @@ async def list_payments(
             "transaction_reference": p.transaction_reference or "N/A",
             "status": p.status,
             "notes": p.notes or "",
-            "receipt_number": rec_num or f"RCP-{p.id:06d}",
+            "receipt_number": rec_num or f"RCP-2026-{p.id:04d}",
         }
         for p, s, rec_num, bch_name, std_name, b_name in rows
     ]
@@ -580,7 +586,7 @@ async def build_receipt_response(
                 continue
             seen_payment_ids.add(p_hist.id)
 
-            hist_receipt_no = pr_hist.receipt_number if pr_hist else f"RCP-{p_hist.id:06d}"
+            hist_receipt_no = pr_hist.receipt_number if pr_hist else f"RCP-2026-{p_hist.id:04d}"
             p_amt = Decimal(str(p_hist.amount))
             previous_payments_total += p_amt
             historical_payments.append({

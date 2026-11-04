@@ -1097,11 +1097,21 @@ async def render_staff_document(
 
     check_institution_access(profile.institution_id, current_user)
 
-    # Fetch institution
-    inst = (await db.execute(select(Institution).where(Institution.id == 1))).scalar_one_or_none()
-    inst_name = inst.name if inst else "Prashant Academy"
-    inst_address = inst.address if inst else "Plot 12, Educational Zone, Mumbai - 400001"
+    # Fetch institution & active academic year dynamically
+    effective_inst_id = profile.institution_id or 1
+    inst = (await db.execute(select(Institution).where(Institution.id == effective_inst_id))).scalar_one_or_none()
+    inst_name = inst.name if inst else "PrathamOne Academy"
+    inst_address = inst.address if inst else "Vasai Road (W), Palghar - 401202"
     inst_phone = inst.phone if inst else "+91 98765 43210"
+
+    ay_res = await db.execute(
+        select(AcademicYear).where(
+            AcademicYear.institution_id == effective_inst_id,
+            AcademicYear.is_active == True,
+        ).limit(1)
+    )
+    active_ay = ay_res.scalars().first()
+    active_ay_name = active_ay.name if active_ay and active_ay.name else "2026-27"
 
     # Fetch teaching workload
     assignments = (await db.execute(
@@ -1257,7 +1267,7 @@ async def render_staff_document(
                     {assignments_rows}
                 </tbody>
             </table>
-            <p style="font-size: 12px; color: #475569; margin: 8px 0;">This workload allocation has been confirmed by the Academic Steering Committee for the active 2026-27 academic session. Faculty members are required to maintain student attendance, deliver syllabus targets, and administer periodic chapter assessments.</p>
+            <p style="font-size: 12px; color: #475569; margin: 8px 0;">This workload allocation has been confirmed by the Academic Steering Committee for the active {active_ay_name} academic session. Faculty members are required to maintain student attendance, deliver syllabus targets, and administer periodic chapter assessments.</p>
         """
     else:
         html_content += f"""

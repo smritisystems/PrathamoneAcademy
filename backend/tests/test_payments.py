@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description Pytest suite validating payment recording, invoice reconciliation, and receipt generation.
 #  */
@@ -22,6 +22,7 @@ Tests the full fee accounting workflow including partial payments,
 installment allocation, discounts, reversals, and balance calculations.
 """
 import pytest
+import re
 from decimal import Decimal
 from datetime import date
 from sqlalchemy import select
@@ -395,4 +396,30 @@ class TestPaymentCreation:
         assert resp.status_code == 200
         payments = resp.json()
         assert len(payments) >= 2
+
+    async def test_sequential_receipt_number_generation(
+        self, client, auth_headers, test_fee_invoice, db
+    ):
+        """Receipt numbers are generated in uniform sequential format matching configured rules."""
+        inv = test_fee_invoice["invoice"]
+        student_id = test_fee_invoice["student"].id
+        year_id = test_fee_invoice["academic_year"].id
+
+        pay_resp = await client.post(
+            "/api/v1/payments/",
+            json={
+                "student_id": student_id,
+                "academic_year_id": year_id,
+                "amount": 2500.0,
+                "payment_date": "2026-11-05",
+                "payment_method": "upi",
+                "allocations": [{"invoice_id": inv.id, "amount": 2500.0}],
+            },
+            headers=auth_headers,
+        )
+        assert pay_resp.status_code == 201
+        rec_num = pay_resp.json()["receipt_number"]
+        # Must match sequential pattern RCP-{YYYY}-{SEQ:4+} rather than UUID
+        assert re.match(r"^RCP-\d{4}-\d{4,}$", rec_num), f"Unexpected receipt format: {rec_num}"
+
 
