@@ -1,0 +1,50 @@
+#!/bin/sh
+# /**
+#  * @file        pre-commit
+#  * @project     Prashant Academy Coaching Institute Management System
+#  * @module      .githooks
+#  *
+#  * @author      Jawahar R. Mallah
+#  * @organization AITDL (AI Technology & Development Lab)
+#  * @client      Prashant Academy Coaching Institute
+#  * @copyright   Copyright (c) 2026 AITDL
+#  * @license     Proprietary
+#  *
+#  * @version     1.0.0
+#  * @created     2026-11-04
+#  * @updated     2026-11-04
+#  *
+#  * @description Git pre-commit hook enforcing automated source header attribution and updating timestamps.
+#  */
+
+echo "[HOOK] Running Prashant Academy pre-commit header verification..."
+
+# Identify staged first-party source files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(py|ts|tsx|js|jsx|css)$' | grep -v 'node_modules/' | grep -v 'dist/')
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "[HOOK] No staged first-party source files detected."
+    exit 0
+fi
+
+# Run header auto-fix on staged files
+python scripts/manage_headers.py fix --staged --update-timestamp
+
+# Re-stage any files that were automatically updated with headers
+for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+        git add "$file"
+    fi
+done
+
+# Perform strict check
+python scripts/manage_headers.py check --staged
+CHECK_STATUS=$?
+
+if [ $CHECK_STATUS -ne 0 ]; then
+    echo "[ERROR] Pre-commit hook rejected commit: header verification failed."
+    exit 1
+fi
+
+echo "[HOOK] Header verification passed successfully."
+exit 0

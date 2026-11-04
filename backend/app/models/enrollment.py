@@ -1,0 +1,59 @@
+# /**
+#  * @file        enrollment.py
+#  * @project     PrathamOne Academy Coaching Institute Management System
+#  * @module      backend.app.models
+#  *
+#  * @author      Jawahar R. Mallah
+#  * @organization AITDL (AI Technology & Development Lab)
+#  * @client      Prashant Academy Coaching Institute
+#  * @copyright   Copyright (c) 2026 AITDL
+#  * @license     Proprietary
+#  *
+#  * @version     1.0.0
+#  * @created     2026-11-03
+#  * @updated     2026-11-04
+#  *
+#  * @description SQLAlchemy model defining student enrollment in classes, batches, and academic years.
+#  */
+
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Date
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import datetime, date
+from app.core.database import Base
+
+
+class StudentEnrollment(Base):
+    __tablename__ = "student_enrollments"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    student_id: Mapped[int] = mapped_column(
+        ForeignKey("students.id"), nullable=False
+    )
+    academic_year_id: Mapped[int] = mapped_column(
+        ForeignKey("academic_years.id"), nullable=False
+    )
+    standard_id: Mapped[int] = mapped_column(
+        ForeignKey("standards.id"), nullable=False
+    )
+    division_id: Mapped[int] = mapped_column(
+        ForeignKey("divisions.id"), nullable=True
+    )
+    roll_number: Mapped[str] = mapped_column(String(20), nullable=True)
+    enrollment_date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="active")
+    remarks: Mapped[str] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    student: Mapped["Student"] = relationship(
+        "Student", back_populates="enrollments"
+    )
+    academic_year: Mapped["AcademicYear"] = relationship(
+        "AcademicYear", back_populates="enrollments"
+    )
+    standard: Mapped["Standard"] = relationship("Standard")
+    division: Mapped["Division"] = relationship(
+        "Division", back_populates="enrollments"
+    )
+

@@ -1,0 +1,26 @@
+name: Source Code Attribution & Header Check
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  verify-headers:
+    name: Verify Source Code Headers & Attribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Header Attribution Verification
+        run: |
+          python scripts/manage_headers.py check
+

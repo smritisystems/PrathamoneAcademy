@@ -1,0 +1,972 @@
+# /**
+#  * @file        students.py
+#  * @project     PrathamOne Academy Coaching Institute Management System
+#  * @module      backend.app.api.v1.endpoints
+#  *
+#  * @author      Jawahar R. Mallah
+#  * @organization AITDL (AI Technology & Development Lab)
+#  * @client      Prashant Academy Coaching Institute
+#  * @copyright   Copyright (c) 2026 AITDL
+#  * @license     Proprietary
+#  *
+#  * @version     1.0.0
+#  * @created     2026-11-03
+#  * @updated     2026-11-04
+#  *
+#  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
+#  */
+
+import json
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, or_, and_, desc
+from sqlalchemy.orm import selectinload
+from typing import Optional, List, Dict, Any
+from app.core.database import get_db
+from app.core.deps import get_current_active_user, require_role
+from app.models.student import Student, Guardian
+from app.models.enrollment import StudentEnrollment
+from app.models.fee import FeeInvoice, FeeInstallment, FeeInvoiceItem
+from app.models.payment import Payment, PaymentAllocation, PaymentReceipt
+from app.models.standard import Standard
+from app.models.division import Division
+from app.models.board import Board
+from app.models.subject import Subject
+from app.models.academic_year import AcademicYear
+from app.models.attendance import Attendance
+from app.models.exam import Examination, ExamMark
+from app.models.portal import StudentDocument, TimetableEntry
+from app.models.user import AuditLog
+from pydantic import BaseModel
+from datetime import date
+
+router = APIRouter()
+
+
+class GuardianCreate(BaseModel):
+    relation: str
+    first_name: str
+    last_name: str
+    occupation: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    aadhar_number: Optional[str] = None
+    annual_income: Optional[float] = None
+    is_primary: bool = False
+
+
+class StudentCreate(BaseModel):
+    institution_id: int
+    admission_number: str
+    first_name: str
+    last_name: str
+    middle_name: Optional[str] = None
+    date_of_birth: date
+    gender: str
+    blood_group: Optional[str] = None
+    nationality: str = "Indian"
+    religion: Optional[str] = None
+    caste: Optional[str] = None
+    aadhar_number: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    admission_date: date
+    guardians: List[GuardianCreate] = []
+
+
+class GuardianUpdate(BaseModel):
+    id: Optional[int] = None
+    relation: str
+    first_name: str
+    last_name: str
+    occupation: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    aadhar_number: Optional[str] = None
+    annual_income: Optional[float] = None
+    is_primary: bool = False
+
+
+class EnrollmentUpdate(BaseModel):
+    standard_id: Optional[int] = None
+    division_id: Optional[int] = None
+    roll_number: Optional[str] = None
+    status: Optional[str] = None
+    remarks: Optional[str] = None
+
+
+class StudentUpdate(BaseModel):
+    # Personal & Identity
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None
+    blood_group: Optional[str] = None
+    nationality: Optional[str] = None
+    religion: Optional[str] = None
+    caste: Optional[str] = None
+    aadhar_number: Optional[str] = None
+    photo_url: Optional[str] = None
+    admission_date: Optional[date] = None
+    is_active: Optional[bool] = None
+
+    # Contact & Address
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+
+    # Guardians
+    guardians: Optional[List[GuardianUpdate]] = None
+
+    # Academic & Batch Assignment
+    enrollment: Optional[EnrollmentUpdate] = None
+    transfer_reason: Optional[str] = None
+
+
+class EnrollmentCreate(BaseModel):
+    academic_year_id: int
+    standard_id: int
+    division_id: Optional[int] = None
+    roll_number: Optional[str] = None
+    enrollment_date: date
+
+
+@router.get("/")
+async def list_students(
+    institution_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    academic_year_id: Optional[int] = None,
+    search: Optional[str] = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    query = select(Student).where(Student.is_active == True)
+
+    if institution_id:
+        query = query.where(Student.institution_id == institution_id)
+
+    if search:
+        query = query.where(
+            or_(
+                Student.first_name.ilike(f"%{search}%"),
+                Student.last_name.ilike(f"%{search}%"),
+                Student.admission_number.ilike(f"%{search}%"),
+                Student.phone.ilike(f"%{search}%"),
+            )
+        )
+
+    if standard_id or division_id or academic_year_id:
+        query = query.join(
+            StudentEnrollment, Student.id == StudentEnrollment.student_id
+        )
+        if standard_id:
+            query = query.where(StudentEnrollment.standard_id == standard_id)
+        if division_id:
+            query = query.where(StudentEnrollment.division_id == division_id)
+        if academic_year_id:
+            query = query.where(
+                StudentEnrollment.academic_year_id == academic_year_id
+            )
+
+    count_q = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_q)).scalar() or 0
+
+    offset = (page - 1) * page_size
+    result = await db.execute(
+        query.offset(offset)
+        .limit(page_size)
+        .order_by(Student.first_name)
+        .distinct()
+    )
+    students = result.scalars().all()
+
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "data": [
+            {
+                "id": s.id,
+                "admission_number": s.admission_number,
+                "first_name": s.first_name,
+                "last_name": s.last_name,
+                "middle_name": s.middle_name,
+                "gender": s.gender,
+                "date_of_birth": str(s.date_of_birth),
+                "phone": s.phone,
+                "email": s.email,
+                "admission_date": str(s.admission_date),
+                "city": s.city,
+                "is_active": s.is_active,
+            }
+            for s in students
+        ],
+    }
+
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def create_student(
+    data: StudentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "staff")),
+):
+    existing = await db.execute(
+        select(Student).where(Student.admission_number == data.admission_number)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=400, detail="Admission number already exists"
+        )
+
+    guardians_data = data.guardians
+    student_data = data.model_dump(exclude={"guardians"})
+    student = Student(**student_data)
+    db.add(student)
+    await db.flush()
+
+    for g_data in guardians_data:
+        guardian = Guardian(student_id=student.id, **g_data.model_dump())
+        db.add(guardian)
+
+    await db.commit()
+    await db.refresh(student)
+    return {
+        "id": student.id,
+        "admission_number": student.admission_number,
+        "first_name": student.first_name,
+        "last_name": student.last_name,
+    }
+
+
+@router.get("/{student_id}")
+async def get_student(
+    student_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    result = await db.execute(
+        select(Student)
+        .options(
+            selectinload(Student.guardians),
+            selectinload(Student.enrollments),
+        )
+        .where(Student.id == student_id)
+    )
+    student = result.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    fee_result = await db.execute(
+        select(
+            func.coalesce(func.sum(FeeInvoice.net_amount), 0).label("total_fees"),
+            func.coalesce(func.sum(FeeInvoice.paid_amount), 0).label("total_paid"),
+            func.coalesce(func.sum(FeeInvoice.outstanding_amount), 0).label(
+                "outstanding"
+            ),
+        ).where(FeeInvoice.student_id == student_id)
+    )
+    fee_summary = fee_result.one()
+
+    return {
+        "id": student.id,
+        "admission_number": student.admission_number,
+        "first_name": student.first_name,
+        "last_name": student.last_name,
+        "middle_name": student.middle_name,
+        "date_of_birth": str(student.date_of_birth),
+        "gender": student.gender,
+        "blood_group": student.blood_group,
+        "nationality": student.nationality,
+        "religion": student.religion,
+        "caste": student.caste,
+        "aadhar_number": student.aadhar_number,
+        "address": student.address,
+        "city": student.city,
+        "state": student.state,
+        "pincode": student.pincode,
+        "phone": student.phone,
+        "email": student.email,
+        "admission_date": str(student.admission_date),
+        "is_active": student.is_active,
+        "guardians": [
+            {
+                "id": g.id,
+                "relation": g.relation,
+                "first_name": g.first_name,
+                "last_name": g.last_name,
+                "phone": g.phone,
+                "email": g.email,
+                "occupation": g.occupation,
+                "is_primary": g.is_primary,
+            }
+            for g in student.guardians
+        ],
+        "enrollments": [
+            {
+                "id": e.id,
+                "academic_year_id": e.academic_year_id,
+                "standard_id": e.standard_id,
+                "division_id": e.division_id,
+                "roll_number": e.roll_number,
+                "status": e.status,
+                "enrollment_date": str(e.enrollment_date),
+            }
+            for e in student.enrollments
+        ],
+        "fee_summary": {
+            "total_fees": float(fee_summary.total_fees),
+            "total_paid": float(fee_summary.total_paid),
+            "outstanding": float(fee_summary.outstanding),
+        },
+    }
+
+
+@router.put("/{student_id}")
+@router.put("/{student_id}/profile")
+async def update_student_profile(
+    student_id: int,
+    data: StudentUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
+):
+    result = await db.execute(
+        select(Student)
+        .options(
+            selectinload(Student.guardians),
+            selectinload(Student.enrollments),
+        )
+        .where(Student.id == student_id)
+    )
+    student = result.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # Capture snapshot of old state for audit
+    old_state = {
+        "first_name": student.first_name,
+        "last_name": student.last_name,
+        "middle_name": student.middle_name,
+        "date_of_birth": str(student.date_of_birth) if student.date_of_birth else None,
+        "gender": student.gender,
+        "blood_group": student.blood_group,
+        "nationality": student.nationality,
+        "religion": student.religion,
+        "caste": student.caste,
+        "aadhar_number": student.aadhar_number,
+        "photo_url": student.photo_url,
+        "address": student.address,
+        "city": student.city,
+        "state": student.state,
+        "pincode": student.pincode,
+        "phone": student.phone,
+        "email": student.email,
+        "admission_date": str(student.admission_date) if student.admission_date else None,
+        "is_active": student.is_active,
+        "guardians": [
+            {
+                "id": g.id,
+                "relation": g.relation,
+                "first_name": g.first_name,
+                "last_name": g.last_name,
+                "phone": g.phone,
+                "email": g.email,
+                "occupation": g.occupation,
+                "aadhar_number": g.aadhar_number,
+                "annual_income": g.annual_income,
+                "is_primary": g.is_primary,
+            }
+            for g in student.guardians
+        ],
+    }
+
+    diff_changes = {}
+
+    # 1. Update master scalar fields
+    master_fields = [
+        "first_name", "last_name", "middle_name", "date_of_birth", "gender",
+        "blood_group", "nationality", "religion", "caste", "aadhar_number",
+        "photo_url", "address", "city", "state", "pincode", "phone", "email",
+        "admission_date", "is_active",
+    ]
+    for fld in master_fields:
+        val = getattr(data, fld)
+        if val is not None:
+            curr_val = getattr(student, fld)
+            if curr_val != val:
+                diff_changes[fld] = {"old": str(curr_val), "new": str(val)}
+                setattr(student, fld, val)
+
+    # 2. Update Guardians if provided
+    if data.guardians is not None:
+        existing_guardians = {g.id: g for g in student.guardians if g.id}
+        retained_ids = set()
+        guardian_changes = []
+
+        for g_in in data.guardians:
+            if g_in.id and g_in.id in existing_guardians:
+                g = existing_guardians[g_in.id]
+                retained_ids.add(g.id)
+                g.relation = g_in.relation
+                g.first_name = g_in.first_name
+                g.last_name = g_in.last_name
+                g.phone = g_in.phone
+                g.email = g_in.email
+                g.occupation = g_in.occupation
+                g.aadhar_number = g_in.aadhar_number
+                g.annual_income = g_in.annual_income
+                g.is_primary = g_in.is_primary
+                guardian_changes.append({"action": "updated", "id": g.id, "name": f"{g.first_name} {g.last_name}"})
+            else:
+                new_g = Guardian(
+                    student_id=student.id,
+                    relation=g_in.relation,
+                    first_name=g_in.first_name,
+                    last_name=g_in.last_name,
+                    phone=g_in.phone,
+                    email=g_in.email,
+                    occupation=g_in.occupation,
+                    aadhar_number=g_in.aadhar_number,
+                    annual_income=g_in.annual_income,
+                    is_primary=g_in.is_primary,
+                )
+                db.add(new_g)
+                guardian_changes.append({"action": "added", "name": f"{new_g.first_name} {new_g.last_name}"})
+
+        for g in list(student.guardians):
+            if g.id and g.id not in retained_ids:
+                guardian_changes.append({"action": "removed", "id": g.id, "name": f"{g.first_name} {g.last_name}"})
+                await db.delete(g)
+
+        if guardian_changes:
+            diff_changes["guardians"] = guardian_changes
+
+    # 3. Update Enrollment / Batch
+    is_batch_transfer = False
+    if data.enrollment is not None:
+        active_enr = next((e for e in student.enrollments if e.status == "active"), None)
+        if not active_enr and student.enrollments:
+            active_enr = sorted(student.enrollments, key=lambda e: e.id, reverse=True)[0]
+
+        if active_enr:
+            if data.enrollment.standard_id is not None and data.enrollment.standard_id != active_enr.standard_id:
+                diff_changes["standard_id"] = {"old": active_enr.standard_id, "new": data.enrollment.standard_id}
+                active_enr.standard_id = data.enrollment.standard_id
+                is_batch_transfer = True
+
+            if data.enrollment.division_id is not None and data.enrollment.division_id != active_enr.division_id:
+                diff_changes["division_id"] = {"old": active_enr.division_id, "new": data.enrollment.division_id}
+                active_enr.division_id = data.enrollment.division_id
+                is_batch_transfer = True
+
+            if data.enrollment.roll_number is not None and data.enrollment.roll_number != active_enr.roll_number:
+                diff_changes["roll_number"] = {"old": active_enr.roll_number, "new": data.enrollment.roll_number}
+                active_enr.roll_number = data.enrollment.roll_number
+
+            if data.enrollment.status is not None and data.enrollment.status != active_enr.status:
+                diff_changes["enrollment_status"] = {"old": active_enr.status, "new": data.enrollment.status}
+                active_enr.status = data.enrollment.status
+
+            if data.enrollment.remarks is not None:
+                active_enr.remarks = data.enrollment.remarks
+            elif data.transfer_reason and is_batch_transfer:
+                cur_rem = active_enr.remarks or ""
+                active_enr.remarks = f"{cur_rem} | Batch Transfer: {data.transfer_reason}".strip(" |")
+        elif data.enrollment.standard_id is not None:
+            # Create active enrollment if none existed
+            ay_res = await db.execute(
+                select(AcademicYear).where(AcademicYear.institution_id == student.institution_id, AcademicYear.is_current == True)
+            )
+            ay = ay_res.scalar_one_or_none()
+            if not ay:
+                ay = await db.scalar(select(AcademicYear).where(AcademicYear.institution_id == student.institution_id).order_by(desc(AcademicYear.id)))
+
+            if ay:
+                new_enr = StudentEnrollment(
+                    student_id=student.id,
+                    academic_year_id=ay.id,
+                    standard_id=data.enrollment.standard_id,
+                    division_id=data.enrollment.division_id,
+                    roll_number=data.enrollment.roll_number,
+                    enrollment_date=date.today(),
+                    status=data.enrollment.status or "active",
+                    remarks=data.enrollment.remarks or data.transfer_reason,
+                )
+                db.add(new_enr)
+                diff_changes["enrollment"] = {"action": "created", "standard_id": data.enrollment.standard_id, "division_id": data.enrollment.division_id}
+
+    # 4. Record Audit Log
+    action = "batch_transfer" if is_batch_transfer else "student_profile_updated"
+    audit_log = AuditLog(
+        user_id=current_user.id,
+        action=action,
+        resource_type="student",
+        resource_id=student.id,
+        old_data=json.dumps(old_state, default=str),
+        new_data=json.dumps(
+            {
+                "updated_by": current_user.username,
+                "admin_name": f"{current_user.first_name} {current_user.last_name}",
+                "changes": diff_changes,
+                "transfer_reason": data.transfer_reason if is_batch_transfer else None,
+            },
+            default=str,
+        ),
+    )
+    db.add(audit_log)
+
+    await db.commit()
+    await db.refresh(student)
+
+    return {
+        "message": "Student profile updated successfully",
+        "id": student_id,
+        "action": action,
+        "changes": diff_changes,
+    }
+
+
+@router.post("/{student_id}/enroll", status_code=status.HTTP_201_CREATED)
+async def enroll_student(
+    student_id: int,
+    data: EnrollmentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "staff")),
+):
+    result = await db.execute(
+        select(Student).where(Student.id == student_id)
+    )
+    student = result.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    enrollment = StudentEnrollment(student_id=student_id, **data.model_dump())
+    db.add(enrollment)
+    await db.commit()
+    await db.refresh(enrollment)
+    return {
+        "id": enrollment.id,
+        "student_id": student_id,
+        "status": enrollment.status,
+    }
+
+
+class StudentDocumentCreate(BaseModel):
+    title: str
+    document_type: str
+    file_url: str
+    status: Optional[str] = "verified"
+
+
+@router.get("/{student_id}/profile")
+async def get_student_admin_profile(
+    student_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "teacher", "accountant", "staff")),
+):
+    """
+    Comprehensive 8-tab profile view for Admin and Teachers:
+    Overview, Enrollment, Classes, Attendance, Tests, Fees, Documents, Activity
+    """
+    # 1. Base Student with relations
+    res = await db.execute(
+        select(Student)
+        .options(
+            selectinload(Student.guardians),
+            selectinload(Student.enrollments),
+            selectinload(Student.documents),
+        )
+        .where(Student.id == student_id)
+    )
+    student = res.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # 2. Active Enrollment details (Board, Standard, Division, Academic Year)
+    enr_stmt = (
+        select(StudentEnrollment, Standard, Division, Board, AcademicYear)
+        .join(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .join(AcademicYear, StudentEnrollment.academic_year_id == AcademicYear.id)
+        .where(StudentEnrollment.student_id == student_id)
+        .order_by(desc(StudentEnrollment.id))
+    )
+    enr_rows = (await db.execute(enr_stmt)).all()
+    enrollment_list = []
+    active_division_id = None
+    active_standard_id = None
+    for enr, std, div, brd, ay in enr_rows:
+        if enr.status == "active" and active_division_id is None:
+            active_division_id = div.id if div else None
+            active_standard_id = std.id
+        enrollment_list.append({
+            "id": enr.id,
+            "academic_year": ay.name,
+            "academic_year_id": ay.id,
+            "standard_id": std.id,
+            "standard_name": std.name,
+            "standard_level": std.level,
+            "division_id": div.id if div else None,
+            "division_name": div.name if div else "Unassigned",
+            "board_name": brd.name if brd else "General Board",
+            "board_code": brd.code if brd else "GEN",
+            "roll_number": enr.roll_number or "N/A",
+            "status": enr.status,
+            "enrollment_date": str(enr.enrollment_date),
+            "remarks": enr.remarks,
+        })
+
+    # 3. Classes and subjects
+    subjects_list = []
+    if active_standard_id:
+        sub_stmt = select(Subject).where(Subject.standard_id == active_standard_id).order_by(Subject.name)
+        subjects_list = [
+            {
+                "id": s.id,
+                "name": s.name,
+                "code": s.code,
+                "max_marks": s.max_marks,
+                "pass_marks": s.pass_marks,
+                "is_optional": s.is_optional,
+            }
+            for s in (await db.execute(sub_stmt)).scalars().all()
+        ]
+
+    # 4. Attendance
+    att_stats_stmt = (
+        select(
+            func.count(Attendance.id).label("total"),
+            func.count(func.nullif(Attendance.status != "present", True)).label("present"),
+            func.count(func.nullif(Attendance.status != "absent", True)).label("absent"),
+            func.count(func.nullif(Attendance.status != "late", True)).label("late"),
+        )
+        .where(Attendance.student_id == student_id)
+    )
+    att_stats = (await db.execute(att_stats_stmt)).one()
+    att_total = att_stats.total or 0
+    att_present = att_stats.present or 0
+    att_absent = att_stats.absent or 0
+    att_late = att_stats.late or 0
+    att_pct = round((att_present / att_total) * 100, 1) if att_total > 0 else 100.0
+
+    att_records_stmt = (
+        select(Attendance)
+        .where(Attendance.student_id == student_id)
+        .order_by(desc(Attendance.date))
+        .limit(30)
+    )
+    att_records = [
+        {"id": a.id, "date": str(a.date), "status": a.status, "remarks": a.remarks or ""}
+        for a in (await db.execute(att_records_stmt)).scalars().all()
+    ]
+
+    # 5. Tests & Marks
+    marks_stmt = (
+        select(ExamMark, Examination, Subject)
+        .join(Examination, ExamMark.examination_id == Examination.id)
+        .join(Subject, ExamMark.subject_id == Subject.id)
+        .where(ExamMark.student_id == student_id)
+        .order_by(desc(Examination.start_date), Subject.name)
+    )
+    test_results = []
+    for mark, exam, subj in (await db.execute(marks_stmt)).all():
+        obt = float(mark.marks_obtained) if mark.marks_obtained is not None else 0.0
+        max_m = exam.max_marks or 100
+        pct = round((obt / max_m) * 100, 1) if max_m > 0 else 0.0
+        test_results.append({
+            "id": mark.id,
+            "exam_name": exam.name,
+            "exam_type": exam.exam_type,
+            "subject_name": subj.name,
+            "marks_obtained": obt,
+            "max_marks": max_m,
+            "percentage": pct,
+            "grade": mark.grade or ("A+" if pct >= 90 else "A" if pct >= 80 else "B" if pct >= 70 else "C" if pct >= 50 else "D"),
+            "remarks": mark.remarks or "Completed",
+            "is_absent": mark.is_absent,
+            "exam_date": str(exam.start_date) if exam.start_date else None,
+        })
+
+    # 6. Fees & Payments
+    inv_stmt = (
+        select(FeeInvoice)
+        .options(selectinload(FeeInvoice.items), selectinload(FeeInvoice.installments))
+        .where(FeeInvoice.student_id == student_id)
+        .order_by(desc(FeeInvoice.id))
+    )
+    invoices = (await db.execute(inv_stmt)).scalars().all()
+
+    pmt_stmt = (
+        select(Payment)
+        .options(selectinload(Payment.receipt))
+        .where(Payment.student_id == student_id)
+        .order_by(desc(Payment.payment_date), desc(Payment.id))
+    )
+    payments = (await db.execute(pmt_stmt)).scalars().all()
+
+    total_fees = sum(float(i.net_amount) for i in invoices)
+    total_paid = sum(float(p.amount) for p in payments if p.status == "completed")
+    outstanding = max(0.0, total_fees - total_paid)
+
+    fee_details = {
+        "summary": {
+            "total_fees": total_fees,
+            "total_paid": total_paid,
+            "outstanding": outstanding,
+            "collection_rate": round((total_paid / total_fees) * 100, 1) if total_fees > 0 else 100.0,
+        },
+        "invoices": [
+            {
+                "id": inv.id,
+                "invoice_number": inv.invoice_number,
+                "issue_date": str(inv.issue_date),
+                "due_date": str(inv.due_date) if inv.due_date else None,
+                "net_amount": float(inv.net_amount),
+                "paid_amount": float(inv.paid_amount),
+                "outstanding_amount": float(inv.outstanding_amount),
+                "status": inv.status,
+                "items": [{"id": it.id, "description": it.description, "amount": float(it.amount)} for it in inv.items],
+                "installments": [
+                    {
+                        "id": inst.id,
+                        "installment_number": inst.installment_number,
+                        "due_date": str(inst.due_date),
+                        "amount": float(inst.amount),
+                        "paid_amount": float(inst.paid_amount),
+                        "status": inst.status,
+                    }
+                    for inst in inv.installments
+                ],
+            }
+            for inv in invoices
+        ],
+        "payments": [
+            {
+                "id": p.id,
+                "receipt_number": p.receipt.receipt_number if p.receipt else f"REC-{p.id}",
+                "payment_date": str(p.payment_date),
+                "amount": float(p.amount),
+                "payment_method": p.payment_method,
+                "transaction_reference": p.transaction_reference or "N/A",
+                "status": p.status,
+            }
+            for p in payments
+        ],
+    }
+
+    # 7. Documents
+    documents_list = [
+        {
+            "id": d.id,
+            "title": d.title,
+            "document_type": d.document_type,
+            "file_url": d.file_url,
+            "status": d.status,
+            "uploaded_at": str(d.uploaded_at),
+        }
+        for d in student.documents
+    ]
+
+    # 8. Activity Log
+    # Fetch audit logs + recent payment events + attendance logs to synthesize a clean activity timeline
+    audit_stmt = (
+        select(AuditLog)
+        .where(
+            or_(
+                and_(AuditLog.resource_type == "student", AuditLog.resource_id == student_id),
+                and_(AuditLog.resource_type == "fee_invoice", AuditLog.resource_id.in_([i.id for i in invoices] or [-1])),
+            )
+        )
+        .order_by(desc(AuditLog.created_at))
+        .limit(10)
+    )
+    audit_logs = (await db.execute(audit_stmt)).scalars().all()
+
+    activity_timeline = []
+    for log in audit_logs:
+        act_description = f"{log.action.replace('_', ' ').capitalize()} for {log.resource_type}"
+        if log.action == "batch_transfer":
+            act_description = "Student transferred to different batch by administrator"
+            if log.new_data:
+                try:
+                    payload = json.loads(log.new_data)
+                    reason = payload.get("transfer_reason")
+                    if reason:
+                        act_description += f" (Reason: {reason})"
+                except Exception:
+                    pass
+        elif log.action == "student_profile_updated":
+            act_description = "Student profile updated by administrator"
+            if log.new_data:
+                try:
+                    payload = json.loads(log.new_data)
+                    ch = payload.get("changes", {})
+                    if ch:
+                        fields_updated = [k.replace('_', ' ').capitalize() for k in ch.keys()]
+                        act_description += f" ({', '.join(fields_updated[:4])})"
+                except Exception:
+                    pass
+        activity_timeline.append({
+            "id": f"audit-{log.id}",
+            "type": "audit",
+            "action": log.action,
+            "description": act_description,
+            "timestamp": str(log.created_at),
+        })
+
+    for p in payments[:5]:
+        activity_timeline.append({
+            "id": f"pmt-{p.id}",
+            "type": "payment",
+            "action": "fee_payment",
+            "description": f"Payment of ₹{float(p.amount):,.0f} received via {p.payment_method.upper()}",
+            "timestamp": str(p.payment_date),
+        })
+
+    if not activity_timeline:
+        activity_timeline.append({
+            "id": f"enroll-{student.id}",
+            "type": "enrollment",
+            "action": "enrolled",
+            "description": f"Student admitted into Prashant Academy on {student.admission_date}",
+            "timestamp": str(student.admission_date),
+        })
+
+    return {
+        "overview": {
+            "id": student.id,
+            "admission_number": student.admission_number,
+            "first_name": student.first_name,
+            "last_name": student.last_name,
+            "middle_name": student.middle_name,
+            "full_name": f"{student.first_name} {student.last_name}",
+            "date_of_birth": str(student.date_of_birth),
+            "gender": student.gender,
+            "blood_group": student.blood_group,
+            "nationality": student.nationality,
+            "religion": student.religion,
+            "caste": student.caste,
+            "aadhar_number": student.aadhar_number,
+            "phone": student.phone,
+            "email": student.email,
+            "address": student.address,
+            "city": student.city,
+            "state": student.state,
+            "pincode": student.pincode,
+            "admission_date": str(student.admission_date),
+            "is_active": student.is_active,
+            "active_batch": enrollment_list[0]["division_name"] if enrollment_list else "Unassigned",
+            "active_standard": enrollment_list[0]["standard_name"] if enrollment_list else "Unassigned",
+            "active_board": enrollment_list[0]["board_name"] if enrollment_list else "General Board",
+            "guardians": [
+                {
+                    "id": g.id,
+                    "relation": g.relation,
+                    "first_name": g.first_name,
+                    "last_name": g.last_name,
+                    "phone": g.phone,
+                    "email": g.email,
+                    "occupation": g.occupation,
+                    "is_primary": g.is_primary,
+                }
+                for g in student.guardians
+            ],
+            "attendance_summary": {
+                "attendance_percentage": att_pct,
+                "total_days": att_total,
+                "present_days": att_present,
+                "absent_days": att_absent,
+            },
+            "fee_summary": fee_details["summary"],
+            "recent_test": test_results[0] if test_results else None,
+        },
+        "enrollment": enrollment_list,
+        "classes": {
+            "active_standard_id": active_standard_id,
+            "active_division_id": active_division_id,
+            "subjects": subjects_list,
+        },
+        "attendance": {
+            "summary": {
+                "total_days": att_total,
+                "present_days": att_present,
+                "absent_days": att_absent,
+                "late_days": att_late,
+                "attendance_percentage": att_pct,
+            },
+            "records": att_records,
+        },
+        "tests": test_results,
+        "fees": fee_details,
+        "documents": documents_list,
+        "activity": activity_timeline,
+    }
+
+
+@router.post("/{student_id}/documents", status_code=status.HTTP_201_CREATED)
+async def add_student_document(
+    student_id: int,
+    data: StudentDocumentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "staff", "teacher")),
+):
+    student = await db.scalar(select(Student).where(Student.id == student_id))
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    doc = StudentDocument(
+        student_id=student_id,
+        title=data.title,
+        document_type=data.document_type,
+        file_url=data.file_url,
+        status=data.status or "verified",
+    )
+    db.add(doc)
+    await db.commit()
+    await db.refresh(doc)
+
+    return {
+        "id": doc.id,
+        "student_id": doc.student_id,
+        "title": doc.title,
+        "document_type": doc.document_type,
+        "file_url": doc.file_url,
+        "status": doc.status,
+        "uploaded_at": str(doc.uploaded_at),
+    }
+
+
+@router.delete("/{student_id}/documents/{document_id}")
+async def delete_student_document(
+    student_id: int,
+    document_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
+):
+    doc = await db.scalar(
+        select(StudentDocument).where(
+            and_(
+                StudentDocument.id == document_id,
+                StudentDocument.student_id == student_id,
+            )
+        )
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    await db.delete(doc)
+    await db.commit()
+    return {"message": "Document removed successfully", "id": document_id}
+
+

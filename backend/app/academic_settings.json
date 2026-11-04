@@ -1,0 +1,7 @@
+{
+  "defaultBatchCapacity": 42,
+  "enforceCapacityStrict": true,
+  "preventTimetableConflicts": true,
+  "academicYearName": "AY 2024\u201325 (Current)",
+  "autoRollNumberFormat": "STD-DIV-SEQ"
+}

@@ -1,0 +1,85 @@
+# /**
+#  * @file        router.py
+#  * @project     PrathamOne Academy Coaching Institute Management System
+#  * @module      backend.app.api.v1
+#  *
+#  * @author      Jawahar R. Mallah
+#  * @organization AITDL (AI Technology & Development Lab)
+#  * @client      Prashant Academy Coaching Institute
+#  * @copyright   Copyright (c) 2026 AITDL
+#  * @license     Proprietary
+#  *
+#  * @version     1.0.0
+#  * @created     2026-11-03
+#  * @updated     2026-11-04
+#  *
+#  * @description Central v1 API router registering all domain endpoint routers.
+#  */
+
+from fastapi import APIRouter
+from app.api.v1.endpoints import (
+    auth,
+    institutions,
+    academic_years,
+    boards,
+    standards,
+    divisions,
+    students,
+    subjects,
+    attendance,
+    fees,
+    payments,
+    users,
+    dashboard,
+    reports,
+    examinations,
+    import_register,
+    student_portal,
+    import_export,
+    timetable,
+    enrollments,
+    forms,
+)
+
+api_router = APIRouter()
+
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+api_router.include_router(
+    institutions.router, prefix="/institutions", tags=["institutions"]
+)
+api_router.include_router(
+    academic_years.router, prefix="/academic-years", tags=["academic-years"]
+)
+api_router.include_router(boards.router, prefix="/boards", tags=["boards"])
+api_router.include_router(
+    standards.router, prefix="/standards", tags=["standards"]
+)
+api_router.include_router(
+    divisions.router, prefix="/divisions", tags=["divisions"]
+)
+api_router.include_router(students.router, prefix="/students", tags=["students"])
+api_router.include_router(subjects.router, prefix="/subjects", tags=["subjects"])
+api_router.include_router(
+    attendance.router, prefix="/attendance", tags=["attendance"]
+)
+api_router.include_router(fees.router, prefix="/fees", tags=["fees"])
+api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
+api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
+api_router.include_router(
+    examinations.router, prefix="/examinations", tags=["examinations"]
+)
+api_router.include_router(
+    import_register.router, prefix="/import/fee-register", tags=["import"]
+)
+api_router.include_router(
+    student_portal.router, prefix="/student-portal", tags=["student-portal"]
+)
+api_router.include_router(
+    import_export.router, prefix="/import-export", tags=["import-export"]
+)
+api_router.include_router(timetable.router, prefix="/timetable", tags=["timetable"])
+api_router.include_router(enrollments.router, prefix="/enrollments", tags=["enrollments"])
+api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(forms.router, prefix="/forms", tags=["forms"])
+

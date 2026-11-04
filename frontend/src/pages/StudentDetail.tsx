@@ -1,0 +1,1532 @@
+/**
+ * @file        StudentDetail.tsx
+ * @project     PrathamOne Academy Coaching Institute Management System
+ * @module      frontend.pages
+ *
+ * @author      Jawahar R. Mallah
+ * @organization AITDL (AI Technology & Development Lab)
+ * @client      Prashant Academy Coaching Institute
+ * @copyright   Copyright (c) 2026 AITDL
+ * @license     Proprietary
+ *
+ * @version     1.0.0
+ * @created     2026-11-03
+ * @updated     2026-11-04
+ *
+ * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
+ */
+
+import React, { useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  ArrowLeft, CreditCard, User, BookOpen, Receipt, FileText,
+  ClipboardCheck, Award, Activity, Upload, Trash2, Eye,
+  CheckCircle, PlusCircle, Calendar, Phone, Mail, MapPin, ExternalLink,
+  Edit3, AlertTriangle, X, Check, Save, Shield, Users, Printer
+} from 'lucide-react'
+import { studentsApi, standardsApi, divisionsApi } from '../api/endpoints'
+import { useAuthStore } from '../store/authStore'
+import { StatusBadge } from '../components/Badge'
+import type { StudentDocumentItem } from '../types'
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
+
+const ADMIN_TABS = [
+  'Overview',
+  'Enrollment',
+  'Classes',
+  'Attendance',
+  'Tests',
+  'Fees',
+  'Documents',
+  'Activity',
+] as const
+
+type AdminTab = (typeof ADMIN_TABS)[number]
+
+export default function StudentDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const studentId = Number(id)
+  const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState<AdminTab>('Overview')
+
+  const currentUser = useAuthStore((s) => s.user)
+  const canEdit =
+    currentUser?.role === 'superadmin' ||
+    currentUser?.role === 'admin' ||
+    currentUser?.role === 'principal'
+
+  // Full Profile Edit Modal State
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editTab, setEditTab] = useState<'personal' | 'contact' | 'guardians' | 'academic'>('personal')
+  const [editSuccessMsg, setEditSuccessMsg] = useState<string | null>(null)
+  const [editErrorMsg, setEditErrorMsg] = useState<string | null>(null)
+  const [confirmBatchTransfer, setConfirmBatchTransfer] = useState(false)
+
+  // Edit Form State
+  const [profileForm, setProfileForm] = useState({
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    gender: 'male',
+    date_of_birth: '',
+    blood_group: '',
+    nationality: 'Indian',
+    religion: '',
+    caste: '',
+    aadhar_number: '',
+    admission_date: '',
+    is_active: true,
+
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+
+    guardians: [] as Array<{
+      id?: number
+      relation: string
+      first_name: string
+      last_name: string
+      phone: string
+      email: string
+      occupation: string
+      annual_income: number | string
+      is_primary: boolean
+    }>,
+
+    standard_id: 0,
+    division_id: 0,
+    roll_number: '',
+    enrollment_status: 'active',
+    transfer_reason: '',
+  })
+
+  // Document upload modal state
+  const [showDocModal, setShowDocModal] = useState(false)
+  const [docForm, setDocForm] = useState({
+    title: '',
+    document_type: 'Aadhar Card',
+    file_url: '',
+    status: 'verified',
+  })
+  const [docSuccessMsg, setDocSuccessMsg] = useState<string | null>(null)
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['student-admin-profile', studentId],
+    queryFn: () => studentsApi.getProfile(studentId).then((r) => r.data),
+    enabled: !!studentId,
+  })
+
+  // Standards and Divisions queries for editing
+  const { data: standardsList } = useQuery({
+    queryKey: ['standards'],
+    queryFn: () => standardsApi.list().then((r) => r.data),
+    enabled: showEditModal,
+  })
+
+  const { data: divisionsList } = useQuery({
+    queryKey: ['divisions', profileForm.standard_id],
+    queryFn: () =>
+      divisionsApi.list(profileForm.standard_id ? { standard_id: profileForm.standard_id } : undefined).then((r) => r.data),
+    enabled: showEditModal && !!profileForm.standard_id,
+  })
+
+  // Full Profile Update Mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => studentsApi.update(studentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-admin-profile', studentId] })
+      queryClient.invalidateQueries({ queryKey: ['students'] })
+      setShowEditModal(false)
+      setEditSuccessMsg('Student profile updated successfully!')
+      setTimeout(() => setEditSuccessMsg(null), 4000)
+    },
+    onError: (err: any) => {
+      setEditErrorMsg(err.response?.data?.detail || 'Failed to update student profile.')
+    },
+  })
+
+  // Document add mutation
+  const addDocMutation = useMutation({
+    mutationFn: (data: typeof docForm) => studentsApi.addDocument(studentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-admin-profile', studentId] })
+      setShowDocModal(false)
+      setDocForm({ title: '', document_type: 'Aadhar Card', file_url: '', status: 'verified' })
+      setDocSuccessMsg('Document uploaded successfully!')
+      setTimeout(() => setDocSuccessMsg(null), 3000)
+    },
+  })
+
+  // Document delete mutation
+  const deleteDocMutation = useMutation({
+    mutationFn: (docId: number) => studentsApi.deleteDocument(studentId, docId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-admin-profile', studentId] })
+    },
+  })
+
+  const openEditModal = () => {
+    if (!profile) return
+    const curEnr = profile.enrollment.find((e) => e.status === 'active') || profile.enrollment[0]
+    setProfileForm({
+      first_name: profile.overview.first_name || '',
+      middle_name: profile.overview.middle_name || '',
+      last_name: profile.overview.last_name || '',
+      gender: profile.overview.gender || 'male',
+      date_of_birth: profile.overview.date_of_birth || '',
+      blood_group: profile.overview.blood_group || '',
+      nationality: profile.overview.nationality || 'Indian',
+      religion: profile.overview.religion || '',
+      caste: profile.overview.caste || '',
+      aadhar_number: profile.overview.aadhar_number || '',
+      admission_date: profile.overview.admission_date || '',
+      is_active: profile.overview.is_active ?? true,
+
+      phone: profile.overview.phone || '',
+      email: profile.overview.email || '',
+      address: profile.overview.address || '',
+      city: profile.overview.city || '',
+      state: profile.overview.state || '',
+      pincode: profile.overview.pincode || '',
+
+      guardians: (profile.overview.guardians || []).map((g) => ({
+        id: g.id,
+        relation: g.relation,
+        first_name: g.first_name,
+        last_name: g.last_name,
+        phone: g.phone || '',
+        email: g.email || '',
+        occupation: g.occupation || '',
+        annual_income: g.annual_income || '',
+        is_primary: g.is_primary,
+      })),
+
+      standard_id: curEnr?.standard_id || 0,
+      division_id: curEnr?.division_id || 0,
+      roll_number: curEnr?.roll_number !== 'N/A' ? curEnr?.roll_number || '' : '',
+      enrollment_status: curEnr?.status || 'active',
+      transfer_reason: '',
+    })
+    setConfirmBatchTransfer(false)
+    setEditErrorMsg(null)
+    setEditTab('personal')
+    setShowEditModal(true)
+  }
+
+  const addGuardian = () => {
+    setProfileForm({
+      ...profileForm,
+      guardians: [
+        ...profileForm.guardians,
+        {
+          relation: 'Father',
+          first_name: '',
+          last_name: '',
+          phone: '',
+          email: '',
+          occupation: '',
+          annual_income: '',
+          is_primary: profileForm.guardians.length === 0,
+        },
+      ],
+    })
+  }
+
+  const removeGuardian = (index: number) => {
+    setProfileForm({
+      ...profileForm,
+      guardians: profileForm.guardians.filter((_, i) => i !== index),
+    })
+  }
+
+  const updateGuardian = (index: number, field: string, val: any) => {
+    const updated = [...profileForm.guardians]
+    updated[index] = { ...updated[index], [field]: val }
+    if (field === 'is_primary' && val === true) {
+      updated.forEach((g, i) => {
+        if (i !== index) g.is_primary = false
+      })
+    }
+    setProfileForm({ ...profileForm, guardians: updated })
+  }
+
+  const curEnr = profile?.enrollment.find((e) => e.status === 'active') || profile?.enrollment[0]
+  const initialStandardId = curEnr?.standard_id || 0
+  const initialDivisionId = curEnr?.division_id || 0
+  const isBatchTransferAttempted =
+    showEditModal &&
+    ((profileForm.standard_id > 0 && profileForm.standard_id !== initialStandardId) ||
+      (profileForm.division_id > 0 && profileForm.division_id !== initialDivisionId))
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault()
+    setEditErrorMsg(null)
+
+    if (!profileForm.first_name.trim() || !profileForm.last_name.trim()) {
+      setEditErrorMsg('First Name and Last Name are mandatory.')
+      setEditTab('personal')
+      return
+    }
+
+    if (isBatchTransferAttempted) {
+      if (!profileForm.transfer_reason.trim()) {
+        setEditErrorMsg('Please provide a reason for the batch transfer.')
+        setEditTab('academic')
+        return
+      }
+      if (!confirmBatchTransfer) {
+        setEditErrorMsg('Please confirm the batch transfer agreement checkbox to proceed.')
+        setEditTab('academic')
+        return
+      }
+    }
+
+    const payload: Record<string, unknown> = {
+      first_name: profileForm.first_name.trim(),
+      middle_name: profileForm.middle_name.trim() || null,
+      last_name: profileForm.last_name.trim(),
+      gender: profileForm.gender,
+      date_of_birth: profileForm.date_of_birth || null,
+      blood_group: profileForm.blood_group.trim() || null,
+      nationality: profileForm.nationality.trim() || 'Indian',
+      religion: profileForm.religion.trim() || null,
+      caste: profileForm.caste.trim() || null,
+      aadhar_number: profileForm.aadhar_number.trim() || null,
+      admission_date: profileForm.admission_date || null,
+      is_active: profileForm.is_active,
+
+      phone: profileForm.phone.trim() || null,
+      email: profileForm.email.trim() || null,
+      address: profileForm.address.trim() || null,
+      city: profileForm.city.trim() || null,
+      state: profileForm.state.trim() || null,
+      pincode: profileForm.pincode.trim() || null,
+
+      guardians: profileForm.guardians.map((g) => ({
+        id: g.id || null,
+        relation: g.relation,
+        first_name: g.first_name.trim(),
+        last_name: g.last_name.trim(),
+        phone: g.phone.trim() || null,
+        email: g.email.trim() || null,
+        occupation: g.occupation.trim() || null,
+        annual_income: g.annual_income ? Number(g.annual_income) : null,
+        is_primary: g.is_primary,
+      })),
+
+      enrollment: {
+        standard_id: profileForm.standard_id ? Number(profileForm.standard_id) : null,
+        division_id: profileForm.division_id ? Number(profileForm.division_id) : null,
+        roll_number: profileForm.roll_number.trim() || null,
+        status: profileForm.enrollment_status,
+      },
+      transfer_reason: isBatchTransferAttempted ? profileForm.transfer_reason.trim() : null,
+    }
+
+    updateProfileMutation.mutate(payload)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700" />
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return <div className="card text-center text-gray-400 py-20">Student profile not found.</div>
+  }
+
+  const { overview, enrollment, classes, attendance, tests, fees, documents, activity } = profile
+  const totalFees = overview.fee_summary?.total_fees ?? 0
+  const totalPaid = overview.fee_summary?.total_paid ?? 0
+  const outstanding = overview.fee_summary?.outstanding ?? 0
+  const collectionPct = overview.fee_summary?.collection_rate ?? 0
+
+  return (
+    <div className="space-y-5">
+      {/* Back + Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Link to="/students" className="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">{overview.full_name}</h1>
+              <span className="px-2 py-0.5 rounded text-xs font-semibold bg-primary-100 text-primary-800">
+                {overview.active_batch}
+              </span>
+            </div>
+            <p className="text-sm text-gray-500">
+              Admission No: <span className="font-mono text-primary-700 font-bold">{overview.admission_number}</span> &bull; {overview.active_board} &bull; {overview.active_standard}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Link
+            to={`/forms?formId=student_kyc&recordId=${studentId}&mode=prefilled`}
+            className="px-3.5 py-2 rounded-lg border border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
+            title="Print Student KYC, Admission & KYC Dossier"
+          >
+            <Printer className="w-4 h-4" /> Print Form / KYC
+          </Link>
+          {canEdit && (
+            <button
+              onClick={openEditModal}
+              className="px-3.5 py-2 rounded-lg border border-primary-600 bg-white text-primary-700 hover:bg-primary-50 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
+              title="Edit student profile, guardians, and batch assignment"
+            >
+              <Edit3 className="w-4 h-4" /> Edit Profile
+            </button>
+          )}
+          <Link
+            to={`/student/dashboard?student_id=${studentId}`}
+            className="px-3.5 py-2 rounded-lg border border-primary-300 text-primary-700 hover:bg-primary-50 text-sm font-medium flex items-center gap-1.5"
+            title="Preview student's portal view"
+          >
+            <ExternalLink className="w-4 h-4" /> Student Portal View
+          </Link>
+          <Link to={`/fees?tab=collect&studentId=${studentId}`} className="btn-primary flex items-center gap-2">
+            <CreditCard className="w-4 h-4" /> Collect Fee
+          </Link>
+        </div>
+      </div>
+
+      {/* Success Notification Banner */}
+      {editSuccessMsg && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm flex items-center justify-between shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+            <span className="font-semibold">{editSuccessMsg}</span>
+          </div>
+          <button onClick={() => setEditSuccessMsg(null)} className="text-emerald-600 hover:text-emerald-800">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Top Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="card text-center">
+          <p className="text-xs text-gray-500 mb-1">Total Fee Obligation</p>
+          <p className="text-xl font-bold text-gray-800">{fmt(totalFees)}</p>
+        </div>
+        <div className="card text-center">
+          <p className="text-xs text-gray-500 mb-1">Total Paid Amount</p>
+          <p className="text-xl font-bold text-green-600">{fmt(totalPaid)}</p>
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+            <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${Math.min(collectionPct, 100)}%` }} />
+          </div>
+        </div>
+        <div className="card text-center">
+          <p className="text-xs text-gray-500 mb-1">Outstanding Balance</p>
+          <p className={`text-xl font-bold ${outstanding > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{fmt(outstanding)}</p>
+        </div>
+        <div className="card text-center">
+          <p className="text-xs text-gray-500 mb-1">Attendance Rate</p>
+          <p className="text-xl font-bold text-primary-700">{attendance.summary.attendance_percentage}%</p>
+          <p className="text-[11px] text-gray-400 mt-1">{attendance.summary.present_days} / {attendance.summary.total_days} Days</p>
+        </div>
+      </div>
+
+      {/* 8 Profile Tabs */}
+      <div className="card p-0 overflow-hidden shadow-sm border border-gray-200">
+        <div className="border-b border-gray-200 flex overflow-x-auto scrollbar-none bg-gray-50">
+          {ADMIN_TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-3.5 text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === tab
+                  ? 'text-primary-700 border-b-2 border-primary-700 bg-white font-bold'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6">
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'Overview' && (
+            <div className="space-y-6">
+              {/* Core Admission Info */}
+              <div>
+                <h4 className="font-bold text-gray-900 text-sm mb-3">Admission & Identity</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5">
+                  <div className="flex gap-2 py-1 border-b border-gray-50">
+                    <span className="text-sm text-gray-500 w-40 flex-shrink-0">Admission Number</span>
+                    <span className="text-sm font-bold text-primary-700 font-mono">{overview.admission_number}</span>
+                  </div>
+                  <div className="flex gap-2 py-1 border-b border-gray-50">
+                    <span className="text-sm text-gray-500 w-40 flex-shrink-0">Admission Date</span>
+                    <span className="text-sm font-medium text-gray-800">{overview.admission_date}</span>
+                  </div>
+                  <div className="flex gap-2 py-1 border-b border-gray-50">
+                    <span className="text-sm text-gray-500 w-40 flex-shrink-0">Gender</span>
+                    <span className="text-sm font-medium text-gray-800 capitalize">{overview.gender}</span>
+                  </div>
+                  <div className="flex gap-2 py-1 border-b border-gray-50">
+                    <span className="text-sm text-gray-500 w-40 flex-shrink-0">Date of Birth</span>
+                    <span className="text-sm font-medium text-gray-800">{overview.date_of_birth}</span>
+                  </div>
+                  <div className="flex gap-2 py-1 border-b border-gray-50">
+                    <span className="text-sm text-gray-500 w-40 flex-shrink-0">Enrolled Batch</span>
+                    <span className="text-sm font-semibold text-gray-900">{overview.active_batch}</span>
+                  </div>
+                  <div className="flex gap-2 py-1 border-b border-gray-50">
+                    <span className="text-sm text-gray-500 w-40 flex-shrink-0">Course / Board</span>
+                    <span className="text-sm font-semibold text-gray-900">{overview.active_board} ({overview.active_standard})</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Optional Contact & Demographics (only shown when data exists) */}
+              {(overview.phone || overview.email || overview.address || overview.city || overview.blood_group || overview.aadhar_number) && (
+                <div className="pt-4 border-t border-gray-100">
+                  <h4 className="font-bold text-gray-900 text-sm mb-3">Contact & Demographics</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2.5">
+                    {overview.phone && (
+                      <div className="flex gap-2 py-1 border-b border-gray-50">
+                        <span className="text-sm text-gray-500 w-40 flex-shrink-0">Phone</span>
+                        <span className="text-sm font-medium text-gray-800">{overview.phone}</span>
+                      </div>
+                    )}
+                    {overview.email && (
+                      <div className="flex gap-2 py-1 border-b border-gray-50">
+                        <span className="text-sm text-gray-500 w-40 flex-shrink-0">Email</span>
+                        <span className="text-sm font-medium text-gray-800">{overview.email}</span>
+                      </div>
+                    )}
+                    {overview.blood_group && (
+                      <div className="flex gap-2 py-1 border-b border-gray-50">
+                        <span className="text-sm text-gray-500 w-40 flex-shrink-0">Blood Group</span>
+                        <span className="text-sm font-medium text-gray-800">{overview.blood_group}</span>
+                      </div>
+                    )}
+                    {overview.aadhar_number && (
+                      <div className="flex gap-2 py-1 border-b border-gray-50">
+                        <span className="text-sm text-gray-500 w-40 flex-shrink-0">Aadhar Number</span>
+                        <span className="text-sm font-mono font-medium text-gray-800">{overview.aadhar_number}</span>
+                      </div>
+                    )}
+                    {(overview.city || overview.state) && (
+                      <div className="flex gap-2 py-1 border-b border-gray-50">
+                        <span className="text-sm text-gray-500 w-40 flex-shrink-0">City / State</span>
+                        <span className="text-sm font-medium text-gray-800">{[overview.city, overview.state].filter(Boolean).join(', ')}</span>
+                      </div>
+                    )}
+                    {overview.address && (
+                      <div className="flex gap-2 py-1 border-b border-gray-50 md:col-span-2">
+                        <span className="text-sm text-gray-500 w-40 flex-shrink-0">Address</span>
+                        <span className="text-sm font-medium text-gray-800">{overview.address}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Primary Guardians */}
+              <div className="pt-4 border-t border-gray-100 space-y-3">
+                <h4 className="font-bold text-gray-900 text-sm">Parent / Guardian Contacts</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {overview.guardians && overview.guardians.length > 0 ? (
+                    overview.guardians.map((g) => (
+                      <div key={g.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-gray-900">{g.first_name} {g.last_name}</span>
+                          <span className="text-xs px-2 py-0.5 rounded bg-white text-gray-600 border border-gray-200">{g.relation}</span>
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">Phone: {g.phone || '—'} &bull; Email: {g.email || '—'}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-2 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-lg text-xs text-gray-500">
+                      No secondary guardians registered. Primary student records are maintained under admission #{overview.admission_number}.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: ENROLLMENT */}
+          {activeTab === 'Enrollment' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                <h3 className="font-bold text-gray-900">Academic Enrollment History</h3>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {enrollment.map((e) => (
+                  <div key={e.id} className="py-3 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900">{e.standard_name} &bull; {e.division_name}</span>
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-primary-50 text-primary-700">
+                          {e.board_name}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Academic Year: <span className="font-medium text-gray-700">{e.academic_year}</span> &bull; Roll No: <span className="font-mono">{e.roll_number}</span> &bull; Enrolled on {e.enrollment_date}
+                      </p>
+                    </div>
+                    <StatusBadge status={e.status} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: CLASSES */}
+          {activeTab === 'Classes' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-bold text-gray-900">Active Curriculum Subjects</h3>
+                <p className="text-xs text-gray-500">Subjects assigned for {overview.active_standard} ({overview.active_batch})</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {classes.subjects.map((sub) => (
+                  <div key={sub.id} className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+                    <p className="font-bold text-gray-900">{sub.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Code: {sub.code || 'N/A'}</p>
+                    <div className="mt-3 pt-2 border-t border-gray-200 flex items-center justify-between text-xs text-gray-600">
+                      <span>Max Marks: {sub.max_marks}</span>
+                      <span>Pass Marks: {sub.pass_marks}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: ATTENDANCE */}
+          {activeTab === 'Attendance' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                <h3 className="font-bold text-gray-900">Dated Attendance Records (Recent 30 Days)</h3>
+                <span className="text-xs font-bold text-primary-700">{attendance.summary.attendance_percentage}% Overall Attendance</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                      <th className="py-2.5 px-3">Date</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {attendance.records.map((r) => (
+                      <tr key={r.id} className="hover:bg-gray-50">
+                        <td className="py-2 px-3 font-medium text-gray-900">{r.date}</td>
+                        <td className="py-2 px-3">
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
+                            r.status === 'present' ? 'bg-green-100 text-green-800' :
+                            r.status === 'absent' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {r.status}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-xs text-gray-500">{r.remarks || 'Regular Attendance'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: TESTS */}
+          {activeTab === 'Tests' && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-900">Examination Results & Performance</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                      <th className="py-2.5 px-3">Examination</th>
+                      <th className="py-2.5 px-3">Subject</th>
+                      <th className="py-2.5 px-3">Marks Obtained</th>
+                      <th className="py-2.5 px-3">Max Marks</th>
+                      <th className="py-2.5 px-3">Percentage</th>
+                      <th className="py-2.5 px-3">Grade</th>
+                      <th className="py-2.5 px-3">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {tests.map((t) => (
+                      <tr key={t.id} className="hover:bg-gray-50">
+                        <td className="py-2 px-3 font-medium text-gray-900">{t.exam_name}</td>
+                        <td className="py-2 px-3 text-gray-700 font-semibold">{t.subject_name}</td>
+                        <td className="py-2 px-3 font-mono font-bold text-gray-900">{t.marks_obtained}</td>
+                        <td className="py-2 px-3 font-mono text-gray-500">{t.max_marks}</td>
+                        <td className="py-2 px-3 text-emerald-600 font-semibold">{t.percentage}%</td>
+                        <td className="py-2 px-3">
+                          <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary-100 text-primary-800">
+                            {t.grade}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-xs text-gray-500">{t.remarks || 'Pass'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: FEES */}
+          {activeTab === 'Fees' && (
+            <div className="space-y-6">
+              {/* Invoices */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-gray-900 text-sm">Invoices</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                        <th className="py-2 px-3">Invoice No</th>
+                        <th className="py-2 px-3">Date</th>
+                        <th className="py-2 px-3">Total Net</th>
+                        <th className="py-2 px-3">Paid</th>
+                        <th className="py-2 px-3">Outstanding</th>
+                        <th className="py-2 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {fees.invoices.map((inv) => (
+                        <tr key={inv.id} className="hover:bg-gray-50">
+                          <td className="py-2 px-3 font-mono font-semibold text-primary-700">{inv.invoice_number}</td>
+                          <td className="py-2 px-3 text-gray-600">{inv.issue_date}</td>
+                          <td className="py-2 px-3 font-bold text-gray-900">{fmt(inv.net_amount)}</td>
+                          <td className="py-2 px-3 text-green-600 font-semibold">{fmt(inv.paid_amount)}</td>
+                          <td className="py-2 px-3 text-red-600 font-semibold">{fmt(inv.outstanding_amount)}</td>
+                          <td className="py-2 px-3">
+                            <StatusBadge status={inv.status} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Payments */}
+              <div className="space-y-3 pt-4 border-t border-gray-100">
+                <h4 className="font-bold text-gray-900 text-sm">Payments & Receipts</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                        <th className="py-2 px-3">Receipt No</th>
+                        <th className="py-2 px-3">Date</th>
+                        <th className="py-2 px-3">Mode</th>
+                        <th className="py-2 px-3">Reference</th>
+                        <th className="py-2 px-3 text-right">Amount</th>
+                        <th className="py-2 px-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {fees.payments.map((pmt) => (
+                        <tr key={pmt.id} className="hover:bg-gray-50">
+                          <td className="py-2 px-3 font-mono font-semibold text-primary-700">{pmt.receipt_number}</td>
+                          <td className="py-2 px-3 text-gray-600">{pmt.payment_date}</td>
+                          <td className="py-2 px-3 uppercase text-xs font-medium text-gray-700">{pmt.payment_method}</td>
+                          <td className="py-2 px-3 font-mono text-xs text-gray-500">{pmt.transaction_reference}</td>
+                          <td className="py-2 px-3 text-right font-bold text-emerald-700">{fmt(pmt.amount)}</td>
+                          <td className="py-2 px-3 text-right">
+                            <Link
+                              to={`/receipts/${pmt.receipt_number}`}
+                              className="text-xs text-primary-600 hover:text-primary-800 font-medium inline-flex items-center gap-1"
+                            >
+                              <Receipt className="w-3.5 h-3.5" /> View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7: DOCUMENTS */}
+          {activeTab === 'Documents' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                <div>
+                  <h3 className="font-bold text-gray-900">Student Identity & Official Documents</h3>
+                  <p className="text-xs text-gray-500">Official documents verified by administration</p>
+                </div>
+                <button
+                  onClick={() => setShowDocModal(true)}
+                  className="btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Upload Document
+                </button>
+              </div>
+
+              {docSuccessMsg && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>{docSuccessMsg}</span>
+                </div>
+              )}
+
+              {documents.length === 0 ? (
+                <p className="text-sm text-gray-400 py-6 text-center">No documents uploaded for this student yet.</p>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary-50 text-primary-700 rounded-lg">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{doc.title}</p>
+                          <p className="text-xs text-gray-500">
+                            Type: <span className="font-medium text-gray-700">{doc.document_type}</span> &bull; Uploaded on {doc.uploaded_at}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
+                          {doc.status}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete ${doc.title}?`)) {
+                              deleteDocMutation.mutate(doc.id)
+                            }
+                          }}
+                          className="p-1 rounded text-red-500 hover:bg-red-50"
+                          title="Delete Document"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload Document Modal */}
+              {showDocModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                  <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                      <h4 className="font-bold text-gray-900">Upload Student Document</h4>
+                      <button onClick={() => setShowDocModal(false)} className="text-gray-400 hover:text-gray-600">&times;</button>
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        addDocMutation.mutate(docForm)
+                      }}
+                      className="space-y-3"
+                    >
+                      <div>
+                        <label className="text-xs font-medium text-gray-700">Document Title</label>
+                        <input
+                          type="text"
+                          required
+                          value={docForm.title}
+                          onChange={(e) => setDocForm({ ...docForm, title: e.target.value })}
+                          placeholder="e.g. 10th Standard Marksheet"
+                          className="form-input text-sm mt-1"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-700">Document Type</label>
+                        <select
+                          value={docForm.document_type}
+                          onChange={(e) => setDocForm({ ...docForm, document_type: e.target.value })}
+                          className="form-input text-sm mt-1"
+                        >
+                          <option value="Aadhar Card">Aadhar Card</option>
+                          <option value="Birth Certificate">Birth Certificate</option>
+                          <option value="Previous Marksheet">Previous Marksheet</option>
+                          <option value="Transfer Certificate">Transfer Certificate</option>
+                          <option value="Address Proof">Address Proof</option>
+                          <option value="Medical Certificate">Medical Certificate</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-700">File URL / Storage Path</label>
+                        <input
+                          type="text"
+                          required
+                          value={docForm.file_url}
+                          onChange={(e) => setDocForm({ ...docForm, file_url: e.target.value })}
+                          placeholder="/uploads/student_doc.pdf"
+                          className="form-input text-sm mt-1"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={() => setShowDocModal(false)}
+                          className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={addDocMutation.isPending}
+                          className="btn-primary text-sm"
+                        >
+                          {addDocMutation.isPending ? 'Saving...' : 'Add Document'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 8: ACTIVITY */}
+          {activeTab === 'Activity' && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-900">Student System Timeline & Activity</h3>
+              <div className="space-y-3">
+                {activity.map((act) => (
+                  <div key={act.id} className="p-3.5 rounded-xl border border-gray-200 bg-gray-50 flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg bg-primary-100 text-primary-700 mt-0.5">
+                      <Activity className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-900">{act.description}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Timestamp: {act.timestamp}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* FULL STUDENT PROFILE EDIT MODAL */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-gray-100 flex flex-col max-h-[92vh] overflow-hidden my-auto animate-scale-in">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-primary-100 text-primary-700">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-gray-900">Edit Student Profile & Master Records</h3>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded bg-primary-100 text-primary-800 font-bold">
+                      {overview.admission_number}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Administrator editing enabled. All modifications are tracked in the system audit log.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Navigation Tabs */}
+            <div className="flex border-b border-gray-200 bg-gray-100/70 px-6 gap-2 flex-shrink-0 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setEditTab('personal')}
+                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
+                  editTab === 'personal'
+                    ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <User className="w-4 h-4" /> Personal & Identity
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditTab('contact')}
+                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
+                  editTab === 'contact'
+                    ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Phone className="w-4 h-4" /> Contact & Address
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditTab('guardians')}
+                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
+                  editTab === 'guardians'
+                    ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Shield className="w-4 h-4" /> Parents & Guardians ({profileForm.guardians.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditTab('academic')}
+                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
+                  editTab === 'academic'
+                    ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" /> Academic & Batch Assignment
+                {isBatchTransferAttempted && (
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                )}
+              </button>
+            </div>
+
+            {/* Modal Body Form */}
+            <form onSubmit={handleSaveProfile} className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* TAB 1: PERSONAL & IDENTITY */}
+              {editTab === 'personal' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">First Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={profileForm.first_name}
+                        onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="First Name"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Middle Name</label>
+                      <input
+                        type="text"
+                        value={profileForm.middle_name}
+                        onChange={(e) => setProfileForm({ ...profileForm, middle_name: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="Middle Name (Optional)"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Last Name <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={profileForm.last_name}
+                        onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="Last Name"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Gender <span className="text-red-500">*</span></label>
+                      <select
+                        value={profileForm.gender}
+                        onChange={(e) => setProfileForm({ ...profileForm, gender: e.target.value })}
+                        className="form-input text-sm mt-1 capitalize"
+                      >
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Date of Birth</label>
+                      <input
+                        type="date"
+                        value={profileForm.date_of_birth}
+                        onChange={(e) => setProfileForm({ ...profileForm, date_of_birth: e.target.value })}
+                        className="form-input text-sm mt-1"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Blood Group</label>
+                      <select
+                        value={profileForm.blood_group}
+                        onChange={(e) => setProfileForm({ ...profileForm, blood_group: e.target.value })}
+                        className="form-input text-sm mt-1"
+                      >
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Aadhar Number (12 Digits)</label>
+                      <input
+                        type="text"
+                        maxLength={12}
+                        value={profileForm.aadhar_number}
+                        onChange={(e) => setProfileForm({ ...profileForm, aadhar_number: e.target.value.replace(/\D/g, '') })}
+                        className="form-input text-sm mt-1 font-mono"
+                        placeholder="123456789012"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Nationality</label>
+                      <input
+                        type="text"
+                        value={profileForm.nationality}
+                        onChange={(e) => setProfileForm({ ...profileForm, nationality: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="Indian"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Admission Date</label>
+                      <input
+                        type="date"
+                        value={profileForm.admission_date}
+                        onChange={(e) => setProfileForm({ ...profileForm, admission_date: e.target.value })}
+                        className="form-input text-sm mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Religion</label>
+                      <input
+                        type="text"
+                        value={profileForm.religion}
+                        onChange={(e) => setProfileForm({ ...profileForm, religion: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="e.g. Hindu, Muslim, Sikh"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Caste / Category</label>
+                      <input
+                        type="text"
+                        value={profileForm.caste}
+                        onChange={(e) => setProfileForm({ ...profileForm, caste: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="e.g. General, OBC, SC, ST"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Student System Status</label>
+                      <select
+                        value={profileForm.is_active ? 'active' : 'inactive'}
+                        onChange={(e) => setProfileForm({ ...profileForm, is_active: e.target.value === 'active' })}
+                        className="form-input text-sm mt-1"
+                      >
+                        <option value="active">Active (Currently Enrolled)</option>
+                        <option value="inactive">Inactive / Suspended</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: CONTACT & ADDRESS */}
+              {editTab === 'contact' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Primary Phone Number</label>
+                      <input
+                        type="tel"
+                        maxLength={15}
+                        value={profileForm.phone}
+                        onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="e.g. 9876543210"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Email Address</label>
+                      <input
+                        type="email"
+                        value={profileForm.email}
+                        onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="student@example.com"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-gray-700">Residential Address</label>
+                    <textarea
+                      rows={3}
+                      value={profileForm.address}
+                      onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                      className="form-input text-sm mt-1"
+                      placeholder="Flat / Building, Street, Area..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">City</label>
+                      <input
+                        type="text"
+                        value={profileForm.city}
+                        onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="Pune"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">State</label>
+                      <input
+                        type="text"
+                        value={profileForm.state}
+                        onChange={(e) => setProfileForm({ ...profileForm, state: e.target.value })}
+                        className="form-input text-sm mt-1"
+                        placeholder="Maharashtra"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Pincode</label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={profileForm.pincode}
+                        onChange={(e) => setProfileForm({ ...profileForm, pincode: e.target.value.replace(/\D/g, '') })}
+                        className="form-input text-sm mt-1 font-mono"
+                        placeholder="411001"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: PARENTS & GUARDIANS */}
+              {editTab === 'guardians' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">Parent / Guardian Contacts</h4>
+                      <p className="text-xs text-gray-500">Manage primary and secondary contacts for communication and emergencies</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addGuardian}
+                      className="px-3 py-1.5 rounded-lg border border-primary-600 text-primary-700 hover:bg-primary-50 text-xs font-semibold flex items-center gap-1"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" /> Add Guardian
+                    </button>
+                  </div>
+
+                  {profileForm.guardians.length === 0 ? (
+                    <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+                      <Shield className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-gray-700">No Guardians Registered</p>
+                      <p className="text-xs text-gray-500 mt-1">Click the button above to add parents or guardians.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {profileForm.guardians.map((g, idx) => (
+                        <div key={idx} className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-primary-800 uppercase tracking-wide">
+                              Guardian #{idx + 1} {g.is_primary && '— Primary Contact'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeGuardian(idx)}
+                              className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 text-xs flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Remove
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="text-[11px] font-medium text-gray-700">Relationship</label>
+                              <select
+                                value={g.relation}
+                                onChange={(e) => updateGuardian(idx, 'relation', e.target.value)}
+                                className="form-input text-xs mt-1"
+                              >
+                                <option value="Father">Father</option>
+                                <option value="Mother">Mother</option>
+                                <option value="Guardian">Legal Guardian</option>
+                                <option value="Other">Other</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-medium text-gray-700">First Name</label>
+                              <input
+                                type="text"
+                                required
+                                value={g.first_name}
+                                onChange={(e) => updateGuardian(idx, 'first_name', e.target.value)}
+                                className="form-input text-xs mt-1"
+                                placeholder="First Name"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-medium text-gray-700">Last Name</label>
+                              <input
+                                type="text"
+                                required
+                                value={g.last_name}
+                                onChange={(e) => updateGuardian(idx, 'last_name', e.target.value)}
+                                className="form-input text-xs mt-1"
+                                placeholder="Last Name"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="text-[11px] font-medium text-gray-700">Phone</label>
+                              <input
+                                type="tel"
+                                value={g.phone}
+                                onChange={(e) => updateGuardian(idx, 'phone', e.target.value)}
+                                className="form-input text-xs mt-1"
+                                placeholder="Phone number"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-medium text-gray-700">Email</label>
+                              <input
+                                type="email"
+                                value={g.email}
+                                onChange={(e) => updateGuardian(idx, 'email', e.target.value)}
+                                className="form-input text-xs mt-1"
+                                placeholder="Email address"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] font-medium text-gray-700">Occupation</label>
+                              <input
+                                type="text"
+                                value={g.occupation}
+                                onChange={(e) => updateGuardian(idx, 'occupation', e.target.value)}
+                                className="form-input text-xs mt-1"
+                                placeholder="e.g. Architect, Teacher"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-200 text-xs">
+                            <div className="flex items-center gap-2">
+                              <label className="text-[11px] font-medium text-gray-700">Annual Income (₹):</label>
+                              <input
+                                type="number"
+                                value={g.annual_income}
+                                onChange={(e) => updateGuardian(idx, 'annual_income', e.target.value)}
+                                className="form-input text-xs w-36 py-1"
+                                placeholder="e.g. 800000"
+                              />
+                            </div>
+                            <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-800">
+                              <input
+                                type="checkbox"
+                                checked={g.is_primary}
+                                onChange={(e) => updateGuardian(idx, 'is_primary', e.target.checked)}
+                                className="rounded text-primary-600 focus:ring-primary-500"
+                              />
+                              Primary Contact
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: ACADEMIC & BATCH ASSIGNMENT */}
+              {editTab === 'academic' && (
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900">Current Academic & Batch Assignment</h4>
+                    <p className="text-xs text-gray-500">Configure standard level, batch/division, and roll number</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Standard / Level <span className="text-red-500">*</span></label>
+                      <select
+                        value={profileForm.standard_id}
+                        onChange={(e) =>
+                          setProfileForm({
+                            ...profileForm,
+                            standard_id: Number(e.target.value),
+                            division_id: 0, // reset batch when standard changes
+                          })
+                        }
+                        className="form-input text-sm mt-1"
+                      >
+                        <option value={0}>Select Standard</option>
+                        {(standardsList || []).map((std) => (
+                          <option key={std.id} value={std.id}>
+                            {std.name} (Level {std.level})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Batch / Division <span className="text-red-500">*</span></label>
+                      <select
+                        value={profileForm.division_id}
+                        onChange={(e) => setProfileForm({ ...profileForm, division_id: Number(e.target.value) })}
+                        className="form-input text-sm mt-1"
+                        disabled={!profileForm.standard_id}
+                      >
+                        <option value={0}>Select Batch</option>
+                        {(divisionsList || []).map((div) => (
+                          <option key={div.id} value={div.id}>
+                            {div.name} (Capacity: {div.capacity})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Roll Number</label>
+                      <input
+                        type="text"
+                        value={profileForm.roll_number}
+                        onChange={(e) => setProfileForm({ ...profileForm, roll_number: e.target.value })}
+                        className="form-input text-sm mt-1 font-mono"
+                        placeholder="e.g. 10-01"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">Enrollment Status</label>
+                      <select
+                        value={profileForm.enrollment_status}
+                        onChange={(e) => setProfileForm({ ...profileForm, enrollment_status: e.target.value })}
+                        className="form-input text-sm mt-1"
+                      >
+                        <option value="active">Active</option>
+                        <option value="transferred">Transferred</option>
+                        <option value="completed">Completed / Graduated</option>
+                        <option value="inactive">Inactive / On Leave</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* CONSEQUENTIAL CHANGE WARNING & CONFIRMATION */}
+                  {isBatchTransferAttempted && (
+                    <div className="p-4 rounded-xl border border-amber-300 bg-amber-50 space-y-3 animate-fade-in">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-bold text-amber-900">
+                            Batch Transfer Notice (Consequential Change)
+                          </p>
+                          <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                            You are transferring this student to another standard or batch. The student's enrolled curriculum, subjects, and timetable will update to reflect the new batch.
+                          </p>
+                          <div className="mt-2 p-2 rounded bg-amber-100/70 border border-amber-200 text-[11px] text-amber-950 flex items-center gap-1.5 font-medium">
+                            <CheckCircle className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                            <span>
+                              <strong>Financial & Historical Records Preserved:</strong> Fee obligations ({fmt(totalFees)}), payment receipts, and attendance history will remain completely untouched.
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold text-amber-900">
+                          Transfer Reason / Administrative Remarks <span className="text-red-600">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={profileForm.transfer_reason}
+                          onChange={(e) => setProfileForm({ ...profileForm, transfer_reason: e.target.value })}
+                          placeholder="e.g. Transferred to Morning Batch / Upgraded after mid-term assessment"
+                          className="form-input text-xs mt-1 bg-white border-amber-300 focus:border-amber-500"
+                        />
+                      </div>
+
+                      <label className="flex items-center gap-2 cursor-pointer pt-1 text-xs font-semibold text-amber-950">
+                        <input
+                          type="checkbox"
+                          checked={confirmBatchTransfer}
+                          onChange={(e) => setConfirmBatchTransfer(e.target.checked)}
+                          className="rounded text-amber-600 focus:ring-amber-500 w-4 h-4"
+                        />
+                        <span>I confirm this batch transfer and authorize updating the student's active enrollment.</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Error Display inside Modal */}
+              {editErrorMsg && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  <span>{editErrorMsg}</span>
+                </div>
+              )}
+
+              {/* Modal Footer Controls */}
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200 flex-shrink-0">
+                <span className="text-[11px] text-gray-400">
+                  Author: <span className="font-semibold text-gray-600">{currentUser?.username}</span> &bull; Audit logged
+                </span>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updateProfileMutation.isPending || (isBatchTransferAttempted && (!confirmBatchTransfer || !profileForm.transfer_reason.trim()))}
+                    className="btn-primary text-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Save className="w-4 h-4" />
+                    {updateProfileMutation.isPending ? 'Saving Profile...' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

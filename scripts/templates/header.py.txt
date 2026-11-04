@@ -1,0 +1,17 @@
+# /**
+#  * @file        <filename>
+#  * @project     PrathamOne Academy Coaching Institute Management System
+#  * @module      <module name>
+#  *
+#  * @author      Jawahar R. Mallah
+#  * @organization AITDL (AI Technology & Development Lab)
+#  * @client      Prashant Academy Coaching Institute
+#  * @copyright   Copyright (c) 2026 AITDL
+#  * @license     Proprietary
+#  *
+#  * @version     1.0.0
+#  * @created     YYYY-MM-DD
+#  * @updated     YYYY-MM-DD
+#  *
+#  * @description <accurate file purpose>
+#  */

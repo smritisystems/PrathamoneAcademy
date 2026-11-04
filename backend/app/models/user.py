@@ -1,0 +1,130 @@
+# /**
+#  * @file        user.py
+#  * @project     PrathamOne Academy Coaching Institute Management System
+#  * @module      backend.app.models
+#  *
+#  * @author      Jawahar R. Mallah
+#  * @organization AITDL (AI Technology & Development Lab)
+#  * @client      Prashant Academy Coaching Institute
+#  * @copyright   Copyright (c) 2026 AITDL
+#  * @license     Proprietary
+#  *
+#  * @version     1.0.0
+#  * @created     2026-11-03
+#  * @updated     2026-11-04
+#  *
+#  * @description SQLAlchemy model defining system user accounts, authentication credentials, and RBAC roles.
+#  */
+
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Integer, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import datetime
+from app.core.database import Base
+
+
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    description: Mapped[str] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    users: Mapped[list["User"]] = relationship("User", back_populates="role_obj")
+    permissions: Mapped[list["Permission"]] = relationship(
+        "Permission", back_populates="role"
+    )
+
+
+class Permission(Base):
+    __tablename__ = "permissions"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
+    resource: Mapped[str] = mapped_column(String(100), nullable=False)
+    action: Mapped[str] = mapped_column(String(20), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    role: Mapped["Role"] = relationship("Role", back_populates="permissions")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    institution_id: Mapped[int] = mapped_column(
+        ForeignKey("institutions.id"), nullable=True
+    )
+    username: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, index=True
+    )
+    email: Mapped[str] = mapped_column(
+        String(200), unique=True, nullable=False
+    )
+    hashed_password: Mapped[str] = mapped_column(String(200), nullable=False)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    phone: Mapped[str] = mapped_column(String(20), nullable=True)
+    role: Mapped[str] = mapped_column(String(50), default="staff")
+    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=True)
+    student_id: Mapped[int | None] = mapped_column(
+        ForeignKey("students.id"), nullable=True
+    )
+    invitation_status: Mapped[str] = mapped_column(
+        String(30), default="accepted", server_default="accepted", index=True
+    )
+    invitation_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    scope_type: Mapped[str] = mapped_column(
+        String(30), default="institute", server_default="institute"
+    )
+    scope_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    staff_code: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, index=True
+    )
+    designation: Mapped[str | None] = mapped_column(
+        String(100), nullable=True
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_login: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    role_obj: Mapped["Role"] = relationship("Role", back_populates="users")
+    student: Mapped["Student | None"] = relationship("Student", foreign_keys=[student_id])
+    audit_logs: Mapped[list["AuditLog"]] = relationship(
+        "AuditLog", back_populates="user"
+    )
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=True)
+    action: Mapped[str] = mapped_column(String(100), nullable=False)
+    resource_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    resource_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    old_data: Mapped[str] = mapped_column(Text, nullable=True)
+    new_data: Mapped[str] = mapped_column(Text, nullable=True)
+    ip_address: Mapped[str] = mapped_column(String(50), nullable=True)
+    user_agent: Mapped[str] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    user: Mapped["User"] = relationship("User", back_populates="audit_logs")
+

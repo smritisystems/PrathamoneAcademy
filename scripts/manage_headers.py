@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /**
 #  * @file        manage_headers.py
-#  * @project     Prashant Academy Coaching Institute Management System
+#  * @project     PrathamOne Academy Coaching Institute Management System
 #  * @module      scripts
 #  *
 #  * @author      Jawahar R. Mallah
@@ -36,7 +36,11 @@ if hasattr(sys.stderr, 'reconfigure'):
     except Exception:
         pass
 
-PROJECT_NAME = "Prashant Academy Coaching Institute Management System"
+PROJECT_NAME = "PrathamOne Academy Coaching Institute Management System"
+VALID_PROJECT_NAMES = {
+    "PrathamOne Academy Coaching Institute Management System",
+    "Prashant Academy Coaching Institute Management System"
+}
 AUTHOR = "Jawahar R. Mallah"
 ORGANIZATION = "AITDL (AI Technology & Development Lab)"
 CLIENT = "Prashant Academy Coaching Institute"
@@ -367,6 +371,22 @@ CATALOG = {
         "backend.scripts",
         "Diagnostic utility inspecting sheets and header rows in uploaded Excel import workbooks."
     ),
+    "backend/scripts/reconcile_students.py": (
+        "backend.scripts",
+        "Diagnostic script verifying student board and standard database assignments."
+    ),
+    "backend/scripts/reconcile_student_assignments.py": (
+        "backend.scripts",
+        "Authoritative student class and standard assignment reconciliation engine."
+    ),
+    "backend/scripts/import_padata_excel.py": (
+        "backend.scripts",
+        "Controlled database reset and authoritative import from Padata.xlsx for Prashant Academy fee register."
+    ),
+    "backend/scripts/replace_fee_records.py": (
+        "backend.scripts",
+        "Authoritative script replacing existing fee and payment records with revised Prashant Academy ledger dataset."
+    ),
     "backend/scripts/reset_and_import_actual_data.py": (
         "backend.scripts",
         "Database initialization script resetting schema and seeding actual Prashant Academy datasets."
@@ -479,6 +499,10 @@ CATALOG = {
         "frontend.components",
         "React error boundary catching runtime component errors and displaying fallback diagnostics."
     ),
+    "frontend/src/components/Footer.tsx": (
+        "frontend.components",
+        "Slim, compact, full-width application footer displaying tenant branch, current route, product edition, and live system metrics."
+    ),
     "frontend/src/components/Layout.tsx": (
         "frontend.components",
         "Master application shell component providing header navigation, collapsible sidebar, and main view outlet."
@@ -498,6 +522,14 @@ CATALOG = {
     "frontend/src/components/StatCard.tsx": (
         "frontend.components",
         "KPI metric stat card component with icon container, trend indicator, and status badge."
+    ),
+    "frontend/src/components/reports/ExcelReportGrid.tsx": (
+        "frontend.components.reports",
+        "Production-grade spreadsheet-style report data grid with sorting, column resizing/reordering, visibility toggle, column filters, and multi-format exports."
+    ),
+    "frontend/src/config/appConfig.ts": (
+        "frontend.config",
+        "Centralized application metadata, edition branding, tenant defaults, and version configuration."
     ),
     "frontend/src/pages/AcademicWorkspace.tsx": (
         "frontend.pages",
@@ -607,9 +639,17 @@ CATALOG = {
         "frontend.test",
         "Vitest unit tests verifying badge component variant classes, icons, and label rendering."
     ),
+    "frontend/src/test/ExcelReportGrid.test.tsx": (
+        "frontend.test",
+        "Unit tests verifying spreadsheet-style grid operations: search, sorting, filtering, column visibility, pagination, summary calculations, and multi-format exports."
+    ),
     "frontend/src/test/FeesModule.test.tsx": (
         "frontend.test",
         "Vitest test suite verifying Fees & Payments overview KPIs, charts, filters, and receipt modals."
+    ),
+    "frontend/src/test/Footer.test.tsx": (
+        "frontend.test",
+        "Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, and versioning."
     ),
     "frontend/src/test/ImportExport.test.tsx": (
         "frontend.test",
@@ -638,6 +678,10 @@ CATALOG = {
     "frontend/src/test/setup.ts": (
         "frontend.test",
         "Vitest test setup configuration polyfilling ResizeObserver, matchMedia, and JSDOM mocks."
+    ),
+    "frontend/src/utils/reportExport.ts": (
+        "frontend.utils",
+        "Universal client-side export utility supporting Excel (.xlsx), CSV (.csv), and JSON (.json) with formula injection protection."
     ),
     "frontend/src/types/index.ts": (
         "frontend.types",
@@ -819,7 +863,7 @@ def validate_header_data(rel_path: str, data: dict) -> list[str]:
     if data["@file"] != filename:
         errors.append(f"@file mismatch: expected '{filename}', got '{data['@file']}'")
 
-    if data["@project"] != PROJECT_NAME:
+    if data["@project"] not in VALID_PROJECT_NAMES:
         errors.append(f"@project mismatch: expected '{PROJECT_NAME}', got '{data['@project']}'")
 
     if data["@author"] != AUTHOR:

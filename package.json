@@ -1,0 +1,19 @@
+{
+  "name": "prashant-academy-workspace",
+  "version": "6.99.1",
+  "private": true,
+  "description": "Prashant Academy Coaching Institute Management System - Monorepo Workspace",
+  "scripts": {
+    "headers:check": "python scripts/manage_headers.py check",
+    "headers:fix": "python scripts/manage_headers.py fix",
+    "version:bump": "python scripts/version_bump.py",
+    "test:frontend": "npm --prefix frontend test",
+    "test:backend": "docker exec prashant_academy_backend pytest",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "author": "Jawahar R. Mallah",
+  "organization": "AITDL (AI Technology & Development Lab)",
+  "client": "Prashant Academy Coaching Institute",
+  "license": "Proprietary"
+}
+
