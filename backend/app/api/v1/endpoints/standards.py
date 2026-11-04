@@ -275,8 +275,8 @@ async def create_standard(
     current_user=Depends(get_current_active_user),
 ):
     d = data.model_dump()
-    if not d.get("institution_id") or d.get("institution_id") == 1:
-        d["institution_id"] = getattr(current_user, "institution_id", None) or 2
+    if not d.get("institution_id"):
+        d["institution_id"] = getattr(current_user, "institution_id", None) or 1
 
     # Check duplicate level per institution
     existing = (

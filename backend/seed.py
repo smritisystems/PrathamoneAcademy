@@ -125,15 +125,36 @@ async def seed():
         session.add(accountant_user)
         await session.flush()
 
-        # --- Academic Year 2024-25 ---
+        # --- Academic Years (Current 2026-27, Historical 2025-26 & 2024-25) ---
         academic_year = AcademicYear(
             institution_id=institution.id,
-            name="2024-25",
-            start_date=date(2024, 6, 1),
-            end_date=date(2025, 3, 31),
+            name="2026-27",
+            start_date=date(2026, 4, 1),
+            end_date=date(2027, 3, 31),
             is_current=True,
+            is_active=True,
         )
         session.add(academic_year)
+
+        academic_year_25 = AcademicYear(
+            institution_id=institution.id,
+            name="2025-26",
+            start_date=date(2025, 4, 1),
+            end_date=date(2026, 3, 31),
+            is_current=False,
+            is_active=True,
+        )
+        session.add(academic_year_25)
+
+        academic_year_24 = AcademicYear(
+            institution_id=institution.id,
+            name="2024-25",
+            start_date=date(2024, 4, 1),
+            end_date=date(2025, 3, 31),
+            is_current=False,
+            is_active=True,
+        )
+        session.add(academic_year_24)
         await session.flush()
 
         # --- Standards 1-12 ---

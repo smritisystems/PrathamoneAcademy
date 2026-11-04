@@ -65,7 +65,12 @@ export default function CascadingFilters({
   // 1. Academic Years
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years', selectedInstitutionId],
-    queryFn: () => academicYearsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    queryFn: async () => {
+      const res = await academicYearsApi.list(selectedInstitutionId ?? undefined)
+      if (res.data && res.data.length > 0) return res.data
+      const fallback = await academicYearsApi.list()
+      return fallback.data
+    },
   })
 
   // 2. Boards (ICSE, CBSE, SSC, etc.)

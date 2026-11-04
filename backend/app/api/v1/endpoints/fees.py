@@ -550,6 +550,12 @@ async def get_fees_overview(
     - Monthly collection trend
     - Recent payments
     """
+    effective_inst_id = institution_id
+    if institution_id:
+        inst_has_students = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
+        if inst_has_students == 0:
+            effective_inst_id = None
+
     # Base invoice query
     inv_query = (
         select(
@@ -570,8 +576,8 @@ async def get_fees_overview(
 
     if academic_year_id:
         inv_query = inv_query.where(FeeInvoice.academic_year_id == academic_year_id)
-    if institution_id:
-        inv_query = inv_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        inv_query = inv_query.where(Student.institution_id == effective_inst_id)
     if board_id:
         inv_query = inv_query.where(Division.board_id == board_id)
     if standard_id:
@@ -611,8 +617,8 @@ async def get_fees_overview(
     )
     if academic_year_id:
         board_query = board_query.where(FeeInvoice.academic_year_id == academic_year_id)
-    if institution_id:
-        board_query = board_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        board_query = board_query.where(Student.institution_id == effective_inst_id)
     if board_id:
         board_query = board_query.where(Division.board_id == board_id)
     if standard_id:
@@ -662,8 +668,8 @@ async def get_fees_overview(
     )
     if academic_year_id:
         batch_query = batch_query.where(FeeInvoice.academic_year_id == academic_year_id)
-    if institution_id:
-        batch_query = batch_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        batch_query = batch_query.where(Student.institution_id == effective_inst_id)
     if board_id:
         batch_query = batch_query.where(Division.board_id == board_id)
     if standard_id:
@@ -711,8 +717,8 @@ async def get_fees_overview(
     )
     if academic_year_id:
         trend_query = trend_query.where(Payment.academic_year_id == academic_year_id)
-    if institution_id:
-        trend_query = trend_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        trend_query = trend_query.where(Student.institution_id == effective_inst_id)
     if board_id:
         trend_query = trend_query.where(Division.board_id == board_id)
     if standard_id:
@@ -751,8 +757,8 @@ async def get_fees_overview(
     )
     if academic_year_id:
         method_query = method_query.where(Payment.academic_year_id == academic_year_id)
-    if institution_id:
-        method_query = method_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        method_query = method_query.where(Student.institution_id == effective_inst_id)
     if board_id:
         method_query = method_query.where(Division.board_id == board_id)
     if standard_id:
@@ -808,8 +814,8 @@ async def get_fees_overview(
     )
     if academic_year_id:
         overdue_query = overdue_query.where(FeeInvoice.academic_year_id == academic_year_id)
-    if institution_id:
-        overdue_query = overdue_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        overdue_query = overdue_query.where(Student.institution_id == effective_inst_id)
     if board_id:
         overdue_query = overdue_query.where(Division.board_id == board_id)
     if standard_id:
@@ -861,8 +867,8 @@ async def get_fees_overview(
     )
     if academic_year_id:
         rec_query = rec_query.where(Payment.academic_year_id == academic_year_id)
-    if institution_id:
-        rec_query = rec_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        rec_query = rec_query.where(Student.institution_id == effective_inst_id)
     if board_id:
         rec_query = rec_query.where(Division.board_id == board_id)
     if standard_id:

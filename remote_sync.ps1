@@ -63,9 +63,10 @@ try {
     exit 1
 }
 
-# 3. Restart backend container
-Write-Host "[3/3] Restarting backend service..." -ForegroundColor Cyan
+# 3. Restart application services
+Write-Host "[3/3] Restarting application services..." -ForegroundColor Cyan
 docker restart $BackendContainer | Out-Null
+docker restart prashant_academy_frontend 2>$null | Out-Null
 Start-Sleep -Seconds 5
 
 # 4. Verify Health and Counts

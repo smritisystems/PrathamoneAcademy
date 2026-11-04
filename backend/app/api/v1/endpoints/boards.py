@@ -128,8 +128,8 @@ async def create_board(
         raise HTTPException(status_code=400, detail=f"Board with code '{data.code}' already exists")
 
     d = data.model_dump()
-    if not d.get("institution_id") or d.get("institution_id") == 1:
-        d["institution_id"] = getattr(current_user, "institution_id", None) or 2
+    if not d.get("institution_id"):
+        d["institution_id"] = getattr(current_user, "institution_id", None) or 1
     board = Board(**d)
     db.add(board)
     await db.commit()

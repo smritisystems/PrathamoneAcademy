@@ -185,16 +185,21 @@ export default function Fees() {
 
   // Sync with global academic year selection
   useEffect(() => {
-    if (selectedAcademicYearId && !selectedAY) {
+    if (selectedAcademicYearId) {
       setSelectedAY(selectedAcademicYearId)
       setAppliedFilters((prev) => ({ ...prev, academicYearId: selectedAcademicYearId }))
     }
-  }, [selectedAcademicYearId, selectedAY])
+  }, [selectedAcademicYearId])
 
   // Master Lists for Cascading Filter Bar
   const { data: academicYears = [] } = useQuery({
     queryKey: ['filter-academic-years', selectedInstitutionId],
-    queryFn: () => academicYearsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    queryFn: async () => {
+      const res = await academicYearsApi.list(selectedInstitutionId ?? undefined)
+      if (res.data && res.data.length > 0) return res.data
+      const fallback = await academicYearsApi.list()
+      return fallback.data
+    },
   })
 
   const { data: boards = [] } = useQuery({

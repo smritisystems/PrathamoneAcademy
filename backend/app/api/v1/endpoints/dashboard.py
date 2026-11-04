@@ -48,10 +48,17 @@ async def get_dashboard_stats(
     - Monthly collection trend
     - Recent payments with receipt, student, batch, method, and date
     """
+    # Verify institution_id validity; if client passed an ID with 0 students (e.g. stale client state), fallback
+    effective_inst_id = institution_id
+    if institution_id:
+        inst_count = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
+        if inst_count == 0:
+            effective_inst_id = None
+
     # 1. Total Active Students
     student_query = select(func.count(func.distinct(Student.id))).where(Student.is_active == True)
-    if institution_id:
-        student_query = student_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        student_query = student_query.where(Student.institution_id == effective_inst_id)
     if academic_year_id or standard_id or division_id:
         student_query = student_query.join(
             StudentEnrollment, Student.id == StudentEnrollment.student_id
@@ -71,9 +78,9 @@ async def get_dashboard_stats(
         func.coalesce(func.sum(FeeInvoice.outstanding_amount), 0).label("total_outstanding"),
     ).where(FeeInvoice.status != "cancelled")
 
-    if institution_id:
+    if effective_inst_id:
         invoice_query = invoice_query.join(Student, FeeInvoice.student_id == Student.id).where(
-            Student.institution_id == institution_id
+            Student.institution_id == effective_inst_id
         )
     if academic_year_id:
         invoice_query = invoice_query.where(FeeInvoice.academic_year_id == academic_year_id)
@@ -107,10 +114,10 @@ async def get_dashboard_stats(
     )
     if academic_year_id:
         trend_query = trend_query.where(Payment.academic_year_id == academic_year_id)
-    if institution_id or standard_id or division_id:
+    if effective_inst_id or standard_id or division_id:
         trend_query = trend_query.join(Student, Payment.student_id == Student.id)
-        if institution_id:
-            trend_query = trend_query.where(Student.institution_id == institution_id)
+        if effective_inst_id:
+            trend_query = trend_query.where(Student.institution_id == effective_inst_id)
         if standard_id or division_id:
             trend_query = trend_query.join(
                 StudentEnrollment,
@@ -151,8 +158,8 @@ async def get_dashboard_stats(
     )
     if academic_year_id:
         recent_query = recent_query.where(Payment.academic_year_id == academic_year_id)
-    if institution_id:
-        recent_query = recent_query.where(Student.institution_id == institution_id)
+    if effective_inst_id:
+        recent_query = recent_query.where(Student.institution_id == effective_inst_id)
     if standard_id:
         recent_query = recent_query.where(StudentEnrollment.standard_id == standard_id)
     if division_id:

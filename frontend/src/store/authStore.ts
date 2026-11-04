@@ -38,8 +38,19 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       selectedInstitutionId: null,
       selectedAcademicYearId: null,
-      login: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
+      login: (token, user) =>
+        set({
+          token,
+          user,
+          selectedInstitutionId: user.institution_id ?? null,
+        }),
+      logout: () =>
+        set({
+          token: null,
+          user: null,
+          selectedInstitutionId: null,
+          selectedAcademicYearId: null,
+        }),
       setSelectedInstitution: (id) => set({ selectedInstitutionId: id }),
       setSelectedAcademicYear: (id) => set({ selectedAcademicYearId: id }),
     }),

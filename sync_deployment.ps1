@@ -57,7 +57,7 @@ if ($dbRunning -ne "true") {
 Write-Host "[2/5] Inspecting current customer database state..." -ForegroundColor Cyan
 
 $expectedCounts = [ordered]@{
-    "academic_years"          = 2
+    "academic_years"          = 3
     "boards"                  = 3
     "standards"               = 12
     "divisions"               = 5

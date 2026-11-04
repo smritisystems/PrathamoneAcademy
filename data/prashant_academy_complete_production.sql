@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 1uCruHWiMtadQoNX0JUu7S1zcBYUfKVhNNnHEpntjStmS14o5jcQ9ZqaUac0PhT
+\restrict 1T4XU7zMzyvSZ21xXwW1KbSFB5e7a2bwrs3FyJocj0teEWoDsHAK4LJtrGLZVxs
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -1805,8 +1805,9 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 COPY public.academic_years (id, institution_id, name, start_date, end_date, is_current, is_active, created_at, updated_at) FROM stdin;
-3	2	2023-24	2023-06-01	2024-03-31	f	t	2026-11-03 18:17:09.293778+00	2026-11-03 18:17:09.293778+00
-1	2	2026 - 27	2024-06-01	2025-03-31	t	t	2026-11-03 15:17:26.3504+00	2026-11-04 08:30:52.520916+00
+1	1	2026-27	2026-04-01	2027-03-31	t	t	2026-11-03 15:17:26.3504+00	2026-11-04 08:30:52.520916+00
+2	1	2024-25	2024-04-01	2025-03-31	f	t	2026-11-04 14:50:34.739904+00	2026-11-04 14:50:34.739904+00
+3	1	2025-26	2025-04-01	2026-03-31	f	t	2026-11-03 18:17:09.293778+00	2026-11-03 18:17:09.293778+00
 \.
 
 
@@ -1824,10 +1825,10 @@ COPY public.alembic_version (version_num) FROM stdin;
 --
 
 COPY public.announcements (id, institution_id, standard_id, division_id, title, content, category, is_pinned, publish_date, created_at) FROM stdin;
-7	2	\N	\N	Annual Term Examination 2024-25 Schedule Announced	The Term 1 examinations for ICSE, CBSE, and SSC batches will commence from October 15, 2024. Hall tickets and seating layout are available on the student notice board.	examination	t	2024-09-25	2026-11-04 14:26:35.769607+00
-8	2	\N	\N	Parent-Teacher Interactive Meeting & Progress Report Release	Quarterly Parent-Teacher Meeting will be held this Saturday between 10:00 AM and 1:00 PM. Parents are requested to collect student academic performance portfolios.	general	t	2024-10-05	2026-11-04 14:26:35.769607+00
-9	2	\N	\N	Diwali Vacation & Special Board Revision Batch	The academy will observe Diwali break from October 30 to November 5, 2024. Standard X ICSE and CBSE fast-track revision lectures will continue online.	holiday	t	2024-10-20	2026-11-04 14:26:35.769607+00
-10	2	\N	\N	Trigonometry & Calculus Masterclass Workshop	Intensive problem-solving workshop covering trigonometric identities and height & distance numericals for Standard X students this Sunday in Hall 101.	academic	f	2024-10-12	2026-11-04 14:26:35.769607+00
+7	1	\N	\N	Annual Term Examination 2024-25 Schedule Announced	The Term 1 examinations for ICSE, CBSE, and SSC batches will commence from October 15, 2024. Hall tickets and seating layout are available on the student notice board.	examination	t	2024-09-25	2026-11-04 14:26:35.769607+00
+8	1	\N	\N	Parent-Teacher Interactive Meeting & Progress Report Release	Quarterly Parent-Teacher Meeting will be held this Saturday between 10:00 AM and 1:00 PM. Parents are requested to collect student academic performance portfolios.	general	t	2024-10-05	2026-11-04 14:26:35.769607+00
+9	1	\N	\N	Diwali Vacation & Special Board Revision Batch	The academy will observe Diwali break from October 30 to November 5, 2024. Standard X ICSE and CBSE fast-track revision lectures will continue online.	holiday	t	2024-10-20	2026-11-04 14:26:35.769607+00
+10	1	\N	\N	Trigonometry & Calculus Masterclass Workshop	Intensive problem-solving workshop covering trigonometric identities and height & distance numericals for Standard X students this Sunday in Hall 101.	academic	f	2024-10-12	2026-11-04 14:26:35.769607+00
 \.
 
 
@@ -2691,9 +2692,9 @@ COPY public.audit_logs (id, user_id, action, resource_type, resource_id, old_dat
 --
 
 COPY public.boards (id, institution_id, name, code, description, is_active, created_at) FROM stdin;
-2	2	CBSE	CBSE	Central Board of Secondary Education	t	2026-11-03 19:49:08.545328+00
-3	2	SSC	SSC	Secondary School Certificate (State Board)	t	2026-11-03 19:49:08.545328+00
-1	2	ICSE	ICSE	Indian Certificate of Secondary Education	t	2026-11-03 19:49:08.545328+00
+2	1	CBSE	CBSE	Central Board of Secondary Education	t	2026-11-03 19:49:08.545328+00
+3	1	SSC	SSC	Secondary School Certificate (State Board)	t	2026-11-03 19:49:08.545328+00
+1	1	ICSE	ICSE	Indian Certificate of Secondary Education	t	2026-11-03 19:49:08.545328+00
 \.
 
 
@@ -3051,15 +3052,15 @@ COPY public.exam_marks (id, examination_id, student_id, subject_id, marks_obtain
 --
 
 COPY public.examinations (id, academic_year_id, standard_id, name, exam_type, start_date, end_date, max_marks, passing_marks, is_active, created_at) FROM stdin;
-15	1	4	Unit Test 1 (Term 1)	Unit Test	2024-07-22	2024-07-26	50	18	t	2026-11-04 14:26:35.769607+00
-16	1	4	Mid-Term Examination 2024	Semester Exam	2024-09-20	2024-09-28	100	35	t	2026-11-04 14:26:35.769607+00
-17	1	8	Unit Test 1 (Term 1)	Unit Test	2024-07-22	2024-07-26	50	18	t	2026-11-04 14:26:35.769607+00
-18	1	8	Mid-Term Examination 2024	Semester Exam	2024-09-20	2024-09-28	100	35	t	2026-11-04 14:26:35.769607+00
-19	1	9	Unit Test 1 (Term 1)	Unit Test	2024-07-22	2024-07-27	50	18	t	2026-11-04 14:26:35.769607+00
-20	1	9	Mid-Term Examination 2024	Semester Exam	2024-09-20	2024-09-30	100	35	t	2026-11-04 14:26:35.769607+00
-21	1	10	Unit Test 1 (Term 1)	Unit Test	2024-07-20	2024-07-28	50	18	t	2026-11-04 14:26:35.769607+00
-22	1	10	Mid-Term Examination 2024	Semester Exam	2024-09-20	2024-10-01	100	35	t	2026-11-04 14:26:35.769607+00
-23	1	10	Pre-Board Mock Series 1	Model Exam	2024-11-20	2024-12-02	100	35	t	2026-11-04 14:26:35.769607+00
+15	1	4	Unit Test 1 (Term 1)	Unit Test	2026-07-22	2026-07-26	50	18	t	2026-11-04 14:26:35.769607+00
+16	1	4	Mid-Term Examination 2024	Semester Exam	2026-09-20	2026-09-28	100	35	t	2026-11-04 14:26:35.769607+00
+17	1	8	Unit Test 1 (Term 1)	Unit Test	2026-07-22	2026-07-26	50	18	t	2026-11-04 14:26:35.769607+00
+18	1	8	Mid-Term Examination 2024	Semester Exam	2026-09-20	2026-09-28	100	35	t	2026-11-04 14:26:35.769607+00
+19	1	9	Unit Test 1 (Term 1)	Unit Test	2026-07-22	2026-07-27	50	18	t	2026-11-04 14:26:35.769607+00
+20	1	9	Mid-Term Examination 2024	Semester Exam	2026-09-20	2026-09-30	100	35	t	2026-11-04 14:26:35.769607+00
+21	1	10	Unit Test 1 (Term 1)	Unit Test	2026-07-20	2026-07-28	50	18	t	2026-11-04 14:26:35.769607+00
+22	1	10	Mid-Term Examination 2024	Semester Exam	2026-09-20	2026-10-01	100	35	t	2026-11-04 14:26:35.769607+00
+23	1	10	Pre-Board Mock Series 1	Model Exam	2026-11-20	2026-12-02	100	35	t	2026-11-04 14:26:35.769607+00
 \.
 
 
@@ -3068,13 +3069,13 @@ COPY public.examinations (id, academic_year_id, standard_id, name, exam_type, st
 --
 
 COPY public.fee_categories (id, institution_id, name, description, is_active, created_at) FROM stdin;
-1	2	Tuition Fee	\N	t	2026-11-03 15:17:26.3504+00
-2	2	Admission Fee	\N	t	2026-11-03 15:17:26.3504+00
-3	2	Examination Fee	\N	t	2026-11-03 15:17:26.3504+00
-4	2	Transport Fee	\N	t	2026-11-03 15:17:26.3504+00
-5	2	Sports Fee	\N	t	2026-11-03 15:17:26.3504+00
-6	2	Library Fee	\N	t	2026-11-03 15:17:26.3504+00
-7	2	Coaching Tuition Fee	Coaching and tuition fee	t	2026-11-03 19:26:16.621438+00
+1	1	Tuition Fee	\N	t	2026-11-03 15:17:26.3504+00
+2	1	Admission Fee	\N	t	2026-11-03 15:17:26.3504+00
+3	1	Examination Fee	\N	t	2026-11-03 15:17:26.3504+00
+4	1	Transport Fee	\N	t	2026-11-03 15:17:26.3504+00
+5	1	Sports Fee	\N	t	2026-11-03 15:17:26.3504+00
+6	1	Library Fee	\N	t	2026-11-03 15:17:26.3504+00
+7	1	Coaching Tuition Fee	Coaching and tuition fee	t	2026-11-03 19:26:16.621438+00
 \.
 
 
@@ -3179,7 +3180,7 @@ COPY public.fee_invoices (id, invoice_number, student_id, assignment_id, academi
 --
 
 COPY public.fee_register_imports (id, file_name, file_hash, academic_year_id, institution_id, imported_students_count, imported_payments_count, total_fees, total_collected, total_outstanding, reconciliation_summary, status, imported_by_id, created_at) FROM stdin;
-1	Padata.xlsx	05e9b175b7b77c180f899b0cd74c82603fdae6be00b75364bbfef1aee382e20d	1	2	36	170	2770000.00	1819500.00	950500.00	{"source_file": "Padata.xlsx", "file_sha256": "05e9b175b7b77c180f899b0cd74c82603fdae6be00b75364bbfef1aee382e20d", "file_size_bytes": 13421, "total_rows_parsed": 170, "unique_students": 36, "total_fee_obligation": 2770000.0, "total_payments_sum": 1819500.0, "total_outstanding": 950500.0, "collection_rate_percent": 65.69, "anomalies_handled": [{"row": 170, "student": "Ashwin", "issue": "Invalid date '31-Sep-2026' (September has 30 days)", "resolution": "Clamped to valid month-end '2026-09-30'"}, {"rows": [107, 108], "student": "Keshwa", "issue": "Identical installment rows [107, 108] for Rs 10,000.00 on 2026-08-05", "resolution": "Preserved both valid installment payments per authoritative ledger total"}], "timestamp": "2026-11-04T11:14:23.661038"}	completed	1	2026-11-04 11:14:22.322779+00
+1	Padata.xlsx	05e9b175b7b77c180f899b0cd74c82603fdae6be00b75364bbfef1aee382e20d	1	1	36	170	2770000.00	1819500.00	950500.00	{"source_file": "Padata.xlsx", "file_sha256": "05e9b175b7b77c180f899b0cd74c82603fdae6be00b75364bbfef1aee382e20d", "file_size_bytes": 13421, "total_rows_parsed": 170, "unique_students": 36, "total_fee_obligation": 2770000.0, "total_payments_sum": 1819500.0, "total_outstanding": 950500.0, "collection_rate_percent": 65.69, "anomalies_handled": [{"row": 170, "student": "Ashwin", "issue": "Invalid date '31-Sep-2026' (September has 30 days)", "resolution": "Clamped to valid month-end '2026-09-30'"}, {"rows": [107, 108], "student": "Keshwa", "issue": "Identical installment rows [107, 108] for Rs 10,000.00 on 2026-08-05", "resolution": "Preserved both valid installment payments per authoritative ledger total"}], "timestamp": "2026-11-04T11:14:23.661038"}	completed	1	2026-11-04 11:14:22.322779+00
 \.
 
 
@@ -3188,42 +3189,42 @@ COPY public.fee_register_imports (id, file_name, file_hash, academic_year_id, in
 --
 
 COPY public.fee_structures (id, institution_id, academic_year_id, standard_id, category_id, name, amount, frequency, installments_count, due_day, late_fee_amount, late_fee_days, is_active, created_at) FROM stdin;
-1	2	1	4	1	Annual Tuition Fee - Rida	30000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-2	2	1	9	1	Annual Tuition Fee - Aditya	45000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-3	2	1	4	1	Annual Tuition Fee - Aadya	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-4	2	1	10	1	Annual Tuition Fee - Raudrita	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-5	2	1	10	1	Annual Tuition Fee - Rajnees	95000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-6	2	1	10	1	Annual Tuition Fee - Ayaan	95000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-7	2	1	10	1	Annual Tuition Fee - Netham	90000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-8	2	1	10	1	Annual Tuition Fee - Shreshta	60000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-9	2	1	10	1	Annual Tuition Fee - Savesh	95000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-10	2	1	10	1	Annual Tuition Fee - Ansh	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-11	2	1	10	1	Annual Tuition Fee - Riddhima	95000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-12	2	1	10	1	Annual Tuition Fee - Sonakshi	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-13	2	1	10	1	Annual Tuition Fee - Samruddhi	60000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-14	2	1	10	1	Annual Tuition Fee - Aman	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-15	2	1	10	1	Annual Tuition Fee - Ashwin	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-16	2	1	10	1	Annual Tuition Fee - Keshwa	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-17	2	1	8	1	Annual Tuition Fee - Puneeta	90000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-18	2	1	8	1	Annual Tuition Fee - Aliya	75000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-19	2	1	8	1	Annual Tuition Fee - Siddhant	75000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-20	2	1	8	1	Annual Tuition Fee - Chehek	75000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-21	2	1	9	1	Annual Tuition Fee - Siddharth	50000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-22	2	1	9	1	Annual Tuition Fee - Shriya	50000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-23	2	1	9	1	Annual Tuition Fee - Sukhmeet	50000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-24	2	1	4	1	Annual Tuition Fee - Satnam	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-25	2	1	4	1	Annual Tuition Fee - Samud	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-26	2	1	4	1	Annual Tuition Fee - Simran	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-27	2	1	4	1	Annual Tuition Fee - Kashish	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-28	2	1	4	1	Annual Tuition Fee - Vedant	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-29	2	1	4	1	Annual Tuition Fee - Khushi	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-30	2	1	4	1	Annual Tuition Fee - Mahek	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-31	2	1	4	1	Annual Tuition Fee - Johan	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-32	2	1	4	1	Annual Tuition Fee - Avner	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-33	2	1	4	1	Annual Tuition Fee - Apika	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-34	2	1	4	1	Annual Tuition Fee - Shrawya	65000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-35	2	1	4	1	Annual Tuition Fee - Afton	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
-36	2	1	4	1	Annual Tuition Fee - Maahi	70000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+1	1	1	4	1	Annual Tuition Fee - Rida	30000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+2	1	1	9	1	Annual Tuition Fee - Aditya	45000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+3	1	1	4	1	Annual Tuition Fee - Aadya	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+4	1	1	10	1	Annual Tuition Fee - Raudrita	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+5	1	1	10	1	Annual Tuition Fee - Rajnees	95000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+6	1	1	10	1	Annual Tuition Fee - Ayaan	95000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+7	1	1	10	1	Annual Tuition Fee - Netham	90000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+8	1	1	10	1	Annual Tuition Fee - Shreshta	60000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+9	1	1	10	1	Annual Tuition Fee - Savesh	95000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+10	1	1	10	1	Annual Tuition Fee - Ansh	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+11	1	1	10	1	Annual Tuition Fee - Riddhima	95000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+12	1	1	10	1	Annual Tuition Fee - Sonakshi	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+13	1	1	10	1	Annual Tuition Fee - Samruddhi	60000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+14	1	1	10	1	Annual Tuition Fee - Aman	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+15	1	1	10	1	Annual Tuition Fee - Ashwin	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+16	1	1	10	1	Annual Tuition Fee - Keshwa	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+17	1	1	8	1	Annual Tuition Fee - Puneeta	90000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+18	1	1	8	1	Annual Tuition Fee - Aliya	75000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+19	1	1	8	1	Annual Tuition Fee - Siddhant	75000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+20	1	1	8	1	Annual Tuition Fee - Chehek	75000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+21	1	1	9	1	Annual Tuition Fee - Siddharth	50000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+22	1	1	9	1	Annual Tuition Fee - Shriya	50000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+23	1	1	9	1	Annual Tuition Fee - Sukhmeet	50000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+24	1	1	4	1	Annual Tuition Fee - Satnam	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+25	1	1	4	1	Annual Tuition Fee - Samud	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+26	1	1	4	1	Annual Tuition Fee - Simran	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+27	1	1	4	1	Annual Tuition Fee - Kashish	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+28	1	1	4	1	Annual Tuition Fee - Vedant	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+29	1	1	4	1	Annual Tuition Fee - Khushi	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+30	1	1	4	1	Annual Tuition Fee - Mahek	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+31	1	1	4	1	Annual Tuition Fee - Johan	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+32	1	1	4	1	Annual Tuition Fee - Avner	80000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+33	1	1	4	1	Annual Tuition Fee - Apika	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+34	1	1	4	1	Annual Tuition Fee - Shrawya	65000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+35	1	1	4	1	Annual Tuition Fee - Afton	85000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
+36	1	1	4	1	Annual Tuition Fee - Maahi	70000.00	annually	1	10	0.00	0	t	2026-11-04 11:14:22.322779+00
 \.
 
 
@@ -3318,7 +3319,7 @@ COPY public.guardians (id, student_id, relation, first_name, last_name, occupati
 --
 
 COPY public.institutions (id, name, code, address, city, state, pincode, phone, email, website, logo_url, is_active, created_at, updated_at) FROM stdin;
-2	Prashant Academy	PA001	123 Education Lane, School District	Mumbai	Maharashtra	400001	+91-22-12345678	info@prashantacademy.edu.in	https://prashantacademy.edu.in	\N	t	2026-11-03 15:17:26.3504+00	2026-11-03 15:17:26.3504+00
+1	Prashant Academy	PA001	123 Education Lane, School District	Mumbai	Maharashtra	400001	+91-22-12345678	info@prashantacademy.edu.in	https://prashantacademy.edu.in	\N	t	2026-11-03 15:17:26.3504+00	2026-11-03 15:17:26.3504+00
 \.
 
 
@@ -3925,18 +3926,18 @@ COPY public.scholarships (id, institution_id, name, amount, description, is_acti
 --
 
 COPY public.standards (id, institution_id, name, level, description, is_active, created_at) FROM stdin;
-1	2	Standard 1	1	\N	t	2026-11-03 15:17:26.3504+00
-2	2	Standard 2	2	\N	t	2026-11-03 15:17:26.3504+00
-3	2	Standard 3	3	\N	t	2026-11-03 15:17:26.3504+00
-5	2	Standard 5	5	\N	t	2026-11-03 15:17:26.3504+00
-6	2	Standard 6	6	\N	t	2026-11-03 15:17:26.3504+00
-7	2	Standard 7	7	\N	t	2026-11-03 15:17:26.3504+00
-11	2	Standard 11	11	\N	t	2026-11-03 15:17:26.3504+00
-12	2	Standard 12	12	\N	t	2026-11-03 15:17:26.3504+00
-8	2	Class VIII	8	Class VIII	t	2026-11-03 15:17:26.3504+00
-9	2	Class IX	9	Class IX	t	2026-11-03 15:17:26.3504+00
-10	2	Class X	10	Class X	t	2026-11-03 15:17:26.3504+00
-4	2	Class IV	4	Class IV	t	2026-11-03 15:17:26.3504+00
+1	1	Standard 1	1	\N	t	2026-11-03 15:17:26.3504+00
+2	1	Standard 2	2	\N	t	2026-11-03 15:17:26.3504+00
+3	1	Standard 3	3	\N	t	2026-11-03 15:17:26.3504+00
+5	1	Standard 5	5	\N	t	2026-11-03 15:17:26.3504+00
+6	1	Standard 6	6	\N	t	2026-11-03 15:17:26.3504+00
+7	1	Standard 7	7	\N	t	2026-11-03 15:17:26.3504+00
+11	1	Standard 11	11	\N	t	2026-11-03 15:17:26.3504+00
+12	1	Standard 12	12	\N	t	2026-11-03 15:17:26.3504+00
+8	1	Class VIII	8	Class VIII	t	2026-11-03 15:17:26.3504+00
+9	1	Class IX	9	Class IX	t	2026-11-03 15:17:26.3504+00
+10	1	Class X	10	Class X	t	2026-11-03 15:17:26.3504+00
+4	1	Class IV	4	Class IV	t	2026-11-03 15:17:26.3504+00
 \.
 
 
@@ -4239,45 +4240,45 @@ COPY public.student_fee_assignments (id, student_id, fee_structure_id, academic_
 --
 
 COPY public.students (id, institution_id, admission_number, first_name, last_name, middle_name, date_of_birth, gender, blood_group, nationality, religion, caste, aadhar_number, photo_url, address, city, state, pincode, phone, email, admission_date, is_active, created_at, updated_at) FROM stdin;
-129	2	PA-2024-000001	Rajnees	Sharma	\N	2010-01-01	male	O+	Indian	\N	\N	481239841000	\N	Flat 101, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820014411	rajnees.sharma129@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-130	2	PA-2024-000002	Ayaan	Verma	\N	2010-02-02	female	A+	Indian	\N	\N	481239841001	\N	Flat 102, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820024411	ayaan.verma130@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-131	2	PA-2024-000003	Netham	Patil	\N	2010-03-03	male	B+	Indian	\N	\N	481239841002	\N	Flat 103, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820034411	netham.patil131@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-132	2	PA-2024-000004	Shreshta	Deshmukh	\N	2010-04-04	female	AB+	Indian	\N	\N	481239841003	\N	Flat 104, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820044411	shreshta.deshmukh132@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-133	2	PA-2024-000005	Savesh	Kulkarni	\N	2010-05-05	male	O-	Indian	\N	\N	481239841004	\N	Flat 105, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820054411	savesh.kulkarni133@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-134	2	PA-2024-000006	Ansh	Joshi	\N	2010-06-06	female	O+	Indian	\N	\N	481239841005	\N	Flat 106, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820064411	ansh.joshi134@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-135	2	PA-2024-000007	Riddhima	Mehta	\N	2010-07-07	male	A+	Indian	\N	\N	481239841006	\N	Flat 107, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820074411	riddhima.mehta135@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-136	2	PA-2024-000008	Sonakshi	Shah	\N	2010-08-08	female	B+	Indian	\N	\N	481239841007	\N	Flat 108, Building A, Ghatkopar East, Tilak Road	Mumbai	Maharashtra	400077	+91-9820084411	sonakshi.shah136@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-137	2	PA-2024-000009	Raudrita	Pawar	\N	2010-09-09	male	AB+	Indian	\N	\N	481239841008	\N	Flat 109, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820094411	raudrita.pawar137@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-138	2	PA-2024-000010	Samruddhi	Bhide	\N	2010-10-10	female	O-	Indian	\N	\N	481239841009	\N	Flat 110, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820104411	samruddhi.bhide138@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-139	2	PA-2024-000011	Aman	Chavan	\N	2010-11-11	male	O+	Indian	\N	\N	481239841010	\N	Flat 111, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820114411	aman.chavan139@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-140	2	PA-2024-000012	Ashwin	Tambe	\N	2010-12-12	female	A+	Indian	\N	\N	481239841011	\N	Flat 112, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820124411	ashwin.tambe140@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-141	2	PA-2024-000013	Keshwa	Mistry	\N	2010-01-13	male	B+	Indian	\N	\N	481239841012	\N	Flat 113, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820134411	keshwa.mistry141@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-142	2	PA-2024-000014	Satnam	Bhatia	\N	2016-02-14	female	AB+	Indian	\N	\N	481239841013	\N	Flat 114, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820144411	satnam.bhatia142@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-143	2	PA-2024-000015	Samud	Kapoor	\N	2016-03-15	male	O-	Indian	\N	\N	481239841014	\N	Flat 115, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820154411	samud.kapoor143@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-144	2	PA-2024-000016	Simran	Malhotra	\N	2016-04-16	female	O+	Indian	\N	\N	481239841015	\N	Flat 116, Building A, Ghatkopar East, Tilak Road	Mumbai	Maharashtra	400077	+91-9820164411	simran.malhotra144@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-145	2	PA-2024-000017	Kashish	Sawant	\N	2016-05-17	male	A+	Indian	\N	\N	481239841016	\N	Flat 117, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820174411	kashish.sawant145@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-146	2	PA-2024-000018	Vedant	Gokhale	\N	2016-06-18	female	B+	Indian	\N	\N	481239841017	\N	Flat 118, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820184411	vedant.gokhale146@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-147	2	PA-2024-000019	Khushi	Gadgil	\N	2016-07-19	male	AB+	Indian	\N	\N	481239841018	\N	Flat 119, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820194411	khushi.gadgil147@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-148	2	PA-2024-000020	Mahek	Nair	\N	2016-08-20	female	O-	Indian	\N	\N	481239841019	\N	Flat 120, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820204411	mahek.nair148@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-149	2	PA-2024-000021	Johan	Iyer	\N	2016-09-21	male	O+	Indian	\N	\N	481239841020	\N	Flat 121, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820214411	johan.iyer149@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-150	2	PA-2024-000022	Avner	Rao	\N	2016-10-22	female	A+	Indian	\N	\N	481239841021	\N	Flat 122, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820224411	avner.rao150@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-151	2	PA-2024-000023	Apika	Shetty	\N	2016-11-23	male	B+	Indian	\N	\N	481239841022	\N	Flat 123, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820234411	apika.shetty151@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-152	2	PA-2024-000024	Shrawya	Kamath	\N	2016-12-24	female	AB+	Indian	\N	\N	481239841023	\N	Flat 124, Building A, Ghatkopar East, Tilak Road	Mumbai	Maharashtra	400077	+91-9820244411	shrawya.kamath152@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-153	2	PA-2024-000025	Afton	Sharma	\N	2016-01-25	male	O-	Indian	\N	\N	481239841024	\N	Flat 125, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820254411	afton.sharma153@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-154	2	PA-2024-000026	Maahi	Verma	\N	2016-02-26	female	O+	Indian	\N	\N	481239841025	\N	Flat 126, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820264411	maahi.verma154@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-155	2	PA-2024-000027	Aadya	Patil	\N	2016-03-27	male	A+	Indian	\N	\N	481239841026	\N	Flat 127, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820274411	aadya.patil155@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-156	2	PA-2024-000028	Rida	Deshmukh	\N	2016-04-01	female	B+	Indian	\N	\N	481239841027	\N	Flat 128, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820284411	rida.deshmukh156@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-157	2	PA-2024-000029	Puneeta	Kulkarni	\N	2016-05-02	male	AB+	Indian	\N	\N	481239841028	\N	Flat 129, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820294411	puneeta.kulkarni157@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-158	2	PA-2024-000030	Aliya	Joshi	\N	2016-06-03	female	O-	Indian	\N	\N	481239841029	\N	Flat 130, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820304411	aliya.joshi158@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-159	2	PA-2024-000031	Siddhant	Mehta	\N	2016-07-04	male	O+	Indian	\N	\N	481239841030	\N	Flat 131, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820314411	siddhant.mehta159@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-160	2	PA-2024-000032	Shaurya	Shah	\N	2016-08-05	female	A+	Indian	\N	\N	481239841031	\N	Flat 132, Building A, Ghatkopar East, Tilak Road	Mumbai	Maharashtra	400077	+91-9820324411	shaurya.shah160@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-161	2	PA-2024-000033	Chehek	Pawar	\N	2016-09-06	male	B+	Indian	\N	\N	481239841032	\N	Flat 133, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820334411	chehek.pawar161@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-162	2	PA-2024-000034	Siddharth	Bhide	\N	2016-10-07	female	AB+	Indian	\N	\N	481239841033	\N	Flat 134, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820344411	siddharth.bhide162@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-163	2	PA-2024-000035	Aditya	Chavan	\N	2016-11-08	male	O-	Indian	\N	\N	481239841034	\N	Flat 135, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820354411	aditya.chavan163@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-164	2	PA-2024-000036	Shriya	Tambe	\N	2016-12-09	female	O+	Indian	\N	\N	481239841035	\N	Flat 136, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820364411	shriya.tambe164@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-165	2	PA-2024-000037	Sukhmeet	Mistry	\N	2016-01-10	male	A+	Indian	\N	\N	481239841036	\N	Flat 137, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820374411	sukhmeet.mistry165@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-166	2	PA-2024-000038	Sushmya	Bhatia	\N	2016-02-11	female	B+	Indian	\N	\N	481239841037	\N	Flat 138, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820384411	sushmya.bhatia166@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
-167	2	PA-2024-000039	Aaradhya	Kapoor	\N	2016-03-12	male	AB+	Indian	\N	\N	481239841038	\N	Flat 139, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820394411	aaradhya.kapoor167@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+129	1	PA-2024-000001	Rajnees	Sharma	\N	2010-01-01	male	O+	Indian	\N	\N	481239841000	\N	Flat 101, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820014411	rajnees.sharma129@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+130	1	PA-2024-000002	Ayaan	Verma	\N	2010-02-02	female	A+	Indian	\N	\N	481239841001	\N	Flat 102, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820024411	ayaan.verma130@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+131	1	PA-2024-000003	Netham	Patil	\N	2010-03-03	male	B+	Indian	\N	\N	481239841002	\N	Flat 103, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820034411	netham.patil131@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+132	1	PA-2024-000004	Shreshta	Deshmukh	\N	2010-04-04	female	AB+	Indian	\N	\N	481239841003	\N	Flat 104, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820044411	shreshta.deshmukh132@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+133	1	PA-2024-000005	Savesh	Kulkarni	\N	2010-05-05	male	O-	Indian	\N	\N	481239841004	\N	Flat 105, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820054411	savesh.kulkarni133@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+134	1	PA-2024-000006	Ansh	Joshi	\N	2010-06-06	female	O+	Indian	\N	\N	481239841005	\N	Flat 106, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820064411	ansh.joshi134@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+135	1	PA-2024-000007	Riddhima	Mehta	\N	2010-07-07	male	A+	Indian	\N	\N	481239841006	\N	Flat 107, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820074411	riddhima.mehta135@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+136	1	PA-2024-000008	Sonakshi	Shah	\N	2010-08-08	female	B+	Indian	\N	\N	481239841007	\N	Flat 108, Building A, Ghatkopar East, Tilak Road	Mumbai	Maharashtra	400077	+91-9820084411	sonakshi.shah136@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+137	1	PA-2024-000009	Raudrita	Pawar	\N	2010-09-09	male	AB+	Indian	\N	\N	481239841008	\N	Flat 109, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820094411	raudrita.pawar137@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+138	1	PA-2024-000010	Samruddhi	Bhide	\N	2010-10-10	female	O-	Indian	\N	\N	481239841009	\N	Flat 110, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820104411	samruddhi.bhide138@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+139	1	PA-2024-000011	Aman	Chavan	\N	2010-11-11	male	O+	Indian	\N	\N	481239841010	\N	Flat 111, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820114411	aman.chavan139@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+140	1	PA-2024-000012	Ashwin	Tambe	\N	2010-12-12	female	A+	Indian	\N	\N	481239841011	\N	Flat 112, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820124411	ashwin.tambe140@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+141	1	PA-2024-000013	Keshwa	Mistry	\N	2010-01-13	male	B+	Indian	\N	\N	481239841012	\N	Flat 113, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820134411	keshwa.mistry141@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+142	1	PA-2024-000014	Satnam	Bhatia	\N	2016-02-14	female	AB+	Indian	\N	\N	481239841013	\N	Flat 114, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820144411	satnam.bhatia142@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+143	1	PA-2024-000015	Samud	Kapoor	\N	2016-03-15	male	O-	Indian	\N	\N	481239841014	\N	Flat 115, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820154411	samud.kapoor143@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+144	1	PA-2024-000016	Simran	Malhotra	\N	2016-04-16	female	O+	Indian	\N	\N	481239841015	\N	Flat 116, Building A, Ghatkopar East, Tilak Road	Mumbai	Maharashtra	400077	+91-9820164411	simran.malhotra144@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+145	1	PA-2024-000017	Kashish	Sawant	\N	2016-05-17	male	A+	Indian	\N	\N	481239841016	\N	Flat 117, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820174411	kashish.sawant145@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+146	1	PA-2024-000018	Vedant	Gokhale	\N	2016-06-18	female	B+	Indian	\N	\N	481239841017	\N	Flat 118, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820184411	vedant.gokhale146@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+147	1	PA-2024-000019	Khushi	Gadgil	\N	2016-07-19	male	AB+	Indian	\N	\N	481239841018	\N	Flat 119, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820194411	khushi.gadgil147@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+148	1	PA-2024-000020	Mahek	Nair	\N	2016-08-20	female	O-	Indian	\N	\N	481239841019	\N	Flat 120, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820204411	mahek.nair148@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+149	1	PA-2024-000021	Johan	Iyer	\N	2016-09-21	male	O+	Indian	\N	\N	481239841020	\N	Flat 121, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820214411	johan.iyer149@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+150	1	PA-2024-000022	Avner	Rao	\N	2016-10-22	female	A+	Indian	\N	\N	481239841021	\N	Flat 122, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820224411	avner.rao150@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+151	1	PA-2024-000023	Apika	Shetty	\N	2016-11-23	male	B+	Indian	\N	\N	481239841022	\N	Flat 123, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820234411	apika.shetty151@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+152	1	PA-2024-000024	Shrawya	Kamath	\N	2016-12-24	female	AB+	Indian	\N	\N	481239841023	\N	Flat 124, Building A, Ghatkopar East, Tilak Road	Mumbai	Maharashtra	400077	+91-9820244411	shrawya.kamath152@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+153	1	PA-2024-000025	Afton	Sharma	\N	2016-01-25	male	O-	Indian	\N	\N	481239841024	\N	Flat 125, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820254411	afton.sharma153@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+154	1	PA-2024-000026	Maahi	Verma	\N	2016-02-26	female	O+	Indian	\N	\N	481239841025	\N	Flat 126, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820264411	maahi.verma154@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+155	1	PA-2024-000027	Aadya	Patil	\N	2016-03-27	male	A+	Indian	\N	\N	481239841026	\N	Flat 127, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820274411	aadya.patil155@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+156	1	PA-2024-000028	Rida	Deshmukh	\N	2016-04-01	female	B+	Indian	\N	\N	481239841027	\N	Flat 128, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820284411	rida.deshmukh156@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+157	1	PA-2024-000029	Puneeta	Kulkarni	\N	2016-05-02	male	AB+	Indian	\N	\N	481239841028	\N	Flat 129, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820294411	puneeta.kulkarni157@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+158	1	PA-2024-000030	Aliya	Joshi	\N	2016-06-03	female	O-	Indian	\N	\N	481239841029	\N	Flat 130, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820304411	aliya.joshi158@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+159	1	PA-2024-000031	Siddhant	Mehta	\N	2016-07-04	male	O+	Indian	\N	\N	481239841030	\N	Flat 131, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820314411	siddhant.mehta159@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+160	1	PA-2024-000032	Shaurya	Shah	\N	2016-08-05	female	A+	Indian	\N	\N	481239841031	\N	Flat 132, Building A, Ghatkopar East, Tilak Road	Mumbai	Maharashtra	400077	+91-9820324411	shaurya.shah160@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+161	1	PA-2024-000033	Chehek	Pawar	\N	2016-09-06	male	B+	Indian	\N	\N	481239841032	\N	Flat 133, Building A, Dadar West, Near Shivaji Park	Mumbai	Maharashtra	400028	+91-9820334411	chehek.pawar161@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+162	1	PA-2024-000034	Siddharth	Bhide	\N	2016-10-07	female	AB+	Indian	\N	\N	481239841033	\N	Flat 134, Building A, Bandra West, Linking Road	Mumbai	Maharashtra	400050	+91-9820344411	siddharth.bhide162@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+163	1	PA-2024-000035	Aditya	Chavan	\N	2016-11-08	male	O-	Indian	\N	\N	481239841034	\N	Flat 135, Building A, Andheri East, Chakala	Mumbai	Maharashtra	400069	+91-9820354411	aditya.chavan163@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+164	1	PA-2024-000036	Shriya	Tambe	\N	2016-12-09	female	O+	Indian	\N	\N	481239841035	\N	Flat 136, Building A, Thane West, Naupada	Thane	Maharashtra	400602	+91-9820364411	shriya.tambe164@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+165	1	PA-2024-000037	Sukhmeet	Mistry	\N	2016-01-10	male	A+	Indian	\N	\N	481239841036	\N	Flat 137, Building A, Vashi, Sector 17	Navi Mumbai	Maharashtra	400703	+91-9820374411	sukhmeet.mistry165@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+166	1	PA-2024-000038	Sushmya	Bhatia	\N	2016-02-11	female	B+	Indian	\N	\N	481239841037	\N	Flat 138, Building A, Borivali West, Shimpoli Road	Mumbai	Maharashtra	400092	+91-9820384411	sushmya.bhatia166@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
+167	1	PA-2024-000039	Aaradhya	Kapoor	\N	2016-03-12	male	AB+	Indian	\N	\N	481239841038	\N	Flat 139, Building A, Chembur, Diamond Garden	Mumbai	Maharashtra	400071	+91-9820394411	aaradhya.kapoor167@example.com	2024-04-01	t	2026-11-04 03:50:41.678614+00	2026-11-04 08:43:43.87947+00
 \.
 
 
@@ -4286,16 +4287,16 @@ COPY public.students (id, institution_id, admission_number, first_name, last_nam
 --
 
 COPY public.study_materials (id, institution_id, standard_id, subject_id, division_id, title, description, file_type, file_url, file_size_bytes, created_at) FROM stdin;
-13	2	10	1	\N	Class X Mathematics - Complete Formula Booklet & Theorems	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Formula Sheet	/materials/math10_formulas.pdf	1850000	2026-11-04 14:26:35.769607+00
-14	2	10	1	\N	Class X Quadratic Equations & Arithmetic Progressions Solved Bank	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Question Bank	/materials/math10_quadratics_ap.pdf	3200000	2026-11-04 14:26:35.769607+00
-15	2	10	2	\N	Class X Physics - Light, Electricity & Magnetism Numerical Handbook	Comprehensive coaching notes, concept maps, and practice questions for Physics.	Notes	/materials/phys10_numerical_bank.pdf	2750000	2026-11-04 14:26:35.769607+00
-16	2	10	3	\N	Class X Chemistry - Chemical Reactions & Periodic Classification Chart	Comprehensive coaching notes, concept maps, and practice questions for Chemistry.	Revision	/materials/chem10_periodic_chart.pdf	1950000	2026-11-04 14:26:35.769607+00
-17	2	9	7	\N	Class IX Polynomials & Coordinate Geometry Practice Problems	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Assignment	/materials/math9_polynomials.pdf	1400000	2026-11-04 14:26:35.769607+00
-18	2	9	8	\N	Class IX Laws of Motion & Gravitation Derivations & Solutions	Comprehensive coaching notes, concept maps, and practice questions for Physics.	Notes	/materials/phys9_motion_gravitation.pdf	2200000	2026-11-04 14:26:35.769607+00
-19	2	8	13	\N	Class VIII Rational Numbers & Algebraic Identities Workbook	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Workbook	/materials/math8_algebra_workbook.pdf	1150000	2026-11-04 14:26:35.769607+00
-20	2	8	14	\N	Class VIII Force & Pressure Experimental Concepts & Diagrams	Comprehensive coaching notes, concept maps, and practice questions for Science.	Notes	/materials/sci8_force_pressure.pdf	1650000	2026-11-04 14:26:35.769607+00
-21	2	4	37	\N	Class IV Primary Mathematics - Fractions & Decimals Illustrated Guide	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Worksheet	/materials/math4_fractions_guide.pdf	890000	2026-11-04 14:26:35.769607+00
-22	2	4	38	\N	Class IV Environmental Science - Living Things & Habitats Notes	Comprehensive coaching notes, concept maps, and practice questions for Science.	Notes	/materials/sci4_living_things.pdf	940000	2026-11-04 14:26:35.769607+00
+13	1	10	1	\N	Class X Mathematics - Complete Formula Booklet & Theorems	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Formula Sheet	/materials/math10_formulas.pdf	1850000	2026-11-04 14:26:35.769607+00
+14	1	10	1	\N	Class X Quadratic Equations & Arithmetic Progressions Solved Bank	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Question Bank	/materials/math10_quadratics_ap.pdf	3200000	2026-11-04 14:26:35.769607+00
+15	1	10	2	\N	Class X Physics - Light, Electricity & Magnetism Numerical Handbook	Comprehensive coaching notes, concept maps, and practice questions for Physics.	Notes	/materials/phys10_numerical_bank.pdf	2750000	2026-11-04 14:26:35.769607+00
+16	1	10	3	\N	Class X Chemistry - Chemical Reactions & Periodic Classification Chart	Comprehensive coaching notes, concept maps, and practice questions for Chemistry.	Revision	/materials/chem10_periodic_chart.pdf	1950000	2026-11-04 14:26:35.769607+00
+17	1	9	7	\N	Class IX Polynomials & Coordinate Geometry Practice Problems	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Assignment	/materials/math9_polynomials.pdf	1400000	2026-11-04 14:26:35.769607+00
+18	1	9	8	\N	Class IX Laws of Motion & Gravitation Derivations & Solutions	Comprehensive coaching notes, concept maps, and practice questions for Physics.	Notes	/materials/phys9_motion_gravitation.pdf	2200000	2026-11-04 14:26:35.769607+00
+19	1	8	13	\N	Class VIII Rational Numbers & Algebraic Identities Workbook	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Workbook	/materials/math8_algebra_workbook.pdf	1150000	2026-11-04 14:26:35.769607+00
+20	1	8	14	\N	Class VIII Force & Pressure Experimental Concepts & Diagrams	Comprehensive coaching notes, concept maps, and practice questions for Science.	Notes	/materials/sci8_force_pressure.pdf	1650000	2026-11-04 14:26:35.769607+00
+21	1	4	37	\N	Class IV Primary Mathematics - Fractions & Decimals Illustrated Guide	Comprehensive coaching notes, concept maps, and practice questions for Mathematics.	Worksheet	/materials/math4_fractions_guide.pdf	890000	2026-11-04 14:26:35.769607+00
+22	1	4	38	\N	Class IV Environmental Science - Living Things & Habitats Notes	Comprehensive coaching notes, concept maps, and practice questions for Science.	Notes	/materials/sci4_living_things.pdf	940000	2026-11-04 14:26:35.769607+00
 \.
 
 
@@ -4378,51 +4379,51 @@ COPY public.timetable_entries (id, division_id, subject_id, day_of_week, start_t
 --
 
 COPY public.users (id, institution_id, username, email, hashed_password, first_name, last_name, phone, role, role_id, is_active, last_login, created_at, updated_at, student_id, invitation_status, invitation_sent_at, scope_type, scope_id, staff_code, designation) FROM stdin;
-2	2	accountant	accountant@prashantacademy.edu.in	$2b$12$3Ev8e.oFbCHso4ekpPf5T.RND2/2CPxfuOfauPCzqNeQktXopcYuG	Rajesh	Sharma	+91-9870011122	accountant	10	t	\N	2026-11-03 15:17:26.3504+00	2026-11-04 08:43:43.87947+00	\N	accepted	\N	institute	\N	ACC-001	Head Accountant
-121	2	rahul.desai	rahul.desai@prashantacademy.in	$2b$12$XMyA3BYsAR..x/F4iX1CMuRhwC8waObUEc/gvVbOK6iUS7E6Wddc6	Rahul	Desai	+91-9870021122	teacher	11	t	\N	2026-11-04 03:56:25.608406+00	2026-11-04 10:17:06.092167+00	\N	accepted	\N	institute	\N	TCH-001	Senior Mathematics Faculty
-122	2	priya.mehta	priya.mehta@prashantacademy.in	$2b$12$1HqkVanv8/j0YRVAAf8WxeonS1o8F6TdC.M9aIZIVcc5nNFZp59/y	Priya	Mehta	+91-9870031122	teacher	11	t	\N	2026-11-04 03:56:25.608406+00	2026-11-04 10:17:06.092167+00	\N	accepted	\N	institute	\N	TCH-002	Senior Science Faculty
-123	2	amit.patil	amit.patil@prashantacademy.in	$2b$12$FpbyfvRRObCf/Jqih33tROAw9G5M4on0EmoLHMxJEBy9PlFBekQeG	Amit	Patil	+91-9870041122	teacher	11	t	\N	2026-11-04 03:56:25.608406+00	2026-11-04 10:17:06.092167+00	\N	accepted	\N	institute	\N	TCH-003	Faculty - Social Studies
-124	2	neha.kulkarni	neha.kulkarni@prashantacademy.in	$2b$12$ikFtirWPGPQHMwHih1kxROCHG0Z/M2u8vrbbZcQSA9gU036fZxVlO	Neha	Kulkarni	+91-9870051122	teacher	11	t	\N	2026-11-04 03:56:25.608406+00	2026-11-04 10:17:06.092167+00	\N	accepted	\N	institute	\N	TCH-004	Faculty - Test Series Coordinator
-91	2	samruddhi10	samruddhi10@prashantacademy.in	$2b$12$WSTj2/keeDBUEEFSg4H4yuVuU/SNDghJhIgeZKbGr0M5pVLKjqYsG	Samruddhi	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	138	accepted	\N	institute	\N	\N	\N
-92	2	aman11	aman11@prashantacademy.in	$2b$12$X/4IiS7l4pccDbFW6QMsx.wvZsQmfkgnBr//x0/w2Hyvwm3qCFRXS	Aman	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	139	accepted	\N	institute	\N	\N	\N
-93	2	ashwin12	ashwin12@prashantacademy.in	$2b$12$g8A55/YSa4szS7RWW9zuo..Ae1QeVtj9m54HJbBeeZQDxx4BT6.pK	Ashwin	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	140	accepted	\N	institute	\N	\N	\N
-94	2	keshwa13	keshwa13@prashantacademy.in	$2b$12$lcW16sRyXECjYFHyY4qaxeemf5w2dP5lRM.ew1JAtgf7ZQaIxIkjG	Keshwa	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	141	accepted	\N	institute	\N	\N	\N
-95	2	satnam14	satnam14@prashantacademy.in	$2b$12$LZpdX7pbYFfNKjnnfUJmc.1u9vXUHklb/bJ4MUOg9dfILTji/gfba	Satnam	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	142	accepted	\N	institute	\N	\N	\N
-96	2	samud15	samud15@prashantacademy.in	$2b$12$tEoMbrPPT8YlmxRYBGM9VuMqPrhYjE8EO7gG5tqwau0b3L2KkHMPK	Samud	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	143	accepted	\N	institute	\N	\N	\N
-97	2	simran16	simran16@prashantacademy.in	$2b$12$fvqDXgc.WogeWKuZ5Xtdj.3fXuojrFVcb5Ym60Wg/TcWN7O83DMMy	Simran	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	144	accepted	\N	institute	\N	\N	\N
-98	2	kashish17	kashish17@prashantacademy.in	$2b$12$OGdBhcHlkIekfFvJBmoyPuJlsZzfyv3Yt5.KnAnOxd7exmG7hT5Ei	Kashish	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	145	accepted	\N	institute	\N	\N	\N
-99	2	vedant18	vedant18@prashantacademy.in	$2b$12$bTNakM6iYWaE/K/2.3FB6ecpUmiMmbbkhTTXczi/xX7sKoN0fy2dC	Vedant	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	146	accepted	\N	institute	\N	\N	\N
-100	2	khushi19	khushi19@prashantacademy.in	$2b$12$kvfO161X./vPAFYPLAcBu.mg8hGmolNoLkArFB2GhgE/v8e.oNVwa	Khushi	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	147	accepted	\N	institute	\N	\N	\N
-101	2	mahek20	mahek20@prashantacademy.in	$2b$12$MIcClwOG.YpXInvVh4kSNOgHxXEp6S7lC49G1s/qlBICGMhnPXQBa	Mahek	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	148	accepted	\N	institute	\N	\N	\N
-102	2	johan21	johan21@prashantacademy.in	$2b$12$5OGpuosOaDH2QHGHTolCDOmOn6w9aAqe0ccrS9HDOJ1PdAv1uYyPi	Johan	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	149	accepted	\N	institute	\N	\N	\N
-103	2	avner22	avner22@prashantacademy.in	$2b$12$0YKkmLibzJllftLaFOa5cu3LQtLgxU5uQzFYSdx4tK6D0a9Red/nO	Avner	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	150	accepted	\N	institute	\N	\N	\N
-104	2	apika23	apika23@prashantacademy.in	$2b$12$ErYbdmQ9T4EaKjKmMALrGeNztiK.N2epEWf.eEdBlqeogpJmyRAEG	Apika	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	151	accepted	\N	institute	\N	\N	\N
-105	2	shrawya24	shrawya24@prashantacademy.in	$2b$12$JbZ7oukU9sJvtbPtRYdqf.cVRhzQ1Y/WJ2MUZUOCfHyna/bAfUyla	Shrawya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	152	accepted	\N	institute	\N	\N	\N
-82	2	rajnees1	rajnees1@prashantacademy.in	$2b$12$xJXecPeiigu7sNK1YXI5uuOihylgW1gc8iL1Dqewb2XUUlZscXjEy	Rajnees	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	129	accepted	\N	institute	\N	\N	\N
-83	2	ayaan2	ayaan2@prashantacademy.in	$2b$12$vw7Xt0H5p2Qnod6pUMKoMOyE5xG1wfaE/AyXQU6TTOJ0XXzvQVU0.	Ayaan	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	130	accepted	\N	institute	\N	\N	\N
-84	2	netham3	netham3@prashantacademy.in	$2b$12$D8Vb5d1rfQZk2djS4ZpA9eFOcytr.0EccdR1cvaqttFeLfAYWtR2W	Netham	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	131	accepted	\N	institute	\N	\N	\N
-85	2	shreshta4	shreshta4@prashantacademy.in	$2b$12$JgsTYX69.Gtqy8RynQgyfuTm3/6uZ13l2W3wvsstSGn8PxfWagMle	Shreshta	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	132	accepted	\N	institute	\N	\N	\N
-86	2	savesh5	savesh5@prashantacademy.in	$2b$12$qwrNZUQknmGMiQhx/BGM.OByo/NXivJgOO1Pgpd.eVUXkHWxZm102	Savesh	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	133	accepted	\N	institute	\N	\N	\N
-87	2	ansh6	ansh6@prashantacademy.in	$2b$12$KL9ew/HPtUQIu33HGn9mo.C0zv9guoHbgwdQQ/x80HE1ACn6JUCyC	Ansh	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	134	accepted	\N	institute	\N	\N	\N
-88	2	riddhima7	riddhima7@prashantacademy.in	$2b$12$ZRfFYtdR3cZTNhMVtn9yVOgcNN48xxzXz8TxM0DQsuM9uIJreafWy	Riddhima	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	135	accepted	\N	institute	\N	\N	\N
-89	2	sonakshi8	sonakshi8@prashantacademy.in	$2b$12$YXFSIHtug1nBgtu3slxVM.6gttqVDW1DMJWmpVOcxvTE6fn3pIF5K	Sonakshi	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	136	accepted	\N	institute	\N	\N	\N
-90	2	raudrita9	raudrita9@prashantacademy.in	$2b$12$/66G4dfSezYL.i5BSVjyLuzn2ScYlEUz.uNL.dnk7CVNTJ.tkqB9.	Raudrita	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	137	accepted	\N	institute	\N	\N	\N
-106	2	afton25	afton25@prashantacademy.in	$2b$12$Cb2xidE.FTRNcjxPB5ED1uxqbzCEtEDBQSFI.OBVGWiyjOPxpG6lW	Afton	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	153	accepted	\N	institute	\N	\N	\N
-107	2	maahi26	maahi26@prashantacademy.in	$2b$12$XpPhCdth2s86s3P19f1EoeLKZ/sC0QhmkVYkNoSkiGxlGNuR3YhCG	Maahi	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	154	accepted	\N	institute	\N	\N	\N
-108	2	aadya27	aadya27@prashantacademy.in	$2b$12$c36XhduEggw4fzKbk.e3ju4mX7d3/Db2Hvmu2XggZCQJ8FoZs7mnC	Aadya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	155	accepted	\N	institute	\N	\N	\N
-109	2	rida28	rida28@prashantacademy.in	$2b$12$4t1.P6b1fTEdhEDsvwLc4eErMn6BTjppjsoxFNDD6SMKOpts7pski	Rida	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	156	accepted	\N	institute	\N	\N	\N
-110	2	puneeta29	puneeta29@prashantacademy.in	$2b$12$DC5/EqH1k4zGGxe/Nm8.duQof/Mnd.LN3use7Iq/ehafyPbt4ix1u	Puneeta	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	157	accepted	\N	institute	\N	\N	\N
-111	2	aliya30	aliya30@prashantacademy.in	$2b$12$IU5PnS.Dh4nA3voOqGhciuyCcFJG0387Zw01Ryl0RUVoIyXUlEpFy	Aliya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	158	accepted	\N	institute	\N	\N	\N
-112	2	siddhant31	siddhant31@prashantacademy.in	$2b$12$YwYcNpqt8oAXA4o1Ycpq4OvJTsWRoUGoh5y99dhrPUhUGZcojS0jq	Siddhant	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	159	accepted	\N	institute	\N	\N	\N
-113	2	shaurya32	shaurya32@prashantacademy.in	$2b$12$KI4tls3nZxfABr/1.ZH1suUr8p4jCmPUnd2ITbOly4VaUmKrPDvp6	Shaurya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	160	accepted	\N	institute	\N	\N	\N
-114	2	chehek33	chehek33@prashantacademy.in	$2b$12$TzOARdVR0S.SDXvwNf.LtuDW0D/ytSw5373m2FDHlHEsTJj6FI4OK	Chehek	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	161	accepted	\N	institute	\N	\N	\N
-115	2	siddharth34	siddharth34@prashantacademy.in	$2b$12$riSv0NHpyLGs.aHYfE14iuvgurQYL2JJzYIn0d8c1Z297oaMC8rvi	Siddharth	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	162	accepted	\N	institute	\N	\N	\N
-116	2	aditya35	aditya35@prashantacademy.in	$2b$12$LgNwOZ6CaAiWmUb5uhezEOHLiteTH3VcAV/SBO4/Xjbamne1ziKZm	Aditya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	163	accepted	\N	institute	\N	\N	\N
-117	2	shriya36	shriya36@prashantacademy.in	$2b$12$mqOHCs2A2YDKLf.WHfzIPu/ikGjkvfE8nfDoOro2c1IDT43Ftp/Oy	Shriya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	164	accepted	\N	institute	\N	\N	\N
-118	2	sukhmeet37	sukhmeet37@prashantacademy.in	$2b$12$wbcFGuk5H9wXfjiEx2ThzexnoM6zm8RmtrHepAZhVp2THzeqxZvpy	Sukhmeet	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	165	accepted	\N	institute	\N	\N	\N
-119	2	sushmya38	sushmya38@prashantacademy.in	$2b$12$wM1On7RyM/u3CVjU8OSFyeaO1bjyWVbbukN1QsF9iYHKG3Vjyg7fG	Sushmya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	166	accepted	\N	institute	\N	\N	\N
-120	2	aaradhya39	aaradhya39@prashantacademy.in	$2b$12$ieNpays3AFa4RLHd8oNuueNsWv6UUEjdPWr6AwwhGG/4PbtClvOru	Aaradhya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	167	accepted	\N	institute	\N	\N	\N
-1	2	admin	admin@prashantacademy.edu.in	$2b$12$LOC2e9Dyz3oI8ygzAp16JeamUYLwFQ7.2h0vZdP4Cnj4IHk7zvQWy	Admin	User	+91-9870061122	admin	8	t	2026-11-04 14:28:16.420423+00	2026-11-03 15:17:26.3504+00	2026-11-04 14:28:16.117775+00	\N	accepted	\N	institute	\N	ADM-001	System Administrator
+113	1	shaurya32	shaurya32@prashantacademy.in	$2b$12$KI4tls3nZxfABr/1.ZH1suUr8p4jCmPUnd2ITbOly4VaUmKrPDvp6	Shaurya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	160	accepted	\N	institute	\N	\N	\N
+2	1	accountant	accountant@prashantacademy.edu.in	$2b$12$3Ev8e.oFbCHso4ekpPf5T.RND2/2CPxfuOfauPCzqNeQktXopcYuG	Rajesh	Sharma	+91-9870011122	accountant	10	t	\N	2026-11-03 15:17:26.3504+00	2026-11-04 08:43:43.87947+00	\N	accepted	\N	institute	\N	ACC-001	Head Accountant
+121	1	rahul.desai	rahul.desai@prashantacademy.in	$2b$12$XMyA3BYsAR..x/F4iX1CMuRhwC8waObUEc/gvVbOK6iUS7E6Wddc6	Rahul	Desai	+91-9870021122	teacher	11	t	\N	2026-11-04 03:56:25.608406+00	2026-11-04 10:17:06.092167+00	\N	accepted	\N	institute	\N	TCH-001	Senior Mathematics Faculty
+122	1	priya.mehta	priya.mehta@prashantacademy.in	$2b$12$1HqkVanv8/j0YRVAAf8WxeonS1o8F6TdC.M9aIZIVcc5nNFZp59/y	Priya	Mehta	+91-9870031122	teacher	11	t	\N	2026-11-04 03:56:25.608406+00	2026-11-04 10:17:06.092167+00	\N	accepted	\N	institute	\N	TCH-002	Senior Science Faculty
+123	1	amit.patil	amit.patil@prashantacademy.in	$2b$12$FpbyfvRRObCf/Jqih33tROAw9G5M4on0EmoLHMxJEBy9PlFBekQeG	Amit	Patil	+91-9870041122	teacher	11	t	\N	2026-11-04 03:56:25.608406+00	2026-11-04 10:17:06.092167+00	\N	accepted	\N	institute	\N	TCH-003	Faculty - Social Studies
+124	1	neha.kulkarni	neha.kulkarni@prashantacademy.in	$2b$12$ikFtirWPGPQHMwHih1kxROCHG0Z/M2u8vrbbZcQSA9gU036fZxVlO	Neha	Kulkarni	+91-9870051122	teacher	11	t	\N	2026-11-04 03:56:25.608406+00	2026-11-04 10:17:06.092167+00	\N	accepted	\N	institute	\N	TCH-004	Faculty - Test Series Coordinator
+91	1	samruddhi10	samruddhi10@prashantacademy.in	$2b$12$WSTj2/keeDBUEEFSg4H4yuVuU/SNDghJhIgeZKbGr0M5pVLKjqYsG	Samruddhi	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	138	accepted	\N	institute	\N	\N	\N
+92	1	aman11	aman11@prashantacademy.in	$2b$12$X/4IiS7l4pccDbFW6QMsx.wvZsQmfkgnBr//x0/w2Hyvwm3qCFRXS	Aman	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	139	accepted	\N	institute	\N	\N	\N
+93	1	ashwin12	ashwin12@prashantacademy.in	$2b$12$g8A55/YSa4szS7RWW9zuo..Ae1QeVtj9m54HJbBeeZQDxx4BT6.pK	Ashwin	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	140	accepted	\N	institute	\N	\N	\N
+94	1	keshwa13	keshwa13@prashantacademy.in	$2b$12$lcW16sRyXECjYFHyY4qaxeemf5w2dP5lRM.ew1JAtgf7ZQaIxIkjG	Keshwa	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	141	accepted	\N	institute	\N	\N	\N
+95	1	satnam14	satnam14@prashantacademy.in	$2b$12$LZpdX7pbYFfNKjnnfUJmc.1u9vXUHklb/bJ4MUOg9dfILTji/gfba	Satnam	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	142	accepted	\N	institute	\N	\N	\N
+96	1	samud15	samud15@prashantacademy.in	$2b$12$tEoMbrPPT8YlmxRYBGM9VuMqPrhYjE8EO7gG5tqwau0b3L2KkHMPK	Samud	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	143	accepted	\N	institute	\N	\N	\N
+97	1	simran16	simran16@prashantacademy.in	$2b$12$fvqDXgc.WogeWKuZ5Xtdj.3fXuojrFVcb5Ym60Wg/TcWN7O83DMMy	Simran	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	144	accepted	\N	institute	\N	\N	\N
+98	1	kashish17	kashish17@prashantacademy.in	$2b$12$OGdBhcHlkIekfFvJBmoyPuJlsZzfyv3Yt5.KnAnOxd7exmG7hT5Ei	Kashish	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	145	accepted	\N	institute	\N	\N	\N
+99	1	vedant18	vedant18@prashantacademy.in	$2b$12$bTNakM6iYWaE/K/2.3FB6ecpUmiMmbbkhTTXczi/xX7sKoN0fy2dC	Vedant	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	146	accepted	\N	institute	\N	\N	\N
+100	1	khushi19	khushi19@prashantacademy.in	$2b$12$kvfO161X./vPAFYPLAcBu.mg8hGmolNoLkArFB2GhgE/v8e.oNVwa	Khushi	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	147	accepted	\N	institute	\N	\N	\N
+101	1	mahek20	mahek20@prashantacademy.in	$2b$12$MIcClwOG.YpXInvVh4kSNOgHxXEp6S7lC49G1s/qlBICGMhnPXQBa	Mahek	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	148	accepted	\N	institute	\N	\N	\N
+102	1	johan21	johan21@prashantacademy.in	$2b$12$5OGpuosOaDH2QHGHTolCDOmOn6w9aAqe0ccrS9HDOJ1PdAv1uYyPi	Johan	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	149	accepted	\N	institute	\N	\N	\N
+103	1	avner22	avner22@prashantacademy.in	$2b$12$0YKkmLibzJllftLaFOa5cu3LQtLgxU5uQzFYSdx4tK6D0a9Red/nO	Avner	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	150	accepted	\N	institute	\N	\N	\N
+104	1	apika23	apika23@prashantacademy.in	$2b$12$ErYbdmQ9T4EaKjKmMALrGeNztiK.N2epEWf.eEdBlqeogpJmyRAEG	Apika	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	151	accepted	\N	institute	\N	\N	\N
+105	1	shrawya24	shrawya24@prashantacademy.in	$2b$12$JbZ7oukU9sJvtbPtRYdqf.cVRhzQ1Y/WJ2MUZUOCfHyna/bAfUyla	Shrawya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	152	accepted	\N	institute	\N	\N	\N
+82	1	rajnees1	rajnees1@prashantacademy.in	$2b$12$xJXecPeiigu7sNK1YXI5uuOihylgW1gc8iL1Dqewb2XUUlZscXjEy	Rajnees	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	129	accepted	\N	institute	\N	\N	\N
+83	1	ayaan2	ayaan2@prashantacademy.in	$2b$12$vw7Xt0H5p2Qnod6pUMKoMOyE5xG1wfaE/AyXQU6TTOJ0XXzvQVU0.	Ayaan	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	130	accepted	\N	institute	\N	\N	\N
+84	1	netham3	netham3@prashantacademy.in	$2b$12$D8Vb5d1rfQZk2djS4ZpA9eFOcytr.0EccdR1cvaqttFeLfAYWtR2W	Netham	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	131	accepted	\N	institute	\N	\N	\N
+85	1	shreshta4	shreshta4@prashantacademy.in	$2b$12$JgsTYX69.Gtqy8RynQgyfuTm3/6uZ13l2W3wvsstSGn8PxfWagMle	Shreshta	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	132	accepted	\N	institute	\N	\N	\N
+114	1	chehek33	chehek33@prashantacademy.in	$2b$12$TzOARdVR0S.SDXvwNf.LtuDW0D/ytSw5373m2FDHlHEsTJj6FI4OK	Chehek	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	161	accepted	\N	institute	\N	\N	\N
+115	1	siddharth34	siddharth34@prashantacademy.in	$2b$12$riSv0NHpyLGs.aHYfE14iuvgurQYL2JJzYIn0d8c1Z297oaMC8rvi	Siddharth	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	162	accepted	\N	institute	\N	\N	\N
+86	1	savesh5	savesh5@prashantacademy.in	$2b$12$qwrNZUQknmGMiQhx/BGM.OByo/NXivJgOO1Pgpd.eVUXkHWxZm102	Savesh	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	133	accepted	\N	institute	\N	\N	\N
+87	1	ansh6	ansh6@prashantacademy.in	$2b$12$KL9ew/HPtUQIu33HGn9mo.C0zv9guoHbgwdQQ/x80HE1ACn6JUCyC	Ansh	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	134	accepted	\N	institute	\N	\N	\N
+88	1	riddhima7	riddhima7@prashantacademy.in	$2b$12$ZRfFYtdR3cZTNhMVtn9yVOgcNN48xxzXz8TxM0DQsuM9uIJreafWy	Riddhima	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	135	accepted	\N	institute	\N	\N	\N
+89	1	sonakshi8	sonakshi8@prashantacademy.in	$2b$12$YXFSIHtug1nBgtu3slxVM.6gttqVDW1DMJWmpVOcxvTE6fn3pIF5K	Sonakshi	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	136	accepted	\N	institute	\N	\N	\N
+90	1	raudrita9	raudrita9@prashantacademy.in	$2b$12$/66G4dfSezYL.i5BSVjyLuzn2ScYlEUz.uNL.dnk7CVNTJ.tkqB9.	Raudrita	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	137	accepted	\N	institute	\N	\N	\N
+106	1	afton25	afton25@prashantacademy.in	$2b$12$Cb2xidE.FTRNcjxPB5ED1uxqbzCEtEDBQSFI.OBVGWiyjOPxpG6lW	Afton	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	153	accepted	\N	institute	\N	\N	\N
+107	1	maahi26	maahi26@prashantacademy.in	$2b$12$XpPhCdth2s86s3P19f1EoeLKZ/sC0QhmkVYkNoSkiGxlGNuR3YhCG	Maahi	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	154	accepted	\N	institute	\N	\N	\N
+108	1	aadya27	aadya27@prashantacademy.in	$2b$12$c36XhduEggw4fzKbk.e3ju4mX7d3/Db2Hvmu2XggZCQJ8FoZs7mnC	Aadya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	155	accepted	\N	institute	\N	\N	\N
+109	1	rida28	rida28@prashantacademy.in	$2b$12$4t1.P6b1fTEdhEDsvwLc4eErMn6BTjppjsoxFNDD6SMKOpts7pski	Rida	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	156	accepted	\N	institute	\N	\N	\N
+110	1	puneeta29	puneeta29@prashantacademy.in	$2b$12$DC5/EqH1k4zGGxe/Nm8.duQof/Mnd.LN3use7Iq/ehafyPbt4ix1u	Puneeta	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	157	accepted	\N	institute	\N	\N	\N
+111	1	aliya30	aliya30@prashantacademy.in	$2b$12$IU5PnS.Dh4nA3voOqGhciuyCcFJG0387Zw01Ryl0RUVoIyXUlEpFy	Aliya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	158	accepted	\N	institute	\N	\N	\N
+112	1	siddhant31	siddhant31@prashantacademy.in	$2b$12$YwYcNpqt8oAXA4o1Ycpq4OvJTsWRoUGoh5y99dhrPUhUGZcojS0jq	Siddhant	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	159	accepted	\N	institute	\N	\N	\N
+116	1	aditya35	aditya35@prashantacademy.in	$2b$12$LgNwOZ6CaAiWmUb5uhezEOHLiteTH3VcAV/SBO4/Xjbamne1ziKZm	Aditya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	163	accepted	\N	institute	\N	\N	\N
+117	1	shriya36	shriya36@prashantacademy.in	$2b$12$mqOHCs2A2YDKLf.WHfzIPu/ikGjkvfE8nfDoOro2c1IDT43Ftp/Oy	Shriya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	164	accepted	\N	institute	\N	\N	\N
+118	1	sukhmeet37	sukhmeet37@prashantacademy.in	$2b$12$wbcFGuk5H9wXfjiEx2ThzexnoM6zm8RmtrHepAZhVp2THzeqxZvpy	Sukhmeet	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	165	accepted	\N	institute	\N	\N	\N
+119	1	sushmya38	sushmya38@prashantacademy.in	$2b$12$wM1On7RyM/u3CVjU8OSFyeaO1bjyWVbbukN1QsF9iYHKG3Vjyg7fG	Sushmya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	166	accepted	\N	institute	\N	\N	\N
+120	1	aaradhya39	aaradhya39@prashantacademy.in	$2b$12$ieNpays3AFa4RLHd8oNuueNsWv6UUEjdPWr6AwwhGG/4PbtClvOru	Aaradhya	Student	\N	student	17	t	\N	2026-11-04 03:50:41.678614+00	2026-11-04 10:17:06.092167+00	167	accepted	\N	institute	\N	\N	\N
+1	1	admin	admin@prashantacademy.edu.in	$2b$12$LOC2e9Dyz3oI8ygzAp16JeamUYLwFQ7.2h0vZdP4Cnj4IHk7zvQWy	Admin	User	+91-9870061122	admin	8	t	2026-11-04 14:57:51.049412+00	2026-11-03 15:17:26.3504+00	2026-11-04 14:57:50.751018+00	\N	accepted	\N	institute	\N	ADM-001	System Administrator
 \.
 
 
@@ -4549,7 +4550,7 @@ SELECT pg_catalog.setval('public.guardians_id_seq', 79, true);
 -- Name: institutions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.institutions_id_seq', 3, true);
+SELECT pg_catalog.setval('public.institutions_id_seq', 1, true);
 
 
 --
@@ -5916,5 +5917,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 1uCruHWiMtadQoNX0JUu7S1zcBYUfKVhNNnHEpntjStmS14o5jcQ9ZqaUac0PhT
+\unrestrict 1T4XU7zMzyvSZ21xXwW1KbSFB5e7a2bwrs3FyJocj0teEWoDsHAK4LJtrGLZVxs
 

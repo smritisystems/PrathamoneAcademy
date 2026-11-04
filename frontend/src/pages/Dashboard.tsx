@@ -58,7 +58,7 @@ export default function DashboardPage() {
 
   // Sync year filter when global academic year changes
   useEffect(() => {
-    if (selectedAcademicYearId && !filters.academicYearId) {
+    if (selectedAcademicYearId) {
       setFilters((prev) => ({ ...prev, academicYearId: selectedAcademicYearId }))
     }
   }, [selectedAcademicYearId])

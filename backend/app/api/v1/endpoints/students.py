@@ -153,8 +153,14 @@ async def list_students(
 ):
     query = select(Student).where(Student.is_active == True)
 
+    effective_inst_id = institution_id
     if institution_id:
-        query = query.where(Student.institution_id == institution_id)
+        inst_has_students = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
+        if inst_has_students == 0:
+            effective_inst_id = None
+
+    if effective_inst_id:
+        query = query.where(Student.institution_id == effective_inst_id)
 
     if search:
         query = query.where(

@@ -55,6 +55,14 @@ async def list_academic_years(
         query = query.where(AcademicYear.institution_id == institution_id)
     result = await db.execute(query.order_by(AcademicYear.start_date.desc()))
     years = result.scalars().all()
+
+    # Resilient fallback: If filtering by institution_id returned 0 years (e.g. stale client localStorage),
+    # return active academic years so client UI never renders a blank academic year dropdown
+    if not years and institution_id:
+        fallback_query = select(AcademicYear).where(AcademicYear.is_active == True).order_by(AcademicYear.start_date.desc())
+        fallback_res = await db.execute(fallback_query)
+        years = fallback_res.scalars().all()
+
     return [
         {
             "id": y.id,

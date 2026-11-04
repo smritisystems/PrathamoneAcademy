@@ -49,10 +49,27 @@ export default function Layout() {
     queryFn: () => institutionsApi.list().then((r) => r.data),
   })
 
+  // Validate or auto-select institution if none selected or if stale ID
+  useEffect(() => {
+    if (institutions.length > 0) {
+      const instExists = institutions.some((i) => i.id === selectedInstitutionId)
+      if (!selectedInstitutionId || !instExists) {
+        setSelectedInstitution(institutions[0].id)
+      }
+    }
+  }, [institutions, selectedInstitutionId, setSelectedInstitution])
+
   const { data: academicYears = [] } = useQuery({
     queryKey: ['academic-years', selectedInstitutionId],
-    queryFn: () =>
-      academicYearsApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
+    queryFn: async () => {
+      const res = await academicYearsApi.list(selectedInstitutionId ?? undefined)
+      if (res.data && res.data.length > 0) {
+        return res.data
+      }
+      // Resilient fallback: return active years if filtered list was empty
+      const fallback = await academicYearsApi.list()
+      return fallback.data
+    },
   })
 
   // Global keyboard shortcut: Ctrl+B or Cmd+B to toggle sidebar
@@ -80,13 +97,6 @@ export default function Layout() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [desktopState, expandSidebar, toggleCollapse])
-
-  // Auto-select first institution if none selected
-  useEffect(() => {
-    if (institutions.length > 0 && !selectedInstitutionId) {
-      setSelectedInstitution(institutions[0].id)
-    }
-  }, [institutions, selectedInstitutionId, setSelectedInstitution])
 
   // Dynamically default to current academic year, while preserving historical selection
   useEffect(() => {
@@ -147,13 +157,17 @@ export default function Layout() {
             <select
               value={selectedInstitutionId ?? ''}
               onChange={(e) => setSelectedInstitution(Number(e.target.value))}
-              className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px]"
             >
-              {institutions.map((inst) => (
-                <option key={inst.id} value={inst.id}>
-                  {inst.name}
-                </option>
-              ))}
+              {institutions.length === 0 ? (
+                <option value="">Loading...</option>
+              ) : (
+                institutions.map((inst) => (
+                  <option key={inst.id} value={inst.id}>
+                    {inst.name}
+                  </option>
+                ))
+              )}
             </select>
             <ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
@@ -163,13 +177,17 @@ export default function Layout() {
             <select
               value={selectedAcademicYearId ?? ''}
               onChange={(e) => setSelectedAcademicYear(Number(e.target.value))}
-              className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px]"
             >
-              {academicYears.map((year) => (
-                <option key={year.id} value={year.id}>
-                  AY {year.name} {year.is_current ? '(Current)' : '(Historical)'}
-                </option>
-              ))}
+              {academicYears.length === 0 ? (
+                <option value="">Loading AY...</option>
+              ) : (
+                academicYears.map((year) => (
+                  <option key={year.id} value={year.id}>
+                    AY {year.name} {year.is_current ? '(Current)' : '(Historical)'}
+                  </option>
+                ))
+              )}
             </select>
             <ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
