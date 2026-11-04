@@ -112,7 +112,7 @@ async def render_single_form(
         mode=mode,
         count=1,
         ip_address=ip_addr,
-        user_agent=user_agent,
+        user_agent=user_agent[:490] if user_agent else None,
     )
 
     return rendered
@@ -209,7 +209,7 @@ async def bulk_render_forms(
         mode=payload.mode,
         count=len(rendered_forms),
         ip_address=ip_addr,
-        user_agent=user_agent,
+        user_agent=user_agent[:490] if user_agent else None,
     )
 
     return {

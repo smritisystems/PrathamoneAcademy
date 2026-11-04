@@ -155,7 +155,7 @@ export default function Layout() {
           {/* Institution Selector */}
           <div className="relative">
             <select
-              value={selectedInstitutionId ?? ''}
+              value={selectedInstitutionId ?? (institutions[0]?.id ?? '')}
               onChange={(e) => setSelectedInstitution(Number(e.target.value))}
               className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px]"
             >
@@ -175,7 +175,11 @@ export default function Layout() {
           {/* Academic Year Selector */}
           <div className="relative">
             <select
-              value={selectedAcademicYearId ?? ''}
+              value={
+                (academicYears.some((y) => y.id === selectedAcademicYearId)
+                  ? selectedAcademicYearId
+                  : (academicYears.find((y) => y.is_current)?.id ?? academicYears[0]?.id)) ?? ''
+              }
               onChange={(e) => setSelectedAcademicYear(Number(e.target.value))}
               className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px]"
             >

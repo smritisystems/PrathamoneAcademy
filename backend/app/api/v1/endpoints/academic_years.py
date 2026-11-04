@@ -63,6 +63,21 @@ async def list_academic_years(
         fallback_res = await db.execute(fallback_query)
         years = fallback_res.scalars().all()
 
+    # Emergency auto-bootstrap: if table is empty, auto-create current AY 2026-27
+    if not years:
+        default_ay = AcademicYear(
+            institution_id=institution_id or 1,
+            name="2026-27",
+            start_date=date(2026, 4, 1),
+            end_date=date(2027, 3, 31),
+            is_current=True,
+            is_active=True,
+        )
+        db.add(default_ay)
+        await db.commit()
+        await db.refresh(default_ay)
+        years = [default_ay]
+
     return [
         {
             "id": y.id,

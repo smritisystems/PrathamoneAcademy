@@ -300,7 +300,7 @@ class FormRendererEngine:
             ("Original School Leaving / Transfer Certificate", "TC"),
         ]
         for title, code in standard_doc_names:
-            matched = next((d for d in student.documents if d.document_type == code or code in d.file_url), None)
+            matched = next((d for d in student.documents if d.document_type == code or (d.file_url and code in d.file_url)), None)
             doc_checklist.append({
                 "title": title,
                 "code": code,
@@ -324,10 +324,12 @@ class FormRendererEngine:
         age = calculate_age(student.date_of_birth)
         is_minor = (age is not None and age < 18) or (age is None)
 
+        adm_num = student.admission_number or f"STU-{student.id:04d}"
+        roll_num = adm_num[-3:] if len(adm_num) >= 3 else adm_num
         return {
             "student_id": student.id,
-            "admission_number": student.admission_number,
-            "roll_number": f"{student.admission_number[-3:]}",
+            "admission_number": adm_num,
+            "roll_number": roll_num,
             "first_name": student.first_name,
             "last_name": student.last_name,
             "full_name": f"{student.first_name} {student.last_name}".strip(),
@@ -352,7 +354,7 @@ class FormRendererEngine:
                 "board": board_name,
                 "standard": standard_name,
                 "batch": division_name,
-                "roll_no": student.admission_number[-3:],
+                "roll_no": roll_num,
                 "room_number": "Room 102 (First Floor)",
                 "timing": "08:00 AM - 11:30 AM (Monday to Saturday)",
                 "batch_coordinator": "Prof. Rahul Desai (Senior Mathematics Faculty)",

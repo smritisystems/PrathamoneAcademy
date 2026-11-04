@@ -78,16 +78,25 @@ async def normalize_data():
         # ID 1: Current session 2026-27 (active)
         # ID 2: Historical session 2024-25
         # ID 3: Historical session 2025-26
-        await session.execute(text("""
-            UPDATE academic_years
-            SET name = '2026-27',
-                start_date = '2026-04-01',
-                end_date = '2027-03-31',
-                is_current = true,
-                is_active = true,
-                institution_id = 1
-            WHERE id = 1;
-        """))
+        # Check if ID 1 exists, otherwise insert
+        ay1 = (await session.execute(text("SELECT id FROM academic_years WHERE id = 1;"))).scalar()
+        if not ay1:
+            await session.execute(text("""
+                INSERT INTO academic_years (id, institution_id, name, start_date, end_date, is_current, is_active, created_at, updated_at)
+                VALUES (1, 1, '2026-27', '2026-04-01', '2027-03-31', true, true, NOW(), NOW())
+                ON CONFLICT (id) DO UPDATE SET name = '2026-27', is_current = true, institution_id = 1, is_active = true;
+            """))
+        else:
+            await session.execute(text("""
+                UPDATE academic_years
+                SET name = '2026-27',
+                    start_date = '2026-04-01',
+                    end_date = '2027-03-31',
+                    is_current = true,
+                    is_active = true,
+                    institution_id = 1
+                WHERE id = 1;
+            """))
 
         # Check if ID 2 exists, otherwise insert
         ay2 = (await session.execute(text("SELECT id FROM academic_years WHERE id = 2;"))).scalar()
