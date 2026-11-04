@@ -182,3 +182,4 @@ async def normalize_data():
 
 if __name__ == "__main__":
     asyncio.run(normalize_data())
+

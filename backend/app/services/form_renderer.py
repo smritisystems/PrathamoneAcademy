@@ -228,6 +228,7 @@ class FormRendererEngine:
                 selectinload(Student.payments),
                 selectinload(Student.attendances),
                 selectinload(Student.exam_marks).selectinload(ExamMark.examination),
+                selectinload(Student.exam_marks).selectinload(ExamMark.subject),
             )
             .where(Student.id == student_id)
         )
@@ -253,7 +254,7 @@ class FormRendererEngine:
 
         # Financial summary
         total_due = sum(float(fa.custom_amount if fa.custom_amount is not None else (fa.fee_structure.amount if fa.fee_structure else 0.0)) for fa in student.fee_assignments) if student.fee_assignments else 0.0
-        total_paid = sum(p.amount for p in student.payments if p.status == "success") if student.payments else 0.0
+        total_paid = sum(float(p.amount) for p in student.payments if p.status in ("success", "completed")) if student.payments else 0.0
         outstanding = max(0.0, total_due - total_paid)
 
         # Attendance calculation
@@ -264,13 +265,17 @@ class FormRendererEngine:
         # Exam marks
         marks_rows = []
         for mark in (student.exam_marks or []):
-            pct = round((mark.marks_obtained / mark.max_marks) * 100, 1) if mark.max_marks > 0 else 0
-            grade = "A+" if pct >= 90 else ("A" if pct >= 80 else ("B+" if pct >= 70 else ("B" if pct >= 60 else "C")))
+            exam = mark.examination
+            max_m = float(exam.max_marks) if (exam and exam.max_marks) else 100.0
+            obtained = float(mark.marks_obtained) if mark.marks_obtained is not None else 0.0
+            pct = round((obtained / max_m) * 100, 1) if max_m > 0 else 0.0
+            grade = mark.grade or ("A+" if pct >= 90 else ("A" if pct >= 80 else ("B+" if pct >= 70 else ("B" if pct >= 60 else "C"))))
             marks_rows.append({
-                "exam_title": mark.examination.title if mark.examination else "Periodic Assessment",
-                "exam_type": mark.examination.exam_type if mark.examination else "Mock Test",
-                "marks_obtained": mark.marks_obtained,
-                "max_marks": mark.max_marks,
+                "exam_title": exam.name if exam else "Periodic Assessment",
+                "exam_type": exam.exam_type if exam else "Mock Test",
+                "subject": mark.subject.name if (mark.subject and mark.subject.name) else "General",
+                "marks_obtained": obtained,
+                "max_marks": max_m,
                 "percentage": pct,
                 "grade": grade,
             })
