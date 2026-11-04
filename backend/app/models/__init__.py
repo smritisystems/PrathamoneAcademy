@@ -36,5 +36,9 @@ from app.models.portal import (
     TimetableEntry, StudyMaterial, Announcement, StudentDocument
 )
 from app.models.import_log import FeeRegisterImport, DataImportLog
+from app.models.staff import (
+    StaffProfile, StaffDocument, TeacherAssignment,
+    StaffAttendance, StaffLeave, StaffLeaveBalance, StaffGeneratedDocument
+)
 
 

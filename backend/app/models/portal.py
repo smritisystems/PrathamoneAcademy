@@ -42,6 +42,9 @@ class TimetableEntry(Base):
     subject_id: Mapped[int] = mapped_column(
         ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
+    teacher_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     day_of_week: Mapped[str] = mapped_column(String(15), nullable=False)
     start_time: Mapped[str] = mapped_column(String(10), nullable=False)
     end_time: Mapped[str] = mapped_column(String(10), nullable=False)
@@ -53,6 +56,7 @@ class TimetableEntry(Base):
 
     division: Mapped["Division"] = relationship("Division")
     subject: Mapped["Subject"] = relationship("Subject")
+    teacher: Mapped["User | None"] = relationship("User", foreign_keys=[teacher_id])
 
 
 class StudyMaterial(Base):
