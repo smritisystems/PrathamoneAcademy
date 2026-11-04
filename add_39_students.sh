@@ -78,3 +78,4 @@ docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c "SELE
 echo -e "\nWeb Application: http://localhost:80"
 echo "Login:           admin@prashantacademy.edu.in / admin123"
 echo "======================================================================"
+
