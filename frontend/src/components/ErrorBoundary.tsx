@@ -11,13 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description React error boundary catching runtime component errors and displaying fallback diagnostics.
  */
 
 import React from 'react'
 import { AlertCircle, RefreshCw } from 'lucide-react'
+import { BRANDING_CONFIG } from '../config/branding'
 
 interface Props {
   children: React.ReactNode
@@ -65,13 +66,24 @@ export class ErrorBoundary extends React.Component<Props, State> {
               {this.state.error.message}
             </pre>
           )}
-          <button
-            onClick={this.handleReset}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Try Again
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={this.handleReset}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-bold"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Try Again
+            </button>
+            <a
+              href={`mailto:${BRANDING_CONFIG.support.email}`}
+              className="text-xs text-slate-500 hover:text-slate-800 underline"
+            >
+              Contact Support
+            </a>
+          </div>
+          <p className="text-[10px] text-slate-400 mt-4">
+            {BRANDING_CONFIG.appName} • {BRANDING_CONFIG.versionDisplay}
+          </p>
         </div>
       )
     }

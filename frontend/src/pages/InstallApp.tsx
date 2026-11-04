@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Dedicated Progressive Web App installation portal with platform-specific setup guides and launch actions.
  */
@@ -38,8 +38,12 @@ import {
   Globe
 } from 'lucide-react';
 import { usePWA, PlatformType } from '../hooks/usePWA';
+import { useBranding } from '../config/branding';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export default function InstallApp() {
+  const branding = useBranding();
+  useDocumentTitle('Install App');
   const { isInstallable, isInstalled, platform, installApp, isOffline } = usePWA();
   const [activeTab, setActiveTab] = useState<PlatformType>(() => {
     if (platform === 'ios') return 'ios';
@@ -109,10 +113,10 @@ export default function InstallApp() {
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                PrathamOne Academy
+                {branding.appName}
               </h1>
               <p className="text-blue-200/90 text-sm max-w-xl">
-                Official Desktop & Mobile App for Prashant Academy Coaching Institute. Install locally for instant desktop launch, distraction-free windowing, and offline capability.
+                Official Desktop & Mobile App for {branding.academyName} {branding.tagline}. Install locally for instant desktop launch, distraction-free windowing, and offline capability.
               </p>
             </div>
           </div>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
+import { useBranding } from '../config/branding'
 
 interface NavItem {
   to: string
@@ -67,6 +68,7 @@ const secondaryNavItems: NavItem[] = [
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
+  const branding = useBranding()
   const {
     desktopState,
     mobileOpen,
@@ -171,7 +173,7 @@ export default function Sidebar() {
               </div>
               {!isCollapsed && (
                 <div className="min-w-0">
-                  <p className="font-bold text-sm tracking-tight truncate">Prashant Academy</p>
+                  <p className="font-bold text-sm tracking-tight truncate">{branding.academyName}</p>
                   <p className="text-slate-400 text-xs font-medium truncate">Student Portal</p>
                 </div>
               )}
@@ -358,10 +360,10 @@ export default function Sidebar() {
             {!isCollapsed && (
               <div className="min-w-0">
                 <h1 className="font-extrabold text-sm tracking-tight text-white truncate">
-                  Prashant Academy
+                  {branding.academyName}
                 </h1>
                 <p className="text-[11px] font-medium text-slate-400 truncate">
-                  Coaching Institute
+                  {branding.tagline}
                 </p>
               </div>
             )}

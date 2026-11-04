@@ -30,6 +30,8 @@ import StatCard from '../components/StatCard'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
 import { dashboardApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useBranding } from '../config/branding'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
@@ -43,6 +45,9 @@ const METHOD_LABELS: Record<string, string> = {
 }
 
 export default function DashboardPage() {
+  const branding = useBranding()
+  useDocumentTitle('Dashboard')
+
   const {
     selectedAcademicYearId,
     selectedInstitutionId,
@@ -94,7 +99,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Coaching Institute Dashboard</h1>
           <p className="text-gray-500 text-sm">
-            Real-time overview of Prashant Academy admissions, fee collections, and batches
+            Real-time overview of {branding.academyName} admissions, fee collections, and batches
           </p>
         </div>
       </div>

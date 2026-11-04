@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Premium user authentication page featuring abstract educational wave aesthetics, secure credential validation, and role redirection.
  */
@@ -24,6 +24,8 @@ import { z } from 'zod'
 import { GraduationCap, Eye, EyeOff, Lock, User, ShieldCheck, Sparkles } from 'lucide-react'
 import { authApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useBranding } from '../config/branding'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import toast from 'react-hot-toast'
 
 const schema = z.object({
@@ -36,6 +38,8 @@ type FormData = z.infer<typeof schema>
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuthStore()
+  const branding = useBranding()
+  useDocumentTitle('Sign In')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -152,15 +156,15 @@ export default function LoginPage() {
             </div>
 
             <h1 className="text-2xl sm:text-[26px] font-bold text-white tracking-tight drop-shadow-xs">
-              Prashant Academy
+              {branding.academyName}
             </h1>
             <p className="text-blue-100/90 text-xs sm:text-sm font-medium mt-1">
-              Coaching Institute Management System
+              {branding.tagline}
             </p>
 
             <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[11px] font-semibold text-blue-100">
               <Sparkles className="w-3 h-3 text-cyan-300" />
-              <span>PrathamOne Academic Suite</span>
+              <span>{branding.suiteName}</span>
             </div>
           </div>
 

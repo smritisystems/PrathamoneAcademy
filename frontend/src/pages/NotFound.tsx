@@ -11,15 +11,17 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description 404 Not Found error page with navigation shortcuts back to dashboard.
  */
 
 import { Link } from 'react-router-dom'
 import { Home, AlertCircle } from 'lucide-react'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 export default function NotFoundPage() {
+  useDocumentTitle('404 Not Found')
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
       <AlertCircle className="w-16 h-16 text-indigo-300 mb-4" />

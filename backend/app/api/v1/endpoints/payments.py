@@ -35,6 +35,7 @@ from app.models.standard import Standard
 from app.models.division import Division
 from app.models.board import Board
 from app.models.user import User
+from app.models.academic_year import AcademicYear
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -663,9 +664,16 @@ async def build_receipt_response(
     elif "allocations" in receipt_data:
         allocations_list = receipt_data["allocations"]
 
+    academic_year_name = receipt_data.get("academic_year")
+    if not academic_year_name and payment.academic_year_id:
+        ay_res = await db.execute(select(AcademicYear.name).where(AcademicYear.id == payment.academic_year_id))
+        academic_year_name = ay_res.scalar_one_or_none()
+
     return {
         "receipt_number": receipt.receipt_number,
         "payment_id": payment.id,
+        "academic_year": academic_year_name or "2026 – 27",
+        "academic_year_id": payment.academic_year_id,
         "student_id": payment.student_id,
         "student_name": student_name,
         "admission_number": admission_number,

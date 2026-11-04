@@ -84,10 +84,15 @@ export function printReceiptElement(
     // Clone receipt contents
     const clonedReceipt = receiptEl.cloneNode(true) as HTMLElement;
 
+    // Collect parent stylesheets and Tailwind styles to ensure 100% styling parity
+    const parentStyles = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'))
+      .map((el) => el.outerHTML)
+      .join('\n');
+
     const pageSizeCss =
       paperSize === 'A5'
-        ? `@page { size: A5 portrait; margin: 8mm 10mm; } #print-root { max-width: 130mm; padding: 12px 16px; font-size: 11px; }`
-        : `@page { size: A4 portrait; margin: 10mm 14mm; } #print-root { max-width: 185mm; padding: 18px 24px; }`;
+        ? `@page { size: A5 portrait; margin: 5mm 6mm; } #print-root { width: 100%; max-width: 138mm; padding: 0; font-size: 10px; margin: 0 auto; border: none; }`
+        : `@page { size: A4 portrait; margin: 8mm 10mm; } #print-root { width: 100%; max-width: 185mm; padding: 0; font-size: 11px; margin: 0 auto; border: none; }`;
 
     iframeDoc.open();
     iframeDoc.write(`
@@ -96,6 +101,7 @@ export function printReceiptElement(
       <head>
         <meta charset="UTF-8" />
         <title>${title}</title>
+        ${parentStyles}
         <style>
           ${pageSizeCss}
           * {
@@ -115,9 +121,22 @@ export function printReceiptElement(
             width: 100%;
             margin: 0 auto;
             background: #ffffff;
-            border: 2px solid #cbd5e1;
-            border-radius: 12px;
+            border: none;
             page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          @media print {
+            body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+            }
+            #print-root {
+              box-shadow: none !important;
+              border: none !important;
+              padding: 0 !important;
+            }
+          }
           }
           /* Tables */
           table { width: 100%; border-collapse: collapse; margin-top: 6px; }

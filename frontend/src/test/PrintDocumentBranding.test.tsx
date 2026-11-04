@@ -1,0 +1,136 @@
+/**
+ * @file        PrintDocumentBranding.test.tsx
+ * @project     PrathamOne Academy Coaching Institute Management System
+ * @module      frontend.test
+ *
+ * @author      Jawahar R. Mallah
+ * @organization AITDL (AI Technology & Development Lab)
+ * @client      Prashant Academy Coaching Institute
+ * @copyright   Copyright (c) 2026 AITDL
+ * @license     Proprietary
+ *
+ * @version     1.0.0
+ * @created     2026-11-05
+ * @updated     2026-11-05
+ *
+ * @description Integration tests verifying reusable printable document branding headers, seals, and authorized signatories.
+ */
+
+import React from 'react'
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  PrintDocumentHeader,
+  PrintDocumentSignatory,
+} from '../components/PrintDocumentBranding'
+
+function renderWithQueryClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+}
+
+describe('Printable Document Branding Components', () => {
+  describe('PrintDocumentHeader Component', () => {
+    it('renders the official document header with academy name, title, and reference', () => {
+      renderWithQueryClient(
+        <PrintDocumentHeader
+          title="OFFICIAL FEE RECEIPT"
+          documentRef="RCP-2026-0999"
+          academicYear="2026-27"
+          documentDate="05 Nov 2026"
+          statusBadge="ORIGINAL COPY"
+          statusBadgeColor="emerald"
+        />
+      )
+
+      expect(screen.getByTestId('print-document-header')).toBeDefined()
+      expect(screen.getByText('OFFICIAL FEE RECEIPT')).toBeDefined()
+      expect(screen.getByText('REF: RCP-2026-0999')).toBeDefined()
+      expect(screen.getByText(/Prashant Academy/i)).toBeDefined()
+      expect(screen.getByText(/SESSION: AY 2026-27/i)).toBeDefined()
+      expect(screen.getByText(/DATE: 05 Nov 2026/i)).toBeDefined()
+      expect(screen.getByText('ORIGINAL COPY')).toBeDefined()
+      expect(screen.getByText('PA')).toBeDefined()
+    })
+
+    it('renders custom institution information when provided', () => {
+      const customInst = {
+        name: 'Vanguard Academy',
+        code: 'VA777',
+        address: '100 Knowledge Boulevard',
+        city: 'Thane',
+        state: 'Maharashtra',
+        pincode: '400601',
+        phone: '+91-22-87654321',
+        email: 'admin@vanguard.edu.in',
+      }
+
+      renderWithQueryClient(
+        <PrintDocumentHeader
+          title="STUDENT MERIT CERTIFICATE"
+          documentRef="CERT-2026-001"
+          institution={customInst}
+          monogram="VA"
+        />
+      )
+
+      expect(screen.getByText(/Vanguard Academy/i)).toBeDefined()
+      expect(screen.getByText('CODE: VA777')).toBeDefined()
+      expect(screen.getByText('VA')).toBeDefined()
+      expect(screen.getByText(/100 Knowledge Boulevard, Thane, Maharashtra - 400601/i)).toBeDefined()
+      expect(screen.getByText(/Ph: \+91-22-87654321/i)).toBeDefined()
+    })
+
+    it('supports compact layout for A5 documents and fee vouchers', () => {
+      const { container } = renderWithQueryClient(
+        <PrintDocumentHeader
+          title="FEE INSTALLMENT VOUCHER"
+          documentRef="VCH-01"
+          compact={true}
+        />
+      )
+
+      expect(screen.getByText('FEE INSTALLMENT VOUCHER')).toBeDefined()
+      expect(container.querySelector('.text-lg')).toBeDefined()
+    })
+  })
+
+  describe('PrintDocumentSignatory Component', () => {
+    it('renders default authorized signatory layout with official stamp and DPDP compliance', () => {
+      renderWithQueryClient(
+        <PrintDocumentSignatory
+          collectorName="Mr. Rajesh Sharma (Head Cashier)"
+          generatedAt="05-Nov-2026 14:30:00"
+          showStampBox={true}
+          showDPDPNotice={true}
+        />
+      )
+
+      expect(screen.getByTestId('print-document-signatory')).toBeDefined()
+      expect(screen.getByText('Authorized Signatory')).toBeDefined()
+      expect(screen.getByText('Mr. Rajesh Sharma (Head Cashier)')).toBeDefined()
+      expect(screen.getByText('05-Nov-2026 14:30:00')).toBeDefined()
+      expect(screen.getByText(/Official Seal/i)).toBeDefined()
+      expect(screen.getByText(/Institution Stamp/i)).toBeDefined()
+      expect(screen.getByText(/DPDP Act 2023/i)).toBeDefined()
+      expect(screen.getByText(/Computer-generated official academic document/i)).toBeDefined()
+    })
+
+    it('renders parent / guardian signature line for student KYC and admission dossiers', () => {
+      renderWithQueryClient(
+        <PrintDocumentSignatory
+          showParentSignature={true}
+          parentSignatoryTitle="Parent / Legal Guardian Signature"
+          showStampBox={false}
+        />
+      )
+
+      expect(screen.getByText('Parent / Legal Guardian Signature')).toBeDefined()
+      expect(screen.getByText(/Date: _______________/i)).toBeDefined()
+      expect(screen.getByText('Authorized Signatory')).toBeDefined()
+    })
+  })
+})

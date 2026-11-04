@@ -26,6 +26,8 @@ import { useAuthStore } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
 import { institutionsApi, academicYearsApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
+import { useBranding } from '../config/branding'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 // Fallback authoritative academic sessions ensuring zero blank dropdown states
 const DEFAULT_ACADEMIC_YEARS = [
@@ -35,6 +37,9 @@ const DEFAULT_ACADEMIC_YEARS = [
 ]
 
 export default function Layout() {
+  const branding = useBranding()
+  useDocumentTitle()
+
   const {
     selectedInstitutionId,
     selectedAcademicYearId,
@@ -217,7 +222,7 @@ export default function Layout() {
           )}
 
           <p className="text-sm font-medium text-gray-600 hidden sm:block">
-            Prashant Academy Coaching Institute
+            {branding.academyName} {branding.tagline}
           </p>
         </header>
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Vite React application entry point initializing DOM root, query client, and global styles.
  */
@@ -24,6 +24,10 @@ import { Toaster } from 'react-hot-toast'
 import App from './App'
 import './index.css'
 import { registerServiceWorker } from './registerServiceWorker'
+import { printConsoleBrandingBanner } from './utils/consoleBanner'
+
+// Print official application startup banner in browser console
+printConsoleBrandingBanner()
 
 const queryClient = new QueryClient({
   defaultOptions: {

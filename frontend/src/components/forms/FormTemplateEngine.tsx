@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Standardized A4 print and preview template engine with DPDP Act 2023 compliance, Aadhaar masking, and signatures.
  */
@@ -659,7 +659,7 @@ export default function FormTemplateEngine({
           <div className="flex flex-col justify-end">
             <div className="h-10 border-b border-slate-400 mb-1 flex items-end justify-center">
               <span className="text-[9px] text-slate-400 italic">
-                {isBlank ? '' : 'For Prashant Academy'}
+                {isBlank ? '' : `For ${institution?.name || 'Prashant Academy'}`}
               </span>
             </div>
             <span className="text-[10px] font-bold text-slate-900 uppercase">Center Head / Principal</span>
@@ -670,7 +670,7 @@ export default function FormTemplateEngine({
         {/* Footer Audit Notice & Pagination */}
         <div className="mt-4 pt-2 border-t border-slate-200 flex items-center justify-between text-[8px] text-slate-500 font-mono">
           <span>
-            Prashant Academy IMS &bull; DPDP Compliance Certified &bull; Ref: {form.document_ref}
+            {institution?.name || 'Prashant Academy'} IMS &bull; DPDP Compliance Certified &bull; Ref: {form.document_ref}
           </span>
           <span>
             Page {pageNumber} of {totalPages}

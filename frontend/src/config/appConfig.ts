@@ -9,25 +9,26 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Centralized application metadata, edition branding, tenant defaults, and version configuration.
  */
 
-import pkg from '../../package.json'
+import { BRANDING_CONFIG } from './branding'
 
 export const APP_CONFIG = {
-  productName: 'PrathamOne Academy Management System',
-  edition: 'Enterprise Edition',
-  version: pkg.version || '6.99.1',
-  versionDisplay: `v${pkg.version || '6.99.1'}`,
-  website: 'prathamone.com',
-  websiteUrl: 'https://prathamone.com',
-  defaultTenantName: 'Prashant Academy',
-  defaultTenantCode: 'PA001',
-  defaultBranchName: 'Jankalyan Nagar, Malad West',
-  defaultBranchCode: 'MALAD-W',
+  productName: BRANDING_CONFIG.productName,
+  edition: BRANDING_CONFIG.edition,
+  version: BRANDING_CONFIG.version,
+  versionDisplay: `v${BRANDING_CONFIG.version}`,
+  website: BRANDING_CONFIG.support.websiteDisplay,
+  websiteUrl: BRANDING_CONFIG.support.website,
+  defaultTenantName: BRANDING_CONFIG.defaultAcademyName,
+  defaultTenantCode: BRANDING_CONFIG.defaultAcademyCode,
+  defaultBranchName: BRANDING_CONFIG.defaultBranchName,
+  defaultBranchCode: BRANDING_CONFIG.defaultBranchCode,
 } as const
 
+export { BRANDING_CONFIG }

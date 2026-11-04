@@ -132,6 +132,7 @@ export interface BatchRosterStudent {
   enrollment_id: number
   roll_number: string
   admission_number: string
+  academic_year?: string
   first_name: string
   last_name: string
   full_name: string
@@ -184,6 +185,7 @@ export interface Enrollment {
 export interface Student {
   id: number
   admission_number: string
+  academic_year?: string
   first_name: string
   last_name: string
   full_name?: string
@@ -350,6 +352,7 @@ export interface RecentPayment {
   student_id: number
   student_name: string
   admission_number: string
+  academic_year?: string
   board?: string
   standard?: string
   batch: string
@@ -372,6 +375,7 @@ export interface TopOverdueAccount {
   student_id: number
   student_name: string
   admission_number: string
+  academic_year?: string
   phone: string
   board_name: string
   standard_name: string
@@ -410,6 +414,7 @@ export interface FeeRegisterInstallment {
 export interface FeeRegisterEntry {
   student_id: number
   admission_number: string
+  academic_year?: string
   student_name: string
   phone: string
   board_id?: number | null
@@ -434,6 +439,64 @@ export interface FeeRegisterEntry {
   installments: FeeRegisterInstallment[]
 }
 
+export interface HistoricalPaymentItem {
+  payment_id: number
+  receipt_number: string
+  date: string
+  payment_method: string
+  amount: number
+  transaction_reference?: string | null
+}
+
+export interface ReceiptFeeSummary {
+  total_fee_amount: number
+  previous_payments_total: number
+  current_payment_amount: number
+  total_paid_to_date: number
+  outstanding_balance: number
+}
+
+export interface DetailedPaymentReceipt {
+  receipt_number: string
+  payment_id: number
+  student_id: number
+  student_name: string
+  admission_number: string
+  academic_year?: string
+  standard?: string
+  division?: string
+  batch?: string
+  amount: number
+  payment_date: string
+  payment_method: string
+  transaction_reference?: string | null
+  bank_name?: string | null
+  cheque_number?: string | null
+  cheque_date?: string | null
+  notes?: string | null
+  status: string
+  is_reversed?: boolean
+  reversed_at?: string | null
+  reversal_reason?: string | null
+  invoice_id?: number | null
+  invoice_number?: string | null
+  historical_payments?: HistoricalPaymentItem[]
+  fee_summary?: ReceiptFeeSummary
+  allocations?: Array<{
+    id?: number
+    invoice_id?: number
+    installment_id?: number | null
+    installment_number?: number | null
+    amount: number
+  }>
+  collected_by?: string
+  generated_at?: string
+  total_fees?: number
+  total_paid?: number
+  outstanding_after?: number
+  previous_paid?: number
+}
+
 export interface PaymentReceiptListItem {
   id: number
   receipt_number: string
@@ -441,6 +504,7 @@ export interface PaymentReceiptListItem {
   student_id: number
   student_name: string
   admission_number: string
+  academic_year?: string
   board_name: string
   standard_name: string
   batch_name: string
@@ -458,6 +522,7 @@ export interface PaymentTransactionItem {
   student_id: number
   student_name: string
   admission_number: string
+  academic_year?: string
   board_name: string
   standard_name: string
   batch_name: string
@@ -495,6 +560,7 @@ export interface PaginatedResponse<T> {
 
 export interface FeeCollectionRow {
   admission_number: string
+  academic_year?: string
   student_name: string
   total_fees: number
   paid: number
@@ -507,6 +573,7 @@ export interface OutstandingRow {
   student_id: number
   student_name: string
   admission_number: string
+  academic_year?: string
   net_amount: number
   paid_amount: number
   outstanding: number
@@ -595,6 +662,7 @@ export interface FeeRegisterImportExecutionResponse {
   imported_students: {
     student_id: number
     admission_number: string
+  academic_year?: string
     name: string
     group: string
     batch: string
@@ -699,6 +767,7 @@ export interface StudentPortalDashboard {
   student: {
     id: number
     admission_number: string
+  academic_year?: string
     first_name: string
     last_name: string
     full_name: string
@@ -754,6 +823,7 @@ export interface StudentAdminProfile {
   overview: {
     id: number
     admission_number: string
+  academic_year?: string
     first_name: string
     last_name: string
     middle_name?: string
@@ -1023,6 +1093,7 @@ export interface UserProfileWorkspaceData {
   linked_student?: {
     id: number
     admission_number: string
+  academic_year?: string
     first_name: string
     last_name: string
     full_name: string
@@ -1189,6 +1260,7 @@ export interface EnrollmentRecord {
   student_id: number
   student_name: string
   admission_number: string
+  academic_year?: string
   phone?: string
   academic_year_id: number
   academic_year_name: string
@@ -1218,6 +1290,7 @@ export interface EnrollmentStats {
 export interface UnassignedStudent {
   id: number
   admission_number: string
+  academic_year?: string
   first_name: string
   last_name: string
   full_name: string
@@ -1386,6 +1459,7 @@ export interface UserProfileWorkspaceData {
   linked_student?: {
     id: number
     admission_number: string
+  academic_year?: string
     first_name: string
     last_name: string
     full_name: string
@@ -1521,6 +1595,7 @@ export interface UserUpdatePayload {
 export interface UnassignedStudent {
   id: number
   admission_number: string
+  academic_year?: string
   first_name: string
   last_name: string
   full_name: string
@@ -1804,64 +1879,4 @@ export interface SystemSettings {
 }
 
 
-export interface HistoricalPaymentItem {
-  id?: number
-  payment_id?: number
-  receipt_number: string
-  amount: number
-  payment_date?: string
-  date?: string
-  payment_method: string
-  transaction_reference?: string | null
-  status?: string
-  installment_number?: number | null
-}
 
-export interface ReceiptFeeSummary {
-  total_fee_amount: number
-  previous_payments_total: number
-  current_payment_amount: number
-  total_paid_to_date: number
-  outstanding_balance: number
-}
-
-export interface DetailedPaymentReceipt {
-  receipt_number: string
-  payment_id: number
-  student_id: number
-  student_name: string
-  admission_number: string
-  standard?: string
-  division?: string
-  batch?: string
-  board?: string
-  amount: number
-  payment_date: string
-  payment_method: string
-  transaction_reference?: string | null
-  bank_name?: string | null
-  cheque_number?: string | null
-  cheque_date?: string | null
-  notes?: string | null
-  status?: string
-  is_reversed?: boolean
-  reversed_at?: string | null
-  reversal_reason?: string | null
-  invoice_id?: number | null
-  invoice_number?: string | null
-  historical_payments?: HistoricalPaymentItem[]
-  fee_summary?: ReceiptFeeSummary
-  allocations?: Array<{
-    id?: number
-    invoice_id?: number
-    installment_id?: number | null
-    installment_number?: number | null
-    amount: number
-  }>
-  collected_by?: string
-  generated_at?: string
-  total_fees?: number
-  total_paid?: number
-  outstanding_after?: number
-  previous_paid?: number
-}

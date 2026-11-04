@@ -242,6 +242,123 @@ describe('Receipt Printing Specification & Container Isolation', () => {
       expect(printBtn).toBeDefined();
       fireEvent.click(printBtn);
     });
+
+    it('renders exact visual components matching the A5 portrait screenshot specifications', () => {
+      const screenshotReceipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0167',
+        payment_id: 167,
+        student_id: 155,
+        student_name: 'Puneeta Kulkarni',
+        admission_number: 'PA-2024-000029',
+        standard: 'VIII',
+        division: 'A (Morning)',
+        batch: 'A (Morning)',
+        amount: 7000.0,
+        payment_date: '2026-11-04',
+        academic_year: '2026 – 27',
+        payment_method: 'bank_transfer',
+        transaction_reference: 'TXN-2026-0167',
+        invoice_number: 'INV-2026-0157',
+        status: 'completed',
+        historical_payments: [
+          { payment_id: 19, receipt_number: 'RCP-2026-0019', date: '2026-04-14', payment_method: 'cheque', amount: 6000.0 },
+          { payment_id: 56, receipt_number: 'RCP-2026-0056', date: '2026-06-08', payment_method: 'cash', amount: 9000.0 },
+          { payment_id: 91, receipt_number: 'RCP-2026-0091', date: '2026-07-10', payment_method: 'cash', amount: 7000.0 },
+          { payment_id: 117, receipt_number: 'RCP-2026-0117', date: '2026-08-12', payment_method: 'upi', amount: 7000.0 },
+          { payment_id: 139, receipt_number: 'RCP-2026-0139', date: '2026-09-16', payment_method: 'bank_transfer', amount: 7000.0 },
+          { payment_id: 144, receipt_number: 'RCP-2026-0144', date: '2026-10-06', payment_method: 'upi', amount: 7000.0 },
+        ],
+        fee_summary: {
+          total_fee_amount: 90000.0,
+          previous_payments_total: 43000.0,
+          current_payment_amount: 7000.0,
+          total_paid_to_date: 50000.0,
+          outstanding_balance: 40000.0,
+        },
+      };
+
+      render(<PaymentReceiptView receipt={screenshotReceipt} initialPaperSize="A5" />);
+
+      // 1. Header ribbon & metadata
+      expect(screen.getByText('OFFICIAL FEE RECEIPT')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0167')).toBeDefined();
+      expect(screen.getByText('2026 – 27')).toBeDefined();
+      expect(screen.getByText('INV-2026-0157')).toBeDefined();
+      expect(screen.getByText('PAID')).toBeDefined();
+
+      // 2. Student details & amount
+      expect(screen.getByText('Puneeta Kulkarni')).toBeDefined();
+      expect(screen.getByText('PA-2024-000029')).toBeDefined();
+      expect(screen.getByText('VIII')).toBeDefined();
+      expect(screen.getByText('A (Morning)')).toBeDefined();
+      expect(screen.getAllByText('₹7,000').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText(/Rupees Seven Thousand Only/i)).toBeDefined();
+
+      // 3. Payment method & transaction reference
+      expect(screen.getAllByText('Bank Transfer').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('TXN-2026-0167')).toBeDefined();
+
+      // 4. Fee Account Summary & Donut percentage
+      expect(screen.getByText('FEE ACCOUNT SUMMARY')).toBeDefined();
+      expect(screen.getByText('56%')).toBeDefined();
+      expect(screen.getByText('₹90,000')).toBeDefined();
+      expect(screen.getAllByText('₹43,000').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('₹50,000')).toBeDefined();
+      expect(screen.getByText('₹40,000')).toBeDefined();
+
+      // 5. 6 previous payments in table
+      expect(screen.getByText('RCP-2026-0019')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0056')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0091')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0117')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0139')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0144')).toBeDefined();
+
+      // 6. Footer and security disclaimers
+      expect(screen.getByText('Thank you for your payment.')).toBeDefined();
+      expect(screen.getByText(/computer-generated receipt/i)).toBeDefined();
+      expect(screen.getByText('Authorized Signatory')).toBeDefined();
+    });
+
+    it('adaptively caps historical payments to 6 on A5 paper and shows overflow footnote', () => {
+      const eightPayments = Array.from({ length: 8 }, (_, i) => ({
+        payment_id: i + 1,
+        receipt_number: `RCP-2026-${String(i + 1).padStart(4, '0')}`,
+        date: `2026-0${i + 1}-10`,
+        payment_method: 'upi',
+        amount: 5000.0,
+      }));
+
+      const heavyReceipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0099',
+        payment_id: 99,
+        student_id: 1,
+        student_name: 'Test Student',
+        admission_number: 'PA-2024-000001',
+        amount: 5000.0,
+        payment_date: '2026-11-01',
+        payment_method: 'upi',
+        status: 'completed',
+        historical_payments: eightPayments,
+        fee_summary: {
+          total_fee_amount: 50000.0,
+          previous_payments_total: 40000.0,
+          current_payment_amount: 5000.0,
+          total_paid_to_date: 45000.0,
+          outstanding_balance: 5000.0,
+        },
+      };
+
+      const { rerender } = render(<PaymentReceiptView receipt={heavyReceipt} initialPaperSize="A5" />);
+
+      // On A5 mode, 6 are rendered and overflow notice appears
+      expect(screen.getByText(/Showing 6 most recent installments/i)).toBeDefined();
+
+      // When switched to A4 mode, all 8 are shown without the overflow notice
+      const a4Btn = screen.getByText('A4 Portrait');
+      fireEvent.click(a4Btn);
+      expect(screen.queryByText(/Showing 6 most recent installments/i)).toBeNull();
+    });
   });
 });
 
