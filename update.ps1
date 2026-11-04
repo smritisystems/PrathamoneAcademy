@@ -70,6 +70,13 @@ Write-Host ""
 
 if ($isHealthy) {
     Write-Host "[OK] Backend API is healthy and operational." -ForegroundColor Green
+    Write-Host "`nSynchronizing schema, academic years, and production datasets..." -ForegroundColor Cyan
+    try {
+        docker compose exec -T backend python scripts/normalize_academic_and_institution.py
+        Write-Host "[OK] Academic years and institution schema normalized successfully." -ForegroundColor Green
+    } catch {
+        Write-Host "[WARN] Schema normalization encountered an error: $_" -ForegroundColor Yellow
+    }
 } else {
     Write-Host "[WARN] Health check did not respond in time. Run 'docker compose logs -f' to inspect." -ForegroundColor Yellow
 }

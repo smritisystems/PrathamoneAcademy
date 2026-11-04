@@ -38,5 +38,8 @@ echo -e "\n[3/3] Validating service health..."
 sleep 5
 docker compose ps
 
+echo -e "\nSynchronizing schema, academic years, and production datasets..."
+docker compose exec -T backend python scripts/normalize_academic_and_institution.py || true
+
 echo -e "\n[SUCCESS] PrathamOne Academy updated successfully without data loss."
 
