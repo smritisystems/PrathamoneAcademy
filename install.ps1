@@ -19,10 +19,14 @@
 
 [CmdletBinding()]
 param (
-    [string]$InstallDir = $PSScriptRoot,
+    [string]$InstallDir = $(if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }),
     [string]$RepoUrl = "https://github.com/smritisystems/PrathamoneAcademy.git",
     [switch]$SkipElevationCheck
 )
+
+if ([string]::IsNullOrWhiteSpace($InstallDir)) {
+    $InstallDir = (Get-Location).Path
+}
 
 $ErrorActionPreference = "Stop"
 

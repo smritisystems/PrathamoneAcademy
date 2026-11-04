@@ -16,7 +16,7 @@
 
 [CmdletBinding()]
 param(
-    [string]$BackupDir = (Join-Path $PSScriptRoot "backups"),
+    [string]$BackupDir = $(Join-Path (if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }) "backups"),
     [string]$ContainerName = "prashant_academy_db",
     [string]$DbUser = "postgres",
     [string]$DbName = "prashant_academy"

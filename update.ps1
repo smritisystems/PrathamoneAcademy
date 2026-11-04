@@ -24,7 +24,7 @@ Write-Host "====================================================================
 Write-Host "       PrathamOne Academy - Safe System Updater                       " -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Blue
 
-$projectRoot = $PSScriptRoot
+$projectRoot = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
 Set-Location $projectRoot
 
 Write-Host "`n[1/4] Checking local Git working tree..." -ForegroundColor Cyan

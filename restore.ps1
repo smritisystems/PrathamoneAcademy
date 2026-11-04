@@ -29,7 +29,7 @@ Write-Host "====================================================================
 Write-Host "       PrathamOne Academy - Database Restore Utility                  " -ForegroundColor Cyan
 Write-Host "======================================================================" -ForegroundColor Blue
 
-$backupDir = Join-Path $PSScriptRoot "backups"
+$backupDir = Join-Path (if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }) "backups"
 
 # If no backup file specified, list available in backups/
 if (-not $BackupFile) {
