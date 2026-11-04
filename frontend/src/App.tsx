@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -50,6 +50,7 @@ const FormsDocumentsPage = React.lazy(() => import('./pages/FormsDocuments'))
 const InstallAppPage = React.lazy(() => import('./pages/InstallApp'))
 const StaffManagementPage = React.lazy(() => import('./pages/StaffManagement'))
 const SysAdminWorkspacePage = React.lazy(() => import('./pages/SysAdminWorkspace'))
+const SettingsPage = React.lazy(() => import('./pages/Settings'))
 
 function PageLoader() {
   return (
@@ -155,6 +156,7 @@ export default function App() {
           <Route path="forms" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="forms-documents" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
+          <Route path="settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
           {/* 404 within authenticated shell */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

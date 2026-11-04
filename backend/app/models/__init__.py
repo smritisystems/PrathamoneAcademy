@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -40,5 +40,55 @@ from app.models.staff import (
     StaffProfile, StaffDocument, TeacherAssignment,
     StaffAttendance, StaffLeave, StaffLeaveBalance, StaffGeneratedDocument
 )
+from app.models.settings import (
+    InstitutionSetting, LookupItem, SettingAuditLog
+)
+
+__all__ = [
+    "Institution",
+    "AcademicYear",
+    "Board",
+    "User",
+    "Role",
+    "Permission",
+    "AuditLog",
+    "Standard",
+    "Division",
+    "Student",
+    "Guardian",
+    "StudentEnrollment",
+    "Subject",
+    "FeeCategory",
+    "FeeStructure",
+    "StudentFeeAssignment",
+    "FeeInvoice",
+    "FeeInvoiceItem",
+    "FeeInstallment",
+    "Discount",
+    "Scholarship",
+    "Payment",
+    "PaymentAllocation",
+    "PaymentReceipt",
+    "Attendance",
+    "Examination",
+    "ExamMark",
+    "TimetableEntry",
+    "StudyMaterial",
+    "Announcement",
+    "StudentDocument",
+    "FeeRegisterImport",
+    "DataImportLog",
+    "StaffProfile",
+    "StaffDocument",
+    "TeacherAssignment",
+    "StaffAttendance",
+    "StaffLeave",
+    "StaffLeaveBalance",
+    "StaffGeneratedDocument",
+    "InstitutionSetting",
+    "LookupItem",
+    "SettingAuditLog",
+]
+
 
 

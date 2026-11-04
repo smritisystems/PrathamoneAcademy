@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description Central v1 API router registering all domain endpoint routers.
 #  */
@@ -41,6 +41,7 @@ from app.api.v1.endpoints import (
     forms,
     staff,
     sysadmin,
+    settings,
 )
 
 api_router = APIRouter()
@@ -86,4 +87,5 @@ api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(forms.router, prefix="/forms", tags=["forms"])
 api_router.include_router(staff.router, prefix="/staff", tags=["staff"])
 api_router.include_router(sysadmin.router, prefix="/sysadmin", tags=["sysadmin"])
+api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 

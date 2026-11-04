@@ -36,6 +36,7 @@ import type {
   StaffMember, StaffProfileDetail, TeacherAssignmentItem, StaffAttendanceItem,
   StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
   SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
+  InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -884,4 +885,38 @@ export const sysadminApi = {
       '/sysadmin/system-settings',
       data
     ),
+}
+
+// ─── Institute Settings Workspace & Configuration ───────────────────────────
+
+export const settingsApi = {
+  getProfile: () =>
+    apiClient.get<InstituteProfile>('/settings/profile'),
+
+  updateProfile: (data: Partial<InstituteProfile>) =>
+    apiClient.put<{ status: string; message: string; profile: InstituteProfile }>('/settings/profile', data),
+
+  getAll: () =>
+    apiClient.get<AllSettingsState>('/settings/all'),
+
+  updateBatch: (category: string, settings: Record<string, any>, reason?: string) =>
+    apiClient.put<{ status: string; message: string }>('/settings/batch', { category, settings, reason }),
+
+  getLookups: (category?: string) =>
+    apiClient.get<LookupsResponse>('/settings/lookups', { params: category ? { category } : {} }),
+
+  createLookup: (data: Omit<LookupItem, 'id' | 'is_system'>) =>
+    apiClient.post<{ status: string; message: string; item: LookupItem }>('/settings/lookups', data),
+
+  updateLookup: (id: number, data: Partial<LookupItem>) =>
+    apiClient.put<{ status: string; message: string; item: LookupItem }>(`/settings/lookups/${id}`, data),
+
+  deleteLookup: (id: number) =>
+    apiClient.delete<{ status: string; message: string }>(`/settings/lookups/${id}`),
+
+  getAuditLogs: (params?: { category?: string; limit?: number }) =>
+    apiClient.get<SettingAuditLogItem[]>('/settings/audit-logs', { params }),
+
+  resetDefaults: (category: string) =>
+    apiClient.post<{ status: string; message: string }>(`/settings/reset-defaults?category=${category}`),
 }

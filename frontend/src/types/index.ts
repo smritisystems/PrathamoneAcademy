@@ -1878,5 +1878,66 @@ export interface SystemSettings {
   app_environment: string
 }
 
+// ─── Institute Settings Workspace & Configuration ───────────────────────────
+
+export interface InstituteProfile {
+  id: number
+  name: string
+  code: string
+  short_name: string
+  tagline: string
+  institute_type: string
+  establishment_year: number
+  registration_number: string
+  tax_id: string
+  description: string
+  is_active: boolean
+  default_language: string
+  timezone: string
+  address: string
+  city: string
+  state: string
+  pincode: string
+  phone: string
+  email: string
+  website: string
+  logo_url: string
+  favicon_url: string
+  primary_color: string
+  secondary_color: string
+  accent_color: string
+}
+
+export interface LookupItem {
+  id: number
+  category: string
+  code: string
+  label: string
+  description?: string
+  sort_order: number
+  is_active: boolean
+  is_system: boolean
+  meta_data?: string
+}
+
+export interface LookupsResponse {
+  categories: string[]
+  items: LookupItem[]
+}
+
+export interface SettingAuditLogItem {
+  id: number
+  setting_key: string
+  category: string
+  previous_value?: string
+  new_value?: string
+  changed_by_name: string
+  reason?: string
+  created_at: string
+}
+
+export type AllSettingsState = Record<string, Record<string, any>>
+
+
 
 

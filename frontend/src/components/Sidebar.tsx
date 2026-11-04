@@ -63,7 +63,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/import-export', label: 'Import & Export', icon: FileSpreadsheet },
   { to: '/install', label: 'Install App (PWA)', icon: Download },
   { to: '/users', label: 'Users & Roles', icon: Shield },
-  { to: '/academic?tab=settings', label: 'Settings', icon: Settings },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function Sidebar() {
