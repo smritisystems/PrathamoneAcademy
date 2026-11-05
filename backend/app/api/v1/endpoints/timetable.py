@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for class timetable scheduling, room allocation, and collision detection.
 #  */
@@ -24,7 +24,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, require_role
 from app.models.portal import TimetableEntry
 from app.models.division import Division
 from app.models.subject import Subject
@@ -253,7 +253,7 @@ async def check_conflict(
 async def create_timetable_entry(
     data: TimetableEntryCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     # Validate conflict
     conflict_check = await check_conflict(
@@ -289,7 +289,7 @@ async def update_timetable_entry(
     entry_id: int,
     data: TimetableEntryUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     entry = (
         await db.execute(select(TimetableEntry).where(TimetableEntry.id == entry_id))
@@ -332,7 +332,7 @@ async def update_timetable_entry(
 async def delete_timetable_entry(
     entry_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     entry = (
         await db.execute(select(TimetableEntry).where(TimetableEntry.id == entry_id))

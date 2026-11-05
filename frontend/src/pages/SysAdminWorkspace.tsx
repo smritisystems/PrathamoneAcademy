@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Dedicated System Administrator governance workspace with protected security audits, universal records editor, and system controls.
  */
@@ -28,6 +28,43 @@ import { sysadminApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import type { SecurityAuditLogItem, UniversalEditPayload } from '../types'
 import OrganizationBranding from '../components/OrganizationBranding'
+
+const MODEL_ALLOWLISTS: Record<string, string[]> = {
+  student: [
+    'first_name', 'last_name', 'middle_name', 'date_of_birth', 'gender',
+    'blood_group', 'nationality', 'religion', 'caste', 'aadhar_number',
+    'photo_url', 'address', 'city', 'state', 'pincode', 'phone', 'email',
+    'is_active', 'exit_date', 'exit_reason', 'exit_notes'
+  ],
+  staff: [
+    'first_name', 'last_name', 'designation', 'department', 'qualification',
+    'experience_years', 'phone', 'email', 'address', 'status', 'joining_date',
+    'specialization'
+  ],
+  user: [
+    'first_name', 'last_name', 'email', 'phone', 'role', 'is_active'
+  ],
+  fee_structure: [
+    'name', 'description', 'total_amount', 'is_active'
+  ],
+  division: [
+    'name', 'code', 'room_number', 'capacity', 'schedule_timing', 'status',
+    'is_active', 'class_teacher_id'
+  ],
+  batch: [
+    'name', 'code', 'room_number', 'capacity', 'schedule_timing', 'status',
+    'is_active', 'class_teacher_id'
+  ],
+  standard: [
+    'name', 'level', 'description', 'is_active'
+  ],
+  institution: [
+    'name', 'tagline', 'address', 'city', 'state', 'pincode', 'phone',
+    'email', 'website', 'logo_url', 'favicon_url', 'primary_color',
+    'secondary_color', 'accent_color', 'description', 'is_active'
+  ],
+}
+
 
 export default function SysAdminWorkspace() {
   const { user } = useAuthStore()
@@ -465,7 +502,8 @@ export default function SysAdminWorkspace() {
                   <option value="staff">Staff Profile</option>
                   <option value="user">User Account</option>
                   <option value="fee_structure">Fee Structure</option>
-                  <option value="division">Division / Batch</option>
+                  <option value="division">Division / Class Section</option>
+                  <option value="batch">Academic Batch</option>
                   <option value="standard">Standard / Class</option>
                   <option value="institution">Institution Profile</option>
                 </select>
@@ -485,7 +523,28 @@ export default function SysAdminWorkspace() {
 
             {/* Field-Value Pair Builder */}
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-              <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">Field to Update</div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">Field to Update</div>
+                <div className="text-[11px] text-slate-500">Click an allowed field to prefill</div>
+              </div>
+              {MODEL_ALLOWLISTS[editPayload.model_name] && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {MODEL_ALLOWLISTS[editPayload.model_name].map((allowedField) => (
+                    <button
+                      key={allowedField}
+                      type="button"
+                      onClick={() => setFieldKey(allowedField)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono transition border ${
+                        fieldKey === allowedField
+                          ? 'bg-indigo-100 text-indigo-700 border-indigo-300 font-bold'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {allowedField}
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-slate-500 block mb-1">Field Name (Attribute)</label>

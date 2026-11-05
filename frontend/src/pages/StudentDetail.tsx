@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -30,7 +30,7 @@ import {
 } from 'lucide-react'
 import ShareModal from '../components/ShareModal'
 import { studentsApi, standardsApi, divisionsApi } from '../api/endpoints'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore, isUserAdmin } from '../store/authStore'
 import { StatusBadge } from '../components/Badge'
 import type { StudentDocumentItem } from '../types'
 
@@ -58,10 +58,7 @@ export default function StudentDetailPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('Overview')
 
   const currentUser = useAuthStore((s) => s.user)
-  const canEdit =
-    currentUser?.role === 'superadmin' ||
-    currentUser?.role === 'admin' ||
-    currentUser?.role === 'principal'
+  const canEdit = isUserAdmin(currentUser)
 
   // Share Modal State
   const [showShareModal, setShowShareModal] = useState(false)

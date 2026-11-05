@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for academic subjects master catalogue and curriculum syllabus mapping.
 #  */
@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from typing import Optional, List
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, require_role
 from app.models.subject import Subject
 from app.models.standard import Standard
 from pydantic import BaseModel
@@ -88,7 +88,7 @@ async def list_subjects(
 async def create_subject(
     data: SubjectCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     if data.code:
         existing = (
@@ -152,7 +152,7 @@ async def update_subject(
     subject_id: int,
     data: SubjectUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     result = await db.execute(select(Subject).where(Subject.id == subject_id))
     subject = result.scalar_one_or_none()
@@ -178,7 +178,7 @@ async def update_subject(
 async def delete_subject(
     subject_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     result = await db.execute(select(Subject).where(Subject.id == subject_id))
     subject = result.scalar_one_or_none()

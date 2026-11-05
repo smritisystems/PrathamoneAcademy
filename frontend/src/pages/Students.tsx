@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Student directory page with multi-field search, status filtering, lifecycle exit/reactivation, and fast profile navigation.
  */
@@ -24,7 +24,7 @@ import {
   UserMinus, UserCheck,
 } from 'lucide-react'
 import { studentsApi, standardsApi, divisionsApi, settingsApi } from '../api/endpoints'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore, isUserAdmin } from '../store/authStore'
 import Pagination from '../components/Pagination'
 import StudentExitModal from '../components/StudentExitModal'
 import StudentReactivateModal from '../components/StudentReactivateModal'
@@ -57,8 +57,7 @@ export default function StudentsPage() {
   const [exitTargetStudent, setExitTargetStudent] = useState<Student | null>(null)
   const [reactivateTargetStudent, setReactivateTargetStudent] = useState<Student | null>(null)
 
-  const canManageLifecycle =
-    user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'staff'
+  const canManageLifecycle = isUserAdmin(user) || user?.role === 'staff'
 
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],

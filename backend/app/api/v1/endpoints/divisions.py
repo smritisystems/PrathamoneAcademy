@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for batch/division management, teacher allocation, capacity, and scheduling.
 #  */
@@ -24,7 +24,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, require_role
 from app.services.settings_service import get_institution_setting
 from app.models.division import Division
 from app.models.standard import Standard
@@ -167,7 +167,7 @@ async def list_divisions(
 async def create_division(
     data: DivisionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "admin", "principal")),
 ):
     # Check if duplicate code exists under same standard and board
     if data.code:
@@ -287,7 +287,7 @@ async def update_division(
     division_id: int,
     data: DivisionUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "admin", "principal")),
 ):
     division = (
         await db.execute(select(Division).where(Division.id == division_id))
@@ -321,7 +321,7 @@ async def update_division(
 async def archive_division(
     division_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "admin", "principal")),
 ):
     division = (
         await db.execute(select(Division).where(Division.id == division_id))

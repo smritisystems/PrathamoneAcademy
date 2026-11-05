@@ -217,6 +217,44 @@ async def list_security_audit_logs(
     }
 
 
+# Explicit Field-level Allowlists for Universal Record Editor
+MODEL_FIELD_ALLOWLIST: Dict[str, set] = {
+    "student": {
+        "first_name", "last_name", "middle_name", "date_of_birth", "gender",
+        "blood_group", "nationality", "religion", "caste", "aadhar_number",
+        "photo_url", "address", "city", "state", "pincode", "phone", "email",
+        "is_active", "exit_date", "exit_reason", "exit_notes"
+    },
+    "staff": {
+        "first_name", "last_name", "designation", "department", "qualification",
+        "experience_years", "phone", "email", "address", "status", "joining_date",
+        "specialization"
+    },
+    "user": {
+        "first_name", "last_name", "email", "phone", "role", "is_active"
+    },
+    "fee_structure": {
+        "name", "description", "total_amount", "is_active"
+    },
+    "division": {
+        "name", "code", "room_number", "capacity", "schedule_timing", "status",
+        "is_active", "class_teacher_id"
+    },
+    "batch": {
+        "name", "code", "room_number", "capacity", "schedule_timing", "status",
+        "is_active", "class_teacher_id"
+    },
+    "standard": {
+        "name", "level", "description", "is_active"
+    },
+    "institution": {
+        "name", "tagline", "address", "city", "state", "pincode", "phone",
+        "email", "website", "logo_url", "favicon_url", "primary_color",
+        "secondary_color", "accent_color", "description", "is_active"
+    },
+}
+
+
 @router.post("/universal-edit")
 async def execute_universal_edit(
     req: UniversalEditRequest,
@@ -227,17 +265,32 @@ async def execute_universal_edit(
     """
     Universal Administrative Edit Endpoint.
     Enables authorized SysAdmin superusers to update editable fields across application entities.
+    Enforces strict field allowlists to protect primary keys, passwords, foreign keys, and tenant isolation.
     Automatically maintains comprehensive before/after security audit logging.
-    Preserves database constraints, tenant isolation, and financial referential integrity.
     """
     model_name = req.model_name.lower().strip()
     record_id = req.record_id
     fields = req.fields
     reason = req.reason or "Direct SysAdmin Administrative Modification"
 
-    # Block editing of forbidden critical immutable security keys
-    forbidden_keys = {"id", "hashed_password", "created_at"}
-    filtered_fields = {k: v for k, v in fields.items() if k not in forbidden_keys}
+    if model_name not in MODEL_FIELD_ALLOWLIST:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Model '{model_name}' is not supported for universal editing. Supported models: {sorted(list(MODEL_FIELD_ALLOWLIST.keys()))}",
+        )
+
+    allowed_fields = MODEL_FIELD_ALLOWLIST[model_name]
+    disallowed_fields = [k for k in fields.keys() if k not in allowed_fields]
+    if disallowed_fields:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Field(s) {disallowed_fields} are protected or not permissible for direct universal edit on model '{model_name}'. "
+                f"Permissible fields: {sorted(list(allowed_fields))}"
+            ),
+        )
+
+    filtered_fields = {k: v for k, v in fields.items() if k in allowed_fields}
     if not filtered_fields:
         raise HTTPException(status_code=400, detail="No permissible fields supplied for edit.")
 

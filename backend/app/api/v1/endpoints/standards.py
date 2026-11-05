@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for standards/classes management, board associations, and settings.
 #  */
@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, require_role
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.board import Board
@@ -100,7 +100,7 @@ async def get_academic_settings(
 async def update_academic_settings(
     data: AcademicSettingsSchema,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     settings_dict = data.model_dump()
     user_inst_id = getattr(current_user, "institution_id", None) or 1
@@ -336,7 +336,7 @@ async def list_standards(
 async def create_standard(
     data: StandardCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     d = data.model_dump()
     if not d.get("institution_id"):
@@ -417,7 +417,7 @@ async def update_standard(
     standard_id: int,
     data: StandardUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     result = await db.execute(select(Standard).where(Standard.id == standard_id))
     standard = result.scalar_one_or_none()
@@ -443,7 +443,7 @@ async def update_standard(
 async def delete_standard(
     standard_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     result = await db.execute(select(Standard).where(Standard.id == standard_id))
     standard = result.scalar_one_or_none()

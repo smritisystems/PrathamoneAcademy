@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-06
  *
  * @description Dedicated user profile management workspace for inspecting activity logs, scopes, and passwords.
  */
@@ -38,6 +38,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
 
 const ROLES = [
+  { value: 'sysadmin', label: 'System Administrator' },
   { value: 'superadmin', label: 'Super Admin' },
   { value: 'admin', label: 'Administrator' },
   { value: 'principal', label: 'Principal' },
@@ -205,6 +206,7 @@ export default function UserProfilePage() {
   // ── Role Styling ────────────────────────────────────────────────────────────
   const getRoleBadgeClass = (role: string) => {
     switch (role?.toLowerCase()) {
+      case 'sysadmin':
       case 'superadmin':
       case 'super_admin':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300'
@@ -227,6 +229,7 @@ export default function UserProfilePage() {
 
   const getRoleGradient = (role: string) => {
     switch (role?.toLowerCase()) {
+      case 'sysadmin':
       case 'superadmin':
       case 'super_admin':
         return 'from-purple-600 to-indigo-600'

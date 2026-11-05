@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for academic year lifecycle, current session selection, and validation.
 #  */
@@ -25,6 +25,7 @@ from app.core.deps import (
     get_current_active_user,
     enforce_institution_access,
     check_institution_access,
+    require_role,
 )
 from app.models.academic_year import AcademicYear
 from pydantic import BaseModel
@@ -99,7 +100,7 @@ async def list_academic_years(
 async def create_academic_year(
     data: AcademicYearCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     check_institution_access(data.institution_id, current_user)
     if data.is_current:
@@ -148,7 +149,7 @@ async def update_academic_year(
     year_id: int,
     data: AcademicYearUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     result = await db.execute(
         select(AcademicYear).where(AcademicYear.id == year_id)

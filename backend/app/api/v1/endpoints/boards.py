@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for educational boards management, standards mapping, and academic hierarchy.
 #  */
@@ -23,7 +23,7 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, require_role
 from app.models.board import Board
 from app.models.division import Division
 from app.models.enrollment import StudentEnrollment
@@ -118,7 +118,7 @@ async def list_boards(
 async def create_board(
     data: BoardCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     # Check duplicate code
     existing = (
@@ -184,7 +184,7 @@ async def update_board(
     board_id: int,
     data: BoardUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     result = await db.execute(select(Board).where(Board.id == board_id))
     board = result.scalar_one_or_none()
@@ -211,7 +211,7 @@ async def update_board(
 async def toggle_board_status(
     board_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     result = await db.execute(select(Board).where(Board.id == board_id))
     board = result.scalar_one_or_none()

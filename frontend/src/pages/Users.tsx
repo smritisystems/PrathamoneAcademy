@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-06
  *
  * @description User management dashboard listing system accounts, roles, access scopes, and invitation workflows.
  */
@@ -36,6 +36,7 @@ import toast from 'react-hot-toast'
 
 const ROLES = [
   { value: 'all', label: 'All Roles' },
+  { value: 'sysadmin', label: 'System Administrator' },
   { value: 'superadmin', label: 'Super Admin' },
   { value: 'admin', label: 'Administrator' },
   { value: 'principal', label: 'Principal' },
@@ -293,6 +294,7 @@ export default function UsersPage() {
   // ── Role Color Helper ───────────────────────────────────────────────────────
   const getRoleBadgeClass = (role: string) => {
     switch (role.toLowerCase()) {
+      case 'sysadmin':
       case 'superadmin':
       case 'super_admin':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300'

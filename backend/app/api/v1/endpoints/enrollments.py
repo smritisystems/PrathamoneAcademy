@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for student course and batch enrollment, transfers, and status tracking.
 #  */
@@ -24,7 +24,7 @@ from pydantic import BaseModel
 from datetime import date, datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, require_role
 from app.models.enrollment import StudentEnrollment
 from app.models.student import Student
 from app.models.division import Division
@@ -277,7 +277,7 @@ async def list_unassigned_students(
 async def create_enrollment(
     data: EnrollmentCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "admin", "principal", "staff")),
 ):
     # 1. Prevent duplicate active enrollment in same academic year
     existing_active = (
@@ -350,7 +350,7 @@ async def create_enrollment(
 async def transfer_batch(
     req: BatchTransferRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "admin", "principal", "staff")),
 ):
     enr = (
         await db.execute(select(StudentEnrollment).where(StudentEnrollment.id == req.enrollment_id))
@@ -433,7 +433,7 @@ async def update_enrollment(
     enrollment_id: int,
     data: EnrollmentUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "admin", "principal", "staff")),
 ):
     enr = (
         await db.execute(select(StudentEnrollment).where(StudentEnrollment.id == enrollment_id))
@@ -455,7 +455,7 @@ async def update_enrollment(
 async def delete_enrollment(
     enrollment_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "admin", "principal", "staff")),
 ):
     enr = (
         await db.execute(select(StudentEnrollment).where(StudentEnrollment.id == enrollment_id))
