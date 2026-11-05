@@ -9,15 +9,21 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     2.0.0
  * @created     2026-11-03
  * @updated     2026-11-05
  *
- * @description Axios HTTP client instance configured with base URL, authentication headers, and response interceptors.
+ * @description Axios HTTP client instance configured with base URL, authentication headers, error classification, and response interceptors.
  */
 
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
+import {
+  classifyError,
+  generateErrorReferenceId,
+  USER_ERROR_SPECS,
+  logTechnicalError,
+} from '../utils/errorTaxonomy'
 
 const apiClient = axios.create({
   baseURL: '/api/v1',
@@ -25,7 +31,7 @@ const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token
+  const token = typeof useAuthStore?.getState === 'function' ? useAuthStore.getState()?.token : null
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -37,10 +43,31 @@ let isRedirecting = false
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const errorId = error?.errorId || generateErrorReferenceId()
+    const category = classifyError(error)
+    const spec = USER_ERROR_SPECS[category]
+
+    // Attach classified non-technical properties to error object
+    if (error && typeof error === 'object') {
+      error.errorId = errorId
+      error.category = category
+      error.userFriendlyMessage = spec.message
+      error.userFriendlyTitle = spec.title
+    }
+
+    // Log complete developer details in console group
+    logTechnicalError({
+      errorId,
+      error,
+      category,
+      apiEndpoint: error?.config?.url,
+      status: error?.response?.status,
+    })
+
     if (error.response?.status === 401) {
-      const hadToken = !!useAuthStore.getState().token
-      if (hadToken) {
-        useAuthStore.getState().logout()
+      const hadToken = typeof useAuthStore?.getState === 'function' ? !!useAuthStore.getState()?.token : false
+      if (hadToken && typeof useAuthStore?.getState === 'function') {
+        useAuthStore.getState()?.logout?.()
       }
 
       if (typeof window !== 'undefined') {
@@ -54,9 +81,9 @@ apiClient.interceptors.response.use(
         }
       }
     }
+
     return Promise.reject(error)
   }
 )
 
 export default apiClient
-

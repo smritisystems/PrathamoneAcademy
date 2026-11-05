@@ -20,39 +20,41 @@ import React, { Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { OfflineBanner } from './components/OfflineBanner'
+import { lazyWithRetry } from './utils/lazyWithRetry'
 import Layout from './components/Layout'
 import NotFoundPage from './pages/NotFound'
 
 // Lazy-load all pages for code splitting
-const LoginPage = React.lazy(() => import('./pages/Login'))
-const DashboardPage = React.lazy(() => import('./pages/Dashboard'))
-const CoursesPage = React.lazy(() => import('./pages/Courses'))
-const StandardsPage = React.lazy(() => import('./pages/Standards'))
-const BatchesPage = React.lazy(() => import('./pages/Batches'))
-const SubjectsPage = React.lazy(() => import('./pages/Subjects'))
-const StudentsPage = React.lazy(() => import('./pages/Students'))
-const StudentDetailPage = React.lazy(() => import('./pages/StudentDetail'))
-const AddStudentPage = React.lazy(() => import('./pages/AddStudent'))
-const AttendancePage = React.lazy(() => import('./pages/Attendance'))
-const ExaminationsPage = React.lazy(() => import('./pages/Examinations'))
-const FeesPage = React.lazy(() => import('./pages/Fees'))
-const FeeCollectionPage = React.lazy(() => import('./pages/FeeCollection'))
-const PaymentsPage = React.lazy(() => import('./pages/Payments'))
-const ReceiptPage = React.lazy(() => import('./pages/Receipt'))
-const ReportsPage = React.lazy(() => import('./pages/Reports'))
-const UsersPage = React.lazy(() => import('./pages/Users'))
-const UserProfilePage = React.lazy(() => import('./pages/UserProfile'))
-const ImportFeeRegisterPage = React.lazy(() => import('./pages/ImportFeeRegister'))
-const StudentDashboardPage = React.lazy(() => import('./pages/StudentDashboard'))
-const AcademicWorkspacePage = React.lazy(() => import('./pages/AcademicWorkspace'))
-const ImportExportPage = React.lazy(() => import('./pages/ImportExport'))
-const FormsDocumentsPage = React.lazy(() => import('./pages/FormsDocuments'))
-const InstallAppPage = React.lazy(() => import('./pages/InstallApp'))
-const StaffManagementPage = React.lazy(() => import('./pages/StaffManagement'))
-const SysAdminWorkspacePage = React.lazy(() => import('./pages/SysAdminWorkspace'))
-const SettingsPage = React.lazy(() => import('./pages/Settings'))
-const CommunicationPage = React.lazy(() => import('./pages/Communication'))
-const ReleasesPage = React.lazy(() => import('./pages/Releases'))
+const LoginPage = lazyWithRetry(() => import('./pages/Login'), 'Login')
+const DashboardPage = lazyWithRetry(() => import('./pages/Dashboard'), 'Dashboard')
+const CoursesPage = lazyWithRetry(() => import('./pages/Courses'), 'Courses')
+const StandardsPage = lazyWithRetry(() => import('./pages/Standards'), 'Standards')
+const BatchesPage = lazyWithRetry(() => import('./pages/Batches'), 'Batches')
+const SubjectsPage = lazyWithRetry(() => import('./pages/Subjects'), 'Subjects')
+const StudentsPage = lazyWithRetry(() => import('./pages/Students'), 'Students')
+const StudentDetailPage = lazyWithRetry(() => import('./pages/StudentDetail'), 'StudentDetail')
+const AddStudentPage = lazyWithRetry(() => import('./pages/AddStudent'), 'AddStudent')
+const AttendancePage = lazyWithRetry(() => import('./pages/Attendance'), 'Attendance')
+const ExaminationsPage = lazyWithRetry(() => import('./pages/Examinations'), 'Examinations')
+const FeesPage = lazyWithRetry(() => import('./pages/Fees'), 'Fees')
+const FeeCollectionPage = lazyWithRetry(() => import('./pages/FeeCollection'), 'FeeCollection')
+const PaymentsPage = lazyWithRetry(() => import('./pages/Payments'), 'Payments')
+const ReceiptPage = lazyWithRetry(() => import('./pages/Receipt'), 'Receipt')
+const ReportsPage = lazyWithRetry(() => import('./pages/Reports'), 'Reports')
+const UsersPage = lazyWithRetry(() => import('./pages/Users'), 'Users')
+const UserProfilePage = lazyWithRetry(() => import('./pages/UserProfile'), 'UserProfile')
+const ImportFeeRegisterPage = lazyWithRetry(() => import('./pages/ImportFeeRegister'), 'ImportFeeRegister')
+const StudentDashboardPage = lazyWithRetry(() => import('./pages/StudentDashboard'), 'StudentDashboard')
+const AcademicWorkspacePage = lazyWithRetry(() => import('./pages/AcademicWorkspace'), 'AcademicWorkspace')
+const ImportExportPage = lazyWithRetry(() => import('./pages/ImportExport'), 'ImportExport')
+const FormsDocumentsPage = lazyWithRetry(() => import('./pages/FormsDocuments'), 'FormsDocuments')
+const InstallAppPage = lazyWithRetry(() => import('./pages/InstallApp'), 'InstallApp')
+const StaffManagementPage = lazyWithRetry(() => import('./pages/StaffManagement'), 'StaffManagement')
+const SysAdminWorkspacePage = lazyWithRetry(() => import('./pages/SysAdminWorkspace'), 'SysAdminWorkspace')
+const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
+const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), 'Communication')
+const ReleasesPage = lazyWithRetry(() => import('./pages/Releases'), 'Releases')
 
 function PageLoader() {
   return (
@@ -92,6 +94,7 @@ function IndexRedirect() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <OfflineBanner />
       <Routes>
         <Route
           path="/login"

@@ -22,6 +22,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download } from 'lucide-react'
 import Sidebar from './Sidebar'
 import Footer from './Footer'
+import { RouteErrorBoundary } from './RouteErrorBoundary'
 import { useAuthStore } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
 import { institutionsApi, academicYearsApi } from '../api/endpoints'
@@ -232,7 +233,9 @@ export default function Layout() {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 min-h-0 min-w-0 print:h-auto print:overflow-visible print:p-0">
-          <Outlet />
+          <RouteErrorBoundary>
+            <Outlet />
+          </RouteErrorBoundary>
         </main>
 
         {/* Application Fixed Bottom Footer */}

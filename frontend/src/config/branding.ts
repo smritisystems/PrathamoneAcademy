@@ -48,6 +48,7 @@ export interface SalesSupportInfo {
   phones: string[]
   displayPhones: string
   email: string
+  alternateEmail: string
 }
 
 /**
@@ -110,6 +111,7 @@ export const BRANDING_CONFIG = {
     phones: ['9323 023 007', '9324 117 007'],
     displayPhones: '9323 023 007 | 9324 117 007',
     email: 'support@prathamone.com',
+    alternateEmail: 'prathamone@outlook.com',
   } as SalesSupportInfo,
   colors: {
     primary: '#1e40af',       // Deep Royal Blue
@@ -130,6 +132,7 @@ export const BRANDING_CONFIG = {
   },
   support: {
     email: 'support@prathamone.com' as string,
+    alternateEmail: 'prathamone@outlook.com' as string,
     academyEmail: 'info@prashantacademy.edu.in' as string,
     phone: '+91-22-12345678' as string,
     website: 'https://prathamone.com' as string,

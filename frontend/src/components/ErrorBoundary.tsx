@@ -9,82 +9,110 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     2.0.0
  * @created     2026-11-04
  * @updated     2026-11-05
  *
- * @description React error boundary catching runtime component errors and displaying fallback diagnostics.
+ * @description Centralized React Error Boundary catching component exceptions, logging technical diagnostics, and presenting friendly recovery UI.
  */
 
 import React from 'react'
-import { AlertCircle, RefreshCw } from 'lucide-react'
-import { BRANDING_CONFIG } from '../config/branding'
+import { AlertCircle } from 'lucide-react'
+import {
+  ErrorCategory,
+  classifyError,
+  generateErrorReferenceId,
+  createSafeDiagnostics,
+  logTechnicalError,
+  SafeDiagnostics,
+} from '../utils/errorTaxonomy'
+import { ErrorScreen } from './ErrorScreen'
 
-interface Props {
+export interface ErrorBoundaryProps {
   children: React.ReactNode
   fallbackTitle?: string
   fallbackMessage?: string
+  categoryOverride?: ErrorCategory
+  onReset?: () => void
+  isInline?: boolean
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean
   error: Error | null
+  errorId: string
+  category: ErrorCategory
+  diagnostics: SafeDiagnostics | null
 }
 
-export class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  constructor(props: ErrorBoundaryProps) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = {
+      hasError: false,
+      error: null,
+      errorId: '',
+      category: 'UNKNOWN_ERROR',
+      diagnostics: null,
+    }
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    const errorId = (error as any)?.errorId || generateErrorReferenceId()
+    const category = (error as any)?.category || classifyError(error)
+    const diagnostics = createSafeDiagnostics(errorId, category)
+
+    return {
+      hasError: true,
+      error,
+      errorId,
+      category,
+      diagnostics,
+    }
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught:', error, errorInfo)
+    const { errorId, category } = this.state
+    const effectiveCategory = this.props.categoryOverride || category
+
+    // Log full developer diagnostics matching the user-facing error reference ID
+    logTechnicalError({
+      errorId: errorId || generateErrorReferenceId(),
+      error,
+      category: effectiveCategory,
+      componentStack: errorInfo.componentStack || undefined,
+    })
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null })
+    if (this.props.onReset) {
+      this.props.onReset()
+    }
+    this.setState({
+      hasError: false,
+      error: null,
+      errorId: '',
+      category: 'UNKNOWN_ERROR',
+      diagnostics: null,
+    })
   }
 
   render() {
-    if (this.state.hasError) {
+    if (this.state.hasError && this.state.diagnostics) {
+      const effectiveCategory = this.props.categoryOverride || this.state.category
+
       return (
-        <div className="flex flex-col items-center justify-center min-h-[300px] p-8 text-center">
-          <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            {this.props.fallbackTitle ?? 'Something went wrong'}
-          </h2>
-          <p className="text-gray-500 mb-6 max-w-md">
-            {this.props.fallbackMessage ??
-              'An unexpected error occurred while loading this section. Please try refreshing.'}
-          </p>
-          {this.state.error && (
-            <pre className="text-xs text-left bg-gray-100 rounded p-3 mb-6 max-w-xl overflow-auto text-red-700">
-              {this.state.error.message}
-            </pre>
-          )}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={this.handleReset}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs font-bold"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Try Again
-            </button>
-            <a
-              href={`mailto:${BRANDING_CONFIG.support.email}`}
-              className="text-xs text-slate-500 hover:text-slate-800 underline"
-            >
-              Contact Support
-            </a>
-          </div>
-          <p className="text-[10px] text-slate-400 mt-4">
-            {BRANDING_CONFIG.appName} • {BRANDING_CONFIG.versionDisplay}
-          </p>
-        </div>
+        <ErrorScreen
+          category={effectiveCategory}
+          diagnostics={this.state.diagnostics}
+          fallbackTitle={this.props.fallbackTitle}
+          fallbackMessage={this.props.fallbackMessage}
+          onReset={this.handleReset}
+          isInline={this.props.isInline}
+        />
       )
     }
 
@@ -96,16 +124,25 @@ export class ErrorBoundary extends React.Component<Props, State> {
 export function QueryError({
   error,
   title = 'Failed to load data',
+  onRetry,
 }: {
   error: unknown
   title?: string
+  onRetry?: () => void
 }) {
-  const msg = error instanceof Error ? error.message : String(error)
+  const category = classifyError(error)
+  const errorId = (error as any)?.errorId || generateErrorReferenceId()
+  const diagnostics = createSafeDiagnostics(errorId, category)
+
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <AlertCircle className="w-10 h-10 text-red-400 mb-3" />
-      <p className="font-medium text-gray-700">{title}</p>
-      <p className="text-sm text-gray-500 mt-1">{msg}</p>
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+      <ErrorScreen
+        category={category}
+        diagnostics={diagnostics}
+        fallbackTitle={title}
+        onReset={onRetry}
+        isInline
+      />
     </div>
   )
 }
@@ -122,10 +159,13 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      {Icon && <Icon className="w-12 h-12 text-gray-300 mb-4" />}
+      {Icon ? (
+        <Icon className="w-12 h-12 text-gray-300 mb-4" />
+      ) : (
+        <AlertCircle className="w-12 h-12 text-gray-300 mb-4" />
+      )}
       <p className="text-lg font-medium text-gray-500">{title}</p>
       {message && <p className="text-sm text-gray-400 mt-1">{message}</p>}
     </div>
   )
 }
-
