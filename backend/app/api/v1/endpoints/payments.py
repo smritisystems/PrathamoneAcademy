@@ -26,7 +26,7 @@ from datetime import date, datetime, timezone
 import json
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, is_sysadmin
+from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access
 from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
@@ -134,6 +134,12 @@ async def create_payment(
             status_code=400,
             detail=f"Total allocation ({total_allocated}) must equal payment amount ({data.amount})",
         )
+
+    # Verify student exists and belongs to authorized institution
+    target_student = await db.get(Student, data.student_id)
+    if not target_student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    check_institution_access(target_student.institution_id, current_user)
 
     # Validate each allocation against invoice & installment
     for alloc in data.allocations:
@@ -322,10 +328,12 @@ async def submit_draft_payment(
     current_user=Depends(require_role("superadmin", "admin", "accountant", "staff", "principal")),
 ):
     """Submits a draft payment voucher for review, approval, or posting."""
-    result = await db.execute(select(Payment).where(Payment.id == payment_id))
+    result = await db.execute(select(Payment).options(selectinload(Payment.student)).where(Payment.id == payment_id))
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
     if payment.status != "draft":
         raise HTTPException(status_code=400, detail=f"Cannot submit payment in '{payment.status}' state")
 
@@ -358,10 +366,12 @@ async def approve_payment(
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
     """Approves a submitted payment under Standard ERP workflow rules."""
-    result = await db.execute(select(Payment).where(Payment.id == payment_id))
+    result = await db.execute(select(Payment).options(selectinload(Payment.student)).where(Payment.id == payment_id))
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
     if payment.status != "submitted":
         raise HTTPException(status_code=400, detail=f"Cannot approve payment in '{payment.status}' state")
 
@@ -395,11 +405,13 @@ async def post_payment(
 ):
     """Executes ledger posting for submitted or approved payments."""
     result = await db.execute(
-        select(Payment).options(selectinload(Payment.allocations)).where(Payment.id == payment_id)
+        select(Payment).options(selectinload(Payment.allocations), selectinload(Payment.student)).where(Payment.id == payment_id)
     )
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
 
     effective_inst_id = getattr(current_user, "institution_id", None) or 1
     settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
@@ -467,12 +479,15 @@ async def update_payment(
         .options(
             selectinload(Payment.allocations),
             selectinload(Payment.receipts),
+            selectinload(Payment.student),
         )
         .where(Payment.id == payment_id)
     )
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
 
     # Permission check for posted payments
     if payment.status in ("posted", "completed"):
@@ -512,11 +527,17 @@ async def reprint_receipt(
 ):
     """Increments reprint count and records duplicate copy issuance."""
     result = await db.execute(
-        select(PaymentReceipt).where(PaymentReceipt.receipt_number == receipt_number)
+        select(PaymentReceipt).options(selectinload(PaymentReceipt.payment).selectinload(Payment.student)).where(PaymentReceipt.receipt_number == receipt_number)
     )
     receipt = result.scalar_one_or_none()
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
+    if receipt.payment and receipt.payment.student:
+        check_institution_access(receipt.payment.student.institution_id, current_user)
+    elif receipt.student_id:
+        std = await db.get(Student, receipt.student_id)
+        if std:
+            check_institution_access(std.institution_id, current_user)
 
     receipt.reprint_count += 1
     await log_payment_audit(
@@ -553,11 +574,13 @@ async def create_payment_refund(
     Enforces that refund cannot exceed remaining refundable collection balance.
     """
     pay_res = await db.execute(
-        select(Payment).options(selectinload(Payment.allocations)).where(Payment.id == payment_id)
+        select(Payment).options(selectinload(Payment.allocations), selectinload(Payment.student)).where(Payment.id == payment_id)
     )
     payment = pay_res.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment record not found")
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
     if payment.status not in ("posted", "completed"):
         raise HTTPException(status_code=400, detail="Refunds can only be processed on posted payments")
 
@@ -640,6 +663,7 @@ async def approve_refund(
     refund = result.scalar_one_or_none()
     if not refund:
         raise HTTPException(status_code=404, detail="Refund record not found")
+    check_institution_access(refund.institution_id, current_user)
     if refund.status != "requested":
         raise HTTPException(status_code=400, detail=f"Cannot approve refund in '{refund.status}' state")
 
@@ -673,6 +697,7 @@ async def process_refund(
     refund = result.scalar_one_or_none()
     if not refund:
         raise HTTPException(status_code=404, detail="Refund record not found")
+    check_institution_access(refund.institution_id, current_user)
     if refund.status not in ("requested", "approved"):
         raise HTTPException(status_code=400, detail=f"Cannot process refund in '{refund.status}' state")
 
@@ -698,15 +723,26 @@ async def list_refunds(
     student_id: Optional[int] = None,
     payment_id: Optional[int] = None,
     status: Optional[str] = None,
+    institution_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     """Lists refund records with student and payment metadata."""
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+        effective_inst_id = institution_id
+    elif not is_sysadmin(current_user):
+        effective_inst_id = getattr(current_user, "institution_id", None)
+    else:
+        effective_inst_id = None
+
     query = (
         select(Refund, Student, PaymentReceipt.receipt_number)
         .join(Student, Refund.student_id == Student.id)
         .outerjoin(PaymentReceipt, Refund.payment_id == PaymentReceipt.payment_id)
     )
+    if effective_inst_id is not None:
+        query = query.where(Refund.institution_id == effective_inst_id)
     if student_id:
         query = query.where(Refund.student_id == student_id)
     if payment_id:
@@ -747,6 +783,13 @@ async def get_payment_audit_trail(
     current_user=Depends(get_current_active_user),
 ):
     """Returns chronological audit records for a payment."""
+    pay_res = await db.execute(select(Payment).options(selectinload(Payment.student)).where(Payment.id == payment_id))
+    payment = pay_res.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
+
     query = (
         select(AuditLog, User.username, User.first_name, User.last_name)
         .outerjoin(User, AuditLog.user_id == User.id)
@@ -846,10 +889,19 @@ async def list_payments(
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
     status: Optional[str] = None,
+    institution_id: Optional[int] = None,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+        effective_inst_id = institution_id
+    elif not is_sysadmin(current_user):
+        effective_inst_id = getattr(current_user, "institution_id", None)
+    else:
+        effective_inst_id = None
+
     query = (
         select(
             Payment,
@@ -873,6 +925,8 @@ async def list_payments(
         .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
     )
+    if effective_inst_id is not None:
+        query = query.where(Student.institution_id == effective_inst_id)
     if student_id:
         query = query.where(Payment.student_id == student_id)
     if academic_year_id:
@@ -931,10 +985,19 @@ async def list_receipts(
     board_id: Optional[int] = None,
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
+    institution_id: Optional[int] = None,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+        effective_inst_id = institution_id
+    elif not is_sysadmin(current_user):
+        effective_inst_id = getattr(current_user, "institution_id", None)
+    else:
+        effective_inst_id = None
+
     query = (
         select(
             PaymentReceipt,
@@ -955,6 +1018,8 @@ async def list_receipts(
         .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
     )
+    if effective_inst_id is not None:
+        query = query.where(Student.institution_id == effective_inst_id)
     if academic_year_id:
         query = query.where(Payment.academic_year_id == academic_year_id)
     if board_id:
@@ -1027,12 +1092,15 @@ async def get_payment(
         .options(
             selectinload(Payment.allocations),
             selectinload(Payment.receipts),
+            selectinload(Payment.student),
         )
         .where(Payment.id == payment_id)
     )
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
     
     curr_rec = next((r for r in payment.receipts if r.status == "valid"), None) if payment.receipts else None
     return {
@@ -1073,12 +1141,14 @@ async def reverse_payment(
     """Reverse a payment, restore invoice balances, and mark receipt as voided."""
     result = await db.execute(
         select(Payment)
-        .options(selectinload(Payment.allocations), selectinload(Payment.receipts))
+        .options(selectinload(Payment.allocations), selectinload(Payment.receipts), selectinload(Payment.student))
         .where(Payment.id == payment_id)
     )
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
     if payment.status == "reversed":
         raise HTTPException(status_code=400, detail="Payment already reversed")
 
@@ -1383,13 +1453,13 @@ async def get_receipt(
     current_user=Depends(get_current_active_user),
 ):
     result = await db.execute(
-        select(PaymentReceipt).where(PaymentReceipt.receipt_number == receipt_number)
+        select(PaymentReceipt).options(selectinload(PaymentReceipt.payment).selectinload(Payment.student)).where(PaymentReceipt.receipt_number == receipt_number)
     )
     receipt = result.scalar_one_or_none()
 
     if not receipt and receipt_number.isdigit():
         result = await db.execute(
-            select(PaymentReceipt).where(
+            select(PaymentReceipt).options(selectinload(PaymentReceipt.payment).selectinload(Payment.student)).where(
                 PaymentReceipt.payment_id == int(receipt_number),
                 PaymentReceipt.status == "valid",
             )
@@ -1397,11 +1467,18 @@ async def get_receipt(
         receipt = result.scalar_one_or_none()
         if not receipt:
             result = await db.execute(
-                select(PaymentReceipt).where(PaymentReceipt.payment_id == int(receipt_number))
+                select(PaymentReceipt).options(selectinload(PaymentReceipt.payment).selectinload(Payment.student)).where(PaymentReceipt.payment_id == int(receipt_number))
             )
             receipt = result.scalar_one_or_none()
 
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
+
+    if receipt.payment and receipt.payment.student:
+        check_institution_access(receipt.payment.student.institution_id, current_user)
+    elif receipt.student_id:
+        std = await db.get(Student, receipt.student_id)
+        if std:
+            check_institution_access(std.institution_id, current_user)
 
     return await build_receipt_response(db, receipt)

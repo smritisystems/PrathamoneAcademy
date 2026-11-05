@@ -67,6 +67,14 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return token ? <>{children}</> : <Navigate to="/login" replace />
 }
 
+function StaffRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user)
+  if (user?.role === 'student') {
+    return <Navigate to="/student-portal" replace />
+  }
+  return <>{children}</>
+}
+
 function IndexRedirect() {
   const user = useAuthStore((s) => s.user)
   const token = useAuthStore((s) => s.token)
@@ -105,11 +113,13 @@ export default function App() {
           <Route
             path="dashboard"
             element={
-              <ErrorBoundary fallbackTitle="Dashboard error">
-                <Suspense fallback={<PageLoader />}>
-                  <DashboardPage />
-                </Suspense>
-              </ErrorBoundary>
+              <StaffRoute>
+                <ErrorBoundary fallbackTitle="Dashboard error">
+                  <Suspense fallback={<PageLoader />}>
+                    <DashboardPage />
+                  </Suspense>
+                </ErrorBoundary>
+              </StaffRoute>
             }
           />
           <Route

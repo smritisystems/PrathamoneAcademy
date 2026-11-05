@@ -158,6 +158,9 @@ async def test_cross_institution_list_endpoints_return_403(
         f"/api/v1/examinations/?institution_id={institution_b.id}",
         f"/api/v1/academic-years/?institution_id={institution_b.id}",
         f"/api/v1/staff/?institution_id={institution_b.id}",
+        f"/api/v1/payments/?institution_id={institution_b.id}",
+        f"/api/v1/payments/receipts-list?institution_id={institution_b.id}",
+        f"/api/v1/payments/refunds/?institution_id={institution_b.id}",
     ]
 
     for url in endpoints:

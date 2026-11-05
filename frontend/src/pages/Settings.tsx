@@ -1660,7 +1660,10 @@ export default function Settings() {
                                 name="workflow_mode"
                                 value="simple"
                                 checked={(allSettings.fees?.workflow_mode || 'simple') === 'simple'}
-                                onChange={() => handleSettingChange('fees', 'workflow_mode', 'simple')}
+                                onChange={() => {
+                                  handleSettingChange('fees', 'workflow_mode', 'simple')
+                                  handleSettingChange('fees', 'payment_workflow_mode', 'simple')
+                                }}
                                 className="mt-0.5 text-primary-600 focus:ring-primary-500"
                               />
                               <div>
@@ -1683,7 +1686,10 @@ export default function Settings() {
                                 name="workflow_mode"
                                 value="erp"
                                 checked={(allSettings.fees?.workflow_mode || 'simple') === 'erp'}
-                                onChange={() => handleSettingChange('fees', 'workflow_mode', 'erp')}
+                                onChange={() => {
+                                  handleSettingChange('fees', 'workflow_mode', 'erp')
+                                  handleSettingChange('fees', 'payment_workflow_mode', 'standard_erp')
+                                }}
                                 className="mt-0.5 text-purple-600 focus:ring-purple-500"
                               />
                               <div>
@@ -1714,7 +1720,11 @@ export default function Settings() {
                                   min="0"
                                   step="1000"
                                   value={allSettings.fees?.approval_threshold ?? 25000}
-                                  onChange={(e) => handleSettingChange('fees', 'approval_threshold', parseFloat(e.target.value) || 0)}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0
+                                    handleSettingChange('fees', 'approval_threshold', val)
+                                    handleSettingChange('fees', 'erp_approval_amount_threshold', val)
+                                  }}
                                   className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
                                 />
                                 <span className="text-[10px] text-gray-500 mt-1 block">

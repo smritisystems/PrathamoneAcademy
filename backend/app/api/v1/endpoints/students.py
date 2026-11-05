@@ -860,7 +860,7 @@ async def get_student_admin_profile(
     payments = (await db.execute(pmt_stmt)).scalars().all()
 
     total_fees = sum(float(i.net_amount) for i in invoices)
-    total_paid = sum(float(p.amount) for p in payments if p.status == "completed")
+    total_paid = sum(float(p.amount) for p in payments if p.status in ("completed", "posted"))
     outstanding = max(0.0, total_fees - total_paid)
 
     fee_details = {
@@ -1185,7 +1185,7 @@ async def exit_student(
             await db.execute(
                 select(func.coalesce(func.sum(Payment.amount), 0)).where(
                     Payment.student_id == student_id,
-                    Payment.status == "completed",
+                    Payment.status.in_(["completed", "posted"]),
                     Payment.reversed_at.is_(None),
                 )
             )
@@ -1195,7 +1195,7 @@ async def exit_student(
             await db.execute(
                 select(func.coalesce(func.sum(Refund.amount), 0)).where(
                     Refund.student_id == student_id,
-                    Refund.status == "completed",
+                    Refund.status.in_(["completed", "processed"]),
                 )
             )
         ).scalar() or Decimal("0")
@@ -1211,7 +1211,7 @@ async def exit_student(
         latest_payment = await db.scalar(
             select(Payment).where(
                 Payment.student_id == student_id,
-                Payment.status == "completed",
+                Payment.status.in_(["completed", "posted"]),
                 Payment.reversed_at.is_(None),
             ).order_by(desc(Payment.payment_date))
         )

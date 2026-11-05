@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints dedicated to authenticated student dashboard views, timetables, and grades.
 #  */
@@ -645,7 +645,7 @@ async def get_student_fees(
     payments = (await db.execute(pmt_stmt)).scalars().all()
 
     total_fees = sum(float(inv.net_amount) for inv in invoices)
-    total_paid = sum(float(p.amount) for p in payments if p.status == "completed")
+    total_paid = sum(float(p.amount) for p in payments if p.status in ("completed", "posted"))
     outstanding = max(0.0, total_fees - total_paid)
 
     status_str = "Paid" if outstanding <= 0 and total_fees > 0 else "Partially Paid" if total_paid > 0 else "Unpaid"

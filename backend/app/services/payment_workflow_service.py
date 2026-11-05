@@ -61,9 +61,10 @@ async def get_payment_workflow_settings(
         val = r.value
         if not val:
             continue
-        if r.key == "payment_workflow_mode":
-            config["workflow_mode"] = val.strip().lower()
-        elif r.key == "erp_approval_amount_threshold":
+        if r.key in ("payment_workflow_mode", "workflow_mode"):
+            mode_val = val.strip().lower()
+            config["workflow_mode"] = "standard_erp" if mode_val in ("erp", "standard_erp") else "simple"
+        elif r.key in ("erp_approval_amount_threshold", "approval_threshold"):
             try:
                 config["approval_amount_threshold"] = Decimal(val.strip())
             except Exception:
@@ -73,11 +74,19 @@ async def get_payment_workflow_settings(
                 config["approval_roles"] = json.loads(val)
             except Exception:
                 pass
-        elif r.key == "erp_require_approval_methods":
+        elif r.key in ("erp_require_approval_methods", "require_approval_methods"):
             try:
                 config["require_approval_methods"] = json.loads(val)
             except Exception:
                 pass
+        elif r.key == "require_cheque_approval":
+            is_req = val.strip().lower() in ("true", "1", "yes")
+            curr_methods = list(config.get("require_approval_methods") or ["cheque", "bank_transfer", "demand_draft"])
+            if is_req and "cheque" not in curr_methods:
+                curr_methods.append("cheque")
+            elif not is_req and "cheque" in curr_methods:
+                curr_methods = [m for m in curr_methods if m != "cheque"]
+            config["require_approval_methods"] = curr_methods
         elif r.key == "allow_posted_payment_edits":
             config["allow_posted_payment_edits"] = val.strip().lower() in ("true", "1", "yes")
         elif r.key == "refund_approval_required":

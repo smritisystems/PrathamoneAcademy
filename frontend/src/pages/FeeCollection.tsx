@@ -30,6 +30,7 @@ import { InstallmentStatusBadge } from '../components/Badge';
 import Modal from '../components/Modal';
 import PaymentReceiptView from '../components/PaymentReceiptView';
 import { printReceiptElement } from '../utils/printReceipt';
+import { useAuthStore } from '../store/authStore';
 
 const PAYMENT_METHODS = ['cash', 'upi', 'bank_transfer', 'cheque', 'other'] as const;
 type PaymentMethod = (typeof PAYMENT_METHODS)[number];
@@ -43,6 +44,7 @@ export default function FeeCollection() {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { selectedAcademicYearId } = useAuthStore();
 
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<string>('');
@@ -149,19 +151,32 @@ export default function FeeCollection() {
       return;
     }
 
+    const academicYearId = selectedInvoice?.academic_year_id || selectedAcademicYearId || 1;
+    const paymentDate = new Date().toISOString().split('T')[0];
+
+    // If no manual allocations were specified, automatically allocate to selected invoice
+    const finalAllocations = allocations.length > 0
+      ? allocations.map((a) => ({
+          invoice_id: selectedInvoiceId,
+          installment_id: a.installment_id,
+          amount: parseFloat(a.amount) || 0,
+        }))
+      : [{
+          invoice_id: selectedInvoiceId,
+          installment_id: undefined,
+          amount,
+        }];
+
     const payload: any = {
       student_id: Number(studentId),
-      invoice_id: selectedInvoiceId,
+      academic_year_id: academicYearId,
       amount,
+      payment_date: paymentDate,
       payment_method: paymentMethod,
       transaction_reference: transactionRef || undefined,
       notes: notes || undefined,
-      allocations: allocations.length > 0
-        ? allocations.map((a) => ({
-            installment_id: a.installment_id,
-            amount: parseFloat(a.amount) || 0,
-          }))
-        : undefined,
+      allocations: finalAllocations,
+      action: 'post',
     };
 
     payMutation.mutate(payload);

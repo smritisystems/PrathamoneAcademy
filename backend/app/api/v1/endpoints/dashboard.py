@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, require_role
 from app.models.student import Student
 from app.models.payment import Payment, PaymentReceipt
 from app.models.fee import FeeInvoice
@@ -47,7 +47,7 @@ async def get_dashboard_stats(
     status: Optional[str] = Query(default=None),
     include_all_statuses: Optional[bool] = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "sysadmin", "super_admin", "admin", "principal", "accountant", "staff", "teacher")),
 ):
     """
     Get dashboard metrics with filters:
@@ -132,7 +132,7 @@ async def get_dashboard_stats(
             month_label_col.label("month_label"),
             func.coalesce(func.sum(Payment.amount), 0).label("collected"),
         )
-        .where(Payment.status != "reversed")
+        .where(Payment.status.in_(["posted", "completed"]))
     )
     if academic_year_id:
         trend_query = trend_query.where(Payment.academic_year_id == academic_year_id)

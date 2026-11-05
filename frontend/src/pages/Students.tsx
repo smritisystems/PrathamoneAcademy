@@ -259,22 +259,61 @@ export default function StudentsPage() {
                     {s.first_name} {s.last_name}
                   </td>
                   <td className="table-td">
-                    {s.is_active ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                        Active
-                      </span>
-                    ) : s.exit_date ? (
-                      <span
-                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800"
-                        title={`Withdrawn on ${s.exit_date} - ${s.exit_reason || ''}`}
-                      >
-                        Withdrawn
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
-                        Inactive
-                      </span>
-                    )}
+                    {(() => {
+                      if (s.is_active) {
+                        return (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                            Active
+                          </span>
+                        )
+                      }
+                      const reason = (s.exit_reason || '').toLowerCase()
+                      if (reason.includes('graduat')) {
+                        return (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800"
+                            title={`Graduated on ${s.exit_date || 'N/A'} - ${s.exit_reason || ''}`}
+                          >
+                            Graduated
+                          </span>
+                        )
+                      }
+                      if (reason.includes('complet')) {
+                        return (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800"
+                            title={`Completed on ${s.exit_date || 'N/A'} - ${s.exit_reason || ''}`}
+                          >
+                            Completed
+                          </span>
+                        )
+                      }
+                      if (reason.includes('transfer')) {
+                        return (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800"
+                            title={`Transferred on ${s.exit_date || 'N/A'} - ${s.exit_reason || ''}`}
+                          >
+                            Transferred
+                          </span>
+                        )
+                      }
+                      if (s.exit_date) {
+                        return (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800"
+                            title={`Withdrawn on ${s.exit_date} - ${s.exit_reason || ''}`}
+                          >
+                            Withdrawn
+                          </span>
+                        )
+                      }
+                      return (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
+                          Inactive
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td className="table-td capitalize">{s.gender}</td>
                   <td className="table-td">{s.date_of_birth}</td>

@@ -288,7 +288,7 @@ async def payments_summary(
         Payment.payment_method,
         func.count(Payment.id).label("count"),
         func.coalesce(func.sum(Payment.amount), 0).label("total"),
-    ).where(Payment.status == "completed")
+    ).where(Payment.status.in_(["completed", "posted"]))
 
     if academic_year_id:
         query = query.where(Payment.academic_year_id == academic_year_id)
@@ -621,7 +621,7 @@ async def student_withdrawals_report(
         ).where(
             Payment.student_id == std.id,
             Payment.academic_year_id == enr.academic_year_id,
-            Payment.status == "completed",
+            Payment.status.in_(["completed", "posted"]),
             Payment.reversed_at.is_(None),
         )
         gross_paid = float((await db.execute(pmt_stmt)).scalar() or 0)
@@ -631,7 +631,7 @@ async def student_withdrawals_report(
             func.coalesce(func.sum(Refund.amount), 0)
         ).where(
             Refund.student_id == std.id,
-            Refund.status == "completed",
+            Refund.status.in_(["completed", "processed"]),
         )
         refund_amount = float((await db.execute(ref_stmt)).scalar() or 0)
 

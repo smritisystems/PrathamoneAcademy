@@ -751,7 +751,7 @@ async def get_fees_overview(
             & (Payment.academic_year_id == StudentEnrollment.academic_year_id),
         )
         .outerjoin(Division, StudentEnrollment.division_id == Division.id)
-        .where(Payment.status != "reversed")
+        .where(Payment.status.in_(["posted", "completed"]))
     )
     if academic_year_id:
         trend_query = trend_query.where(Payment.academic_year_id == academic_year_id)
@@ -791,7 +791,7 @@ async def get_fees_overview(
             & (Payment.academic_year_id == StudentEnrollment.academic_year_id),
         )
         .outerjoin(Division, StudentEnrollment.division_id == Division.id)
-        .where(Payment.status != "reversed")
+        .where(Payment.status.in_(["posted", "completed"]))
     )
     if academic_year_id:
         method_query = method_query.where(Payment.academic_year_id == academic_year_id)
@@ -901,7 +901,7 @@ async def get_fees_overview(
         .outerjoin(Division, StudentEnrollment.division_id == Division.id)
         .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
-        .where(Payment.status != "reversed")
+        .where(Payment.status.in_(["posted", "completed"]))
     )
     if academic_year_id:
         rec_query = rec_query.where(Payment.academic_year_id == academic_year_id)
@@ -992,7 +992,7 @@ async def get_fee_register(
             Payment,
             (FeeInvoice.student_id == Payment.student_id)
             & (FeeInvoice.academic_year_id == Payment.academic_year_id)
-            & (Payment.status != "reversed"),
+            & (Payment.status.in_(["posted", "completed"])),
         )
         .where(FeeInvoice.status != "cancelled")
     )

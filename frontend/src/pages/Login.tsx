@@ -66,7 +66,11 @@ export default function LoginPage() {
       const resp = await authApi.login(data.username, data.password)
       login(resp.data.access_token, resp.data.user)
       toast.success(`Welcome, ${resp.data.user.first_name}!`)
-      navigate('/dashboard')
+      if (resp.data.user.role === 'student') {
+        navigate('/student-portal', { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.detail ?? 'Login failed. Check credentials.')
     } finally {

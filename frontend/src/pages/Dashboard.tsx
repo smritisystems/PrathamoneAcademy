@@ -23,7 +23,7 @@ import {
   Calendar, BookOpen, Layers,
   SlidersHorizontal,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -50,9 +50,18 @@ export default function DashboardPage() {
   useDocumentTitle('Dashboard')
 
   const {
+    user,
     selectedAcademicYearId,
     selectedInstitutionId,
   } = useAuthStore()
+
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user?.role === 'student') {
+      navigate('/student-portal', { replace: true })
+    }
+  }, [user, navigate])
 
   // Student Status Filter Override ('default' follows institute settings)
   const [statusFilter, setStatusFilter] = useState<'default' | 'active' | 'all' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('default')
