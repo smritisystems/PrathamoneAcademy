@@ -16,7 +16,8 @@
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
 
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
+import { QueryClientContext, useQuery, QueryClient } from '@tanstack/react-query'
 import {
   Printer,
   Calendar,
@@ -41,6 +42,11 @@ import { DetailedPaymentReceipt, Receipt } from '../types'
 import { printReceiptElement } from '../utils/printReceipt'
 import { numberToWordsINR } from '../pages/Fees'
 import { useBranding } from '../config/branding'
+import { settingsApi } from '../api/endpoints'
+
+const fallbackQueryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+})
 
 const fmt = (n?: number | null) =>
   new Intl.NumberFormat('en-IN', {
@@ -165,6 +171,32 @@ export default function PaymentReceiptView({
   containerId = 'receipt-print-area',
 }: PaymentReceiptViewProps) {
   const branding = useBranding()
+  const activeClient = useContext(QueryClientContext)
+
+  // Document & Signatory Settings from Central Configuration
+  const { data: documentSettings } = useQuery(
+    {
+      queryKey: ['settings', 'documents'],
+      queryFn: () => settingsApi.getAll().then((r) => r.data?.documents),
+      staleTime: 1000 * 60 * 5,
+    },
+    activeClient ?? fallbackQueryClient
+  )
+
+  const signatoryTitle = documentSettings?.signatory_title || 'Authorized Signatory'
+  const signatoryName = documentSettings?.signatory_name || branding.academyName || branding.appName
+  const disclaimerText =
+    documentSettings?.disclaimer_text ||
+    'This is a computer-generated receipt and does not require a physical signature.'
+
+  // Dynamic branding fields from existing Institute Profile
+  const academyName = (branding.academyName || branding.appName || 'PrathamOne Academy').toUpperCase()
+  const academyTagline = branding.tagline || 'Coaching Institute Management System'
+  const academyAddress = branding.institutionAddress || branding.support?.address || ''
+  const academyPhone = branding.institutionPhone || branding.support?.phone || ''
+  const academyEmail = branding.institutionEmail || branding.support?.academyEmail || ''
+  const academyWebsite = branding.institutionWebsite || branding.support?.website || ''
+
   const [paperSize, setPaperSize] = useState<'A5' | 'A4'>(initialPaperSize)
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false)
 
@@ -344,46 +376,58 @@ export default function PaymentReceiptView({
         )}
 
         {/* 1. Official Academy Header */}
-        <header className="flex items-center justify-between gap-3 pb-3 relative z-10">
+        <header className="receipt-header flex items-center justify-between gap-3 pb-3 relative z-10">
           <div className="flex items-center gap-3 min-w-0">
-            {/* PA Royal Blue Monogram Emblem */}
-            <div className="w-12 h-12 bg-[#0256b9] rounded-2xl text-white font-black text-2xl flex items-center justify-center shadow-xs shrink-0 select-none">
+            {/* PA Royal Blue Monogram Emblem or Custom Uploaded Logo */}
+            {branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? (
+              <img
+                src={branding.assets.logoUrl}
+                alt={academyName}
+                className="w-12 h-12 object-contain rounded-2xl shrink-0"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none'
+                  const next = e.currentTarget.nextElementSibling as HTMLElement
+                  if (next) next.style.display = 'flex'
+                }}
+              />
+            ) : null}
+            <div
+              className={`w-12 h-12 bg-[#0256b9] rounded-2xl text-white font-black text-2xl flex items-center justify-center shadow-xs shrink-0 select-none ${
+                branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? 'hidden' : 'flex'
+              }`}
+            >
               {branding.monogram || 'PA'}
             </div>
 
             {/* Institution Brand & Subtitle */}
             <div className="min-w-0">
               <h1 className="text-xl font-black text-[#0b2b5c] tracking-tight leading-tight uppercase truncate">
-                {branding.appName.toUpperCase()}
+                {academyName}
               </h1>
               <p className="text-xs text-slate-500 font-semibold tracking-tight leading-tight truncate">
-                {branding.tagline || 'Coaching Institute Management System'}
+                {academyTagline}
               </p>
 
               {/* Institution Contact Strip */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[9.5px] text-slate-600 font-medium">
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-sky-600 shrink-0" />
-                  <span>
-                    {branding.institutionAddress ||
-                      branding.support.address ||
-                      'Vasai Road (W), Palghar - 401202'}
+                {academyAddress ? (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-sky-600 shrink-0" />
+                    <span>{academyAddress}</span>
                   </span>
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-sky-600 shrink-0" />
-                  <span>
-                    {branding.institutionPhone || branding.support.phone || '+91 98765 43210'}
+                ) : null}
+                {academyPhone ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-sky-600 shrink-0" />
+                    <span>{academyPhone}</span>
                   </span>
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Mail className="w-3 h-3 text-sky-600 shrink-0" />
-                  <span>
-                    {branding.institutionEmail ||
-                      branding.support.academyEmail ||
-                      'info@prathamoneacademy.in'}
+                ) : null}
+                {academyEmail ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Mail className="w-3 h-3 text-sky-600 shrink-0" />
+                    <span>{academyEmail}</span>
                   </span>
-                </span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -660,7 +704,7 @@ export default function PaymentReceiptView({
           </div>
 
           <div className="overflow-hidden border border-blue-100 rounded-xl mt-1 shadow-2xs">
-            <table className="w-full text-left text-[10px] border-collapse bg-white">
+            <table className="receipt-history-table w-full text-left text-[10px] border-collapse bg-white">
               <thead className="bg-[#eff6ff] text-slate-800 font-bold uppercase text-[9px] tracking-wide border-b border-blue-100">
                 <tr>
                   <th className="py-1 px-2 text-center w-6">#</th>
@@ -731,13 +775,13 @@ export default function PaymentReceiptView({
         </div>
 
         {/* 8. Footer Section with QR Code, Disclaimers, and Authorized Signatory */}
-        <footer className="pt-3 border-t border-slate-200 grid grid-cols-12 gap-3 items-end relative z-10">
+        <footer className="receipt-footer pt-3 border-t border-slate-200 grid grid-cols-12 gap-3 items-end relative z-10">
           {/* Left: QR Code & Verification Notes (8 cols) */}
           <div className="col-span-8 flex items-center gap-3">
             <div className="p-1 bg-white border border-slate-200 rounded-lg shadow-2xs shrink-0">
               <ReceiptQRCode
                 size={48}
-                value={`https://prathamone.com/verify/receipt?rcp=${receipt.receipt_number}&std=${receipt.student_id}&amt=${receipt.amount}`}
+                value={`${academyWebsite ? academyWebsite.replace(/\/+$/, '') : 'https://prathamone.com'}/verify/receipt?rcp=${receipt.receipt_number || ''}&std=${receipt.student_id || ''}&amt=${receipt.amount || ''}`}
               />
             </div>
             <div>
@@ -745,7 +789,7 @@ export default function PaymentReceiptView({
                 Thank you for your payment.
               </p>
               <p className="text-[8.5px] text-slate-500 leading-tight mt-0.5">
-                This is a computer-generated receipt and does not require a physical signature.
+                {disclaimerText}
               </p>
               <p className="text-[8.5px] text-slate-500 leading-tight">
                 For any queries, contact the academy office.
@@ -759,13 +803,49 @@ export default function PaymentReceiptView({
               <AuthorizedSignatureSVG />
             </div>
             <p className="font-black text-slate-900 text-[10px] uppercase tracking-wide leading-none">
-              Authorized Signatory
+              {signatoryTitle}
             </p>
             <p className="text-[9px] text-slate-500 font-semibold mt-0.5 leading-none">
-              {branding.appName}
+              {signatoryName}
             </p>
           </div>
         </footer>
+
+        {/* Embedded Print Safeguard Stylesheet */}
+        <style>{`
+          @media print {
+            #${containerId} {
+              width: 100% !important;
+              max-width: 136mm !important;
+              margin: 0 auto !important;
+              padding: 0 !important;
+              border: none !important;
+              box-shadow: none !important;
+              visibility: visible !important;
+              display: block !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            #${containerId} * {
+              visibility: visible !important;
+            }
+            #${containerId} .receipt-header {
+              display: flex !important;
+              visibility: visible !important;
+            }
+            #${containerId} .receipt-history-table {
+              display: table !important;
+              visibility: visible !important;
+            }
+            #${containerId} .receipt-footer {
+              display: grid !important;
+              visibility: visible !important;
+            }
+            .print\\:hidden, button {
+              display: none !important;
+            }
+          }
+        `}</style>
 
         {/* Subtle Decorative Bottom Accent Strip */}
         <div

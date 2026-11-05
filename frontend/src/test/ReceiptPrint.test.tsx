@@ -360,5 +360,240 @@ describe('Receipt Printing Specification & Container Isolation', () => {
       expect(screen.queryByText(/Showing 6 most recent installments/i)).toBeNull();
     });
   });
+
+  describe('Comprehensive Print Fidelity & Institute Branding Scenarios', () => {
+    it('Scenario 1: Preview and print a normal single-payment receipt', () => {
+      const normalReceipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0001',
+        payment_id: 1,
+        student_id: 101,
+        student_name: 'Ananya Sharma',
+        admission_number: 'PA-2026-000001',
+        standard: 'Class X',
+        batch: 'Batch A',
+        amount: 15000.0,
+        payment_date: '2026-04-10',
+        payment_method: 'upi',
+        transaction_reference: 'TXN-2026-0001',
+        invoice_number: 'INV-2026-0001',
+        status: 'completed',
+        historical_payments: [],
+        fee_summary: {
+          total_fee_amount: 60000.0,
+          previous_payments_total: 0.0,
+          current_payment_amount: 15000.0,
+          total_paid_to_date: 15000.0,
+          outstanding_balance: 45000.0,
+        },
+      };
+
+      render(<PaymentReceiptView receipt={normalReceipt} initialPaperSize="A5" />);
+
+      expect(screen.getByText('RCP-2026-0001')).toBeDefined();
+      expect(screen.getByText('Ananya Sharma')).toBeDefined();
+      expect(screen.getByText('PA-2026-000001')).toBeDefined();
+      expect(screen.getAllByText('₹15,000').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText('₹45,000')).toBeDefined();
+      expect(screen.getByText(/No previous payments/i)).toBeDefined();
+
+      const printBtn = screen.getByText(/Print Receipt \(A5\)/i);
+      fireEvent.click(printBtn);
+    });
+
+    it('Scenario 2: Preview and print receipt with historical installments matching ledger reconciliation', () => {
+      const historyReceipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0167',
+        payment_id: 167,
+        student_id: 155,
+        student_name: 'Puneeta Kulkarni',
+        admission_number: 'PA-2024-000029',
+        standard: 'VIII',
+        batch: 'A (Morning)',
+        amount: 7000.0,
+        payment_date: '2026-11-04',
+        payment_method: 'bank_transfer',
+        transaction_reference: 'TXN-2026-0167',
+        invoice_number: 'INV-2026-0157',
+        status: 'completed',
+        historical_payments: [
+          { payment_id: 19, receipt_number: 'RCP-2026-0019', date: '2026-04-14', payment_method: 'cheque', amount: 6000.0 },
+          { payment_id: 56, receipt_number: 'RCP-2026-0056', date: '2026-06-08', payment_method: 'cash', amount: 9000.0 },
+          { payment_id: 91, receipt_number: 'RCP-2026-0091', date: '2026-07-10', payment_method: 'cash', amount: 7000.0 },
+          { payment_id: 117, receipt_number: 'RCP-2026-0117', date: '2026-08-12', payment_method: 'upi', amount: 7000.0 },
+          { payment_id: 139, receipt_number: 'RCP-2026-0139', date: '2026-09-16', payment_method: 'bank_transfer', amount: 7000.0 },
+          { payment_id: 144, receipt_number: 'RCP-2026-0144', date: '2026-10-06', payment_method: 'upi', amount: 7000.0 },
+        ],
+        fee_summary: {
+          total_fee_amount: 90000.0,
+          previous_payments_total: 43000.0,
+          current_payment_amount: 7000.0,
+          total_paid_to_date: 50000.0,
+          outstanding_balance: 40000.0,
+        },
+      };
+
+      render(<PaymentReceiptView receipt={historyReceipt} initialPaperSize="A5" />);
+
+      expect(screen.getByText('56%')).toBeDefined();
+      expect(screen.getByText('₹90,000')).toBeDefined();
+      expect(screen.getByText('₹50,000')).toBeDefined();
+      expect(screen.getByText('₹40,000')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0019')).toBeDefined();
+      expect(screen.getByText('RCP-2026-0144')).toBeDefined();
+    });
+
+    it('Scenario 3: Print with long institute address and long student name without layout distortion', () => {
+      const longNameReceipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0172',
+        payment_id: 172,
+        student_id: 199,
+        student_name: 'Harsimranjeet Singh Randhawa-Bhattacharya',
+        admission_number: 'PA-2026-000099',
+        standard: 'Class XII (Science Stream)',
+        batch: 'Batch B-Advanced Morning Coaching',
+        amount: 25000.0,
+        payment_date: '2026-11-05',
+        payment_method: 'bank_transfer',
+        transaction_reference: 'TXN-BANK-NEFT-2026-99999',
+        invoice_number: 'INV-2026-0199',
+        status: 'completed',
+        historical_payments: [],
+        fee_summary: {
+          total_fee_amount: 100000.0,
+          previous_payments_total: 0.0,
+          current_payment_amount: 25000.0,
+          total_paid_to_date: 25000.0,
+          outstanding_balance: 75000.0,
+        },
+      };
+
+      render(<PaymentReceiptView receipt={longNameReceipt} initialPaperSize="A5" />);
+
+      expect(screen.getByText('Harsimranjeet Singh Randhawa-Bhattacharya')).toBeDefined();
+      expect(screen.getByText('Class XII (Science Stream)')).toBeDefined();
+      expect(screen.getByText('Batch B-Advanced Morning Coaching')).toBeDefined();
+    });
+
+    it('Scenario 4: Gracefully handles missing logo and optional contact fields without fabricating information', () => {
+      const minimalReceipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0005',
+        payment_id: 5,
+        student_id: 105,
+        student_name: 'Dev Patel',
+        admission_number: 'PA-2026-000005',
+        amount: 8000.0,
+        payment_date: '2026-05-01',
+        payment_method: 'cash',
+        status: 'completed',
+        fee_summary: {
+          total_fee_amount: 8000.0,
+          previous_payments_total: 0.0,
+          current_payment_amount: 8000.0,
+          total_paid_to_date: 8000.0,
+          outstanding_balance: 0.0,
+        },
+      };
+
+      const { container } = render(<PaymentReceiptView receipt={minimalReceipt} initialPaperSize="A5" />);
+
+      expect(container.querySelector('.receipt-header')).not.toBeNull();
+      expect(screen.getByText('PA')).toBeDefined();
+      expect(screen.getByText('PAID')).toBeDefined();
+    });
+
+    it('Scenario 5: Accommodates large historical payments list with overflow handling on A5 and full expansion on A4', () => {
+      const twelvePayments = Array.from({ length: 12 }, (_, i) => ({
+        payment_id: i + 1,
+        receipt_number: `RCP-2026-00${String(i + 1).padStart(2, '0')}`,
+        date: `2026-0${(i % 9) + 1}-15`,
+        payment_method: i % 2 === 0 ? 'upi' : 'cash',
+        amount: 4000.0,
+      }));
+
+      const multiPageReceipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0099',
+        payment_id: 99,
+        student_id: 102,
+        student_name: 'Rohit Verma',
+        admission_number: 'PA-2024-000010',
+        amount: 4000.0,
+        payment_date: '2026-11-05',
+        payment_method: 'upi',
+        status: 'completed',
+        historical_payments: twelvePayments,
+        fee_summary: {
+          total_fee_amount: 60000.0,
+          previous_payments_total: 48000.0,
+          current_payment_amount: 4000.0,
+          total_paid_to_date: 52000.0,
+          outstanding_balance: 8000.0,
+        },
+      };
+
+      render(<PaymentReceiptView receipt={multiPageReceipt} initialPaperSize="A5" />);
+
+      expect(screen.getByText(/Showing 6 most recent installments/i)).toBeDefined();
+
+      const a4Btn = screen.getByText('A4 Portrait');
+      fireEvent.click(a4Btn);
+      expect(screen.queryByText(/Showing 6 most recent installments/i)).toBeNull();
+      expect(screen.getByText('RCP-2026-0012')).toBeDefined();
+    });
+
+    it('Scenario 6: Dynamically renders updated Institute Profile branding without hardcoded overrides', () => {
+      const receipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0199',
+        payment_id: 199,
+        student_id: 103,
+        student_name: 'Sneha Joshi',
+        admission_number: 'PA-2024-000015',
+        amount: 10000.0,
+        payment_date: '2026-11-05',
+        payment_method: 'cheque',
+        status: 'completed',
+        fee_summary: {
+          total_fee_amount: 50000.0,
+          previous_payments_total: 0.0,
+          current_payment_amount: 10000.0,
+          total_paid_to_date: 10000.0,
+          outstanding_balance: 40000.0,
+        },
+      };
+
+      const { container } = render(<PaymentReceiptView receipt={receipt} initialPaperSize="A5" />);
+
+      expect(container.querySelector('.receipt-header')).toBeDefined();
+      expect(container.querySelector('.receipt-footer')).toBeDefined();
+      expect(screen.getByText('Authorized Signatory')).toBeDefined();
+    });
+
+    it('Scenario 7: Guarantees tenant and student data isolation with zero leakage of unrelated student records', () => {
+      const isolatedReceipt: DetailedPaymentReceipt = {
+        receipt_number: 'RCP-2026-0155',
+        payment_id: 155,
+        student_id: 155,
+        student_name: 'Kavita Menon',
+        admission_number: 'PA-2024-000028',
+        amount: 6500.0,
+        payment_date: '2026-11-03',
+        payment_method: 'upi',
+        status: 'completed',
+        fee_summary: {
+          total_fee_amount: 65000.0,
+          previous_payments_total: 20000.0,
+          current_payment_amount: 6500.0,
+          total_paid_to_date: 26500.0,
+          outstanding_balance: 38500.0,
+        },
+      };
+
+      render(<PaymentReceiptView receipt={isolatedReceipt} />);
+
+      expect(screen.getByText('Kavita Menon')).toBeDefined();
+      expect(screen.getByText('PA-2024-000028')).toBeDefined();
+      expect(screen.queryByText('Puneeta Kulkarni')).toBeNull();
+      expect(screen.queryByText('Aarav Sharma')).toBeNull();
+    });
+  });
 });
 

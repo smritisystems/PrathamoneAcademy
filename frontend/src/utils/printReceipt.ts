@@ -9,28 +9,28 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     2.0.0
  * @created     2026-11-04
  * @updated     2026-11-05
  *
- * @description Isolated receipt printing utility for clean, header-free A4/A5 voucher generation.
+ * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
 
 export interface PrintReceiptOptions {
   elementId?: string;
   documentTitle?: string;
-  paperSize?: 'A4' | 'A5' | 'auto';
+  paperSize?: 'A5' | 'A4' | 'auto';
   onAfterPrint?: () => void;
 }
 
 /**
  * Prints the target receipt element inside an isolated sandbox iframe
  * preventing any outer application UI, backdrop modals, buttons, or navigation from printing.
- * Supports A4 and A5 paper dimensions with automatic scaling.
+ * Supports A5 portrait (standard) and A4 paper dimensions with full color & layout parity.
  */
 export function printReceiptElement(
   elementIdOrOptions: string | PrintReceiptOptions = 'receipt-print-area',
-  defaultTitle: string = 'Official Fee Receipt - Prashant Academy'
+  defaultTitle: string = 'Official Fee Receipt - PrathamOne Academy'
 ): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false;
@@ -38,12 +38,12 @@ export function printReceiptElement(
 
   const options: PrintReceiptOptions =
     typeof elementIdOrOptions === 'string'
-      ? { elementId: elementIdOrOptions, documentTitle: defaultTitle, paperSize: 'A4' }
-      : { elementId: 'receipt-print-area', documentTitle: defaultTitle, paperSize: 'A4', ...elementIdOrOptions };
+      ? { elementId: elementIdOrOptions, documentTitle: defaultTitle, paperSize: 'A5' }
+      : { elementId: 'receipt-print-area', documentTitle: defaultTitle, paperSize: 'A5', ...elementIdOrOptions };
 
   const elementId = options.elementId || 'receipt-print-area';
   const title = options.documentTitle || defaultTitle;
-  const paperSize = options.paperSize || 'A4';
+  const paperSize = options.paperSize || 'A5';
 
   const receiptEl = document.getElementById(elementId);
   if (!receiptEl) {
@@ -84,14 +84,20 @@ export function printReceiptElement(
     // Clone receipt contents
     const clonedReceipt = receiptEl.cloneNode(true) as HTMLElement;
 
-    // Collect parent stylesheets and Tailwind styles to ensure 100% styling parity
+    // Remove any interactive print actions / buttons inside cloned container
+    clonedReceipt.querySelectorAll('.print\\:hidden, button, [role="button"]').forEach((el) => {
+      el.parentNode?.removeChild(el);
+    });
+
+    // Collect parent stylesheets and Tailwind styles to ensure styling parity
     const parentStyles = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'))
       .map((el) => el.outerHTML)
       .join('\n');
 
+    // Exact A5 portrait (148 x 210mm) and A4 portrait dimensions
     const pageSizeCss =
       paperSize === 'A5'
-        ? `@page { size: A5 portrait; margin: 5mm 6mm; } #print-root { width: 100%; max-width: 138mm; padding: 0; font-size: 10px; margin: 0 auto; border: none; }`
+        ? `@page { size: A5 portrait; margin: 6mm 8mm; } #print-root { width: 100%; max-width: 136mm; padding: 0; font-size: 10px; margin: 0 auto; border: none; }`
         : `@page { size: A4 portrait; margin: 8mm 10mm; } #print-root { width: 100%; max-width: 185mm; padding: 0; font-size: 11px; margin: 0 auto; border: none; }`;
 
     iframeDoc.open();
@@ -137,136 +143,241 @@ export function printReceiptElement(
               padding: 0 !important;
             }
           }
-          }
-          /* Tables */
-          table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-          th, td { border: 1px solid #e2e8f0; padding: 6px 10px; font-size: 11px; text-align: left; }
-          th { background-color: #f8fafc !important; font-weight: 700; color: #334155 !important; }
-          .receipt-history-table th, .receipt-history-table td { border-color: #cbd5e1; }
-          /* Typography & utilities */
-          .text-center { text-align: center; }
-          .text-right { text-align: right; }
-          .text-left { text-align: left; }
-          .flex { display: flex; }
-          .items-center { align-items: center; }
-          .items-end { align-items: flex-end; }
-          .justify-center { justify-content: center; }
-          .justify-between { justify-content: space-between; }
-          .justify-end { justify-content: flex-end; }
-          .grid { display: grid; }
-          .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-          .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-          .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-          .gap-1 { gap: 4px; }
-          .gap-2 { gap: 8px; }
-          .gap-3 { gap: 12px; }
-          .gap-4 { gap: 16px; }
-          .gap-6 { gap: 24px; }
-          .space-y-1 > * + * { margin-top: 4px; }
-          .space-y-2 > * + * { margin-top: 8px; }
-          .space-y-3 > * + * { margin-top: 12px; }
-          .space-y-4 > * + * { margin-top: 16px; }
-          .w-12 { width: 48px; }
-          .h-12 { height: 48px; }
-          .w-16 { width: 64px; }
-          .h-16 { height: 64px; }
-          .w-40 { width: 160px; }
-          .h-10 { height: 40px; }
-          .mx-auto { margin-left: auto; margin-right: auto; }
-          .mb-1 { margin-bottom: 4px; }
-          .mb-2 { margin-bottom: 8px; }
-          .mb-3 { margin-bottom: 12px; }
-          .mb-4 { margin-bottom: 16px; }
-          .mb-6 { margin-bottom: 24px; }
-          .mt-0\\.5 { margin-top: 2px; }
-          .mt-1 { margin-top: 4px; }
-          .mt-2 { margin-top: 8px; }
-          .mt-3 { margin-top: 12px; }
-          .mt-4 { margin-top: 16px; }
-          .mt-6 { margin-top: 24px; }
-          .mt-8 { margin-top: 32px; }
-          .p-2 { padding: 8px; }
-          .p-3 { padding: 12px; }
-          .p-4 { padding: 16px; }
-          .p-6 { padding: 24px; }
-          .p-8 { padding: 32px; }
-          .pb-2 { padding-bottom: 8px; }
-          .pb-4 { padding-bottom: 16px; }
-          .pb-6 { padding-bottom: 24px; }
-          .pt-2 { padding-top: 8px; }
-          .pt-4 { padding-top: 16px; }
-          .px-2 { padding-left: 8px; padding-right: 8px; }
-          .px-3 { padding-left: 12px; padding-right: 12px; }
-          .px-4 { padding-left: 16px; padding-right: 16px; }
-          .px-6 { padding-left: 24px; padding-right: 24px; }
-          .py-1 { padding-top: 4px; padding-bottom: 4px; }
-          .py-1\\.5 { padding-top: 6px; padding-bottom: 6px; }
-          .py-2 { padding-top: 8px; padding-bottom: 8px; }
-          .rounded-full { border-radius: 9999px; }
-          .rounded-2xl { border-radius: 16px; }
-          .rounded-xl { border-radius: 12px; }
-          .rounded-lg { border-radius: 8px; }
-          .border { border: 1px solid #e2e8f0; }
-          .border-2 { border-width: 2px; }
-          .border-b { border-bottom: 1px solid #e2e8f0; }
-          .border-b-2 { border-bottom: 2px solid #2563eb; }
-          .border-t { border-top: 1px solid #e2e8f0; }
-          .border-blue-200 { border-color: #bfdbfe; }
-          .border-blue-600 { border-color: #2563eb; }
-          .border-slate-100 { border-color: #f1f5f9; }
-          .border-slate-200 { border-color: #e2e8f0; }
-          .border-slate-300 { border-color: #cbd5e1; }
-          .border-gray-200 { border-color: #e5e7eb; }
-          .border-gray-300 { border-color: #d1d5db; }
-          .border-red-300 { border-color: #fca5a5; }
-          .bg-blue-600 { background-color: #2563eb !important; color: #ffffff !important; }
-          .bg-blue-700 { background-color: #1d4ed8 !important; color: #ffffff !important; }
-          .bg-blue-50 { background-color: #eff6ff !important; }
-          .bg-slate-50 { background-color: #f8fafc !important; }
-          .bg-slate-100 { background-color: #f1f5f9 !important; }
-          .bg-gray-50 { background-color: #f9fafb !important; }
-          .bg-emerald-50 { background-color: #ecfdf5 !important; }
-          .bg-red-50 { background-color: #fef2f2 !important; }
+
+          /* Comprehensive Layout & Utility Rules for Reliable Standalone Print */
+          .flex { display: flex !important; }
+          .inline-flex { display: inline-flex !important; }
+          .flex-col { flex-direction: column !important; }
+          .flex-wrap { flex-wrap: wrap !important; }
+          .items-center { align-items: center !important; }
+          .items-start { align-items: flex-start !important; }
+          .items-end { align-items: flex-end !important; }
+          .items-stretch { align-items: stretch !important; }
+          .justify-center { justify-content: center !important; }
+          .justify-between { justify-content: space-between !important; }
+          .justify-end { justify-content: flex-end !important; }
+          .shrink-0 { flex-shrink: 0 !important; }
+          .flex-1 { flex: 1 1 0% !important; }
+          .min-w-0 { min-width: 0 !important; }
+
+          /* 12-Column and Standard Grid Utilities */
+          .grid { display: grid !important; }
+          .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+          .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+          .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+          .grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)) !important; }
+          .col-span-4 { grid-column: span 4 / span 4 !important; }
+          .col-span-5 { grid-column: span 5 / span 5 !important; }
+          .col-span-7 { grid-column: span 7 / span 7 !important; }
+          .col-span-8 { grid-column: span 8 / span 8 !important; }
+          .col-span-12 { grid-column: span 12 / span 12 !important; }
+
+          /* Divide Utilities */
+          .divide-x > * + * { border-left-width: 1px !important; }
+          .divide-y > * + * { border-top-width: 1px !important; }
+          .divide-slate-100 > * + * { border-color: #f1f5f9 !important; }
+          .divide-slate-200 > * + * { border-color: #e2e8f0 !important; }
+
+          /* Spacing & Gap */
+          .gap-0\\.5 { gap: 2px !important; }
+          .gap-1 { gap: 4px !important; }
+          .gap-1\\.5 { gap: 6px !important; }
+          .gap-2 { gap: 8px !important; }
+          .gap-2\\.5 { gap: 10px !important; }
+          .gap-3 { gap: 12px !important; }
+          .gap-4 { gap: 16px !important; }
+          .gap-x-3 { column-gap: 12px !important; }
+          .gap-y-0\\.5 { row-gap: 2px !important; }
+
+          /* Margins & Paddings */
+          .p-0 { padding: 0 !important; }
+          .p-1 { padding: 4px !important; }
+          .p-2 { padding: 8px !important; }
+          .p-2\\.5 { padding: 10px !important; }
+          .p-3 { padding: 12px !important; }
+          .p-4 { padding: 16px !important; }
+          .py-0\\.5 { padding-top: 2px !important; padding-bottom: 2px !important; }
+          .py-1 { padding-top: 4px !important; padding-bottom: 4px !important; }
+          .py-1\\.5 { padding-top: 6px !important; padding-bottom: 6px !important; }
+          .py-2 { padding-top: 8px !important; padding-bottom: 8px !important; }
+          .px-1 { padding-left: 4px !important; padding-right: 4px !important; }
+          .px-2 { padding-left: 8px !important; padding-right: 8px !important; }
+          .px-2\\.5 { padding-left: 10px !important; padding-right: 10px !important; }
+          .px-3 { padding-left: 12px !important; padding-right: 12px !important; }
+          .px-4 { padding-left: 16px !important; padding-right: 16px !important; }
+          .pt-3 { padding-top: 12px !important; }
+          .pb-1 { padding-bottom: 4px !important; }
+          .pb-3 { padding-bottom: 12px !important; }
+          .pl-3 { padding-left: 12px !important; }
+          .pr-6 { padding-right: 24px !important; }
+          .my-1 { margin-top: 4px !important; margin-bottom: 4px !important; }
+          .my-2 { margin-top: 8px !important; margin-bottom: 8px !important; }
+          .my-2\\.5 { margin-top: 10px !important; margin-bottom: 10px !important; }
+          .mt-0\\.5 { margin-top: 2px !important; }
+          .mt-1 { margin-top: 4px !important; }
+          .mt-2 { margin-top: 8px !important; }
+          .mt-3 { margin-top: 12px !important; }
+          .mb-0\\.5 { margin-bottom: 2px !important; }
+          .mb-3 { margin-bottom: 12px !important; }
+          .mr-2 { margin-right: 8px !important; }
+          .mx-1\\.5 { margin-left: 6px !important; margin-right: 6px !important; }
+          .-ml-4 { margin-left: -16px !important; }
+          .pl-6 { padding-left: 24px !important; }
+
+          /* Dimensions */
+          .w-3 { width: 12px !important; }
+          .h-3 { height: 12px !important; }
+          .w-3\\.5 { width: 14px !important; }
+          .h-3\\.5 { height: 14px !important; }
+          .w-4 { width: 16px !important; }
+          .h-4 { height: 16px !important; }
+          .w-5 { width: 20px !important; }
+          .h-5 { height: 20px !important; }
+          .w-6 { width: 24px !important; }
+          .h-6 { height: 24px !important; }
+          .w-10 { width: 40px !important; }
+          .h-10 { height: 40px !important; }
+          .w-12 { width: 48px !important; }
+          .h-12 { height: 48px !important; }
+          .w-20 { width: 80px !important; }
+          .h-20 { height: 80px !important; }
+          .w-28 { width: 112px !important; }
+          .h-28 { height: 112px !important; }
+          .w-full { width: 100% !important; }
+          .h-full { height: 100% !important; }
+
+          /* Borders & Radii */
+          .border { border: 1px solid #e2e8f0 !important; }
+          .border-2 { border-width: 2px !important; }
+          .border-t { border-top: 1px solid #e2e8f0 !important; }
+          .border-b { border-bottom: 1px solid #e2e8f0 !important; }
+          .border-l { border-left: 1px solid #e2e8f0 !important; }
+          .border-slate-100 { border-color: #f1f5f9 !important; }
+          .border-slate-200 { border-color: #e2e8f0 !important; }
+          .border-slate-300 { border-color: #cbd5e1 !important; }
+          .border-blue-100 { border-color: #dbeafe !important; }
+          .border-blue-200 { border-color: #bfdbfe !important; }
+          .border-emerald-200\\/60 { border-color: rgba(167, 243, 208, 0.6) !important; }
+          .border-emerald-500 { border-color: #10b981 !important; }
+          .border-rose-200\\/60 { border-color: rgba(254, 205, 211, 0.6) !important; }
+          .border-red-300 { border-color: #fca5a5 !important; }
+          .border-red-500 { border-color: #ef4444 !important; }
+          .rounded-md { border-radius: 6px !important; }
+          .rounded-lg { border-radius: 8px !important; }
+          .rounded-xl { border-radius: 12px !important; }
+          .rounded-2xl { border-radius: 16px !important; }
+          .rounded-full { border-radius: 9999px !important; }
+          .rounded-t-xl { border-top-left-radius: 12px !important; border-top-right-radius: 12px !important; }
+          .rounded-b-xl { border-bottom-left-radius: 12px !important; border-bottom-right-radius: 12px !important; }
+          .rounded-tr-xl { border-top-right-radius: 12px !important; }
+
+          /* Color Fills & Backgrounds */
           .bg-white { background-color: #ffffff !important; }
+          .bg-\\[\\#0b2b5c\\] { background-color: #0b2b5c !important; color: #ffffff !important; }
+          .bg-\\[\\#dbeafe\\] { background-color: #dbeafe !important; }
+          .bg-\\[\\#0256b9\\] { background-color: #0256b9 !important; color: #ffffff !important; }
+          .bg-\\[\\#eff6ff\\] { background-color: #eff6ff !important; }
+          .bg-blue-50 { background-color: #eff6ff !important; }
+          .bg-blue-50\\/40 { background-color: rgba(239, 246, 255, 0.4) !important; }
+          .bg-emerald-50 { background-color: #ecfdf5 !important; }
+          .bg-emerald-50\\/90 { background-color: rgba(236, 253, 245, 0.9) !important; }
+          .bg-emerald-600 { background-color: #059669 !important; }
+          .bg-rose-50 { background-color: #fff1f2 !important; }
+          .bg-red-50 { background-color: #fef2f2 !important; }
+          .bg-slate-50 { background-color: #f8fafc !important; }
+          .bg-slate-300 { background-color: #cbd5e1 !important; }
+
+          /* Typography */
           .text-white { color: #ffffff !important; }
+          .text-\\[\\#0b2b5c\\] { color: #0b2b5c !important; }
           .text-slate-900 { color: #0f172a !important; }
           .text-slate-800 { color: #1e293b !important; }
           .text-slate-700 { color: #334155 !important; }
           .text-slate-600 { color: #475569 !important; }
           .text-slate-500 { color: #64748b !important; }
           .text-slate-400 { color: #94a3b8 !important; }
-          .text-blue-900 { color: #1e3a8a !important; }
-          .text-blue-700 { color: #1d4ed8 !important; }
+          .text-slate-300 { color: #cbd5e1 !important; }
           .text-blue-600 { color: #2563eb !important; }
-          .text-blue-100 { color: #dbeafe !important; }
-          .text-emerald-700 { color: #047857 !important; }
+          .text-blue-700 { color: #1d4ed8 !important; }
+          .text-blue-800 { color: #1e40af !important; }
+          .text-blue-950 { color: #172554 !important; }
+          .text-sky-600 { color: #0284c7 !important; }
           .text-emerald-600 { color: #059669 !important; }
-          .text-red-700 { color: #b91c1c !important; }
+          .text-emerald-700 { color: #047857 !important; }
+          .text-emerald-950 { color: #022c22 !important; }
+          .text-rose-700 { color: #be123c !important; }
+          .text-rose-950 { color: #4c0519 !important; }
           .text-red-600 { color: #dc2626 !important; }
-          .font-black { font-weight: 900; }
-          .font-extrabold { font-weight: 800; }
-          .font-bold { font-weight: 700; }
-          .font-semibold { font-weight: 600; }
-          .font-medium { font-weight: 500; }
-          .text-4xl { font-size: 32px; line-height: 40px; }
-          .text-3xl { font-size: 28px; line-height: 36px; }
-          .text-2xl { font-size: 24px; line-height: 32px; }
-          .text-xl { font-size: 20px; line-height: 28px; }
-          .text-lg { font-size: 18px; line-height: 28px; }
-          .text-sm { font-size: 14px; line-height: 20px; }
-          .text-xs { font-size: 12px; line-height: 16px; }
-          .text-\\[11px\\] { font-size: 11px; line-height: 15px; }
-          .text-\\[10px\\] { font-size: 10px; line-height: 14px; }
-          .uppercase { text-transform: uppercase; }
-          .capitalize { text-transform: capitalize; }
-          .italic { font-style: italic; }
-          .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-          .inline-block { display: inline-block; }
-          .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
-          .tracking-wide { letter-spacing: 0.025em; }
-          .tracking-wider { letter-spacing: 0.05em; }
-          .print-hidden, .no-print { display: none !important; }
+          .text-red-700 { color: #b91c1c !important; }
+          .text-red-800 { color: #991b1b !important; }
+
+          .font-normal { font-weight: 400 !important; }
+          .font-medium { font-weight: 500 !important; }
+          .font-semibold { font-weight: 600 !important; }
+          .font-bold { font-weight: 700 !important; }
+          .font-extrabold { font-weight: 800 !important; }
+          .font-black { font-weight: 900 !important; }
+          .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important; }
+
+          .text-\\[8\\.5px\\] { font-size: 8.5px !important; line-height: 11px !important; }
+          .text-\\[9px\\] { font-size: 9px !important; line-height: 12px !important; }
+          .text-\\[9\\.5px\\] { font-size: 9.5px !important; line-height: 13px !important; }
+          .text-\\[10px\\] { font-size: 10px !important; line-height: 14px !important; }
+          .text-\\[10\\.5px\\] { font-size: 10.5px !important; line-height: 14px !important; }
+          .text-\\[11px\\] { font-size: 11px !important; line-height: 15px !important; }
+          .text-xs { font-size: 12px !important; line-height: 16px !important; }
+          .text-sm { font-size: 14px !important; line-height: 20px !important; }
+          .text-base { font-size: 16px !important; line-height: 24px !important; }
+          .text-xl { font-size: 20px !important; line-height: 26px !important; }
+          .text-2xl { font-size: 24px !important; line-height: 30px !important; }
+          .text-3xl { font-size: 28px !important; line-height: 34px !important; }
+
+          .uppercase { text-transform: uppercase !important; }
+          .capitalize { text-transform: capitalize !important; }
+          .italic { font-style: italic !important; }
+          .truncate { overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+          .whitespace-nowrap { white-space: nowrap !important; }
+          .leading-none { line-height: 1 !important; }
+          .leading-tight { line-height: 1.25 !important; }
+          .tracking-tight { letter-spacing: -0.025em !important; }
+          .tracking-wide { letter-spacing: 0.025em !important; }
+          .tracking-wider { letter-spacing: 0.05em !important; }
+          .text-center { text-align: center !important; }
+          .text-left { text-align: left !important; }
+          .text-right { text-align: right !important; }
+
+          /* Tables */
+          table, .receipt-history-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+          }
+          th, td {
+            padding: 4px 8px !important;
+            font-size: 10px !important;
+          }
+          tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          /* Page Break Controls */
+          header, .receipt-header, footer, .receipt-footer, .banner-ribbon {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          /* Positioning & Overflows */
+          .relative { position: relative !important; }
+          .absolute { position: absolute !important; }
+          .overflow-hidden { overflow: hidden !important; }
+          .z-10 { z-index: 10 !important; }
+          .z-0 { z-index: 0 !important; }
+          .shadow-xs, .shadow-2xs, .shadow-sm, .shadow-md { box-shadow: none !important; }
+
+          .print-hidden, .no-print, button {
+            display: none !important;
+          }
         </style>
       </head>
       <body>
@@ -278,8 +389,8 @@ export function printReceiptElement(
     `);
     iframeDoc.close();
 
-    // Trigger print safely after layout stabilization
-    setTimeout(() => {
+    // Trigger print safely after stylesheets, fonts, and images have loaded
+    const triggerIframePrint = () => {
       try {
         iframe.contentWindow?.focus();
         iframe.contentWindow?.print();
@@ -291,9 +402,42 @@ export function printReceiptElement(
           if (iframe.parentNode) {
             iframe.parentNode.removeChild(iframe);
           }
-        }, 1500);
+        }, 2000);
       }
-    }, 200);
+    };
+
+    // If iframe window is ready, wait for images or fallback to timeout
+    const images = iframeDoc.getElementsByTagName('img');
+    let loadedCount = 0;
+    const totalImages = images.length;
+
+    if (totalImages === 0) {
+      setTimeout(triggerIframePrint, 150);
+    } else {
+      const checkAndPrint = () => {
+        loadedCount++;
+        if (loadedCount >= totalImages) {
+          triggerIframePrint();
+        }
+      };
+
+      for (let i = 0; i < totalImages; i++) {
+        const img = images[i];
+        if (img.complete) {
+          loadedCount++;
+        } else {
+          img.onload = checkAndPrint;
+          img.onerror = checkAndPrint;
+        }
+      }
+
+      if (loadedCount >= totalImages) {
+        setTimeout(triggerIframePrint, 150);
+      } else {
+        // Safety timeout so print never hangs
+        setTimeout(triggerIframePrint, 600);
+      }
+    }
 
     return true;
   } catch (error) {
@@ -328,4 +472,3 @@ export function directPrintReceipt(elementId: string = 'receipt-print-area'): vo
   // Safety fallback in case afterprint does not fire
   setTimeout(cleanup, 2000);
 }
-
