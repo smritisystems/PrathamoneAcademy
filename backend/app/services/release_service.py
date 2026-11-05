@@ -727,6 +727,14 @@ class ReleaseService:
         release.rollback_reason = reason.strip()
         release.rollback_target_version = target_version
 
+        # Restore configuration to rollback target version
+        try:
+            script_path = os.path.join(os.getcwd(), "scripts", "version_bump.py")
+            if os.path.isfile(script_path):
+                subprocess.run(["python", script_path, "--set", target_version], timeout=5)
+        except Exception:
+            pass
+
         audit = AuditLog(
             user_id=user.id,
             action="release_rolled_back",
