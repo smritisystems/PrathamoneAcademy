@@ -11,13 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
 
 import apiClient from './client'
 import type {
+  PaymentPermissions,
   Institution, AcademicYear, Board, Standard, Division,
   Student, FeeCategory, FeeStructure, FeeInvoice,
   FeeInstallment, Payment, Receipt, DashboardStats,
@@ -480,6 +481,12 @@ export const paymentsApi = {
     apiClient.get<PaymentWorkflowConfig>('/payments/workflow/config'),
   updateWorkflowConfig: (data: Partial<PaymentWorkflowConfig>) =>
     apiClient.put<{ message: string; config: PaymentWorkflowConfig }>('/payments/workflow/config', data),
+  getMyPermissions: () =>
+    apiClient.get<PaymentPermissions>('/payments/my-permissions'),
+  getEditPostedStatus: (role_name?: string) =>
+    apiClient.get<{ role_name: string; role_id: number; has_edit_posted_permission: boolean; permission_id?: number }>('/sysadmin/permissions/edit-posted-status', { params: { role_name } }),
+  toggleEditPosted: (data: { role_name?: string; granted: boolean; reason: string }) =>
+    apiClient.post<{ success: boolean; role_name: string; edit_posted_granted: boolean; action: string; message: string }>('/sysadmin/permissions/toggle-edit-posted', data),
 }
 
 // ─── Reports ──────────────────────────────────────────────────────────────────

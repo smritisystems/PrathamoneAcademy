@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for user account administration, RBAC roles, security scopes, and invitations.
 #  */
@@ -28,7 +28,7 @@ from sqlalchemy import select, func, or_, and_, desc, asc
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_user_permissions, get_current_active_user, require_role
 from app.core.security import get_password_hash
 from app.models.user import User, Role, Permission, AuditLog
 from app.models.student import Student
@@ -107,7 +107,11 @@ async def resolve_scope_label(db: AsyncSession, scope_type: str, scope_id: Optio
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.get("/me")
-async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
+async def get_current_user_info(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    perms = await get_user_permissions(db, current_user)
     return {
         "id": current_user.id,
         "username": current_user.username,
@@ -123,6 +127,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_active_
         "designation": current_user.designation,
         "scope_type": current_user.scope_type,
         "scope_id": current_user.scope_id,
+        "permissions": [f"{r}:{a}" for r, a in perms],
     }
 
 

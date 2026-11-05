@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Zustand state store managing user authentication token, logged-in profile, and active institute ID.
  */
@@ -77,4 +77,36 @@ export const isUserAdmin = (user: User | null): boolean => {
     r === 'admin' ||
     r === 'principal'
   )
+}
+
+
+export const hasPermission = (user: User | null, perm: string): boolean => {
+  if (!user) return false
+  const r = (user.role || '').toLowerCase()
+  const perms = user.permissions || []
+
+  // Direct explicit match
+  if (perms.includes(perm)) return true
+
+  // STRICT RULE: 'payments:edit_posted' CANNOT be bypassed by wildcard or sysadmin role!
+  if (perm === 'payments:edit_posted') {
+    return perms.includes('payments:edit_posted')
+  }
+
+  // Sysadmin superuser blanket access for other permissions
+  if (r === 'sysadmin' || r === 'superadmin' || r === 'super_admin') {
+    return true
+  }
+
+  // General wildcard permission
+  if (perms.includes('*:*') || perms.includes('*.*')) {
+    return true
+  }
+
+  return false
+}
+
+export const canUserEditPosted = (user: User | null): boolean => {
+  if (!user || !user.permissions) return false
+  return user.permissions.includes('payments:edit_posted')
 }

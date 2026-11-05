@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description SysAdmin superuser API endpoints for security audits, universal records editing, and system governance.
 #  */
@@ -412,4 +412,99 @@ async def update_system_settings(
         "success": True,
         "message": "System settings updated successfully",
         "data": data.dict(exclude_none=True),
+    }
+
+
+class ToggleEditPostedRequest(BaseModel):
+    role_name: str = "sysadmin"
+    granted: bool
+    reason: str
+
+
+@router.get("/permissions/edit-posted-status")
+async def get_edit_posted_status(
+    role_name: str = "sysadmin",
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_sysadmin),
+):
+    """Checks whether the specified role has explicit payments:edit_posted permission."""
+    role_res = await db.execute(select(Role).where(func.lower(Role.name) == role_name.lower().strip()))
+    role = role_res.scalar_one_or_none()
+    if not role:
+        raise HTTPException(status_code=404, detail=f"Role '{role_name}' not found")
+
+    perm_res = await db.execute(
+        select(Permission).where(
+            Permission.role_id == role.id,
+            Permission.resource == "payments",
+            Permission.action == "edit_posted",
+        )
+    )
+    perm = perm_res.scalar_one_or_none()
+    return {
+        "role_name": role.name,
+        "role_id": role.id,
+        "has_edit_posted_permission": perm is not None,
+        "permission_id": perm.id if perm else None,
+    }
+
+
+@router.post("/permissions/toggle-edit-posted")
+async def toggle_edit_posted_permission(
+    req: ToggleEditPostedRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_sysadmin),
+):
+    """
+    Grants or revokes the explicit 'payments:edit_posted' permission for a role.
+    Maintains an immutable audit log entry of this security change.
+    """
+    if not req.reason or not req.reason.strip():
+        raise HTTPException(status_code=400, detail="Administrative reason is required for permission modification.")
+
+    role_res = await db.execute(select(Role).where(func.lower(Role.name) == req.role_name.lower().strip()))
+    role = role_res.scalar_one_or_none()
+    if not role:
+        raise HTTPException(status_code=404, detail=f"Role '{req.role_name}' not found")
+
+    perm_res = await db.execute(
+        select(Permission).where(
+            Permission.role_id == role.id,
+            Permission.resource == "payments",
+            Permission.action == "edit_posted",
+        )
+    )
+    existing_perm = perm_res.scalar_one_or_none()
+
+    if req.granted and not existing_perm:
+        new_perm = Permission(role_id=role.id, resource="payments", action="edit_posted")
+        db.add(new_perm)
+        action_name = "permission_granted"
+    elif not req.granted and existing_perm:
+        await db.delete(existing_perm)
+        action_name = "permission_revoked"
+    else:
+        action_name = "permission_unchanged"
+
+    # Log to audit trail
+    audit = AuditLog(
+        user_id=current_user.id,
+        action=f"sysadmin_permission_{action_name}",
+        resource_type="permission",
+        resource_id=role.id,
+        old_data=json.dumps({"has_edit_posted": existing_perm is not None}),
+        new_data=json.dumps({"has_edit_posted": req.granted}),
+        details=f"SysAdmin toggled 'payments:edit_posted' for role '{role.name}' to {req.granted}. Reason: {req.reason}",
+        severity="critical",
+        is_system_audit=True,
+    )
+    db.add(audit)
+    await db.commit()
+
+    return {
+        "success": True,
+        "role_name": role.name,
+        "edit_posted_granted": req.granted,
+        "action": action_name,
+        "message": f"Successfully {'granted' if req.granted else 'revoked'} 'payments:edit_posted' for role '{role.name}'",
     }

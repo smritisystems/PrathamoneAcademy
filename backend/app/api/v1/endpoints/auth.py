@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for user authentication, password verification, and JWT session issuance.
 #  */
@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from datetime import datetime, timezone
 from app.core.database import get_db
+from app.core.deps import get_user_permissions
 from app.core.security import verify_password, create_access_token, create_refresh_token
 from app.models.user import User
 from app.core.limiter import limiter
@@ -74,6 +75,7 @@ async def login(
             "last_name": user.last_name,
             "role": user.role,
             "institution_id": user.institution_id,
+            "permissions": [f"{r}:{a}" for r, a in await get_user_permissions(db, user)],
         },
     }
 

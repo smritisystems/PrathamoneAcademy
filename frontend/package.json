@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --pool=forks",
     "test:watch": "vitest",
     "headers:check": "python ../scripts/manage_headers.py check",
     "headers:fix": "python ../scripts/manage_headers.py fix",

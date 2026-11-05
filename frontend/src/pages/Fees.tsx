@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -36,7 +36,7 @@ import {
   studentsApi, invoicesApi, reportsApi, academicYearsApi, boardsApi,
   standardsApi, divisionsApi, settingsApi
 } from '../api/endpoints'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import Modal from '../components/Modal'
 import PaymentReceiptView from '../components/PaymentReceiptView'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
@@ -1417,7 +1417,7 @@ export default function Fees() {
       {/* 3. TABS NAVIGATION BAR                                                    */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-1.5 shadow-xs flex items-center gap-1 overflow-x-auto custom-scrollbar">
-        {TABS.map((tab) => {
+        {TABS.filter(tab => tab.id !== 'settings' || (hasPermission(user, 'fee_workflow:configure') || isUserAdmin(user))).map((tab) => {
           const isActive = activeTab === tab.id
           return (
             <button

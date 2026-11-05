@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description Pytest configuration fixtures providing test database session, test client, and auth helpers.
 #  */
@@ -70,9 +70,65 @@ def event_loop():
 
 @pytest.fixture(scope="session", autouse=True)
 async def db_setup():
+    from sqlalchemy.sql import text
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
+        # Seed standard roles in test database
+        await conn.execute(text("""
+            INSERT INTO roles (name, description, created_at) VALUES
+            ('superadmin', 'Super Administrator', NOW()),
+            ('admin', 'Administrator', NOW()),
+            ('principal', 'Principal', NOW()),
+            ('accountant', 'Accountant', NOW()),
+            ('teacher', 'Teacher', NOW()),
+            ('staff', 'Staff Member', NOW()),
+            ('student', 'Student Account', NOW()),
+            ('sysadmin', 'System Administrator', NOW());
+        """))
+
+        # Seed standard permissions in test database
+        role_rows = (await conn.execute(text("SELECT id, name FROM roles;"))).fetchall()
+        role_map = {r[1]: r[0] for r in role_rows}
+
+        perms_to_seed = [
+            ("sysadmin", "*", "*"),
+            ("sysadmin", "fees", "view"),
+            ("sysadmin", "payments", "view"),
+            ("sysadmin", "payments", "draft"),
+            ("sysadmin", "payments", "edit_submitted"),
+            ("sysadmin", "fee_workflow", "configure"),
+            ("sysadmin", "payments", "refund_process"),
+            ("sysadmin", "payments", "refund_approve"),
+            ("sysadmin", "payments", "view_audit"),
+
+            ("admin", "fees", "view"),
+            ("admin", "payments", "view"),
+            ("admin", "payments", "draft"),
+            ("admin", "payments", "edit_submitted"),
+            ("admin", "payments", "edit_posted"),
+            ("admin", "fee_workflow", "configure"),
+            ("admin", "payments", "refund_process"),
+            ("admin", "payments", "refund_approve"),
+            ("admin", "payments", "view_audit"),
+
+            ("accountant", "fees", "view"),
+            ("accountant", "payments", "view"),
+            ("accountant", "payments", "draft"),
+            ("accountant", "payments", "edit_submitted"),
+            ("accountant", "payments", "refund_process"),
+            ("accountant", "payments", "view_audit"),
+        ]
+
+        for rname, res, act in perms_to_seed:
+            rid = role_map.get(rname)
+            if rid:
+                await conn.execute(text("""
+                    INSERT INTO permissions (role_id, resource, action, created_at)
+                    VALUES (:rid, :res, :act, NOW());
+                """), {"rid": rid, "res": res, "act": act})
+
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -102,8 +158,14 @@ async def client(db):
 @pytest.fixture
 async def admin_user(db):
     import random
+    from sqlalchemy import select
+    from app.models.user import Role
     suffix = random.randint(100000, 999999)
     username = f"admin_{suffix}"
+    role_res = await db.execute(select(Role).where(Role.name == "admin"))
+    admin_role = role_res.scalar_one_or_none()
+    role_id = admin_role.id if admin_role else None
+
     user = User(
         username=username,
         email=f"admin_{suffix}@test.com",
@@ -111,6 +173,7 @@ async def admin_user(db):
         first_name="Test",
         last_name="Admin",
         role="admin",
+        role_id=role_id,
     )
     db.add(user)
     await db.commit()
@@ -159,8 +222,8 @@ async def test_academic_year(db, test_institution):
 
 @pytest.fixture
 async def test_student(db, test_institution):
-    import random
-    suffix = random.randint(10000, 99999)
+    import uuid
+    suffix = uuid.uuid4().hex[:8]
     student = Student(
         institution_id=test_institution.id,
         admission_number=f"TEST{suffix}",
@@ -179,8 +242,8 @@ async def test_student(db, test_institution):
 @pytest.fixture
 async def test_fee_invoice(db, test_student, test_institution, test_academic_year, admin_user):
     """Setup: ₹24,000 invoice with 1 installment"""
-    import random
-    suffix = random.randint(10000, 99999)
+    import uuid
+    suffix = uuid.uuid4().hex[:8]
 
     category = FeeCategory(institution_id=test_institution.id, name=f"Tuition-{suffix}")
     db.add(category)

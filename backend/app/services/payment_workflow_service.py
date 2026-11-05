@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description Service managing payment lifecycle states, ERP approval rules, audited modifications, receipt versioning, and refunds.
 #  */
@@ -610,6 +610,7 @@ async def execute_payment_edit(
         return {
             "message": f"Payment updated: previous receipt {old_receipt_num} superseded, new receipt {new_receipt_number} issued",
             "payment_id": payment.id,
+            "receipt_number": new_receipt_number,
             "old_receipt_number": old_receipt_num,
             "new_receipt_number": new_receipt_number,
             "version": old_version + 1,

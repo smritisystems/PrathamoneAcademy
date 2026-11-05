@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description FastAPI dependency injection providers for database sessions and authenticated user context.
 #  */
@@ -135,4 +135,100 @@ def check_institution_access(target_institution_id: Optional[int], current_user)
         )
 
 
+async def get_user_permissions(db: AsyncSession, user) -> set[tuple[str, str]]:
+    """
+    Retrieves all effective (resource, action) permissions for a user from their role
+    and any direct user-specific permission grants.
+    """
+    if not user:
+        return set()
 
+    from app.models.user import Permission, Role
+    from sqlalchemy import or_, func
+
+    conditions = []
+    if getattr(user, "role_id", None):
+        conditions.append(Permission.role_id == user.role_id)
+    if getattr(user, "id", None):
+        conditions.append(Permission.user_id == user.id)
+
+    # If role_id is unset but role string exists, resolve role_id
+    if not getattr(user, "role_id", None) and getattr(user, "role", None):
+        role_res = await db.execute(select(Role.id).where(func.lower(Role.name) == func.lower(user.role)))
+        rid = role_res.scalar_one_or_none()
+        if rid:
+            conditions.append(Permission.role_id == rid)
+
+    if not conditions:
+        return set()
+
+    stmt = select(Permission.resource, Permission.action).where(or_(*conditions))
+    rows = (await db.execute(stmt)).fetchall()
+    return {(r, a) for r, a in rows}
+
+
+async def has_permission(
+    db: AsyncSession,
+    user,
+    resource: str,
+    action: str,
+    allow_wildcard: bool = True,
+) -> bool:
+    """
+    Checks if a user possesses a specific permission.
+    - If allow_wildcard=True:
+      - Direct match (resource, action) -> True
+      - Role wildcard (*, *) or (resource, *) -> True
+      - Sysadmin role -> True
+    - If allow_wildcard=False (e.g. for sensitive 'Edit Posted Payments' gate):
+      - ONLY direct match (resource, action) in user's permissions -> True
+      - Generic sysadmin role or wildcard (*, *) does NOT bypass this check.
+    """
+    if not user:
+        return False
+
+    perms = await get_user_permissions(db, user)
+
+    # 1. Direct explicit match
+    if (resource, action) in perms:
+        return True
+
+    # 2. Strict non-wildcard check (e.g., payments:edit_posted)
+    if not allow_wildcard:
+        return False
+
+    # 3. Wildcard permissions
+    if ("*", "*") in perms or (resource, "*") in perms:
+        return True
+
+    # 4. Blanket superuser role check
+    if is_sysadmin(user):
+        return True
+
+    return False
+
+
+def require_permission(resource: str, action: str, allow_wildcard: bool = True):
+    """
+    FastAPI Dependency to enforce granular permission check on endpoints.
+    """
+    async def permission_checker(
+        current_user=Depends(get_current_active_user),
+        db: AsyncSession = Depends(get_db),
+    ):
+        authorized = await has_permission(
+            db, current_user, resource, action, allow_wildcard=allow_wildcard
+        )
+        if not authorized:
+            if not allow_wildcard and action == "edit_posted":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Explicit 'Edit Posted Payments' permission is required to modify a posted financial payment.",
+                )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Insufficient permissions: requires '{resource}:{action}' privilege.",
+            )
+        return current_user
+
+    return permission_checker

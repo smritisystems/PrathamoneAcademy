@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description SQLAlchemy model defining system user accounts, authentication credentials, and RBAC roles.
 #  */
@@ -42,14 +42,16 @@ class Permission(Base):
     __tablename__ = "permissions"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    role_id: Mapped[int] = mapped_column(ForeignKey("roles.id"), nullable=False)
+    role_id: Mapped[int | None] = mapped_column(ForeignKey("roles.id"), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     resource: Mapped[str] = mapped_column(String(100), nullable=False)
-    action: Mapped[str] = mapped_column(String(20), nullable=False)
+    action: Mapped[str] = mapped_column(String(50), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 
-    role: Mapped["Role"] = relationship("Role", back_populates="permissions")
+    role: Mapped["Role | None"] = relationship("Role", back_populates="permissions")
+    user: Mapped["User | None"] = relationship("User", back_populates="direct_permissions")
 
 
 class User(Base):
@@ -105,6 +107,9 @@ class User(Base):
 
     role_obj: Mapped["Role"] = relationship("Role", back_populates="users")
     student: Mapped["Student | None"] = relationship("Student", foreign_keys=[student_id])
+    direct_permissions: Mapped[list["Permission"]] = relationship(
+        "Permission", back_populates="user", foreign_keys="Permission.user_id"
+    )
     audit_logs: Mapped[list["AuditLog"]] = relationship(
         "AuditLog", back_populates="user"
     )

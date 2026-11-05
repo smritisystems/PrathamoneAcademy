@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import ShareModal from '../components/ShareModal'
 import { paymentsApi } from '../api/endpoints'
-import { useAuthStore, isUserSysAdmin } from '../store/authStore'
+import { useAuthStore, isUserSysAdmin, hasPermission, canUserEditPosted } from '../store/authStore'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
 import Modal from '../components/Modal'
 import type { PaymentTransactionItem, PaymentAuditLog } from '../types'
@@ -55,8 +55,46 @@ export default function Payments() {
   const queryClient = useQueryClient()
   const userRole = (user?.role || '').toLowerCase()
   const isSysAdmin = isUserSysAdmin(user)
-  const canApprove = APPROVER_ROLES.includes(userRole)
-  const canEditPosted = ['superadmin', 'sysadmin', 'admin'].includes(userRole)
+
+  // Query: Resolved payment permissions for current user from backend
+  const { data: userPerms } = useQuery({
+    queryKey: ['my-payment-permissions'],
+    queryFn: async () => {
+      const res = await paymentsApi.getMyPermissions()
+      return res.data
+    },
+    staleTime: 30000,
+  })
+
+  // Granular capability flags verified against API and store
+  const canEditPosted = userPerms ? userPerms.can_edit_posted : canUserEditPosted(user)
+  const canApprove = userPerms ? userPerms.can_approve_refund : APPROVER_ROLES.includes(userRole)
+  const canRefund = userPerms ? userPerms.can_process_refund : ['superadmin', 'sysadmin', 'admin', 'principal', 'accountant'].includes(userRole)
+  const canEditSubmitted = userPerms ? userPerms.can_edit_submitted : true
+  const canViewAudit = userPerms ? userPerms.can_view_audit : true
+
+  // Sysadmin Toggle Permission Modal State
+  const [togglePermModalOpen, setTogglePermModalOpen] = useState(false)
+  const [togglePermReason, setTogglePermReason] = useState('')
+
+  const togglePermMutation = useMutation({
+    mutationFn: (granted: boolean) =>
+      paymentsApi.toggleEditPosted({
+        role_name: 'sysadmin',
+        granted,
+        reason: togglePermReason.trim() || 'SysAdmin administrative security authorization',
+      }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['my-payment-permissions'] })
+      queryClient.invalidateQueries({ queryKey: ['payments-page'] })
+      setTogglePermModalOpen(false)
+      setTogglePermReason('')
+      toast.success(res.data.message)
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Failed to toggle permission')
+    },
+  })
 
   const [filters, setFilters] = useState<FilterState>({
     academicYearId: selectedAcademicYearId || null,
@@ -282,6 +320,7 @@ export default function Payments() {
         cheque_number: editForm.cheque_number || undefined,
         cheque_date: editForm.cheque_date || undefined,
         notes: editForm.notes,
+        reason: editForm.edit_reason.trim() || 'Payment details update',
         edit_reason: editForm.edit_reason.trim() || 'Payment details update',
       },
     })
@@ -396,6 +435,38 @@ export default function Payments() {
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
               Audit Ledger
             </span>
+            {isSysAdmin && (
+              canEditPosted ? (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300">
+                  <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Posted Edits: Unlocked</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTogglePermReason('Administrative lock applied')
+                      togglePermMutation.mutate(false)
+                    }}
+                    className="ml-1 text-xs underline font-medium text-amber-800 hover:text-amber-900"
+                    title="Lock Posted Payment Editing"
+                  >
+                    Lock
+                  </button>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300">
+                  <ShieldAlert className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Posted Edits: Protected</span>
+                  <button
+                    type="button"
+                    onClick={() => setTogglePermModalOpen(true)}
+                    className="ml-1 text-xs underline font-medium text-primary-700 hover:text-primary-800"
+                    title="Grant Explicit Permission to Edit Posted Payments"
+                  >
+                    Unlock
+                  </button>
+                </div>
+              )
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
             Immutable transaction ledger, multi-stage ERP payment workflow, receipt versioning, and refunds
@@ -729,15 +800,17 @@ export default function Payments() {
                                   <span>Edit</span>
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => handleOpenRefund(p)}
-                                className="text-xs text-amber-700 hover:text-amber-900 font-medium py-1 px-2 border border-amber-200 rounded hover:bg-amber-50 inline-flex items-center gap-1"
-                                title="Process partial or full refund"
-                              >
-                                <Undo2 className="w-3 h-3 text-amber-600" />
-                                <span>Refund</span>
-                              </button>
+                              {canRefund && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenRefund(p)}
+                                  className="text-xs text-amber-700 hover:text-amber-900 font-medium py-1 px-2 border border-amber-200 rounded hover:bg-amber-50 inline-flex items-center gap-1"
+                                  title="Process partial or full refund"
+                                >
+                                  <Undo2 className="w-3 h-3 text-amber-600" />
+                                  <span>Refund</span>
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => handleOpenReverse(p)}
@@ -751,14 +824,16 @@ export default function Payments() {
                           )}
 
                           {/* AUDIT TRAIL ACTION (All payments) */}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenAudit(p)}
-                            className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"
-                            title="View Lifecycle Audit Trail"
-                          >
-                            <History className="w-3.5 h-3.5" />
-                          </button>
+                          {canViewAudit && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAudit(p)}
+                              className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"
+                              title="View Lifecycle Audit Trail"
+                            >
+                              <History className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1213,6 +1288,57 @@ export default function Payments() {
           recipientName={sharingPayment.student_name}
           defaultMessage={`Dear Parent, official fee receipt #${sharingPayment.receipt_number} for ${sharingPayment.student_name} (Amount: ₹${sharingPayment.amount?.toLocaleString('en-IN')}) is ready.`}
         />
+      )}
+      {/* MODAL: SysAdmin Explicit Permission Toggle */}
+      {togglePermModalOpen && (
+        <Modal
+          isOpen={togglePermModalOpen}
+          onClose={() => setTogglePermModalOpen(false)}
+          title="Explicit Permission Authorization: Edit Posted Payments"
+        >
+          <div className="space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 space-y-1">
+              <p className="font-semibold flex items-center gap-1">
+                <ShieldAlert className="w-4 h-4 text-amber-600" />
+                Audited Financial Security Control
+              </p>
+              <p>
+                In compliance with strict ERP separation of duties, modifying posted financial transactions requires the explicit <strong>Edit Posted Payments</strong> permission. Wildcard privileges do not bypass this rule.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Administrative Justification / Reason <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={togglePermReason}
+                onChange={(e) => setTogglePermReason(e.target.value)}
+                placeholder="Specify reason for temporarily unlocking posted payment corrections (e.g. Bank reconciliation discrepancy remediation)..."
+                rows={3}
+                className="w-full text-xs rounded border border-gray-300 p-2 focus:ring-1 focus:ring-primary-500"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setTogglePermModalOpen(false)}
+                className="btn-secondary text-xs py-1.5 px-3"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!togglePermReason.trim() || togglePermMutation.isPending}
+                onClick={() => togglePermMutation.mutate(true)}
+                className="btn-primary text-xs py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {togglePermMutation.isPending ? 'Authorizing...' : 'Authorize & Unlock'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   )

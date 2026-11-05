@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -26,6 +26,23 @@ export interface User {
   last_name: string
   role: string
   institution_id?: number
+  permissions?: string[]
+}
+
+export interface PaymentPermissions {
+  user_id: number
+  username: string
+  role: string
+  can_view_all: boolean
+  can_create_draft: boolean
+  can_edit_draft: boolean
+  can_edit_submitted: boolean
+  can_edit_posted: boolean
+  can_configure_workflow: boolean
+  can_process_refund: boolean
+  can_approve_refund: boolean
+  can_view_audit: boolean
+  permissions: string[]
 }
 
 export interface Institution {

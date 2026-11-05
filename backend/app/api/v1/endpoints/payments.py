@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -26,7 +26,7 @@ from datetime import date, datetime, timezone
 import json
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access
+from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access, has_permission, require_permission, get_user_permissions
 from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
@@ -84,6 +84,7 @@ class PaymentUpdate(BaseModel):
     notes: Optional[str] = None
     allocations: Optional[List[AllocationInput]] = None
     reason: Optional[str] = None  # Mandatory when modifying submitted or posted payments
+    edit_reason: Optional[str] = None
 
 
 class ReversalRequest(BaseModel):
@@ -110,6 +111,46 @@ class WorkflowConfigUpdate(BaseModel):
     erp_require_approval_methods: Optional[List[str]] = None
     allow_posted_payment_edits: Optional[bool] = None
     refund_approval_required: Optional[bool] = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 0. RESOLVED PERMISSIONS FOR CURRENT USER
+# ─────────────────────────────────────────────────────────────────────────────
+@router.get("/my-permissions")
+async def get_my_payment_permissions(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Returns the resolved, fine-grained permission capabilities for the authenticated user
+    in the Fees & Payments module.
+    """
+    can_view_all = await has_permission(db, current_user, "payments", "view")
+    can_draft = await has_permission(db, current_user, "payments", "draft")
+    can_edit_submitted = await has_permission(db, current_user, "payments", "edit_submitted")
+    can_edit_posted = await has_permission(db, current_user, "payments", "edit_posted", allow_wildcard=False)
+    can_config = await has_permission(db, current_user, "fee_workflow", "configure")
+    can_process_refund = await has_permission(db, current_user, "payments", "refund_process")
+    can_approve_refund = await has_permission(db, current_user, "payments", "refund_approve")
+    can_view_audit = await has_permission(db, current_user, "payments", "view_audit")
+
+    perms = await get_user_permissions(db, current_user)
+
+    return {
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "role": current_user.role,
+        "can_view_all": can_view_all,
+        "can_create_draft": can_draft,
+        "can_edit_draft": can_draft,
+        "can_edit_submitted": can_edit_submitted,
+        "can_edit_posted": can_edit_posted,
+        "can_configure_workflow": can_config,
+        "can_process_refund": can_process_refund,
+        "can_approve_refund": can_approve_refund,
+        "can_view_audit": can_view_audit,
+        "permissions": [f"{r}:{a}" for r, a in perms],
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -489,15 +530,43 @@ async def update_payment(
     if payment.student:
         check_institution_access(payment.student.institution_id, current_user)
 
-    # Permission check for posted payments
-    if payment.status in ("posted", "completed"):
-        if getattr(current_user, "role", None) not in APPROVER_ROLES:
+    effective_reason = (data.reason or data.edit_reason or "").strip()
+    # Mandatory audit reason validation for submitted or posted payments
+    if payment.status in ("submitted", "approved", "posted", "completed"):
+        if not effective_reason:
             raise HTTPException(
-                status_code=403,
-                detail="Administrator privileges required to modify a posted financial payment",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"A mandatory audit reason is strictly required when modifying a {payment.status} payment transaction.",
             )
 
-    update_dict = data.model_dump(exclude_unset=True, exclude={"reason"})
+    # Permission check for draft payments
+    if payment.status == "draft":
+        can_draft = await has_permission(db, current_user, "payments", "draft")
+        if not can_draft:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions: requires 'payments:draft' privilege to edit payment drafts.",
+            )
+
+    # Permission check for submitted or approved payments
+    if payment.status in ("submitted", "approved"):
+        can_edit_submitted = await has_permission(db, current_user, "payments", "edit_submitted")
+        if not can_edit_submitted:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions: requires 'payments:edit_submitted' privilege to edit submitted payments.",
+            )
+
+    # Strict explicit permission check for posted payments (allow_wildcard=False)
+    if payment.status in ("posted", "completed"):
+        can_edit_posted = await has_permission(db, current_user, "payments", "edit_posted", allow_wildcard=False)
+        if not can_edit_posted:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Explicit 'Edit Posted Payments' permission is required to modify a posted financial payment.",
+            )
+
+    update_dict = data.model_dump(exclude_unset=True, exclude={"reason", "edit_reason"})
     if "allocations" in update_dict and update_dict["allocations"]:
         update_dict["allocations"] = [a.model_dump() for a in data.allocations]
 
@@ -507,7 +576,7 @@ async def update_payment(
         db,
         payment=payment,
         update_data=update_dict,
-        reason=data.reason or "",
+        reason=effective_reason,
         current_user=current_user,
         effective_institution_id=effective_inst_id,
     )
@@ -567,8 +636,14 @@ async def create_payment_refund(
     payment_id: int,
     data: RefundRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
+    current_user=Depends(get_current_active_user),
 ):
+    can_refund = await has_permission(db, current_user, "payments", "refund_process")
+    if not can_refund:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'payments:refund_process' privilege.",
+        )
     """
     Creates a refund request linked directly to an existing posted payment.
     Enforces that refund cannot exceed remaining refundable collection balance.
@@ -656,8 +731,14 @@ async def create_payment_refund(
 async def approve_refund(
     refund_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_role("superadmin", "admin", "principal")),
+    current_user=Depends(get_current_active_user),
 ):
+    can_approve = await has_permission(db, current_user, "payments", "refund_approve")
+    if not can_approve:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'payments:refund_approve' privilege.",
+        )
     """Approves a requested refund."""
     result = await db.execute(select(Refund).where(Refund.id == refund_id))
     refund = result.scalar_one_or_none()
@@ -690,8 +771,14 @@ async def approve_refund(
 async def process_refund(
     refund_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
+    current_user=Depends(get_current_active_user),
 ):
+    can_process = await has_permission(db, current_user, "payments", "refund_process")
+    if not can_process:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'payments:refund_process' privilege.",
+        )
     """Processes disbursement for an approved refund."""
     result = await db.execute(select(Refund).where(Refund.id == refund_id))
     refund = result.scalar_one_or_none()
@@ -783,6 +870,12 @@ async def get_payment_audit_trail(
     current_user=Depends(get_current_active_user),
 ):
     """Returns chronological audit records for a payment."""
+    can_audit = await has_permission(db, current_user, "payments", "view_audit")
+    if not can_audit:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'payments:view_audit' privilege to inspect audit trails.",
+        )
     pay_res = await db.execute(select(Payment).options(selectinload(Payment.student)).where(Payment.id == payment_id))
     payment = pay_res.scalar_one_or_none()
     if not payment:
@@ -819,9 +912,15 @@ async def get_payment_audit_trail(
 @router.get("/workflow/config")
 async def get_workflow_config(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_role("superadmin", "admin", "principal")),
+    current_user=Depends(get_current_active_user),
 ):
     """Returns current institute payment workflow configuration."""
+    can_cfg = await has_permission(db, current_user, "fee_workflow", "configure")
+    if not can_cfg:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'fee_workflow:configure' privilege.",
+        )
     effective_inst_id = getattr(current_user, "institution_id", None) or 1
     settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
     return {
@@ -838,9 +937,15 @@ async def get_workflow_config(
 async def update_workflow_config(
     data: WorkflowConfigUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_role("superadmin", "admin")),
+    current_user=Depends(get_current_active_user),
 ):
     """Updates payment workflow configuration."""
+    can_cfg = await has_permission(db, current_user, "fee_workflow", "configure")
+    if not can_cfg:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'fee_workflow:configure' privilege.",
+        )
     effective_inst_id = getattr(current_user, "institution_id", None) or 1
 
     mapping = {
