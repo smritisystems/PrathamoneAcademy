@@ -11,26 +11,33 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
 
 from fastapi import APIRouter, Depends, Response, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_
-from typing import Optional
+from sqlalchemy import select, func, or_, and_, desc
+from typing import Optional, List, Dict, Any
+from datetime import date
+from decimal import Decimal
 import io
 import csv
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
-from app.models.payment import Payment
-from app.models.fee import FeeInvoice
+from app.core.deps import (
+    get_current_active_user,
+    enforce_institution_access,
+    check_institution_access,
+)
+from app.models.payment import Payment, Refund
+from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
 from app.models.division import Division
 from app.models.standard import Standard
 from app.models.board import Board
 from app.models.enrollment import StudentEnrollment
+from app.models.academic_year import AcademicYear
 from app.models.portal import TimetableEntry
 from app.models.user import User
 
@@ -454,5 +461,359 @@ async def export_academic_report(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
+# ── Student Lifecycle & Withdrawal Analytics Reports ──
+
+
+@router.get("/withdrawals")
+async def student_withdrawals_report(
+    academic_year_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    paid_status: Optional[str] = Query(None, description="all, paid, unpaid"),
+    reason: Optional[str] = None,
+    search: Optional[str] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Detailed Student Withdrawal Report providing student metadata, class & batch allocation,
+    exit date & reasons, paid/unpaid status, gross payments, refunds, net retained, and outstanding dues.
+    """
+    query = (
+        select(StudentEnrollment, Student, Standard, Division, AcademicYear, User)
+        .join(Student, StudentEnrollment.student_id == Student.id)
+        .join(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .join(AcademicYear, StudentEnrollment.academic_year_id == AcademicYear.id)
+        .outerjoin(User, StudentEnrollment.exited_by_id == User.id)
+        .where(
+            or_(
+                StudentEnrollment.status == "withdrawn",
+                and_(Student.is_active == False, Student.exit_date.isnot(None)),
+            )
+        )
+    )
+
+    if effective_inst_id:
+        query = query.where(Student.institution_id == effective_inst_id)
+    if academic_year_id:
+        query = query.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if standard_id:
+        query = query.where(StudentEnrollment.standard_id == standard_id)
+    if division_id:
+        query = query.where(StudentEnrollment.division_id == division_id)
+    if reason:
+        query = query.where(
+            or_(
+                StudentEnrollment.exit_reason.ilike(f"%{reason}%"),
+                Student.exit_reason.ilike(f"%{reason}%"),
+            )
+        )
+    if search:
+        query = query.where(
+            or_(
+                Student.first_name.ilike(f"%{search}%"),
+                Student.last_name.ilike(f"%{search}%"),
+                Student.admission_number.ilike(f"%{search}%"),
+            )
+        )
+
+    query = query.order_by(desc(StudentEnrollment.exit_date), desc(StudentEnrollment.id))
+    rows = (await db.execute(query)).all()
+
+    report_items = []
+    for enr, std, standard, div, ay, user in rows:
+        # 1. Total invoiced for this student in this academic year
+        inv_stmt = select(
+            func.coalesce(func.sum(FeeInvoice.net_amount), 0).label("invoiced"),
+            func.coalesce(func.sum(FeeInvoice.paid_amount), 0).label("paid"),
+            func.coalesce(func.sum(FeeInvoice.outstanding_amount), 0).label("outstanding"),
+        ).where(
+            FeeInvoice.student_id == std.id,
+            FeeInvoice.academic_year_id == enr.academic_year_id,
+        )
+        inv_res = (await db.execute(inv_stmt)).one()
+        invoiced_amount = float(inv_res.invoiced or 0)
+        invoice_outstanding = float(inv_res.outstanding or 0)
+
+        # 2. Authoritative gross completed payments (excluding reversed/failed)
+        pmt_stmt = select(
+            func.coalesce(func.sum(Payment.amount), 0)
+        ).where(
+            Payment.student_id == std.id,
+            Payment.academic_year_id == enr.academic_year_id,
+            Payment.status == "completed",
+            Payment.reversed_at.is_(None),
+        )
+        gross_paid = float((await db.execute(pmt_stmt)).scalar() or 0)
+
+        # 3. Authoritative refunds processed for this student
+        ref_stmt = select(
+            func.coalesce(func.sum(Refund.amount), 0)
+        ).where(
+            Refund.student_id == std.id,
+            Refund.status == "completed",
+        )
+        refund_amount = float((await db.execute(ref_stmt)).scalar() or 0)
+
+        # 4. Net Retained Collections & Outstanding at Exit
+        net_retained = max(0.0, round(gross_paid - refund_amount, 2))
+        outstanding_at_exit = max(0.0, round(invoiced_amount - net_retained, 2)) if invoiced_amount > 0 else invoice_outstanding
+
+        # 5. Paid / Unpaid classification
+        classification = "Paid" if gross_paid > 0 else "Unpaid"
+        if paid_status:
+            p_lower = paid_status.lower()
+            if p_lower == "paid" and classification != "Paid":
+                continue
+            elif p_lower == "unpaid" and classification != "Unpaid":
+                continue
+
+        # 6. Installment-wise attrition estimation
+        effective_exit = enr.exit_date or std.exit_date or date.today()
+        inst_stmt = (
+            select(func.count(FeeInstallment.id))
+            .join(FeeInvoice, FeeInstallment.invoice_id == FeeInvoice.id)
+            .where(
+                FeeInvoice.student_id == std.id,
+                FeeInvoice.academic_year_id == enr.academic_year_id,
+                FeeInstallment.due_date <= effective_exit,
+            )
+        )
+        passed_installments = (await db.execute(inst_stmt)).scalar() or 0
+        installment_label = (
+            f"Installment #{passed_installments}"
+            if passed_installments > 0
+            else "Pre-Installment"
+        )
+
+        duration_days = (
+            (effective_exit - enr.enrollment_date).days
+            if effective_exit and enr.enrollment_date
+            else 0
+        )
+
+        report_items.append({
+            "enrollment_id": enr.id,
+            "student_id": std.id,
+            "admission_number": std.admission_number,
+            "student_name": f"{std.first_name} {std.last_name}",
+            "standard_id": standard.id,
+            "standard_name": standard.name,
+            "division_id": div.id if div else None,
+            "division_name": div.name if div else "Unassigned",
+            "academic_year_id": ay.id,
+            "academic_year_name": ay.name,
+            "enrollment_date": str(enr.enrollment_date),
+            "exit_date": str(effective_exit),
+            "duration_days": max(0, duration_days),
+            "exit_reason": enr.exit_reason or std.exit_reason or "Personal / Relocation",
+            "exit_notes": enr.exit_notes or std.exit_notes or "",
+            "exited_by_name": f"{user.first_name} {user.last_name}" if user else "Administration",
+            "paid_classification": classification,
+            "installment_at_exit": installment_label,
+            "total_invoiced": invoiced_amount,
+            "gross_paid": gross_paid,
+            "refund_amount": refund_amount,
+            "net_retained": net_retained,
+            "outstanding_at_exit": outstanding_at_exit,
+        })
+
+    return report_items
+
+
+@router.get("/withdrawal-analytics")
+async def withdrawal_analytics_report(
+    academic_year_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Comprehensive Analytics Blueprint endpoint providing aggregate KPIs, Attrition Rate,
+    Reason Distributions, Class/Batch breakdown, Installment-wise attrition, and Monthly Trends.
+    """
+    items = await student_withdrawals_report(
+        academic_year_id=academic_year_id,
+        standard_id=standard_id,
+        division_id=division_id,
+        effective_inst_id=effective_inst_id,
+        db=db,
+        current_user=current_user,
+    )
+
+    # Total enrolled count across selected scope
+    enr_count_stmt = select(func.count(StudentEnrollment.id)).join(
+        Student, StudentEnrollment.student_id == Student.id
+    )
+    if effective_inst_id:
+        enr_count_stmt = enr_count_stmt.where(Student.institution_id == effective_inst_id)
+    if academic_year_id:
+        enr_count_stmt = enr_count_stmt.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if standard_id:
+        enr_count_stmt = enr_count_stmt.where(StudentEnrollment.standard_id == standard_id)
+    if division_id:
+        enr_count_stmt = enr_count_stmt.where(StudentEnrollment.division_id == division_id)
+
+    total_enrolled = (await db.execute(enr_count_stmt)).scalar() or 0
+    total_withdrawn = len(items)
+    attrition_rate = round((total_withdrawn / total_enrolled) * 100, 2) if total_enrolled > 0 else 0.0
+
+    # Summary Financials
+    paid_count = sum(1 for i in items if i["paid_classification"] == "Paid")
+    unpaid_count = total_withdrawn - paid_count
+    total_gross = round(sum(i["gross_paid"] for i in items), 2)
+    total_refunds = round(sum(i["refund_amount"] for i in items), 2)
+    total_net = round(sum(i["net_retained"] for i in items), 2)
+    total_outstanding = round(sum(i["outstanding_at_exit"] for i in items), 2)
+
+    # Group by Reason
+    reason_map = {}
+    for i in items:
+        r = i["exit_reason"]
+        if r not in reason_map:
+            reason_map[r] = {"count": 0, "net_retained": 0.0}
+        reason_map[r]["count"] += 1
+        reason_map[r]["net_retained"] += i["net_retained"]
+
+    by_reason = [
+        {
+            "reason": r,
+            "count": data["count"],
+            "percentage": round((data["count"] / total_withdrawn) * 100, 1) if total_withdrawn > 0 else 0.0,
+            "net_retained": round(data["net_retained"], 2),
+        }
+        for r, data in sorted(reason_map.items(), key=lambda x: x[1]["count"], reverse=True)
+    ]
+
+    # Group by Class & Batch
+    batch_map = {}
+    for i in items:
+        key = f"{i['standard_name']} - {i['division_name']}"
+        if key not in batch_map:
+            batch_map[key] = {
+                "standard_name": i["standard_name"],
+                "division_name": i["division_name"],
+                "withdrawals": 0,
+                "net_retained": 0.0,
+            }
+        batch_map[key]["withdrawals"] += 1
+        batch_map[key]["net_retained"] += i["net_retained"]
+
+    by_class_batch = [
+        {
+            "standard_name": data["standard_name"],
+            "division_name": data["division_name"],
+            "withdrawals": data["withdrawals"],
+            "net_retained": round(data["net_retained"], 2),
+        }
+        for key, data in sorted(batch_map.items(), key=lambda x: x[1]["withdrawals"], reverse=True)
+    ]
+
+    # Group by Installment
+    installment_map = {}
+    for i in items:
+        inst = i["installment_at_exit"]
+        if inst not in installment_map:
+            installment_map[inst] = {"count": 0, "gross_collected": 0.0, "net_retained": 0.0}
+        installment_map[inst]["count"] += 1
+        installment_map[inst]["gross_collected"] += i["gross_paid"]
+        installment_map[inst]["net_retained"] += i["net_retained"]
+
+    by_installment = [
+        {
+            "installment": inst,
+            "count": data["count"],
+            "gross_collected": round(data["gross_collected"], 2),
+            "net_retained": round(data["net_retained"], 2),
+        }
+        for inst, data in sorted(installment_map.items(), key=lambda x: x[0])
+    ]
+
+    # Monthly Trends
+    month_map = {}
+    for i in items:
+        m = i["exit_date"][:7] if i["exit_date"] else "Unknown"
+        if m not in month_map:
+            month_map[m] = {"count": 0, "gross_collected": 0.0, "refunds": 0.0, "net_retained": 0.0}
+        month_map[m]["count"] += 1
+        month_map[m]["gross_collected"] += i["gross_paid"]
+        month_map[m]["refunds"] += i["refund_amount"]
+        month_map[m]["net_retained"] += i["net_retained"]
+
+    trends_monthly = [
+        {
+            "month": m,
+            "count": data["count"],
+            "gross_collected": round(data["gross_collected"], 2),
+            "refunds": round(data["refunds"], 2),
+            "net_retained": round(data["net_retained"], 2),
+        }
+        for m, data in sorted(month_map.items(), key=lambda x: x[0])
+    ]
+
+    return {
+        "summary": {
+            "total_enrolled": total_enrolled,
+            "total_active": max(0, total_enrolled - total_withdrawn),
+            "total_withdrawn": total_withdrawn,
+            "attrition_rate": attrition_rate,
+            "paid_withdrawals": paid_count,
+            "unpaid_withdrawals": unpaid_count,
+            "total_gross_paid": total_gross,
+            "total_refunds": total_refunds,
+            "total_net_retained": total_net,
+            "total_outstanding_at_exit": total_outstanding,
+        },
+        "by_reason": by_reason,
+        "by_class_batch": by_class_batch,
+        "by_installment": by_installment,
+        "trends_monthly": trends_monthly,
+    }
+
+
+@router.get("/withdrawals/export")
+async def export_student_withdrawals_report(
+    academic_year_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    data = await student_withdrawals_report(
+        academic_year_id=academic_year_id,
+        standard_id=standard_id,
+        division_id=division_id,
+        effective_inst_id=effective_inst_id,
+        db=db,
+        current_user=current_user,
+    )
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=[
+            "admission_number", "student_name", "standard_name", "division_name",
+            "academic_year_name", "enrollment_date", "exit_date", "duration_days",
+            "exit_reason", "paid_classification", "installment_at_exit",
+            "total_invoiced", "gross_paid", "refund_amount", "net_retained",
+            "outstanding_at_exit", "exit_notes", "exited_by_name"
+        ],
+        extrasaction="ignore",
+    )
+    writer.writeheader()
+    writer.writerows(data)
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=student_withdrawals_report.csv"},
+    )
+
 
 

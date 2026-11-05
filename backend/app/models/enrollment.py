@@ -11,12 +11,12 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description SQLAlchemy model defining student enrollment in classes, batches, and academic years.
 #  */
 
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Date, Index, text
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Date, Index, text, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, date
 from app.core.database import Base
@@ -51,6 +51,15 @@ class StudentEnrollment(Base):
     enrollment_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="active")
     remarks: Mapped[str] = mapped_column(String(500), nullable=True)
+    exit_date: Mapped[date] = mapped_column(Date, nullable=True)
+    exit_reason: Mapped[str] = mapped_column(String(100), nullable=True)
+    exit_notes: Mapped[str] = mapped_column(Text, nullable=True)
+    exited_by_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    exited_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -65,4 +74,5 @@ class StudentEnrollment(Base):
     division: Mapped["Division"] = relationship(
         "Division", back_populates="enrollments"
     )
+    exited_by: Mapped["User"] = relationship("User", foreign_keys=[exited_by_id])
 

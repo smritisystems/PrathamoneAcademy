@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description SQLAlchemy model defining financial transactions, payment modes, and receipt numbering.
 #  */
@@ -133,4 +133,50 @@ class PaymentReceipt(Base):
     payment: Mapped["Payment"] = relationship(
         "Payment", back_populates="receipt"
     )
+
+
+class Refund(Base):
+    __tablename__ = "refunds"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    institution_id: Mapped[int] = mapped_column(
+        ForeignKey("institutions.id"), nullable=False
+    )
+    student_id: Mapped[int] = mapped_column(
+        ForeignKey("students.id"), nullable=False
+    )
+    enrollment_id: Mapped[int] = mapped_column(
+        ForeignKey("student_enrollments.id"), nullable=True
+    )
+    payment_id: Mapped[int] = mapped_column(
+        ForeignKey("payments.id"), nullable=True
+    )
+    invoice_id: Mapped[int] = mapped_column(
+        ForeignKey("fee_invoices.id"), nullable=True
+    )
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    refund_date: Mapped[date] = mapped_column(Date, nullable=False)
+    refund_method: Mapped[str] = mapped_column(String(30), nullable=False)
+    reference_number: Mapped[str] = mapped_column(String(100), nullable=True)
+    reason: Mapped[str] = mapped_column(String(200), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="completed")
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    processed_by_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    student: Mapped["Student"] = relationship("Student", back_populates="refunds")
+    payment: Mapped["Payment"] = relationship("Payment")
+    invoice: Mapped["FeeInvoice"] = relationship("FeeInvoice")
+    enrollment: Mapped["StudentEnrollment"] = relationship("StudentEnrollment")
+    processed_by: Mapped["User"] = relationship("User")
+
 

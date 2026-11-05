@@ -30,10 +30,10 @@ from app.core.deps import (
     check_institution_access,
     is_sysadmin,
 )
-from app.models.student import Student, Guardian
+from app.models.student import Student, Guardian, StudentLifecycleLog
 from app.models.enrollment import StudentEnrollment
 from app.models.fee import FeeInvoice, FeeInstallment, FeeInvoiceItem
-from app.models.payment import Payment, PaymentAllocation, PaymentReceipt
+from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.board import Board
@@ -42,9 +42,10 @@ from app.models.academic_year import AcademicYear
 from app.models.attendance import Attendance
 from app.models.exam import Examination, ExamMark
 from app.models.portal import StudentDocument, TimetableEntry
-from app.models.user import AuditLog
-from pydantic import BaseModel
+from app.models.user import User, AuditLog
+from pydantic import BaseModel, Field
 from datetime import date
+from decimal import Decimal
 
 router = APIRouter()
 
@@ -149,22 +150,59 @@ class EnrollmentCreate(BaseModel):
     enrollment_date: date
 
 
+class StudentExitRequest(BaseModel):
+    enrollment_id: Optional[int] = None
+    status: str = "withdrawn"  # "withdrawn", "inactive", "completed", "transferred"
+    exit_date: date = Field(default_factory=date.today)
+    reason: str = Field(min_length=2, max_length=100)
+    notes: Optional[str] = None
+    refund_amount: Optional[Decimal] = None
+    refund_method: Optional[str] = "bank_transfer"
+    refund_reference: Optional[str] = None
+    refund_reason: Optional[str] = None
+
+
+class StudentReactivateRequest(BaseModel):
+    academic_year_id: Optional[int] = None
+    standard_id: Optional[int] = None
+    division_id: Optional[int] = None
+    effective_date: date = Field(default_factory=date.today)
+    reason: Optional[str] = "Student re-enrolled"
+    notes: Optional[str] = None
+
+
 @router.get("/")
 async def list_students(
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
     search: Optional[str] = None,
+    include_inactive: bool = Query(default=False),
+    status: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, le=100),
     effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    query = select(Student).where(Student.is_active == True)
+    query = select(Student)
 
     if effective_inst_id:
         query = query.where(Student.institution_id == effective_inst_id)
+
+    # Active / Inactive / Status Filtering
+    if status:
+        stat_lower = status.lower()
+        if stat_lower == "active":
+            query = query.where(Student.is_active == True)
+        elif stat_lower == "withdrawn":
+            query = query.where(Student.is_active == False, Student.exit_date.isnot(None))
+        elif stat_lower == "inactive":
+            query = query.where(Student.is_active == False)
+        # "all" preserves full list
+    elif not include_inactive:
+        # Default behavior: active students only
+        query = query.where(Student.is_active == True)
 
     if search:
         query = query.where(
@@ -219,6 +257,9 @@ async def list_students(
                 "admission_date": str(s.admission_date),
                 "city": s.city,
                 "is_active": s.is_active,
+                "exit_date": str(s.exit_date) if s.exit_date else None,
+                "exit_reason": s.exit_reason,
+                "exit_notes": s.exit_notes,
             }
             for s in students
         ],
@@ -364,6 +405,9 @@ async def get_student(
         "email": student.email,
         "admission_date": str(student.admission_date),
         "is_active": student.is_active,
+        "exit_date": str(student.exit_date) if student.exit_date else None,
+        "exit_reason": student.exit_reason,
+        "exit_notes": student.exit_notes,
         "guardians": [
             {
                 "id": g.id,
@@ -386,6 +430,9 @@ async def get_student(
                 "roll_number": e.roll_number,
                 "status": e.status,
                 "enrollment_date": str(e.enrollment_date),
+                "exit_date": str(e.exit_date) if e.exit_date else None,
+                "exit_reason": e.exit_reason,
+                "exit_notes": e.exit_notes,
             }
             for e in student.enrollments
         ],
@@ -937,6 +984,9 @@ async def get_student_admin_profile(
             "pincode": student.pincode,
             "admission_date": str(student.admission_date),
             "is_active": student.is_active,
+            "exit_date": str(student.exit_date) if student.exit_date else None,
+            "exit_reason": student.exit_reason,
+            "exit_notes": student.exit_notes,
             "active_batch": enrollment_list[0]["division_name"] if enrollment_list else "Unassigned",
             "active_standard": enrollment_list[0]["standard_name"] if enrollment_list else "Unassigned",
             "active_board": enrollment_list[0]["board_name"] if enrollment_list else "General Board",
@@ -1046,5 +1096,413 @@ async def delete_student_document(
     await db.delete(doc)
     await db.commit()
     return {"message": "Document removed successfully", "id": document_id}
+
+
+# ── Student Lifecycle: Exit / Withdrawal, Reactivation & History ──
+
+
+@router.post("/{student_id}/exit")
+async def exit_student(
+    student_id: int,
+    data: StudentExitRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "accountant")),
+):
+    student = await db.scalar(select(Student).where(Student.id == student_id))
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    check_institution_access(student.institution_id, current_user)
+
+    if not student.is_active:
+        raise HTTPException(status_code=400, detail="Student is already inactive / withdrawn.")
+
+    # Find the target enrollment (either specified or the current active one)
+    if data.enrollment_id:
+        enr = await db.scalar(
+            select(StudentEnrollment).where(
+                StudentEnrollment.id == data.enrollment_id,
+                StudentEnrollment.student_id == student_id,
+            )
+        )
+    else:
+        enr = await db.scalar(
+            select(StudentEnrollment).where(
+                StudentEnrollment.student_id == student_id,
+                StudentEnrollment.status == "active",
+            ).order_by(desc(StudentEnrollment.id))
+        )
+
+    if not enr:
+        raise HTTPException(status_code=400, detail="No active enrollment found for this student.")
+
+    old_status = enr.status
+
+    # Update enrollment record
+    enr.status = data.status
+    enr.exit_date = data.exit_date
+    enr.exit_reason = data.reason
+    enr.exit_notes = data.notes
+    enr.exited_by_id = current_user.id
+    enr.exited_at = func.now()
+
+    # Update student master record
+    student.is_active = False
+    student.exit_date = data.exit_date
+    student.exit_reason = data.reason
+    student.exit_notes = data.notes
+
+    # Process refund if provided
+    refund_record = None
+    if data.refund_amount and data.refund_amount > 0:
+        # Check that refund doesn't exceed total net paid
+        payments_sum = (
+            await db.execute(
+                select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                    Payment.student_id == student_id,
+                    Payment.status == "completed",
+                    Payment.reversed_at.is_(None),
+                )
+            )
+        ).scalar() or Decimal("0")
+
+        existing_refunds_sum = (
+            await db.execute(
+                select(func.coalesce(func.sum(Refund.amount), 0)).where(
+                    Refund.student_id == student_id,
+                    Refund.status == "completed",
+                )
+            )
+        ).scalar() or Decimal("0")
+
+        max_refundable = payments_sum - existing_refunds_sum
+        if data.refund_amount > max_refundable:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Refund amount (₹{data.refund_amount}) exceeds net paid collections (₹{max_refundable}).",
+            )
+
+        # Find latest payment/invoice for linkage
+        latest_payment = await db.scalar(
+            select(Payment).where(
+                Payment.student_id == student_id,
+                Payment.status == "completed",
+                Payment.reversed_at.is_(None),
+            ).order_by(desc(Payment.payment_date))
+        )
+        latest_invoice = await db.scalar(
+            select(FeeInvoice).where(
+                FeeInvoice.student_id == student_id,
+            ).order_by(desc(FeeInvoice.id))
+        )
+
+        refund_record = Refund(
+            institution_id=student.institution_id,
+            student_id=student.id,
+            enrollment_id=enr.id,
+            payment_id=latest_payment.id if latest_payment else None,
+            invoice_id=latest_invoice.id if latest_invoice else None,
+            amount=data.refund_amount,
+            refund_date=data.exit_date,
+            refund_method=data.refund_method or "bank_transfer",
+            reference_number=data.refund_reference,
+            reason=data.refund_reason or f"Withdrawal refund: {data.reason}",
+            status="completed",
+            notes=data.notes,
+            processed_by_id=current_user.id,
+        )
+        db.add(refund_record)
+
+    # Record in StudentLifecycleLog
+    lifecycle_log = StudentLifecycleLog(
+        institution_id=student.institution_id,
+        student_id=student.id,
+        enrollment_id=enr.id,
+        action=data.status,
+        from_status=old_status,
+        to_status=data.status,
+        effective_date=data.exit_date,
+        reason=data.reason,
+        notes=data.notes,
+        performed_by_id=current_user.id,
+    )
+    db.add(lifecycle_log)
+
+    # General system AuditLog
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="student_exit",
+        resource_type="student",
+        resource_id=student.id,
+        old_data=f"status={old_status}, is_active=True",
+        new_data=f"status={data.status}, is_active=False, reason={data.reason}, exit_date={data.exit_date}",
+    )
+    db.add(audit)
+
+    await db.commit()
+    await db.refresh(student)
+    await db.refresh(enr)
+
+    return {
+        "success": True,
+        "message": f"Student {student.first_name} {student.last_name} marked as {data.status} successfully.",
+        "student_id": student.id,
+        "enrollment_id": enr.id,
+        "is_active": student.is_active,
+        "exit_date": str(student.exit_date),
+        "exit_reason": student.exit_reason,
+        "refund_id": refund_record.id if refund_record else None,
+    }
+
+
+@router.post("/{student_id}/reactivate")
+async def reactivate_student(
+    student_id: int,
+    data: StudentReactivateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
+):
+    student = await db.scalar(select(Student).where(Student.id == student_id))
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    check_institution_access(student.institution_id, current_user)
+
+    if student.is_active:
+        raise HTTPException(status_code=400, detail="Student is already active.")
+
+    # Determine target academic year
+    target_ay_id = data.academic_year_id
+    if not target_ay_id:
+        active_ay = await db.scalar(
+            select(AcademicYear).where(
+                AcademicYear.institution_id == student.institution_id,
+                AcademicYear.is_current == True,
+            )
+        )
+        if not active_ay:
+            active_ay = await db.scalar(
+                select(AcademicYear).where(
+                    AcademicYear.institution_id == student.institution_id
+                ).order_by(desc(AcademicYear.id))
+            )
+        target_ay_id = active_ay.id if active_ay else 1
+
+    # Check if student already has an active enrollment in this AY
+    existing_active = await db.scalar(
+        select(StudentEnrollment).where(
+            StudentEnrollment.student_id == student_id,
+            StudentEnrollment.academic_year_id == target_ay_id,
+            StudentEnrollment.status == "active",
+        )
+    )
+    if existing_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Student already has an active enrollment (#{existing_active.id}) in academic year #{target_ay_id}.",
+        )
+
+    # Check division capacity if division_id provided
+    target_div_id = data.division_id
+    target_std_id = data.standard_id
+
+    # If standard or division not provided, fallback to their last enrollment
+    if not target_std_id or not target_div_id:
+        last_enr = await db.scalar(
+            select(StudentEnrollment).where(
+                StudentEnrollment.student_id == student_id
+            ).order_by(desc(StudentEnrollment.id))
+        )
+        if last_enr:
+            if not target_std_id:
+                target_std_id = last_enr.standard_id
+            if not target_div_id:
+                target_div_id = last_enr.division_id
+
+    if not target_std_id:
+        first_std = await db.scalar(
+            select(Standard).where(Standard.institution_id == student.institution_id).order_by(Standard.id)
+        )
+        target_std_id = first_std.id if first_std else 1
+
+    if target_div_id:
+        div = await db.scalar(select(Division).where(Division.id == target_div_id))
+        if div and div.capacity:
+            enrolled_count = (
+                await db.execute(
+                    select(func.count(StudentEnrollment.id)).where(
+                        StudentEnrollment.division_id == target_div_id,
+                        StudentEnrollment.status == "active",
+                    )
+                )
+            ).scalar() or 0
+            if enrolled_count >= div.capacity:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Target batch '{div.name}' is at full capacity ({div.capacity} students).",
+                )
+
+    # Create new active enrollment
+    new_enrollment = StudentEnrollment(
+        student_id=student_id,
+        academic_year_id=target_ay_id,
+        standard_id=target_std_id,
+        division_id=target_div_id,
+        roll_number=student.admission_number,
+        enrollment_date=data.effective_date or date.today(),
+        status="active",
+        remarks=f"Reactivated on {data.effective_date or date.today()}. Reason: {data.reason or 'Re-enrollment'}",
+    )
+    db.add(new_enrollment)
+    await db.flush()
+
+    # Update student master record
+    student.is_active = True
+    student.exit_date = None
+    student.exit_reason = None
+    student.exit_notes = None
+
+    # Lifecycle log
+    lifecycle_log = StudentLifecycleLog(
+        institution_id=student.institution_id,
+        student_id=student.id,
+        enrollment_id=new_enrollment.id,
+        action="reactivated",
+        from_status="withdrawn",
+        to_status="active",
+        effective_date=data.effective_date or date.today(),
+        reason=data.reason or "Student reactivated by administration",
+        notes=data.notes,
+        performed_by_id=current_user.id,
+    )
+    db.add(lifecycle_log)
+
+    # General audit log
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="student_reactivate",
+        resource_type="student",
+        resource_id=student.id,
+        old_data="is_active=False",
+        new_data=f"is_active=True, enrollment_id={new_enrollment.id}, reason={data.reason}",
+    )
+    db.add(audit)
+
+    await db.commit()
+    await db.refresh(student)
+    await db.refresh(new_enrollment)
+
+    return {
+        "success": True,
+        "message": f"Student {student.first_name} {student.last_name} reactivated successfully.",
+        "student_id": student.id,
+        "enrollment_id": new_enrollment.id,
+        "is_active": student.is_active,
+        "academic_year_id": target_ay_id,
+        "standard_id": target_std_id,
+        "division_id": target_div_id,
+    }
+
+
+@router.get("/{student_id}/lifecycle-history")
+async def get_student_lifecycle_history(
+    student_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    student = await db.scalar(select(Student).where(Student.id == student_id))
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    check_institution_access(student.institution_id, current_user)
+
+    # Fetch lifecycle logs with performer details
+    logs_stmt = (
+        select(StudentLifecycleLog, StudentEnrollment, User)
+        .outerjoin(StudentEnrollment, StudentLifecycleLog.enrollment_id == StudentEnrollment.id)
+        .outerjoin(User, StudentLifecycleLog.performed_by_id == User.id)
+        .where(StudentLifecycleLog.student_id == student_id)
+        .order_by(desc(StudentLifecycleLog.created_at))
+    )
+    logs_rows = (await db.execute(logs_stmt)).all()
+
+    logs_list = [
+        {
+            "id": log.id,
+            "action": log.action,
+            "from_status": log.from_status,
+            "to_status": log.to_status,
+            "effective_date": str(log.effective_date),
+            "reason": log.reason,
+            "notes": log.notes,
+            "performed_by": f"{u.first_name} {u.last_name}" if u else "System Admin",
+            "created_at": log.created_at.isoformat() if log.created_at else None,
+            "enrollment_id": log.enrollment_id,
+        }
+        for log, enr, u in logs_rows
+    ]
+
+    # Fetch all enrollments (both active and historical)
+    enr_stmt = (
+        select(StudentEnrollment, Standard, Division, AcademicYear, User)
+        .join(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .join(AcademicYear, StudentEnrollment.academic_year_id == AcademicYear.id)
+        .outerjoin(User, StudentEnrollment.exited_by_id == User.id)
+        .where(StudentEnrollment.student_id == student_id)
+        .order_by(desc(StudentEnrollment.id))
+    )
+    enr_rows = (await db.execute(enr_stmt)).all()
+
+    enrollments_list = [
+        {
+            "id": enr.id,
+            "academic_year": ay.name,
+            "standard_name": std.name,
+            "division_name": div.name if div else "Unassigned",
+            "roll_number": enr.roll_number,
+            "enrollment_date": str(enr.enrollment_date),
+            "status": enr.status,
+            "exit_date": str(enr.exit_date) if enr.exit_date else None,
+            "exit_reason": enr.exit_reason,
+            "exit_notes": enr.exit_notes,
+            "exited_by": f"{exited_by.first_name} {exited_by.last_name}" if exited_by else None,
+            "remarks": enr.remarks,
+        }
+        for enr, std, div, ay, exited_by in enr_rows
+    ]
+
+    # Fetch refunds if any
+    ref_stmt = (
+        select(Refund, User)
+        .outerjoin(User, Refund.processed_by_id == User.id)
+        .where(Refund.student_id == student_id)
+        .order_by(desc(Refund.refund_date))
+    )
+    ref_rows = (await db.execute(ref_stmt)).all()
+    refunds_list = [
+        {
+            "id": r.id,
+            "amount": float(r.amount),
+            "refund_date": str(r.refund_date),
+            "refund_method": r.refund_method,
+            "reference_number": r.reference_number,
+            "reason": r.reason,
+            "status": r.status,
+            "notes": r.notes,
+            "processed_by": f"{u.first_name} {u.last_name}" if u else None,
+        }
+        for r, u in ref_rows
+    ]
+
+    return {
+        "student_id": student.id,
+        "is_active": student.is_active,
+        "current_status": "active" if student.is_active else (student.exit_reason or "withdrawn"),
+        "exit_date": str(student.exit_date) if student.exit_date else None,
+        "exit_reason": student.exit_reason,
+        "exit_notes": student.exit_notes,
+        "lifecycle_logs": logs_list,
+        "enrollments": enrollments_list,
+        "refunds": refunds_list,
+    }
+
 
 

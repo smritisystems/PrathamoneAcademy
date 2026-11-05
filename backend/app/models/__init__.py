@@ -22,14 +22,14 @@ from app.models.board import Board
 from app.models.user import User, Role, Permission, AuditLog
 from app.models.standard import Standard
 from app.models.division import Division
-from app.models.student import Student, Guardian
+from app.models.student import Student, Guardian, StudentLifecycleLog
 from app.models.enrollment import StudentEnrollment
 from app.models.subject import Subject
 from app.models.fee import (
     FeeCategory, FeeStructure, StudentFeeAssignment,
     FeeInvoice, FeeInvoiceItem, FeeInstallment, Discount, Scholarship
 )
-from app.models.payment import Payment, PaymentAllocation, PaymentReceipt
+from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.attendance import Attendance
 from app.models.exam import Examination, ExamMark
 from app.models.portal import (
@@ -59,6 +59,7 @@ __all__ = [
     "Division",
     "Student",
     "Guardian",
+    "StudentLifecycleLog",
     "StudentEnrollment",
     "Subject",
     "FeeCategory",
@@ -72,6 +73,7 @@ __all__ = [
     "Payment",
     "PaymentAllocation",
     "PaymentReceipt",
+    "Refund",
     "Attendance",
     "Examination",
     "ExamMark",

@@ -39,6 +39,8 @@ import type {
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
   MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
   ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics,
+  StudentExitPayload, StudentReactivatePayload, StudentLifecycleHistoryResponse,
+  WithdrawalReportItem, WithdrawalAnalyticsResponse,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -286,6 +288,8 @@ export const studentsApi = {
     standard_id?: number | string
     division_id?: number | string
     academic_year_id?: number | string
+    status?: string
+    include_inactive?: boolean
     search?: string
     page?: number
     page_size?: number
@@ -306,6 +310,12 @@ export const studentsApi = {
       enrollment_date: string
     }
   ) => apiClient.post(`/students/${id}/enroll`, data),
+  exit: (id: number | string, data: StudentExitPayload) =>
+    apiClient.post(`/students/${id}/exit`, data),
+  reactivate: (id: number | string, data: StudentReactivatePayload) =>
+    apiClient.post(`/students/${id}/reactivate`, data),
+  lifecycleHistory: (id: number | string) =>
+    apiClient.get<StudentLifecycleHistoryResponse>(`/students/${id}/lifecycle-history`),
   getProfile: (id: number | string) =>
     apiClient.get<StudentAdminProfile>(`/students/${id}/profile`),
   addDocument: (
@@ -442,6 +452,29 @@ export const reportsApi = {
     }),
   paymentsSummary: (params?: { academic_year_id?: number | string }) =>
     apiClient.get('/reports/payments-summary', { params }),
+  withdrawals: (params?: {
+    academic_year_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+    paid_status?: string
+    reason?: string
+  }) =>
+    apiClient.get<WithdrawalReportItem[]>('/reports/withdrawals', { params }),
+  withdrawalAnalytics: (params?: {
+    academic_year_id?: number | string
+  }) =>
+    apiClient.get<WithdrawalAnalyticsResponse>('/reports/withdrawal-analytics', { params }),
+  exportWithdrawals: (params?: {
+    academic_year_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+    paid_status?: string
+    reason?: string
+  }) =>
+    apiClient.get('/reports/withdrawals/export', {
+      params,
+      responseType: 'blob',
+    }),
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────

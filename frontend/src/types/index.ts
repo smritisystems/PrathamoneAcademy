@@ -180,6 +180,14 @@ export interface Enrollment {
   roll_number?: string
   status: string
   enrollment_date: string
+  exit_date?: string
+  exit_reason?: string
+  exit_notes?: string
+  exited_by_id?: number
+  exited_at?: string
+  standard_name?: string
+  division_name?: string
+  academic_year_name?: string
 }
 
 export interface Student {
@@ -205,6 +213,9 @@ export interface Student {
   pincode?: string
   admission_date: string
   is_active: boolean
+  exit_date?: string
+  exit_reason?: string
+  exit_notes?: string
   guardians?: Guardian[]
   enrollments?: Enrollment[]
   fee_summary?: FeeSummary
@@ -843,6 +854,9 @@ export interface StudentAdminProfile {
     pincode?: string
     admission_date: string
     is_active: boolean
+    exit_date?: string
+    exit_reason?: string
+    exit_notes?: string
     active_batch: string
     active_standard: string
     active_board: string
@@ -876,6 +890,9 @@ export interface StudentAdminProfile {
     status: string
     enrollment_date: string
     remarks?: string
+    exit_date?: string
+    exit_reason?: string
+    exit_notes?: string
   }[]
   classes: {
     active_standard_id?: number
@@ -2043,4 +2060,148 @@ export interface ChannelDiagnostics {
       features: string[]
     }
   >
+}
+
+
+// ─── Student Lifecycle & Withdrawal Analytics ─────────────────────────────
+
+export interface StudentExitPayload {
+  exit_date: string
+  reason: string
+  notes?: string
+  refund_amount?: number
+  refund_method?: 'cash' | 'bank_transfer' | 'cheque' | 'upi'
+  refund_reference?: string
+  refund_notes?: string
+}
+
+export interface StudentReactivatePayload {
+  academic_year_id: number
+  standard_id: number
+  division_id?: number
+  effective_date: string
+  roll_number?: string
+  notes?: string
+}
+
+export interface RefundItem {
+  id: number
+  student_id: number
+  enrollment_id?: number
+  payment_id?: number
+  invoice_id?: number
+  amount: number
+  refund_date: string
+  refund_method: string
+  reference_number?: string
+  reason: string
+  status: string
+  notes?: string
+  processed_by_id?: number
+  processed_by_name?: string
+  created_at: string
+}
+
+export interface StudentLifecycleLogItem {
+  id: number
+  student_id: number
+  enrollment_id?: number
+  action: string
+  from_status?: string
+  to_status?: string
+  effective_date: string
+  reason?: string
+  notes?: string
+  performed_by_id?: number
+  performed_by_name?: string
+  created_at: string
+}
+
+export interface StudentLifecycleHistoryResponse {
+  student_id: number
+  is_active: boolean
+  current_status: string
+  exit_date?: string
+  exit_reason?: string
+  exit_notes?: string
+  logs: StudentLifecycleLogItem[]
+  enrollments: {
+    id: number
+    academic_year_id: number
+    academic_year: string
+    standard_id: number
+    standard_name: string
+    division_id?: number
+    division_name?: string
+    roll_number?: string
+    status: string
+    enrollment_date: string
+    exit_date?: string
+    exit_reason?: string
+    exit_notes?: string
+  }[]
+  refunds: RefundItem[]
+}
+
+export interface WithdrawalReportItem {
+  student_id: number
+  admission_number: string
+  student_name: string
+  phone?: string
+  academic_year: string
+  standard_name: string
+  division_name: string
+  enrollment_date?: string
+  exit_date?: string
+  exit_reason?: string
+  exit_notes?: string
+  exited_by_name?: string
+  invoiced_amount: number
+  gross_paid: number
+  refund_amount: number
+  net_retained: number
+  outstanding_at_exit: number
+  paid_classification: 'Paid' | 'Unpaid'
+  installment_at_exit?: string
+}
+
+export interface WithdrawalAnalyticsResponse {
+  summary: {
+    total_enrolled: number
+    active_students: number
+    withdrawn_students: number
+    attrition_rate: number
+    paid_withdrawn_count: number
+    unpaid_withdrawn_count: number
+    gross_paid: number
+    refund_amount: number
+    net_retained: number
+    outstanding_at_exit: number
+  }
+  by_reason: {
+    reason: string
+    count: number
+    percentage: number
+    net_retained: number
+  }[]
+  by_class_batch: {
+    standard_name: string
+    division_name: string
+    total_enrolled: number
+    withdrawn_count: number
+    attrition_rate: number
+    net_retained: number
+  }[]
+  by_installment: {
+    installment_at_exit: string
+    count: number
+    net_retained: number
+  }[]
+  trends_monthly: {
+    month: string
+    month_label: string
+    count: number
+    refund_amount: number
+    net_retained: number
+  }[]
 }

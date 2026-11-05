@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description SQLAlchemy model defining student personal profile, contact information, and parent records.
 #  */
@@ -51,6 +51,9 @@ class Student(Base):
     email: Mapped[str] = mapped_column(String(200), nullable=True)
     admission_date: Mapped[date] = mapped_column(Date, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    exit_date: Mapped[date] = mapped_column(Date, nullable=True)
+    exit_reason: Mapped[str] = mapped_column(String(100), nullable=True)
+    exit_notes: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -81,6 +84,12 @@ class Student(Base):
     documents: Mapped[list["StudentDocument"]] = relationship(
         "StudentDocument", back_populates="student", cascade="all, delete-orphan"
     )
+    refunds: Mapped[list["Refund"]] = relationship(
+        "Refund", back_populates="student"
+    )
+    lifecycle_logs: Mapped[list["StudentLifecycleLog"]] = relationship(
+        "StudentLifecycleLog", back_populates="student", order_by="desc(StudentLifecycleLog.created_at)"
+    )
 
 
 class Guardian(Base):
@@ -106,4 +115,38 @@ class Guardian(Base):
     student: Mapped["Student"] = relationship(
         "Student", back_populates="guardians"
     )
+
+
+class StudentLifecycleLog(Base):
+    __tablename__ = "student_lifecycle_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    institution_id: Mapped[int] = mapped_column(
+        ForeignKey("institutions.id"), nullable=False
+    )
+    student_id: Mapped[int] = mapped_column(
+        ForeignKey("students.id"), nullable=False
+    )
+    enrollment_id: Mapped[int] = mapped_column(
+        ForeignKey("student_enrollments.id"), nullable=True
+    )
+    action: Mapped[str] = mapped_column(String(50), nullable=False)
+    from_status: Mapped[str] = mapped_column(String(30), nullable=True)
+    to_status: Mapped[str] = mapped_column(String(30), nullable=False)
+    effective_date: Mapped[date] = mapped_column(Date, nullable=False)
+    reason: Mapped[str] = mapped_column(String(100), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    performed_by_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    student: Mapped["Student"] = relationship(
+        "Student", back_populates="lifecycle_logs"
+    )
+    enrollment: Mapped["StudentEnrollment"] = relationship("StudentEnrollment")
+    performed_by: Mapped["User"] = relationship("User")
+
 

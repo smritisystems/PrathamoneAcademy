@@ -18,12 +18,15 @@
 
 import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import StudentExitModal from '../components/StudentExitModal'
+import StudentReactivateModal from '../components/StudentReactivateModal'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, CreditCard, User, BookOpen, Receipt, FileText,
   ClipboardCheck, Award, Activity, Upload, Trash2, Eye,
   CheckCircle, PlusCircle, Calendar, Phone, Mail, MapPin, ExternalLink,
-  Edit3, AlertTriangle, X, Check, Save, Shield, Users, Printer, Share2
+  Edit3, AlertTriangle, X, Check, Save, Shield, Users, Printer, Share2,
+  UserMinus, UserCheck, History, GraduationCap
 } from 'lucide-react'
 import ShareModal from '../components/ShareModal'
 import { studentsApi, standardsApi, divisionsApi } from '../api/endpoints'
@@ -43,6 +46,7 @@ const ADMIN_TABS = [
   'Fees',
   'Documents',
   'Activity',
+  'Lifecycle & History',
 ] as const
 
 type AdminTab = (typeof ADMIN_TABS)[number]
@@ -61,6 +65,23 @@ export default function StudentDetailPage() {
 
   // Share Modal State
   const [showShareModal, setShowShareModal] = useState(false)
+
+  // Student Lifecycle Modals State
+  const [showExitModal, setShowExitModal] = useState(false)
+  const [showReactivateModal, setShowReactivateModal] = useState(false)
+
+  const { data: lifecycleHistory, refetch: refetchLifecycle } = useQuery({
+    queryKey: ['student-lifecycle-history', studentId],
+    queryFn: () => studentsApi.lifecycleHistory(studentId).then((r) => r.data),
+    enabled: !!studentId,
+  })
+
+  const handleLifecycleSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['student-admin-profile', studentId] })
+    queryClient.invalidateQueries({ queryKey: ['student-lifecycle-history', studentId] })
+    queryClient.invalidateQueries({ queryKey: ['students'] })
+    refetchLifecycle()
+  }
 
   // Full Profile Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false)
@@ -368,6 +389,15 @@ export default function StudentDetailPage() {
               <span className="px-2 py-0.5 rounded text-xs font-semibold bg-primary-100 text-primary-800">
                 {overview.active_batch}
               </span>
+              {overview.is_active ? (
+                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
+                  Active
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800" title={`Withdrawn: ${overview.exit_date || ''}`}>
+                  Withdrawn
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-500">
               Admission No: <span className="font-mono text-primary-700 font-bold">{overview.admission_number}</span> &bull; {overview.active_board} &bull; {overview.active_standard}
@@ -390,6 +420,29 @@ export default function StudentDetailPage() {
           >
             <Share2 className="w-4 h-4" /> Share Profile
           </button>
+          {canEdit && (
+            <>
+              {overview.is_active ? (
+                <button
+                  type="button"
+                  onClick={() => setShowExitModal(true)}
+                  className="px-3.5 py-2 rounded-lg border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
+                  title="Withdraw / Exit student from institute"
+                >
+                  <UserMinus className="w-4 h-4" /> Exit / Withdraw
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowReactivateModal(true)}
+                  className="px-3.5 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
+                  title="Reactivate student into active batch"
+                >
+                  <UserCheck className="w-4 h-4" /> Reactivate Student
+                </button>
+              )}
+            </>
+          )}
           {canEdit && (
             <button
               onClick={openEditModal}
@@ -422,6 +475,23 @@ export default function StudentDetailPage() {
           <button onClick={() => setEditSuccessMsg(null)} className="text-emerald-600 hover:text-emerald-800">
             <X className="w-4 h-4" />
           </button>
+        </div>
+      )}
+
+      {/* Inactive / Withdrawn Alert Banner */}
+      {!overview.is_active && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-900 flex items-start gap-3 shadow-sm">
+          <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <div className="font-bold flex items-center gap-2">
+              <span>Student Inactive / Withdrawn</span>
+              {overview.exit_date && <span className="text-xs font-mono font-normal bg-red-200/60 px-2 py-0.5 rounded">Exit Date: {overview.exit_date}</span>}
+            </div>
+            <p className="text-xs text-red-800 mt-1">
+              Reason: <span className="font-semibold">{overview.exit_reason || 'Administrative Exit'}</span>
+              {overview.exit_notes ? ` — ${overview.exit_notes}` : ''}
+            </p>
+          </div>
         </div>
       )}
 
@@ -926,6 +996,227 @@ export default function StudentDetailPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'Lifecycle & History' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-900">Student Lifecycle & Audit Timeline</h3>
+                  <p className="text-xs text-gray-500">Chronological history of enrollment, withdrawals, reactivations, and refunds</p>
+                </div>
+                {canEdit && (
+                  <div className="flex gap-2">
+                    {overview.is_active ? (
+                      <button
+                        onClick={() => setShowExitModal(true)}
+                        className="px-3 py-1.5 rounded-lg border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
+                      >
+                        <UserMinus className="w-4 h-4" /> Exit / Withdraw Student
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowReactivateModal(true)}
+                        className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
+                      >
+                        <UserCheck className="w-4 h-4" /> Reactivate Student
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="card text-center p-4">
+                  <p className="text-xs text-gray-500 mb-1">Current Lifecycle Status</p>
+                  <p className="text-lg font-bold">
+                    {overview.is_active ? (
+                      <span className="text-emerald-700">Active Student</span>
+                    ) : overview.exit_date ? (
+                      <span className="text-red-700">Withdrawn on {overview.exit_date}</span>
+                    ) : (
+                      <span className="text-gray-700">Inactive</span>
+                    )}
+                  </p>
+                  {overview.exit_reason && (
+                    <p className="text-xs text-gray-500 mt-1">Reason: {overview.exit_reason}</p>
+                  )}
+                </div>
+
+                <div className="card text-center p-4">
+                  <p className="text-xs text-gray-500 mb-1">Total Enrollments</p>
+                  <p className="text-lg font-bold text-primary-700">
+                    {lifecycleHistory?.enrollments?.length ?? enrollment.length} Records
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Active: {overview.is_active ? 1 : 0} &bull; Withdrawn: {lifecycleHistory?.enrollments?.filter((e) => e.status === 'withdrawn').length ?? 0}
+                  </p>
+                </div>
+
+                <div className="card text-center p-4">
+                  <p className="text-xs text-gray-500 mb-1">Total Refunds Issued</p>
+                  <p className="text-lg font-bold text-amber-700">
+                    {fmt(lifecycleHistory?.refunds?.reduce((acc, r) => acc + (r.amount || 0), 0) ?? 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {lifecycleHistory?.refunds?.length ?? 0} refund transaction(s)
+                  </p>
+                </div>
+              </div>
+
+              {/* Section 1: Lifecycle Audit Logs */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                  <History className="w-4 h-4 text-primary-600" /> Lifecycle Transitions & Audit History
+                </h4>
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold">
+                      <tr>
+                        <th className="p-3">Action</th>
+                        <th className="p-3">Effective Date</th>
+                        <th className="p-3">From &rarr; To Status</th>
+                        <th className="p-3">Reason / Justification</th>
+                        <th className="p-3">Notes</th>
+                        <th className="p-3">Logged By</th>
+                        <th className="p-3">Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {(!lifecycleHistory?.logs || lifecycleHistory.logs.length === 0) ? (
+                        <tr>
+                          <td colSpan={7} className="p-6 text-center text-gray-400">
+                            No lifecycle transition events recorded yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        lifecycleHistory.logs.map((log) => (
+                          <tr key={log.id} className="hover:bg-gray-50/50">
+                            <td className="p-3 font-semibold capitalize text-primary-800">{log.action}</td>
+                            <td className="p-3 font-mono">{log.effective_date}</td>
+                            <td className="p-3">
+                              <span className="font-mono text-gray-600">{log.from_status || '—'}</span>
+                              {' '}&rarr;{' '}
+                              <span className="font-semibold text-gray-900">{log.to_status || '—'}</span>
+                            </td>
+                            <td className="p-3 text-gray-800">{log.reason || '—'}</td>
+                            <td className="p-3 text-gray-600 max-w-xs truncate" title={log.notes || ''}>
+                              {log.notes || '—'}
+                            </td>
+                            <td className="p-3 text-gray-700">{log.performed_by_name || 'System'}</td>
+                            <td className="p-3 font-mono text-gray-500">{log.created_at ? log.created_at.slice(0, 19).replace('T', ' ') : '—'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Section 2: Enrollment History */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-primary-600" /> Enrollment Records & Historical Classes
+                </h4>
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold">
+                      <tr>
+                        <th className="p-3">Academic Year</th>
+                        <th className="p-3">Standard / Class</th>
+                        <th className="p-3">Batch / Division</th>
+                        <th className="p-3">Roll No.</th>
+                        <th className="p-3">Enrollment Date</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Exit Details</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {(lifecycleHistory?.enrollments || []).map((enr) => (
+                        <tr key={enr.id} className="hover:bg-gray-50/50">
+                          <td className="p-3 font-semibold text-gray-900">{enr.academic_year}</td>
+                          <td className="p-3 text-gray-800">{enr.standard_name}</td>
+                          <td className="p-3 text-gray-700">{enr.division_name || '—'}</td>
+                          <td className="p-3 font-mono text-gray-600">{enr.roll_number || '—'}</td>
+                          <td className="p-3 font-mono">{enr.enrollment_date}</td>
+                          <td className="p-3">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                                enr.status === 'active'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : enr.status === 'withdrawn'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              {enr.status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-gray-600">
+                            {enr.exit_date ? (
+                              <div>
+                                <span className="font-medium text-red-700">{enr.exit_date}</span>
+                                {enr.exit_reason && <span className="block text-gray-500 text-[11px]">{enr.exit_reason}</span>}
+                              </div>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Section 3: Refunds Issued */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-amber-600" /> Processed Student Refunds
+                </h4>
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold">
+                      <tr>
+                        <th className="p-3">Refund Date</th>
+                        <th className="p-3">Amount</th>
+                        <th className="p-3">Method</th>
+                        <th className="p-3">Reference #</th>
+                        <th className="p-3">Reason</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Processed By</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {(!lifecycleHistory?.refunds || lifecycleHistory.refunds.length === 0) ? (
+                        <tr>
+                          <td colSpan={7} className="p-6 text-center text-gray-400">
+                            No refunds recorded for this student.
+                          </td>
+                        </tr>
+                      ) : (
+                        lifecycleHistory.refunds.map((ref) => (
+                          <tr key={ref.id} className="hover:bg-gray-50/50">
+                            <td className="p-3 font-mono font-medium">{ref.refund_date}</td>
+                            <td className="p-3 font-mono font-bold text-amber-700">{fmt(ref.amount)}</td>
+                            <td className="p-3 uppercase text-gray-700">{ref.refund_method}</td>
+                            <td className="p-3 font-mono text-gray-600">{ref.reference_number || '—'}</td>
+                            <td className="p-3 text-gray-800">{ref.reason}</td>
+                            <td className="p-3">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                                {ref.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-gray-700">{ref.processed_by_name || 'Admin'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -1550,6 +1841,37 @@ export default function StudentDetailPage() {
           recipientPhone={overview.phone || (overview.guardians && overview.guardians[0]?.phone) || ''}
           recipientEmail={overview.email || (overview.guardians && overview.guardians[0]?.email) || ''}
           defaultMessage={`Dear Parent/Student,\n\nPlease find the student academic profile and enrollment summary for ${overview.full_name} (${overview.admission_number}) at PrathamOne Academy.`}
+        />
+      )}
+      {/* Student Exit Modal */}
+      {showExitModal && (
+        <StudentExitModal
+          isOpen={showExitModal}
+          onClose={() => setShowExitModal(false)}
+          student={{
+            id: overview.id,
+            admission_number: overview.admission_number,
+            full_name: overview.full_name,
+            first_name: overview.first_name,
+            last_name: overview.last_name,
+          }}
+          onSuccess={handleLifecycleSuccess}
+        />
+      )}
+
+      {/* Student Reactivate Modal */}
+      {showReactivateModal && (
+        <StudentReactivateModal
+          isOpen={showReactivateModal}
+          onClose={() => setShowReactivateModal(false)}
+          student={{
+            id: overview.id,
+            admission_number: overview.admission_number,
+            full_name: overview.full_name,
+            first_name: overview.first_name,
+            last_name: overview.last_name,
+          }}
+          onSuccess={handleLifecycleSuccess}
         />
       )}
     </div>
