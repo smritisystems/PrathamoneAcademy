@@ -20,7 +20,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, act, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import Footer, { resolvePageTitle } from '../components/Footer'
+import Footer, { resolvePageTitle, FOOTER_COLLAPSED_KEY } from '../components/Footer'
 import { useAuthStore } from '../store/authStore'
 import { APP_CONFIG } from '../config/appConfig'
 
@@ -28,6 +28,7 @@ describe('Application Footer Specifications', () => {
   let queryClient: QueryClient
 
   beforeEach(() => {
+    localStorage.clear()
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false, gcTime: 0 },
@@ -210,5 +211,126 @@ describe('Application Footer Specifications', () => {
     expect(footer?.className).toContain('shrink-0')
     expect(footer?.className).toContain('text-[10.5px]')
     expect(footer?.className).not.toContain('overflow-x-auto')
+  })
+
+  describe('Collapsible & Expandable Footer Behaviors', () => {
+    it('renders expanded content by default on desktop and collapses when clicking Collapse button', () => {
+      // Desktop width
+      window.innerWidth = 1024
+      renderFooter()
+
+      expect(screen.getByTestId('footer-expanded-content')).toBeDefined()
+      expect(screen.queryByTestId('footer-collapsed-bar')).toBeNull()
+
+      const collapseBtn = screen.getByTestId('footer-collapse-btn')
+      expect(collapseBtn.getAttribute('aria-expanded')).toBe('true')
+      expect(collapseBtn.getAttribute('aria-label')).toBe('Collapse footer')
+
+      // Click collapse
+      act(() => {
+        fireEvent.click(collapseBtn)
+      })
+
+      // Collapsed bar is now visible and expanded content is hidden
+      expect(screen.getByTestId('footer-collapsed-bar')).toBeDefined()
+      expect(screen.queryByTestId('footer-expanded-content')).toBeNull()
+      expect(localStorage.getItem(FOOTER_COLLAPSED_KEY)).toBe('true')
+
+      // Expand button is now visible
+      const expandBtn = screen.getByTestId('footer-expand-btn')
+      expect(expandBtn.getAttribute('aria-expanded')).toBe('false')
+      expect(expandBtn.getAttribute('aria-label')).toBe('Expand footer')
+    })
+
+    it('expands back when clicking Expand button in collapsed state', () => {
+      localStorage.setItem(FOOTER_COLLAPSED_KEY, 'true')
+      renderFooter()
+
+      // Initially collapsed
+      expect(screen.getByTestId('footer-collapsed-bar')).toBeDefined()
+      const expandBtn = screen.getByTestId('footer-expand-btn')
+
+      act(() => {
+        fireEvent.click(expandBtn)
+      })
+
+      // Expanded content restored
+      expect(screen.getByTestId('footer-expanded-content')).toBeDefined()
+      expect(screen.queryByTestId('footer-collapsed-bar')).toBeNull()
+      expect(localStorage.getItem(FOOTER_COLLAPSED_KEY)).toBe('false')
+    })
+
+    it('defaults to collapsed on mobile screens (< 768px) when no preference exists', () => {
+      localStorage.removeItem(FOOTER_COLLAPSED_KEY)
+      window.innerWidth = 375 // Mobile viewport
+
+      renderFooter()
+
+      // Must be collapsed by default on mobile
+      expect(screen.getByTestId('footer-collapsed-bar')).toBeDefined()
+      expect(screen.queryByTestId('footer-expanded-content')).toBeNull()
+
+      // Restore desktop viewport
+      window.innerWidth = 1024
+    })
+
+    it('defaults to expanded on desktop screens (>= 768px) when no preference exists', () => {
+      localStorage.removeItem(FOOTER_COLLAPSED_KEY)
+      window.innerWidth = 1024 // Desktop viewport
+
+      renderFooter()
+
+      // Must be expanded by default on desktop
+      expect(screen.getByTestId('footer-expanded-content')).toBeDefined()
+      expect(screen.queryByTestId('footer-collapsed-bar')).toBeNull()
+    })
+
+    it('honors saved localStorage preference over screen size default', () => {
+      // Saved preference: expanded even on mobile screen
+      localStorage.setItem(FOOTER_COLLAPSED_KEY, 'false')
+      window.innerWidth = 375
+
+      renderFooter()
+
+      expect(screen.getByTestId('footer-expanded-content')).toBeDefined()
+
+      // Restore
+      window.innerWidth = 1024
+    })
+
+    it('toggles footer state when user presses Ctrl+Shift+F keyboard shortcut', () => {
+      window.innerWidth = 1024
+      renderFooter()
+
+      expect(screen.getByTestId('footer-expanded-content')).toBeDefined()
+
+      // Trigger Ctrl+Shift+F
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'F',
+            ctrlKey: true,
+            shiftKey: true,
+          })
+        )
+      })
+
+      expect(screen.getByTestId('footer-collapsed-bar')).toBeDefined()
+      expect(localStorage.getItem(FOOTER_COLLAPSED_KEY)).toBe('true')
+
+      // Trigger Ctrl+Shift+F again to expand
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'F',
+            ctrlKey: true,
+            shiftKey: true,
+          })
+        )
+      })
+
+      expect(screen.getByTestId('footer-expanded-content')).toBeDefined()
+      expect(localStorage.getItem(FOOTER_COLLAPSED_KEY)).toBe('false')
+    })
   })
 })

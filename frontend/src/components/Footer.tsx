@@ -9,21 +9,23 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.1.0
+ * @version     1.2.0
  * @created     2026-11-04
  * @updated     2026-11-05
  *
- * @description Slim, compact, full-width application footer displaying tenant branch, current route, product edition, live system metrics, and AITDL parent branding.
+ * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and AITDL parent branding.
  */
 
 import { useState, useEffect, useMemo } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, X } from 'lucide-react'
+import { Building2, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { institutionsApi } from '../api/endpoints'
 import { APP_CONFIG } from '../config/appConfig'
 import OrganizationBranding from './OrganizationBranding'
+
+export const FOOTER_COLLAPSED_KEY = 'pratham_footer_collapsed'
 
 /**
  * Dynamically resolves the human-readable page / menu title from routing and query state.
@@ -147,6 +149,43 @@ export default function Footer() {
   const isOnline = useLiveConnectionStatus()
   const [showAboutModal, setShowAboutModal] = useState(false)
 
+  // Initialize collapse state: check localStorage first, else default to mobile (< 768px)
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const saved = localStorage.getItem(FOOTER_COLLAPSED_KEY)
+      if (saved !== null) {
+        return saved === 'true'
+      }
+      return window.innerWidth < 768
+    } catch {
+      return false
+    }
+  })
+
+  // Global toggle handler persisting to localStorage
+  const toggleCollapsed = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem(FOOTER_COLLAPSED_KEY, String(next))
+      } catch {}
+      return next
+    })
+  }
+
+  // Keyboard shortcut: Ctrl+Shift+F (or Cmd+Shift+F)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+        e.preventDefault()
+        toggleCollapsed()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // Cached institution listing for tenant & branch metadata
   const { data: institutions = [] } = useQuery({
     queryKey: ['institutions'],
@@ -178,35 +217,24 @@ export default function Footer() {
     <footer
       role="contentinfo"
       aria-label="Application Footer"
-      className="shrink-0 z-20 bg-white border-t border-slate-200/90 px-3 md:px-5 py-1.5 text-[10.5px] sm:text-[11px] leading-tight text-slate-600 print:hidden transition-all duration-200 select-none"
+      className={`shrink-0 z-20 bg-white border-t border-slate-200/90 px-3 md:px-5 print:hidden transition-all duration-200 select-none ${
+        isCollapsed
+          ? 'py-1 text-[10px] sm:text-[10.5px]'
+          : 'py-1.5 text-[10.5px] sm:text-[11px] leading-tight text-slate-600'
+      }`}
     >
-      <div className="flex flex-col gap-1.5 w-full min-w-0">
-        {/* Row 1: Context, Page & Primary Operational Status */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-x-4 gap-y-1 w-full min-w-0">
-          {/* Left & Center Context Group */}
-          <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap min-w-0">
-            {/* Left: Institute Name, Tenant Code, Branch Name & Code */}
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-semibold text-slate-900 tracking-tight">{tenantName}</span>
-              <span className="text-slate-300 select-none">·</span>
-              <span className="text-slate-500 font-mono text-[10px]" title="Tenant Code">
-                [{tenantCode}]
-              </span>
-              <span className="text-slate-300 select-none">·</span>
-              <span className="text-slate-600">Branch: {branchName}</span>
-              <span className="text-slate-500 font-mono text-[10px]" title="Branch Code">
-                ({branchCode})
-              </span>
-            </div>
-
-            <span className="hidden sm:inline text-slate-300 select-none">|</span>
-
-            {/* Center: Dynamic Active Page / Workspace Name */}
-            <div
-              className="flex items-center gap-1 min-w-0 text-slate-600"
-              title={`Active Workspace: ${currentPageTitle}`}
-            >
-              <span className="text-slate-400 font-medium">Workspace:</span>
+      {isCollapsed ? (
+        /* Slim Collapsed Footer Bar */
+        <div
+          data-testid="footer-collapsed-bar"
+          className="flex items-center justify-between gap-2 w-full min-w-0"
+        >
+          {/* Left summary indicators */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 text-slate-500 font-medium">
+            <span className="font-semibold text-slate-800 tracking-tight">{tenantName}</span>
+            <span className="text-slate-300 select-none">·</span>
+            <div className="flex items-center gap-1 min-w-0">
+              <span className="text-slate-400">Workspace:</span>
               <span
                 data-testid="footer-page-title"
                 className="font-semibold text-blue-700 bg-blue-50/80 px-1.5 py-0.2 rounded border border-blue-200/60"
@@ -214,79 +242,167 @@ export default function Footer() {
                 {currentPageTitle}
               </span>
             </div>
+            <span className="hidden sm:inline text-slate-300 select-none">·</span>
+            <span
+              className="hidden sm:inline-flex items-center gap-1"
+              title={isOnline ? 'Cloud Sync: Connected' : 'Cloud Sync: Offline'}
+              aria-label={`Connection status: ${isOnline ? 'Online' : 'Offline'}`}
+            >
+              <span
+                className={`inline-block w-1.5 h-1.5 rounded-full ${
+                  isOnline ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
+                }`}
+                aria-hidden="true"
+              />
+              <span className={isOnline ? 'text-emerald-700' : 'text-rose-700'}>
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
+            </span>
+            <span className="hidden md:inline text-slate-300 select-none">·</span>
+            <span className="hidden md:inline font-mono text-[10px] text-slate-700">
+              {APP_CONFIG.versionDisplay}
+            </span>
           </div>
 
-          {/* Product & Right System Group */}
-          <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap lg:justify-end min-w-0">
-            {/* Product: PrathamOne Academy Management System · Enterprise Edition · prathamone.com */}
-            <div className="flex items-center gap-1.5 min-w-0 text-slate-500">
-              <span className="text-slate-700 font-medium">{APP_CONFIG.productName}</span>
-              <span className="text-slate-300 select-none">·</span>
-              <span className="text-slate-700 font-semibold">{APP_CONFIG.edition}</span>
-              <span className="text-slate-300 select-none">·</span>
-              <a
-                href={APP_CONFIG.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-700 hover:underline font-medium transition-colors"
-              >
-                {APP_CONFIG.website}
-              </a>
-              <span className="text-slate-300 select-none">·</span>
-              <button
-                type="button"
-                onClick={() => setShowAboutModal(true)}
-                className="inline-flex items-center gap-1 text-[10px] text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200/80 transition-colors font-semibold"
-                title="View AITDL Parent Organization & Product Ecosystem"
-                aria-haspopup="dialog"
-              >
-                <Building2 className="w-2.5 h-2.5 text-blue-600" aria-hidden="true" />
-                <span>AITDL Ecosystem</span>
-              </button>
-            </div>
-
-            <span className="hidden sm:inline text-slate-300 select-none">|</span>
-
-            {/* Right: User ID, Role, Live Connection Status, Version */}
-            <div className="flex items-center gap-1.5 min-w-0 text-slate-500 font-medium">
-              <span className="font-mono text-slate-700" title="Logged-in User ID">
-                UID: #{user?.id ?? 1}
-              </span>
-              <span className="text-slate-300 select-none">·</span>
-              <span className="text-slate-700" title="User Access Role">
-                Role: {userRole}
-              </span>
-              <span className="text-slate-300 select-none">·</span>
-              <span
-                className="inline-flex items-center gap-1"
-                title={isOnline ? 'Cloud Sync: Connected' : 'Cloud Sync: Offline'}
-                aria-label={`Connection status: ${isOnline ? 'Online' : 'Offline'}`}
-              >
-                <span
-                  className={`inline-block w-1.5 h-1.5 rounded-full ${
-                    isOnline ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
-                  }`}
-                  aria-hidden="true"
-                />
-                <span className={isOnline ? 'text-emerald-700' : 'text-rose-700'}>
-                  {isOnline ? 'Online' : 'Offline'}
-                </span>
-              </span>
-              <span className="text-slate-300 select-none">·</span>
-              <Link
-                to="/releases"
-                className="font-semibold text-slate-800 hover:text-blue-600 hover:underline font-mono text-[10px] transition-colors"
-                title="System Version & Release Management"
-              >
-                {APP_CONFIG.versionDisplay}
-              </Link>
-            </div>
+          {/* Right: Expand Toggle Button */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              data-testid="footer-expand-btn"
+              aria-label="Expand footer"
+              aria-expanded="false"
+              title="Expand footer (Ctrl+Shift+F)"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <ChevronUp className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
+              <span>Expand</span>
+            </button>
           </div>
         </div>
+      ) : (
+        /* Full Expanded Footer Content */
+        <div data-testid="footer-expanded-content" className="flex flex-col gap-1.5 w-full min-w-0">
+          {/* Row 1: Context, Page & Primary Operational Status */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-x-4 gap-y-1 w-full min-w-0">
+            {/* Left & Center Context Group */}
+            <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap min-w-0">
+              {/* Left: Institute Name, Tenant Code, Branch Name & Code */}
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-semibold text-slate-900 tracking-tight">{tenantName}</span>
+                <span className="text-slate-300 select-none">·</span>
+                <span className="text-slate-500 font-mono text-[10px]" title="Tenant Code">
+                  [{tenantCode}]
+                </span>
+                <span className="text-slate-300 select-none">·</span>
+                <span className="text-slate-600">Branch: {branchName}</span>
+                <span className="text-slate-500 font-mono text-[10px]" title="Branch Code">
+                  ({branchCode})
+                </span>
+              </div>
 
-        {/* Row 2: Accessible Semantic AITDL Parent Organization, Products & Support Contact Bar */}
-        <OrganizationBranding variant="footer" />
-      </div>
+              <span className="hidden sm:inline text-slate-300 select-none">|</span>
+
+              {/* Center: Dynamic Active Page / Workspace Name */}
+              <div
+                className="flex items-center gap-1 min-w-0 text-slate-600"
+                title={`Active Workspace: ${currentPageTitle}`}
+              >
+                <span className="text-slate-400 font-medium">Workspace:</span>
+                <span
+                  data-testid="footer-page-title"
+                  className="font-semibold text-blue-700 bg-blue-50/80 px-1.5 py-0.2 rounded border border-blue-200/60"
+                >
+                  {currentPageTitle}
+                </span>
+              </div>
+            </div>
+
+            {/* Product & Right System Group */}
+            <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap lg:justify-end min-w-0">
+              {/* Product: PrathamOne Academy Management System · Enterprise Edition · prathamone.com */}
+              <div className="flex items-center gap-1.5 min-w-0 text-slate-500">
+                <span className="text-slate-700 font-medium">{APP_CONFIG.productName}</span>
+                <span className="text-slate-300 select-none">·</span>
+                <span className="text-slate-700 font-semibold">{APP_CONFIG.edition}</span>
+                <span className="text-slate-300 select-none">·</span>
+                <a
+                  href={APP_CONFIG.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 hover:underline font-medium transition-colors"
+                >
+                  {APP_CONFIG.website}
+                </a>
+                <span className="text-slate-300 select-none">·</span>
+                <button
+                  type="button"
+                  onClick={() => setShowAboutModal(true)}
+                  className="inline-flex items-center gap-1 text-[10px] text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200/80 transition-colors font-semibold"
+                  title="View AITDL Parent Organization & Product Ecosystem"
+                  aria-haspopup="dialog"
+                >
+                  <Building2 className="w-2.5 h-2.5 text-blue-600" aria-hidden="true" />
+                  <span>AITDL Ecosystem</span>
+                </button>
+              </div>
+
+              <span className="hidden sm:inline text-slate-300 select-none">|</span>
+
+              {/* Right: User ID, Role, Live Connection Status, Version, Collapse Button */}
+              <div className="flex items-center gap-1.5 min-w-0 text-slate-500 font-medium">
+                <span className="font-mono text-slate-700" title="Logged-in User ID">
+                  UID: #{user?.id ?? 1}
+                </span>
+                <span className="text-slate-300 select-none">·</span>
+                <span className="text-slate-700" title="User Access Role">
+                  Role: {userRole}
+                </span>
+                <span className="text-slate-300 select-none">·</span>
+                <span
+                  className="inline-flex items-center gap-1"
+                  title={isOnline ? 'Cloud Sync: Connected' : 'Cloud Sync: Offline'}
+                  aria-label={`Connection status: ${isOnline ? 'Online' : 'Offline'}`}
+                >
+                  <span
+                    className={`inline-block w-1.5 h-1.5 rounded-full ${
+                      isOnline ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span className={isOnline ? 'text-emerald-700' : 'text-rose-700'}>
+                    {isOnline ? 'Online' : 'Offline'}
+                  </span>
+                </span>
+                <span className="text-slate-300 select-none">·</span>
+                <Link
+                  to="/releases"
+                  className="font-semibold text-slate-800 hover:text-blue-600 hover:underline font-mono text-[10px] transition-colors"
+                  title="System Version & Release Management"
+                >
+                  {APP_CONFIG.versionDisplay}
+                </Link>
+                <span className="text-slate-300 select-none">·</span>
+                <button
+                  type="button"
+                  onClick={toggleCollapsed}
+                  data-testid="footer-collapse-btn"
+                  aria-label="Collapse footer"
+                  aria-expanded="true"
+                  title="Collapse footer (Ctrl+Shift+F)"
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
+                  <span>Collapse</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Accessible Semantic AITDL Parent Organization, Products & Support Contact Bar */}
+          <OrganizationBranding variant="footer" />
+        </div>
+      )}
 
       {/* Accessible About Dialog */}
       {showAboutModal && (
