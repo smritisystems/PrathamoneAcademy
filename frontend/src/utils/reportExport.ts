@@ -11,12 +11,13 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Universal client-side export utility supporting Excel (.xlsx), CSV (.csv), and JSON (.json) with formula injection protection.
  */
 
 import * as XLSX from 'xlsx'
+import { PRINT_SHARE_BRANDING } from '../config/branding'
 
 export interface ExportColumn<T = any> {
   id: string
@@ -118,9 +119,15 @@ export function exportToExcel<T>({
     })
   })
 
-  // 3. Assemble worksheet
-  const aoa = [headers, ...rows]
-  const ws = XLSX.utils.aoa_to_sheet(aoa)
+  // 3. Assemble worksheet with understated trailing branding row
+  const aoa = [headers, ...rows, [], [PRINT_SHARE_BRANDING.text]]
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Configure print page footer in Excel workbook
+  (ws as any)['!footer'] = {
+    odd: `&C&8&K888888${PRINT_SHARE_BRANDING.text}`,
+    even: `&C&8&K888888${PRINT_SHARE_BRANDING.text}`,
+  }
 
   // 4. Calculate sensible column widths
   const colWidths = columns.map((col, idx) => {
@@ -159,8 +166,10 @@ export function exportToCsv<T>({
     return columns.map((col) => sanitizeCsvValue(getRawCellValue(row, col))).join(',')
   })
 
+  const footerLine = sanitizeCsvValue(PRINT_SHARE_BRANDING.text)
+
   // Prepend UTF-8 BOM so Microsoft Excel handles rupee signs and UTF-8 characters seamlessly
-  const csvContent = '\uFEFF' + [headerLine, ...rowLines].join('\r\n')
+  const csvContent = '\uFEFF' + [headerLine, ...rowLines, '', footerLine].join('\r\n')
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   downloadBlob(blob, safeFilename)
 }

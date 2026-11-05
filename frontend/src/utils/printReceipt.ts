@@ -144,6 +144,22 @@ export function printReceiptElement(
             }
           }
 
+          /* Global Print & Share Branding */
+          .print-branding-footer {
+            display: block !important;
+            visibility: visible !important;
+            text-align: center !important;
+            margin-top: 8px !important;
+            padding-top: 6px !important;
+          }
+          .print-branding-footer p {
+            font-size: 8pt !important;
+            color: #64748b !important;
+            font-weight: 300 !important;
+            letter-spacing: 0.025em !important;
+            margin: 0 !important;
+          }
+
           /* Comprehensive Layout & Utility Rules for Reliable Standalone Print */
           .flex { display: flex !important; }
           .inline-flex { display: inline-flex !important; }

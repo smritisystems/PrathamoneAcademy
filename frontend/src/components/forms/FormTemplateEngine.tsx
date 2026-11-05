@@ -19,6 +19,7 @@
 import React from 'react'
 import { ShieldCheck, CheckSquare, Square, Building2, AlertCircle, FileText } from 'lucide-react'
 import type { RenderedFormPayload } from '../../types/forms'
+import { PrintBrandingFooter } from '../PrintDocumentBranding'
 
 interface Props {
   form: RenderedFormPayload
@@ -676,6 +677,9 @@ export default function FormTemplateEngine({
             Page {pageNumber} of {totalPages}
           </span>
         </div>
+
+        {/* Global Print & Share Branding */}
+        <PrintBrandingFooter className="mt-1.5" />
       </div>
     </div>
   )

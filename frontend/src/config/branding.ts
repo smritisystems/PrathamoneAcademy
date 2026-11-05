@@ -51,11 +51,19 @@ export interface SalesSupportInfo {
   alternateEmail: string
 }
 
+export const PRINT_SHARE_BRANDING = {
+  text: 'PrathamOne Coaching Institutes Enterprise Suite · prathamone.com',
+  suiteName: 'PrathamOne Coaching Institutes Enterprise Suite',
+  domain: 'prathamone.com',
+  url: 'https://prathamone.com',
+} as const
+
 /**
  * Static baseline branding tokens for PrathamOne Academy suite
  */
 export const BRANDING_CONFIG = {
   appName: 'PrathamOne Academy',
+  printShareBranding: PRINT_SHARE_BRANDING,
   productName: 'PrathamOne Academy Management System',
   shortName: 'PrathamOne',
   suiteName: 'PrathamOne Academic Suite',
@@ -167,6 +175,7 @@ export interface ResolvedBranding {
   parentOrganization: ParentOrganization
   products: OrganizationProduct[]
   salesSupport: SalesSupportInfo
+  printShareBranding: typeof PRINT_SHARE_BRANDING
   colors: typeof BRANDING_CONFIG.colors
   assets: typeof BRANDING_CONFIG.assets
   support: typeof BRANDING_CONFIG.support
@@ -230,6 +239,7 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     parentOrganization: BRANDING_CONFIG.parentOrganization,
     products: BRANDING_CONFIG.products,
     salesSupport: BRANDING_CONFIG.salesSupport,
+    printShareBranding: BRANDING_CONFIG.printShareBranding,
     colors: {
       ...BRANDING_CONFIG.colors,
       primary: primaryColor,

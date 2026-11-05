@@ -163,6 +163,7 @@ async def export_fee_collection(
         )
         writer.writeheader()
         writer.writerows(data)
+        output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
         return Response(
             content=output.getvalue(),
             media_type="text/csv",
@@ -176,6 +177,10 @@ async def export_fee_collection(
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Fee Collection"
+        # Print page footer
+        ws.oddFooter.center.text = "PrathamOne Coaching Institutes Enterprise Suite · prathamone.com"
+        ws.oddFooter.center.size = 8
+        ws.oddFooter.center.color = "888888"
         headers = [
             "Admission No.",
             "Student Name",
@@ -194,6 +199,8 @@ async def export_fee_collection(
                     row["outstanding"],
                 ]
             )
+        ws.append([])
+        ws.append(["PrathamOne Coaching Institutes Enterprise Suite · prathamone.com"])
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
@@ -532,6 +539,7 @@ async def export_academic_report(
         writer.writerows(data)
         filename = "faculty_load_report.csv"
 
+    output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
     return Response(
         content=output.getvalue(),
         media_type="text/csv",
@@ -884,6 +892,7 @@ async def export_student_withdrawals_report(
     )
     writer.writeheader()
     writer.writerows(data)
+    output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
 
     return Response(
         content=output.getvalue(),

@@ -23,7 +23,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   PrintDocumentHeader,
   PrintDocumentSignatory,
+  PrintBrandingFooter,
 } from '../components/PrintDocumentBranding'
+import { PRINT_SHARE_BRANDING } from '../config/branding'
 
 function renderWithQueryClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -131,6 +133,60 @@ describe('Printable Document Branding Components', () => {
       expect(screen.getByText('Parent / Legal Guardian Signature')).toBeDefined()
       expect(screen.getByText(/Date: _______________/i)).toBeDefined()
       expect(screen.getByText('Authorized Signatory')).toBeDefined()
+    })
+  })
+
+  describe('PrintBrandingFooter Component', () => {
+    it('renders canonical understated branding text at the bottom', () => {
+      renderWithQueryClient(<PrintBrandingFooter />)
+
+      const footer = screen.getByTestId('print-share-branding-footer')
+      expect(footer).toBeDefined()
+      expect(screen.getByText(PRINT_SHARE_BRANDING.text)).toBeDefined()
+      expect(screen.getByText(/PrathamOne Coaching Institutes Enterprise Suite · prathamone.com/i)).toBeDefined()
+    })
+
+    it('defaults to center alignment and low-contrast 8pt font styling', () => {
+      const { container } = renderWithQueryClient(<PrintBrandingFooter />)
+
+      const footer = container.querySelector('[data-testid="print-share-branding-footer"]')
+      expect(footer?.className).toContain('text-center')
+      expect(footer?.className).toContain('justify-center')
+
+      const textEl = footer?.querySelector('p')
+      expect(textEl?.className).toContain('text-[8pt]')
+      expect(textEl?.className).toContain('text-slate-400')
+      expect(textEl?.className).toContain('font-light')
+    })
+
+    it('supports custom alignments (left, right) and dividers', () => {
+      const { container: leftContainer } = renderWithQueryClient(
+        <PrintBrandingFooter align="left" showDivider={true} />
+      )
+      const leftFooter = leftContainer.querySelector('[data-testid="print-share-branding-footer"]')
+      expect(leftFooter?.className).toContain('text-left')
+      expect(leftFooter?.className).toContain('border-t')
+
+      const { container: rightContainer } = renderWithQueryClient(
+        <PrintBrandingFooter align="right" />
+      )
+      const rightFooter = rightContainer.querySelector('[data-testid="print-share-branding-footer"]')
+      expect(rightFooter?.className).toContain('text-right')
+    })
+
+    it('supports fixed bottom mode for repeating on multi-page print documents', () => {
+      const { container } = renderWithQueryClient(
+        <PrintBrandingFooter fixedBottom={true} />
+      )
+      const footer = container.querySelector('[data-testid="print-share-branding-footer"]')
+      expect(footer?.className).toContain('print:fixed')
+      expect(footer?.className).toContain('print:bottom-0')
+    })
+
+    it('is included automatically inside PrintDocumentSignatory', () => {
+      renderWithQueryClient(<PrintDocumentSignatory />)
+      expect(screen.getByTestId('print-share-branding-footer')).toBeDefined()
+      expect(screen.getByText(PRINT_SHARE_BRANDING.text)).toBeDefined()
     })
   })
 })

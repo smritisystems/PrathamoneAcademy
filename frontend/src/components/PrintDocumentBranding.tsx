@@ -18,7 +18,7 @@
 
 import React from 'react'
 import { ShieldCheck, FileCheck2 } from 'lucide-react'
-import { useBranding, BRANDING_CONFIG } from '../config/branding'
+import { useBranding, BRANDING_CONFIG, PRINT_SHARE_BRANDING } from '../config/branding'
 import type { Institution } from '../types'
 
 export interface PrintDocumentHeaderProps {
@@ -260,7 +260,57 @@ export function PrintDocumentSignatory({
       <div className="text-center text-[8.5px] text-slate-400 font-mono">
         {BRANDING_CONFIG.suiteName} &bull; {BRANDING_CONFIG.versionDisplay} &bull; {BRANDING_CONFIG.copyright}
       </div>
+
+      {/* Global Understated Print & Share Branding */}
+      <PrintBrandingFooter className="pt-1 mt-1" />
     </div>
   )
 }
+export interface PrintBrandingFooterProps {
+  className?: string
+  align?: 'center' | 'left' | 'right'
+  fixedBottom?: boolean
+  showDivider?: boolean
+  customText?: string
+}
+
+/**
+ * Consistent, understated PrathamOne branding footer for printable and shareable outputs.
+ * Designed with a thin, light, low-contrast font (8-9pt print) that remains readable in grayscale.
+ */
+export function PrintBrandingFooter({
+  className = '',
+  align = 'center',
+  fixedBottom = false,
+  showDivider = false,
+  customText,
+}: PrintBrandingFooterProps) {
+  const alignmentClass = {
+    center: 'text-center justify-center',
+    left: 'text-left justify-start',
+    right: 'text-right justify-end',
+  }[align]
+
+  return (
+    <div
+      data-testid="print-share-branding-footer"
+      className={`print-branding-footer select-none ${
+        showDivider ? 'pt-2 mt-3 border-t border-slate-200/80 print:border-slate-300' : 'pt-2 mt-2'
+      } ${
+        fixedBottom ? 'print:fixed print:bottom-0 print:left-0 print:right-0 print:pb-1.5' : ''
+      } ${alignmentClass} ${className}`}
+    >
+      <p
+        className="font-light tracking-wide text-[8pt] text-slate-400 print:text-slate-500 print:font-normal leading-normal"
+        style={{
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          letterSpacing: '0.025em',
+        }}
+      >
+        {customText || PRINT_SHARE_BRANDING.text}
+      </p>
+    </div>
+  )
+}
+
 

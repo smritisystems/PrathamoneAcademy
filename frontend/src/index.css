@@ -270,5 +270,29 @@
   #receipt-print-area .no-print {
     display: none !important;
   }
+
+  /* ────────────────────────────────────────────────────────────────────────── */
+  /* GLOBAL PRINT & SHARE BRANDING FOOTER                                      */
+  /* Understated, 8pt, thin font, readable in grayscale, non-distracting        */
+  /* ────────────────────────────────────────────────────────────────────────── */
+  .print-branding-footer {
+    display: block !important;
+    visibility: visible !important;
+    text-align: center !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .print-branding-footer p {
+    font-size: 8pt !important;
+    line-height: 1.2 !important;
+    color: #64748b !important;
+    font-weight: 300 !important;
+    letter-spacing: 0.025em !important;
+    visibility: visible !important;
+  }
+  #receipt-print-area .print-branding-footer {
+    display: block !important;
+    visibility: visible !important;
+  }
 }
 

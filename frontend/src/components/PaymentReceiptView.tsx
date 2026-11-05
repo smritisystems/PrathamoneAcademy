@@ -42,6 +42,7 @@ import { DetailedPaymentReceipt, Receipt } from '../types'
 import { printReceiptElement } from '../utils/printReceipt'
 import { numberToWordsINR } from '../pages/Fees'
 import { useBranding } from '../config/branding'
+import { PrintBrandingFooter } from './PrintDocumentBranding'
 import { settingsApi } from '../api/endpoints'
 
 const fallbackQueryClient = new QueryClient({
@@ -885,6 +886,19 @@ export default function PaymentReceiptView({
               display: grid !important;
               visibility: visible !important;
             }
+            #${containerId} .print-branding-footer {
+              display: block !important;
+              visibility: visible !important;
+              text-align: center !important;
+              margin-top: 6px !important;
+              padding-top: 4px !important;
+            }
+            #${containerId} .print-branding-footer p {
+              font-size: 8pt !important;
+              color: #64748b !important;
+              font-weight: 300 !important;
+              letter-spacing: 0.025em !important;
+            }
             .print\\:hidden, button {
               display: none !important;
             }
@@ -896,6 +910,9 @@ export default function PaymentReceiptView({
           className="w-full h-1.5 bg-gradient-to-r from-blue-700 via-sky-500 to-blue-700 rounded-b-xl mt-3"
           aria-hidden="true"
         />
+
+        {/* Global Print & Share Branding */}
+        <PrintBrandingFooter className="pt-2 pb-0.5 print:pb-0" />
       </div>
     </div>
   )

@@ -23,7 +23,8 @@ import {
 } from 'lucide-react'
 import { communicationApi } from '../api/endpoints'
 import type { ShareDocumentResponse } from '../types'
-import { useBranding } from '../config/branding'
+import { useBranding, PRINT_SHARE_BRANDING } from '../config/branding'
+import { PrintBrandingFooter } from './PrintDocumentBranding'
 
 export interface ShareModalProps {
   isOpen: boolean
@@ -137,7 +138,7 @@ export default function ShareModal({
     try {
       setLoading(true)
       const linkSnippet = shareData?.share_url ? `\nSecure Link: ${window.location.origin}${shareData.share_url}` : ''
-      const finalMsg = `${customMessage}${linkSnippet}`
+      const finalMsg = `${customMessage}${linkSnippet}\n\n— ${PRINT_SHARE_BRANDING.text}`
 
       // Call API to record dispatch in audit logs
       await communicationApi.sendMessage({
@@ -184,7 +185,7 @@ export default function ShareModal({
     try {
       setLoading(true)
       const linkSnippet = shareData?.share_url ? `\n\nView Document Online: ${window.location.origin}${shareData.share_url}` : ''
-      const finalMsg = `${customMessage}${linkSnippet}`
+      const finalMsg = `${customMessage}${linkSnippet}\n\n— ${PRINT_SHARE_BRANDING.text}`
 
       await communicationApi.sendMessage({
         channel: 'EMAIL',
@@ -617,6 +618,11 @@ export default function ShareModal({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Global Print & Share Branding Footer */}
+        <div className="px-6 py-2 border-t border-slate-100 bg-slate-50/80">
+          <PrintBrandingFooter className="pt-0 mt-0" />
         </div>
       </div>
     </div>

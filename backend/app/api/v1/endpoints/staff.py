@@ -1304,6 +1304,11 @@ async def render_staff_document(
             <span>Security Hash: {ref_number}</span>
             <span>Confidential & Official Document</span>
         </div>
+
+        <!-- Global Print & Share Branding Footer -->
+        <div style="margin-top: 14px; text-align: center; font-size: 8pt; color: #94a3b8; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 300; letter-spacing: 0.025em;">
+            PrathamOne Coaching Institutes Enterprise Suite · prathamone.com
+        </div>
     </div>
     """
 
