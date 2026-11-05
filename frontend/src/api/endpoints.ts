@@ -41,6 +41,8 @@ import type {
   ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics,
   StudentExitPayload, StudentReactivatePayload, StudentLifecycleHistoryResponse,
   WithdrawalReportItem, WithdrawalAnalyticsResponse,
+  SystemReleaseCurrent, SystemReleaseListItem, SystemReleaseDetail,
+  PendingChangesResponse, ReleaseAuditLogItem,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -1012,4 +1014,65 @@ export const communicationApi = {
       '/communication/diagnostics/test',
       data
     ),
+}
+
+// ─── Release & Change Management ─────────────────────────────────────────────
+
+export const releasesApi = {
+  getCurrent: () =>
+    apiClient.get<SystemReleaseCurrent>('/releases/current'),
+
+  list: (params?: { status?: string; environment?: string; page?: number; limit?: number }) =>
+    apiClient.get<{ total: number; page: number; limit: number; items: SystemReleaseListItem[] }>('/releases/', { params }),
+
+  getPendingChanges: () =>
+    apiClient.get<PendingChangesResponse>('/releases/pending-changes'),
+
+  get: (id: number | string) =>
+    apiClient.get<SystemReleaseDetail>(`/releases/${id}`),
+
+  generateDraft: (data: {
+    version?: string
+    title?: string
+    environment?: string
+    bump_type?: string
+    is_critical_security?: boolean
+    migration_plan?: string
+  }) => apiClient.post<{ message: string; release_id: number; version: string; build_number: string; status: string }>(
+    '/releases/generate-draft',
+    data
+  ),
+
+  update: (id: number | string, data: {
+    title?: string
+    release_notes_markdown?: string
+    release_notes_structured?: any
+    migration_plan?: string
+    is_critical_security?: boolean
+  }) => apiClient.put<{ message: string; release_id: number }>(`/releases/${id}`, data),
+
+  validate: (id: number | string) =>
+    apiClient.post<{ release_id: number; version: string; status: string; validation_status: string; checks: any }>(
+      `/releases/${id}/validate`
+    ),
+
+  promoteRc: (id: number | string) =>
+    apiClient.post<{ message: string; status: string; build_number: string }>(`/releases/${id}/promote-rc`),
+
+  approve: (id: number | string) =>
+    apiClient.post<{ message: string; status: string; approved_at: string }>(`/releases/${id}/approve`),
+
+  publish: (id: number | string) =>
+    apiClient.post<{ message: string; status: string; version: string; build_number: string; published_at: string }>(
+      `/releases/${id}/publish`
+    ),
+
+  rollback: (id: number | string, data: { reason: string; target_version?: string }) =>
+    apiClient.post<{ message: string; status: string; rollback_target_version: string; rollback_reason: string; rolled_back_at: string }>(
+      `/releases/${id}/rollback`,
+      data
+    ),
+
+  getAudit: (id: number | string) =>
+    apiClient.get<ReleaseAuditLogItem[]>(`/releases/${id}/audit`),
 }

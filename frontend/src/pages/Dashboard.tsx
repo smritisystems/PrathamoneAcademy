@@ -21,7 +21,8 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Users, TrendingUp, AlertCircle, DollarSign, ArrowRight,
   Calendar, BookOpen, Layers,
-} SlidersHorizontal, from 'lucide-react'
+  SlidersHorizontal,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,

@@ -43,6 +43,7 @@ from app.api.v1.endpoints import (
     sysadmin,
     settings,
     communication,
+    releases,
 )
 
 api_router = APIRouter()
@@ -90,4 +91,5 @@ api_router.include_router(staff.router, prefix="/staff", tags=["staff"])
 api_router.include_router(sysadmin.router, prefix="/sysadmin", tags=["sysadmin"])
 api_router.include_router(settings.router, prefix="/settings", tags=["settings"])
 api_router.include_router(communication.router, prefix="/communication", tags=["communication"])
+api_router.include_router(releases.router, prefix="/releases", tags=["releases"])
 

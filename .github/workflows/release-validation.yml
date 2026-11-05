@@ -1,0 +1,46 @@
+name: Enterprise Release & Pre-Flight Validation
+
+on:
+  push:
+    branches: [main, master, develop]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  validate-release:
+    name: Pre-Flight Release Validation & Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Verify Source Code Headers & Attribution
+        run: |
+          python scripts/manage_headers.py check
+
+      - name: Run Release Manager Validation
+        run: |
+          python scripts/release_manager.py validate
+
+      - name: Install Frontend Dependencies & Build
+        run: |
+          cd frontend
+          npm ci || npm install
+          npm run build

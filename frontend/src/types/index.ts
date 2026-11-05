@@ -2205,3 +2205,106 @@ export interface WithdrawalAnalyticsResponse {
     net_retained: number
   }[]
 }
+
+
+// ─── Release & Change Management ─────────────────────────────────────────────
+
+export interface SystemReleaseCurrent {
+  id: number | null
+  version: string
+  build_number: string
+  title: string
+  status: 'draft' | 'validating' | 'release_candidate' | 'approved' | 'published' | 'rolled_back'
+  environment: string
+  published_at: string | null
+  git_commit?: string | null
+  git_tag?: string | null
+  is_critical_security: boolean
+  release_notes_markdown: string
+}
+
+export interface SystemReleaseListItem {
+  id: number
+  version: string
+  build_number: string
+  title: string
+  status: 'draft' | 'validating' | 'release_candidate' | 'approved' | 'published' | 'rolled_back'
+  environment: string
+  git_branch?: string
+  git_tag?: string
+  validation_status: 'pending' | 'in_progress' | 'passed' | 'failed'
+  is_critical_security: boolean
+  created_at: string
+  approved_at?: string | null
+  published_at?: string | null
+  rolled_back_at?: string | null
+  rollback_reason?: string | null
+  rollback_target_version?: string | null
+  created_by_id: number
+  approved_by_id?: number | null
+  published_by_id?: number | null
+  change_summary: {
+    total_commits?: number
+    changed_files?: number
+    affected_modules?: string[]
+    migrations_count?: number
+  }
+  structured_notes_counts: Record<string, number>
+}
+
+export interface SystemReleaseDetail extends SystemReleaseListItem {
+  git_commit_start?: string | null
+  git_commit_end?: string | null
+  release_notes_markdown: string
+  release_notes_structured: {
+    added?: string[]
+    changed?: string[]
+    fixed?: string[]
+    security?: string[]
+    database?: string[]
+    deprecated?: string[]
+  }
+  validation_results: Record<string, { status: string; message: string; [key: string]: any }>
+  requires_db_backup: boolean
+  migration_plan?: string | null
+}
+
+export interface PendingChangesResponse {
+  last_published_version: string
+  last_commit?: string | null
+  recommended_bump: 'major' | 'minor' | 'patch'
+  next_version: string
+  total_commits: number
+  commits: {
+    hash: string
+    short_hash: string
+    author: string
+    date: string
+    subject: string
+    category: string
+    is_breaking: boolean
+  }[]
+  changed_files_count: number
+  changed_files: string[]
+  affected_modules: string[]
+  structured_notes: {
+    added: string[]
+    changed: string[]
+    fixed: string[]
+    security: string[]
+    database: string[]
+    deprecated: string[]
+  }
+  migrations: string[]
+}
+
+export interface ReleaseAuditLogItem {
+  id: number
+  action: string
+  user_id: number | null
+  user_name: string
+  severity: string
+  details?: string | null
+  new_data?: string | null
+  created_at: string
+}

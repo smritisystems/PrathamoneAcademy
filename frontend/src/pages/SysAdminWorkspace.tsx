@@ -11,17 +11,18 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Dedicated System Administrator governance workspace with protected security audits, universal records editor, and system controls.
  */
 
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Shield, Terminal, Lock, KeyRound, AlertTriangle, CheckCircle2,
   Database, Server, RefreshCw, Search, Filter, Edit3, Save,
-  Eye, FileText, Activity, Users, CreditCard, Layers, XCircle
+  Eye, FileText, Activity, Users, CreditCard, Layers, XCircle, GitBranch
 } from 'lucide-react'
 import { sysadminApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
@@ -273,6 +274,28 @@ export default function SysAdminWorkspace() {
                 {overview?.security_audit_summary?.critical_events ?? 0} Critical / Warning Logged
               </div>
             </div>
+          </div>
+
+          {/* Enterprise Release & Change Governance Quick Link */}
+          <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl p-5 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm border border-blue-800">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <GitBranch className="w-5 h-5 text-indigo-300" />
+                <h3 className="text-sm font-bold text-white">Enterprise Release & Change Governance</h3>
+                <span className="px-2 py-0.5 bg-blue-500/30 text-blue-200 border border-blue-400/40 rounded text-[11px] font-mono">
+                  v6.99.1
+                </span>
+              </div>
+              <p className="text-xs text-blue-100 max-w-xl">
+                Track pending repository changes, execute automated pre-flight quality gates, manage semantic versioning, and approve production deployments.
+              </p>
+            </div>
+            <Link
+              to="/releases"
+              className="px-4 py-2 bg-white hover:bg-blue-50 text-blue-900 font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 shrink-0"
+            >
+              Open Releases Workspace ➔
+            </Link>
           </div>
 
           {/* Roles Breakdown */}

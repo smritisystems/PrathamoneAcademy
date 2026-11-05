@@ -17,7 +17,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { institutionsApi } from '../api/endpoints'
@@ -78,6 +78,8 @@ export function resolvePageTitle(pathname: string, search: string): string {
     '/forms': 'Print Forms & KYC',
     '/install': 'Install App (PWA)',
     '/users': 'Users & Roles',
+    '/releases': 'Releases & Changes',
+    '/admin/releases': 'Releases & Changes',
     '/login': 'Sign In',
   }
 
@@ -255,9 +257,13 @@ export default function Footer() {
               </span>
             </span>
             <span className="text-slate-300 select-none">·</span>
-            <span className="font-semibold text-slate-800 font-mono text-[10px]" title="System Version">
+            <Link
+              to="/releases"
+              className="font-semibold text-slate-800 hover:text-blue-600 hover:underline font-mono text-[10px] transition-colors"
+              title="System Version & Release Management"
+            >
               {APP_CONFIG.versionDisplay}
-            </span>
+            </Link>
           </div>
         </div>
       </div>

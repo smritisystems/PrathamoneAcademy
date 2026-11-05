@@ -43,6 +43,7 @@ from app.models.staff import (
 from app.models.settings import (
     InstitutionSetting, LookupItem, SettingAuditLog
 )
+from app.models.release import SystemRelease
 from app.models.communication import (
     MessageTemplate, CommunicationLog, SharedDocumentToken
 )
@@ -96,6 +97,7 @@ __all__ = [
     "MessageTemplate",
     "CommunicationLog",
     "SharedDocumentToken",
+    "SystemRelease",
 ]
 
 
