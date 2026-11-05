@@ -64,3 +64,4 @@ def downgrade() -> None:
         existing_type=sa.Text(),
         existing_nullable=True,
     )
+

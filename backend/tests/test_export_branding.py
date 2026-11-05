@@ -62,3 +62,4 @@ def test_create_csv_content_branding_footer():
     assert EXPECTED_BRANDING in csv_text
     lines = [l.strip() for l in csv_text.strip().splitlines() if l.strip()]
     assert EXPECTED_BRANDING in lines[-1]
+
