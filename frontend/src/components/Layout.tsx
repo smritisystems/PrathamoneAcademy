@@ -56,9 +56,13 @@ export default function Layout() {
 
   const { isInstalled } = usePWA()
 
+  const token = useAuthStore((s) => s.token)
   const { data: institutions = [] } = useQuery({
     queryKey: ['institutions'],
     queryFn: () => institutionsApi.list().then((r) => r.data),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
   })
 
   // Validate or auto-select institution if none selected or if stale ID

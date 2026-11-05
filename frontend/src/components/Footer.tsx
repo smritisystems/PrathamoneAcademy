@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Slim, compact, full-width application footer displaying tenant branch, current route, product edition, and live system metrics.
  */
@@ -139,14 +139,16 @@ function useLiveConnectionStatus(): boolean {
 
 export default function Footer() {
   const location = useLocation()
-  const { user, selectedInstitutionId } = useAuthStore()
+  const { user, selectedInstitutionId, token } = useAuthStore()
   const isOnline = useLiveConnectionStatus()
 
   // Cached institution listing for tenant & branch metadata
   const { data: institutions = [] } = useQuery({
     queryKey: ['institutions'],
     queryFn: () => institutionsApi.list().then((r) => r.data),
+    enabled: !!token,
     staleTime: 1000 * 60 * 5,
+    retry: false,
   })
 
   const activeInstitution = useMemo(() => {

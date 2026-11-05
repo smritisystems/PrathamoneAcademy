@@ -175,19 +175,23 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
   }
 }
 
+export const FALLBACK_BRANDING = resolveBranding(undefined)
+
 /**
  * React hook accessing reactive, institution-aware branding across UI components.
  * Safely operates with or without an ambient QueryClientProvider in the tree.
  */
 export function useBranding(): ResolvedBranding {
-  const { selectedInstitutionId } = useAuthStore()
+  const { selectedInstitutionId, token } = useAuthStore()
   const activeClient = useContext(QueryClientContext)
 
   const { data: institutions = [] } = useQuery(
     {
       queryKey: ['institutions'],
       queryFn: () => institutionsApi.list().then((r) => r.data),
+      enabled: !!token,
       staleTime: 1000 * 60 * 5,
+      retry: false,
     },
     activeClient ?? fallbackQueryClient
   )

@@ -274,3 +274,31 @@ async def test_staff_creation_temporary_password_and_role_fallback(
     assert user_row.role_id is not None, "Role ID must NOT be NULL"
     assert user_row.role == "staff", "Role should safely fall back to 'staff'"
 
+
+
+@pytest.mark.asyncio
+async def test_institutions_endpoint_authentication_and_unauthorized_rejection(
+    client: AsyncClient,
+    auth_headers_a: dict,
+    institution_a: Institution,
+):
+    """
+    Regression test ensuring:
+    1. Valid authenticated request with Bearer token succeeds with HTTP 200.
+    2. Missing credentials returns HTTP 401 Unauthorized.
+    3. Invalid / expired token returns HTTP 401 Unauthorized.
+    """
+    # 1. Valid authentication -> HTTP 200
+    res_auth = await client.get("/api/v1/institutions/", headers=auth_headers_a)
+    assert res_auth.status_code == 200
+    data = res_auth.json()
+    assert isinstance(data, list)
+    assert any(inst["id"] == institution_a.id for inst in data)
+
+    # 2. Missing credentials -> HTTP 401
+    res_no_auth = await client.get("/api/v1/institutions/")
+    assert res_no_auth.status_code == 401
+
+    # 3. Invalid credentials -> HTTP 401
+    res_bad_auth = await client.get("/api/v1/institutions/", headers={"Authorization": "Bearer invalid.expired.token"})
+    assert res_bad_auth.status_code == 401

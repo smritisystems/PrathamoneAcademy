@@ -16,7 +16,7 @@
  * @description Premium user authentication page featuring abstract educational wave aesthetics, secure credential validation, and role redirection.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -37,11 +37,21 @@ type FormData = z.infer<typeof schema>
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { login } = useAuthStore()
+  const { login, token, user } = useAuthStore()
   const branding = useBranding()
   useDocumentTitle('Sign In')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (token && user) {
+      if (user.role === 'student') {
+        navigate('/student-portal', { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
+    }
+  }, [token, user, navigate])
 
   const {
     register,
