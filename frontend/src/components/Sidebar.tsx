@@ -170,8 +170,23 @@ export default function Sidebar() {
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="bg-gradient-to-tr from-amber-400 to-indigo-500 p-2 rounded-xl shadow-md flex-shrink-0">
-                <GraduationCap className="w-5 h-5 text-white" />
+              <div
+                style={{
+                  background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
+                }}
+                className="w-9 h-9 rounded-xl p-0.5 shadow-md flex-shrink-0 flex items-center justify-center overflow-hidden"
+              >
+                {branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? (
+                  <img
+                    src={branding.assets.logoUrl}
+                    alt={branding.academyName}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-900/60 backdrop-blur-xs rounded-lg flex items-center justify-center font-bold text-xs text-white">
+                    {branding.monogram}
+                  </div>
+                )}
               </div>
               {!isCollapsed && (
                 <div className="min-w-0">
@@ -354,10 +369,23 @@ export default function Sidebar() {
           }`}
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-blue-500 to-amber-400 p-0.5 shadow-lg flex-shrink-0 flex items-center justify-center">
-              <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-indigo-400" />
-              </div>
+            <div
+              style={{
+                background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
+              }}
+              className="w-10 h-10 rounded-xl p-0.5 shadow-lg flex-shrink-0 flex items-center justify-center overflow-hidden"
+            >
+              {branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? (
+                <img
+                  src={branding.assets.logoUrl}
+                  alt={branding.academyName}
+                  className="w-full h-full object-cover rounded-[10px]"
+                />
+              ) : (
+                <div className="w-full h-full bg-slate-900/60 backdrop-blur-xs rounded-[10px] flex items-center justify-center font-black text-xs text-white">
+                  {branding.monogram}
+                </div>
+              )}
             </div>
             {!isCollapsed && (
               <div className="min-w-0">

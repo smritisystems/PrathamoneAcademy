@@ -17,6 +17,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Building2, Palette, GraduationCap, UserCheck, Users, CreditCard,
   CalendarCheck, Award, MessageSquare, Printer, Sliders, SlidersHorizontal,
@@ -63,6 +64,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
 export default function Settings() {
   const { user } = useAuthStore()
   const branding = useBranding()
+  const queryClient = useQueryClient()
   const isSysAdmin = isUserSysAdmin(user)
 
   // Navigation & Category Search
@@ -210,15 +212,14 @@ export default function Settings() {
 
   // Discard Changes
   const handleDiscard = () => {
-    if (activeCategory === 'profile') {
+    if (activeCategory === 'profile' || activeCategory === 'branding') {
       if (originalProfile) setProfile(originalProfile)
-    } else {
-      if (originalSettings[activeCategory]) {
-        setAllSettings((prev) => ({
-          ...prev,
-          [activeCategory]: { ...originalSettings[activeCategory] },
-        }))
-      }
+    }
+    if (originalSettings[activeCategory]) {
+      setAllSettings((prev) => ({
+        ...prev,
+        [activeCategory]: { ...originalSettings[activeCategory] },
+      }))
     }
     showNotification('success', 'Changes discarded. Restored saved configuration.')
   }
@@ -227,11 +228,26 @@ export default function Settings() {
   const handleSave = async () => {
     try {
       setSaving(true)
-      if (activeCategory === 'profile') {
+      if (activeCategory === 'profile' || activeCategory === 'branding') {
         const res = await settingsApi.updateProfile(profile)
         setProfile(res.data.profile)
         setOriginalProfile(res.data.profile)
-        showNotification('success', 'Institute profile and branding settings saved successfully.')
+        if (activeCategory === 'branding') {
+          const categoryData = allSettings[activeCategory] || {}
+          await settingsApi.updateBatch(
+            activeCategory,
+            categoryData,
+            `Updated via Institute Settings ${currentCategoryMeta.title} workspace`
+          )
+          setOriginalSettings((prev) => ({
+            ...prev,
+            [activeCategory]: { ...categoryData },
+          }))
+        }
+        await queryClient.invalidateQueries({ queryKey: ['institutions'] })
+        await queryClient.invalidateQueries({ queryKey: ['public_branding'] })
+        await queryClient.invalidateQueries({ queryKey: ['institute_profile'] })
+        showNotification('success', 'Institute profile and branding settings saved and applied across the application.')
       } else {
         const categoryData = allSettings[activeCategory] || {}
         await settingsApi.updateBatch(
@@ -257,29 +273,45 @@ export default function Settings() {
     }
   }
 
-  // Handle Logo Upload Simulation
+  // Handle Logo Upload with Validation
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        handleProfileChange('logo_url', reader.result as string)
-        showNotification('success', `Logo "${file.name}" uploaded for preview. Click Save Changes to commit.`)
-      }
-      reader.readAsDataURL(file)
+    if (!file) return
+    const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      showNotification('error', 'Unsupported file type. Please upload a PNG, JPEG, WEBP, or SVG image.')
+      return
     }
+    if (file.size > 2 * 1024 * 1024) {
+      showNotification('error', 'Logo image exceeds 2MB limit. Please upload an optimized image.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      handleProfileChange('logo_url', reader.result as string)
+      showNotification('success', `Logo "${file.name}" uploaded for preview. Click Save Changes to commit.`)
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleFaviconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        handleProfileChange('favicon_url', reader.result as string)
-        showNotification('success', `Favicon "${file.name}" uploaded for preview. Click Save Changes to commit.`)
-      }
-      reader.readAsDataURL(file)
+    if (!file) return
+    const validTypes = ['image/png', 'image/x-icon', 'image/vnd.microsoft.icon', 'image/svg+xml']
+    if (!validTypes.includes(file.type) && !file.name.endsWith('.ico')) {
+      showNotification('error', 'Unsupported favicon format. Please upload an ICO, PNG, or SVG.')
+      return
     }
+    if (file.size > 500 * 1024) {
+      showNotification('error', 'Favicon exceeds 500KB limit. Please upload a 32x32 px icon.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      handleProfileChange('favicon_url', reader.result as string)
+      showNotification('success', `Favicon "${file.name}" uploaded for preview. Click Save Changes to commit.`)
+    }
+    reader.readAsDataURL(file)
   }
 
   // Lookups Management
@@ -1259,37 +1291,150 @@ export default function Settings() {
                 {/* ─────────────────────────────────────────────────────────── */}
                 {activeCategory === 'branding' && (
                   <div className="space-y-6 max-w-4xl">
+                    {/* Live Branding Preview Card */}
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Palette className="w-4 h-4 text-blue-600" />
-                        <span>Theme Presets & Typography</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                        {[
-                          { name: 'Royal Blue & Indigo', primary: '#1E40AF', secondary: '#3B82F6', accent: '#8B5CF6' },
-                          { name: 'Emerald Forest', primary: '#065F46', secondary: '#10B981', accent: '#059669' },
-                          { name: 'Midnight Slate', primary: '#0F172A', secondary: '#38BDF8', accent: '#6366F1' },
-                          { name: 'Imperial Crimson', primary: '#881337', secondary: '#F43F5E', accent: '#FB7185' },
-                        ].map((preset) => (
-                          <button
-                            key={preset.name}
-                            type="button"
-                            onClick={() => {
-                              handleProfileChange('primary_color', preset.primary)
-                              handleProfileChange('secondary_color', preset.secondary)
-                              handleProfileChange('accent_color', preset.accent)
-                              showNotification('success', `Preset "${preset.name}" applied. Click Save Changes to commit.`)
-                            }}
-                            className="p-3 border border-gray-200 rounded-xl text-left hover:border-blue-500 hover:shadow-xs transition-all"
-                          >
-                            <div className="flex items-center gap-1.5 mb-2">
-                              <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.primary }} />
-                              <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
-                              <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.accent }} />
+                      <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                        <Eye className="w-4 h-4 text-blue-600" />
+                        <div>
+                          <h3 className="text-sm font-bold text-gray-900">Branding Preview</h3>
+                          <p className="text-[11px] text-gray-500">
+                            How your institute will appear in the application
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Dynamic Live Banner Card */}
+                      <div
+                        style={{
+                          background: `linear-gradient(135deg, ${profile.primary_color || '#1E40AF'} 0%, ${profile.secondary_color || '#3B82F6'} 100%)`,
+                        }}
+                        className="rounded-xl p-4 text-white shadow-md flex items-center gap-3.5 relative overflow-hidden"
+                      >
+                        <div
+                          style={{ backgroundColor: profile.accent_color || '#8B5CF6' }}
+                          className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
+                        />
+                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-bold text-lg text-white border border-white/30 shadow-xs flex-shrink-0">
+                          {profile.logo_url && profile.logo_url !== '/logo.svg' ? (
+                            <img
+                              src={profile.logo_url}
+                              alt="Logo preview"
+                              className="w-full h-full object-cover rounded-xl"
+                            />
+                          ) : (
+                            profile.short_name || 'PA'
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1 relative z-10">
+                          <h4 className="font-bold text-sm tracking-tight truncate">
+                            {profile.name || 'PrathamOne Academy'}
+                          </h4>
+                          <p className="text-xs text-blue-100 font-medium truncate mt-0.5">
+                            {profile.tagline || 'Learn • Practice • Achieve'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Presets and Custom Colors Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Theme Presets */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <Palette className="w-4 h-4 text-blue-600" />
+                          <span>Theme Presets</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {[
+                            { name: 'Royal Blue & Indigo', primary: '#1E40AF', secondary: '#3B82F6', accent: '#8B5CF6' },
+                            { name: 'Emerald Forest', primary: '#065F46', secondary: '#10B981', accent: '#059669' },
+                            { name: 'Midnight Slate', primary: '#0F172A', secondary: '#38BDF8', accent: '#6366F1' },
+                            { name: 'Imperial Crimson', primary: '#881337', secondary: '#F43F5E', accent: '#FB7185' },
+                          ].map((preset) => (
+                            <button
+                              key={preset.name}
+                              type="button"
+                              onClick={() => {
+                                handleProfileChange('primary_color', preset.primary)
+                                handleProfileChange('secondary_color', preset.secondary)
+                                handleProfileChange('accent_color', preset.accent)
+                                showNotification('success', `Preset "${preset.name}" applied. Click Save Changes to commit.`)
+                              }}
+                              className="p-3 border border-gray-200 rounded-xl text-left hover:border-blue-500 hover:shadow-xs transition-all"
+                            >
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.primary }} />
+                                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
+                                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.accent }} />
+                              </div>
+                              <div className="text-xs font-bold text-gray-900">{preset.name}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Custom Palette Tweaks */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <Sliders className="w-4 h-4 text-blue-600" />
+                          <span>Custom Color Controls</span>
+                        </h3>
+                        <div className="space-y-3">
+                          {/* Primary */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-700">Primary Color</span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={profile.primary_color || '#1E40AF'}
+                                onChange={(e) => handleProfileChange('primary_color', e.target.value)}
+                                className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
+                              />
+                              <input
+                                type="text"
+                                value={profile.primary_color || '#1E40AF'}
+                                onChange={(e) => handleProfileChange('primary_color', e.target.value)}
+                                className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
+                              />
                             </div>
-                            <div className="text-xs font-bold text-gray-900">{preset.name}</div>
-                          </button>
-                        ))}
+                          </div>
+                          {/* Secondary */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-700">Secondary Color</span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={profile.secondary_color || '#3B82F6'}
+                                onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
+                                className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
+                              />
+                              <input
+                                type="text"
+                                value={profile.secondary_color || '#3B82F6'}
+                                onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
+                                className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
+                              />
+                            </div>
+                          </div>
+                          {/* Accent */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-700">Accent Color</span>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={profile.accent_color || '#8B5CF6'}
+                                onChange={(e) => handleProfileChange('accent_color', e.target.value)}
+                                className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
+                              />
+                              <input
+                                type="text"
+                                value={profile.accent_color || '#8B5CF6'}
+                                onChange={(e) => handleProfileChange('accent_color', e.target.value)}
+                                className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

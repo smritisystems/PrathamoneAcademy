@@ -86,6 +86,7 @@ export const dashboardApi = {
 
 export const institutionsApi = {
   list: () => apiClient.get<Institution[]>('/institutions/'),
+  getPublicBranding: () => apiClient.get<Institution>('/institutions/public/branding'),
   get: (id: number | string) => apiClient.get<Institution>(`/institutions/${id}`),
   create: (data: Partial<Institution>) => apiClient.post<Institution>('/institutions/', data),
   update: (id: number | string, data: Partial<Institution>) =>

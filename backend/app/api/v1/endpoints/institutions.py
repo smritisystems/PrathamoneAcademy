@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -85,12 +85,20 @@ async def list_institutions(
             "id": i.id,
             "name": i.name,
             "code": i.code,
+            "short_name": i.short_name or "PA",
+            "tagline": i.tagline or "Learn • Practice • Achieve",
             "city": i.city,
             "state": i.state,
+            "pincode": i.pincode,
             "phone": i.phone,
             "email": i.email,
             "website": i.website,
             "address": i.address,
+            "logo_url": i.logo_url or "/logo.svg",
+            "favicon_url": i.favicon_url or "/favicon.svg",
+            "primary_color": i.primary_color or "#1E40AF",
+            "secondary_color": i.secondary_color or "#3B82F6",
+            "accent_color": i.accent_color or "#8B5CF6",
         }
         for i in institutions
     ]
@@ -113,6 +121,40 @@ async def create_institution(
     }
 
 
+@router.get("/public/branding")
+async def get_public_institution_branding(
+    institution_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    target_id = institution_id or 1
+    res = await db.execute(select(Institution).where(Institution.id == target_id))
+    inst = res.scalar_one_or_none()
+    if not inst:
+        res_any = await db.execute(select(Institution).limit(1))
+        inst = res_any.scalar_one_or_none()
+    if not inst:
+        raise HTTPException(status_code=404, detail="Institution not found")
+    return {
+        "id": inst.id,
+        "name": inst.name,
+        "code": inst.code,
+        "short_name": inst.short_name or "PA",
+        "tagline": inst.tagline or "Learn • Practice • Achieve",
+        "logo_url": inst.logo_url or "/logo.svg",
+        "favicon_url": inst.favicon_url or "/favicon.svg",
+        "primary_color": inst.primary_color or "#1E40AF",
+        "secondary_color": inst.secondary_color or "#3B82F6",
+        "accent_color": inst.accent_color or "#8B5CF6",
+        "phone": inst.phone,
+        "email": inst.email,
+        "website": inst.website,
+        "address": inst.address,
+        "city": inst.city,
+        "state": inst.state,
+        "pincode": inst.pincode,
+    }
+
+
 @router.get("/{institution_id}")
 async def get_institution(
     institution_id: int,
@@ -129,6 +171,8 @@ async def get_institution(
         "id": institution.id,
         "name": institution.name,
         "code": institution.code,
+        "short_name": institution.short_name or "PA",
+        "tagline": institution.tagline or "Learn • Practice • Achieve",
         "address": institution.address,
         "city": institution.city,
         "state": institution.state,
@@ -136,6 +180,11 @@ async def get_institution(
         "phone": institution.phone,
         "email": institution.email,
         "website": institution.website,
+        "logo_url": institution.logo_url or "/logo.svg",
+        "favicon_url": institution.favicon_url or "/favicon.svg",
+        "primary_color": institution.primary_color or "#1E40AF",
+        "secondary_color": institution.secondary_color or "#3B82F6",
+        "accent_color": institution.accent_color or "#8B5CF6",
     }
 
 

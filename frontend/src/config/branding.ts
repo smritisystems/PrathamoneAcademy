@@ -182,10 +182,12 @@ export interface ResolvedBranding {
 export function resolveBranding(activeInstitution?: Partial<Institution> | null): ResolvedBranding {
   const academyName = activeInstitution?.name?.trim() || BRANDING_CONFIG.defaultAcademyName
   const academyCode = activeInstitution?.code?.trim() || BRANDING_CONFIG.defaultAcademyCode
+  const tagline = activeInstitution?.tagline?.trim() || BRANDING_CONFIG.tagline
+  const shortName = activeInstitution?.short_name?.trim()
 
-  // Derive monogram (first letter of first two words, or first two letters)
-  let monogram = BRANDING_CONFIG.monogram
-  if (academyName) {
+  // Derive monogram: prefer explicit short_name if provided, otherwise compute from academyName
+  let monogram = shortName || BRANDING_CONFIG.monogram
+  if (!shortName && academyName) {
     const parts = academyName.split(/\s+/).filter(Boolean)
     if (parts.length >= 2) {
       monogram = (parts[0][0] + parts[1][0]).toUpperCase()
@@ -193,6 +195,10 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
       monogram = parts[0].slice(0, 2).toUpperCase()
     }
   }
+
+  const primaryColor = activeInstitution?.primary_color || BRANDING_CONFIG.colors.primary
+  const secondaryColor = activeInstitution?.secondary_color || BRANDING_CONFIG.colors.secondary
+  const accentColor = activeInstitution?.accent_color || BRANDING_CONFIG.colors.accent
 
   const address = activeInstitution?.address
     ? `${activeInstitution.address}${activeInstitution.city ? `, ${activeInstitution.city}` : ''}${
@@ -203,7 +209,7 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
   return {
     appName: BRANDING_CONFIG.appName,
     productName: BRANDING_CONFIG.productName,
-    shortName: BRANDING_CONFIG.shortName,
+    shortName: shortName || BRANDING_CONFIG.shortName,
     suiteName: BRANDING_CONFIG.suiteName,
     edition: BRANDING_CONFIG.edition,
     editionFull: BRANDING_CONFIG.editionFull,
@@ -211,7 +217,7 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     academyCode,
     branchName: BRANDING_CONFIG.defaultBranchName,
     branchCode: BRANDING_CONFIG.defaultBranchCode,
-    tagline: BRANDING_CONFIG.tagline,
+    tagline,
     motto: BRANDING_CONFIG.motto,
     monogram,
     version: BRANDING_CONFIG.version,
@@ -224,10 +230,17 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     parentOrganization: BRANDING_CONFIG.parentOrganization,
     products: BRANDING_CONFIG.products,
     salesSupport: BRANDING_CONFIG.salesSupport,
-    colors: BRANDING_CONFIG.colors,
+    colors: {
+      ...BRANDING_CONFIG.colors,
+      primary: primaryColor,
+      primaryHover: secondaryColor,
+      secondary: secondaryColor,
+      accent: accentColor,
+    },
     assets: {
       ...BRANDING_CONFIG.assets,
-      logoUrl: (activeInstitution as any)?.logo_url || BRANDING_CONFIG.assets.logoUrl,
+      logoUrl: activeInstitution?.logo_url || BRANDING_CONFIG.assets.logoUrl,
+      faviconUrl: activeInstitution?.favicon_url || BRANDING_CONFIG.assets.faviconUrl,
     },
     support: {
       ...BRANDING_CONFIG.support,
@@ -245,6 +258,8 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
 
 export const FALLBACK_BRANDING = resolveBranding(undefined)
 
+export const BRANDING_STORAGE_KEY = 'pratham_active_branding'
+
 /**
  * React hook accessing reactive, institution-aware branding across UI components.
  * Safely operates with or without an ambient QueryClientProvider in the tree.
@@ -253,6 +268,7 @@ export function useBranding(): ResolvedBranding {
   const { selectedInstitutionId, token } = useAuthStore()
   const activeClient = useContext(QueryClientContext)
 
+  // 1. Authenticated query for tenant institutions
   const { data: institutions = [] } = useQuery(
     {
       queryKey: ['institutions'],
@@ -264,9 +280,59 @@ export function useBranding(): ResolvedBranding {
     activeClient ?? fallbackQueryClient
   )
 
-  const activeInstitution = useMemo(() => {
-    return institutions.find((i) => i.id === selectedInstitutionId) ?? institutions[0]
-  }, [institutions, selectedInstitutionId])
+  // 2. Unauthenticated public branding query (for login/guest view)
+  const { data: publicInst } = useQuery(
+    {
+      queryKey: ['public_branding'],
+      queryFn: () => institutionsApi.getPublicBranding().then((r) => r.data).catch(() => null),
+      enabled: !token && !(typeof window !== 'undefined' && (window as any).__VITEST__ || (import.meta as any).env?.MODE === 'test'),
+      staleTime: 1000 * 60 * 10,
+      retry: false,
+    },
+    activeClient ?? fallbackQueryClient
+  )
 
-  return useMemo(() => resolveBranding(activeInstitution), [activeInstitution])
+  const activeInstitution = useMemo(() => {
+    if (token) {
+      return institutions.find((i) => i.id === selectedInstitutionId) ?? institutions[0]
+    }
+    return publicInst || null
+  }, [institutions, selectedInstitutionId, token, publicInst])
+
+  const resolved = useMemo(() => {
+    const res = resolveBranding(activeInstitution)
+    // Synchronize to localStorage for instantaneous load on reload
+    if (typeof window !== 'undefined' && activeInstitution) {
+      try {
+        localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(res))
+      } catch {}
+    }
+    return res
+  }, [activeInstitution])
+
+  // Reactively apply dynamic theme CSS variables & Favicon link to DOM
+  useMemo(() => {
+    if (typeof document === 'undefined') return
+    try {
+      const root = document.documentElement
+      root.style.setProperty('--color-primary', resolved.colors.primary)
+      root.style.setProperty('--color-secondary', resolved.colors.secondary)
+      root.style.setProperty('--color-accent', resolved.colors.accent)
+
+      // Favicon link update
+      if (resolved.assets.faviconUrl) {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']")
+        if (!link) {
+          link = document.createElement('link')
+          link.rel = 'icon'
+          document.getElementsByTagName('head')[0].appendChild(link)
+        }
+        if (link.href !== resolved.assets.faviconUrl) {
+          link.href = resolved.assets.faviconUrl
+        }
+      }
+    } catch {}
+  }, [resolved.colors.primary, resolved.colors.secondary, resolved.colors.accent, resolved.assets.faviconUrl])
+
+  return resolved
 }

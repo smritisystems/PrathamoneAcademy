@@ -32,6 +32,8 @@ export interface Institution {
   id: number
   name: string
   code: string
+  short_name?: string
+  tagline?: string
   address?: string
   city?: string
   state?: string
@@ -39,6 +41,11 @@ export interface Institution {
   phone?: string
   email?: string
   website?: string
+  logo_url?: string
+  favicon_url?: string
+  primary_color?: string
+  secondary_color?: string
+  accent_color?: string
 }
 
 export interface AcademicYear {
