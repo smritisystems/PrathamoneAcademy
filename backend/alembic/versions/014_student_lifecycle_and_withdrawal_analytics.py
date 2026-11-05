@@ -127,3 +127,4 @@ def downgrade() -> None:
     op.drop_column("students", "exit_notes")
     op.drop_column("students", "exit_reason")
     op.drop_column("students", "exit_date")
+
