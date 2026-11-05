@@ -9,15 +9,15 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
- * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, and versioning.
+ * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, versioning, and AITDL parent branding.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, act } from '@testing-library/react'
+import { render, screen, act, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Footer, { resolvePageTitle } from '../components/Footer'
@@ -119,6 +119,53 @@ describe('Application Footer Specifications', () => {
     expect(screen.getByText('v6.99.1')).toBeDefined()
   })
 
+  it('renders AITDL parent organization and products section in the DOM', () => {
+    renderFooter()
+
+    const orgSection = screen.getByTestId('organization-branding')
+    expect(orgSection).toBeDefined()
+
+    // Parent organization
+    expect(within(orgSection).getByText(/AITDL — AI Technology & Development Lab/i)).toBeDefined()
+    const aitdlLink = within(orgSection).getByRole('link', { name: /aitdl\.com/i })
+    expect(aitdlLink.getAttribute('href')).toBe('https://aitdl.com')
+
+    // 3 Products inside organization branding
+    const prathamLink = within(orgSection).getByRole('link', { name: /^PrathamOne/i })
+    expect(prathamLink.getAttribute('href')).toBe('https://prathamone.com')
+
+    const smritiBooksLink = within(orgSection).getByRole('link', { name: /^SmritiBooks/i })
+    expect(smritiBooksLink.getAttribute('href')).toBe('https://smritibooks.com')
+
+    const smritiSysLink = within(orgSection).getByRole('link', { name: /^SmritiSys/i })
+    expect(smritiSysLink.getAttribute('href')).toBe('https://smritisys.com')
+
+    // Sales & Support phone numbers
+    const phone1 = within(orgSection).getByRole('link', { name: '9323 023 007' })
+    expect(phone1.getAttribute('href')).toBe('tel:9323023007')
+
+    const phone2 = within(orgSection).getByRole('link', { name: '9324 117 007' })
+    expect(phone2.getAttribute('href')).toBe('tel:9324117007')
+  })
+
+  it('opens and closes the AITDL Ecosystem modal dialog on user interaction', () => {
+    renderFooter()
+
+    // Trigger button
+    const ecosystemBtn = screen.getByRole('button', { name: /AITDL Ecosystem/i })
+    expect(ecosystemBtn).toBeDefined()
+
+    // Open modal
+    fireEvent.click(ecosystemBtn)
+    expect(screen.getByRole('dialog')).toBeDefined()
+    expect(screen.getByText(/AITDL Parent Organization & Product Ecosystem/i)).toBeDefined()
+
+    // Close modal
+    const closeBtn = screen.getByRole('button', { name: /Close dialog/i })
+    fireEvent.click(closeBtn)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
   it('updates live connection indicator when offline and online events trigger', () => {
     renderFooter()
 
@@ -165,4 +212,3 @@ describe('Application Footer Specifications', () => {
     expect(footer?.className).not.toContain('overflow-x-auto')
   })
 })
-

@@ -9,11 +9,11 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     1.1.0
  * @created     2026-11-05
  * @updated     2026-11-05
  *
- * @description Unit tests verifying browser console startup banner rendering, execution gating, and security privacy controls.
+ * @description Unit tests verifying browser console startup banner rendering with AITDL parent org, product hierarchy, and security controls.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -60,6 +60,37 @@ describe('Browser Console Startup Branding Banner', () => {
     expect(bannerText).toContain(BRANDING_CONFIG.support.email)
   })
 
+  it('displays AITDL parent organization and its product ecosystem', () => {
+    printConsoleBrandingBanner()
+    const logArgs = consoleSpy.mock.calls[0]
+    const bannerText = logArgs[0] as string
+
+    // Parent organization
+    expect(bannerText).toContain('Parent Org:')
+    expect(bannerText).toContain('AITDL — AI Technology & Development Lab')
+    expect(bannerText).toContain('https://aitdl.com')
+
+    // Products hierarchy
+    expect(bannerText).toContain('1. PrathamOne — Education, Coaching Institute Management, ERP & AI Solutions (https://prathamone.com)')
+    expect(bannerText).toContain('2. SmritiBooks — Accounting & Bookkeeping Software (https://smritibooks.com)')
+    expect(bannerText).toContain('3. SmritiSys — E-commerce, Inventory & Warehouse Management (https://smritisys.com)')
+
+    // Sales & Support phone numbers
+    expect(bannerText).toContain('Sales & Support:')
+    expect(bannerText).toContain('9323 023 007')
+    expect(bannerText).toContain('9324 117 007')
+  })
+
+  it('preserves enterprise security and DPDP compliance notices', () => {
+    printConsoleBrandingBanner()
+    const logArgs = consoleSpy.mock.calls[0]
+    const bannerText = logArgs[0] as string
+
+    expect(bannerText).toContain('Enterprise-Grade Security')
+    expect(bannerText).toContain('DPDP Act 2023 Compliant')
+    expect(bannerText).toContain('Role-Based Access Control')
+  })
+
   it('suppresses duplicate startup banner logs on subsequent invocations', () => {
     const firstCall = printConsoleBrandingBanner()
     expect(firstCall).toBe(true)
@@ -98,4 +129,3 @@ describe('Browser Console Startup Branding Banner', () => {
     expect(printConsoleBrandingBanner()).toBe(true)
   })
 })
-

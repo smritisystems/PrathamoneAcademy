@@ -9,7 +9,7 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.1.0
+ * @version     1.2.0
  * @created     2026-11-04
  * @updated     2026-11-05
  *
@@ -29,6 +29,9 @@ export const APP_CONFIG = {
   defaultTenantCode: BRANDING_CONFIG.defaultAcademyCode,
   defaultBranchName: BRANDING_CONFIG.defaultBranchName,
   defaultBranchCode: BRANDING_CONFIG.defaultBranchCode,
+  parentOrganization: BRANDING_CONFIG.parentOrganization,
+  products: BRANDING_CONFIG.products,
+  salesSupport: BRANDING_CONFIG.salesSupport,
 } as const
 
 export { BRANDING_CONFIG }

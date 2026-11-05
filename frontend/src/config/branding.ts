@@ -28,6 +28,28 @@ const fallbackQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 })
 
+export interface OrganizationProduct {
+  id: string
+  name: string
+  description: string
+  website: string
+  websiteDisplay: string
+  isCurrent?: boolean
+}
+
+export interface ParentOrganization {
+  name: string
+  shortName: string
+  website: string
+  websiteDisplay: string
+}
+
+export interface SalesSupportInfo {
+  phones: string[]
+  displayPhones: string
+  email: string
+}
+
 /**
  * Static baseline branding tokens for PrathamOne Academy suite
  */
@@ -52,6 +74,43 @@ export const BRANDING_CONFIG = {
   copyright: 'Copyright © 2026 AITDL (AI Technology & Development Lab). All rights reserved.',
   organization: 'AITDL (AI Technology & Development Lab)',
   clientOrganization: 'Prashant Academy Coaching Institute',
+  parentOrganization: {
+    name: 'AITDL — AI Technology & Development Lab',
+    shortName: 'AITDL',
+    website: 'https://aitdl.com',
+    websiteDisplay: 'aitdl.com',
+  } as ParentOrganization,
+  products: [
+    {
+      id: 'prathamone',
+      name: 'PrathamOne',
+      description: 'Education, Coaching Institute Management, ERP & AI Solutions',
+      website: 'https://prathamone.com',
+      websiteDisplay: 'prathamone.com',
+      isCurrent: true,
+    },
+    {
+      id: 'smritibooks',
+      name: 'SmritiBooks',
+      description: 'Accounting & Bookkeeping Software',
+      website: 'https://smritibooks.com',
+      websiteDisplay: 'smritibooks.com',
+      isCurrent: false,
+    },
+    {
+      id: 'smritisys',
+      name: 'SmritiSys',
+      description: 'E-commerce, Inventory & Warehouse Management',
+      website: 'https://smritisys.com',
+      websiteDisplay: 'smritisys.com',
+      isCurrent: false,
+    },
+  ] as OrganizationProduct[],
+  salesSupport: {
+    phones: ['9323 023 007', '9324 117 007'],
+    displayPhones: '9323 023 007 | 9324 117 007',
+    email: 'support@prathamone.com',
+  } as SalesSupportInfo,
   colors: {
     primary: '#1e40af',       // Deep Royal Blue
     primaryHover: '#1d4ed8',  // Blue-700
@@ -102,6 +161,9 @@ export interface ResolvedBranding {
   copyright: string
   organization: string
   clientOrganization: string
+  parentOrganization: ParentOrganization
+  products: OrganizationProduct[]
+  salesSupport: SalesSupportInfo
   colors: typeof BRANDING_CONFIG.colors
   assets: typeof BRANDING_CONFIG.assets
   support: typeof BRANDING_CONFIG.support
@@ -156,6 +218,9 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     copyright: BRANDING_CONFIG.copyright,
     organization: BRANDING_CONFIG.organization,
     clientOrganization: BRANDING_CONFIG.clientOrganization,
+    parentOrganization: BRANDING_CONFIG.parentOrganization,
+    products: BRANDING_CONFIG.products,
+    salesSupport: BRANDING_CONFIG.salesSupport,
     colors: BRANDING_CONFIG.colors,
     assets: {
       ...BRANDING_CONFIG.assets,

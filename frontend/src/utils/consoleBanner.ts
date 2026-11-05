@@ -9,11 +9,11 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     1.1.0
  * @created     2026-11-05
  * @updated     2026-11-05
  *
- * @description Secure, once-only startup console branding banner logging application identity without sensitive credential leakage.
+ * @description Secure, once-only startup console branding banner logging AITDL parent identity, product ecosystem, and contacts without sensitive credential leakage.
  */
 
 import { BRANDING_CONFIG } from '../config/branding'
@@ -77,16 +77,38 @@ export function printConsoleBrandingBanner(branding = BRANDING_CONFIG): boolean 
     'display: block',
   ].join(';')
 
-  const { appName, edition, version, buildNumber, environment, copyright, defaultAcademyName, support } = branding
+  const {
+    appName,
+    edition,
+    version,
+    buildNumber,
+    environment,
+    copyright,
+    defaultAcademyName,
+    support,
+    parentOrganization,
+    products,
+    salesSupport,
+  } = branding
 
   const line1 = `%c🎓 ${appName.toUpperCase()} • ${defaultAcademyName.toUpperCase()}`
+
+  // Format the 3 products beneath parent organization
+  const productList = products || BRANDING_CONFIG.products
+  const productLines = productList.map((p, idx) => {
+    const prefix = idx === 0 ? 'Products:         ' : '                  '
+    return `${prefix}${idx + 1}. ${p.name} — ${p.description} (${p.website})`
+  })
+
   const line2 = [
-    `%cEdition:      ${edition}`,
-    `Version:      v${version} (Build: ${buildNumber})`,
-    `Environment:  ${environment.toUpperCase()}`,
-    `Official Web: ${support.websiteDisplay} | ${support.academyWebsiteDisplay}`,
-    `Support:      ${support.email}`,
-    `Legal:        ${copyright}`,
+    `%cParent Org:       ${parentOrganization?.name || BRANDING_CONFIG.parentOrganization.name} (${parentOrganization?.website || BRANDING_CONFIG.parentOrganization.website})`,
+    ...productLines,
+    `Sales & Support:  ${salesSupport?.displayPhones || BRANDING_CONFIG.salesSupport.displayPhones} • ${salesSupport?.email || support.email}`,
+    `Edition:          ${edition}`,
+    `Version:          v${version} (Build: ${buildNumber})`,
+    `Environment:      ${environment.toUpperCase()}`,
+    `Official Web:     ${support.websiteDisplay} | ${support.academyWebsiteDisplay}`,
+    `Legal:            ${copyright}`,
   ].join('\n')
   const line3 = `%c⚡ Enterprise-Grade Security • DPDP Act 2023 Compliant • Role-Based Access Control`
 
@@ -95,7 +117,7 @@ export function printConsoleBrandingBanner(branding = BRANDING_CONFIG): boolean 
     console.log(`${line1}\n${line2}\n${line3}`, titleStyle, metaStyle, badgeStyle)
   } catch {
     // Graceful fallback for non-standard console environments
-    console.log(`[${appName}] v${version} (${environment}) - ${defaultAcademyName}`)
+    console.log(`[${parentOrganization?.shortName || 'AITDL'} / ${appName}] v${version} (${environment}) - ${defaultAcademyName}`)
   }
 
   return true
@@ -110,4 +132,3 @@ export function resetConsoleBrandingBannerFlag(): void {
     delete window.__PRATHAMONE_CONSOLE_BANNER_PRINTED__
   }
 }
-

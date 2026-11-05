@@ -9,11 +9,11 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     1.1.0
  * @created     2026-11-05
  * @updated     2026-11-05
  *
- * @description Unit and integration tests verifying centralized branding configuration, dynamic tenant resolution, and security compliance.
+ * @description Unit and integration tests verifying centralized branding configuration, AITDL parent organization, product ecosystem, and dynamic tenant resolution.
  */
 
 import { describe, it, expect } from 'vitest'
@@ -39,6 +39,38 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(BRANDING_CONFIG.copyright).toContain('AITDL')
   })
 
+  it('defines AITDL parent organization structure and product ecosystem', () => {
+    const { parentOrganization, products, salesSupport } = BRANDING_CONFIG
+
+    // Parent Organization
+    expect(parentOrganization.name).toBe('AITDL — AI Technology & Development Lab')
+    expect(parentOrganization.website).toBe('https://aitdl.com')
+    expect(parentOrganization.websiteDisplay).toBe('aitdl.com')
+
+    // Products hierarchy
+    expect(products).toHaveLength(3)
+
+    const [prathamOne, smritiBooks, smritiSys] = products
+
+    expect(prathamOne.name).toBe('PrathamOne')
+    expect(prathamOne.description).toBe('Education, Coaching Institute Management, ERP & AI Solutions')
+    expect(prathamOne.website).toBe('https://prathamone.com')
+    expect(prathamOne.isCurrent).toBe(true)
+
+    expect(smritiBooks.name).toBe('SmritiBooks')
+    expect(smritiBooks.description).toBe('Accounting & Bookkeeping Software')
+    expect(smritiBooks.website).toBe('https://smritibooks.com')
+
+    expect(smritiSys.name).toBe('SmritiSys')
+    expect(smritiSys.description).toBe('E-commerce, Inventory & Warehouse Management')
+    expect(smritiSys.website).toBe('https://smritisys.com')
+
+    // Sales & Support phone numbers
+    expect(salesSupport.phones).toContain('9323 023 007')
+    expect(salesSupport.phones).toContain('9324 117 007')
+    expect(salesSupport.displayPhones).toBe('9323 023 007 | 9324 117 007')
+  })
+
   it('defines consistent design tokens and brand colors', () => {
     const { colors } = BRANDING_CONFIG
     expect(colors.primary).toMatch(/^#[0-9a-fA-F]{6}$/)
@@ -61,6 +93,9 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(APP_CONFIG.version).toBe(BRANDING_CONFIG.version)
     expect(APP_CONFIG.defaultTenantName).toBe(BRANDING_CONFIG.defaultAcademyName)
     expect(APP_CONFIG.defaultTenantCode).toBe(BRANDING_CONFIG.defaultAcademyCode)
+    expect(APP_CONFIG.parentOrganization).toEqual(BRANDING_CONFIG.parentOrganization)
+    expect(APP_CONFIG.products).toEqual(BRANDING_CONFIG.products)
+    expect(APP_CONFIG.salesSupport).toEqual(BRANDING_CONFIG.salesSupport)
   })
 
   describe('resolveBranding() Tenant Overrides', () => {
@@ -70,6 +105,8 @@ describe('Centralized Application Branding & Identity System', () => {
       expect(resolved.academyCode).toBe('PA001')
       expect(resolved.monogram).toBe('PA')
       expect(resolved.appName).toBe('PrathamOne Academy')
+      expect(resolved.parentOrganization.name).toBe('AITDL — AI Technology & Development Lab')
+      expect(resolved.products).toHaveLength(3)
     })
 
     it('dynamically adapts branding to custom institutions while preserving core engine identity', () => {
@@ -100,6 +137,8 @@ describe('Centralized Application Branding & Identity System', () => {
       expect(resolved.appName).toBe('PrathamOne Academy')
       expect(resolved.suiteName).toBe('PrathamOne Academic Suite')
       expect(resolved.version).toBe(BRANDING_CONFIG.version)
+      expect(resolved.parentOrganization.name).toBe('AITDL — AI Technology & Development Lab')
+      expect(resolved.salesSupport.displayPhones).toContain('9323 023 007')
     })
 
     it('correctly calculates monograms for single-word institutions', () => {

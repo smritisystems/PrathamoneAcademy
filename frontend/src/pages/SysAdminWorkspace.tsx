@@ -27,6 +27,7 @@ import {
 import { sysadminApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import type { SecurityAuditLogItem, UniversalEditPayload } from '../types'
+import OrganizationBranding from '../components/OrganizationBranding'
 
 export default function SysAdminWorkspace() {
   const { user } = useAuthStore()
@@ -310,6 +311,8 @@ export default function SysAdminWorkspace() {
               ))}
             </div>
           </div>
+          {/* AITDL Organization Branding & Product Ecosystem */}
+          <OrganizationBranding variant="card" />
         </div>
       )}
 

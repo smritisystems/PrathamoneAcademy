@@ -31,6 +31,7 @@ import type {
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useBranding } from '../config/branding'
+import OrganizationBranding from '../components/OrganizationBranding'
 
 // Definition of 15 settings workspace categories matching system architecture
 export interface SettingsCategory {
@@ -1793,6 +1794,8 @@ export default function Settings() {
                         </div>
                       </div>
                     </div>
+                    {/* AITDL Parent Organization & Product Ecosystem */}
+                    <OrganizationBranding variant="card" />
                   </div>
                 )}
 
