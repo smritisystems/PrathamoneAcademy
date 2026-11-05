@@ -1430,6 +1430,78 @@ export default function Settings() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Student Status & Operational Visibility Configuration */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                      <div className="border-b border-gray-100 pb-2">
+                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-blue-600" />
+                          <span>Student Status & Operational Visibility</span>
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Configure institute-level default visibility rules for inactive, withdrawn, completed, and graduated students.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                        {/* 1. Dashboard Student Visibility */}
+                        <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
+                          <label className="block text-xs font-bold text-gray-900">
+                            Dashboard Visibility
+                          </label>
+                          <p className="text-[11px] text-gray-500 leading-tight mb-2">
+                            Controls whether executive dashboard KPI metrics show only active students or include all statuses.
+                          </p>
+                          <select
+                            data-testid="setting-student-visibility-dashboard"
+                            value={allSettings.admission?.student_visibility_dashboard || 'active_only'}
+                            onChange={(e) => handleSettingChange('admission', 'student_visibility_dashboard', e.target.value)}
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="active_only">Active students only (default)</option>
+                            <option value="include_all">Include all student statuses</option>
+                          </select>
+                        </div>
+
+                        {/* 2. Reports Student Visibility */}
+                        <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
+                          <label className="block text-xs font-bold text-gray-900">
+                            Reports Visibility
+                          </label>
+                          <p className="text-[11px] text-gray-500 leading-tight mb-2">
+                            Controls whether financial and academic reports default to including all statuses or active only.
+                          </p>
+                          <select
+                            data-testid="setting-student-visibility-reports"
+                            value={allSettings.admission?.student_visibility_reports || 'include_all'}
+                            onChange={(e) => handleSettingChange('admission', 'student_visibility_reports', e.target.value)}
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="include_all">Include all statuses by default</option>
+                            <option value="active_only">Active students only by default</option>
+                          </select>
+                        </div>
+
+                        {/* 3. Student Lists Visibility */}
+                        <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
+                          <label className="block text-xs font-bold text-gray-900">
+                            Student Lists Visibility
+                          </label>
+                          <p className="text-[11px] text-gray-500 leading-tight mb-2">
+                            Controls whether student directories and batch roster views load active students only or all students by default.
+                          </p>
+                          <select
+                            data-testid="setting-student-visibility-lists"
+                            value={allSettings.admission?.student_visibility_lists || 'active_only'}
+                            onChange={(e) => handleSettingChange('admission', 'student_visibility_lists', e.target.value)}
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="active_only">Show active students by default</option>
+                            <option value="include_all">Show all students by default</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 

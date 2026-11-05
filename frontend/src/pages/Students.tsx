@@ -23,7 +23,7 @@ import {
   Search, Plus, Eye, CreditCard, GraduationCap, Printer,
   UserMinus, UserCheck,
 } from 'lucide-react'
-import { studentsApi, standardsApi, divisionsApi } from '../api/endpoints'
+import { studentsApi, standardsApi, divisionsApi, settingsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import Pagination from '../components/Pagination'
 import StudentExitModal from '../components/StudentExitModal'
@@ -36,8 +36,21 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('')
   const [standardId, setStandardId] = useState<number | undefined>()
   const [divisionId, setDivisionId] = useState<number | undefined>()
+  const [userToggledInactive, setUserToggledInactive] = useState(false)
   const [includeInactive, setIncludeInactive] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'withdrawn' | 'inactive'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('all')
+
+  // Load institute-level configuration settings
+  const { data: allSettings } = useQuery({
+    queryKey: ['settings', 'all', selectedInstitutionId],
+    queryFn: () => settingsApi.getAll().then((r) => r.data),
+    staleTime: 1000 * 60 * 5,
+  })
+
+  // Determine effective inactive inclusion from user toggle or institute settings default
+  const effectiveIncludeInactive = userToggledInactive
+    ? includeInactive
+    : allSettings?.admission?.student_visibility_lists === 'include_all' || includeInactive
   const [page, setPage] = useState(1)
 
   // Lifecycle Modals
@@ -69,7 +82,7 @@ export default function StudentsPage() {
         page,
         selectedAcademicYearId,
         selectedInstitutionId,
-        includeInactive,
+        effectiveIncludeInactive,
         statusFilter,
       },
     ],
@@ -81,7 +94,7 @@ export default function StudentsPage() {
           division_id: divisionId,
           academic_year_id: selectedAcademicYearId ?? undefined,
           institution_id: selectedInstitutionId ?? undefined,
-          include_inactive: includeInactive,
+          include_inactive: effectiveIncludeInactive,
           status: statusFilter !== 'all' ? statusFilter : undefined,
           page,
           page_size: 20,
@@ -163,30 +176,38 @@ export default function StudentsPage() {
             <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-gray-700 select-none">
               <input
                 type="checkbox"
-                checked={includeInactive}
+                data-testid="include-inactive-checkbox"
+                checked={effectiveIncludeInactive}
                 onChange={(e) => {
+                  setUserToggledInactive(true)
                   setIncludeInactive(e.target.checked)
                   if (!e.target.checked) setStatusFilter('all')
                   setPage(1)
                 }}
                 className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
               />
-              Include Inactive Students
+              <span>Include Inactive Students</span>
+              {allSettings?.admission?.student_visibility_lists === 'include_all' && !userToggledInactive && (
+                <span className="text-[10px] text-blue-600 font-semibold">(Default: All)</span>
+              )}
             </label>
 
-            {includeInactive && (
+            {effectiveIncludeInactive && (
               <select
+                data-testid="student-status-filter"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value as any)
                   setPage(1)
                 }}
-                className="input text-xs py-1.5 px-2 w-32 animate-fade-in"
+                className="input text-xs py-1.5 px-2 w-36 animate-fade-in"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active Only</option>
-                <option value="withdrawn">Withdrawn Only</option>
                 <option value="inactive">Inactive Only</option>
+                <option value="withdrawn">Withdrawn Only</option>
+                <option value="completed">Completed Only</option>
+                <option value="graduated">Graduated Only</option>
               </select>
             )}
           </div>

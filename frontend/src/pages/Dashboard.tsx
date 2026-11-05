@@ -21,7 +21,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Users, TrendingUp, AlertCircle, DollarSign, ArrowRight,
   Calendar, BookOpen, Layers,
-} from 'lucide-react'
+} SlidersHorizontal, from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -53,6 +53,9 @@ export default function DashboardPage() {
     selectedInstitutionId,
   } = useAuthStore()
 
+  // Student Status Filter Override ('default' follows institute settings)
+  const [statusFilter, setStatusFilter] = useState<'default' | 'active' | 'all' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('default')
+
   // Unified Cascading Filters state
   const [filters, setFilters] = useState<FilterState>({
     academicYearId: selectedAcademicYearId || null,
@@ -77,6 +80,7 @@ export default function DashboardPage() {
       filters.boardId,
       filters.standardId,
       filters.divisionId,
+      statusFilter,
     ],
     queryFn: () =>
       dashboardApi
@@ -86,6 +90,7 @@ export default function DashboardPage() {
           board_id: filters.boardId ?? undefined,
           standard_id: filters.standardId ?? undefined,
           division_id: filters.divisionId ?? undefined,
+          status: statusFilter !== 'default' ? statusFilter : undefined,
         })
         .then((r) => r.data),
   })
@@ -104,12 +109,46 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Unified Cascading Filter Bar */}
-      <CascadingFilters
-        filters={filters}
-        onChange={(updated) => setFilters(updated)}
-        title="Filter Dashboard Metrics"
-      />
+      {/* Unified Cascading Filter Bar with Status Override */}
+      <div className="space-y-2">
+        <CascadingFilters
+          filters={filters}
+          onChange={(updated) => setFilters(updated)}
+          title="Filter Dashboard Metrics"
+        />
+
+        {/* Student Lifecycle & Status Filter Override */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-2xs text-xs">
+          <div className="flex items-center gap-2 text-gray-700 font-medium">
+            <SlidersHorizontal className="w-4 h-4 text-blue-600" />
+            <span>Student Status Scope:</span>
+            <span className="text-gray-500 font-normal">
+              ({(stats as any)?.configured_visibility === 'include_all' ? 'Institute Default: All Statuses' : 'Institute Default: Active Only'})
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="dashboard-status-filter" className="text-gray-600">
+              Filter:
+            </label>
+            <select
+              id="dashboard-status-filter"
+              data-testid="dashboard-status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="default">Institute Setting Default</option>
+              <option value="active">Active Students Only</option>
+              <option value="all">Include All Student Statuses</option>
+              <option value="withdrawn">Withdrawn Students</option>
+              <option value="completed">Completed Students</option>
+              <option value="graduated">Graduated Students</option>
+              <option value="inactive">Inactive Students</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -118,7 +157,13 @@ export default function DashboardPage() {
           value={stats?.total_students ?? 0}
           icon={Users}
           color="blue"
-          subtitle="Enrolled active students"
+          subtitle={
+            (stats as any)?.status_filter === 'all'
+              ? 'All student statuses'
+              : (stats as any)?.status_filter && (stats as any)?.status_filter !== 'active'
+              ? `${(stats as any).status_filter.charAt(0).toUpperCase() + (stats as any).status_filter.slice(1)} students`
+              : 'Enrolled active students'
+          }
         />
         <StatCard
           title="Total Fees Invoiced"

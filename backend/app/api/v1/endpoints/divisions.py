@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-05
 #  *
 #  * @description API endpoints for batch/division management, teacher allocation, capacity, and scheduling.
 #  */
@@ -25,6 +25,7 @@ from datetime import datetime
 
 from app.core.database import get_db
 from app.core.deps import get_current_active_user
+from app.services.settings_service import get_institution_setting
 from app.models.division import Division
 from app.models.standard import Standard
 from app.models.board import Board
@@ -347,6 +348,8 @@ async def archive_division(
 @router.get("/{division_id}/roster")
 async def get_division_roster(
     division_id: int,
+    status: Optional[str] = Query(default=None),
+    include_inactive: Optional[bool] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -361,16 +364,47 @@ async def get_division_roster(
         raise HTTPException(status_code=404, detail="Batch not found")
     div, std, brd = div_row
 
-    # Query enrolled students
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    configured_list_mode = await get_institution_setting(
+        db, user_inst_id, "admission", "student_visibility_lists", "active_only"
+    )
+
+    # Query enrolled students respecting status criteria & institute settings
     roster_query = (
         select(Student, StudentEnrollment)
         .join(StudentEnrollment, Student.id == StudentEnrollment.student_id)
-        .where(
-            StudentEnrollment.division_id == division_id,
-            StudentEnrollment.status == "active",
-        )
-        .order_by(StudentEnrollment.roll_number, Student.first_name)
+        .where(StudentEnrollment.division_id == division_id)
     )
+
+    if status:
+        st = status.strip().lower()
+        if st == "active":
+            roster_query = roster_query.where(StudentEnrollment.status == "active", Student.is_active == True)
+        elif st == "inactive":
+            roster_query = roster_query.where(or_(StudentEnrollment.status == "inactive", Student.is_active == False))
+        elif st == "withdrawn":
+            roster_query = roster_query.where(
+                or_(
+                    StudentEnrollment.status == "withdrawn",
+                    and_(Student.is_active == False, Student.exit_date.isnot(None)),
+                )
+            )
+        elif st == "completed":
+            roster_query = roster_query.where(StudentEnrollment.status == "completed")
+        elif st == "graduated":
+            roster_query = roster_query.where(StudentEnrollment.status == "graduated")
+        elif st in ("all", "include_all"):
+            pass
+        else:
+            roster_query = roster_query.where(StudentEnrollment.status == st)
+    elif include_inactive is not None:
+        if not include_inactive:
+            roster_query = roster_query.where(StudentEnrollment.status == "active", Student.is_active == True)
+    else:
+        if configured_list_mode != "include_all":
+            roster_query = roster_query.where(StudentEnrollment.status == "active", Student.is_active == True)
+
+    roster_query = roster_query.order_by(StudentEnrollment.roll_number, Student.first_name)
     rows = (await db.execute(roster_query)).all()
 
     # Pre-fetch fee obligations and payments
@@ -408,6 +442,8 @@ async def get_division_roster(
             "admission_number": s.admission_number,
             "first_name": s.first_name,
             "last_name": s.last_name or "",
+            "status": enr.status,
+            "is_active": s.is_active,
             "full_name": f"{s.first_name} {s.last_name or ''}".strip(),
             "gender": s.gender,
             "phone": s.phone,
@@ -430,6 +466,8 @@ async def get_division_roster(
         "enrolled_count": len(students_list),
         "available_seats": max(0, div.capacity - len(students_list)),
         "students": students_list,
+        "configured_visibility": configured_list_mode,
+        "effective_status": status or ("all" if include_inactive or configured_list_mode == "include_all" else "active"),
     }
 
 

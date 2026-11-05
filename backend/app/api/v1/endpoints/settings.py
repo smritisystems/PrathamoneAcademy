@@ -83,6 +83,9 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "mandatory_kyc_docs": ["Aadhaar Card", "Previous Marksheet", "Passport Photo"],
         "sibling_discount_pct": 10.0,
         "min_admission_age": 5,
+        "student_visibility_dashboard": "active_only",
+        "student_visibility_reports": "include_all",
+        "student_visibility_lists": "active_only",
     },
     "staff": {
         "employee_id_prefix": "EMP",

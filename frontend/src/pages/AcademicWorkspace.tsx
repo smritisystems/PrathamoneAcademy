@@ -86,6 +86,7 @@ export default function AcademicWorkspace() {
   const [showRosterModal, setShowRosterModal] = useState(false)
   const [rosterBatchId, setRosterBatchId] = useState<number | null>(null)
   const [rosterSearch, setRosterSearch] = useState('')
+  const [rosterStatusFilter, setRosterStatusFilter] = useState<'all' | 'active' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('active')
 
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [scheduleBatch, setScheduleBatch] = useState<Division | null>(null)
@@ -761,8 +762,13 @@ export default function AcademicWorkspace() {
 
   // 10. Batch Roster
   const { data: rosterData, isLoading: isRosterLoading } = useQuery({
-    queryKey: ['batch-roster', rosterBatchId],
-    queryFn: () => divisionsApi.getRoster(rosterBatchId!).then((r) => r.data),
+    queryKey: ['batch-roster', rosterBatchId, rosterStatusFilter],
+    queryFn: () =>
+      divisionsApi
+        .getRoster(rosterBatchId!, {
+          status: rosterStatusFilter !== 'all' ? rosterStatusFilter : undefined,
+        })
+        .then((r) => r.data),
     enabled: !!rosterBatchId && showRosterModal,
   })
 
@@ -3850,8 +3856,28 @@ export default function AcademicWorkspace() {
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div className="text-xs font-semibold text-gray-500">
-              Capacity: <span className="font-bold text-gray-800">{rosterData?.enrolled_count || 0} / {rosterData?.capacity || 40}</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-xs">
+                <label htmlFor="roster-status-filter" className="text-gray-600 font-medium">Status:</label>
+                <select
+                  id="roster-status-filter"
+                  data-testid="roster-status-filter"
+                  value={rosterStatusFilter}
+                  onChange={(e) => setRosterStatusFilter(e.target.value as any)}
+                  className="px-2 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-800"
+                >
+                  <option value="active">Active Only</option>
+                  <option value="all">All Statuses</option>
+                  <option value="withdrawn">Withdrawn Only</option>
+                  <option value="completed">Completed Only</option>
+                  <option value="graduated">Graduated Only</option>
+                  <option value="inactive">Inactive Only</option>
+                </select>
+              </div>
+
+              <div className="text-xs font-semibold text-gray-500">
+                Capacity: <span className="font-bold text-gray-800">{rosterData?.enrolled_count || 0} / {rosterData?.capacity || 40}</span>
+              </div>
             </div>
           </div>
 

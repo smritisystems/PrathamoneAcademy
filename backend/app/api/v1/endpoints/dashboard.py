@@ -16,7 +16,7 @@
 #  * @description API endpoints for administrative and coaching institute executive dashboard analytics.
 #  */
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional
@@ -28,6 +28,7 @@ from app.models.fee import FeeInvoice
 from app.models.enrollment import StudentEnrollment
 from app.models.standard import Standard
 from app.models.division import Division
+from app.services.settings_service import get_institution_setting
 from app.services.student_metrics import (
     get_authoritative_student_count,
     get_student_reconciliation_diagnostic,
@@ -43,6 +44,8 @@ async def get_dashboard_stats(
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
     board_id: Optional[int] = None,
+    status: Optional[str] = Query(default=None),
+    include_all_statuses: Optional[bool] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -60,7 +63,22 @@ async def get_dashboard_stats(
         if inst_count == 0:
             effective_inst_id = None
 
-    # 1. Authoritative Total Active Students
+    # Resolve student visibility mode from settings or explicit user override
+    user_inst_id = effective_inst_id or getattr(current_user, "institution_id", None) or 1
+    configured_visibility = await get_institution_setting(
+        db, user_inst_id, "admission", "student_visibility_dashboard", "active_only"
+    )
+
+    effective_status = status
+    if not effective_status:
+        if include_all_statuses is True:
+            effective_status = "all"
+        elif include_all_statuses is False:
+            effective_status = "active"
+        else:
+            effective_status = "all" if configured_visibility == "include_all" else "active"
+
+    # 1. Authoritative Student Count according to visibility criteria
     total_students = await get_authoritative_student_count(
         db=db,
         institution_id=effective_inst_id,
@@ -68,6 +86,7 @@ async def get_dashboard_stats(
         board_id=board_id,
         standard_id=standard_id,
         division_id=division_id,
+        status=effective_status,
     )
 
     # 2. Fee Stats (Total Fees, Total Collected, Outstanding)
@@ -207,6 +226,8 @@ async def get_dashboard_stats(
         "collection_rate": collection_rate,
         "monthly_trends": monthly_trends,
         "recent_payments": recent_payments,
+        "status_filter": effective_status,
+        "configured_visibility": configured_visibility,
     }
 
 

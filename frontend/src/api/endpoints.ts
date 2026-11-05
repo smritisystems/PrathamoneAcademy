@@ -70,6 +70,8 @@ export const dashboardApi = {
     board_id?: number | string
     standard_id?: number | string
     division_id?: number | string
+    status?: string
+    include_all_statuses?: boolean
   }) => apiClient.get<DashboardStats>('/dashboard/stats', { params }),
   getReconciliation: (params?: {
     academic_year_id?: number | string
@@ -274,8 +276,8 @@ export const divisionsApi = {
     apiClient.put<Division>(`/divisions/${id}`, data),
   archive: (id: number | string) =>
     apiClient.put<{ id: number; status: string; message: string }>(`/divisions/${id}/archive`),
-  getRoster: (id: number | string) =>
-    apiClient.get<BatchRosterResponse>(`/divisions/${id}/roster`),
+  getRoster: (id: number | string, params?: { status?: string; include_inactive?: boolean }) =>
+    apiClient.get<BatchRosterResponse>(`/divisions/${id}/roster`, { params }),
   checkConflict: (data: { room_number?: string; teacher_id?: number; day_of_week?: string; start_time: string; end_time: string; exclude_division_id?: number }) =>
     apiClient.post<{ has_conflict: boolean; conflict_type?: string; details?: string }>('/divisions/check-conflict', data),
 }
@@ -437,14 +439,24 @@ export const paymentsApi = {
 // ─── Reports ──────────────────────────────────────────────────────────────────
 
 export const reportsApi = {
-  feeCollection: (params?: { academic_year_id?: number | string; institution_id?: number | string }) =>
-    apiClient.get<FeeCollectionRow[]>('/reports/fee-collection', { params }),
-  outstanding: (params?: { academic_year_id?: number | string; institution_id?: number | string }) =>
-    apiClient.get<OutstandingRow[]>('/reports/outstanding', { params }),
+  feeCollection: (params?: {
+    academic_year_id?: number | string
+    institution_id?: number | string
+    status?: string
+    include_inactive?: boolean
+  }) => apiClient.get<FeeCollectionRow[]>('/reports/fee-collection', { params }),
+  outstanding: (params?: {
+    academic_year_id?: number | string
+    institution_id?: number | string
+    status?: string
+    include_inactive?: boolean
+  }) => apiClient.get<OutstandingRow[]>('/reports/outstanding', { params }),
   exportFeeCollection: (params?: {
     format?: string
     academic_year_id?: number | string
     institution_id?: number | string
+    status?: string
+    include_inactive?: boolean
   }) =>
     apiClient.get('/reports/fee-collection/export', {
       params,

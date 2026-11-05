@@ -29,14 +29,16 @@ import {
 export default function Reports() {
   const { selectedAcademicYearId, selectedInstitutionId } = useAuthStore()
   const [activeTab, setActiveTab] = useState<'collection' | 'outstanding' | 'summary' | 'withdrawals' | 'withdrawal-analytics'>('collection')
+  const [reportStatusFilter, setReportStatusFilter] = useState<'default' | 'all' | 'active' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('default')
 
   // 1. Fee Collection Report
   const { data: collectionReport = [], isLoading: loadingCollection } = useQuery({
-    queryKey: ['report-collection', selectedAcademicYearId, selectedInstitutionId],
+    queryKey: ['report-collection', selectedAcademicYearId, selectedInstitutionId, reportStatusFilter],
     queryFn: async () => {
       const res = await reportsApi.feeCollection({
         academic_year_id: selectedAcademicYearId || undefined,
         institution_id: selectedInstitutionId || undefined,
+        status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
       })
       return res.data
     },
@@ -45,11 +47,12 @@ export default function Reports() {
 
   // 2. Outstanding Dues Report
   const { data: outstandingReport = [], isLoading: loadingOutstanding } = useQuery({
-    queryKey: ['report-outstanding', selectedAcademicYearId, selectedInstitutionId],
+    queryKey: ['report-outstanding', selectedAcademicYearId, selectedInstitutionId, reportStatusFilter],
     queryFn: async () => {
       const res = await reportsApi.outstanding({
         academic_year_id: selectedAcademicYearId || undefined,
         institution_id: selectedInstitutionId || undefined,
+        status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
       })
       return res.data
     },
@@ -674,12 +677,12 @@ export default function Reports() {
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-8">
+      {/* Tabs & Status Scope Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200">
+        <nav className="flex space-x-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('collection')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors ${
+            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'collection'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -689,7 +692,7 @@ export default function Reports() {
           </button>
           <button
             onClick={() => setActiveTab('outstanding')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors ${
+            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'outstanding'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -699,7 +702,7 @@ export default function Reports() {
           </button>
           <button
             onClick={() => setActiveTab('summary')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors ${
+            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'summary'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -709,7 +712,7 @@ export default function Reports() {
           </button>
           <button
             onClick={() => setActiveTab('withdrawals')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors ${
+            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'withdrawals'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -719,7 +722,7 @@ export default function Reports() {
           </button>
           <button
             onClick={() => setActiveTab('withdrawal-analytics')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors ${
+            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'withdrawal-analytics'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -728,6 +731,30 @@ export default function Reports() {
             Withdrawal Analytics
           </button>
         </nav>
+
+        {/* Status Scope Selector for Financial Reports */}
+        {(activeTab === 'collection' || activeTab === 'outstanding') && (
+          <div className="flex items-center gap-2 pb-2 sm:pb-0 text-xs self-end sm:self-auto">
+            <label htmlFor="report-status-filter" className="text-gray-600 font-medium whitespace-nowrap">
+              Student Scope:
+            </label>
+            <select
+              id="report-status-filter"
+              data-testid="report-status-filter"
+              value={reportStatusFilter}
+              onChange={(e) => setReportStatusFilter(e.target.value as any)}
+              className="px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="default">Institute Default (All Statuses)</option>
+              <option value="active">Active Students Only</option>
+              <option value="all">Include All Statuses</option>
+              <option value="withdrawn">Withdrawn Students</option>
+              <option value="completed">Completed Students</option>
+              <option value="graduated">Graduated Students</option>
+              <option value="inactive">Inactive Students</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Tab Content */}

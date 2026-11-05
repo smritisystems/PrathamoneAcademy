@@ -25,6 +25,7 @@ from decimal import Decimal
 import io
 import csv
 from app.core.database import get_db
+from app.services.settings_service import get_institution_setting
 from app.core.deps import (
     get_current_active_user,
     enforce_institution_access,
@@ -48,6 +49,8 @@ router = APIRouter()
 async def fee_collection_report(
     academic_year_id: Optional[int] = None,
     institution_id: Optional[int] = None,
+    status: Optional[str] = Query(default=None),
+    include_inactive: Optional[bool] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -71,10 +74,44 @@ async def fee_collection_report(
         )
     )
 
+    user_inst_id = institution_id or getattr(current_user, "institution_id", None) or 1
+    configured_report_mode = await get_institution_setting(
+        db, user_inst_id, "admission", "student_visibility_reports", "include_all"
+    )
+
     if academic_year_id:
         query = query.where(FeeInvoice.academic_year_id == academic_year_id)
     if institution_id:
         query = query.where(Student.institution_id == institution_id)
+
+    # Student visibility criteria
+    if status:
+        st = status.strip().lower()
+        if st == "active":
+            query = query.where(Student.is_active == True)
+        elif st == "inactive":
+            query = query.where(Student.is_active == False)
+        elif st == "withdrawn":
+            query = query.where(
+                or_(
+                    and_(Student.is_active == False, Student.exit_date.isnot(None)),
+                    Student.enrollments.any(StudentEnrollment.status == "withdrawn"),
+                )
+            )
+        elif st == "completed":
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == "completed"))
+        elif st == "graduated":
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == "graduated"))
+        elif st in ("all", "include_all"):
+            pass
+        else:
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == st))
+    elif include_inactive is not None:
+        if not include_inactive:
+            query = query.where(Student.is_active == True)
+    else:
+        if configured_report_mode == "active_only":
+            query = query.where(Student.is_active == True)
 
     result = await db.execute(query)
     rows = result.all()
@@ -96,12 +133,16 @@ async def export_fee_collection(
     format: str = "csv",
     academic_year_id: Optional[int] = None,
     institution_id: Optional[int] = None,
+    status: Optional[str] = Query(default=None),
+    include_inactive: Optional[bool] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     data = await fee_collection_report(
         academic_year_id=academic_year_id,
         institution_id=institution_id,
+        status=status,
+        include_inactive=include_inactive,
         db=db,
         current_user=current_user,
     )
@@ -171,9 +212,16 @@ async def export_fee_collection(
 async def outstanding_report(
     academic_year_id: Optional[int] = None,
     institution_id: Optional[int] = None,
+    status: Optional[str] = Query(default=None),
+    include_inactive: Optional[bool] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    user_inst_id = institution_id or getattr(current_user, "institution_id", None) or 1
+    configured_report_mode = await get_institution_setting(
+        db, user_inst_id, "admission", "student_visibility_reports", "include_all"
+    )
+
     query = select(FeeInvoice, Student).join(
         Student, FeeInvoice.student_id == Student.id
     ).where(FeeInvoice.outstanding_amount > 0)
@@ -182,6 +230,34 @@ async def outstanding_report(
         query = query.where(FeeInvoice.academic_year_id == academic_year_id)
     if institution_id:
         query = query.where(Student.institution_id == institution_id)
+
+    if status:
+        st = status.strip().lower()
+        if st == "active":
+            query = query.where(Student.is_active == True)
+        elif st == "inactive":
+            query = query.where(Student.is_active == False)
+        elif st == "withdrawn":
+            query = query.where(
+                or_(
+                    and_(Student.is_active == False, Student.exit_date.isnot(None)),
+                    Student.enrollments.any(StudentEnrollment.status == "withdrawn"),
+                )
+            )
+        elif st == "completed":
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == "completed"))
+        elif st == "graduated":
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == "graduated"))
+        elif st in ("all", "include_all"):
+            pass
+        else:
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == st))
+    elif include_inactive is not None:
+        if not include_inactive:
+            query = query.where(Student.is_active == True)
+    else:
+        if configured_report_mode == "active_only":
+            query = query.where(Student.is_active == True)
     
     result = await db.execute(query)
     rows = result.all()

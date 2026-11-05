@@ -30,6 +30,7 @@ from app.core.deps import (
     check_institution_access,
     is_sysadmin,
 )
+from app.services.settings_service import get_institution_setting
 from app.models.student import Student, Guardian, StudentLifecycleLog
 from app.models.enrollment import StudentEnrollment
 from app.models.fee import FeeInvoice, FeeInstallment, FeeInvoiceItem
@@ -177,7 +178,7 @@ async def list_students(
     division_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
     search: Optional[str] = None,
-    include_inactive: bool = Query(default=False),
+    include_inactive: Optional[bool] = Query(default=None),
     status: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, le=100),
@@ -190,19 +191,42 @@ async def list_students(
     if effective_inst_id:
         query = query.where(Student.institution_id == effective_inst_id)
 
+    # Resolve student visibility mode from settings or explicit user query override
+    user_inst_id = effective_inst_id or getattr(current_user, "institution_id", None) or 1
+    configured_list_mode = await get_institution_setting(
+        db, user_inst_id, "admission", "student_visibility_lists", "active_only"
+    )
+
     # Active / Inactive / Status Filtering
     if status:
-        stat_lower = status.lower()
+        stat_lower = status.strip().lower()
         if stat_lower == "active":
             query = query.where(Student.is_active == True)
-        elif stat_lower == "withdrawn":
-            query = query.where(Student.is_active == False, Student.exit_date.isnot(None))
         elif stat_lower == "inactive":
             query = query.where(Student.is_active == False)
-        # "all" preserves full list
-    elif not include_inactive:
-        # Default behavior: active students only
-        query = query.where(Student.is_active == True)
+        elif stat_lower == "withdrawn":
+            query = query.where(
+                or_(
+                    and_(Student.is_active == False, Student.exit_date.isnot(None)),
+                    Student.enrollments.any(StudentEnrollment.status == "withdrawn"),
+                )
+            )
+        elif stat_lower == "completed":
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == "completed"))
+        elif stat_lower == "graduated":
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == "graduated"))
+        elif stat_lower in ("all", "include_all"):
+            pass  # preserve full list
+        else:
+            query = query.where(Student.enrollments.any(StudentEnrollment.status == stat_lower))
+    elif include_inactive is not None:
+        if not include_inactive:
+            query = query.where(Student.is_active == True)
+        # include_inactive == True preserves all students
+    else:
+        # Default behavior driven by institute settings
+        if configured_list_mode != "include_all":
+            query = query.where(Student.is_active == True)
 
     if search:
         query = query.where(
@@ -243,6 +267,8 @@ async def list_students(
         "total": total,
         "page": page,
         "page_size": page_size,
+        "configured_visibility": configured_list_mode,
+        "effective_status": status or ("all" if include_inactive or configured_list_mode == "include_all" else "active"),
         "data": [
             {
                 "id": s.id,

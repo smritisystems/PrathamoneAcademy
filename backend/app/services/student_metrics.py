@@ -17,7 +17,7 @@
 #  */
 
 from typing import Optional, Dict, Tuple, List, Any
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.student import Student
@@ -28,6 +28,37 @@ from app.models.board import Board
 from app.models.fee import FeeInvoice
 
 
+
+def apply_student_status_filter(query, status: Optional[str] = None, include_inactive: bool = False):
+    """
+    Applies authoritative student & enrollment status criteria.
+    Supports: active, inactive, withdrawn, completed, graduated, and all.
+    """
+    if status:
+        st = status.strip().lower()
+        if st == "active":
+            return query.where(Student.is_active == True, StudentEnrollment.status == "active")
+        elif st == "inactive":
+            return query.where(or_(Student.is_active == False, StudentEnrollment.status == "inactive"))
+        elif st == "withdrawn":
+            return query.where(
+                or_(
+                    StudentEnrollment.status == "withdrawn",
+                    and_(Student.is_active == False, Student.exit_date.isnot(None)),
+                )
+            )
+        elif st == "completed":
+            return query.where(StudentEnrollment.status == "completed")
+        elif st == "graduated":
+            return query.where(StudentEnrollment.status == "graduated")
+        elif st in ("all", "include_all"):
+            return query
+        else:
+            return query.where(StudentEnrollment.status == st)
+    elif not include_inactive:
+        return query.where(Student.is_active == True, StudentEnrollment.status == "active")
+    return query
+
 async def get_authoritative_student_count(
     db: AsyncSession,
     institution_id: Optional[int] = None,
@@ -35,6 +66,8 @@ async def get_authoritative_student_count(
     board_id: Optional[int] = None,
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
+    status: Optional[str] = None,
+    include_inactive: bool = False,
 ) -> int:
     """
     Authoritative student count rule:
@@ -51,11 +84,8 @@ async def get_authoritative_student_count(
     query = (
         select(func.count(func.distinct(Student.id)))
         .join(StudentEnrollment, Student.id == StudentEnrollment.student_id)
-        .where(
-            Student.is_active == True,
-            StudentEnrollment.status == "active",
-        )
     )
+    query = apply_student_status_filter(query, status=status, include_inactive=include_inactive)
 
     if institution_id:
         query = query.where(Student.institution_id == institution_id)
