@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Vitest specifications validating centralized forms workspace, prefilled & blank modes, Aadhaar masking, DPDP consent, and print triggers.
  */
@@ -240,6 +240,10 @@ describe('Print Forms & KYC System Specification', () => {
     expect(screen.getByText(/Blank Form/i)).toBeDefined()
     expect(screen.getByText(/Single Record/i)).toBeDefined()
     expect(screen.getByText(/Bulk Batch Print/i)).toBeDefined()
+
+    await waitFor(() => {
+      expect(screen.getByText(/Student Admission & Application Form/i)).toBeDefined()
+    })
   })
 
   it('switches between prefilled and blank form mode', async () => {
@@ -248,6 +252,10 @@ describe('Print Forms & KYC System Specification', () => {
         <FormsDocuments />
       </BrowserRouter>
     )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Student Admission & Application Form/i)).toBeDefined()
+    })
 
     const blankBtn = screen.getByText(/Blank Form/i)
     fireEvent.click(blankBtn)
@@ -263,6 +271,10 @@ describe('Print Forms & KYC System Specification', () => {
         <FormsDocuments />
       </BrowserRouter>
     )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Student Admission & Application Form/i)).toBeDefined()
+    })
 
     const bulkBtn = screen.getByText(/Bulk Batch Print/i)
     fireEvent.click(bulkBtn)

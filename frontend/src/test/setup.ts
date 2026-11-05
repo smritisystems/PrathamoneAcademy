@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-05
  *
  * @description Vitest test setup configuration polyfilling ResizeObserver, matchMedia, and JSDOM mocks.
  */
@@ -41,5 +41,14 @@ if (typeof globalThis !== 'undefined') {
       }),
     })
   }
+}
+
+// Suppress React Router v7 future flag deprecation notices in test logs
+const originalWarn = console.warn
+console.warn = (...args: any[]) => {
+  if (typeof args[0] === 'string' && args[0].includes('React Router Future Flag Warning')) {
+    return
+  }
+  originalWarn(...args)
 }
 
