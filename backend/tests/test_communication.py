@@ -193,3 +193,14 @@ async def test_diagnostics_endpoints(client: AsyncClient, admin_user: User, test
     assert test_res.status_code == 200
     assert test_res.json()["status"] == "success"
 
+@pytest.mark.asyncio
+async def test_search_communication_recipients(client: AsyncClient, admin_user: User, test_institution: Institution):
+    token = create_access_token({"sub": str(admin_user.id), "institution_id": test_institution.id})
+    headers = {"Authorization": f"Bearer {token}"}
+
+    for target in ["ALL", "STUDENT", "PARENT", "STAFF", "BATCH"]:
+        res = await client.get(f"/api/v1/communication/recipients/search?query=&target_type={target}", headers=headers)
+        assert res.status_code == 200
+        items = res.json()
+        assert isinstance(items, list)
+

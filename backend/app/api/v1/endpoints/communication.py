@@ -19,6 +19,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, desc, update, delete
+from sqlalchemy.orm import selectinload
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime, timedelta, timezone
@@ -489,6 +490,7 @@ async def search_communication_recipients(
     if target_type in ("ALL", "STUDENT", "PARENT"):
         stmt = (
             select(Student)
+            .options(selectinload(Student.guardians))
             .where(
                 Student.institution_id == target_id,
                 Student.is_active == True,
@@ -496,7 +498,7 @@ async def search_communication_recipients(
                     func.lower(Student.first_name).like(q_str),
                     func.lower(Student.last_name).like(q_str),
                     func.lower(Student.admission_number).like(q_str),
-                    func.lower(Student.contact_number).like(q_str),
+                    func.lower(func.coalesce(Student.phone, "")).like(q_str),
                 ),
             )
             .limit(20)
@@ -505,52 +507,66 @@ async def search_communication_recipients(
         for s in students:
             full_name = f"{s.first_name} {s.last_name}".strip()
             # Student entry
-            if target_type in ("ALL", "STUDENT") and (s.contact_number or s.email):
+            if target_type in ("ALL", "STUDENT") and (s.phone or s.email):
                 results.append({
                     "id": s.id,
                     "type": "STUDENT",
                     "name": full_name,
                     "subtitle": f"Student • Adm: {s.admission_number}",
-                    "phone": s.contact_number,
+                    "phone": s.phone,
                     "email": s.email,
                     "admission_number": s.admission_number,
                 })
             # Parent entry
-            if target_type in ("ALL", "PARENT") and s.emergency_contact_phone:
-                results.append({
-                    "id": s.id,
-                    "type": "PARENT",
-                    "name": f"Parent of {full_name}",
-                    "subtitle": f"Guardian • Student: {full_name}",
-                    "phone": s.emergency_contact_phone,
-                    "email": s.email,
-                    "admission_number": s.admission_number,
-                })
+            if target_type in ("ALL", "PARENT"):
+                parent_phone = s.phone
+                parent_email = s.email
+                parent_name = f"Parent of {full_name}"
+                if s.guardians:
+                    primary_g = next((g for g in s.guardians if g.is_primary), s.guardians[0])
+                    parent_phone = primary_g.phone or s.phone
+                    parent_email = primary_g.email or s.email
+                    g_name = f"{primary_g.first_name} {primary_g.last_name}".strip()
+                    if g_name:
+                        parent_name = f"{g_name} (Parent of {full_name})"
+                if parent_phone or parent_email:
+                    results.append({
+                        "id": s.id,
+                        "type": "PARENT",
+                        "name": parent_name,
+                        "subtitle": f"Guardian • Student: {full_name}",
+                        "phone": parent_phone,
+                        "email": parent_email,
+                        "admission_number": s.admission_number,
+                    })
 
     # 2. Staff & Faculty
     if target_type in ("ALL", "STAFF"):
         staff_stmt = (
-            select(StaffProfile)
+            select(StaffProfile, User)
+            .join(User, StaffProfile.user_id == User.id)
             .where(
                 StaffProfile.institution_id == target_id,
-                StaffProfile.is_active == True,
+                StaffProfile.status == "active",
+                User.is_active == True,
                 or_(
-                    func.lower(StaffProfile.full_name).like(q_str),
+                    func.lower(User.first_name).like(q_str),
+                    func.lower(User.last_name).like(q_str),
                     func.lower(StaffProfile.employee_id).like(q_str),
-                    func.lower(StaffProfile.primary_phone).like(q_str),
+                    func.lower(func.coalesce(User.phone, "")).like(q_str),
                 ),
             )
             .limit(15)
         )
-        staff_members = (await db.execute(staff_stmt)).scalars().all()
-        for st in staff_members:
+        staff_rows = (await db.execute(staff_stmt)).all()
+        for st, u in staff_rows:
             results.append({
                 "id": st.id,
                 "type": "STAFF",
-                "name": st.full_name,
-                "subtitle": f"{st.staff_type} • ID: {st.employee_id}",
-                "phone": st.primary_phone,
-                "email": st.email,
+                "name": f"{u.first_name} {u.last_name}".strip(),
+                "subtitle": f"{st.staff_type.title()} • ID: {st.employee_id}",
+                "phone": u.phone,
+                "email": u.email,
                 "employee_id": st.employee_id,
             })
 
@@ -558,13 +574,13 @@ async def search_communication_recipients(
     if target_type in ("ALL", "BATCH"):
         div_stmt = (
             select(Division)
-            .join(Standard)
+            .join(Standard, Division.standard_id == Standard.id)
             .where(
                 Standard.institution_id == target_id,
                 Division.is_active == True,
                 or_(
                     func.lower(Division.name).like(q_str),
-                    func.lower(Division.code).like(q_str),
+                    func.lower(func.coalesce(Division.code, "")).like(q_str),
                 ),
             )
             .limit(10)
@@ -575,10 +591,10 @@ async def search_communication_recipients(
                 "id": b.id,
                 "type": "BATCH",
                 "name": f"Batch: {b.name}",
-                "subtitle": f"Batch Code: {b.code} (Capacity: {b.capacity})",
+                "subtitle": f"Batch Code: {b.code or b.name} (Capacity: {b.capacity})",
                 "phone": None,
                 "email": None,
-                "batch_code": b.code,
+                "batch_code": b.code or str(b.id),
             })
 
     return results
