@@ -307,10 +307,21 @@ export interface Payment {
   transaction_reference?: string
   bank_name?: string
   cheque_number?: string
-  status: string
+  cheque_date?: string
+  status: 'draft' | 'submitted' | 'approved' | 'posted' | 'reversed' | 'completed' | string
   notes?: string
   receipt_number?: string
   allocations?: PaymentAllocation[]
+  submitted_at?: string
+  submitted_by_id?: number
+  approved_at?: string
+  approved_by_id?: number
+  posted_at?: string
+  posted_by_id?: number
+  last_edited_at?: string
+  last_edited_by_id?: number
+  edit_count?: number
+  receipts?: Receipt[]
 }
 
 export interface Receipt {
@@ -328,7 +339,50 @@ export interface Receipt {
   payment_method: string
   transaction_reference?: string
   generated_at: string
+  version?: number
+  status?: 'valid' | 'superseded' | 'cancelled' | string
+  superseded_at?: string
+  superseded_by_receipt_number?: string
+  reprint_count?: number
+  is_duplicate?: boolean
   allocations?: { invoice_id: number; amount: number }[]
+}
+
+export interface RefundRecord {
+  id: number
+  institution_id: number
+  student_id: number
+  enrollment_id?: number
+  payment_id?: number
+  amount: number
+  reason: string
+  status: 'requested' | 'approved' | 'rejected' | 'processed' | 'completed' | string
+  refund_method?: string
+  requested_by_id?: number
+  approved_by_id?: number
+  approved_at?: string
+  rejection_reason?: string
+  reference_note?: string
+  created_at: string
+  processed_at?: string
+  student_name?: string
+  admission_number?: string
+  receipt_number?: string
+}
+
+export interface PaymentWorkflowConfig {
+  mode: 'simple' | 'erp'
+  approval_threshold: number
+  approver_roles: string[]
+  require_cheque_approval: boolean
+}
+
+export interface PaymentAuditLog {
+  id: number
+  action: string
+  user_name?: string
+  timestamp: string
+  details?: Record<string, any>
 }
 
 export interface BoardBreakdown {
@@ -522,9 +576,14 @@ export interface PaymentReceiptListItem {
   amount: number
   payment_date: string
   payment_method: string
-  status: 'valid' | 'voided'
+  status: 'valid' | 'voided' | 'superseded' | string
   is_voided: boolean
   generated_at?: string
+  version?: number
+  superseded_at?: string
+  superseded_by_receipt_number?: string
+  reprint_count?: number
+  is_duplicate?: boolean
   details?: Record<string, any>
 }
 
@@ -541,9 +600,11 @@ export interface PaymentTransactionItem {
   payment_date: string
   payment_method: string
   transaction_reference: string
-  status: string
+  status: 'draft' | 'submitted' | 'approved' | 'posted' | 'reversed' | 'completed' | string
   notes: string
   receipt_number: string
+  edit_count?: number
+  refundable_balance?: number
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────

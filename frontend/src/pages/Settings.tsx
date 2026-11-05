@@ -1623,6 +1623,126 @@ export default function Settings() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Payment Workflow & ERP Governance Card */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                          <span>Payment Workflow & ERP Approval Governance</span>
+                        </h3>
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                          (allSettings.fees?.workflow_mode || 'simple') === 'erp'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {(allSettings.fees?.workflow_mode || 'simple') === 'erp' ? 'Standard ERP Mode' : 'Simple Mode'}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-gray-500">
+                        Configure payment lifecycle controls. Simple mode keeps day-to-day operations swift and flexible, while Standard ERP mode enforces strict approval gates for high-value payments and cheques.
+                      </p>
+
+                      <div className="space-y-4 pt-1">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-800 mb-2">
+                            Workflow Operating Mode
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                              (allSettings.fees?.workflow_mode || 'simple') === 'simple'
+                                ? 'border-primary-500 bg-primary-50/40 ring-1 ring-primary-500'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}>
+                              <input
+                                type="radio"
+                                name="workflow_mode"
+                                value="simple"
+                                checked={(allSettings.fees?.workflow_mode || 'simple') === 'simple'}
+                                onChange={() => handleSettingChange('fees', 'workflow_mode', 'simple')}
+                                className="mt-0.5 text-primary-600 focus:ring-primary-500"
+                              />
+                              <div>
+                                <span className="text-xs font-bold text-gray-900 block">
+                                  Simple Mode (Recommended Default)
+                                </span>
+                                <span className="text-[11px] text-gray-500 block mt-0.5 leading-relaxed">
+                                  Draft → Submitted → Posted. Authorized users can post payments directly without bottlenecking routine operations.
+                                </span>
+                              </div>
+                            </label>
+
+                            <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                              (allSettings.fees?.workflow_mode || 'simple') === 'erp'
+                                ? 'border-purple-500 bg-purple-50/40 ring-1 ring-purple-500'
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}>
+                              <input
+                                type="radio"
+                                name="workflow_mode"
+                                value="erp"
+                                checked={(allSettings.fees?.workflow_mode || 'simple') === 'erp'}
+                                onChange={() => handleSettingChange('fees', 'workflow_mode', 'erp')}
+                                className="mt-0.5 text-purple-600 focus:ring-purple-500"
+                              />
+                              <div>
+                                <span className="text-xs font-bold text-gray-900 block">
+                                  Standard ERP Mode
+                                </span>
+                                <span className="text-[11px] text-gray-500 block mt-0.5 leading-relaxed">
+                                  Draft → Submitted → Approved → Posted. Enforces multi-tier approval verification for high-value amounts and cheques.
+                                </span>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+
+                        {(allSettings.fees?.workflow_mode || 'simple') === 'erp' && (
+                          <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl p-4 space-y-4">
+                            <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider">
+                              ERP Approval Criteria & Thresholds
+                            </h4>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                  Approval Required for Amounts Exceeding (₹)
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1000"
+                                  value={allSettings.fees?.approval_threshold ?? 25000}
+                                  onChange={(e) => handleSettingChange('fees', 'approval_threshold', parseFloat(e.target.value) || 0)}
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                                />
+                                <span className="text-[10px] text-gray-500 mt-1 block">
+                                  Payments at or above this amount require manager/admin sign-off.
+                                </span>
+                              </div>
+
+                              <div className="flex flex-col justify-center">
+                                <label className="flex items-center gap-2 cursor-pointer pt-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={allSettings.fees?.require_cheque_approval !== false}
+                                    onChange={(e) => handleSettingChange('fees', 'require_cheque_approval', e.target.checked)}
+                                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                  />
+                                  <span className="text-xs font-semibold text-gray-800">
+                                    Require Approval for all Cheque Payments
+                                  </span>
+                                </label>
+                                <span className="text-[10px] text-gray-500 ml-5 block mt-0.5">
+                                  Prevents posting unverified cheques until clearance is verified.
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 

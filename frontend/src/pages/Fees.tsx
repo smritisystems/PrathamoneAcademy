@@ -428,18 +428,24 @@ export default function Fees() {
   const collectMutation = useMutation({
     mutationFn: (payload: any) => paymentsApi.create(payload),
     onSuccess: (res, vars) => {
-      toast.success(`Payment recorded! Receipt: ${res.data.receipt_number}`)
-      setReceiptSuccessData({
-        receipt_number: res.data.receipt_number,
-        payment_id: res.data.payment_id,
-        amount: Number(vars.amount),
-        student_name: collectStudent
-          ? `${collectStudent.first_name} ${collectStudent.last_name}`
-          : undefined,
-        admission_number: collectStudent?.admission_number,
-        payment_method: vars.payment_method,
-        payment_date: vars.payment_date,
-      })
+      if (res.data.status === 'draft') {
+        toast.success(`Draft payment voucher created! Voucher ID: #${res.data.payment_id}`)
+      } else {
+        toast.success(`Payment recorded! Receipt: ${res.data.receipt_number || '#' + res.data.payment_id}`)
+        if (res.data.receipt_number) {
+          setReceiptSuccessData({
+            receipt_number: res.data.receipt_number,
+            payment_id: res.data.payment_id,
+            amount: Number(vars.amount),
+            student_name: collectStudent
+              ? `${collectStudent.first_name} ${collectStudent.last_name}`
+              : undefined,
+            admission_number: collectStudent?.admission_number,
+            payment_method: vars.payment_method,
+            payment_date: vars.payment_date,
+          })
+        }
+      }
       setPaymentAmount('')
       setTransRef('')
       setBankName('')
@@ -451,6 +457,7 @@ export default function Fees() {
       queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
       queryClient.invalidateQueries({ queryKey: ['fee-register'] })
       queryClient.invalidateQueries({ queryKey: ['payments-list'] })
+      queryClient.invalidateQueries({ queryKey: ['payments-page'] })
       queryClient.invalidateQueries({ queryKey: ['receipts-list'] })
       queryClient.invalidateQueries({ queryKey: ['collect-invoices'] })
       refetchCollectInvoices()
@@ -460,8 +467,8 @@ export default function Fees() {
     },
   })
 
-  const handleRecordPayment = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleRecordPayment = (e?: React.FormEvent, action: 'draft' | 'post' = 'post') => {
+    if (e) e.preventDefault()
     if (!selectedCollectStudentId || !activeInvoice) {
       toast.error('Please select a student with an active fee invoice')
       return
@@ -471,7 +478,7 @@ export default function Fees() {
       toast.error('Please enter a valid payment amount')
       return
     }
-    if (amt > Number(activeInvoice.outstanding_amount)) {
+    if (action === 'post' && amt > Number(activeInvoice.outstanding_amount)) {
       if (!window.confirm(`Amount ${fmt(amt)} exceeds outstanding balance of ${fmt(activeInvoice.outstanding_amount)}. Proceed anyway?`)) {
         return
       }
@@ -487,6 +494,7 @@ export default function Fees() {
       bank_name: bankName || undefined,
       cheque_number: chequeNumber || undefined,
       notes: paymentNotes || undefined,
+      action: action,
       allocations: [
         {
           invoice_id: activeInvoice.id,
@@ -2278,13 +2286,24 @@ export default function Fees() {
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={collectMutation.isPending}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all"
-                  >
-                    {collectMutation.isPending ? 'Recording Payment...' : 'Record Payment & Issue Official Receipt'}
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      disabled={collectMutation.isPending}
+                      onClick={() => handleRecordPayment(undefined, 'draft')}
+                      className="w-full sm:w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 transition-all"
+                      title="Save payment voucher as draft without issuing receipt or decrementing invoice"
+                    >
+                      Save as Draft
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={collectMutation.isPending}
+                      className="w-full sm:w-2/3 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all"
+                    >
+                      {collectMutation.isPending ? 'Recording Payment...' : 'Record Payment & Issue Official Receipt'}
+                    </button>
+                  </div>
                 </form>
               </div>
             ) : (

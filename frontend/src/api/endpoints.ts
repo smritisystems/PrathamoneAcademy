@@ -43,6 +43,7 @@ import type {
   WithdrawalReportItem, WithdrawalAnalyticsResponse,
   SystemReleaseCurrent, SystemReleaseListItem, SystemReleaseDetail,
   PendingChangesResponse, ReleaseAuditLogItem,
+  PaymentWorkflowConfig, RefundRecord, PaymentAuditLog,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -423,8 +424,27 @@ export const paymentsApi = {
     bank_name?: string
     cheque_number?: string
     notes?: string
+    action?: 'draft' | 'submit' | 'post'
     allocations: { invoice_id: number | string; installment_id?: number | string; amount: number }[]
-  }) => apiClient.post<{ payment_id: number; receipt_number: string; amount: number }>('/payments/', data),
+  }) => apiClient.post<{ payment_id: number; receipt_number?: string; amount: number; status: string; message: string }>('/payments/', data),
+  update: (id: number | string, data: {
+    amount?: number
+    payment_date?: string
+    payment_method?: string
+    transaction_reference?: string
+    bank_name?: string
+    cheque_number?: string
+    cheque_date?: string
+    notes?: string
+    edit_reason: string
+    allocations?: { invoice_id: number | string; installment_id?: number | string; amount: number }[]
+  }) => apiClient.put<{ message: string; payment_id: number; status: string; receipt_number?: string; is_superseded?: boolean }>(`/payments/${id}`, data),
+  submit: (id: number | string) =>
+    apiClient.post<{ message: string; status: string; payment_id: number }>(`/payments/${id}/submit`),
+  approve: (id: number | string, data?: { remarks?: string }) =>
+    apiClient.post<{ message: string; status: string; payment_id: number }>(`/payments/${id}/approve`, data || {}),
+  postPayment: (id: number | string) =>
+    apiClient.post<{ message: string; status: string; receipt_number: string; payment_id: number }>(`/payments/${id}/post`),
   reverse: (id: number | string, reason: string) =>
     apiClient.post(`/payments/${id}/reverse`, { reason }),
   getReceipt: (receiptNumber: string) =>
@@ -436,6 +456,29 @@ export const paymentsApi = {
     division_id?: number | string
     search?: string
   }) => apiClient.get<PaymentReceiptListItem[]>('/payments/receipts-list', { params }),
+  reprintReceipt: (receiptNumber: string, reason?: string) =>
+    apiClient.post<{ receipt_number: string; reprint_count: number; message: string; is_duplicate: boolean }>(`/payments/receipts/${receiptNumber}/reprint`, { reason }),
+  requestRefund: (paymentId: number | string, data: {
+    amount: number
+    reason: string
+    refund_method?: string
+    reference_note?: string
+    requires_approval?: boolean
+  }) => apiClient.post<{ message: string; refund_id: number; status: string }>(`/payments/${paymentId}/refunds`, data),
+  listRefunds: (params?: { student_id?: number | string; status?: string; limit?: number }) =>
+    apiClient.get<RefundRecord[]>('/payments/refunds/', { params }),
+  approveRefund: (refundId: number | string, data?: { notes?: string }) =>
+    apiClient.post<{ message: string; refund_id: number; status: string }>(`/payments/refunds/${refundId}/approve`, data || {}),
+  rejectRefund: (refundId: number | string, data: { reason: string }) =>
+    apiClient.post<{ message: string; refund_id: number; status: string }>(`/payments/refunds/${refundId}/reject`, data),
+  processRefund: (refundId: number | string, data?: { notes?: string }) =>
+    apiClient.post<{ message: string; refund_id: number; status: string }>(`/payments/refunds/${refundId}/process`, data || {}),
+  getAuditTrail: (paymentId: number | string) =>
+    apiClient.get<PaymentAuditLog[]>(`/payments/${paymentId}/audit-trail`),
+  getWorkflowConfig: () =>
+    apiClient.get<PaymentWorkflowConfig>('/payments/workflow/config'),
+  updateWorkflowConfig: (data: Partial<PaymentWorkflowConfig>) =>
+    apiClient.put<{ message: string; config: PaymentWorkflowConfig }>('/payments/workflow/config', data),
 }
 
 // ─── Reports ──────────────────────────────────────────────────────────────────

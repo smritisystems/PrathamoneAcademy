@@ -201,6 +201,8 @@ export default function PaymentReceiptView({
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false)
 
   const isReversed = receipt.status === 'reversed' || receipt.is_reversed
+  const isSuperseded = receipt.status === 'superseded' || Boolean(receipt.superseded_at)
+  const isDuplicate = Boolean(receipt.is_duplicate) || (Number(receipt.reprint_count || 0) > 0)
 
   // Authoritative financial totals
   const feeSummary = receipt.fee_summary || {
@@ -375,6 +377,38 @@ export default function PaymentReceiptView({
           </div>
         )}
 
+        {/* Superseded Stamp Notice (if applicable) */}
+        {isSuperseded && !isReversed && (
+          <div className="mb-3 bg-amber-50 border-2 border-amber-300 rounded-xl p-2.5 text-center text-amber-900 relative z-10">
+            <div className="flex items-center justify-center gap-1.5 font-black uppercase tracking-wider text-xs">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <span>SUPERSEDED RECEIPT (VOID / REPLACED)</span>
+            </div>
+            <p className="text-[10px] text-amber-800 mt-0.5">
+              This receipt was superseded
+              {receipt.superseded_at ? ` on ${new Date(receipt.superseded_at).toLocaleDateString('en-IN')}` : ''}
+              {receipt.superseded_by_receipt_number ? ` and replaced by #${receipt.superseded_by_receipt_number}` : ''}.
+              It is no longer valid for official accounting or tax reconciliation.
+            </p>
+          </div>
+        )}
+
+        {/* Watermarks for Printed / Display Background */}
+        {isDuplicate && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 select-none overflow-hidden opacity-[0.06] print:opacity-[0.08]">
+            <span className="text-6xl sm:text-7xl font-black tracking-widest uppercase rotate-[-30deg] text-purple-950 border-8 border-dashed border-purple-950 p-6 sm:p-8 rounded-3xl">
+              DUPLICATE COPY
+            </span>
+          </div>
+        )}
+        {isSuperseded && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 select-none overflow-hidden opacity-[0.07] print:opacity-[0.10]">
+            <span className="text-6xl sm:text-7xl font-black tracking-widest uppercase rotate-[-30deg] text-amber-950 border-8 border-dashed border-amber-950 p-6 sm:p-8 rounded-3xl">
+              SUPERSEDED
+            </span>
+          </div>
+        )}
+
         {/* 1. Official Academy Header */}
         <header className="receipt-header flex items-center justify-between gap-3 pb-3 relative z-10">
           <div className="flex items-center gap-3 min-w-0">
@@ -498,16 +532,26 @@ export default function PaymentReceiptView({
           </div>
 
           {/* Status Badge */}
-          <div className="flex items-center justify-center px-1">
+          <div className="flex items-center justify-center gap-1.5 px-1">
             {isReversed ? (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-red-500 bg-red-50 text-red-700 font-black text-[11px] tracking-wide">
                 <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
                 <span>VOIDED</span>
               </span>
+            ) : isSuperseded ? (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-amber-500 bg-amber-50 text-amber-800 font-black text-[11px] tracking-wide">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                <span>SUPERSEDED</span>
+              </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500 bg-emerald-50/90 text-emerald-700 font-black text-[11px] tracking-wide shadow-2xs">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                 <span>PAID</span>
+              </span>
+            )}
+            {isDuplicate && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-purple-400 bg-purple-50 text-purple-700 font-extrabold text-[10px] tracking-wider uppercase">
+                COPY
               </span>
             )}
           </div>

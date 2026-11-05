@@ -9,37 +9,47 @@
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
-#  * @version     1.0.0
+#  * @version     2.0.0
 #  * @created     2026-11-03
 #  * @updated     2026-11-05
 #  *
-#  * @description API endpoints for transaction recording, payment reversals, audit logs, and receipt vouchers.
+#  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, desc, and_
 from sqlalchemy.orm import selectinload
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from datetime import date, datetime, timezone
 import json
-import uuid
+
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
-from app.models.payment import Payment, PaymentAllocation, PaymentReceipt
+from app.core.deps import get_current_active_user, require_role, is_sysadmin
+from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
 from app.models.enrollment import StudentEnrollment
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.board import Board
-from app.models.user import User
+from app.models.user import User, AuditLog
 from app.models.academic_year import AcademicYear
+from app.models.settings import InstitutionSetting
 from app.services.sequence import generate_next_receipt_number
-from pydantic import BaseModel
+from app.services.payment_workflow_service import (
+    get_payment_workflow_settings,
+    check_requires_erp_approval,
+    execute_payment_posting,
+    execute_payment_edit,
+    log_payment_audit,
+)
+from pydantic import BaseModel, Field
 
 router = APIRouter()
+
+APPROVER_ROLES = {"superadmin", "sysadmin", "super_admin", "admin", "principal"}
 
 
 class AllocationInput(BaseModel):
@@ -60,19 +70,63 @@ class PaymentCreate(BaseModel):
     cheque_date: Optional[date] = None
     notes: Optional[str] = None
     allocations: List[AllocationInput]
+    action: Optional[str] = "post"  # "draft" | "submit" | "post"
+
+
+class PaymentUpdate(BaseModel):
+    amount: Optional[Decimal] = None
+    payment_date: Optional[date] = None
+    payment_method: Optional[str] = None
+    transaction_reference: Optional[str] = None
+    bank_name: Optional[str] = None
+    cheque_number: Optional[str] = None
+    cheque_date: Optional[date] = None
+    notes: Optional[str] = None
+    allocations: Optional[List[AllocationInput]] = None
+    reason: Optional[str] = None  # Mandatory when modifying submitted or posted payments
 
 
 class ReversalRequest(BaseModel):
     reason: str
 
 
+class RefundRequest(BaseModel):
+    amount: Decimal
+    refund_method: str = "bank_transfer"
+    reason: str
+    reference_number: Optional[str] = None
+    notes: Optional[str] = None
+    process_now: Optional[bool] = False
+
+
+class RefundRejectRequest(BaseModel):
+    reason: str
+
+
+class WorkflowConfigUpdate(BaseModel):
+    payment_workflow_mode: Optional[str] = None  # "simple" | "standard_erp"
+    erp_approval_amount_threshold: Optional[Decimal] = None
+    erp_approval_roles: Optional[List[str]] = None
+    erp_require_approval_methods: Optional[List[str]] = None
+    allow_posted_payment_edits: Optional[bool] = None
+    refund_approval_required: Optional[bool] = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. RECORD / CREATE PAYMENT (Draft, Submit, or Post)
+# ─────────────────────────────────────────────────────────────────────────────
 @router.post("/", status_code=201)
 async def create_payment(
     data: PaymentCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_role("superadmin", "admin", "accountant")),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "staff", "principal")),
 ):
-    """Record a payment with allocation. Atomic transaction prevents overbilling."""
+    """
+    Records a payment transaction conforming to configured workflow mode:
+    - 'draft': Saves unposted draft voucher. Does NOT impact student balance or assign receipt.
+    - 'submit': Submits payment for review / approval.
+    - 'post': Posts directly in Simple Mode; evaluates approval gates in Standard ERP Mode.
+    """
     # Validate allocation total equals payment amount
     total_allocated = sum(a.amount for a in data.allocations)
     if abs(total_allocated - data.amount) > Decimal("0.01"):
@@ -81,25 +135,20 @@ async def create_payment(
             detail=f"Total allocation ({total_allocated}) must equal payment amount ({data.amount})",
         )
 
-    # Validate each allocation
+    # Validate each allocation against invoice & installment
     for alloc in data.allocations:
         inv_result = await db.execute(
             select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id)
         )
         invoice = inv_result.scalar_one_or_none()
         if not invoice:
-            raise HTTPException(
-                status_code=404, detail=f"Invoice {alloc.invoice_id} not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Invoice {alloc.invoice_id} not found")
         if invoice.student_id != data.student_id:
-            raise HTTPException(
-                status_code=400,
-                detail="Invoice does not belong to this student",
-            )
+            raise HTTPException(status_code=400, detail="Invoice does not belong to this student")
         if alloc.amount > invoice.outstanding_amount + Decimal("0.01"):
             raise HTTPException(
                 status_code=400,
-                detail=f"Allocation amount {alloc.amount} exceeds outstanding {invoice.outstanding_amount}",
+                detail=f"Allocation amount {alloc.amount} exceeds outstanding balance {invoice.outstanding_amount}",
             )
 
         if alloc.installment_id:
@@ -111,10 +160,7 @@ async def create_payment(
             )
             installment = inst_result.scalar_one_or_none()
             if not installment:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Installment {alloc.installment_id} not found",
-                )
+                raise HTTPException(status_code=404, detail=f"Installment {alloc.installment_id} not found")
             remaining = installment.amount - installment.paid_amount
             if alloc.amount > remaining + Decimal("0.01"):
                 raise HTTPException(
@@ -122,101 +168,676 @@ async def create_payment(
                     detail=f"Allocation exceeds installment balance ({remaining})",
                 )
 
-    # Create payment record
-    payment_data = data.model_dump(exclude={"allocations"})
-    payment = Payment(**payment_data, collected_by_id=current_user.id)
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+    settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
+
+    requested_action = (data.action or "post").lower()
+    now = datetime.now(timezone.utc)
+
+    # ─── CASE A: DRAFT PAYMENT ───────────────────────────────────────────────
+    if requested_action == "draft":
+        payment_dict = data.model_dump(exclude={"allocations", "action"})
+        payment = Payment(
+            **payment_dict,
+            status="draft",
+            collected_by_id=current_user.id,
+        )
+        db.add(payment)
+        await db.flush()
+
+        for alloc in data.allocations:
+            db.add(PaymentAllocation(
+                payment_id=payment.id,
+                invoice_id=alloc.invoice_id,
+                installment_id=alloc.installment_id,
+                allocated_amount=alloc.amount,
+            ))
+
+        await db.commit()
+        return {
+            "payment_id": payment.id,
+            "status": "draft",
+            "amount": float(payment.amount),
+            "payment_date": str(payment.payment_date),
+            "message": "Payment draft created successfully. Balance will be decremented upon posting.",
+        }
+
+    # ─── CASE B: SUBMIT PAYMENT ──────────────────────────────────────────────
+    if requested_action == "submit":
+        payment_dict = data.model_dump(exclude={"allocations", "action"})
+        payment = Payment(
+            **payment_dict,
+            status="submitted",
+            submitted_at=now,
+            submitted_by_id=current_user.id,
+            collected_by_id=current_user.id,
+        )
+        db.add(payment)
+        await db.flush()
+
+        for alloc in data.allocations:
+            db.add(PaymentAllocation(
+                payment_id=payment.id,
+                invoice_id=alloc.invoice_id,
+                installment_id=alloc.installment_id,
+                allocated_amount=alloc.amount,
+            ))
+
+        await db.commit()
+        return {
+            "payment_id": payment.id,
+            "status": "submitted",
+            "amount": float(payment.amount),
+            "payment_date": str(payment.payment_date),
+            "message": "Payment submitted successfully. Awaiting review and posting.",
+        }
+
+    # ─── CASE C: POST DIRECTLY (Standard Path) ───────────────────────────────
+    # In Standard ERP Mode: evaluate whether transaction requires approval
+    requires_approval = check_requires_erp_approval(
+        settings,
+        amount=data.amount,
+        payment_method=data.payment_method,
+        user_role=getattr(current_user, "role", "staff"),
+    )
+
+    if requires_approval and getattr(current_user, "role", None) not in APPROVER_ROLES:
+        # Route through submitted state awaiting approval
+        payment_dict = data.model_dump(exclude={"allocations", "action"})
+        payment = Payment(
+            **payment_dict,
+            status="submitted",
+            submitted_at=now,
+            submitted_by_id=current_user.id,
+            collected_by_id=current_user.id,
+        )
+        db.add(payment)
+        await db.flush()
+
+        for alloc in data.allocations:
+            db.add(PaymentAllocation(
+                payment_id=payment.id,
+                invoice_id=alloc.invoice_id,
+                installment_id=alloc.installment_id,
+                allocated_amount=alloc.amount,
+            ))
+
+        await db.commit()
+        return {
+            "payment_id": payment.id,
+            "status": "submitted",
+            "amount": float(payment.amount),
+            "payment_date": str(payment.payment_date),
+            "requires_approval": True,
+            "message": "Payment submitted for approval under Standard ERP workflow rules.",
+        }
+
+    # Immediate posting: create payment in submitted state and execute posting
+    payment_dict = data.model_dump(exclude={"allocations", "action"})
+    payment = Payment(
+        **payment_dict,
+        status="submitted",
+        submitted_at=now,
+        submitted_by_id=current_user.id,
+        collected_by_id=current_user.id,
+    )
     db.add(payment)
     await db.flush()
 
-    # Create allocations and update balances
     for alloc in data.allocations:
-        allocation = PaymentAllocation(
+        db.add(PaymentAllocation(
             payment_id=payment.id,
             invoice_id=alloc.invoice_id,
             installment_id=alloc.installment_id,
             allocated_amount=alloc.amount,
-        )
-        db.add(allocation)
+        ))
 
-        inv_result = await db.execute(
-            select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id)
-        )
-        invoice = inv_result.scalar_one_or_none()
-        invoice.paid_amount = invoice.paid_amount + alloc.amount
-        invoice.outstanding_amount = max(
-            invoice.outstanding_amount - alloc.amount, Decimal("0")
-        )
-        if invoice.outstanding_amount <= Decimal("0.01"):
-            invoice.status = "paid"
-        elif invoice.paid_amount > Decimal("0"):
-            invoice.status = "partial"
-
-        if alloc.installment_id:
-            inst_result = await db.execute(
-                select(FeeInstallment).where(
-                    FeeInstallment.id == alloc.installment_id
-                )
-            )
-            installment = inst_result.scalar_one_or_none()
-            if installment:
-                installment.paid_amount = installment.paid_amount + alloc.amount
-                remaining = installment.amount - installment.paid_amount
-                if remaining <= Decimal("0.01"):
-                    installment.status = "paid"
-                elif installment.paid_amount > Decimal("0"):
-                    installment.status = "partial"
-
-    # Generate sequential receipt number conforming to institute settings (e.g. RCP-2026-0171)
-    effective_inst_id = getattr(current_user, "institution_id", None) or 1
-    receipt_number = await generate_next_receipt_number(
+    receipt = await execute_payment_posting(
         db,
-        institution_id=effective_inst_id,
-        academic_year_id=data.academic_year_id,
+        payment=payment,
+        current_user_id=current_user.id,
+        effective_institution_id=effective_inst_id,
     )
 
-    student_result = await db.execute(
-        select(Student).where(Student.id == data.student_id)
-    )
-    student = student_result.scalar_one_or_none()
-
-    receipt_data = {
-        "receipt_number": receipt_number,
-        "student_name": (
-            f"{student.first_name} {student.last_name}" if student else ""
-        ),
-        "admission_number": student.admission_number if student else "",
-        "amount": float(data.amount),
-        "payment_date": str(data.payment_date),
-        "payment_method": data.payment_method,
-        "transaction_reference": data.transaction_reference,
-        "allocations": [
-            {"invoice_id": a.invoice_id, "amount": float(a.amount)}
-            for a in data.allocations
-        ],
-    }
-
-    receipt = PaymentReceipt(
-        receipt_number=receipt_number,
-        payment_id=payment.id,
-        student_id=data.student_id,
-        amount=data.amount,
-        payment_date=data.payment_date,
-        payment_method=data.payment_method,
-        receipt_data=json.dumps(receipt_data),
-    )
-    db.add(receipt)
     await db.commit()
 
     return {
         "payment_id": payment.id,
-        "receipt_number": receipt_number,
-        "amount": float(data.amount),
-        "payment_method": data.payment_method,
-        "payment_date": str(data.payment_date),
-        "message": "Payment recorded successfully",
+        "receipt_number": receipt.receipt_number,
+        "amount": float(payment.amount),
+        "payment_method": payment.payment_method,
+        "payment_date": str(payment.payment_date),
+        "status": payment.status,
+        "message": "Payment recorded and posted successfully",
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. SUBMIT DRAFT PAYMENT
+# ─────────────────────────────────────────────────────────────────────────────
+@router.post("/{payment_id}/submit")
+async def submit_draft_payment(
+    payment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "staff", "principal")),
+):
+    """Submits a draft payment voucher for review, approval, or posting."""
+    result = await db.execute(select(Payment).where(Payment.id == payment_id))
+    payment = result.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.status != "draft":
+        raise HTTPException(status_code=400, detail=f"Cannot submit payment in '{payment.status}' state")
+
+    now = datetime.now(timezone.utc)
+    payment.status = "submitted"
+    payment.submitted_at = now
+    payment.submitted_by_id = current_user.id
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="payment_submitted",
+        payment_id=payment.id,
+        old_data={"status": "draft"},
+        new_data={"status": "submitted"},
+        reason="Payment draft submitted for posting",
+    )
+
+    await db.commit()
+    return {"message": "Payment submitted successfully", "payment_id": payment.id, "status": "submitted"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. APPROVE SUBMITTED PAYMENT (Standard ERP Mode)
+# ─────────────────────────────────────────────────────────────────────────────
+@router.post("/{payment_id}/approve")
+async def approve_payment(
+    payment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
+):
+    """Approves a submitted payment under Standard ERP workflow rules."""
+    result = await db.execute(select(Payment).where(Payment.id == payment_id))
+    payment = result.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if payment.status != "submitted":
+        raise HTTPException(status_code=400, detail=f"Cannot approve payment in '{payment.status}' state")
+
+    now = datetime.now(timezone.utc)
+    payment.status = "approved"
+    payment.approved_at = now
+    payment.approved_by_id = current_user.id
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="payment_approved",
+        payment_id=payment.id,
+        old_data={"status": "submitted"},
+        new_data={"status": "approved"},
+        reason="Payment approved by authorized reviewer",
+    )
+
+    await db.commit()
+    return {"message": "Payment approved successfully", "payment_id": payment.id, "status": "approved"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. POST APPROVED OR SUBMITTED PAYMENT
+# ─────────────────────────────────────────────────────────────────────────────
+@router.post("/{payment_id}/post")
+async def post_payment(
+    payment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
+):
+    """Executes ledger posting for submitted or approved payments."""
+    result = await db.execute(
+        select(Payment).options(selectinload(Payment.allocations)).where(Payment.id == payment_id)
+    )
+    payment = result.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+    settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
+
+    # In Standard ERP Mode, if approval is required, check that payment is approved
+    if settings.get("workflow_mode") == "standard_erp":
+        req_approval = check_requires_erp_approval(
+            settings,
+            amount=payment.amount,
+            payment_method=payment.payment_method,
+            user_role=getattr(current_user, "role", "staff"),
+        )
+        if req_approval and payment.status != "approved" and getattr(current_user, "role", None) not in APPROVER_ROLES:
+            raise HTTPException(
+                status_code=400,
+                detail="Payment requires approval before posting under Standard ERP rules",
+            )
+
+    receipt = await execute_payment_posting(
+        db,
+        payment=payment,
+        current_user_id=current_user.id,
+        effective_institution_id=effective_inst_id,
+    )
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="payment_posted",
+        payment_id=payment.id,
+        old_data={"status": "submitted"},
+        new_data={"status": "posted", "receipt_number": receipt.receipt_number},
+        reason="Payment ledger posting executed",
+    )
+
+    await db.commit()
+
+    return {
+        "message": "Payment posted successfully",
+        "payment_id": payment.id,
+        "receipt_number": receipt.receipt_number,
+        "status": payment.status,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. AUDITED EDIT PAYMENT (Draft, Submitted, or Posted)
+# ─────────────────────────────────────────────────────────────────────────────
+@router.put("/{payment_id}")
+async def update_payment(
+    payment_id: int,
+    data: PaymentUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "staff", "principal")),
+):
+    """
+    Audited modification of a draft, submitted, or posted payment.
+    - Draft: freely editable by authorized staff/accountant.
+    - Submitted: editable with mandatory audit reason.
+    - Posted: editable only by Admins/SysAdmins with mandatory audit reason.
+      Minor changes keep receipt #; financial/method changes supersede previous receipt.
+    """
+    result = await db.execute(
+        select(Payment)
+        .options(
+            selectinload(Payment.allocations),
+            selectinload(Payment.receipts),
+        )
+        .where(Payment.id == payment_id)
+    )
+    payment = result.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    # Permission check for posted payments
+    if payment.status in ("posted", "completed"):
+        if getattr(current_user, "role", None) not in APPROVER_ROLES:
+            raise HTTPException(
+                status_code=403,
+                detail="Administrator privileges required to modify a posted financial payment",
+            )
+
+    update_dict = data.model_dump(exclude_unset=True, exclude={"reason"})
+    if "allocations" in update_dict and update_dict["allocations"]:
+        update_dict["allocations"] = [a.model_dump() for a in data.allocations]
+
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+
+    edit_res = await execute_payment_edit(
+        db,
+        payment=payment,
+        update_data=update_dict,
+        reason=data.reason or "",
+        current_user=current_user,
+        effective_institution_id=effective_inst_id,
+    )
+
+    await db.commit()
+    return edit_res
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. REPRINT RECEIPT (Duplicate Copy Watermark)
+# ─────────────────────────────────────────────────────────────────────────────
+@router.post("/receipts/{receipt_number}/reprint")
+async def reprint_receipt(
+    receipt_number: str,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Increments reprint count and records duplicate copy issuance."""
+    result = await db.execute(
+        select(PaymentReceipt).where(PaymentReceipt.receipt_number == receipt_number)
+    )
+    receipt = result.scalar_one_or_none()
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    receipt.reprint_count += 1
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="receipt_reprinted",
+        payment_id=receipt.payment_id,
+        old_data=None,
+        new_data={"receipt_number": receipt.receipt_number, "reprint_count": receipt.reprint_count},
+        reason=f"Receipt reprint #{receipt.reprint_count} requested by {current_user.username}",
+    )
+    await db.commit()
+
+    return {
+        "receipt_number": receipt.receipt_number,
+        "reprint_count": receipt.reprint_count,
+        "is_duplicate": True,
+        "message": f"Duplicate copy issued (Reprint #{receipt.reprint_count})",
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. REFUND WORKFLOW ENDPOINTS
+# ─────────────────────────────────────────────────────────────────────────────
+@router.post("/{payment_id}/refunds")
+async def create_payment_refund(
+    payment_id: int,
+    data: RefundRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
+):
+    """
+    Creates a refund request linked directly to an existing posted payment.
+    Enforces that refund cannot exceed remaining refundable collection balance.
+    """
+    pay_res = await db.execute(
+        select(Payment).options(selectinload(Payment.allocations)).where(Payment.id == payment_id)
+    )
+    payment = pay_res.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment record not found")
+    if payment.status not in ("posted", "completed"):
+        raise HTTPException(status_code=400, detail="Refunds can only be processed on posted payments")
+
+    if data.amount <= Decimal("0.00"):
+        raise HTTPException(status_code=400, detail="Refund amount must be greater than zero")
+
+    # Calculate existing non-rejected refunds for this payment
+    ref_res = await db.execute(
+        select(func.coalesce(func.sum(Refund.amount), 0)).where(
+            Refund.payment_id == payment_id,
+            Refund.status.in_(["requested", "approved", "completed"]),
+        )
+    )
+    existing_refunds_sum = Decimal(str(ref_res.scalar() or 0))
+    max_refundable = payment.amount - existing_refunds_sum
+
+    if data.amount > max_refundable + Decimal("0.01"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Requested refund (₹{data.amount}) exceeds remaining refundable balance (₹{max_refundable})",
+        )
+
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+    settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
+
+    # Determine initial status: if user is admin and process_now is true, process immediately
+    is_admin = getattr(current_user, "role", None) in APPROVER_ROLES
+    initial_status = "completed" if (is_admin and data.process_now) else "requested"
+
+    now = datetime.now(timezone.utc)
+    refund = Refund(
+        institution_id=effective_inst_id,
+        student_id=payment.student_id,
+        payment_id=payment.id,
+        invoice_id=payment.allocations[0].invoice_id if payment.allocations else None,
+        amount=data.amount,
+        refund_date=date.today(),
+        refund_method=data.refund_method,
+        reference_number=data.reference_number,
+        reason=data.reason,
+        notes=data.notes,
+        status=initial_status,
+        requested_by_id=current_user.id,
+        processed_by_id=current_user.id if initial_status == "completed" else None,
+        approved_by_id=current_user.id if initial_status == "completed" else None,
+        approved_at=now if initial_status == "completed" else None,
+    )
+    db.add(refund)
+    await db.flush()
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action=f"refund_{initial_status}",
+        payment_id=payment.id,
+        old_data=None,
+        new_data={"refund_id": refund.id, "amount": float(data.amount), "status": initial_status},
+        reason=f"Refund of ₹{data.amount} for payment {payment.id}: {data.reason}",
+    )
+
+    await db.commit()
+
+    return {
+        "refund_id": refund.id,
+        "payment_id": payment.id,
+        "amount": float(refund.amount),
+        "status": refund.status,
+        "message": "Refund processed successfully" if initial_status == "completed" else "Refund requested for approval",
+    }
+
+
+@router.post("/refunds/{refund_id}/approve")
+async def approve_refund(
+    refund_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
+):
+    """Approves a requested refund."""
+    result = await db.execute(select(Refund).where(Refund.id == refund_id))
+    refund = result.scalar_one_or_none()
+    if not refund:
+        raise HTTPException(status_code=404, detail="Refund record not found")
+    if refund.status != "requested":
+        raise HTTPException(status_code=400, detail=f"Cannot approve refund in '{refund.status}' state")
+
+    now = datetime.now(timezone.utc)
+    refund.status = "approved"
+    refund.approved_by_id = current_user.id
+    refund.approved_at = now
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="refund_approved",
+        payment_id=refund.payment_id or 0,
+        old_data={"status": "requested"},
+        new_data={"status": "approved", "refund_id": refund.id},
+        reason=f"Refund #{refund.id} approved by {current_user.username}",
+    )
+
+    await db.commit()
+    return {"message": "Refund approved successfully", "refund_id": refund.id, "status": "approved"}
+
+
+@router.post("/refunds/{refund_id}/process")
+async def process_refund(
+    refund_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
+):
+    """Processes disbursement for an approved refund."""
+    result = await db.execute(select(Refund).where(Refund.id == refund_id))
+    refund = result.scalar_one_or_none()
+    if not refund:
+        raise HTTPException(status_code=404, detail="Refund record not found")
+    if refund.status not in ("requested", "approved"):
+        raise HTTPException(status_code=400, detail=f"Cannot process refund in '{refund.status}' state")
+
+    refund.status = "completed"
+    refund.processed_by_id = current_user.id
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="refund_processed",
+        payment_id=refund.payment_id or 0,
+        old_data={"status": refund.status},
+        new_data={"status": "completed", "refund_id": refund.id},
+        reason=f"Refund #{refund.id} marked as disbursed",
+    )
+
+    await db.commit()
+    return {"message": "Refund disbursed and completed successfully", "refund_id": refund.id, "status": "completed"}
+
+
+@router.get("/refunds/")
+async def list_refunds(
+    student_id: Optional[int] = None,
+    payment_id: Optional[int] = None,
+    status: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Lists refund records with student and payment metadata."""
+    query = (
+        select(Refund, Student, PaymentReceipt.receipt_number)
+        .join(Student, Refund.student_id == Student.id)
+        .outerjoin(PaymentReceipt, Refund.payment_id == PaymentReceipt.payment_id)
+    )
+    if student_id:
+        query = query.where(Refund.student_id == student_id)
+    if payment_id:
+        query = query.where(Refund.payment_id == payment_id)
+    if status:
+        query = query.where(Refund.status == status)
+
+    query = query.order_by(desc(Refund.refund_date), desc(Refund.id))
+    rows = (await db.execute(query)).all()
+
+    return [
+        {
+            "id": r.id,
+            "student_id": r.student_id,
+            "student_name": f"{s.first_name} {s.last_name}",
+            "admission_number": s.admission_number,
+            "payment_id": r.payment_id,
+            "receipt_number": rec_num,
+            "amount": float(r.amount),
+            "refund_date": str(r.refund_date),
+            "refund_method": r.refund_method,
+            "reason": r.reason,
+            "status": r.status,
+            "reference_number": r.reference_number,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r, s, rec_num in rows
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. PAYMENT AUDIT TRAIL
+# ─────────────────────────────────────────────────────────────────────────────
+@router.get("/{payment_id}/audit-trail")
+async def get_payment_audit_trail(
+    payment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Returns chronological audit records for a payment."""
+    query = (
+        select(AuditLog, User.username, User.first_name, User.last_name)
+        .outerjoin(User, AuditLog.user_id == User.id)
+        .where(AuditLog.resource_type == "payment", AuditLog.resource_id == payment_id)
+        .order_by(desc(AuditLog.created_at))
+    )
+    rows = (await db.execute(query)).all()
+
+    return [
+        {
+            "id": log.id,
+            "action": log.action,
+            "actor": f"{fn or ''} {ln or ''}".strip() or uname or "System",
+            "old_data": json.loads(log.old_data) if log.old_data else None,
+            "new_data": json.loads(log.new_data) if log.new_data else None,
+            "reason": log.details,
+            "severity": log.severity,
+            "created_at": log.created_at.isoformat() if log.created_at else None,
+        }
+        for log, uname, fn, ln in rows
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. WORKFLOW CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────
+@router.get("/workflow/config")
+async def get_workflow_config(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal")),
+):
+    """Returns current institute payment workflow configuration."""
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+    settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
+    return {
+        "workflow_mode": settings["workflow_mode"],
+        "approval_amount_threshold": float(settings["approval_amount_threshold"]),
+        "approval_roles": settings["approval_roles"],
+        "require_approval_methods": settings["require_approval_methods"],
+        "allow_posted_payment_edits": settings["allow_posted_payment_edits"],
+        "refund_approval_required": settings["refund_approval_required"],
+    }
+
+
+@router.put("/workflow/config")
+async def update_workflow_config(
+    data: WorkflowConfigUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin")),
+):
+    """Updates payment workflow configuration."""
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+
+    mapping = {
+        "payment_workflow_mode": data.payment_workflow_mode,
+        "erp_approval_amount_threshold": str(data.erp_approval_amount_threshold) if data.erp_approval_amount_threshold is not None else None,
+        "erp_approval_roles": json.dumps(data.erp_approval_roles) if data.erp_approval_roles is not None else None,
+        "erp_require_approval_methods": json.dumps(data.erp_require_approval_methods) if data.erp_require_approval_methods is not None else None,
+        "allow_posted_payment_edits": str(data.allow_posted_payment_edits).lower() if data.allow_posted_payment_edits is not None else None,
+        "refund_approval_required": str(data.refund_approval_required).lower() if data.refund_approval_required is not None else None,
+    }
+
+    for key, val in mapping.items():
+        if val is None:
+            continue
+        stmt = select(InstitutionSetting).where(
+            and_(
+                InstitutionSetting.institution_id == effective_inst_id,
+                InstitutionSetting.category == "fees",
+                InstitutionSetting.key == key,
+            )
+        )
+        row = (await db.execute(stmt)).scalar_one_or_none()
+        if row:
+            row.value = val
+        else:
+            db.add(InstitutionSetting(
+                institution_id=effective_inst_id,
+                category="fees",
+                key=key,
+                value=val,
+                updated_by_id=current_user.id,
+            ))
+
+    await db.commit()
+    return {"message": "Payment workflow settings updated successfully"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 10. LIST & GET PAYMENTS (Existing endpoints updated for new lifecycle)
+# ─────────────────────────────────────────────────────────────────────────────
 @router.get("/")
 async def list_payments(
     student_id: Optional[int] = None,
@@ -239,7 +860,10 @@ async def list_payments(
             Board.name.label("board_name"),
         )
         .join(Student, Payment.student_id == Student.id)
-        .outerjoin(PaymentReceipt, Payment.id == PaymentReceipt.payment_id)
+        .outerjoin(
+            PaymentReceipt,
+            (Payment.id == PaymentReceipt.payment_id) & (PaymentReceipt.status == "valid"),
+        )
         .outerjoin(
             StudentEnrollment,
             (Payment.student_id == StudentEnrollment.student_id)
@@ -260,7 +884,10 @@ async def list_payments(
     if division_id:
         query = query.where(StudentEnrollment.division_id == division_id)
     if status:
-        query = query.where(Payment.status == status)
+        if status in ("posted", "completed"):
+            query = query.where(Payment.status.in_(["posted", "completed"]))
+        else:
+            query = query.where(Payment.status == status)
     if search:
         search_term = f"%{search.strip()}%"
         query = query.where(
@@ -289,9 +916,10 @@ async def list_payments(
             "payment_date": str(p.payment_date),
             "payment_method": p.payment_method,
             "transaction_reference": p.transaction_reference or "N/A",
-            "status": p.status,
+            "status": "posted" if p.status == "completed" else p.status,
+            "edit_count": getattr(p, "edit_count", 0),
             "notes": p.notes or "",
-            "receipt_number": rec_num or f"RCP-2026-{p.id:04d}",
+            "receipt_number": rec_num or (f"RCP-2026-{p.id:04d}" if p.status in ("posted", "completed") else None),
         }
         for p, s, rec_num, bch_name, std_name, b_name in rows
     ]
@@ -358,7 +986,10 @@ async def list_receipts(
             except Exception:
                 pass
 
-        is_voided = p.status == "reversed" or receipt_meta.get("status") == "voided"
+        is_voided = p.status == "reversed" or r.status == "voided" or receipt_meta.get("status") == "voided"
+        is_superseded = r.status == "superseded" or receipt_meta.get("status") == "superseded"
+
+        receipt_status = "voided" if is_voided else ("superseded" if is_superseded else "valid")
 
         receipts.append({
             "id": r.id,
@@ -373,8 +1004,11 @@ async def list_receipts(
             "amount": float(r.amount),
             "payment_date": str(r.payment_date),
             "payment_method": r.payment_method,
-            "status": "voided" if is_voided else "valid",
+            "status": receipt_status,
             "is_voided": is_voided,
+            "is_superseded": is_superseded,
+            "version": r.version,
+            "reprint_count": r.reprint_count,
             "generated_at": r.generated_at.isoformat() if r.generated_at else None,
             "details": receipt_meta,
         })
@@ -392,13 +1026,15 @@ async def get_payment(
         select(Payment)
         .options(
             selectinload(Payment.allocations),
-            selectinload(Payment.receipt),
+            selectinload(Payment.receipts),
         )
         .where(Payment.id == payment_id)
     )
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
+    
+    curr_rec = next((r for r in payment.receipts if r.status == "valid"), None) if payment.receipts else None
     return {
         "id": payment.id,
         "student_id": payment.student_id,
@@ -406,11 +1042,15 @@ async def get_payment(
         "payment_date": str(payment.payment_date),
         "payment_method": payment.payment_method,
         "transaction_reference": payment.transaction_reference,
-        "status": payment.status,
+        "status": "posted" if payment.status == "completed" else payment.status,
         "notes": payment.notes,
-        "receipt_number": (
-            payment.receipt.receipt_number if payment.receipt else None
-        ),
+        "receipt_number": curr_rec.receipt_number if curr_rec else None,
+        "version": curr_rec.version if curr_rec else 1,
+        "edit_count": payment.edit_count,
+        "submitted_at": payment.submitted_at.isoformat() if payment.submitted_at else None,
+        "approved_at": payment.approved_at.isoformat() if payment.approved_at else None,
+        "posted_at": payment.posted_at.isoformat() if payment.posted_at else None,
+        "last_edited_at": payment.last_edited_at.isoformat() if payment.last_edited_at else None,
         "allocations": [
             {
                 "id": a.id,
@@ -428,12 +1068,12 @@ async def reverse_payment(
     payment_id: int,
     data: ReversalRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(require_role("superadmin", "admin", "accountant")),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
 ):
     """Reverse a payment, restore invoice balances, and mark receipt as voided."""
     result = await db.execute(
         select(Payment)
-        .options(selectinload(Payment.allocations))
+        .options(selectinload(Payment.allocations), selectinload(Payment.receipts))
         .where(Payment.id == payment_id)
     )
     payment = result.scalar_one_or_none()
@@ -442,54 +1082,67 @@ async def reverse_payment(
     if payment.status == "reversed":
         raise HTTPException(status_code=400, detail="Payment already reversed")
 
-    for alloc in payment.allocations:
-        inv_result = await db.execute(
-            select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id)
-        )
-        invoice = inv_result.scalar_one_or_none()
-        if invoice:
-            invoice.paid_amount = max(
-                invoice.paid_amount - alloc.allocated_amount, Decimal("0")
+    # Only posted/completed payments affected ledger balances
+    if payment.status in ("posted", "completed"):
+        for alloc in payment.allocations:
+            inv_result = await db.execute(
+                select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id)
             )
-            invoice.outstanding_amount = invoice.net_amount - invoice.paid_amount
-            if invoice.paid_amount <= Decimal("0"):
-                invoice.status = "unpaid"
-            else:
-                invoice.status = "partial"
-
-        if alloc.installment_id:
-            inst_result = await db.execute(
-                select(FeeInstallment).where(
-                    FeeInstallment.id == alloc.installment_id
+            invoice = inv_result.scalar_one_or_none()
+            if invoice:
+                invoice.paid_amount = max(
+                    invoice.paid_amount - alloc.allocated_amount, Decimal("0")
                 )
-            )
-            installment = inst_result.scalar_one_or_none()
-            if installment:
-                installment.paid_amount = max(
-                    installment.paid_amount - alloc.allocated_amount, Decimal("0")
-                )
-                if installment.paid_amount <= Decimal("0"):
-                    installment.status = "unpaid"
+                invoice.outstanding_amount = invoice.net_amount - invoice.paid_amount
+                if invoice.paid_amount <= Decimal("0"):
+                    invoice.status = "unpaid"
                 else:
-                    installment.status = "partial"
+                    invoice.status = "partial"
+
+            if alloc.installment_id:
+                inst_result = await db.execute(
+                    select(FeeInstallment).where(
+                        FeeInstallment.id == alloc.installment_id
+                    )
+                )
+                installment = inst_result.scalar_one_or_none()
+                if installment:
+                    installment.paid_amount = max(
+                        installment.paid_amount - alloc.allocated_amount, Decimal("0")
+                    )
+                    if installment.paid_amount <= Decimal("0"):
+                        installment.status = "unpaid"
+                    else:
+                        installment.status = "partial"
 
     payment.status = "reversed"
     payment.reversed_at = datetime.now(timezone.utc)
     payment.reversal_reason = data.reason
     payment.reversed_by_id = current_user.id
 
-    # Mark associated receipt as voided if exists
-    receipt_stmt = select(PaymentReceipt).where(PaymentReceipt.payment_id == payment_id)
-    receipt = (await db.execute(receipt_stmt)).scalar_one_or_none()
-    if receipt and receipt.receipt_data:
-        try:
-            rdata = json.loads(receipt.receipt_data)
-            rdata["status"] = "voided"
-            rdata["voided_at"] = payment.reversed_at.isoformat()
-            rdata["void_reason"] = data.reason
-            receipt.receipt_data = json.dumps(rdata)
-        except Exception:
-            pass
+    # Mark all associated receipts as voided
+    for receipt in payment.receipts:
+        receipt.status = "voided"
+        if receipt.receipt_data:
+            try:
+                rdata = json.loads(receipt.receipt_data)
+                rdata["status"] = "voided"
+                rdata["voided_at"] = payment.reversed_at.isoformat()
+                rdata["void_reason"] = data.reason
+                receipt.receipt_data = json.dumps(rdata)
+            except Exception:
+                pass
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="payment_reversed",
+        payment_id=payment.id,
+        old_data={"status": "posted"},
+        new_data={"status": "reversed"},
+        reason=data.reason,
+        severity="warning",
+    )
 
     await db.commit()
     return {"message": "Payment reversed successfully", "payment_id": payment_id}
@@ -502,7 +1155,8 @@ async def build_receipt_response(
 ) -> dict:
     """
     Constructs an authoritative receipt payload containing current transaction details,
-    historical successful payments for the same fee obligation, and reconciled fee ledger summary.
+    historical successful payments for the same fee obligation, reconciled fee ledger summary,
+    and versioning metadata (superseded status, duplicate reprint copy, amendments).
     """
     if not payment:
         pay_res = await db.execute(
@@ -556,16 +1210,13 @@ async def build_receipt_response(
             total_fee_amount = invoice.total_amount
 
         # Query all completed previous payments allocated to this same invoice
-        # Exclude current payment (Payment.id != payment.id)
-        # Exclude failed, reversed, pending transactions
-        # Sort chronologically, oldest to newest (payment_date ASC, id ASC)
         hist_stmt = (
             select(Payment, PaymentReceipt)
             .join(PaymentAllocation, PaymentAllocation.payment_id == Payment.id)
-            .outerjoin(PaymentReceipt, PaymentReceipt.payment_id == Payment.id)
+            .outerjoin(PaymentReceipt, (PaymentReceipt.payment_id == Payment.id) & (PaymentReceipt.status == "valid"))
             .where(
                 PaymentAllocation.invoice_id == target_invoice_id,
-                Payment.status == "completed",
+                Payment.status.in_(["posted", "completed"]),
                 Payment.id != payment.id,
                 or_(
                     Payment.payment_date < payment.payment_date,
@@ -599,14 +1250,13 @@ async def build_receipt_response(
             })
 
     current_payment_amount = Decimal(str(payment.amount))
-    if payment.status == "completed":
+    if payment.status in ("posted", "completed"):
         total_paid_to_date = previous_payments_total + current_payment_amount
     else:
         total_paid_to_date = previous_payments_total
 
     outstanding_balance = max(Decimal("0.00"), total_fee_amount - total_paid_to_date)
 
-    # Student demographic metadata
     student = payment.student
     student_name = receipt_data.get("student_name") or (f"{student.first_name} {student.last_name}" if student else "")
     admission_number = receipt_data.get("admission_number") or (student.admission_number if student else "")
@@ -675,6 +1325,9 @@ async def build_receipt_response(
         ay_res = await db.execute(select(AcademicYear.name).where(AcademicYear.id == payment.academic_year_id))
         academic_year_name = ay_res.scalar_one_or_none()
 
+    is_superseded = receipt.status == "superseded"
+    is_voided = payment.status == "reversed" or receipt.status == "voided"
+
     return {
         "receipt_number": receipt.receipt_number,
         "payment_id": payment.id,
@@ -695,7 +1348,7 @@ async def build_receipt_response(
         "cheque_date": str(payment.cheque_date) if payment.cheque_date else None,
         "notes": payment.notes,
         "status": payment.status,
-        "is_reversed": payment.status == "reversed",
+        "is_reversed": is_voided,
         "reversed_at": payment.reversed_at.isoformat() if payment.reversed_at else None,
         "reversal_reason": payment.reversal_reason,
         "invoice_id": invoice.id if invoice else target_invoice_id,
@@ -705,6 +1358,16 @@ async def build_receipt_response(
         "allocations": allocations_list,
         "collected_by": collected_by,
         "generated_at": receipt.generated_at.isoformat(),
+        # Versioning & Workflow Extensions
+        "version": receipt.version,
+        "receipt_status": receipt.status,
+        "is_superseded": is_superseded,
+        "superseded_at": receipt.superseded_at.isoformat() if receipt.superseded_at else None,
+        "superseded_by_receipt_number": receipt.superseded_by_receipt_number,
+        "supersede_reason": receipt_data.get("supersede_reason"),
+        "reprint_count": receipt.reprint_count,
+        "is_duplicate": receipt.reprint_count > 0,
+        "amendments": receipt_data.get("amendments", []),
         # Backward compatibility aliases
         "total_fees": float(total_fee_amount),
         "total_paid": float(total_paid_to_date),
@@ -720,22 +1383,25 @@ async def get_receipt(
     current_user=Depends(get_current_active_user),
 ):
     result = await db.execute(
-        select(PaymentReceipt).where(
-            PaymentReceipt.receipt_number == receipt_number
-        )
+        select(PaymentReceipt).where(PaymentReceipt.receipt_number == receipt_number)
     )
     receipt = result.scalar_one_or_none()
 
     if not receipt and receipt_number.isdigit():
         result = await db.execute(
             select(PaymentReceipt).where(
-                PaymentReceipt.payment_id == int(receipt_number)
+                PaymentReceipt.payment_id == int(receipt_number),
+                PaymentReceipt.status == "valid",
             )
         )
         receipt = result.scalar_one_or_none()
+        if not receipt:
+            result = await db.execute(
+                select(PaymentReceipt).where(PaymentReceipt.payment_id == int(receipt_number))
+            )
+            receipt = result.scalar_one_or_none()
 
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
     return await build_receipt_response(db, receipt)
-
