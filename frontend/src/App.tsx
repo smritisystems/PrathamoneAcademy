@@ -52,6 +52,8 @@ const FormsDocumentsPage = lazyWithRetry(() => import('./pages/FormsDocuments'),
 const InstallAppPage = lazyWithRetry(() => import('./pages/InstallApp'), 'InstallApp')
 const StaffManagementPage = lazyWithRetry(() => import('./pages/StaffManagement'), 'StaffManagement')
 const TeacherManagementPage = lazyWithRetry(() => import('./pages/TeacherManagement'), 'TeacherManagement')
+const TeacherProfilePage = lazyWithRetry(() => import('./pages/TeacherProfilePage'), 'TeacherProfilePage')
+const StaffProfilePage = lazyWithRetry(() => import('./pages/StaffProfilePage'), 'StaffProfilePage')
 const TeacherPayrollPage = lazyWithRetry(() => import('./pages/TeacherPayroll'), 'TeacherPayroll')
 const SysAdminWorkspacePage = lazyWithRetry(() => import('./pages/SysAdminWorkspace'), 'SysAdminWorkspace')
 const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
@@ -168,8 +170,10 @@ export default function App() {
           <Route path="users" element={<Suspense fallback={<PageLoader />}><UsersPage /></Suspense>} />
           <Route path="users/:id" element={<Suspense fallback={<PageLoader />}><UserProfilePage /></Suspense>} />
           <Route path="teachers" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/:id" element={<Suspense fallback={<PageLoader />}><TeacherProfilePage /></Suspense>} />
           <Route path="teacher-management" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
           <Route path="staff" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/:id" element={<Suspense fallback={<PageLoader />}><StaffProfilePage /></Suspense>} />
           <Route path="teacher-payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
           <Route path="payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
           <Route path="sysadmin" element={<Suspense fallback={<PageLoader />}><SysAdminWorkspacePage /></Suspense>} />

@@ -1802,6 +1802,9 @@ export interface StaffProfileDetail extends StaffMember {
   bank_name?: string
   bank_account_number?: string
   bank_ifsc?: string
+  reporting_manager_id?: number | null
+  reporting_manager_name?: string | null
+  responsibilities?: string | null
   assignments: Array<{
     id: number
     board: string
@@ -2664,6 +2667,7 @@ export interface TeacherDashboardMetrics {
   monthly_teaching_hours: number
   monthly_payroll_payable: number
   pending_teacher_payments: number
+  six_month_teaching_hours_total?: number
 }
 
 export interface TeacherWorkforceItem {
@@ -2699,8 +2703,16 @@ export interface TeacherWorkforceItem {
   rehire_eligible: boolean
 }
 
+export interface MonthlyHoursTrendItem {
+  month: string
+  year: number
+  label: string
+  hours: number
+}
+
 export interface TeacherDashboardData {
   metrics: TeacherDashboardMetrics
+  monthly_hours_trend?: MonthlyHoursTrendItem[]
   teachers: TeacherWorkforceItem[]
 }
 
@@ -2713,8 +2725,10 @@ export interface StaffDashboardMetrics {
   departed_staff: number
   upcoming_joining: number
   departments_count: number
-  department_breakdown: Record<string, number>
-  designation_breakdown: Record<string, number>
+  salary_payable?: number
+  pending_payments?: number
+  department_breakdown?: Record<string, number>
+  designation_breakdown?: Record<string, number>
 }
 
 export interface StaffWorkforceItem {

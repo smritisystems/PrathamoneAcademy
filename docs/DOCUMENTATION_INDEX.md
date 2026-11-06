@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-06 16:55:07  
-**Total Indexed Items:** 196  
+**Last Reindexed:** 2026-11-06 22:39:06  
+**Total Indexed Items:** 198  
 
 ---
 
@@ -19,7 +19,7 @@
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **4** | Installation & Deployment |
 | `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **8** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **14** | Student Directory & Admissions |
-| `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **2** | Teacher & Faculty Directory |
+| `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **4** | Teacher & Faculty Directory |
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
 | `07` | [07_ATTENDANCE](#07_attendance) | **5** | Attendance Register & Tracking |
 | `08` | [08_EXAMINATION](#08_examination) | **6** | Examinations, Tests & Grading |
@@ -115,7 +115,9 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **Dedicated Teacher & Staff Workforce Dashboards Implementation Plan** | `PLAN` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md](05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY |
+| **Dedicated Teacher & Staff Workforce Dashboards and Full-Page Profiles Implementation Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md](05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY |
 | **Teacher & Staff Dedicated Workforce Dashboards Implementation Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md](05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md) | 06_TEACHER_PAYROLL, 07_ATTENDANCE, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY |
+| **Teacher & Staff Workforce Dashboards and Dedicated Profiles Architecture Forensic Audit Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md](05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY |
 
 
 ### <a id="06_teacher_payroll"></a>06_TEACHER_PAYROLL — Teacher Payroll & Payment Management

@@ -78,6 +78,10 @@ class StaffProfile(Base):
     approved_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    reporting_manager_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    responsibilities: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Financial / Compliance
     basic_salary: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0.00"))
@@ -107,6 +111,7 @@ class StaffProfile(Base):
         "StaffDocument", back_populates="staff_profile", cascade="all, delete-orphan"
     )
     approved_by: Mapped["User | None"] = relationship("User", foreign_keys=[approved_by_id])
+    reporting_manager: Mapped["User | None"] = relationship("User", foreign_keys=[reporting_manager_id])
     employment_histories: Mapped[List["StaffEmploymentHistory"]] = relationship(
         "StaffEmploymentHistory", back_populates="staff_profile", cascade="all, delete-orphan", order_by="desc(StaffEmploymentHistory.created_at)"
     )

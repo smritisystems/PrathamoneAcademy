@@ -70,6 +70,7 @@ async def list_timetable_entries(
     board_id: Optional[int] = Query(None),
     day_of_week: Optional[str] = Query(None),
     room_number: Optional[str] = Query(None),
+    teacher_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -89,10 +90,17 @@ async def list_timetable_entries(
         .join(Subject, TimetableEntry.subject_id == Subject.id)
         .join(Standard, Division.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
-        .outerjoin(User, Division.class_teacher_id == User.id)
+        .outerjoin(User, func.coalesce(TimetableEntry.teacher_id, Division.class_teacher_id) == User.id)
         .where(TimetableEntry.is_active == True)
     )
 
+    if teacher_id:
+        query = query.where(
+            or_(
+                TimetableEntry.teacher_id == teacher_id,
+                and_(TimetableEntry.teacher_id.is_(None), Division.class_teacher_id == teacher_id),
+            )
+        )
     if division_id:
         query = query.where(TimetableEntry.division_id == division_id)
     if standard_id:

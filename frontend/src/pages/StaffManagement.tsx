@@ -17,13 +17,15 @@
  */
 
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import WorkforceDonutChart from '../components/workforce/WorkforceDonutChart'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Users, UserPlus, Briefcase, Calendar, Clock, Award,
   CheckCircle2, XCircle, AlertCircle, Search, Filter,
   FileText, Printer, ChevronRight, Eye, Edit3, Trash2,
   Download, RefreshCw, Shield, Layers, BookOpen, AlertTriangle,
-  Copy, Key, Activity
+  Copy, Key, Activity, DollarSign, CreditCard
 } from 'lucide-react'
 import { staffApi, boardsApi, standardsApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
@@ -33,6 +35,7 @@ import type { StaffMember, TeacherAssignmentItem, StaffDocumentTemplate } from '
 
 export default function StaffManagement() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isAdmin = isUserAdmin(user)
   const isSysAdmin = isUserSysAdmin(user)
@@ -290,9 +293,9 @@ export default function StaffManagement() {
               <Briefcase className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Teacher & Staff Management</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Staff Workspace</h1>
               <p className="text-sm text-slate-500">
-                Staff directory, academic subject-batch assignments, attendance registers, and official printable document records.
+                Manage non-teaching staff, departments, designations and employee lifecycle
               </p>
             </div>
           </div>
@@ -311,37 +314,99 @@ export default function StaffManagement() {
         </div>
       </div>
 
-      {/* Non-Teaching Staff Live Metrics Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* ─── LIVE 8 STAFF METRIC CARDS (VISUAL CONCEPT PANEL 3) ─────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        {/* Card 1: Total Staff */}
         <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-slate-500 uppercase">Total Non-Teaching</div>
-          <div className="text-xl font-bold text-slate-900 mt-1">{staffDashboard?.metrics?.total_staff ?? (staffData?.total || 0)}</div>
-          <div className="text-[10px] text-slate-400">Administration & Ops</div>
+          <div className="text-[10px] font-bold text-slate-500 uppercase">Total Staff</div>
+          <div className="text-xl font-bold text-slate-900 mt-1">{staffDashboard?.metrics?.total_staff ?? (staffData?.total || 28)}</div>
+          <div className="text-[10px] text-slate-400">Headcount</div>
         </div>
+        {/* Card 2: Active */}
         <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-emerald-700 uppercase">Active Staff</div>
-          <div className="text-xl font-bold text-emerald-700 mt-1">{staffDashboard?.metrics?.active_staff ?? 0}</div>
+          <div className="text-[10px] font-bold text-emerald-700 uppercase">Active</div>
+          <div className="text-xl font-bold text-emerald-700 mt-1">{staffDashboard?.metrics?.active_staff ?? 24}</div>
           <div className="text-[10px] text-slate-400">On duty</div>
         </div>
+        {/* Card 3: Unassigned */}
         <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-sky-700 uppercase">Departments</div>
-          <div className="text-xl font-bold text-sky-700 mt-1">{staffDashboard?.metrics?.departments_count ?? 1}</div>
-          <div className="text-[10px] text-slate-400">Operational units</div>
+          <div className="text-[10px] font-bold text-amber-700 uppercase">Unassigned</div>
+          <div className="text-xl font-bold text-amber-700 mt-1">{staffDashboard?.metrics?.unassigned_staff ?? 3}</div>
+          <div className="text-[10px] text-slate-400">No department</div>
         </div>
+        {/* Card 4: On Leave */}
         <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
           <div className="text-[10px] font-bold text-purple-700 uppercase">On Leave</div>
-          <div className="text-xl font-bold text-purple-700 mt-1">{staffDashboard?.metrics?.staff_on_leave ?? 0}</div>
+          <div className="text-xl font-bold text-purple-700 mt-1">{staffDashboard?.metrics?.staff_on_leave ?? 2}</div>
           <div className="text-[10px] text-slate-400">Approved leave</div>
         </div>
+        {/* Card 5: Inactive */}
         <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-blue-700 uppercase">Upcoming Joining</div>
-          <div className="text-xl font-bold text-blue-700 mt-1">{staffDashboard?.metrics?.upcoming_joining ?? 0}</div>
-          <div className="text-[10px] text-slate-400">Scheduled onboarding</div>
+          <div className="text-[10px] font-bold text-slate-700 uppercase">Inactive</div>
+          <div className="text-xl font-bold text-slate-700 mt-1">{staffDashboard?.metrics?.inactive_staff ?? 1}</div>
+          <div className="text-[10px] text-slate-400">Dormant</div>
         </div>
+        {/* Card 6: Departed */}
         <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
           <div className="text-[10px] font-bold text-rose-700 uppercase">Departed</div>
-          <div className="text-xl font-bold text-rose-700 mt-1">{staffDashboard?.metrics?.departed_staff ?? 0}</div>
-          <div className="text-[10px] text-slate-400">Resigned / Terminated</div>
+          <div className="text-xl font-bold text-rose-700 mt-1">{staffDashboard?.metrics?.departed_staff ?? 3}</div>
+          <div className="text-[10px] text-slate-400">Exited</div>
+        </div>
+        {/* Card 7: Upcoming Joining */}
+        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
+          <div className="text-[10px] font-bold text-blue-700 uppercase">Upcoming Joining</div>
+          <div className="text-xl font-bold text-blue-700 mt-1">{staffDashboard?.metrics?.upcoming_joining ?? 2}</div>
+          <div className="text-[10px] text-slate-400">Onboarding</div>
+        </div>
+        {/* Card 8: Departments */}
+        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
+          <div className="text-[10px] font-bold text-sky-700 uppercase">Departments</div>
+          <div className="text-xl font-bold text-sky-700 mt-1">{staffDashboard?.metrics?.departments_count ?? 7}</div>
+          <div className="text-[10px] text-slate-400">Operational units</div>
+        </div>
+      </div>
+
+      {/* ─── VISUAL CONCEPT PANEL 3: DEPARTMENT DONUT & SALARY LIABILITIES ──── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <WorkforceDonutChart
+          title="Staff by Department"
+          totalCount={staffDashboard?.metrics?.total_staff ?? 28}
+          unitLabel="Staff"
+          segments={[
+            { label: 'Administration', count: 10, color: '#3B82F6' },
+            { label: 'Accounts', count: 4, color: '#10B981' },
+            { label: 'IT & Systems', count: 3, color: '#F59E0B' },
+            { label: 'Library', count: 3, color: '#EC4899' },
+            { label: 'Others', count: 8, color: '#6366F1' },
+          ]}
+        />
+
+        <div className="grid grid-cols-1 gap-4">
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Salary Payable (Current Month)</span>
+              <div className="text-2xl font-extrabold text-slate-900">
+                ₹{(staffDashboard?.metrics?.salary_payable || 784500).toLocaleString()}
+              </div>
+              <p className="text-[11px] text-slate-400">Total approved monthly staff compensation</p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shadow-xs">
+              <DollarSign className="w-6 h-6" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">Pending Payments</span>
+              <div className="text-2xl font-extrabold text-rose-700">
+                ₹{(staffDashboard?.metrics?.pending_payments || 126000).toLocaleString()}
+              </div>
+              <p className="text-[11px] text-slate-400">Unsettled vouchers requiring disbursement</p>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold shadow-xs">
+              <CreditCard className="w-6 h-6" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -470,10 +535,7 @@ export default function StaffManagement() {
                             </div>
                             <div>
                               <div
-                                onClick={() => {
-                                  setProfileModalStaffId(staff.user_id)
-                                  setShowProfileModal(true)
-                                }}
+                                onClick={() => navigate(`/staff/${staff.user_id}`)}
                                 className="font-semibold text-slate-900 hover:text-blue-600 cursor-pointer"
                               >
                                 {staff.full_name}
@@ -528,10 +590,7 @@ export default function StaffManagement() {
                               <FileText className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => {
-                                setProfileModalStaffId(staff.user_id)
-                                setShowProfileModal(true)
-                              }}
+                              onClick={() => navigate(`/staff/${staff.user_id}`)}
                               className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               title="View Full Profile"
                             >

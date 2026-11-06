@@ -107,6 +107,8 @@ class StaffCreateRequest(BaseModel):
     bank_account_number: Optional[str] = None
     bank_ifsc: Optional[str] = None
     notes: Optional[str] = None
+    reporting_manager_id: Optional[int] = None
+    responsibilities: Optional[str] = None
 
 
 class StaffUpdateRequest(BaseModel):
@@ -137,6 +139,8 @@ class StaffUpdateRequest(BaseModel):
     bank_account_number: Optional[str] = None
     bank_ifsc: Optional[str] = None
     notes: Optional[str] = None
+    reporting_manager_id: Optional[int] = None
+    responsibilities: Optional[str] = None
 
 
 class TeacherAssignmentCreateRequest(BaseModel):
@@ -499,6 +503,11 @@ async def get_staff_profile(
     # Leave balances
     bal = (await db.execute(select(StaffLeaveBalance).where(StaffLeaveBalance.user_id == user_id))).scalar_one_or_none()
 
+    # Reporting Manager
+    reporting_mgr = None
+    if profile.reporting_manager_id:
+        reporting_mgr = (await db.execute(select(User).where(User.id == profile.reporting_manager_id))).scalar_one_or_none()
+
     can_view_sensitive = is_self or current_user.role in FINANCIAL_ROLES or current_user.role in STAFF_ADMIN_ROLES
 
     return {
@@ -533,6 +542,9 @@ async def get_staff_profile(
         "status": profile.status,
         "is_active": user.is_active,
         "notes": profile.notes,
+        "reporting_manager_id": profile.reporting_manager_id,
+        "reporting_manager_name": f"{reporting_mgr.first_name} {reporting_mgr.last_name}" if reporting_mgr else None,
+        "responsibilities": profile.responsibilities,
         "basic_salary": float(profile.basic_salary) if can_view_sensitive else None,
         "pan_number": profile.pan_number if can_view_sensitive else None,
         "aadhar_number": profile.aadhar_number if can_view_sensitive else None,

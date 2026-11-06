@@ -191,6 +191,7 @@ export const timetableApi = {
     board_id?: number | string
     day_of_week?: string
     room_number?: string
+    teacher_id?: number | string
   }) => apiClient.get<AcademicTimetableEntry[]>('/timetable/', { params }),
   getRooms: () => apiClient.get<string[]>('/timetable/rooms'),
   checkConflict: (data: {
