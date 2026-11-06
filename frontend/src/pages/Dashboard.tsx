@@ -11,9 +11,9 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
- * @description Main executive dashboard displaying institute KPIs, admissions trend, upcoming batches, and fee status.
+ * @description Main executive dashboard displaying institute KPIs, admissions trend, upcoming batches, fee status, and optional CodeX obfuscation presentation.
  */
 
 import { useState, useEffect } from 'react'
@@ -21,7 +21,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Users, TrendingUp, AlertCircle, DollarSign, ArrowRight,
   Calendar, BookOpen, Layers,
-  SlidersHorizontal,
+  SlidersHorizontal, Lock, KeyRound, Unlock
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -29,10 +29,12 @@ import {
 } from 'recharts'
 import StatCard from '../components/StatCard'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
-import { dashboardApi } from '../api/endpoints'
+import { dashboardApi, codexApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { encodeCodexNumber } from '../utils/codexFormatter'
+import QuickDecoderModal from '../components/codex/QuickDecoderModal'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
@@ -107,6 +109,36 @@ export default function DashboardPage() {
 
   const collectionRate = stats?.collection_rate ?? 0
 
+  // Quick Decoder modal state
+  const [decoderCode, setDecoderCode] = useState<string | null>(null)
+
+  // Query CodeX user status
+  const { data: codexStatus } = useQuery({
+    queryKey: ['codex-user-status', 'dashboard'],
+    queryFn: async () => {
+      try {
+        const res = await codexApi.getUserStatus('dashboard')
+        return res.data
+      } catch {
+        return { is_enabled: false, visibility_mode: 'actual_only', can_decode: false }
+      }
+    },
+    staleTime: 5000,
+  })
+
+  const isCodexActive = Boolean(codexStatus?.is_enabled)
+  const codexMode = codexStatus?.visibility_mode || 'actual_only'
+
+  // CodeX representation calculations
+  const rawFees = stats?.total_fees ?? 0
+  const codeFees = isCodexActive ? encodeCodexNumber(rawFees) : undefined
+
+  const rawCollected = stats?.total_collected ?? 0
+  const codeCollected = isCodexActive ? encodeCodexNumber(rawCollected) : undefined
+
+  const rawOutstanding = stats?.total_outstanding ?? 0
+  const codeOutstanding = isCodexActive ? encodeCodexNumber(rawOutstanding) : undefined
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -117,6 +149,24 @@ export default function DashboardPage() {
             Real-time overview of {branding.academyName} admissions, fee collections, and batches
           </p>
         </div>
+
+        {isCodexActive && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-800 border border-violet-300 shadow-2xs">
+              <Lock className="w-3.5 h-3.5 text-violet-600" />
+              <span>CodeX Active ({codexMode})</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setDecoderCode(codeFees || 'CX-')}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg shadow-2xs transition-colors cursor-pointer"
+              title="Launch CodeX Decoder"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Decoder</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Unified Cascading Filter Bar with Status Override */}
@@ -177,24 +227,54 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Total Fees Invoiced"
-          value={fmt(stats?.total_fees ?? 0)}
+          value={
+            isCodexActive && codexMode === 'coded_only'
+              ? codeFees
+              : fmt(rawFees)
+          }
+          codexBadge={isCodexActive ? codeFees : undefined}
+          onDecodeClick={(c) => setDecoderCode(c)}
           icon={DollarSign}
           color="purple"
-          subtitle="Net invoiced receivables"
+          subtitle={
+            isCodexActive && codexMode === 'coded_only'
+              ? 'CodeX Obfuscated [Click to Decode]'
+              : 'Net invoiced receivables'
+          }
         />
         <StatCard
           title="Collected Fees"
-          value={fmt(stats?.total_collected ?? 0)}
+          value={
+            isCodexActive && codexMode === 'coded_only'
+              ? codeCollected
+              : fmt(rawCollected)
+          }
+          codexBadge={isCodexActive ? codeCollected : undefined}
+          onDecodeClick={(c) => setDecoderCode(c)}
           icon={TrendingUp}
           color="green"
-          subtitle={`${collectionRate}% collection rate`}
+          subtitle={
+            isCodexActive && codexMode === 'coded_only'
+              ? 'CodeX Obfuscated [Click to Decode]'
+              : `${collectionRate}% collection rate`
+          }
         />
         <StatCard
           title="Outstanding Balance"
-          value={fmt(stats?.total_outstanding ?? 0)}
+          value={
+            isCodexActive && codexMode === 'coded_only'
+              ? codeOutstanding
+              : fmt(rawOutstanding)
+          }
+          codexBadge={isCodexActive ? codeOutstanding : undefined}
+          onDecodeClick={(c) => setDecoderCode(c)}
           icon={AlertCircle}
           color="red"
-          subtitle="Pending student dues"
+          subtitle={
+            isCodexActive && codexMode === 'coded_only'
+              ? 'CodeX Obfuscated [Click to Decode]'
+              : 'Pending student dues'
+          }
         />
       </div>
 
@@ -280,7 +360,30 @@ export default function DashboardPage() {
                         {METHOD_LABELS[p.payment_method] ?? p.payment_method}
                       </td>
                       <td className="py-2.5 text-right font-semibold text-gray-900">
-                        {fmt(p.amount)}
+                        {isCodexActive && codexMode === 'coded_only' ? (
+                          <button
+                            type="button"
+                            onClick={() => setDecoderCode(encodeCodexNumber(p.amount))}
+                            className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-violet-100 text-violet-800 border border-violet-200 hover:bg-violet-200 transition-colors"
+                            title="Click to decode with CodeX"
+                          >
+                            {encodeCodexNumber(p.amount)}
+                          </button>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span>{fmt(p.amount)}</span>
+                            {isCodexActive && (
+                              <button
+                                type="button"
+                                onClick={() => setDecoderCode(encodeCodexNumber(p.amount))}
+                                className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors cursor-pointer"
+                                title="CodeX representation — Click to decode"
+                              >
+                                {encodeCodexNumber(p.amount)}
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="py-2.5 text-right text-gray-500">
                         {p.payment_date}
@@ -324,6 +427,14 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {decoderCode && (
+        <QuickDecoderModal
+          isOpen={Boolean(decoderCode)}
+          onClose={() => setDecoderCode(null)}
+          initialCode={decoderCode}
+        />
+      )}
     </div>
   )
 }

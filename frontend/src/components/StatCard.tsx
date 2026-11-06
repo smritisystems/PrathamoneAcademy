@@ -11,19 +11,21 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-07
  *
  * @description KPI metric stat card component with icon container, trend indicator, and status badge.
  */
 
-import { type LucideIcon } from 'lucide-react'
+import { type LucideIcon, Lock } from 'lucide-react'
 
 interface StatCardProps {
   title: string
-  value: string | number
+  value: string | number | React.ReactNode
   icon: LucideIcon
   color: 'blue' | 'green' | 'purple' | 'red' | 'orange'
   subtitle?: string
+  codexBadge?: string
+  onDecodeClick?: (code: string) => void
 }
 
 const colorMap = {
@@ -59,17 +61,41 @@ const colorMap = {
   },
 }
 
-export default function StatCard({ title, value, icon: Icon, color, subtitle }: StatCardProps) {
+export default function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subtitle,
+  codexBadge,
+  onDecodeClick,
+}: StatCardProps) {
   const c = colorMap[color]
   return (
-    <div className={`${c.bg} rounded-xl p-6 flex items-center gap-4`}>
-      <div className={`${c.icon} p-3 rounded-lg`}>
+    <div className={`${c.bg} rounded-xl p-6 flex items-center gap-4 relative overflow-hidden`}>
+      <div className={`${c.icon} p-3 rounded-lg flex-shrink-0`}>
         <Icon className="w-6 h-6" />
       </div>
-      <div>
-        <p className={`text-sm font-medium ${c.title}`}>{title}</p>
-        <p className={`text-2xl font-bold ${c.value}`}>{value}</p>
-        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <p className={`text-sm font-medium ${c.title}`}>{title}</p>
+          {codexBadge && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDecodeClick?.(codexBadge)
+              }}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-violet-100 hover:bg-violet-200 text-violet-800 border border-violet-300 font-mono text-[10px] font-bold tracking-wider transition-colors cursor-pointer shadow-2xs"
+              title="CodeX Bijective Value — Click to Decode"
+            >
+              <Lock className="w-2.5 h-2.5 text-violet-600" />
+              <span>{codexBadge}</span>
+            </button>
+          )}
+        </div>
+        <div className={`text-2xl font-bold truncate ${c.value}`}>{value}</div>
+        {subtitle && <p className="text-xs text-gray-500 mt-0.5 truncate">{subtitle}</p>}
       </div>
     </div>
   )
