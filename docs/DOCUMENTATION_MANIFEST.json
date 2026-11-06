@@ -5,8 +5,8 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-07T00:47:19.450616",
-  "total_documents": 212,
+  "generated_at": "2026-11-07T01:24:46.628629",
+  "total_documents": 224,
   "modules_catalog": [
     {
       "id": "00_PRODUCT_OVERVIEW",
@@ -4161,6 +4161,139 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "14_PRINTING_DOCUMENTS_2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1_md",
+      "filename": "2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "relative_path": "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "extension": ".md",
+      "size_bytes": 6425,
+      "sha256": "484e020be6147012a8cc11134ac962c2a0ea32626f96b339f0394b5b5128ec2e",
+      "module": "14_PRINTING_DOCUMENTS",
+      "title": "Universal Print Engine Architecture Audit — Legacy Print Services, Global CSS Collisions, and Thermal Compatibility",
+      "category": "ARCHITECTURE-AUDIT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "print-audit",
+        "universal-print",
+        "css-page",
+        "thermal-printers",
+        "page-scaling"
+      ],
+      "entities": [
+        "Institution",
+        "PaymentReceipt",
+        "User",
+        "Student"
+      ],
+      "api_routes": [
+        "/api/v1/forms/render",
+        "/api/v1/payments/{id}/receipt"
+      ],
+      "related_modules": [
+        "09_FEES_PAYMENTS",
+        "05_TEACHER_MANAGEMENT",
+        "08_EXAMINATION",
+        "17_UI_UX_DESIGN"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "14_PRINTING_DOCUMENTS_2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1_md",
+      "filename": "2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "relative_path": "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "extension": ".md",
+      "size_bytes": 6758,
+      "sha256": "f33f9d5032bdb3746659addf5eeb2443d3ada82fdb69b7637125433ac5685c8d",
+      "module": "14_PRINTING_DOCUMENTS",
+      "title": "Universal Print Fit & Page Layout Engine — Full Technical Implementation Report",
+      "category": "IMPLEMENTATION-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "universal-print",
+        "implementation-report",
+        "page-layout",
+        "scaling-engine",
+        "readability"
+      ],
+      "entities": [
+        "Institution",
+        "PaymentReceipt",
+        "Student",
+        "StaffProfile",
+        "FeeStructure"
+      ],
+      "api_routes": [
+        "/api/v1/forms/render",
+        "/api/v1/payments/{id}/receipt"
+      ],
+      "related_modules": [
+        "09_FEES_PAYMENTS",
+        "05_TEACHER_MANAGEMENT",
+        "08_EXAMINATION",
+        "17_UI_UX_DESIGN"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "14_PRINTING_DOCUMENTS_2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1_md",
+      "filename": "2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
+      "relative_path": "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
+      "extension": ".md",
+      "size_bytes": 7505,
+      "sha256": "6dce05de7d7bd2f84e356075b3183ea5aadc6411dd22b0f983967b59829c88a2",
+      "module": "14_PRINTING_DOCUMENTS",
+      "title": "Universal Print and Page Layout User Guide — Operational Manual for Institute Staff and Accountants",
+      "category": "USER-MANUAL",
+      "document_type": "GUIDE",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "user-manual",
+        "universal-print",
+        "printing-guide",
+        "paper-sizes",
+        "receipt-printing"
+      ],
+      "entities": [
+        "Institution",
+        "PaymentReceipt",
+        "Student",
+        "StaffProfile"
+      ],
+      "api_routes": [
+        "/api/v1/forms/render",
+        "/api/v1/payments/{id}/receipt"
+      ],
+      "related_modules": [
+        "09_FEES_PAYMENTS",
+        "05_TEACHER_MANAGEMENT",
+        "08_EXAMINATION",
+        "14_PRINTING_DOCUMENTS"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "15_INTEGRATIONS_2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1_md",
       "filename": "2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md",
       "relative_path": "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md",
@@ -5035,6 +5168,98 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "extension": ".md",
+      "size_bytes": 6515,
+      "sha256": "f75b0f828729a8e2f58ecb71a3d295df69cda2137da06d631a58842eddb23813",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Button and Action Validation Matrix — Full Repository Interactive Element Audit",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "buttons",
+        "actions",
+        "validation-matrix",
+        "ui-audit",
+        "interactive-elements"
+      ],
+      "entities": [
+        "User",
+        "Student",
+        "StaffProfile",
+        "FeeStructure",
+        "Examination"
+      ],
+      "api_routes": [
+        "/api/v1/..."
+      ],
+      "related_modules": [
+        "03_ACADEMIC_MANAGEMENT",
+        "04_STUDENT_MANAGEMENT",
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "09_FEES_PAYMENTS"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
+      "extension": ".md",
+      "size_bytes": 5463,
+      "sha256": "7422e2a03037a8eddef23ec60ba20b3943ccc809e2d02c82339f1ef557c67069",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Chart and Analytics Validation — Forensic Evaluation of Visual Metrics and Fallback Risks",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "charts",
+        "analytics",
+        "data-validation",
+        "visual-metrics",
+        "fallbacks",
+        "audit"
+      ],
+      "entities": [
+        "TeachingSession",
+        "TeacherAssignment",
+        "StaffProfile",
+        "Payment",
+        "Attendance"
+      ],
+      "api_routes": [
+        "/api/v1/staff/teachers/dashboard",
+        "/api/v1/staff/non-teaching/dashboard",
+        "/api/v1/reports/dashboard-stats"
+      ],
+      "related_modules": [
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "11_REPORTS_EXPORTS",
+        "17_UI_UX_DESIGN"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1_md",
       "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
       "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
@@ -5132,6 +5357,99 @@
         "16_DATABASE_API",
         "01_ARCHITECTURE",
         "25_BUSINESS_REQUIREMENTS"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "extension": ".md",
+      "size_bytes": 6809,
+      "sha256": "caa9b5ea9e0dc1f86627e178c4eca9976e29f10e1f11e9428d1e4039f954a6ec",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Disconnected API and Database Register — End-to-End Linkage Defect Catalog",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "api-audit",
+        "database-linkage",
+        "disconnected-endpoints",
+        "data-binding",
+        "ssot"
+      ],
+      "entities": [
+        "User",
+        "StaffProfile",
+        "TeacherAssignment",
+        "StaffDocument",
+        "StaffEmploymentHistory"
+      ],
+      "api_routes": [
+        "/api/v1/staff/{user_id}/lifecycle",
+        "/api/v1/staff/assignments/create",
+        "/api/v1/forms/render",
+        "/api/v1/staff/non-teaching/dashboard"
+      ],
+      "related_modules": [
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "14_PRINTING_DOCUMENTS",
+        "16_DATABASE_API"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "extension": ".md",
+      "size_bytes": 8700,
+      "sha256": "2c75956e3171361a16e84f44ae8cc7419d135cc242411f147008e31ec251e134",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Employee Dossier Print Forensic Audit — 14-Point Investigation & Architectural Blueprint",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "employee-dossier",
+        "print-audit",
+        "kyc",
+        "hr-records",
+        "14-point-audit",
+        "ssot"
+      ],
+      "entities": [
+        "User",
+        "StaffProfile",
+        "TeacherAssignment",
+        "TeacherPaymentProfile",
+        "StaffLeave",
+        "StaffEmploymentHistory"
+      ],
+      "api_routes": [
+        "/api/v1/forms/render",
+        "/api/v1/forms/catalogue"
+      ],
+      "related_modules": [
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "14_PRINTING_DOCUMENTS"
       ],
       "product": "PrathamOne EduOS",
       "edition": "Coaching Institute Edition"
@@ -5286,6 +5604,100 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "extension": ".md",
+      "size_bytes": 7624,
+      "sha256": "f95ac90724cff84c318bb9823d7b8826653cc690f443538dc34245b2c8bc35d9",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Full UI Functional Audit — Interactive Elements, Placeholders, and Action Integrity",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "ui-audit",
+        "functional-audit",
+        "buttons",
+        "placeholders",
+        "action-menu",
+        "compliance"
+      ],
+      "entities": [
+        "User",
+        "StaffProfile",
+        "TeacherAssignment",
+        "TeacherPayroll",
+        "TeachingSession"
+      ],
+      "api_routes": [
+        "/api/v1/staff/teachers/dashboard",
+        "/api/v1/staff/non-teaching/dashboard",
+        "/api/v1/staff/{user_id}/lifecycle",
+        "/api/v1/forms/render"
+      ],
+      "related_modules": [
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "14_PRINTING_DOCUMENTS",
+        "17_UI_UX_DESIGN"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "extension": ".md",
+      "size_bytes": 8166,
+      "sha256": "7f120fbff8c9e841ef1ce045fc5b143dae842fa6748bede14e29e6982c12fe1c",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Functional Remediation Roadmap — Phased Action Plan for UI Integrity and Feature Completion",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "remediation-roadmap",
+        "action-plan",
+        "implementation-phases",
+        "workforce",
+        "dossier-print"
+      ],
+      "entities": [
+        "User",
+        "StaffProfile",
+        "TeacherAssignment",
+        "TeacherPayroll",
+        "StaffDocument"
+      ],
+      "api_routes": [
+        "/api/v1/staff/assignments/create",
+        "/api/v1/forms/render",
+        "/api/v1/staff/{id}/lifecycle"
+      ],
+      "related_modules": [
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "14_PRINTING_DOCUMENTS",
+        "16_DATABASE_API"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1_md",
       "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
       "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
@@ -5326,6 +5738,50 @@
       "related_modules": [
         "01_ARCHITECTURE",
         "18_TESTING_QA",
+        "16_DATABASE_API"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
+      "extension": ".md",
+      "size_bytes": 5676,
+      "sha256": "af4463e2657ee7d43e80a2ba8415f25bea7a3102883f866993cbcb81bbb81ee2",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Missing Functionality Report — Comprehensive Gap Analysis and Incomplete Features",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "missing-functionality",
+        "gap-analysis",
+        "incomplete-features",
+        "audit",
+        "compliance"
+      ],
+      "entities": [
+        "StaffProfile",
+        "User",
+        "StaffDocument",
+        "TeacherAssignment",
+        "StaffLeave"
+      ],
+      "api_routes": [
+        "/api/v1/..."
+      ],
+      "related_modules": [
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "14_PRINTING_DOCUMENTS",
         "16_DATABASE_API"
       ],
       "product": "PrathamOne EduOS",
@@ -5437,6 +5893,52 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
+      "extension": ".md",
+      "size_bytes": 6602,
+      "sha256": "cc5dddbc7f76c56707f2ad5dba50ca398c6a7698bf618d60dcd87e2983aa016c",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Placeholder and Mock Data Register — Forensic Audit of Synthetic Data and Fallbacks",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "mock-data",
+        "placeholders",
+        "synthetic-data",
+        "fallbacks",
+        "data-integrity"
+      ],
+      "entities": [
+        "StaffProfile",
+        "User",
+        "TeachingSession",
+        "TeacherPayroll",
+        "AcademicYear"
+      ],
+      "api_routes": [
+        "/api/v1/staff/teachers/dashboard",
+        "/api/v1/staff/non-teaching/dashboard",
+        "/api/v1/forms/render"
+      ],
+      "related_modules": [
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "14_PRINTING_DOCUMENTS",
+        "17_UI_UX_DESIGN"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1_md",
       "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
       "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
@@ -5478,6 +5980,55 @@
         "12_RBAC_SECURITY",
         "13_SYSADMIN_SETTINGS",
         "01_ARCHITECTURE"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1_md",
+      "filename": "2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
+      "extension": ".md",
+      "size_bytes": 7977,
+      "sha256": "084999b1dc4d271fc7d3861850046efbbf67002a114c73bedcbebd7e50a36c0e",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "Teacher and Staff Dashboard & Profile Forensic Audit — Workspaces, Navigation, and Action Verification",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "teacher-management",
+        "staff-management",
+        "dashboards",
+        "profiles",
+        "workspaces",
+        "audit"
+      ],
+      "entities": [
+        "User",
+        "StaffProfile",
+        "TeacherAssignment",
+        "StaffLeave",
+        "StaffEmploymentHistory",
+        "TeacherPayroll"
+      ],
+      "api_routes": [
+        "/api/v1/staff/teachers/dashboard",
+        "/api/v1/staff/non-teaching/dashboard",
+        "/api/v1/staff/{user_id}/lifecycle",
+        "/api/v1/staff/{user_id}/activity-history"
+      ],
+      "related_modules": [
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "07_ATTENDANCE",
+        "17_UI_UX_DESIGN"
       ],
       "product": "PrathamOne EduOS",
       "edition": "Coaching Institute Edition"
@@ -7577,16 +8128,34 @@
     "07_audits_compliance_audit": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md"
+    ],
+    "07_printing_documents_architecture": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
+    ],
+    "07_printing_documents_implementation": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md"
+    ],
+    "07_printing_documents_user": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "07_student_admission_form": [
       "assets/screenshots/07_student_admission_form.png"
@@ -7728,6 +8297,9 @@
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
       "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md",
       "15_INTEGRATIONS/2026-11-05_INTEGRATIONS_IMPLEMENTATION-REPORT_CENTRALIZED-COMMUNICATION-AND-SHARING-REPORT_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
@@ -7755,15 +8327,24 @@
       "20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md",
@@ -7810,6 +8391,9 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-SPECIFICATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md"
     ],
+    "academicyear": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
+    ],
     "academy": [
       "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md",
@@ -7855,6 +8439,9 @@
     "acceptance_criteria": [
       "26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md"
     ],
+    "accountants": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
+    ],
     "accounting": [
       "09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_POLICY-FRAMEWORK_FEE-POLICY-AND-ACCOUNTING_V1.md",
       "26_ARCHIVED/legacy_root/FEE_POLICY_AND_ACCOUNTING.md"
@@ -7867,6 +8454,15 @@
     ],
     "act": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md"
+    ],
+    "action": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
+    ],
+    "actions": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md"
     ],
     "activation": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md",
@@ -7891,11 +8487,15 @@
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md"
     ],
+    "analysis": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
+    ],
     "analytics": [
       "04_STUDENT_MANAGEMENT/2026-11-05_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-LIFECYCLE-AND-WITHDRAWAL-ANALYTICS-REPORT_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
-      "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md"
+      "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
     "analytics_v1": [
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
@@ -7927,6 +8527,9 @@
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_RECEIPT-PRINTING-AND-PWA-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
       "15_INTEGRATIONS/2026-11-05_INTEGRATIONS_IMPLEMENTATION-REPORT_CENTRALIZED-COMMUNICATION-AND-SHARING-REPORT_V1.md",
       "16_DATABASE_API/2026-11-03_DATABASE_API_SPECIFICATION_DATABASE-DESIGN-AND-SCHEMA_V1.md",
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
@@ -7938,6 +8541,14 @@
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_COMPREHENSIVE-AUDIT-AND-REMEDIATION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_AUDIT-REPORT_PHASE1-AND-PHASE2-AUDIT-REMEDIATION-SUMMARY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md",
       "26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md",
@@ -7954,7 +8565,8 @@
       "16_DATABASE_API/2026-11-03_DATABASE_API_SPECIFICATION_DATABASE-DESIGN-AND-SCHEMA_V1.md",
       "16_DATABASE_API/2026-11-03_DATABASE_API_SPECIFICATION_REST-API-STANDARDS_V1.md",
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
     ],
     "application": [
       "17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-FOOTER-IMPLEMENTATION-REPORT_V1.md",
@@ -7965,6 +8577,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_BRANDING-PREVIEW-AND-APPLY-AUDIT-REPORT_V1.md"
     ],
     "architectural": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md"
     ],
     "architecture": [
@@ -7973,6 +8586,7 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-APPLICATION-AUDIT-REPORT-NOV2026_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md",
@@ -8002,6 +8616,7 @@
       "07_ATTENDANCE/2026-11-03_ATTENDANCE_SPECIFICATION_ATTENDANCE-USER-MANUAL_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
       "26_ARCHIVED/legacy_root/ATTENDANCE_AND_TEST_POLICY.md"
     ],
     "attendance_and_test_policy": [
@@ -8030,6 +8645,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-COMPREHENSIVE-VERIFIED-AUDIT-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_COMPREHENSIVE-AUDIT-AND-REMEDIATION-REPORT_V1.md",
@@ -8040,20 +8656,35 @@
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "audit_logs": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md"
     ],
+    "audit_universal": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
+    ],
     "audit_v1": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_AUDIT-REPORT_SYSADMIN-COMPLETE-EDITING-OPTIONS-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "audits": [
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_AUDIT-REPORT_V1.md",
@@ -8118,6 +8749,12 @@
       "09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_SPECIFICATION_FEES-USER-MANUAL_V1.md",
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_SPECIFICATION_FEES-CHANGELOG_V1.md"
     ],
+    "binding": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
+    ],
+    "blueprint": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
+    ],
     "blueprint_v1": [
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md"
     ],
@@ -8147,6 +8784,13 @@
       "25_BUSINESS_REQUIREMENTS/2026-11-04_BUSINESS_REQUIREMENTS_IMPLEMENTATION-PLAN_ORIGINAL-IMPLEMENTATION-PLAN_V1.md",
       "26_ARCHIVED/legacy_root/COACHING_BUSINESS_RULES.md"
     ],
+    "button": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md"
+    ],
+    "buttons": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md"
+    ],
     "capabilities": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-COMPREHENSIVE-VERIFIED-AUDIT-REPORT_V1.md"
     ],
@@ -8157,7 +8801,8 @@
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md"
     ],
     "catalog": [
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
     ],
     "centralized": [
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md",
@@ -8195,7 +8840,11 @@
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-CHANGELOG_V1.md"
     ],
     "chart": [
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
+    ],
+    "charts": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
     "checkout": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
@@ -8307,6 +8956,9 @@
     "collapsible": [
       "17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_COLLAPSIBLE-APPLICATION-FOOTER-REPORT_V1.md"
     ],
+    "collisions": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
+    ],
     "command": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_GITHUB-PUSH-AND-DOCKER-INSTALLER-REPORT_V1.md"
     ],
@@ -8319,6 +8971,9 @@
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md"
     ],
+    "compatibility": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
+    ],
     "complete": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_AUDIT-REPORT_SYSADMIN-COMPLETE-EDITING-OPTIONS-AUDIT_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md"
@@ -8327,6 +8982,7 @@
       "22_USER_MANUALS/complete_user_manual.html"
     ],
     "completion": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md"
     ],
     "compliance": [
@@ -8345,7 +9001,9 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
@@ -8356,7 +9014,8 @@
     ],
     "comprehensive": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-COMPREHENSIVE-VERIFIED-AUDIT-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_COMPREHENSIVE-AUDIT-AND-REMEDIATION-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_COMPREHENSIVE-AUDIT-AND-REMEDIATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
     ],
     "configuration": [
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_INSTITUTE-SETTINGS-AND-CONFIGURATION-REPORT_V1.md"
@@ -8390,6 +9049,9 @@
     "cryptography": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md"
     ],
+    "css": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
+    ],
     "customer": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_CUSTOMER-DEPLOYMENT-SYNCHRONIZATION-REPORT_V1.md"
     ],
@@ -8400,13 +9062,15 @@
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-DEVELOPER-MANUAL_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-SPECIFICATION_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-USER-MANUAL_V1.md",
-      "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md"
+      "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "dashboards": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "dashboards_v1": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
@@ -8418,7 +9082,10 @@
       "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md",
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_REPORT_CLEAN-PRODUCTION-DATA-CLEANUP-PREVIEW_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md",
       "26_ARCHIVED/legacy_root/DATA_PRIVACY_AND_SECURITY.md"
     ],
@@ -8430,7 +9097,8 @@
       "16_DATABASE_API/2026-11-03_DATABASE_API_SPECIFICATION_DATABASE-DESIGN-AND-SCHEMA_V1.md",
       "16_DATABASE_API/2026-11-03_DATABASE_API_SPECIFICATION_REST-API-STANDARDS_V1.md",
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
     ],
     "decision": [
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md",
@@ -8447,6 +9115,9 @@
     "deep": [
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_BRANDING-PREVIEW-AND-APPLY-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_AUDIT-REPORT_V1.md"
+    ],
+    "defect": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
     ],
     "delivery": [
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md"
@@ -8501,6 +9172,9 @@
     "disaster": [
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md"
     ],
+    "disconnected": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
+    ],
     "division": [
       "03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_COURSE-BATCH-ENROLLMENT-RULES_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-DEVELOPER-MANUAL_V1.md",
@@ -8545,6 +9219,10 @@
     "donut": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
     ],
+    "dossier": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
+    ],
     "dpdp": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md"
     ],
@@ -8582,24 +9260,39 @@
       "DOCUMENTATION_RULES.md",
       "README.md"
     ],
+    "element": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md"
+    ],
+    "elements": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md"
+    ],
     "elevation": [
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-MODULE-ELEVATION-REPORT_V1.md"
     ],
     "employee": [
-      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md"
+      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
     ],
     "end": [
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md"
+    ],
+    "endpoints": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
     ],
     "engine": [
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md"
     ],
     "engine_v1": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md"
     ],
@@ -8618,6 +9311,9 @@
     ],
     "error": [
       "17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md"
+    ],
+    "evaluation": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
     "exam": [
       "08_EXAMINATION/2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-CHANGELOG_V1.md",
@@ -8639,6 +9335,7 @@
       "08_EXAMINATION/2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-USER-MANUAL_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
       "26_ARCHIVED/legacy_root/ATTENDANCE_AND_TEST_POLICY.md"
     ],
     "examinations": [
@@ -8679,12 +9376,23 @@
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-SPECIFICATION_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-USER-MANUAL_V1.md"
     ],
+    "fallback": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
+    ],
+    "fallbacks": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
+    ],
     "fastapi": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md"
     ],
     "feature": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
+    ],
+    "features": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
     ],
     "fee": [
       "09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_POLICY-FRAMEWORK_FEE-POLICY-AND-ACCOUNTING_V1.md",
@@ -8790,6 +9498,8 @@
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_SYSADMIN-FEES-PERMISSIONS-AUDIT-AND-PLAN_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_FEES-AND-RECEIPT-EDITING-UX-IMPROVEMENTS-GUIDE_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
     ],
     "final": [
@@ -8799,6 +9509,9 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md",
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEE-RECORDS-REPLACEMENT-REPORT_V1.md",
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_SPECIFICATION_FEES-RECONCILIATION-REPORT_V1.md"
+    ],
+    "fit": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md"
     ],
     "fix1_receipt_edit_modal": [
       "assets/screenshots/fix1_receipt_edit_modal.png"
@@ -8825,6 +9538,10 @@
       "17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-FOOTER-IMPLEMENTATION-REPORT_V1.md",
       "17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_COLLAPSIBLE-APPLICATION-FOOTER-REPORT_V1.md"
     ],
+    "for": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
+    ],
     "foreign": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md"
     ],
@@ -8833,7 +9550,11 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
-      "09_FEES_PAYMENTS/2026-11-05_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FORENSIC-FEE-LEDGER-RECONCILIATION-REPORT_V1.md"
+      "09_FEES_PAYMENTS/2026-11-05_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FORENSIC-FEE-LEDGER-RECONCILIATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "forms": [
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md"
@@ -8888,10 +9609,23 @@
     ],
     "full": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_AUDIT-REPORT_PHASE1-AND-PHASE2-AUDIT-REMEDIATION-SUMMARY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-APPLICATION-AUDIT-REPORT-NOV2026_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-SYSTEM-AUDIT-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md"
+    ],
+    "functional": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
+    ],
+    "functionality": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
+    ],
+    "gap": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
     ],
     "gateway": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
@@ -8909,6 +9643,7 @@
     ],
     "global": [
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
     ],
     "governance": [
@@ -8941,7 +9676,8 @@
     "guide": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_PRODUCTION-DEPLOYMENT-GUIDE_V1.md",
-      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md"
+      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "guide_step1_payments_unlock": [
       "assets/screenshots/guide_step1_payments_unlock.png"
@@ -8958,7 +9694,8 @@
     "guide_v1": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_PRODUCTION-DEPLOYMENT-GUIDE_V1.md",
-      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_FEES-AND-RECEIPT-EDITING-UX-IMPROVEMENTS-GUIDE_V1.md"
+      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_FEES-AND-RECEIPT-EDITING-UX-IMPROVEMENTS-GUIDE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "handling": [
       "17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md"
@@ -9036,6 +9773,7 @@
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md",
       "15_INTEGRATIONS/2026-11-05_INTEGRATIONS_IMPLEMENTATION-REPORT_CENTRALIZED-COMMUNICATION-AND-SHARING-REPORT_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
@@ -9052,6 +9790,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-APPLICATION-AUDIT-REPORT-NOV2026_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-SYSTEM-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-04_BUSINESS_REQUIREMENTS_IMPLEMENTATION-PLAN_ORIGINAL-IMPLEMENTATION-PLAN_V1.md",
       "26_ARCHIVED/legacy_root/IMPLEMENTATION_PLAN.md"
@@ -9067,6 +9806,9 @@
     ],
     "improvements": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_FEES-AND-RECEIPT-EDITING-UX-IMPROVEMENTS-GUIDE_V1.md"
+    ],
+    "incomplete": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
     ],
     "independent": [
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md"
@@ -9093,6 +9835,7 @@
     "institute": [
       "00_PRODUCT_OVERVIEW/2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_INSTITUTE-SETTINGS-AND-CONFIGURATION-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
       "26_ARCHIVED/legacy_root/COACHING_INSTITUTE_POLICY_FRAMEWORK.md"
     ],
     "institutesetting": [
@@ -9113,7 +9856,10 @@
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-PLAN_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
-      "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md"
+      "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "institutionsetting": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
@@ -9131,7 +9877,14 @@
       "15_INTEGRATIONS/2026-11-05_INTEGRATIONS_IMPLEMENTATION-REPORT_CENTRALIZED-COMMUNICATION-AND-SHARING-REPORT_V1.md"
     ],
     "integrity": [
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
+    ],
+    "interactive": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md"
     ],
     "intuitive": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_FEES-AND-RECEIPT-EDITING-UX-IMPROVEMENTS-GUIDE_V1.md"
@@ -9144,7 +9897,8 @@
       "20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md"
     ],
     "investigation": [
-      "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
     ],
     "keys": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md"
@@ -9153,16 +9907,24 @@
       "24_AI_AGENT_KNOWLEDGE/2026-11-03_AI_AGENT_KNOWLEDGE_POLICY-FRAMEWORK_AI-AGENT-GOVERNANCE_V1.md"
     ],
     "kyc": [
-      "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md"
+      "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
     ],
     "latency": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md"
+    ],
+    "layout": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "leaderboard": [
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md"
     ],
     "ledger": [
       "09_FEES_PAYMENTS/2026-11-05_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FORENSIC-FEE-LEDGER-RECONCILIATION-REPORT_V1.md"
+    ],
+    "legacy": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
     ],
     "lifecycle": [
       "04_STUDENT_MANAGEMENT/2026-11-05_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-LIFECYCLE-AND-WITHDRAWAL-ANALYTICS-REPORT_V1.md",
@@ -9172,6 +9934,9 @@
     ],
     "like": [
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md"
+    ],
+    "linkage": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
     ],
     "local": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md"
@@ -9210,7 +9975,8 @@
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-USER-MANUAL_V1.md",
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md",
-      "19_RELEASES_CHANGELOG/2026-11-05_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_ENTERPRISE-RELEASE-AND-CHANGE-MANAGEMENT-REPORT_V1.md"
+      "19_RELEASES_CHANGELOG/2026-11-05_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_ENTERPRISE-RELEASE-AND-CHANGE-MANAGEMENT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "management_audit": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md"
@@ -9247,6 +10013,7 @@
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-USER-MANUAL_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-DEVELOPER-MANUAL_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-USER-MANUAL_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md"
@@ -9265,6 +10032,9 @@
     ],
     "manual_troubleshooting": [
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md"
+    ],
+    "manual_universal": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "manual_v1": [
       "03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-DEVELOPER-MANUAL_V1.md",
@@ -9306,22 +10076,36 @@
     "matrix": [
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md",
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md",
       "26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md",
       "26_ARCHIVED/legacy_root/ROLE_PERMISSION_MATRIX.md"
     ],
     "matrix_v1": [
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md"
+    ],
+    "menu": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md"
     ],
     "messagetemplate": [
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md"
+    ],
+    "metrics": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
     "migration": [
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md"
     ],
     "migrations": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md"
+    ],
+    "missing": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
+    ],
+    "mock": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
     ],
     "model": [
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
@@ -9359,6 +10143,9 @@
     "naming": [
       "DOCUMENTATION_RULES.md"
     ],
+    "navigation": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
+    ],
     "notes": [
       "19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_CHANGELOG_RELEASE-NOTES-HISTORICAL_V1.md"
     ],
@@ -9389,6 +10176,7 @@
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md"
     ],
     "operational": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md"
     ],
@@ -9416,7 +10204,13 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md"
     ],
     "page": [
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
+    ],
+    "paper": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "payment": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
@@ -9444,7 +10238,8 @@
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_SYSADMIN-FEES-PERMISSIONS-AUDIT-AND-PLAN_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_FEES-AND-RECEIPT-EDITING-UX-IMPROVEMENTS-GUIDE_V1.md",
-      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md"
+      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
     "paymentallocation": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
@@ -9452,7 +10247,10 @@
     ],
     "paymentreceipt": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
-      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md"
+      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "payments": [
       "09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_POLICY-FRAMEWORK_FEE-POLICY-AND-ACCOUNTING_V1.md",
@@ -9542,8 +10340,21 @@
     "phase2": [
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_AUDIT-REPORT_PHASE1-AND-PHASE2-AUDIT-REMEDIATION-SUMMARY_V1.md"
     ],
+    "phased": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
+    ],
+    "phases": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
+    ],
     "pixel": [
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-WORKSPACE-PIXEL-PERFECTION-REPORT_V1.md"
+    ],
+    "placeholder": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
+    ],
+    "placeholders": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
     ],
     "plan": [
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-PLAN_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
@@ -9555,6 +10366,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-04_BUSINESS_REQUIREMENTS_IMPLEMENTATION-PLAN_ORIGINAL-IMPLEMENTATION-PLAN_V1.md",
       "26_ARCHIVED/legacy_root/IMPLEMENTATION_PLAN.md"
     ],
@@ -9639,6 +10451,9 @@
       "assets/screenshots/tab3_profiles_and_rates.png",
       "assets/screenshots/tab4_vouchers_ledger.png",
       "assets/screenshots/tab5_reports_analytics.png"
+    ],
+    "point": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
     ],
     "policy": [
       "00_PRODUCT_OVERVIEW/2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md",
@@ -9761,12 +10576,20 @@
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-PLAN_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
-      "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md"
+      "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
     ],
     "printable": [
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md"
+    ],
+    "printers": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
     ],
     "printing": [
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
@@ -9774,7 +10597,8 @@
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_RECEIPT-PRINTING-AND-PWA-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
-      "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md"
+      "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "prioritization": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md"
@@ -9798,11 +10622,13 @@
     ],
     "profile": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
-      "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md"
+      "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "profiles": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "profiles_v1": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
@@ -9845,6 +10671,9 @@
     "react": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md"
     ],
+    "readability": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md"
+    ],
     "readiness": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
@@ -9865,7 +10694,8 @@
     "receipt": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_FEES-AND-RECEIPT-EDITING-UX-IMPROVEMENTS-GUIDE_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_RECEIPT-PRINTING-AND-PWA-SYSTEM-REPORT_V1.md",
-      "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md"
+      "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "receipts": [
       "09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_SPECIFICATION_PAYMENTS-CHANGELOG_V1.md",
@@ -9887,7 +10717,8 @@
     ],
     "records": [
       "04_STUDENT_MANAGEMENT/2026-11-04_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-RECORDS-RESTORATION-REPORT_V1.md",
-      "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEE-RECORDS-REPLACEMENT-REPORT_V1.md"
+      "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEE-RECORDS-REPLACEMENT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
     ],
     "recovery": [
       "17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md",
@@ -9905,11 +10736,15 @@
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_SPECIFICATION_FEES-FEE-REGISTER-IMPORT-SPECIFICATION_V1.md",
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_SPECIFICATION_FEES-FEE-REGISTER-IMPORT-USER-MANUAL_V1.md",
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_SPECIFICATION_FEES-RECONCILIATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_POLICY-DECISION-REGISTER_V1.md",
       "26_ARCHIVED/legacy_root/POLICY_DECISION_REGISTER.md"
     ],
     "register_v1": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_POLICY-DECISION-REGISTER_V1.md"
     ],
@@ -9938,6 +10773,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_COMPREHENSIVE-AUDIT-AND-REMEDIATION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_AUDIT-REPORT_PHASE1-AND-PHASE2-AUDIT-REMEDIATION-SUMMARY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md"
     ],
     "remediation_v1": [
@@ -9991,6 +10827,7 @@
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md",
       "15_INTEGRATIONS/2026-11-05_INTEGRATIONS_IMPLEMENTATION-REPORT_CENTRALIZED-COMMUNICATION-AND-SHARING-REPORT_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
@@ -10014,6 +10851,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md"
     ],
@@ -10041,8 +10879,14 @@
     "report_branding": [
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_BRANDING-PREVIEW-AND-APPLY-AUDIT-REPORT_V1.md"
     ],
+    "report_button": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md"
+    ],
     "report_centralized": [
       "15_INTEGRATIONS/2026-11-05_INTEGRATIONS_IMPLEMENTATION-REPORT_CENTRALIZED-COMMUNICATION-AND-SHARING-REPORT_V1.md"
+    ],
+    "report_chart": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
     "report_code": [
       "19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md"
@@ -10069,8 +10913,14 @@
     "report_digital": [
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_DIGITAL-ID-CARDS-QR-SCANNING_V1.md"
     ],
+    "report_disconnected": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
+    ],
     "report_documentation": [
       "20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md"
+    ],
+    "report_employee": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
     ],
     "report_end": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md"
@@ -10099,7 +10949,11 @@
     "report_full": [
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-APPLICATION-AUDIT-REPORT-NOV2026_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-SYSTEM-AUDIT-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md"
+    ],
+    "report_functional": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
     ],
     "report_github": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_GITHUB-PUSH-AND-DOCKER-INSTALLER-REPORT_V1.md"
@@ -10115,6 +10969,9 @@
     ],
     "report_master": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md"
+    ],
+    "report_missing": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
     ],
     "report_module": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md"
@@ -10134,6 +10991,9 @@
     "report_phase1": [
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_AUDIT-REPORT_PHASE1-AND-PHASE2-AUDIT-REMEDIATION-SUMMARY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md"
+    ],
+    "report_placeholder": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
     ],
     "report_prathamone": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
@@ -10170,10 +11030,14 @@
     ],
     "report_teacher": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
-      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md"
+      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "report_test": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md"
+    ],
+    "report_universal": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md"
     ],
     "report_user": [
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md"
@@ -10223,6 +11087,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md",
@@ -10243,7 +11108,8 @@
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-USER-MANUAL_V1.md"
     ],
     "repository": [
-      "20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md"
     ],
     "requirements": [
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_COACHING-BUSINESS-RULES_V1.md",
@@ -10280,13 +11146,18 @@
     "revisions": [
       "19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md"
     ],
+    "risks": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
+    ],
     "roadmap": [
       "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
       "26_ARCHIVED/legacy_root/ROADMAP.md"
     ],
     "roadmap_v1": [
       "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md"
     ],
     "role": [
@@ -10332,6 +11203,10 @@
     "runtime": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md"
     ],
+    "scaling": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md"
+    ],
     "scanning": [
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-PLAN_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_DIGITAL-ID-CARDS-QR-SCANNING_V1.md"
@@ -10376,6 +11251,9 @@
     "service": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md"
     ],
+    "services": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
+    ],
     "session": [
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md"
     ],
@@ -10413,6 +11291,9 @@
     "single": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
+    ],
+    "sizes": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "sms": [
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
@@ -10508,6 +11389,8 @@
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
     ],
     "staff": [
@@ -10516,7 +11399,9 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
-      "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md"
+      "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "staff_profiles": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md",
@@ -10534,17 +11419,28 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
     ],
+    "staffdocument": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md"
+    ],
     "staffemploymenthistory": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "staffleave": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "staffprofile": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
@@ -10552,7 +11448,18 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
-      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md"
+      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "standard": [
       "03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_COURSE-BATCH-ENROLLMENT-RULES_V1.md",
@@ -10607,8 +11514,12 @@
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
     ],
     "studentacademichistory": [
@@ -10707,6 +11618,9 @@
     "synchronization": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_CUSTOMER-DEPLOYMENT-SYNCHRONIZATION-REPORT_V1.md"
     ],
+    "synthetic": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
+    ],
     "sysadmin": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_SYSADMIN-FEES-PERMISSIONS-AUDIT-AND-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md",
@@ -10773,7 +11687,8 @@
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-PLAN_TEACHER-PAYROLL-IMPLEMENTATION-PLAN_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md",
-      "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md"
+      "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "teacher_profiles": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md",
@@ -10789,13 +11704,21 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "teacherpaymentprofile": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-PLAN_TEACHER-PAYROLL-IMPLEMENTATION-PLAN_V1.md",
-      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md"
+      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
     ],
     "teacherpaymentvoucher": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
@@ -10811,7 +11734,11 @@
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-PLAN_TEACHER-PAYROLL-IMPLEMENTATION-PLAN_V1.md",
-      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md"
+      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "teachers": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
@@ -10828,9 +11755,13 @@
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-PLAN_TEACHER-PAYROLL-IMPLEMENTATION-PLAN_V1.md",
-      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md"
+      "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md"
     ],
     "technical": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-04_BUSINESS_REQUIREMENTS_IMPLEMENTATION-PLAN_ORIGINAL-IMPLEMENTATION-PLAN_V1.md",
       "26_ARCHIVED/legacy_root/IMPLEMENTATION_PLAN.md"
     ],
@@ -10845,7 +11776,8 @@
     ],
     "thermal": [
       "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-PLAN_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
-      "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_DIGITAL-ID-CARDS-QR-SCANNING_V1.md"
+      "04_STUDENT_MANAGEMENT/2026-11-06_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_DIGITAL-ID-CARDS-QR-SCANNING_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
     ],
     "time": [
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md"
@@ -10877,6 +11809,11 @@
     ],
     "unassigned": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md"
+    ],
+    "universal": [
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
     "update": [
       "17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md"
@@ -10910,6 +11847,16 @@
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-SPECIFICATION_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-USER-MANUAL_V1.md",
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
+      "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
     ],
@@ -10937,10 +11884,13 @@
     ],
     "validation": [
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_COMPREHENSIVE-AUDIT-AND-REMEDIATION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md"
     ],
     "validation_v1": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md"
     ],
     "verification": [
@@ -10951,6 +11901,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md",
       "17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-FOOTER-IMPLEMENTATION-REPORT_V1.md",
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
       "26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md"
     ],
     "verified": [
@@ -10970,7 +11921,8 @@
     ],
     "visual": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
-      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md"
+      "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
     "vitest": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md",
@@ -11006,12 +11958,16 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
     ],
     "workspace": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-WORKSPACE-PIXEL-PERFECTION-REPORT_V1.md",
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md"
+    ],
+    "workspaces": [
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
     "year": [
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md"

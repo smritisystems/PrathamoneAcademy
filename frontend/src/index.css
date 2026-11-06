@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -101,9 +101,10 @@
     min-height: auto !important;
     overflow: visible !important;
   }
+  /* Centralized Universal Print Engine Default Page Size */
   @page {
-    size: A5 portrait;
-    margin: 6mm 8mm;
+    size: auto;
+    margin: 8mm;
   }
   body {
     background: white !important;

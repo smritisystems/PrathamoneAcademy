@@ -78,7 +78,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.06-REV-017-v1.10.1-7EE7464',
+  buildNumber: '2026.11.06-REV-019-v1.11.0-83EAAF6',
   releaseChannel: 'Stable',
   releaseStatus: 'Production Candidate',
   releaseDate: '2026-11-06',
