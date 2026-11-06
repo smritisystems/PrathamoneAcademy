@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description API endpoints for user account administration, RBAC roles, security scopes, and invitations.
 #  */
@@ -41,6 +41,8 @@ from app.models.attendance import Attendance
 from app.models.exam import Examination, ExamMark
 from app.models.fee import FeeInvoice, StudentFeeAssignment
 from app.models.payment import Payment, PaymentReceipt
+from app.models.teacher_payroll import TeacherPayroll, TeachingSession
+from app.models.staff import StaffProfile, TeacherAssignment, StaffAttendance, StaffLeave
 
 router = APIRouter()
 
@@ -1000,6 +1002,78 @@ async def delete_user(
             raise HTTPException(status_code=400, detail="Cannot delete the last remaining active System Administrator")
 
     if permanent:
+        # ─── ENFORCE DELETE PROTECTION (SSOT & AUDIT INTEGRITY) ───────────
+        conflicts = []
+
+        # 1. Teacher Payroll Records
+        payroll_count = (await db.execute(
+            select(func.count(TeacherPayroll.id)).where(TeacherPayroll.teacher_user_id == user_id)
+        )).scalar() or 0
+        if payroll_count > 0:
+            conflicts.append(f"{payroll_count} Teacher Payroll record(s)")
+
+        # 2. Teaching Sessions
+        sessions_count = (await db.execute(
+            select(func.count(TeachingSession.id)).where(TeachingSession.teacher_user_id == user_id)
+        )).scalar() or 0
+        if sessions_count > 0:
+            conflicts.append(f"{sessions_count} Teaching Session(s)")
+
+        # 3. Active / Historical Teacher Assignments
+        assignments_count = (await db.execute(
+            select(func.count(TeacherAssignment.id)).where(TeacherAssignment.teacher_user_id == user_id)
+        )).scalar() or 0
+        if assignments_count > 0:
+            conflicts.append(f"{assignments_count} Subject/Batch Assignment(s)")
+
+        # 4. Staff Attendance Records
+        attendance_count = (await db.execute(
+            select(func.count(StaffAttendance.id)).where(StaffAttendance.user_id == user_id)
+        )).scalar() or 0
+        if attendance_count > 0:
+            conflicts.append(f"{attendance_count} Attendance Record(s)")
+
+        # 5. Staff Leaves
+        leaves_count = (await db.execute(
+            select(func.count(StaffLeave.id)).where(StaffLeave.user_id == user_id)
+        )).scalar() or 0
+        if leaves_count > 0:
+            conflicts.append(f"{leaves_count} Staff Leave Application(s)")
+
+        # 6. Financial Transactions / Payments processed
+        payments_count = (await db.execute(
+            select(func.count(Payment.id)).where(
+                or_(
+                    Payment.collected_by_id == user_id,
+                    Payment.submitted_by_id == user_id,
+                    Payment.approved_by_id == user_id,
+                    Payment.posted_by_id == user_id,
+                )
+            )
+        )).scalar() or 0
+        if payments_count > 0:
+            conflicts.append(f"{payments_count} Payment / Financial Receipt(s)")
+
+        # 7. Student Profiles & Enrollments
+        if user.student_id:
+            enrollment_count = (await db.execute(
+                select(func.count(StudentEnrollment.id)).where(StudentEnrollment.student_id == user.student_id)
+            )).scalar() or 0
+            if enrollment_count > 0:
+                conflicts.append(f"{enrollment_count} Student Enrollment record(s)")
+
+        if conflicts:
+            conflict_details = ", ".join(conflicts)
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Delete Protection Violation: Cannot permanently delete user '{user.username}'. "
+                    f"Active historical and financial dependencies exist: {conflict_details}. "
+                    "To preserve audit integrity, compliance, and ledger continuity, please deactivate "
+                    "the account or use the Employment/Student Lifecycle transition instead."
+                ),
+            )
+
         # Unlink divisions where class teacher
         divs = (await db.execute(select(Division).where(Division.class_teacher_id == user_id))).scalars().all()
         for d in divs:
@@ -1018,6 +1092,10 @@ async def delete_user(
         return {"message": f"User {user.username} was permanently deleted"}
     else:
         user.is_active = False
+        staff_prof = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+        if staff_prof:
+            staff_prof.status = "inactive"
+
         audit = AuditLog(
             user_id=current_user.id,
             action="deactivate_user",

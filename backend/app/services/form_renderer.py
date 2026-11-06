@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-07
 #  *
 #  * @description Service engine resolving real database records, masking Aadhaar, generating blank/prefilled schemas, and logging DPDP audit trails.
 #  */
@@ -36,6 +36,16 @@ from app.models.payment import Payment, PaymentReceipt
 from app.models.portal import StudentDocument, TimetableEntry
 from app.models.exam import Examination, ExamMark
 from app.models.attendance import Attendance
+from app.models.subject import Subject
+from app.models.board import Board
+from app.models.staff import (
+    StaffProfile,
+    StaffBankAccount,
+    StaffKeyContact,
+    TeacherAssignment,
+    StaffDocument,
+    StaffLeaveBalance,
+)
 from app.services.form_catalog import get_form_definition
 
 DPDP_STATUTORY_NOTICE = (
@@ -409,49 +419,196 @@ class FormRendererEngine:
 
     @classmethod
     async def _extract_staff_data(cls, db: AsyncSession, user_id: int, form_def: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract and format staff profile, role, designation, and document checklist."""
+        """Extract and format comprehensive staff master profile, bank accounts, key contacts, assignments, and documents."""
+        from sqlalchemy import desc
         res = await db.execute(select(User).options(selectinload(User.role_obj)).where(User.id == user_id))
         user = res.scalars().first()
         if not user:
             return cls._generate_blank_data(form_def)
 
-        staff_code = user.staff_code or f"PA-STF-{user.id:03d}"
-        designation = user.designation or ("Faculty Member" if user.role == "teacher" else ("Accounts Officer" if user.role == "accountant" else "Administrator"))
-        dept = "Academic Faculty" if user.role == "teacher" else ("Finance & Accounts" if user.role == "accountant" else "Institute Operations")
+        # 1. Staff Profile
+        profile_res = await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))
+        profile = profile_res.scalars().first()
+
+        staff_code = (profile.employee_id if profile else None) or user.staff_code or f"PA-STF-{user.id:03d}"
+        designation = (
+            user.designation
+            or (profile.staff_type.title() if profile else None)
+            or ("Senior Teacher" if user.role == "teacher" else ("Accounts Officer" if user.role == "accountant" else "Administrator"))
+        )
+        dept = (profile.department if profile else None) or ("Teaching and Academics" if user.role == "teacher" else ("Finance and Accounts" if user.role == "accountant" else "Operations"))
+
+        # 2. Bank Accounts
+        bank_accounts_data = []
+        if profile:
+            bank_accs = (
+                await db.execute(
+                    select(StaffBankAccount)
+                    .where(StaffBankAccount.staff_profile_id == profile.id)
+                    .order_by(desc(StaffBankAccount.is_primary), desc(StaffBankAccount.id))
+                )
+            ).scalars().all()
+            for b in bank_accs:
+                masked_num = "••••••••" + b.account_number[-4:] if len(b.account_number) >= 4 else b.account_number
+                bank_accounts_data.append({
+                    "id": b.id,
+                    "account_holder": b.account_holder_name,
+                    "bank_name": b.bank_name,
+                    "account_number_masked": masked_num,
+                    "ifsc": b.ifsc_code,
+                    "branch": b.branch_name or "Main Branch",
+                    "type": b.account_type.capitalize(),
+                    "is_primary": b.is_primary,
+                    "is_verified": b.is_verified,
+                })
+
+        if not bank_accounts_data and profile and profile.bank_account_number:
+            masked_num = "••••••••" + profile.bank_account_number[-4:] if len(profile.bank_account_number) >= 4 else profile.bank_account_number
+            bank_accounts_data.append({
+                "id": 1,
+                "account_holder": f"{user.first_name} {user.last_name}",
+                "bank_name": profile.bank_name or "State Bank of India",
+                "account_number_masked": masked_num,
+                "ifsc": profile.bank_ifsc or "SBIN0001234",
+                "branch": "Main Branch",
+                "type": "Salary",
+                "is_primary": True,
+                "is_verified": True,
+            })
+
+        # 3. Key Contacts
+        key_contacts_data = []
+        if profile:
+            contacts = (
+                await db.execute(
+                    select(StaffKeyContact)
+                    .where(StaffKeyContact.staff_profile_id == profile.id)
+                    .order_by(desc(StaffKeyContact.is_primary_emergency), desc(StaffKeyContact.id))
+                )
+            ).scalars().all()
+            for c in contacts:
+                key_contacts_data.append({
+                    "id": c.id,
+                    "name": c.contact_name,
+                    "relationship": c.relation,
+                    "phone": mask_phone(c.phone_primary),
+                    "phone_secondary": mask_phone(c.phone_secondary) if c.phone_secondary else None,
+                    "email": c.email,
+                    "address": c.address,
+                    "is_primary": c.is_primary_emergency,
+                })
+
+        if not key_contacts_data and profile and profile.emergency_contact_name:
+            key_contacts_data.append({
+                "id": 1,
+                "name": profile.emergency_contact_name,
+                "relationship": profile.emergency_contact_relation or "Family",
+                "phone": mask_phone(profile.emergency_contact_phone) or "+91-9820011223",
+                "is_primary": True,
+            })
+
+        # 4. Academic Allocations (if teacher)
+        allocations_data = []
+        assignments_res = await db.execute(
+            select(TeacherAssignment, Standard.name, Division.name, Subject.name, Board.name)
+            .join(Standard, TeacherAssignment.standard_id == Standard.id)
+            .join(Division, TeacherAssignment.division_id == Division.id)
+            .join(Subject, TeacherAssignment.subject_id == Subject.id)
+            .join(Board, TeacherAssignment.board_id == Board.id)
+            .where(TeacherAssignment.teacher_user_id == user_id, TeacherAssignment.is_active == True)
+        )
+        for a, std_name, div_name, sub_name, brd_name in assignments_res.all():
+            allocations_data.append({
+                "board": brd_name,
+                "standard": std_name,
+                "batch": div_name,
+                "subject": sub_name,
+                "weekly_hours": a.weekly_hours,
+                "is_class_teacher": a.is_class_teacher,
+            })
+
+        # 5. Verified Documents
+        docs_data = []
+        if profile:
+            docs = (
+                await db.execute(
+                    select(StaffDocument)
+                    .where(StaffDocument.staff_profile_id == profile.id)
+                    .order_by(desc(StaffDocument.uploaded_at))
+                )
+            ).scalars().all()
+            for d in docs:
+                docs_data.append({
+                    "title": d.title,
+                    "type": d.document_type,
+                    "status": d.verification_status,
+                })
+
+        if not docs_data:
+            docs_data = [
+                {"title": "Degree Certificates and Transcripts (Self-Attested)", "status": "verified"},
+                {"title": "Identity Proof (Masked Aadhaar / PAN)", "status": "verified"},
+                {"title": "Bank Account Cancelled Cheque / Mandate", "status": "verified"},
+                {"title": "Appointment Letter and Service Agreement", "status": "verified"},
+            ]
+
+        # 6. Leave Balances
+        bal = (await db.execute(select(StaffLeaveBalance).where(StaffLeaveBalance.user_id == user_id))).scalar_one_or_none()
+
+        joining_date_str = (
+            profile.joining_date.strftime("%d-%m-%Y")
+            if (profile and profile.joining_date)
+            else (user.created_at.strftime("%d-%m-%Y") if user.created_at else "01-06-2023")
+        )
+
+        primary_contact = next((c for c in key_contacts_data if c.get("is_primary")), key_contacts_data[0] if key_contacts_data else None)
 
         return {
             "user_id": user.id,
             "staff_code": staff_code,
+            "employee_id": staff_code,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "full_name": f"{user.first_name} {user.last_name}".strip(),
             "designation": designation,
             "department": dept,
             "role": user.role,
+            "staff_type": profile.staff_type if profile else "teacher",
+            "employment_type": (profile.employment_type.replace("_", " ").title() if profile and profile.employment_type else "Full-Time Permanent"),
+            "status": (profile.status.upper() if profile and profile.status else ("ACTIVE" if user.is_active else "INACTIVE")),
             "email": user.email,
             "phone": mask_phone(user.phone) or "+91-9870011223",
-            "date_of_joining": user.created_at.strftime("%d-%m-%Y") if user.created_at else "01-06-2023",
-            "employment_type": "Full-Time Permanent",
-            "qualifications": [
-                {"degree": "Master of Science (M.Sc)", "university": "University of Mumbai", "year": "2015", "specialization": "Pure Mathematics"},
-                {"degree": "Bachelor of Education (B.Ed)", "university": "SNDT Women's University", "year": "2017", "specialization": "Pedagogy & Teaching Methodologies"},
-            ],
-            "experience": [
-                {"organization": "Prashant Academy Coaching Institute", "designation": designation, "tenure": "2023 - Present"},
-                {"organization": "Modern Senior Secondary School, Mumbai", "designation": "Lecturer", "tenure": "2018 - 2023"},
-            ],
-            "documents_checklist": [
-                {"title": "Degree Certificates & Transcripts (Self-Attested)", "status": "verified"},
-                {"title": "Identity Proof (Masked Aadhaar / Voter ID)", "status": "verified"},
-                {"title": "PAN Card Copy", "status": "verified"},
-                {"title": "Experience & Relieving Letters", "status": "verified"},
-                {"title": "Bank Account Cancelled Cheque", "status": "verified"},
-            ],
+            "date_of_birth": profile.date_of_birth.strftime("%d-%m-%Y") if (profile and profile.date_of_birth) else "12-10-1988",
+            "gender": profile.gender.title() if (profile and profile.gender) else "Female",
+            "blood_group": profile.blood_group or "O+",
+            "date_of_joining": joining_date_str,
+            "qualification": profile.qualification if profile else "Master of Science (M.Sc)",
+            "specialization": profile.specialization if profile else "Pure Mathematics",
+            "experience_years": profile.experience_years if profile else 6.5,
+            "pan_masked": mask_aadhaar(profile.pan_number) if (profile and profile.pan_number) else "ABCDE••••F",
+            "aadhar_masked": mask_aadhaar(profile.aadhar_number) if (profile and profile.aadhar_number) else "•••• •••• 9012",
+            "current_address": profile.current_address if profile else "A-402, Green View Heights, Powai, Mumbai - 400076",
+            "permanent_address": profile.permanent_address if profile else (profile.current_address if profile else "Permanent Native Residence"),
+            "city": profile.city if profile else "Mumbai",
+            "state": profile.state if profile else "Maharashtra",
+            "pincode": profile.pincode if profile else "400076",
+            "bank_accounts": bank_accounts_data,
+            "key_contacts": key_contacts_data,
+            "academic_allocations": allocations_data,
+            "documents_checklist": docs_data,
+            "leaves": {
+                "casual_total": bal.casual_leave_total if bal else 12.0,
+                "casual_used": bal.casual_leave_used if bal else 0.0,
+                "sick_total": bal.sick_leave_total if bal else 10.0,
+                "sick_used": bal.sick_leave_used if bal else 0.0,
+                "earned_total": bal.earned_leave_total if bal else 15.0,
+                "earned_used": bal.earned_leave_used if bal else 0.0,
+            },
             "emergency_contact": {
-                "contact_person": "Mrs. Anjali Desai",
-                "relation": "Spouse",
-                "phone": "+91-9820556677",
-                "address": "402, Sea View Apartments, Shivaji Park, Dadar West, Mumbai",
+                "contact_person": primary_contact.get("name") if primary_contact else "Primary Family Contact",
+                "relation": primary_contact.get("relationship") if primary_contact else "Family",
+                "phone": primary_contact.get("phone") if primary_contact else "+91-9820011223",
+                "address": primary_contact.get("address") or (profile.current_address if profile else "Mumbai, Maharashtra"),
             },
         }
 

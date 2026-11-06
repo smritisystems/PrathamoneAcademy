@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description SQLAlchemy models for Staff Profiles, Documents, Academic Assignments, Attendance, Leaves, and Generated Documents.
 #  */
@@ -114,6 +114,12 @@ class StaffProfile(Base):
     reporting_manager: Mapped["User | None"] = relationship("User", foreign_keys=[reporting_manager_id])
     employment_histories: Mapped[List["StaffEmploymentHistory"]] = relationship(
         "StaffEmploymentHistory", back_populates="staff_profile", cascade="all, delete-orphan", order_by="desc(StaffEmploymentHistory.created_at)"
+    )
+    bank_accounts: Mapped[List["StaffBankAccount"]] = relationship(
+        "StaffBankAccount", back_populates="staff_profile", cascade="all, delete-orphan", order_by="desc(StaffBankAccount.is_primary)"
+    )
+    key_contacts: Mapped[List["StaffKeyContact"]] = relationship(
+        "StaffKeyContact", back_populates="staff_profile", cascade="all, delete-orphan", order_by="desc(StaffKeyContact.is_primary_emergency)"
     )
 
 
@@ -327,4 +333,56 @@ class StaffGeneratedDocument(Base):
 
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
     generated_by: Mapped["User | None"] = relationship("User", foreign_keys=[generated_by_id])
+
+
+class StaffBankAccount(Base):
+    __tablename__ = "staff_bank_accounts"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    staff_profile_id: Mapped[int] = mapped_column(
+        ForeignKey("staff_profiles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    account_holder_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    bank_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    account_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    ifsc_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    branch_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    account_type: Mapped[str] = mapped_column(
+        String(30), default="salary"  # salary, savings, reimbursement, current
+    )
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    staff_profile: Mapped["StaffProfile"] = relationship("StaffProfile", back_populates="bank_accounts")
+
+
+class StaffKeyContact(Base):
+    __tablename__ = "staff_key_contacts"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    staff_profile_id: Mapped[int] = mapped_column(
+        ForeignKey("staff_profiles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    contact_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    relation: Mapped[str] = mapped_column("relationship", String(50), nullable=False)  # spouse, parent, sibling, child, relative, reference, other
+    phone_primary: Mapped[str] = mapped_column(String(20), nullable=False)
+    phone_secondary: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_primary_emergency: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    staff_profile: Mapped["StaffProfile"] = relationship("StaffProfile", back_populates="key_contacts")
+
 

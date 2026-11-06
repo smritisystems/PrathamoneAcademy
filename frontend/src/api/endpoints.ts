@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -1004,6 +1004,48 @@ export const staffApi = {
 
   getActivityHistory: (userId: number | string, limit?: number) =>
     apiClient.get<EmployeeActivityHistoryItem[]>(`/staff/${userId}/activity-history`, { params: { limit } }),
+
+  getBankAccounts: (userId: number | string) =>
+    apiClient.get<Array<{
+      id: number
+      staff_profile_id: number
+      account_holder_name: string
+      bank_name: string
+      account_number: string
+      ifsc_code: string
+      branch_name?: string
+      account_type: string
+      is_primary: boolean
+      is_verified: boolean
+    }>>(`/staff/${userId}/bank-accounts`),
+
+  addBankAccount: (userId: number | string, data: any) =>
+    apiClient.post<{ success: boolean; message: string; id: number }>(`/staff/${userId}/bank-accounts`, data),
+
+  setPrimaryBankAccount: (userId: number | string, accountId: number) =>
+    apiClient.put<{ success: boolean; message: string }>(`/staff/${userId}/bank-accounts/${accountId}/set-primary`),
+
+  deleteBankAccount: (userId: number | string, accountId: number) =>
+    apiClient.delete<{ success: boolean; message: string }>(`/staff/${userId}/bank-accounts/${accountId}`),
+
+  getKeyContacts: (userId: number | string) =>
+    apiClient.get<Array<{
+      id: number
+      staff_profile_id: number
+      contact_name: string
+      relationship: string
+      phone_primary: string
+      phone_secondary?: string
+      email?: string
+      address?: string
+      is_primary_emergency: boolean
+    }>>(`/staff/${userId}/key-contacts`),
+
+  addKeyContact: (userId: number | string, data: any) =>
+    apiClient.post<{ success: boolean; message: string; id: number }>(`/staff/${userId}/key-contacts`, data),
+
+  deleteKeyContact: (userId: number | string, contactId: number) =>
+    apiClient.delete<{ success: boolean; message: string }>(`/staff/${userId}/key-contacts/${contactId}`),
 }
 
 // ─── SysAdmin Superuser Governance ───────────────────────────────────────────

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description Comprehensive API endpoints for Teacher & Staff Management, assignments, attendance, leaves, and documents.
 #  */
@@ -44,6 +44,8 @@ from app.models.staff import (
     StaffLeave,
     StaffLeaveBalance,
     StaffGeneratedDocument,
+    StaffBankAccount,
+    StaffKeyContact,
 )
 from app.models.academic_year import AcademicYear
 from app.models.board import Board
@@ -141,6 +143,27 @@ class StaffUpdateRequest(BaseModel):
     notes: Optional[str] = None
     reporting_manager_id: Optional[int] = None
     responsibilities: Optional[str] = None
+
+
+class StaffBankAccountCreateRequest(BaseModel):
+    account_holder_name: str
+    bank_name: str
+    account_number: str
+    ifsc_code: str
+    branch_name: Optional[str] = None
+    account_type: str = "salary"  # salary, savings, reimbursement, current
+    is_primary: bool = False
+    is_verified: bool = False
+
+
+class StaffKeyContactCreateRequest(BaseModel):
+    contact_name: str
+    relationship: str
+    phone_primary: str
+    phone_secondary: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    is_primary_emergency: bool = False
 
 
 class TeacherAssignmentCreateRequest(BaseModel):
@@ -503,6 +526,24 @@ async def get_staff_profile(
     # Leave balances
     bal = (await db.execute(select(StaffLeaveBalance).where(StaffLeaveBalance.user_id == user_id))).scalar_one_or_none()
 
+    # Bank accounts
+    bank_accs = (
+        await db.execute(
+            select(StaffBankAccount)
+            .where(StaffBankAccount.staff_profile_id == profile.id)
+            .order_by(desc(StaffBankAccount.is_primary), desc(StaffBankAccount.id))
+        )
+    ).scalars().all()
+
+    # Key contacts
+    contacts = (
+        await db.execute(
+            select(StaffKeyContact)
+            .where(StaffKeyContact.staff_profile_id == profile.id)
+            .order_by(desc(StaffKeyContact.is_primary_emergency), desc(StaffKeyContact.id))
+        )
+    ).scalars().all()
+
     # Reporting Manager
     reporting_mgr = None
     if profile.reporting_manager_id:
@@ -552,6 +593,33 @@ async def get_staff_profile(
         "bank_account_number": profile.bank_account_number if can_view_sensitive else None,
         "bank_ifsc": profile.bank_ifsc if can_view_sensitive else None,
         "assignments": assignments,
+        "bank_accounts": [
+            {
+                "id": b.id,
+                "account_holder_name": b.account_holder_name,
+                "bank_name": b.bank_name,
+                "account_number": b.account_number if can_view_sensitive else "••••••••" + b.account_number[-4:],
+                "ifsc_code": b.ifsc_code,
+                "branch_name": b.branch_name,
+                "account_type": b.account_type,
+                "is_primary": b.is_primary,
+                "is_verified": b.is_verified,
+            }
+            for b in bank_accs
+        ],
+        "key_contacts": [
+            {
+                "id": c.id,
+                "contact_name": c.contact_name,
+                "relationship": c.relation,
+                "phone_primary": c.phone_primary,
+                "phone_secondary": c.phone_secondary,
+                "email": c.email,
+                "address": c.address,
+                "is_primary_emergency": c.is_primary_emergency,
+            }
+            for c in contacts
+        ],
         "leave_balance": {
             "casual_total": bal.casual_leave_total if bal else 12.0,
             "casual_used": bal.casual_leave_used if bal else 0.0,
@@ -600,6 +668,307 @@ async def update_staff_profile(
 
     await db.commit()
     return {"success": True, "message": "Staff profile updated successfully"}
+
+
+# ─── Bank Accounts Endpoints ──────────────────────────────────────────────────
+
+@router.get("/{user_id}/bank-accounts")
+async def list_staff_bank_accounts(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    is_self = current_user.id == user_id
+    if not is_self and current_user.role not in STAFF_ADMIN_ROLES and current_user.role not in FINANCIAL_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized to view bank accounts")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    accounts = (
+        await db.execute(
+            select(StaffBankAccount)
+            .where(StaffBankAccount.staff_profile_id == profile.id)
+            .order_by(desc(StaffBankAccount.is_primary), desc(StaffBankAccount.id))
+        )
+    ).scalars().all()
+
+    return [
+        {
+            "id": a.id,
+            "staff_profile_id": a.staff_profile_id,
+            "account_holder_name": a.account_holder_name,
+            "bank_name": a.bank_name,
+            "account_number": a.account_number,
+            "ifsc_code": a.ifsc_code,
+            "branch_name": a.branch_name,
+            "account_type": a.account_type,
+            "is_primary": a.is_primary,
+            "is_verified": a.is_verified,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+        }
+        for a in accounts
+    ]
+
+
+@router.post("/{user_id}/bank-accounts")
+async def add_staff_bank_account(
+    user_id: int,
+    data: StaffBankAccountCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    if data.is_primary:
+        existing_accs = (
+            await db.execute(
+                select(StaffBankAccount).where(StaffBankAccount.staff_profile_id == profile.id)
+            )
+        ).scalars().all()
+        for a in existing_accs:
+            a.is_primary = False
+
+        profile.bank_name = data.bank_name
+        profile.bank_account_number = data.account_number
+        profile.bank_ifsc = data.ifsc_code
+
+    new_acc = StaffBankAccount(
+        staff_profile_id=profile.id,
+        account_holder_name=data.account_holder_name,
+        bank_name=data.bank_name,
+        account_number=data.account_number,
+        ifsc_code=data.ifsc_code,
+        branch_name=data.branch_name,
+        account_type=data.account_type,
+        is_primary=data.is_primary,
+        is_verified=data.is_verified,
+    )
+    db.add(new_acc)
+    await db.commit()
+    await db.refresh(new_acc)
+    return {"success": True, "message": "Bank account added successfully", "id": new_acc.id}
+
+
+@router.put("/{user_id}/bank-accounts/{account_id}/set-primary")
+async def set_primary_bank_account(
+    user_id: int,
+    account_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    target_acc = (
+        await db.execute(
+            select(StaffBankAccount).where(
+                StaffBankAccount.id == account_id, StaffBankAccount.staff_profile_id == profile.id
+            )
+        )
+    ).scalar_one_or_none()
+    if not target_acc:
+        raise HTTPException(status_code=404, detail="Bank account not found")
+
+    existing_accs = (
+        await db.execute(select(StaffBankAccount).where(StaffBankAccount.staff_profile_id == profile.id))
+    ).scalars().all()
+    for a in existing_accs:
+        a.is_primary = (a.id == account_id)
+
+    profile.bank_name = target_acc.bank_name
+    profile.bank_account_number = target_acc.account_number
+    profile.bank_ifsc = target_acc.ifsc_code
+
+    await db.commit()
+    return {"success": True, "message": f"{target_acc.bank_name} account set as primary salary account"}
+
+
+@router.delete("/{user_id}/bank-accounts/{account_id}")
+async def delete_staff_bank_account(
+    user_id: int,
+    account_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    target_acc = (
+        await db.execute(
+            select(StaffBankAccount).where(
+                StaffBankAccount.id == account_id, StaffBankAccount.staff_profile_id == profile.id
+            )
+        )
+    ).scalar_one_or_none()
+    if not target_acc:
+        raise HTTPException(status_code=404, detail="Bank account not found")
+
+    if target_acc.is_primary:
+        other_acc = (
+            await db.execute(
+                select(StaffBankAccount).where(
+                    StaffBankAccount.staff_profile_id == profile.id, StaffBankAccount.id != account_id
+                )
+            )
+        ).scalars().first()
+        if other_acc:
+            other_acc.is_primary = True
+            profile.bank_name = other_acc.bank_name
+            profile.bank_account_number = other_acc.account_number
+            profile.bank_ifsc = other_acc.ifsc_code
+        else:
+            profile.bank_name = None
+            profile.bank_account_number = None
+            profile.bank_ifsc = None
+
+    await db.delete(target_acc)
+    await db.commit()
+    return {"success": True, "message": "Bank account deleted successfully"}
+
+
+# ─── Key Contacts Endpoints ───────────────────────────────────────────────────
+
+@router.get("/{user_id}/key-contacts")
+async def list_staff_key_contacts(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    is_self = current_user.id == user_id
+    if not is_self and current_user.role not in STAFF_ADMIN_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized to view key contacts")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    contacts = (
+        await db.execute(
+            select(StaffKeyContact)
+            .where(StaffKeyContact.staff_profile_id == profile.id)
+            .order_by(desc(StaffKeyContact.is_primary_emergency), desc(StaffKeyContact.id))
+        )
+    ).scalars().all()
+
+    return [
+        {
+            "id": c.id,
+            "staff_profile_id": c.staff_profile_id,
+            "contact_name": c.contact_name,
+            "relationship": c.relation,
+            "phone_primary": c.phone_primary,
+            "phone_secondary": c.phone_secondary,
+            "email": c.email,
+            "address": c.address,
+            "is_primary_emergency": c.is_primary_emergency,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in contacts
+    ]
+
+
+@router.post("/{user_id}/key-contacts")
+async def add_staff_key_contact(
+    user_id: int,
+    data: StaffKeyContactCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    if data.is_primary_emergency:
+        existing = (
+            await db.execute(
+                select(StaffKeyContact).where(StaffKeyContact.staff_profile_id == profile.id)
+            )
+        ).scalars().all()
+        for c in existing:
+            c.is_primary_emergency = False
+
+        profile.emergency_contact_name = data.contact_name
+        profile.emergency_contact_phone = data.phone_primary
+        profile.emergency_contact_relation = data.relationship
+
+    new_contact = StaffKeyContact(
+        staff_profile_id=profile.id,
+        contact_name=data.contact_name,
+        relation=data.relationship,
+        phone_primary=data.phone_primary,
+        phone_secondary=data.phone_secondary,
+        email=data.email,
+        address=data.address,
+        is_primary_emergency=data.is_primary_emergency,
+    )
+    db.add(new_contact)
+    await db.commit()
+    await db.refresh(new_contact)
+    return {"success": True, "message": "Key contact added successfully", "id": new_contact.id}
+
+
+@router.delete("/{user_id}/key-contacts/{contact_id}")
+async def delete_staff_key_contact(
+    user_id: int,
+    contact_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    target = (
+        await db.execute(
+            select(StaffKeyContact).where(
+                StaffKeyContact.id == contact_id, StaffKeyContact.staff_profile_id == profile.id
+            )
+        )
+    ).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Key contact not found")
+
+    if target.is_primary_emergency:
+        other = (
+            await db.execute(
+                select(StaffKeyContact).where(
+                    StaffKeyContact.staff_profile_id == profile.id, StaffKeyContact.id != contact_id
+                )
+            )
+        ).scalars().first()
+        if other:
+            other.is_primary_emergency = True
+            profile.emergency_contact_name = other.contact_name
+            profile.emergency_contact_phone = other.phone_primary
+            profile.emergency_contact_relation = other.relation
+        else:
+            profile.emergency_contact_name = None
+            profile.emergency_contact_phone = None
+            profile.emergency_contact_relation = None
+
+    await db.delete(target)
+    await db.commit()
+    return {"success": True, "message": "Key contact deleted successfully"}
 
 
 # ─── 2. Teacher Academic Assignments Endpoints ────────────────────────────────

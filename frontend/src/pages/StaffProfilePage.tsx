@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Dedicated full-page Non-Teaching Staff Profile workspace with hero banner, 12 specialized administrative tabs, reporting manager hierarchy, duties checklist, and activity history.
  */
@@ -40,6 +40,9 @@ import {
 } from 'lucide-react'
 import WorkforceHeroCard from '../components/workforce/WorkforceHeroCard'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
+import StaffProfileEditModal from '../components/workforce/StaffProfileEditModal'
+import EmployeeDossierDocument from '../components/workforce/EmployeeDossierDocument'
+import { useUniversalPrint } from '../components/printing'
 import { staffApi } from '../api/endpoints'
 import type { StaffProfileDetail, EmployeeActivityHistoryItem } from '../types'
 
@@ -86,6 +89,8 @@ export default function StaffProfilePage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [showLifecycleModal, setShowLifecycleModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const { openPrint, PrintModal } = useUniversalPrint()
 
   // 1. Fetch Staff Profile Details
   const {
@@ -173,8 +178,16 @@ export default function StaffProfilePage() {
               : '01 Aug 2019',
           },
         ]}
+        onEdit={() => setShowEditModal(true)}
         onAction={(key) => {
           if (key === 'lifecycle') setShowLifecycleModal(true)
+          if (key === 'print') {
+            openPrint({
+              targetElementId: 'staff-employee-dossier-print-content',
+              documentType: 'employee_dossier',
+              documentTitle: `Employee Dossier — ${profile.full_name || 'Staff'}`,
+            })
+          }
         }}
       />
 
@@ -360,10 +373,22 @@ export default function StaffProfilePage() {
                   {profile.emergency_contact_phone || '+91 98673 21900'})
                 </p>
               </div>
-              <div className="sm:col-span-2">
-                <span className="text-slate-400 font-medium">Residential Address</span>
+              <div>
+                <span className="text-slate-400 font-medium">Residential / Current Address</span>
                 <p className="font-semibold text-slate-800 mt-1">
-                  {profile.current_address || 'B-103, Shanti Niketan, Thane West, Mumbai - 400601'}
+                  {profile.current_address || 'B-103, Shanti Niketan, Thane West'}
+                  <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
+                    {profile.city || 'Mumbai'}, {profile.state || 'Maharashtra'} - {profile.pincode || '400601'}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium">Permanent / Hometown Address</span>
+                <p className="font-semibold text-slate-800 mt-1">
+                  {profile.permanent_address || profile.current_address || 'Permanent Native Residence'}
+                  <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
+                    {profile.city || 'Mumbai'}, {profile.state || 'Maharashtra'} - {profile.pincode || '400601'}
+                  </span>
                 </p>
               </div>
             </div>
@@ -537,9 +562,12 @@ export default function StaffProfilePage() {
                 </div>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                <span className="text-[11px] font-bold text-slate-400 uppercase">Bank Account</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase">Primary Bank Account</span>
                 <div className="text-base font-bold text-slate-900 mt-1">
                   {profile.bank_name || 'HDFC Bank'}
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  {profile.bank_account_number || '••••••••1234'} • {profile.bank_ifsc || 'HDFC0000123'}
                 </div>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
@@ -624,6 +652,30 @@ export default function StaffProfilePage() {
           }}
         />
       )}
+
+      {/* ─── Global Edit Profile Modal ───────────────────────────────── */}
+      {showEditModal && (
+        <StaffProfileEditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          profile={profile}
+          onSuccess={() => {
+            refetchProfile()
+            queryClient.invalidateQueries({ queryKey: ['staff-profile', staffId] })
+          }}
+        />
+      )}
+
+      {/* ─── Hidden Printable Dossier Canvas ────────────────────────── */}
+      <div className="hidden print:block">
+        <EmployeeDossierDocument
+          id="staff-employee-dossier-print-content"
+          profile={profile}
+        />
+      </div>
+
+      {/* ─── Universal Print Studio Dialog ───────────────────────────── */}
+      <PrintModal />
     </div>
   )
 }

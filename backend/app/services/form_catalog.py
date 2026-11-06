@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-07
 #  *
 #  * @description Registry and metadata catalogue of printable forms, DPDP compliance settings, and layout sections.
 #  */
@@ -456,6 +456,31 @@ FORM_CATALOGUE: Dict[str, Dict[str, Any]] = {
             {"key": "role_scope", "label": "Institutional Role & Assigned Classes", "default": True},
             {"key": "status", "label": "Active Status & Last System Activity", "default": True},
             {"key": "signatures", "label": "HR Verification", "default": True},
+        ],
+    },
+    "employee_dossier": {
+        "id": "employee_dossier",
+        "title": "Comprehensive Employee Workforce Dossier",
+        "code": "PA-EMP-DOS",
+        "entity": "staff",
+        "category": "HR",
+        "description": "Consolidated institutional workforce dossier detailing identity, qualifications, multiple bank accounts, key contacts, addresses, batch assignments, attendance, leaves, and verified records.",
+        "version": "v1.0 (2026)",
+        "cbse_reference": "CBSE Affiliation Bye-Laws 2018 (Rule 13 — Staff Service Records)",
+        "dpdp_sensitive": True,
+        "available_modes": ["prefilled", "blank"],
+        "supported_scopes": ["single", "bulk"],
+        "required_roles": ["admin", "superadmin", "principal"],
+        "configurable_sections": [
+            {"key": "header", "label": "Institutional Header & Employee Identification", "default": True},
+            {"key": "personal", "label": "Personal Demographics & Identification", "default": True},
+            {"key": "addresses", "label": "Residential & Permanent Addresses", "default": True},
+            {"key": "contacts", "label": "Key Emergency Contacts & Relations", "default": True},
+            {"key": "banking", "label": "Salary & Reimbursement Bank Accounts", "default": True},
+            {"key": "academic_workload", "label": "Subject & Batch Allocations", "default": True},
+            {"key": "leaves_attendance", "label": "Attendance & Leave Entitlements", "default": True},
+            {"key": "compliance_documents", "label": "Verified Document Archive", "default": True},
+            {"key": "signatures", "label": "Employee Affirmation & Verification Signatures", "default": True},
         ],
     },
     "staff_declaration": {

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Dedicated full-page Teacher Profile workspace with persistent hero banner, 12 specialized tabs, timetable matrix, payroll configuration, and activity timeline.
  */
@@ -42,6 +42,9 @@ import {
 } from 'lucide-react'
 import WorkforceHeroCard from '../components/workforce/WorkforceHeroCard'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
+import StaffProfileEditModal from '../components/workforce/StaffProfileEditModal'
+import EmployeeDossierDocument from '../components/workforce/EmployeeDossierDocument'
+import { useUniversalPrint } from '../components/printing'
 import { staffApi, teacherPayrollApi, timetableApi } from '../api/endpoints'
 import type { StaffProfileDetail, EmployeeActivityHistoryItem, AcademicTimetableEntry } from '../types'
 
@@ -88,6 +91,8 @@ export default function TeacherProfilePage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [showLifecycleModal, setShowLifecycleModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const { openPrint, PrintModal } = useUniversalPrint()
 
   // 1. Fetch Profile Details
   const {
@@ -208,8 +213,16 @@ export default function TeacherProfilePage() {
               : '15 Jun 2020',
           },
         ]}
+        onEdit={() => setShowEditModal(true)}
         onAction={(key) => {
           if (key === 'lifecycle') setShowLifecycleModal(true)
+          if (key === 'print') {
+            openPrint({
+              targetElementId: 'teacher-employee-dossier-print-content',
+              documentType: 'employee_dossier',
+              documentTitle: `Employee Dossier — ${profile.full_name || 'Teacher'}`,
+            })
+          }
         }}
       />
 
@@ -420,10 +433,22 @@ export default function TeacherProfilePage() {
                   {profile.emergency_contact_phone || '+91 98200 11223'})
                 </p>
               </div>
-              <div className="sm:col-span-2">
-                <span className="text-slate-400 font-medium">Residential Address</span>
+              <div>
+                <span className="text-slate-400 font-medium">Residential / Current Address</span>
                 <p className="font-semibold text-slate-800 mt-1">
-                  {profile.current_address || 'A-402, Green View Heights, Powai, Mumbai - 400076'}
+                  {profile.current_address || 'A-402, Green View Heights, Powai'}
+                  <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
+                    {profile.city || 'Mumbai'}, {profile.state || 'Maharashtra'} - {profile.pincode || '400076'}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium">Permanent / Hometown Address</span>
+                <p className="font-semibold text-slate-800 mt-1">
+                  {profile.permanent_address || profile.current_address || 'Permanent Native Residence'}
+                  <span className="block text-[11px] text-slate-500 font-normal mt-0.5">
+                    {profile.city || 'Mumbai'}, {profile.state || 'Maharashtra'} - {profile.pincode || '400076'}
+                  </span>
                 </p>
               </div>
             </div>
@@ -744,6 +769,30 @@ export default function TeacherProfilePage() {
           }}
         />
       )}
+
+      {/* ─── Global Edit Profile Modal ───────────────────────────────── */}
+      {showEditModal && (
+        <StaffProfileEditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          profile={profile}
+          onSuccess={() => {
+            refetchProfile()
+            queryClient.invalidateQueries({ queryKey: ['staff-profile', teacherId] })
+          }}
+        />
+      )}
+
+      {/* ─── Hidden Printable Dossier Canvas ────────────────────────── */}
+      <div className="hidden print:block">
+        <EmployeeDossierDocument
+          id="teacher-employee-dossier-print-content"
+          profile={profile}
+        />
+      </div>
+
+      {/* ─── Universal Print Studio Dialog ───────────────────────────── */}
+      <PrintModal />
     </div>
   )
 }
