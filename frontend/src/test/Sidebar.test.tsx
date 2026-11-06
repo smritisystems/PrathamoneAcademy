@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
@@ -24,6 +24,7 @@ import Sidebar from '../components/Sidebar'
 import Layout from '../components/Layout'
 import { useSidebarStore } from '../store/sidebarStore'
 import { useAuthStore } from '../store/authStore'
+import { APP_CONFIG } from '../config/appConfig'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -310,7 +311,7 @@ describe('Layout Integration & Mobile Drawer', () => {
     // Product and right sections: Product, edition, system, version, and website
     expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
     expect(screen.getByText('PrathamOne EduOS — Education Operating System')).toBeDefined()
-    expect(screen.getByText('v1.0.0')).toBeDefined()
+    expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
 
     const websiteLink = screen.getByRole('link', { name: 'prathamone.com' })
     expect(websiteLink).toBeDefined()
@@ -335,7 +336,7 @@ describe('Layout Integration & Mobile Drawer', () => {
 
     expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
     expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
-    expect(screen.getByText('v1.0.0')).toBeDefined()
+    expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
 
     // When sidebar expands back
     act(() => {
@@ -344,7 +345,7 @@ describe('Layout Integration & Mobile Drawer', () => {
 
     expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
     expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
-    expect(screen.getByText('v1.0.0')).toBeDefined()
+    expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
   })
 })
 

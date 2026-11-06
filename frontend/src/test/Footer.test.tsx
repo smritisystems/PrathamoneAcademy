@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, versioning, and AITDL parent branding.
  */
@@ -117,7 +117,7 @@ describe('Application Footer Specifications', () => {
     expect(screen.getByText('UID: #42')).toBeDefined()
     expect(screen.getByText('Role: Admin')).toBeDefined()
     expect(screen.getByText('Online')).toBeDefined()
-    expect(screen.getByText('v1.0.0')).toBeDefined()
+    expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders AITDL parent organization and products section in the DOM', () => {

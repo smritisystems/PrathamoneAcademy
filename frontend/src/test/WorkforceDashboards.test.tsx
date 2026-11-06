@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Unit tests verifying Teacher and Staff Workforce Dashboards, live KPI metrics, unassigned teacher highlights, lifecycle transitions, and 15-tab profile modals.
  */
@@ -282,7 +282,7 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Teacher & Faculty Workspace')).toBeDefined()
+      expect(screen.getByText('Teacher Workspace')).toBeDefined()
     })
 
     // Wait for async query data to render
@@ -293,7 +293,7 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
     // Check Live KPI Cards
     expect(screen.getByText('Total Teachers')).toBeDefined()
     expect(screen.getByText('Monthly Teaching Hours')).toBeDefined()
-    expect(screen.getByText('Monthly Payroll Payable')).toBeDefined()
+    expect(screen.getByText('Teacher Status Distribution')).toBeDefined()
 
     // Verify unassigned teacher highlight
     expect(screen.getByText('Unassigned • Allocate')).toBeDefined()
@@ -396,10 +396,10 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Total Non-Teaching')).toBeDefined()
+      expect(screen.getByText('Total Staff')).toBeDefined()
     })
 
-    expect(screen.getAllByText('Active Staff')[0]).toBeDefined()
+    expect(screen.getByText('Active Staff')).toBeDefined()
     await waitFor(() => {
       expect(screen.getByText('Rajesh Sharma')).toBeDefined()
     })

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Vitest test suite for Institute Settings workspace, live branding preview, sub-tabs, lookups CRUD, and category persistence.
  */
@@ -130,7 +130,7 @@ describe('Institute Settings & Configuration Workspace', () => {
     vi.spyOn(settingsApi, 'updateBatch').mockResolvedValue({ data: { status: 'success' } } as any)
   })
 
-  it('renders all 15 settings workspace categories in navigation', async () => {
+  it('renders all 16 settings workspace categories in navigation', async () => {
     render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
@@ -153,7 +153,9 @@ describe('Institute Settings & Configuration Workspace', () => {
     expect(screen.getByText('General Lookups')).toBeDefined()
     expect(screen.getByText('Data & Maintenance')).toBeDefined()
 
-    expect(SETTINGS_CATEGORIES.length).toBe(15)
+    expect(screen.getByText('CodeX Configuration Studio')).toBeDefined()
+
+    expect(SETTINGS_CATEGORIES.length).toBe(16)
   })
 
   it('filters navigation categories when typing in search box', async () => {
