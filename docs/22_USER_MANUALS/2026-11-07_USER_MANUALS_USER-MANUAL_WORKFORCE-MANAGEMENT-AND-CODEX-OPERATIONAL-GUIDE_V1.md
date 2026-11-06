@@ -276,3 +276,4 @@ Visibility is controlled through a strict 6-tier precedence hierarchy:
 3. The **Universal Print Studio Dialog** opens showing the real-time document preview.
 4. Select paper size **A4**, orientation **Portrait**, and fit option **Fit to Page Width**.
 5. Click **Print Document** to produce a clean, publication-quality physical copy or save as PDF.
+

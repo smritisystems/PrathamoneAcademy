@@ -5,7 +5,7 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-07T04:08:08.709849",
+  "generated_at": "2026-11-07T04:15:08.315160",
   "total_documents": 226,
   "modules_catalog": [
     {
@@ -6222,8 +6222,8 @@
       "filename": "2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
       "relative_path": "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
       "extension": ".md",
-      "size_bytes": 18918,
-      "sha256": "dd90384aa142c53fb76cb41964c1ad5f85451e93e7807325f83c24a32feaea13",
+      "size_bytes": 18919,
+      "sha256": "39173a4e930c72fa8b4bac887b63f2c6e6e58780a112a1cbeddc1d3a79bf6cf1",
       "module": "22_USER_MANUALS",
       "title": "PrathamOne EduOS — Teacher & Staff Workforce Management, Universal Print & CodeX User Manual",
       "category": "USER-MANUAL",
