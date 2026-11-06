@@ -114,6 +114,10 @@ class User(Base):
         "AuditLog", back_populates="user"
     )
 
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

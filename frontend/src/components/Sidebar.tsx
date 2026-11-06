@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -22,7 +22,7 @@ import {
   LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
-  Briefcase, Terminal, MessageSquare, GitBranch
+  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -54,6 +54,7 @@ const academicSubItems = [
 
 const secondaryNavItems: NavItem[] = [
   { to: '/staff', label: 'Teacher & Staff', icon: Briefcase },
+  { to: '/teacher-payroll', label: 'Teacher Payroll', icon: DollarSign },
   { to: '/attendance', label: 'Attendance', icon: ClipboardList },
   { to: '/examinations', label: 'Tests & Results', icon: Award },
   { to: '/fees', label: 'Fees & Payments', icon: CreditCard },

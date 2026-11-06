@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -51,6 +51,7 @@ const ImportExportPage = lazyWithRetry(() => import('./pages/ImportExport'), 'Im
 const FormsDocumentsPage = lazyWithRetry(() => import('./pages/FormsDocuments'), 'FormsDocuments')
 const InstallAppPage = lazyWithRetry(() => import('./pages/InstallApp'), 'InstallApp')
 const StaffManagementPage = lazyWithRetry(() => import('./pages/StaffManagement'), 'StaffManagement')
+const TeacherPayrollPage = lazyWithRetry(() => import('./pages/TeacherPayroll'), 'TeacherPayroll')
 const SysAdminWorkspacePage = lazyWithRetry(() => import('./pages/SysAdminWorkspace'), 'SysAdminWorkspace')
 const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
 const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), 'Communication')
@@ -166,6 +167,8 @@ export default function App() {
           <Route path="users" element={<Suspense fallback={<PageLoader />}><UsersPage /></Suspense>} />
           <Route path="users/:id" element={<Suspense fallback={<PageLoader />}><UserProfilePage /></Suspense>} />
           <Route path="staff" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="teacher-payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
+          <Route path="payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
           <Route path="sysadmin" element={<Suspense fallback={<PageLoader />}><SysAdminWorkspacePage /></Suspense>} />
           <Route path="import-export" element={<Suspense fallback={<PageLoader />}><ImportExportPage /></Suspense>} />
           <Route path="forms" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />

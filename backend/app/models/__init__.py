@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -47,6 +47,11 @@ from app.models.release import SystemRelease
 from app.models.communication import (
     MessageTemplate, CommunicationLog, SharedDocumentToken
 )
+from app.models.teacher_payroll import (
+    TeacherPaymentProfile, TeacherRateHistory, TeacherContractMilestone,
+    TeachingSession, TeacherPayroll, TeacherPaymentVoucher
+)
+
 
 __all__ = [
     "Institution",
@@ -98,6 +103,12 @@ __all__ = [
     "CommunicationLog",
     "SharedDocumentToken",
     "SystemRelease",
+    "TeacherPaymentProfile",
+    "TeacherRateHistory",
+    "TeacherContractMilestone",
+    "TeachingSession",
+    "TeacherPayroll",
+    "TeacherPaymentVoucher",
 ]
 
 

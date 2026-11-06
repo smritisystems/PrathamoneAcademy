@@ -1142,3 +1142,69 @@ export const releasesApi = {
   getAudit: (id: number | string) =>
     apiClient.get<ReleaseAuditLogItem[]>(`/releases/${id}/audit`),
 }
+
+
+// ─── Teacher Payroll ────────────────────────────────────────────────────────
+
+export const teacherPayrollApi = {
+  getTeachers: () => apiClient.get<any[]>('/teacher-payroll/teachers'),
+  getProfiles: () => apiClient.get<any[]>('/teacher-payroll/profiles'),
+  getProfileDetails: (teacherUserId: number | string) =>
+    apiClient.get<any>(`/teacher-payroll/profiles/${teacherUserId}`),
+  updateProfile: (teacherUserId: number | string, data: any) =>
+    apiClient.put<any>(`/teacher-payroll/profiles/${teacherUserId}`, data),
+  addMilestone: (profileId: number | string, data: any) =>
+    apiClient.post<any>(`/teacher-payroll/profiles/${profileId}/milestones`, data),
+  updateMilestone: (milestoneId: number | string, data: any) =>
+    apiClient.put<any>(`/teacher-payroll/milestones/${milestoneId}`, data),
+
+  getSessions: (params?: any) => apiClient.get<any>('/teacher-payroll/sessions', { params }),
+  createSession: (data: any) => apiClient.post<any>('/teacher-payroll/sessions', data),
+  updateSession: (sessionId: number | string, data: any) =>
+    apiClient.put<any>(`/teacher-payroll/sessions/${sessionId}`, data),
+  bulkApproveSessions: (sessionIds: number[]) =>
+    apiClient.post<any>('/teacher-payroll/sessions/bulk-approve', { session_ids: sessionIds }),
+  rejectSession: (sessionId: number | string, reason: string) =>
+    apiClient.post<any>(`/teacher-payroll/sessions/${sessionId}/reject`, { reason }),
+  assignSubstitute: (sessionId: number | string, substituteTeacherId: number, reason?: string) =>
+    apiClient.post<any>(`/teacher-payroll/sessions/${sessionId}/substitute`, {
+      substitute_teacher_id: substituteTeacherId,
+      reason,
+    }),
+
+  getMonthlyPayrolls: (params?: any) => apiClient.get<any[]>('/teacher-payroll/monthly', { params }),
+  getPayrollDetails: (payrollId: number | string) =>
+    apiClient.get<any>(`/teacher-payroll/monthly/${payrollId}`),
+  calculatePayroll: (data: { teacher_user_id: number; month: number; year: number; academic_year_id?: number }) =>
+    apiClient.post<any>('/teacher-payroll/monthly/calculate', data),
+  bulkCalculatePayroll: (data: { month: number; year: number; academic_year_id?: number }) =>
+    apiClient.post<any>('/teacher-payroll/monthly/bulk-calculate', data),
+  submitPayroll: (payrollId: number | string) =>
+    apiClient.post<any>(`/teacher-payroll/monthly/${payrollId}/submit`),
+  approvePayroll: (payrollId: number | string) =>
+    apiClient.post<any>(`/teacher-payroll/monthly/${payrollId}/approve`),
+  finalizePayroll: (payrollId: number | string) =>
+    apiClient.post<any>(`/teacher-payroll/monthly/${payrollId}/finalize`),
+  adjustPayroll: (payrollId: number | string, data: any) =>
+    apiClient.post<any>(`/teacher-payroll/monthly/${payrollId}/adjust`, data),
+
+  getVouchers: (params?: any) => apiClient.get<any[]>('/teacher-payroll/vouchers', { params }),
+  recordVoucher: (payrollId: number | string, data: any) =>
+    apiClient.post<any>(`/teacher-payroll/monthly/${payrollId}/vouchers`, data),
+  reverseVoucher: (voucherId: number | string, reversalReason: string) =>
+    apiClient.post<any>(`/teacher-payroll/vouchers/${voucherId}/reverse`, { reversal_reason: reversalReason }),
+
+  getReport: (reportType: string, params?: any) =>
+    apiClient.get<any[]>(`/teacher-payroll/reports/${reportType}`, { params }),
+  exportReportUrl: (reportType: string, params?: any) => {
+    const q = new URLSearchParams()
+    if (params) {
+      Object.keys(params).forEach((k) => {
+        if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+          q.append(k, String(params[k]))
+        }
+      })
+    }
+    return `/api/v1/teacher-payroll/reports/${reportType}/export?${q.toString()}`
+  },
+}
