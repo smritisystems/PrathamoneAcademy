@@ -47,6 +47,7 @@ import type {
   PendingChangesResponse, ReleaseAuditLogItem,
   PaymentWorkflowConfig, RefundRecord, PaymentAuditLog,
   PaymentGatewayConfig, OnlineOrderResponse, OnlinePaymentVerifyPayload, OnlinePaymentVerifyResult,
+  TeacherDashboardData, StaffDashboardData, StaffLifecyclePayload, EmployeeActivityHistoryItem,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -918,7 +919,7 @@ export const staffApi = {
     apiClient.get<StaffProfileDetail>(`/staff/${userId}`),
 
   create: (data: any) =>
-    apiClient.post<{ success: boolean; message: string; user_id: number; employee_id: string }>(
+    apiClient.post<{ success: boolean; message: string; user_id: number; employee_id: string; username?: string; temporary_password?: string }>(
       '/staff/',
       data
     ),
@@ -986,6 +987,21 @@ export const staffApi = {
 
   renderDocument: (formId: string, params: { user_id: number | string; period_month?: string }) =>
     apiClient.get<StaffDocumentRenderResponse>(`/staff/documents-forms/render/${formId}`, { params }),
+
+  getTeacherDashboard: (academic_year_id?: number | string) =>
+    apiClient.get<TeacherDashboardData>('/staff/teachers/dashboard', { params: { academic_year_id } }),
+
+  getStaffDashboard: () =>
+    apiClient.get<StaffDashboardData>('/staff/non-teaching/dashboard'),
+
+  updateLifecycle: (userId: number | string, data: StaffLifecyclePayload) =>
+    apiClient.post<{ status: string; action: string; user_id: number; old_status: string; new_status: string; effective_date: string; is_active: boolean }>(
+      `/staff/${userId}/lifecycle`,
+      data
+    ),
+
+  getActivityHistory: (userId: number | string, limit?: number) =>
+    apiClient.get<EmployeeActivityHistoryItem[]>(`/staff/${userId}/activity-history`, { params: { limit } }),
 }
 
 // ─── SysAdmin Superuser Governance ───────────────────────────────────────────

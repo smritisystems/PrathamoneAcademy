@@ -2070,7 +2070,7 @@ export default function StudentDetailPage() {
           outstandingAmount={Number(selectedOnlineInvoice.outstanding_amount)}
           onPaymentSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['student-fees', studentId] })
-            refetchFees()
+            queryClient.invalidateQueries({ queryKey: ['student-admin-profile', studentId] })
           }}
         />
       )}

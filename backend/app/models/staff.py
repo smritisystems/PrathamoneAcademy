@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description SQLAlchemy models for Staff Profiles, Documents, Academic Assignments, Attendance, Leaves, and Generated Documents.
 #  */
@@ -69,6 +69,15 @@ class StaffProfile(Base):
     employment_type: Mapped[str] = mapped_column(
         String(50), default="full_time"  # full_time, part_time, visiting, contract
     )
+    contract_start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    contract_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    status_effective_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    exit_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    exit_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    rehire_eligible: Mapped[bool] = mapped_column(Boolean, default=True)
+    approved_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     # Financial / Compliance
     basic_salary: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0.00"))
@@ -97,6 +106,39 @@ class StaffProfile(Base):
     documents: Mapped[List["StaffDocument"]] = relationship(
         "StaffDocument", back_populates="staff_profile", cascade="all, delete-orphan"
     )
+    approved_by: Mapped["User | None"] = relationship("User", foreign_keys=[approved_by_id])
+    employment_histories: Mapped[List["StaffEmploymentHistory"]] = relationship(
+        "StaffEmploymentHistory", back_populates="staff_profile", cascade="all, delete-orphan", order_by="desc(StaffEmploymentHistory.created_at)"
+    )
+
+
+class StaffEmploymentHistory(Base):
+    __tablename__ = "staff_employment_histories"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    staff_profile_id: Mapped[int] = mapped_column(
+        ForeignKey("staff_profiles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # event_type: joined | status_change | contract_renewed | leave_started | leave_ended | resigned | terminated | contract_ended | rehired
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    old_status: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    new_status: Mapped[str] = mapped_column(String(30), nullable=False)
+    effective_date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    staff_profile: Mapped["StaffProfile"] = relationship("StaffProfile", back_populates="employment_histories")
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
+    recorded_by: Mapped["User | None"] = relationship("User", foreign_keys=[recorded_by_id])
 
 
 class StaffDocument(Base):

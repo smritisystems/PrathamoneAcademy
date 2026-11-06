@@ -51,6 +51,7 @@ const ImportExportPage = lazyWithRetry(() => import('./pages/ImportExport'), 'Im
 const FormsDocumentsPage = lazyWithRetry(() => import('./pages/FormsDocuments'), 'FormsDocuments')
 const InstallAppPage = lazyWithRetry(() => import('./pages/InstallApp'), 'InstallApp')
 const StaffManagementPage = lazyWithRetry(() => import('./pages/StaffManagement'), 'StaffManagement')
+const TeacherManagementPage = lazyWithRetry(() => import('./pages/TeacherManagement'), 'TeacherManagement')
 const TeacherPayrollPage = lazyWithRetry(() => import('./pages/TeacherPayroll'), 'TeacherPayroll')
 const SysAdminWorkspacePage = lazyWithRetry(() => import('./pages/SysAdminWorkspace'), 'SysAdminWorkspace')
 const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
@@ -166,6 +167,8 @@ export default function App() {
           <Route path="reports" element={<Suspense fallback={<PageLoader />}><ReportsPage /></Suspense>} />
           <Route path="users" element={<Suspense fallback={<PageLoader />}><UsersPage /></Suspense>} />
           <Route path="users/:id" element={<Suspense fallback={<PageLoader />}><UserProfilePage /></Suspense>} />
+          <Route path="teachers" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teacher-management" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
           <Route path="staff" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
           <Route path="teacher-payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
           <Route path="payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />

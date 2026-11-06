@@ -90,3 +90,4 @@ Five secure endpoints protected by RBAC and institutional isolation:
 1. **Corporate Headers:** `python scripts/manage_headers.py check` verified 255/255 files with 100% compliance.
 2. **SSOT Compliance:** Zero duplicated entities. Utilized canonical `users`, `students`, `guardians`, and `fee_invoices`.
 3. **Product Branding:** Verified `PrathamOne EduOS — Coaching Institute Edition` baseline v1.0.0.
+

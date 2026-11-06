@@ -97,3 +97,4 @@ flowchart TD
 - Pytest tests: `tests/test_communication_automation.py`.
 - Vitest tests: `frontend/src/test/Communication.test.tsx`.
 - Reindex documentation via `tools/docs_manager.py reindex`.
+

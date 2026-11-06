@@ -53,7 +53,8 @@ const academicSubItems = [
 ]
 
 const secondaryNavItems: NavItem[] = [
-  { to: '/staff', label: 'Teacher & Staff', icon: Briefcase },
+  { to: '/teachers', label: 'Teachers', icon: GraduationCap },
+  { to: '/staff', label: 'Staff Directory', icon: Briefcase },
   { to: '/teacher-payroll', label: 'Teacher Payroll', icon: DollarSign },
   { to: '/attendance', label: 'Attendance', icon: ClipboardList },
   { to: '/examinations', label: 'Tests & Results', icon: Award },

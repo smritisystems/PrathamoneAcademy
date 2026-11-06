@@ -90,3 +90,4 @@ In strict adherence to Platform SSOT Directives:
 - Frontend vitest: `frontend/src/test/ExaminationsAndReportCards.test.tsx`.
 - Attribution & Header Compliance: `python scripts/manage_headers.py check`.
 - Documentation Reindex: `python tools/docs_manager.py reindex && validate`.
+

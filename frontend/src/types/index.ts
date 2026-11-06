@@ -2646,3 +2646,122 @@ export interface OnlinePaymentVerifyResult {
   timestamp: string
 }
 
+
+
+// ─── Dedicated Teacher & Staff Workforce Dashboards ──────────────────────────
+
+export interface TeacherDashboardMetrics {
+  total_teachers: number
+  active_teachers: number
+  assigned_teachers: number
+  unassigned_teachers: number
+  teachers_without_timetable: number
+  teachers_on_leave: number
+  inactive_teachers: number
+  departed_teachers: number
+  upcoming_joining: number
+  pending_session_approvals: number
+  monthly_teaching_hours: number
+  monthly_payroll_payable: number
+  pending_teacher_payments: number
+}
+
+export interface TeacherWorkforceItem {
+  id: number
+  profile_id?: number | null
+  employee_id?: string | null
+  name: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  designation: string
+  department: string
+  employment_type: string
+  joining_date?: string | null
+  status: string
+  is_active_employee: boolean
+  is_assigned: boolean
+  assignment_count: number
+  weekly_hours: number
+  has_timetable: boolean
+  timetable_slots_count: number
+  payment_method: string
+  hourly_rate: number
+  per_lecture_rate: number
+  monthly_fixed_amount: number
+  qualification: string
+  specialization: string
+  is_departed: boolean
+  is_upcoming: boolean
+  exit_date?: string | null
+  exit_reason?: string | null
+  rehire_eligible: boolean
+}
+
+export interface TeacherDashboardData {
+  metrics: TeacherDashboardMetrics
+  teachers: TeacherWorkforceItem[]
+}
+
+export interface StaffDashboardMetrics {
+  total_staff: number
+  active_staff: number
+  unassigned_staff: number
+  staff_on_leave: number
+  inactive_staff: number
+  departed_staff: number
+  upcoming_joining: number
+  departments_count: number
+  department_breakdown: Record<string, number>
+  designation_breakdown: Record<string, number>
+}
+
+export interface StaffWorkforceItem {
+  id: number
+  profile_id?: number | null
+  employee_id?: string | null
+  name: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+  designation: string
+  department: string
+  employment_type: string
+  joining_date?: string | null
+  status: string
+  is_active_employee: boolean
+  is_on_leave: boolean
+  qualification: string
+  specialization: string
+  basic_salary: number
+  is_departed: boolean
+  is_upcoming: boolean
+  exit_date?: string | null
+  exit_reason?: string | null
+  rehire_eligible: boolean
+}
+
+export interface StaffDashboardData {
+  metrics: StaffDashboardMetrics
+  staff: StaffWorkforceItem[]
+}
+
+export interface StaffLifecyclePayload {
+  action: 'activate' | 'put_on_leave' | 'deactivate' | 'resign' | 'terminate' | 'end_contract' | 'rehire'
+  effective_date: string
+  reason?: string
+  notes?: string
+  rehire_eligible?: boolean
+}
+
+export interface EmployeeActivityHistoryItem {
+  timestamp: string
+  category: 'lifecycle' | 'assignment' | 'timetable' | 'attendance' | 'leave' | 'teaching_session' | 'payroll' | 'payment' | 'document'
+  event_type: string
+  title: string
+  details: string
+  status: string
+  record_id?: number | string
+}

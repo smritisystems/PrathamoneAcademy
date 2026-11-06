@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description Comprehensive API endpoints for Teacher & Staff Management, assignments, attendance, leaves, and documents.
 #  */
@@ -51,6 +51,12 @@ from app.models.standard import Standard
 from app.models.division import Division
 from app.models.subject import Subject
 from app.models.institution import Institution
+from app.services.workforce_service import (
+    get_teacher_workforce_dashboard,
+    get_staff_workforce_dashboard,
+    update_employee_lifecycle,
+    get_employee_activity_history,
+)
 
 router = APIRouter()
 
@@ -59,6 +65,14 @@ FINANCIAL_ROLES = ("sysadmin", "superadmin", "super_admin", "admin", "accountant
 
 
 # ─── Pydantic Schemas ──────────────────────────────────────────────────────────
+
+class LifecycleUpdateRequest(BaseModel):
+    action: str  # activate | put_on_leave | deactivate | resign | terminate | end_contract | rehire
+    effective_date: date
+    reason: Optional[str] = None
+    notes: Optional[str] = None
+    rehire_eligible: Optional[bool] = True
+
 
 class StaffCreateRequest(BaseModel):
     username: str
@@ -1321,4 +1335,70 @@ async def render_staff_document(
         "employee_id": profile.employee_id,
         "html_content": html_content,
     }
+
+# ─── 8. Dedicated Workforce & Lifecycle Endpoints ────────────────────────────
+
+@router.get("/teachers/dashboard")
+async def get_teacher_dashboard_endpoint(
+    academic_year_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Computes dedicated live Teacher Workspace metrics, assignment classifications
+    (assigned, unassigned, without timetable), teaching hours, and teacher listings.
+    """
+    inst_id = current_user.institution_id or 1
+    return await get_teacher_workforce_dashboard(db, institution_id=inst_id, academic_year_id=academic_year_id)
+
+
+@router.get("/non-teaching/dashboard")
+async def get_non_teaching_dashboard_endpoint(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Computes dedicated live Staff Workspace metrics, department headcounts,
+    designations, and administrative personnel listings.
+    """
+    inst_id = current_user.institution_id or 1
+    return await get_staff_workforce_dashboard(db, institution_id=inst_id)
+
+
+@router.post("/{user_id}/lifecycle")
+async def update_staff_lifecycle_endpoint(
+    user_id: int,
+    payload: LifecycleUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(list(STAFF_ADMIN_ROLES))),
+):
+    """
+    Executes authoritative employee lifecycle state transition:
+    activate, put_on_leave, deactivate, resign, terminate, end_contract, or rehire.
+    Records immutable event in StaffEmploymentHistory.
+    """
+    return await update_employee_lifecycle(
+        db=db,
+        user_id=user_id,
+        action=payload.action,
+        effective_date=payload.effective_date,
+        reason=payload.reason,
+        notes=payload.notes,
+        rehire_eligible=payload.rehire_eligible if payload.rehire_eligible is not None else True,
+        current_user_id=current_user.id,
+    )
+
+
+@router.get("/{user_id}/activity-history")
+async def get_staff_activity_history_endpoint(
+    user_id: int,
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Returns a unified, chronological employee activity timeline across status transitions,
+    assignments, attendance, leaves, lectures, and payroll.
+    """
+    return await get_employee_activity_history(db, user_id=user_id, limit=limit)
 

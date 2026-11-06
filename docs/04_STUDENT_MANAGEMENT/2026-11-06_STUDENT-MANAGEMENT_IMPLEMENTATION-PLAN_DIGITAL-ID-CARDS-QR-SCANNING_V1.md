@@ -86,3 +86,4 @@ In accordance with Platform Rule 001 and Rule 002:
 - Frontend vitest: `frontend/src/test/StudentIDCardAndScanner.test.tsx`.
 - Header compliance: `python scripts/manage_headers.py check`.
 - Documentation reindex: `python tools/docs_manager.py reindex && validate`.
+

@@ -116,3 +116,4 @@ Per **RULE 001** and **RULE 002** of the Single Source of Truth directive, zero 
    - `frontend/src/types/index.ts`
 2. **Documentation Management Engine:**
    Reindexed and validated via `python tools/docs_manager.py reindex && python tools/docs_manager.py validate`.
+

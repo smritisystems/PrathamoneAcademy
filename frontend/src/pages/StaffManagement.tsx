@@ -23,10 +23,12 @@ import {
   CheckCircle2, XCircle, AlertCircle, Search, Filter,
   FileText, Printer, ChevronRight, Eye, Edit3, Trash2,
   Download, RefreshCw, Shield, Layers, BookOpen, AlertTriangle,
-  Copy, Key
+  Copy, Key, Activity
 } from 'lucide-react'
 import { staffApi, boardsApi, standardsApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
+import StaffProfileModal from '../components/StaffProfileModal'
+import StaffLifecycleModal from '../components/StaffLifecycleModal'
 import type { StaffMember, TeacherAssignmentItem, StaffDocumentTemplate } from '../types'
 
 export default function StaffManagement() {
@@ -46,6 +48,18 @@ export default function StaffManagement() {
 
   // Selected staff for view/document rendering
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+
+  // Dedicated Profile & Lifecycle Modals
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [profileModalStaffId, setProfileModalStaffId] = useState<number | null>(null)
+  const [showLifecycleModal, setShowLifecycleModal] = useState(false)
+  const [lifecycleTargetStaff, setLifecycleTargetStaff] = useState<{
+    id: number
+    name: string
+    employee_id?: string | null
+    role: string
+    status: string
+  } | null>(null)
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -148,6 +162,12 @@ export default function StaffManagement() {
   const { data: dashStats } = useQuery({
     queryKey: ['staff-dashboard-stats'],
     queryFn: () => staffApi.dashboardStats().then((r) => r.data),
+  })
+
+  // 6b. Live Non-Teaching Staff Workforce Dashboard Metrics
+  const { data: staffDashboard, refetch: refetchStaffDashboard } = useQuery({
+    queryKey: ['staff-workforce-dashboard'],
+    queryFn: () => staffApi.getStaffDashboard().then((r) => r.data),
   })
 
   // 7. Documents Catalogue Query
@@ -291,6 +311,40 @@ export default function StaffManagement() {
         </div>
       </div>
 
+      {/* Non-Teaching Staff Live Metrics Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
+          <div className="text-[10px] font-bold text-slate-500 uppercase">Total Non-Teaching</div>
+          <div className="text-xl font-bold text-slate-900 mt-1">{staffDashboard?.metrics?.total_staff ?? (staffData?.total || 0)}</div>
+          <div className="text-[10px] text-slate-400">Administration & Ops</div>
+        </div>
+        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
+          <div className="text-[10px] font-bold text-emerald-700 uppercase">Active Staff</div>
+          <div className="text-xl font-bold text-emerald-700 mt-1">{staffDashboard?.metrics?.active_staff ?? 0}</div>
+          <div className="text-[10px] text-slate-400">On duty</div>
+        </div>
+        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
+          <div className="text-[10px] font-bold text-sky-700 uppercase">Departments</div>
+          <div className="text-xl font-bold text-sky-700 mt-1">{staffDashboard?.metrics?.departments_count ?? 1}</div>
+          <div className="text-[10px] text-slate-400">Operational units</div>
+        </div>
+        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
+          <div className="text-[10px] font-bold text-purple-700 uppercase">On Leave</div>
+          <div className="text-xl font-bold text-purple-700 mt-1">{staffDashboard?.metrics?.staff_on_leave ?? 0}</div>
+          <div className="text-[10px] text-slate-400">Approved leave</div>
+        </div>
+        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
+          <div className="text-[10px] font-bold text-blue-700 uppercase">Upcoming Joining</div>
+          <div className="text-xl font-bold text-blue-700 mt-1">{staffDashboard?.metrics?.upcoming_joining ?? 0}</div>
+          <div className="text-[10px] text-slate-400">Scheduled onboarding</div>
+        </div>
+        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
+          <div className="text-[10px] font-bold text-rose-700 uppercase">Departed</div>
+          <div className="text-xl font-bold text-rose-700 mt-1">{staffDashboard?.metrics?.departed_staff ?? 0}</div>
+          <div className="text-[10px] text-slate-400">Resigned / Terminated</div>
+        </div>
+      </div>
+
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 bg-white px-4 rounded-xl shadow-xs overflow-x-auto">
         {[
@@ -415,7 +469,15 @@ export default function StaffManagement() {
                               {staff.first_name[0]}{staff.last_name[0]}
                             </div>
                             <div>
-                              <div className="font-semibold text-slate-900">{staff.full_name}</div>
+                              <div
+                                onClick={() => {
+                                  setProfileModalStaffId(staff.user_id)
+                                  setShowProfileModal(true)
+                                }}
+                                className="font-semibold text-slate-900 hover:text-blue-600 cursor-pointer"
+                              >
+                                {staff.full_name}
+                              </div>
                               <div className="text-xs text-slate-500 flex items-center gap-1.5">
                                 <span className="font-mono text-blue-600 font-medium">{staff.employee_id}</span>
                                 <span>•</span>
@@ -466,12 +528,33 @@ export default function StaffManagement() {
                               <FileText className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => setSelectedUserId(staff.user_id)}
+                              onClick={() => {
+                                setProfileModalStaffId(staff.user_id)
+                                setShowProfileModal(true)
+                              }}
                               className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               title="View Full Profile"
                             >
                               <Eye className="w-4 h-4" />
                             </button>
+                            {(isAdmin || isSysAdmin) && (
+                              <button
+                                onClick={() => {
+                                  setLifecycleTargetStaff({
+                                    id: staff.user_id,
+                                    name: staff.full_name,
+                                    employee_id: staff.employee_id,
+                                    role: staff.role || staff.staff_type,
+                                    status: staff.status,
+                                  })
+                                  setShowLifecycleModal(true)
+                                }}
+                                className="p-1.5 text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
+                                title="Manage Lifecycle (Activate, Leave, Resign, Rehire)"
+                              >
+                                <Activity className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1239,6 +1322,38 @@ export default function StaffManagement() {
           </div>
         </div>
       )}
+
+      {/* ─── MODAL: 10/15-TAB STAFF PROFILE ─────────────────────────────── */}
+      <StaffProfileModal
+        isOpen={showProfileModal}
+        onClose={() => {
+          setShowProfileModal(false)
+          setProfileModalStaffId(null)
+        }}
+        staffId={profileModalStaffId}
+        onUpdate={() => {
+          refetchStaff()
+          refetchStaffDashboard()
+        }}
+        onOpenLifecycleModal={(stf) => {
+          setLifecycleTargetStaff(stf)
+          setShowLifecycleModal(true)
+        }}
+      />
+
+      {/* ─── MODAL: LIFECYCLE MANAGEMENT ─────────────────────────────────── */}
+      <StaffLifecycleModal
+        isOpen={showLifecycleModal}
+        onClose={() => {
+          setShowLifecycleModal(false)
+          setLifecycleTargetStaff(null)
+        }}
+        employee={lifecycleTargetStaff}
+        onSuccess={() => {
+          refetchStaff()
+          refetchStaffDashboard()
+        }}
+      />
     </div>
   )
 }
