@@ -1,7 +1,7 @@
 {
   "name": "prashant-academy",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "headers:check": "python ../scripts/manage_headers.py check",
     "headers:fix": "python ../scripts/manage_headers.py fix",
-    "version:bump": "python ../scripts/version_bump.py"
+    "version:auto": "python ../scripts/auto_version.py --sync",
+    "version:status": "python ../scripts/auto_version.py --status",
+    "version:bump": "python ../scripts/auto_version.py --bump"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",

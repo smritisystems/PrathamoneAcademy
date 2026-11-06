@@ -805,7 +805,7 @@ class ReleaseService:
                 "version": "6.99.1",
                 "build_number": "2026.11.05-PROD-REL",
                 "title": "Version 6.99.1 — Enterprise Edition Governance & Student Lifecycle Analytics",
-                "status": "published",
+                "status": "archived",
                 "environment": "production",
                 "release_notes_markdown": "# Release Notes — PrathamOne Academy v6.99.1\n\n### Enterprise Capabilities\n- Dual Branding: PrathamOne Academy suite & Prashant Academy institute\n- Configurable Student Visibility Settings (Dashboard, Reports, Lists)\n- Controlled Enrollment Exit & Withdrawal Analytics\n- Single-source Fee Receipt Printing & System Administration Workspace",
                 "release_notes_structured": json.dumps({

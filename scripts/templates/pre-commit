@@ -1,0 +1,53 @@
+#!/bin/sh
+# /**
+#  * @file        pre-commit
+#  * @project     PrathamOne EduOS Coaching Institute Management System
+#  * @module      .githooks
+#  *
+#  * @author      Jawahar R. Mallah
+#  * @organization AITDL (AI Technology & Development Lab)
+#  * @client      Prashant Academy Coaching Institute
+#  * @copyright   Copyright (c) 2026 AITDL
+#  * @license     Proprietary
+#  *
+#  * @version     1.0.0
+#  * @created     2026-11-04
+#  * @updated     2026-11-06
+#  *
+#  * @description Git pre-commit hook enforcing automated revision versioning and source header attribution.
+#  */
+
+echo "[HOOK] Running PrathamOne EduOS pre-commit revision & header verification..."
+
+# 1. Run automated version calculation and synchronization based on task / revision history
+python scripts/auto_version.py --hook
+
+# 2. Identify staged first-party source files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(py|ts|tsx|js|jsx|css)$' | grep -v 'node_modules/' | grep -v 'dist/')
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "[HOOK] No staged first-party source files detected."
+    exit 0
+fi
+
+# 3. Run header auto-fix on staged files
+python scripts/manage_headers.py fix --staged --update-timestamp
+
+# 4. Re-stage any files that were automatically updated with headers or version info
+for file in $STAGED_FILES; do
+    if [ -f "$file" ]; then
+        git add "$file"
+    fi
+done
+
+# 5. Perform strict header check
+python scripts/manage_headers.py check --staged
+CHECK_STATUS=$?
+
+if [ $CHECK_STATUS -ne 0 ]; then
+    echo "[ERROR] Pre-commit hook rejected commit: header verification failed."
+    exit 1
+fi
+
+echo "[HOOK] Revision versioning and header verification passed successfully."
+exit 0
