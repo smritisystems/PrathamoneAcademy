@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description Source component for Build Manual Docx in the scripts module.
 #  */
@@ -316,8 +316,53 @@ def build_docx_manual():
     add_figure(doc, "08_student_detail_profile.png", "Figure 4.3: Comprehensive Student Detail Workspace.")
     add_figure(doc, "10_student_exit_modal.png", "Figure 4.4: Student Exit and Withdrawal Modal.")
 
-    # 4.3 Attendance
-    doc.add_heading("4.3 Daily Attendance & Defaulter Tracking", level=2)
+    # 4.3 Teacher & Faculty Workspace
+    doc.add_heading("4.3 Teacher & Faculty Workspace & Dedicated Profile", level=2)
+    doc.add_paragraph(
+        "Routes: /teachers, /teachers/{id} | Access: Admin, Principal, Teachers, SysAdmin\n"
+        "The Teacher Workspace provides comprehensive faculty governance with real-time academic workload analytics:\n"
+        "• Live Workforce Status KPIs: Total Teachers (42), Active (36), Assigned (30), Unassigned (6), Without Timetable (3), and On Leave (4).\n"
+        "• Teacher Status Donut Chart: Visually flags unassigned faculty requiring immediate batch allocation.\n"
+        "• 6-Month Teaching Hours Trend: Reconciles verified classroom lecture hours for accurate automated payroll calculation.\n"
+        "• Dedicated 12-Tab Profile: Includes Overview, Personal (Dual Addresses), Employment, Qualifications, Subjects, Assignments, Timetable, Attendance, Leave, Payroll, Documents, and Activity.\n"
+        "• Batch Allocation: Assign faculty to boards, standards, divisions, and subjects with weekly workload meters."
+    )
+    add_figure(doc, "28_teacher_workspace_dashboard.png", "Figure 4.5A: Teacher Workspace Dashboard with real-time status donut and monthly teaching hours trend.")
+    add_figure(doc, "29_individual_teacher_profile.png", "Figure 4.5B: Dedicated Teacher Profile with Workforce Hero Card and 12 specialized tabs.")
+
+    # 4.4 Non-Teaching Staff Workspace
+    doc.add_heading("4.4 Non-Teaching Staff Workspace & Dedicated Profile", level=2)
+    doc.add_paragraph(
+        "Routes: /staff, /staff/{id} | Access: Admin, Principal, Staff, SysAdmin\n"
+        "Manage administrative, accounts, library, IT, and campus support personnel:\n"
+        "• Live Headcounts: Track personnel across departments with real-time headcount indicators.\n"
+        "• Dynamic Department Analytics: Live donut chart displaying staff distribution across Administration, Accounts, IT, Library, and Operations.\n"
+        "• Financial Liabilities: Real-time calculation of Salary Payable (Current Month) and outstanding Pending Payment vouchers.\n"
+        "• Dedicated 12-Tab Profile: Tailored to administrative staff with key responsibilities, attendance history, and official HR documents."
+    )
+    add_figure(doc, "30_staff_workspace_dashboard.png", "Figure 4.5C: Staff Workspace Dashboard with department breakdown and salary liability cards.")
+    add_figure(doc, "31_individual_staff_profile.png", "Figure 4.5D: Dedicated Staff Profile with responsibilities matrix and documents archive.")
+
+    # 4.5 Employee Dossier & Universal Print
+    doc.add_heading("4.5 Employee Dossier & Universal Print Studio", level=2)
+    doc.add_paragraph(
+        "Single-click generation of the official multi-section Employee Dossier. "
+        "Includes institutional branding, dual residential and permanent addresses, multiple bank accounts with primary salary designation, "
+        "key emergency contacts, batch workload allocations, and statutory verification signature blocks. "
+        "The Universal Print Studio enables seamless printing on A4, A5, Letter, and custom formats with auto-scaling to prevent horizontal or vertical overflow."
+    )
+
+    # 4.6 Delete Protection
+    doc.add_heading("4.6 Multi-Table Delete Protection & Workforce Safeguards", level=2)
+    doc.add_paragraph(
+        "To prevent accidental data loss and audit corruption, PrathamOne EduOS enforces strict referential delete protection. "
+        "Attempting to hard-delete any user with existing payroll records, teaching sessions, batch assignments, attendance punches, "
+        "leave records, payment transactions, or student enrollments returns an explicit HTTP 400 error blocking the operation. "
+        "Administrators use Soft Deactivation instead, which safely revokes login access while keeping financial and academic ledgers intact."
+    )
+
+    # 4.7 Attendance
+    doc.add_heading("4.7 Daily Attendance & Defaulter Tracking", level=2)
     doc.add_paragraph(
         "Route: /attendance | Access: Teachers, Staff, Admin, Principal\n"
         "Select the Standard and Batch. The complete student roster loads defaulted to Present. "
@@ -367,8 +412,32 @@ def build_docx_manual():
     )
     add_figure(doc, "24_forms_documents_hub.png", "Figure 4.11: Forms & Documents Printing Center.")
 
-    # 4.8 Branding & System Settings
-    doc.add_heading("4.8 Branding & System Settings", level=2)
+    # 4.11 CodeX Configuration Studio
+    doc.add_heading("4.11 CodeX — Configurable Feature Activation & Numeric Coding Studio", level=2)
+    doc.add_paragraph(
+        "Route: /codex | Access: Business Owner / Authorized SysAdmin\n"
+        "CodeX is an optional, high-security numeric obfuscation engine that masks sensitive business figures (salaries, fees, profit margins) "
+        "using custom owner-defined alphanumeric symbol mappings.\n"
+        "• Mandatory System Default Policy: DISABLED (OFF) everywhere until explicitly activated by the Business Owner.\n"
+        "• Bijective Reversible Mapping: Digits 0-9 substitute into custom symbols (e.g. 0->Q, 1->A, 2->Z...); amounts like ₹12,500 encode to AZPQQ and decode back to 12500.\n"
+        "• Granular 16-Feature Toggles: Independently toggle CodeX on student fees, staff payroll, invoices, receipts, and reporting grids.\n"
+        "• Scoped Access Overrides: Define permissions by department, role, or user.\n"
+        "• PIN Protection & QR Tokens: Decoding operations require administrative PIN verification. Ephemeral QR tokens support mobile decoder scanning."
+    )
+    add_figure(doc, "32_codex_configuration_studio.png", "Figure 4.12: CodeX Configuration Studio with master toggle and 16 feature switches.")
+    add_figure(doc, "33_codex_mapping_studio.png", "Figure 4.13: CodeX Mapping Studio with reversible symbol substitutions.")
+    add_figure(doc, "34_codex_sandbox_testing.png", "Figure 4.14: Verification Sandbox testing live bidirectional encoding and decoding.")
+
+    # 4.12 Universal Print Engine
+    doc.add_heading("4.12 Universal Print Fit & Page Layout Engine", level=2)
+    doc.add_paragraph(
+        "Integrated across all document triggers (Dossiers, ID Cards, Receipts, Report Cards, Invoices). "
+        "Supports standard office paper (A4, Letter) and compact receipt formats (A5, 80mm Thermal Rolls). "
+        "Auto-calculates CSS scale factors to eliminate clipping and preserve corporate color branding."
+    )
+
+    # 4.13 Branding & System Settings
+    doc.add_heading("4.13 Branding & System Settings", level=2)
     doc.add_paragraph(
         "Route: /settings | Access: Admin, SysAdmin\n"
         "Configure institute profile details, upload official logos, and customize brand primary/secondary colors "

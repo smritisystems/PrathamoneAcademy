@@ -505,8 +505,11 @@
     <div class="toc-item level-2"><span>4.2 Academic Structure & Batch Management</span><span>15</span></div>
     <div class="toc-item level-2"><span>4.3 Courses & Subject Mapping</span><span>17</span></div>
     <div class="toc-item level-2"><span>4.4 Student Admission & Lifecycle Management</span><span>19</span></div>
-    <div class="toc-item level-2"><span>4.5 Faculty & Staff Directory</span><span>23</span></div>
-    <div class="toc-item level-2"><span>4.6 Daily Attendance & Defaulter Tracking</span><span>25</span></div>
+    <div class="toc-item level-2"><span>4.5 Teacher & Faculty Workspace & Dedicated Profile</span><span>23</span></div>
+    <div class="toc-item level-2"><span>4.5.B Non-Teaching Staff Workspace & Dedicated Profile</span><span>25</span></div>
+    <div class="toc-item level-2"><span>4.5.C Employee Dossier & Universal Print Fit Studio</span><span>27</span></div>
+    <div class="toc-item level-2"><span>4.5.D Multi-Table Delete Protection & Workforce Safeguards</span><span>29</span></div>
+    <div class="toc-item level-2"><span>4.6 Daily Attendance & Defaulter Tracking</span><span>31</span></div>
     <div class="toc-item level-2"><span>4.7 Fee Plans, Invoicing & Discount Schemes</span><span>27</span></div>
     <div class="toc-item level-2"><span>4.8 Payments Ledger & Posted Edit Security Gate</span><span>29</span></div>
     <div class="toc-item level-2"><span>4.9 Import Fee Register (CSV/Excel Wizard)</span><span>32</span></div>
@@ -519,6 +522,8 @@
     <div class="toc-item level-2"><span>4.16 Institute Settings & Live Branding Customizer</span><span>46</span></div>
     <div class="toc-item level-2"><span>4.17 SysAdmin Center & Universal Records Editor</span><span>48</span></div>
     <div class="toc-item level-2"><span>4.18 Release Management & Semantic Version Audit</span><span>51</span></div>
+    <div class="toc-item level-2"><span>4.19 CodeX — Configurable Feature Activation & Numeric Coding Studio</span><span>53</span></div>
+    <div class="toc-item level-2"><span>4.20 Universal Print Fit & Page Layout Engine</span><span>55</span></div>
 
     <div class="toc-item level-1"><span>5. End-to-End Business Workflows</span><span>53</span></div>
     <div class="toc-item level-2"><span>5.1 Student Onboarding from Admission to Batch Enrollment</span><span>53</span></div>
@@ -962,15 +967,89 @@
     <div class="figure-caption">Figure 4.9: Formal Student Withdrawal / Exit Dialogue with mandatory reason tracking.</div>
 </div>
 
-<!-- 4.5 Faculty & Staff -->
-<h2>4.5 Faculty & Staff Directory</h2>
-<p><strong>Route:</strong> <code>/staff</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, Principal, SysAdmin</p>
-<p><strong>Purpose:</strong> Maintain comprehensive faculty credentials, employee codes, designations, department allocations, and contact records.</p>
+<!-- 4.5 Teacher & Faculty Workspace -->
+<h2>4.5 Teacher & Faculty Workspace & Dedicated Profile</h2>
+<p><strong>Routes:</strong> <code>/teachers</code> and <code>/teachers/:id</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, Principal, Teachers, SysAdmin</p>
+<p><strong>Purpose:</strong> Comprehensive faculty lifecycle governance, real-time workload tracking, academic batch allocation, timetable health monitoring, and lecture verification.</p>
 
 <div class="figure-box">
-    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/20_staff_management.png" class="figure-img" alt="Staff Management">
-    <div class="figure-caption">Figure 4.10: Staff & Faculty Directory with department filters and profile editor.</div>
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/28_teacher_workspace_dashboard.png" class="figure-img" alt="Teacher Workspace Dashboard">
+    <div class="figure-caption">Figure 4.10A: Dedicated Teacher Workspace with real-time status donut, 6-month lecture hour trends, and live counters for Assigned, Unassigned, No Timetable, and On Leave faculty.</div>
 </div>
+
+<h3>Teacher Workspace Capabilities:</h3>
+<ul>
+    <li><strong>Live Status KPIs:</strong> Instant headcount tracking for Total Teachers (42), Active (36), Assigned (30), Unassigned (6), Without Timetable (3), On Leave (4), and Departed (5).</li>
+    <li><strong>Teacher Status Distribution Donut:</strong> Reconciles live assignments against the database to visually isolate unassigned faculty requiring class allocation.</li>
+    <li><strong>Monthly Teaching Hours Trend:</strong> Verified lecture duration analytics computed across verified teaching sessions for accurate payroll calculations.</li>
+    <li><strong>Filter Subtabs:</strong> Instant one-click filtering by <em>All Faculty</em>, <em>Assigned</em>, <em>Unassigned</em>, <em>No Timetable</em>, <em>On Leave</em>, <em>Upcoming Joining</em>, <em>Departed</em>, <em>Batch Allocations Grid</em>, and <em>Session Register</em>.</li>
+</ul>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/29_individual_teacher_profile.png" class="figure-img" alt="Individual Teacher Profile">
+    <div class="figure-caption">Figure 4.10B: Dedicated Teacher Profile featuring persistent Workforce Hero Card, workload meters, and 12 specialized tabs.</div>
+</div>
+
+<h3>Individual Teacher Profile — The 12 Specialized Tabs:</h3>
+<ol>
+    <li><strong>Overview:</strong> High-level profile summary, active class assignments with status pills, and monthly session counters (lectures delivered, hours, attendance rate).</li>
+    <li><strong>Personal:</strong> Dual address governance (Current Residential vs Permanent Hometown), blood group, date of birth, and primary emergency contact.</li>
+    <li><strong>Employment:</strong> Employment type (Full-time, Part-time, Guest Lecturer), official designation, department, joining date, and reporting hierarchy.</li>
+    <li><strong>Qualifications:</strong> Highest academic credentials, B.Ed./M.Sc. specializations, university, passing year, and total experience.</li>
+    <li><strong>Subjects:</strong> Prescribed subjects authorized for classroom delivery.</li>
+    <li><strong>Assignments:</strong> Real-time academic load matrix showing assigned standards, batches, and weekly hours, featuring an instant <em>Assign New Batch</em> button.</li>
+    <li><strong>Timetable:</strong> Weekly schedule matrix displaying Monday–Saturday time slots, rooms, and divisions.</li>
+    <li><strong>Attendance:</strong> Monthly biometric/manual punch logs, present days, and aggregate attendance rates.</li>
+    <li><strong>Leave:</strong> Leave balances (Casual, Sick, Earned) and historical leave applications.</li>
+    <li><strong>Payroll:</strong> Remuneration model (Hourly Rate, Per-Lecture, Monthly Fixed Amount) and disbursement frequency.</li>
+    <li><strong>Documents:</strong> Official HR document archive (Appointment Letter, Service Agreement, Verification Sheet, Payslips) with instant <em>View</em> preview and print integration.</li>
+    <li><strong>Activity:</strong> Chronological audit log tracking assignments, status transitions, and payroll postings.</li>
+</ol>
+
+<!-- 4.5.B Non-Teaching Staff Workspace -->
+<h2>4.5.B Non-Teaching Staff Workspace & Dedicated Profile</h2>
+<p><strong>Routes:</strong> <code>/staff</code> and <code>/staff/:id</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, Principal, Staff, SysAdmin</p>
+<p><strong>Purpose:</strong> Enterprise workforce management for administrative, accounts, library, IT, and campus operations personnel.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/30_staff_workspace_dashboard.png" class="figure-img" alt="Staff Workspace Dashboard">
+    <div class="figure-caption">Figure 4.10C: Staff Workspace with dynamic department breakdown donut and real-time monthly salary liability cards.</div>
+</div>
+
+<h3>Staff Workspace Capabilities:</h3>
+<ul>
+    <li><strong>Workforce Counters:</strong> Real-time tracking of non-teaching personnel, active staff, unassigned personnel, on-leave employees, and upcoming recruits.</li>
+    <li><strong>Dynamic Department Analytics:</strong> Live donut chart mapping personnel counts across Administration, Accounts, IT & Systems, Library, Operations, and Front Desk.</li>
+    <li><strong>Financial Liability Tracking:</strong> Real-time display of <em>Salary Payable (Current Month)</em> and outstanding <em>Pending Payments</em> vouchers.</li>
+</ul>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/31_individual_staff_profile.png" class="figure-img" alt="Individual Staff Profile">
+    <div class="figure-caption">Figure 4.10D: Dedicated Staff Profile with operational responsibilities card and official documents hub.</div>
+</div>
+
+<!-- 4.5.C Employee Dossier & Universal Print Studio -->
+<h2>4.5.C Employee Dossier & Universal Print Fit Studio</h2>
+<p><strong>Capability:</strong> Single-click institutional master employee record generation and multi-format printing.</p>
+
+<p>Clicking <strong>Actions &rarr; Print Profile / Dossier</strong> from any teacher or staff profile launches the <strong>Universal Print Studio</strong> with pre-rendered institutional branding, dual address records, emergency contacts, academic workload allocations, statutory banking details, and authorized signature blocks.</p>
+
+<div class="callout callout-tip">
+    <div class="callout-title">Universal Print Engine Features</div>
+    <ul>
+        <li><strong>Paper Formats:</strong> Print seamlessly on A4, A5, A3, Letter, Legal, or custom sizes.</li>
+        <li><strong>Intelligent Fit Modes:</strong> <em>Fit to Page Width</em> prevents horizontal cut-off; <em>Fit Entire Document on One Page</em> scales content dynamically.</li>
+        <li><strong>Format Preservation:</strong> Eliminates unwanted browser headers/footers while preserving corporate colors, crisp borders, and QR codes.</li>
+    </ul>
+</div>
+
+<!-- 4.5.D Delete Protection -->
+<h2>4.5.D Multi-Table Delete Protection & Workforce Safeguards</h2>
+<p>To prevent catastrophic data loss and audit corruption, PrathamOne EduOS enforces strict referential delete protection across 7 relational domains:</p>
+<ul>
+    <li><strong>Hard Deletion Barrier:</strong> Attempting to permanently delete a user with existing payroll records, teaching sessions, batch assignments, attendance punches, leave records, payment vouchers, or student enrollments returns an explicit <code>HTTP 400 Bad Request</code> error blocking the operation.</li>
+    <li><strong>Soft Deactivation Workflow:</strong> Instead of deletion, clicking <em>Deactivate</em> marks <code>is_active = False</code> and sets employment status to <span class="chip chip-amber">INACTIVE</span>, immediately revoking login access while preserving all financial and academic historical records.</li>
+</ul>
 
 <!-- 4.6 Attendance Management -->
 <h2>4.6 Daily Attendance & Defaulter Tracking</h2>
@@ -1149,6 +1228,53 @@
 <div class="figure-box">
     <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/27_releases_and_version_audit.png" class="figure-img" alt="Releases Workspace">
     <div class="figure-caption">Figure 4.25: Software Release & Changelog Audit workspace.</div>
+</div>
+
+<!-- 4.19 CodeX Configuration Studio -->
+<h2>4.19 CodeX — Configurable Feature Activation & Numeric Coding Studio</h2>
+<p><strong>Route:</strong> <code>/codex</code> &nbsp;|&nbsp; <strong>Access:</strong> Business Owner / Authorized SysAdmin Exclusive</p>
+<p><strong>Purpose:</strong> Optional, highly secure numeric obfuscation engine that masks sensitive business figures (salaries, prices, fees, profit margins) using custom owner-defined alphanumeric symbol mappings.</p>
+
+<div class="callout callout-warning">
+    <div class="callout-title">Mandatory System Default Policy: DISABLED (OFF)</div>
+    <p>In accordance with global governance directives, CodeX is <strong>DISABLED by default everywhere</strong>. Installing, updating, or initializing software will never auto-activate CodeX. It requires explicit, authorized activation by the Business Owner.</p>
+</div>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/32_codex_configuration_studio.png" class="figure-img" alt="CodeX Configuration Studio">
+    <div class="figure-caption">Figure 4.26A: CodeX Configuration Studio featuring master activation toggle and 16 granular feature controls.</div>
+</div>
+
+<h3>Core Architectural Capabilities:</h3>
+<ul>
+    <li><strong>Bijective Reversible Mapping:</strong> Digits 0 through 9 map to unique custom symbols (e.g., <code>0&rarr;Q, 1&rarr;A, 2&rarr;Z, 3&rarr;M, 4&rarr;K, 5&rarr;P, 6&rarr;X, 7&rarr;B, 8&rarr;T, 9&rarr;R</code>). An amount of <code>₹ 12,500</code> displays as <code>AZPQQ</code>, and decodes back to <code>12500</code>.</li>
+    <li><strong>Granular 16-Feature Control:</strong> Independently enable or disable CodeX across Student Fees, Teacher Payroll, Salary Slips, Invoices, Receipts, and Reports.</li>
+    <li><strong>Scoped Visibility Overrides:</strong> Define access policies per Department, Role, or Individual User (e.g., Accountants see real figures while front desk sees coded values).</li>
+    <li><strong>PIN Protection & QR Decoder:</strong> Decoding coded numbers requires administrative PIN verification. Mobile managers can scan QR codes to decode paper receipts.</li>
+</ul>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/33_codex_mapping_studio.png" class="figure-img" alt="CodeX Mapping Studio">
+    <div class="figure-caption">Figure 4.26B: Interactive Digit Mapping Studio with live substitution preview.</div>
+</div>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/34_codex_sandbox_testing.png" class="figure-img" alt="CodeX Verification Sandbox">
+    <div class="figure-caption">Figure 4.26C: Verification Sandbox testing live bidirectional encoding and decoding before deployment.</div>
+</div>
+
+<!-- 4.20 Universal Print Engine -->
+<h2>4.20 Universal Print Fit & Page Layout Engine</h2>
+<p><strong>Route:</strong> Integrated across all document print triggers &nbsp;|&nbsp; <strong>Access:</strong> All Roles</p>
+<p><strong>Purpose:</strong> Standardized print layout engine delivering pixel-perfect document rendering across A4, A5, A3, Letter, Legal, and custom paper sizes with zero clipping.</p>
+
+<div class="callout callout-note">
+    <div class="callout-title">Universal Print Highlights</div>
+    <ul>
+        <li><strong>Dynamic Sizing:</strong> Supports standard office paper (A4, Letter) as well as compact receipt formats (A5, Thermal Rolls).</li>
+        <li><strong>Automatic Scaling:</strong> Eliminates page overflow issues by auto-calculating CSS scale factors to fit wide tables onto a single sheet.</li>
+        <li><strong>Thermal Printer Compatibility:</strong> Automatically formats fee receipts for POS thermal printers (80mm/58mm) without manual re-configuration.</li>
+    </ul>
 </div>
 
 <!-- CHAPTER 5 -->

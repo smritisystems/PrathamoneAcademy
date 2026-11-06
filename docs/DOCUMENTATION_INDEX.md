@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-07 03:39:55  
-**Total Indexed Items:** 225  
+**Last Reindexed:** 2026-11-07 04:08:08  
+**Total Indexed Items:** 226  
 
 ---
 
@@ -36,7 +36,7 @@
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **5** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **30** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **2** | Troubleshooting, Runbooks & Recovery |
-| `22` | [22_USER_MANUALS](#22_user_manuals) | **8** | User Manuals & Operating Guides |
+| `22` | [22_USER_MANUALS](#22_user_manuals) | **9** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **6** | Business Rules & SSOT Policy |
@@ -336,11 +336,12 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **PrathamOne Academy — Complete User Manual Creation & Delivery Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md](22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md) | - |
-| **PrathamOne_Academy_Complete_User_Manual.docx** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.docx](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.docx) | - |
-| **PrathamOne_Academy_Complete_User_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.pdf) | - |
-| **PrathamOne_Academy_Quick_Start_Guide.pdf** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [PrathamOne_Academy_Quick_Start_Guide.pdf](22_USER_MANUALS/PrathamOne_Academy_Quick_Start_Guide.pdf) | - |
-| **PrathamOne_Academy_Sysadmin_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [PrathamOne_Academy_Sysadmin_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Sysadmin_Manual.pdf) | - |
-| **complete_user_manual.html** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [complete_user_manual.html](22_USER_MANUALS/complete_user_manual.html) | - |
+| **PrathamOne EduOS — Teacher & Staff Workforce Management, Universal Print & CodeX User Manual** | `USER-MANUAL` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md](22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 14_PRINTING_DOCUMENTS, 12_RBAC_SECURITY |
+| **PrathamOne_Academy_Complete_User_Manual.docx** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.docx](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.docx) | - |
+| **PrathamOne_Academy_Complete_User_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.pdf) | - |
+| **PrathamOne_Academy_Quick_Start_Guide.pdf** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [PrathamOne_Academy_Quick_Start_Guide.pdf](22_USER_MANUALS/PrathamOne_Academy_Quick_Start_Guide.pdf) | - |
+| **PrathamOne_Academy_Sysadmin_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [PrathamOne_Academy_Sysadmin_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Sysadmin_Manual.pdf) | - |
+| **complete_user_manual.html** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [complete_user_manual.html](22_USER_MANUALS/complete_user_manual.html) | - |
 | **quick_start_guide.html** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [quick_start_guide.html](22_USER_MANUALS/quick_start_guide.html) | - |
 | **sysadmin_manual.html** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [sysadmin_manual.html](22_USER_MANUALS/sysadmin_manual.html) | - |
 
