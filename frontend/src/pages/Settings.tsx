@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -593,7 +593,7 @@ export default function Settings() {
 
           {/* Sidebar Footer Status */}
           <div className="p-3 bg-gray-50 border-t border-gray-200 text-center text-[11px] text-gray-500">
-            PrathamOne Academy Suite <span className="font-semibold">{branding.versionDisplay}</span>
+            {branding.appName} <span className="font-semibold">{branding.versionDisplay}</span>
           </div>
         </div>
 

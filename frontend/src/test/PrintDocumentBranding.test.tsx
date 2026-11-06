@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Integration tests verifying reusable printable document branding headers, seals, and authorized signatories.
  */
@@ -143,7 +143,7 @@ describe('Printable Document Branding Components', () => {
       const footer = screen.getByTestId('print-share-branding-footer')
       expect(footer).toBeDefined()
       expect(screen.getByText(PRINT_SHARE_BRANDING.text)).toBeDefined()
-      expect(screen.getByText(/PrathamOne Coaching Institutes Enterprise Suite · prathamone.com/i)).toBeDefined()
+      expect(screen.getByText(/PrathamOne EduOS · Coaching Institute Edition · prathamone.com/i)).toBeDefined()
     })
 
     it('defaults to center alignment and low-contrast 8pt font styling', () => {

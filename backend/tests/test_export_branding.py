@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description Unit tests verifying consistent, understated PrathamOne branding in Excel and CSV exports.
 #  */
@@ -21,7 +21,7 @@ import openpyxl
 import pytest
 from app.services.data_exporter import create_excel_workbook, create_csv_content
 
-EXPECTED_BRANDING = "PrathamOne Coaching Institutes Enterprise Suite · prathamone.com"
+EXPECTED_BRANDING = "PrathamOne EduOS · Coaching Institute Edition · prathamone.com"
 
 
 def test_create_excel_workbook_branding_footer():

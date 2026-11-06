@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Comprehensive Teacher & Staff Management workspace with Directory, Academic Assignments, Attendance, Leaves, and 28 Printable Documents.
  */
@@ -1107,7 +1107,7 @@ export default function StaffManagement() {
             <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
               <button
                 onClick={() => {
-                  const credText = `PrathamOne Academy Staff Credentials\nName: ${createdCredentials.name}\nEmployee ID: ${createdCredentials.employee_id || 'N/A'}\nUsername: ${createdCredentials.username}\nTemporary Password: ${createdCredentials.temporary_password || 'N/A'}`;
+                  const credText = `PrathamOne EduOS Staff Credentials\nName: ${createdCredentials.name}\nEmployee ID: ${createdCredentials.employee_id || 'N/A'}\nUsername: ${createdCredentials.username}\nTemporary Password: ${createdCredentials.temporary_password || 'N/A'}`;
                   navigator.clipboard.writeText(credText);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);

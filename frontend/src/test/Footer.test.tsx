@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, versioning, and AITDL parent branding.
  */
@@ -102,8 +102,8 @@ describe('Application Footer Specifications', () => {
   it('renders Product section with system name, Enterprise Edition, and verified prathamone.com link', () => {
     renderFooter()
 
-    expect(screen.getByText('PrathamOne Academy Management System')).toBeDefined()
-    expect(screen.getByText('Enterprise Edition')).toBeDefined()
+    expect(screen.getByText('PrathamOne EduOS — Education Operating System')).toBeDefined()
+    expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
 
     const link = screen.getByRole('link', { name: 'prathamone.com' })
     expect(link).toBeDefined()
@@ -111,13 +111,13 @@ describe('Application Footer Specifications', () => {
     expect(link.getAttribute('target')).toBe('_blank')
   })
 
-  it('renders Right section with user ID, user role, live status, and actual version v6.99.1', () => {
+  it('renders Right section with user ID, user role, live status, and actual version v1.0.0', () => {
     renderFooter()
 
     expect(screen.getByText('UID: #42')).toBeDefined()
     expect(screen.getByText('Role: Admin')).toBeDefined()
     expect(screen.getByText('Online')).toBeDefined()
-    expect(screen.getByText('v6.99.1')).toBeDefined()
+    expect(screen.getByText('v1.0.0')).toBeDefined()
   })
 
   it('renders AITDL parent organization and products section in the DOM', () => {

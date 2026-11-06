@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
@@ -30,7 +30,7 @@ export interface PrintReceiptOptions {
  */
 export function printReceiptElement(
   elementIdOrOptions: string | PrintReceiptOptions = 'receipt-print-area',
-  defaultTitle: string = 'Official Fee Receipt - PrathamOne Academy'
+  defaultTitle: string = 'Official Fee Receipt - PrathamOne EduOS'
 ): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return false;

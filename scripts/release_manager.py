@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description Enterprise CLI tool for managing application releases, change tracking, version bumping, and pre-flight CI/CD validation.
 #  */
@@ -71,7 +71,7 @@ def get_current_version(root_dir: str = ".") -> str:
                     return data["version"]
         except Exception:
             pass
-    return "6.99.1"
+    return "1.0.0"
 
 
 def get_git_commits(max_count: int = 50) -> list:

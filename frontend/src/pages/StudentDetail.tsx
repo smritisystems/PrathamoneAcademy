@@ -2007,7 +2007,7 @@ export default function StudentDetailPage() {
           recipientName={overview.full_name}
           recipientPhone={overview.phone || (overview.guardians && overview.guardians[0]?.phone) || ''}
           recipientEmail={overview.email || (overview.guardians && overview.guardians[0]?.email) || ''}
-          defaultMessage={`Dear Parent/Student,\n\nPlease find the student academic profile and enrollment summary for ${overview.full_name} (${overview.admission_number}) at PrathamOne Academy.`}
+          defaultMessage={`Dear Parent/Student,\n\nPlease find the student academic profile and enrollment summary for ${overview.full_name} (${overview.admission_number}) at Prashant Academy (PrathamOne EduOS).`}
         />
       )}
       {/* Student Exit Modal */}

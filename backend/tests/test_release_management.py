@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description Comprehensive test suite verifying release change tracking, automated release notes, semver management, CI/CD validation, and approval lifecycles.
 #  */
@@ -46,13 +46,13 @@ def test_sanitize_sensitive_data():
 
 def test_semver_bumping_and_parsing():
     """Requirement 3: Verify semantic versioning scheme."""
-    major, minor, patch, pre = parse_semver("6.99.1")
-    assert (major, minor, patch) == (6, 99, 1)
+    major, minor, patch, pre = parse_semver("1.0.0")
+    assert (major, minor, patch) == (1, 0, 0)
 
-    assert bump_semver("6.99.1", "patch") == "6.99.2"
-    assert bump_semver("6.99.1", "minor") == "6.100.0"
-    assert bump_semver("6.99.1", "major") == "7.0.0"
-    assert bump_semver("6.99.1", "7.1.0") == "7.1.0"
+    assert bump_semver("1.0.0", "patch") == "1.0.1"
+    assert bump_semver("1.0.0", "minor") == "1.1.0"
+    assert bump_semver("1.0.0", "major") == "2.0.0"
+    assert bump_semver("1.0.0", "1.1.0") == "1.1.0"
 
 
 def test_conventional_commit_categorization():
@@ -94,7 +94,7 @@ async def test_get_current_release_and_seed_history(
     history = res_list.json()
     assert history["total"] >= 1
     versions = [item["version"] for item in history["items"]]
-    assert "6.99.1" in versions
+    assert "1.0.0" in versions
 
 
 @pytest.mark.asyncio
@@ -192,13 +192,13 @@ async def test_full_release_lifecycle(
     # 9. Rollback Release
     rollback_payload = {
         "reason": "Emergency stability test rollback to previous baseline version.",
-        "target_version": "6.99.1",
+        "target_version": "1.0.0",
     }
     res_rb = await client.post(f"/api/v1/releases/{release_id}/rollback", headers=auth_headers, json=rollback_payload)
     assert res_rb.status_code == 200
     rb_data = res_rb.json()
     assert rb_data["status"] == "rolled_back"
-    assert rb_data["rollback_target_version"] == "6.99.1"
+    assert rb_data["rollback_target_version"] == "1.0.0"
 
     # 10. Verify Audit History
     res_audit = await client.get(f"/api/v1/releases/{release_id}/audit", headers=auth_headers)

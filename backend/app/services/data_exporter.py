@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description Service for exporting student, fee, academic, and attendance data to Excel and CSV formats.
 #  */
@@ -98,10 +98,10 @@ def create_excel_workbook(sheet_name: str, headers: List[str], rows: List[List[A
                 cell.alignment = Alignment(horizontal="left", vertical="center")
 
     # Configure print page footer in Excel worksheet
-    ws.oddFooter.center.text = "PrathamOne Coaching Institutes Enterprise Suite · prathamone.com"
+    ws.oddFooter.center.text = "PrathamOne EduOS · Coaching Institute Edition · prathamone.com"
     ws.oddFooter.center.size = 8
     ws.oddFooter.center.color = "888888"
-    ws.evenFooter.center.text = "PrathamOne Coaching Institutes Enterprise Suite · prathamone.com"
+    ws.evenFooter.center.text = "PrathamOne EduOS · Coaching Institute Edition · prathamone.com"
     ws.evenFooter.center.size = 8
     ws.evenFooter.center.color = "888888"
 
@@ -110,7 +110,7 @@ def create_excel_workbook(sheet_name: str, headers: List[str], rows: List[List[A
     footer_cell = ws.cell(
         row=footer_row_idx,
         column=1,
-        value="PrathamOne Coaching Institutes Enterprise Suite · prathamone.com",
+        value="PrathamOne EduOS · Coaching Institute Edition · prathamone.com",
     )
     footer_cell.font = Font(name="Calibri", size=8, color="888888", italic=True)
 
@@ -133,7 +133,7 @@ def create_csv_content(headers: List[str], rows: List[List[Any]]) -> bytes:
     for row in rows:
         writer.writerow([sanitize_formula_injection(c) for c in row])
     writer.writerow([])
-    writer.writerow(["PrathamOne Coaching Institutes Enterprise Suite · prathamone.com"])
+    writer.writerow(["PrathamOne EduOS · Coaching Institute Edition · prathamone.com"])
     return out.getvalue().encode("utf-8-sig")
 
 

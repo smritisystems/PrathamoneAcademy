@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Vitest test suite for Communication Center workspace, covering compose & send, templates catalogue, delivery logs, and gateway diagnostics.
  */
@@ -32,9 +32,9 @@ vi.mock('../store/authStore', () => ({
 vi.mock('../config/branding', () => ({
   useBranding: () => ({
     branding: {
-      appName: 'PrathamOne Academy',
+      appName: 'PrathamOne EduOS',
       shortName: 'PA',
-      institutionName: 'PrathamOne Academy',
+      institutionName: 'Prashant Academy',
       supportPhone: '+91 98765 43210',
       supportEmail: 'info@prathamoneacademy.in',
     },

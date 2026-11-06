@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-06
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
@@ -69,7 +69,7 @@ describe('Collapsible & Responsive Sidebar Component', () => {
 
     // Institute branding
     expect(screen.getByText('Prashant Academy')).toBeDefined()
-    expect(screen.getByText('Coaching Institute')).toBeDefined()
+    expect(screen.getByText('The Power of Enterprise Education. The Simplicity of WhatsApp.')).toBeDefined()
 
     // Main navigation items
     expect(screen.getByRole('link', { name: /dashboard/i })).toBeDefined()
@@ -308,9 +308,9 @@ describe('Layout Integration & Mobile Drawer', () => {
     expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
 
     // Product and right sections: Product, edition, system, version, and website
-    expect(screen.getByText('Enterprise Edition')).toBeDefined()
-    expect(screen.getByText('PrathamOne Academy Management System')).toBeDefined()
-    expect(screen.getByText('v6.99.1')).toBeDefined()
+    expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
+    expect(screen.getByText('PrathamOne EduOS — Education Operating System')).toBeDefined()
+    expect(screen.getByText('v1.0.0')).toBeDefined()
 
     const websiteLink = screen.getByRole('link', { name: 'prathamone.com' })
     expect(websiteLink).toBeDefined()
@@ -334,8 +334,8 @@ describe('Layout Integration & Mobile Drawer', () => {
     })
 
     expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
-    expect(screen.getByText('Enterprise Edition')).toBeDefined()
-    expect(screen.getByText('v6.99.1')).toBeDefined()
+    expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
+    expect(screen.getByText('v1.0.0')).toBeDefined()
 
     // When sidebar expands back
     act(() => {
@@ -343,8 +343,8 @@ describe('Layout Integration & Mobile Drawer', () => {
     })
 
     expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
-    expect(screen.getByText('Enterprise Edition')).toBeDefined()
-    expect(screen.getByText('v6.99.1')).toBeDefined()
+    expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
+    expect(screen.getByText('v1.0.0')).toBeDefined()
   })
 })
 

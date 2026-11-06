@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -218,7 +218,7 @@ export default function Layout() {
           {!isInstalled && (
             <Link
               to="/install"
-              title="Install PrathamOne Academy Desktop & Mobile App"
+              title="Install PrathamOne EduOS Desktop & Mobile App"
               className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors shadow-2xs"
             >
               <Download className="w-3.5 h-3.5 text-blue-600" />

@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Unit tests verifying browser console startup banner rendering with AITDL parent org, product hierarchy, and security controls.
  */
@@ -45,7 +45,7 @@ describe('Browser Console Startup Branding Banner', () => {
     const bannerText = logArgs[0] as string
 
     // Must include PrathamOne Academy application name
-    expect(bannerText).toContain('PRATHAMONE ACADEMY')
+    expect(bannerText).toContain('PRATHAMONE EDUOS')
     // Must include Academy name
     expect(bannerText).toContain('PRASHANT ACADEMY')
     // Must include Version and build number

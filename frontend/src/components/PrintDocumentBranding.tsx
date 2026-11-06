@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Canonical document branding header, statutory compliance notices, and authorized signatory layout for printable documents.
  */
@@ -178,7 +178,7 @@ export function PrintDocumentSignatory({
   signatoryTitle = 'Authorized Signatory',
   collectorName,
   generatedAt,
-  disclaimer = 'Computer-generated official academic document. Verified against PrathamOne Academy Authoritative Ledger.',
+  disclaimer = 'Computer-generated official academic document. Verified against PrathamOne EduOS Authoritative Ledger.',
   showStampBox = true,
   showParentSignature = false,
   parentSignatoryTitle = 'Parent / Guardian Signature',

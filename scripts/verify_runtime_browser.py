@@ -280,12 +280,12 @@ def run_tests():
         brand_content = page.content()
         has_branding_preview = "preview" in brand_content.lower() or "primary color" in brand_content.lower()
         has_global_footer = "prathamone" in brand_content.lower() and "prashant academy" in brand_content.lower()
-        has_version_display = "v6.99.1" in brand_content.lower()
+        has_version_display = "v1.0.0" in brand_content.lower()
 
         results["specific_verifications"]["branding_and_footer"] = {
             "has_branding_preview": has_branding_preview,
             "has_global_footer_branding": has_global_footer,
-            "has_v6_99_1_displayed": has_version_display
+            "has_v1_0_0_displayed": has_version_display
         }
         print(f"Branding & Footer: Preview={has_branding_preview}, FooterBranding={has_global_footer}, Version={has_version_display}")
 

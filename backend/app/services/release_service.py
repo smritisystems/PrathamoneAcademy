@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description Enterprise Release & Change Management service governing change tracking, automated release notes, semantic versioning, validation, and production approval lifecycles.
 #  */
@@ -184,7 +184,7 @@ def format_markdown_release_notes(
     """
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     md = [
-        f"# Release Notes — PrathamOne Academy v{version}",
+        f"# Release Notes — PrathamOne EduOS v{version}",
         f"**Release Title**: {title}  ",
         f"**Release Date**: {date_str}  ",
         f"**Build Identifier**: `{build_number}`  ",
@@ -326,15 +326,15 @@ class ReleaseService:
         return {
             "id": None,
             "version": settings.VERSION,
-            "build_number": f"{datetime.now(timezone.utc).strftime('%Y.%m.%d')}-PROD-REL",
-            "title": "PrathamOne Academy Foundation Baseline",
+            "build_number": getattr(settings, "BUILD_NUMBER", f"{datetime.now(timezone.utc).strftime('%Y.%m.%d')}-PROD-REL"),
+            "title": f"{getattr(settings, 'PRODUCT_NAME', 'PrathamOne EduOS')} v{settings.VERSION} — {getattr(settings, 'EDITION', 'Coaching Institute Edition')}",
             "status": "published",
             "environment": "production",
             "published_at": datetime.now(timezone.utc).isoformat(),
             "git_commit": None,
             "git_tag": f"v{settings.VERSION}",
             "is_critical_security": False,
-            "release_notes_markdown": f"# PrathamOne Academy v{settings.VERSION}\nOperational Baseline Release.",
+            "release_notes_markdown": f"# {getattr(settings, 'PRODUCT_NAME', 'PrathamOne EduOS')} v{settings.VERSION}\nOperational Baseline Release.",
         }
 
     @classmethod

@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description Source code attribution, header enforcement, and verification automation tool.
 #  */
@@ -38,6 +38,9 @@ if hasattr(sys.stderr, 'reconfigure'):
 
 PROJECT_NAME = "PrathamOne Academy Coaching Institute Management System"
 VALID_PROJECT_NAMES = {
+    "PrathamOne EduOS Coaching Institute Management System",
+    "PrathamOne EduOS — Coaching Institute Edition",
+    "PrathamOne EduOS — Education Operating System",
     "PrathamOne Academy Coaching Institute Management System",
     "Prashant Academy Coaching Institute Management System"
 }

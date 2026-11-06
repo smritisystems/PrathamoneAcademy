@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
@@ -32,7 +32,17 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     APP_NAME: str = "Prashant Academy"
-    VERSION: str = "6.99.1"
+    PRODUCT_NAME: str = "PrathamOne EduOS"
+    PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
+    EDITION: str = "Coaching Institute Edition"
+    TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
+    VERSION: str = "1.0.0"
+    BUILD_NUMBER: str = "2026.11.06-STABLE-v1.0.0"
+    RELEASE_CHANNEL: str = "Stable"
+    RELEASE_STATUS: str = "Production Candidate"
+    BUILD_DATE: str = "2026-11-06"
+    AUTHOR: str = "Jawahar R Mallah"
+    ORGANIZATION: str = "AITDL — AI Technology & Development Lab"
     DEBUG: bool = True
     ALLOWED_ORIGINS: Any = [
         "http://localhost:5173",

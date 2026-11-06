@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Unit and integration tests verifying centralized branding configuration, AITDL parent organization, product ecosystem, and dynamic tenant resolution.
  */
@@ -22,10 +22,10 @@ import { APP_CONFIG } from '../config/appConfig'
 
 describe('Centralized Application Branding & Identity System', () => {
   it('defines valid core application branding tokens', () => {
-    expect(BRANDING_CONFIG.appName).toBe('PrathamOne Academy')
+    expect(BRANDING_CONFIG.appName).toBe('PrathamOne EduOS')
     expect(BRANDING_CONFIG.shortName).toBe('PrathamOne')
-    expect(BRANDING_CONFIG.suiteName).toBe('PrathamOne Academic Suite')
-    expect(BRANDING_CONFIG.edition).toBe('Enterprise Edition')
+    expect(BRANDING_CONFIG.suiteName).toBe('PrathamOne EduOS')
+    expect(BRANDING_CONFIG.edition).toBe('Coaching Institute Edition')
     expect(BRANDING_CONFIG.defaultAcademyName).toBe('Prashant Academy')
     expect(BRANDING_CONFIG.defaultAcademyCode).toBe('PA001')
     expect(BRANDING_CONFIG.monogram).toBe('PA')
@@ -104,7 +104,7 @@ describe('Centralized Application Branding & Identity System', () => {
       expect(resolved.academyName).toBe('Prashant Academy')
       expect(resolved.academyCode).toBe('PA001')
       expect(resolved.monogram).toBe('PA')
-      expect(resolved.appName).toBe('PrathamOne Academy')
+      expect(resolved.appName).toBe('PrathamOne EduOS')
       expect(resolved.parentOrganization.name).toBe('AITDL — AI Technology & Development Lab')
       expect(resolved.products).toHaveLength(3)
     })
@@ -134,8 +134,8 @@ describe('Centralized Application Branding & Identity System', () => {
       expect(resolved.assets.logoUrl).toBe('/custom-logo.png')
 
       // Core PrathamOne engine branding remains intact
-      expect(resolved.appName).toBe('PrathamOne Academy')
-      expect(resolved.suiteName).toBe('PrathamOne Academic Suite')
+      expect(resolved.appName).toBe('PrathamOne EduOS')
+      expect(resolved.suiteName).toBe('PrathamOne EduOS')
       expect(resolved.version).toBe(BRANDING_CONFIG.version)
       expect(resolved.parentOrganization.name).toBe('AITDL — AI Technology & Development Lab')
       expect(resolved.salesSupport.displayPhones).toContain('9323 023 007')

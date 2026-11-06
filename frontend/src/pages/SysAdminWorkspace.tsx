@@ -28,6 +28,7 @@ import { sysadminApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import type { SecurityAuditLogItem, UniversalEditPayload } from '../types'
 import OrganizationBranding from '../components/OrganizationBranding'
+import { useBranding } from '../config/branding'
 
 const MODEL_ALLOWLISTS: Record<string, string[]> = {
   student: [
@@ -70,6 +71,7 @@ export default function SysAdminWorkspace() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const isSysAdmin = isUserSysAdmin(user)
+  const branding = useBranding()
 
   // Active Tab: 'overview' | 'audits' | 'universal-edit' | 'settings'
   const [activeTab, setActiveTab] = useState<'overview' | 'audits' | 'universal-edit' | 'settings'>('overview')
@@ -321,7 +323,7 @@ export default function SysAdminWorkspace() {
                 <GitBranch className="w-5 h-5 text-indigo-300" />
                 <h3 className="text-sm font-bold text-white">Enterprise Release & Change Governance</h3>
                 <span className="px-2 py-0.5 bg-blue-500/30 text-blue-200 border border-blue-400/40 rounded text-[11px] font-mono">
-                  v6.99.1
+                  {branding.versionDisplay}
                 </span>
               </div>
               <p className="text-xs text-blue-100 max-w-xl">

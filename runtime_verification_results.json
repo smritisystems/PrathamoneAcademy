@@ -7,7 +7,7 @@
       "keywords_found": [
         "Overview"
       ],
-      "page_title": "Dashboard | Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Dashboard | Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Academic Structure": {
       "path": "/academic",
@@ -20,7 +20,7 @@
         "Timetable",
         "Enrollment"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Courses": {
       "path": "/courses",
@@ -29,7 +29,7 @@
         "Course",
         "Curriculum"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Subjects": {
       "path": "/subjects",
@@ -37,7 +37,7 @@
       "keywords_found": [
         "Subject"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Students Directory": {
       "path": "/students",
@@ -46,7 +46,7 @@
         "Add Student",
         "Active"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Admissions Registration": {
       "path": "/students/add",
@@ -55,7 +55,7 @@
         "Admission",
         "Gender"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Student Attendance": {
       "path": "/attendance",
@@ -64,7 +64,7 @@
         "Attendance",
         "Date"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Examinations": {
       "path": "/examinations",
@@ -73,7 +73,7 @@
         "Examination",
         "Marks"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Fees & Finance": {
       "path": "/fees",
@@ -81,7 +81,7 @@
       "keywords_found": [
         "Settings"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Fee Register Migration": {
       "path": "/fees/import",
@@ -89,7 +89,7 @@
       "keywords_found": [
         "Fee Register"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Payments & Collections": {
       "path": "/payments",
@@ -99,7 +99,7 @@
         "Receipt",
         "Refund"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Reports & Analytics": {
       "path": "/reports",
@@ -109,7 +109,7 @@
         "Outstanding",
         "Export"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Users & Roles": {
       "path": "/users",
@@ -119,7 +119,7 @@
         "Live Directory",
         "Total Accounts"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Staff & HR": {
       "path": "/staff",
@@ -130,7 +130,7 @@
         "Attendance",
         "Role Dashboard"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "SysAdmin Center": {
       "path": "/sysadmin",
@@ -141,7 +141,7 @@
         "Universal Data Editor",
         "System Configuration"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Data Import/Export": {
       "path": "/import-export",
@@ -150,7 +150,7 @@
         "Import",
         "Export"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Forms & Documents": {
       "path": "/forms",
@@ -158,7 +158,7 @@
       "keywords_found": [
         "Catalogue"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Institute Settings": {
       "path": "/settings",
@@ -167,7 +167,7 @@
         "Institute Profile",
         "Academic Configuration"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Communication Center": {
       "path": "/communication",
@@ -178,7 +178,7 @@
         "History",
         "Diagnostics"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     },
     "Release Management": {
       "path": "/releases",
@@ -187,7 +187,7 @@
         "Releases",
         "Release Candidate"
       ],
-      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+      "page_title": "Prashant Academy \u2013 PrathamOne EduOS"
     }
   },
   "specific_verifications": {
@@ -216,7 +216,7 @@
     "branding_and_footer": {
       "has_branding_preview": true,
       "has_global_footer_branding": true,
-      "has_v6_99_1_displayed": true
+      "has_v1_0_0_displayed": true
     }
   },
   "modal_interactions": {
@@ -246,16 +246,8 @@
   },
   "console_errors": [
     "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Original Exception : AxiosError: Request failed with status code 404\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
-    "Stack Trace        :\nAxiosError: Request failed with status code 404\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
-    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
-    "Original Exception : AxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
-    "Stack Trace        :\nAxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
-    "Error rendering form preview: AxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)\n    at hr.request (http://localhost/assets/index-CgXIhlGR.js:362:2690)\n    at async te (http://localhost/assets/FormsDocuments-CBiVpuKj.js:21:30004)",
-    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
-    "Original Exception : AxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
-    "Stack Trace        :\nAxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
-    "Error rendering form preview: AxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)\n    at hr.request (http://localhost/assets/index-CgXIhlGR.js:362:2690)\n    at async te (http://localhost/assets/FormsDocuments-CBiVpuKj.js:21:30004)"
+    "Original Exception : AxiosError: Request failed with status code 404\n    at bg (http://localhost/assets/index-BhGeQUet.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-BhGeQUet.js:358:20957)",
+    "Stack Trace        :\nAxiosError: Request failed with status code 404\n    at bg (http://localhost/assets/index-BhGeQUet.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-BhGeQUet.js:358:20957)"
   ],
   "console_warnings": [],
   "network_errors": []

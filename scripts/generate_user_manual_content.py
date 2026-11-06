@@ -16,7 +16,7 @@
 #  * @description Source component for Generate User Manual Content in the scripts module.
 #  */
 
-"""PrathamOne Academy - Documentation Content Generator.
+"""PrathamOne EduOS - Documentation Content Generator.
 
 Generates comprehensive, professional documentation content for:
 1. Complete User Manual (All modules, roles, workflows, troubleshooting)
@@ -27,7 +27,7 @@ Product: PrathamOne Coaching Institutes Enterprise Suite
 Website: https://prathamone.com
 Author: Jawahar R Mallah
 Organization: AITDL — AI Technology & Development Lab
-Version: 6.99.1 (2026.11.05-PROD-REL)
+Version: 1.0.0 (2026.11.06-STABLE-v1.0.0)
 Date: November 2026
 """
 
@@ -424,7 +424,7 @@ def get_cover_html(title, subtitle, doc_type="USER MANUAL"):
     <div class="cover-page">
         <div class="cover-top">
             <div class="cover-badge">{doc_type} · ENTERPRISE EDITION</div>
-            <h1 class="cover-title">PrathamOne Academy</h1>
+            <h1 class="cover-title">PrathamOne EduOS</h1>
             <div class="cover-subtitle">{subtitle}</div>
             <div class="cover-tagline">
                 Comprehensive operational, administrative, and technical manual for the complete coaching institute lifecycle management platform.
@@ -449,7 +449,7 @@ def get_cover_html(title, subtitle, doc_type="USER MANUAL"):
                 </div>
                 <div class="meta-item">
                     <div class="meta-label">Release Version</div>
-                    <div class="meta-value">v6.99.1 (Build: 2026.11.05-PROD-REL)</div>
+                    <div class="meta-value">v1.0.0 (Build: 2026.11.06-STABLE-v1.0.0)</div>
                 </div>
                 <div class="meta-item">
                     <div class="meta-label">Publication Date</div>
@@ -459,7 +459,7 @@ def get_cover_html(title, subtitle, doc_type="USER MANUAL"):
         </div>
 
         <div class="cover-footer">
-            <div><strong>PrathamOne Academy</strong> · Enterprise Coaching Institute ERP</div>
+            <div><strong>PrathamOne EduOS</strong> · Enterprise Coaching Institute ERP</div>
             <div>PrathamOne Coaching Institutes Enterprise Suite · prathamone.com</div>
         </div>
     </div>

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description FastAPI application entry point, CORS middleware, exception handlers, and v1 router mounting.
 #  */
@@ -26,8 +26,8 @@ from app.core.limiter import limiter
 from app.api.v1.router import api_router
 
 app = FastAPI(
-    title=settings.APP_NAME,
-    description="Prashant Academy – Coaching Institute Management System API",
+    title=f"{settings.PRODUCT_NAME} — {settings.EDITION}",
+    description=f"{settings.PRODUCT_DESCRIPTION} API",
     version=settings.VERSION,
     # Disable interactive docs in production
     docs_url="/api/docs" if settings.DEBUG else None,
@@ -53,8 +53,14 @@ app.include_router(api_router, prefix="/api/v1")
 @app.get("/")
 async def root():
     return {
-        "message": "Prashant Academy API",
-        "version": "1.0.0",
+        "product": settings.PRODUCT_NAME,
+        "description": settings.PRODUCT_DESCRIPTION,
+        "edition": settings.EDITION,
+        "version": settings.VERSION,
+        "build_number": settings.BUILD_NUMBER,
+        "tagline": settings.TAGLINE,
+        "organization": settings.ORGANIZATION,
+        "author": settings.AUTHOR,
         "docs": "/api/docs" if settings.DEBUG else "Docs disabled in production.",
     }
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Dedicated Progressive Web App installation portal with platform-specific setup guides and launch actions.
  */
@@ -78,7 +78,7 @@ export default function InstallApp() {
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white p-2.5 shadow-lg shrink-0 flex items-center justify-center border-2 border-blue-400/40">
               <img
                 src="/icons/icon-192x192.png"
-                alt="PrathamOne Academy Logo"
+                alt="PrathamOne EduOS Logo"
                 className="w-full h-full object-contain rounded-xl"
                 onError={(e) => {
                   // Fallback if image load fails
@@ -161,7 +161,7 @@ export default function InstallApp() {
       <div>
         <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-blue-600" />
-          <span>Why Install PrathamOne Academy as a Dedicated App?</span>
+          <span>Why Install PrathamOne EduOS as a Dedicated App?</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -327,7 +327,7 @@ export default function InstallApp() {
                 <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">2</div>
                 <h4 className="font-bold text-slate-900 text-xs">Confirm Installation</h4>
                 <p className="text-xs text-slate-600">
-                  Click <span className="font-semibold text-slate-800">Install</span>. Edge will register PrathamOne Academy as a recognized Windows desktop application.
+                  Click <span className="font-semibold text-slate-800">Install</span>. Edge will register PrathamOne EduOS as a recognized Windows desktop application.
                 </p>
               </div>
               <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
@@ -367,7 +367,7 @@ export default function InstallApp() {
                 <div className="w-7 h-7 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center">3</div>
                 <h4 className="font-bold text-slate-900 text-xs">Use as Mobile App</h4>
                 <p className="text-xs text-slate-600">
-                  The PrathamOne Academy icon is placed directly on your home screen and operates as a standalone mobile app.
+                  The PrathamOne EduOS icon is placed directly on your home screen and operates as a standalone mobile app.
                 </p>
               </div>
             </div>
@@ -417,7 +417,7 @@ export default function InstallApp() {
           <span>Security & Data Architecture Note</span>
         </h3>
         <p>
-          PrathamOne Academy uses an isolated Service Worker for static asset delivery. In strict accordance with institute data privacy standards,
+          PrathamOne EduOS uses an isolated Service Worker for static asset delivery. In strict accordance with institute data privacy standards,
           <span className="font-semibold text-slate-800"> user authentication tokens, student fee ledgers, and transactional endpoints (/api/*) are NEVER cached on disk</span>.
           All sensitive transactions require verified real-time server authorization.
         </p>

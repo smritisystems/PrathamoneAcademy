@@ -1,7 +1,7 @@
 {
-  "name": "PrathamOne Academy – Coaching Institute Management System",
-  "short_name": "PrathamOne",
-  "description": "Enterprise-grade Coaching Institute & Academic Management System for Prashant Academy.",
+  "name": "PrathamOne EduOS — Coaching Institute Edition",
+  "short_name": "PrathamOne EduOS",
+  "description": "PrathamOne EduOS — Education Operating System (Coaching Institute Edition) for Prashant Academy.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

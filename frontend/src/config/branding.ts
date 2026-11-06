@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Master branding configuration and dynamic identity resolver for PrathamOne Academy and tenant institutions.
  */
@@ -52,8 +52,8 @@ export interface SalesSupportInfo {
 }
 
 export const PRINT_SHARE_BRANDING = {
-  text: 'PrathamOne Coaching Institutes Enterprise Suite · prathamone.com',
-  suiteName: 'PrathamOne Coaching Institutes Enterprise Suite',
+  text: 'PrathamOne EduOS · Coaching Institute Edition · prathamone.com',
+  suiteName: 'PrathamOne EduOS — Coaching Institute Edition',
   domain: 'prathamone.com',
   url: 'https://prathamone.com',
 } as const
@@ -62,26 +62,30 @@ export const PRINT_SHARE_BRANDING = {
  * Static baseline branding tokens for PrathamOne Academy suite
  */
 export const BRANDING_CONFIG = {
-  appName: 'PrathamOne Academy',
+  appName: 'PrathamOne EduOS',
   printShareBranding: PRINT_SHARE_BRANDING,
-  productName: 'PrathamOne Academy Management System',
+  productName: 'PrathamOne EduOS — Education Operating System',
   shortName: 'PrathamOne',
-  suiteName: 'PrathamOne Academic Suite',
-  edition: 'Enterprise Edition',
-  editionFull: 'Coaching Institute Management System – Enterprise Edition',
+  suiteName: 'PrathamOne EduOS',
+  edition: 'Coaching Institute Edition',
+  editionFull: 'PrathamOne EduOS — Coaching Institute Edition',
   defaultAcademyName: 'Prashant Academy',
   defaultAcademyCode: 'PA001',
   defaultBranchName: 'Jankalyan Nagar, Malad West',
   defaultBranchCode: 'MALAD-W',
-  tagline: 'Coaching Institute',
-  motto: 'Empowering Academic & Competitive Excellence',
+  tagline: 'The Power of Enterprise Education. The Simplicity of WhatsApp.',
+  motto: 'The Power of Enterprise Education. The Simplicity of WhatsApp.',
   monogram: 'PA' as string,
-  version: pkg.version || '6.99.1',
-  versionDisplay: `v${pkg.version || '6.99.1'}`,
-  buildNumber: '2026.11.05-PROD-REL',
+  version: pkg.version || '1.0.0',
+  versionDisplay: `v${pkg.version || '1.0.0'}`,
+  buildNumber: '2026.11.06-STABLE-v1.0.0',
+  releaseChannel: 'Stable',
+  releaseStatus: 'Production Candidate',
+  releaseDate: '2026-11-06',
+  productArchitect: 'Jawahar R Mallah',
   environment: (typeof import.meta !== 'undefined' && (import.meta as any).env?.MODE) || 'production',
   copyright: 'Copyright © 2026 AITDL (AI Technology & Development Lab). All rights reserved.',
-  organization: 'AITDL (AI Technology & Development Lab)',
+  organization: 'AITDL — AI Technology & Development Lab',
   clientOrganization: 'Prashant Academy Coaching Institute',
   parentOrganization: {
     name: 'AITDL — AI Technology & Development Lab',

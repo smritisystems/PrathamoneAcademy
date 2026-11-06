@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -191,7 +191,7 @@ export default function PaymentReceiptView({
     'This is a computer-generated receipt and does not require a physical signature.'
 
   // Dynamic branding fields from existing Institute Profile
-  const academyName = (branding.academyName || branding.appName || 'PrathamOne Academy').toUpperCase()
+  const academyName = (branding.academyName || branding.appName || 'PrathamOne EduOS').toUpperCase()
   const academyTagline = branding.tagline || 'Coaching Institute Management System'
   const academyAddress = branding.institutionAddress || branding.support?.address || ''
   const academyPhone = branding.institutionPhone || branding.support?.phone || ''

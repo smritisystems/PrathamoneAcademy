@@ -16,7 +16,7 @@
 #  * @description Source component for Build All Manuals in the scripts module.
 #  */
 
-"""PrathamOne Academy - Master Manual HTML and PDF Builder.
+"""PrathamOne EduOS - Master Manual HTML and PDF Builder.
 
 Generates:
 1. PrathamOne_Academy_Complete_User_Manual.pdf
@@ -27,7 +27,7 @@ Product: PrathamOne Coaching Institutes Enterprise Suite
 Website: https://prathamone.com
 Author: Jawahar R Mallah
 Organization: AITDL — AI Technology & Development Lab
-Version: 6.99.1 (2026.11.05-PROD-REL)
+Version: 1.0.0 (2026.11.06-STABLE-v1.0.0)
 Date: November 2026
 """
 
@@ -50,7 +50,7 @@ def rel_img(filename):
 def build_complete_user_manual_html():
     css = get_base_css()
     cover = get_cover_html(
-        "PrathamOne Academy",
+        "PrathamOne EduOS",
         "Complete User Manual & Operational Reference Guide",
         "COMPLETE USER MANUAL"
     )
@@ -59,7 +59,7 @@ def build_complete_user_manual_html():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PrathamOne Academy — Complete User Manual</title>
+    <title>PrathamOne EduOS — Complete User Manual</title>
     <style>
         {css}
     </style>
@@ -74,11 +74,11 @@ def build_complete_user_manual_html():
     <table style="width: 100%; margin-top: 15px;">
         <tr>
             <th style="width: 30%;">Document Title</th>
-            <td>PrathamOne Academy Coaching Institutes Enterprise Suite — Complete User Manual</td>
+            <td>PrathamOne EduOS — Coaching Institute Edition — Complete User Manual</td>
         </tr>
         <tr>
             <th>Software Version</th>
-            <td><strong>v6.99.1</strong> (Release Build: <code>2026.11.05-PROD-REL</code>)</td>
+            <td><strong>v1.0.0</strong> (Release Build: <code>2026.11.06-STABLE-v1.0.0</code>)</td>
         </tr>
         <tr>
             <th>Author & Chief Architect</th>
@@ -111,7 +111,7 @@ def build_complete_user_manual_html():
     <div class="callout callout-note" style="margin-top: 30px;">
         <div class="callout-title">Copyright & Proprietary Notice</div>
         <p>Copyright &copy; 2026 AITDL (AI Technology & Development Lab). All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the author and publisher.</p>
-        <p>PrathamOne Academy, PrathamOne Coaching Institutes Enterprise Suite, and the PrathamOne logo are trademarks or registered trademarks of AITDL in India and other jurisdictions.</p>
+        <p>PrathamOne EduOS, PrathamOne Coaching Institutes Enterprise Suite, and the PrathamOne logo are trademarks or registered trademarks of AITDL in India and other jurisdictions.</p>
     </div>
 </div>
 
@@ -128,7 +128,7 @@ def build_complete_user_manual_html():
     <div class="toc-item level-2"><span>2.2 Comprehensive 8-Role Permission Matrix</span><span>8</span></div>
 
     <div class="toc-item level-1"><span>3. Getting Started & Authentication</span><span>11</span></div>
-    <div class="toc-item level-2"><span>3.1 Logging into PrathamOne Academy</span><span>11</span></div>
+    <div class="toc-item level-2"><span>3.1 Logging into PrathamOne EduOS</span><span>11</span></div>
     <div class="toc-item level-2"><span>3.2 Password Security & Profile Customization</span><span>12</span></div>
 
     <div class="toc-item level-1"><span>4. Complete Module-by-Module User Guide</span><span>13</span></div>
@@ -172,7 +172,7 @@ def build_complete_user_manual_html():
 <h1>1. Welcome & Product Architecture Overview</h1>
 
 <h2>1.1 Executive Summary & Mission</h2>
-<p><strong>PrathamOne Academy</strong> (part of the <em>PrathamOne Coaching Institutes Enterprise Suite</em>) is an enterprise-grade ERP and academic operations platform engineered specifically for coaching institutes, competitive exam academies, tutoring centers, and multi-branch educational networks. Engineered by <strong>Jawahar R Mallah</strong> and the team at <strong>AITDL (AI Technology & Development Lab)</strong>, PrathamOne Academy consolidates fragmented institute workflows into a unified, secure, high-performance web platform.</p>
+<p><strong>PrathamOne EduOS</strong> (part of the <em>PrathamOne Coaching Institutes Enterprise Suite</em>) is an enterprise-grade ERP and academic operations platform engineered specifically for coaching institutes, competitive exam academies, tutoring centers, and multi-branch educational networks. Engineered by <strong>Jawahar R Mallah</strong> and the team at <strong>AITDL (AI Technology & Development Lab)</strong>, PrathamOne EduOS consolidates fragmented institute workflows into a unified, secure, high-performance web platform.</p>
 
 <p>The platform delivers complete lifecycle management across five core institutional pillars:</p>
 <ul>
@@ -184,7 +184,7 @@ def build_complete_user_manual_html():
 </ul>
 
 <h2>1.2 System Architecture & Technology Stack</h2>
-<p>PrathamOne Academy is built upon a modern, cloud-native containerized architecture designed for maximum concurrency, sub-second latency, and horizontal scalability:</p>
+<p>PrathamOne EduOS is built upon a modern, cloud-native containerized architecture designed for maximum concurrency, sub-second latency, and horizontal scalability:</p>
 <table>
     <thead>
         <tr>
@@ -220,7 +220,7 @@ def build_complete_user_manual_html():
 <h2>1.3 Navigation, Layout & Responsive UI</h2>
 <p>The application interface is structured around an intuitive 3-zone layout:</p>
 <ol>
-    <li><strong>Top Application Bar:</strong> Displays the institute logo, active branch selector, current academic session, global search, notification bell, system version badge (<code>v6.99.1</code>), and the user profile dropdown.</li>
+    <li><strong>Top Application Bar:</strong> Displays the institute logo, active branch selector, current academic session, global search, notification bell, system version badge (<code>v1.0.0</code>), and the user profile dropdown.</li>
     <li><strong>Collapsible Sidebar Navigation:</strong> Houses quick-access links to all 20 modules organized logically by administrative function. Features collapse/expand toggling for focused workspace utilization.</li>
     <li><strong>Dynamic Workspace Area:</strong> The main viewport where data tables, interactive filter bars, modal dialogs, analytics charts, and printable document previews render.</li>
     <li><strong>Collapsible Enterprise Footer:</strong> Present across all authenticated screens, displaying the verified application release version, build identifier, and the subtle enterprise attribution: <code>PrathamOne Coaching Institutes Enterprise Suite · prathamone.com</code>.</li>
@@ -228,14 +228,14 @@ def build_complete_user_manual_html():
 
 <div class="figure-box">
     <img src="{rel_img('02_dashboard_overview.png')}" class="figure-img" alt="Main Dashboard Overview">
-    <div class="figure-caption">Figure 1.1: PrathamOne Academy Master Dashboard showing operational KPI metrics, quick actions, and sidebar navigation.</div>
+    <div class="figure-caption">Figure 1.1: PrathamOne EduOS Master Dashboard showing operational KPI metrics, quick actions, and sidebar navigation.</div>
 </div>
 
 <!-- CHAPTER 2 -->
 <h1>2. User Roles & RBAC Permission Matrix</h1>
 
 <h2>2.1 Role Hierarchy Overview</h2>
-<p>PrathamOne Academy enforces a strict 8-tier Role-Based Access Control (RBAC) hierarchy. Every user account created in the system is assigned a primary role that governs their viewing, creation, modification, approval, and administrative rights across all API endpoints and frontend screens.</p>
+<p>PrathamOne EduOS enforces a strict 8-tier Role-Based Access Control (RBAC) hierarchy. Every user account created in the system is assigned a primary role that governs their viewing, creation, modification, approval, and administrative rights across all API endpoints and frontend screens.</p>
 
 <div class="figure-box">
     <img src="{rel_img('19_user_profile_rbac_matrix.png')}" class="figure-img" alt="RBAC Permission Matrix">
@@ -243,7 +243,7 @@ def build_complete_user_manual_html():
 </div>
 
 <h2>2.2 Comprehensive 8-Role Permission Matrix</h2>
-<p>The table below outlines the exact, verified permission capabilities for each user role across the core functional modules of PrathamOne Academy:</p>
+<p>The table below outlines the exact, verified permission capabilities for each user role across the core functional modules of PrathamOne EduOS:</p>
 
 <table>
     <thead>
@@ -431,13 +431,13 @@ def build_complete_user_manual_html():
 <!-- CHAPTER 3 -->
 <h1>3. Getting Started & Authentication</h1>
 
-<h2>3.1 Logging into PrathamOne Academy</h2>
+<h2>3.1 Logging into PrathamOne EduOS</h2>
 <p>To access the system, navigate to the application URL in any modern web browser (Google Chrome, Mozilla Firefox, Microsoft Edge, or Safari):</p>
 <code>http://localhost:80/login</code> (or your institute's custom production domain).
 
 <div class="figure-box">
-    <img src="{rel_img('01_login_screen.png')}" class="figure-img" alt="PrathamOne Academy Login Screen">
-    <div class="figure-caption">Figure 3.1: PrathamOne Academy Secure Sign-In Portal.</div>
+    <img src="{rel_img('01_login_screen.png')}" class="figure-img" alt="PrathamOne EduOS Login Screen">
+    <div class="figure-caption">Figure 3.1: PrathamOne EduOS Secure Sign-In Portal.</div>
 </div>
 
 <ul class="step-list">
@@ -680,7 +680,7 @@ def build_complete_user_manual_html():
 <!-- 4.9 Import Fee Register -->
 <h2>4.9 Import Fee Register (CSV/Excel Wizard)</h2>
 <p><strong>Route:</strong> <code>/fees/import</code> &nbsp;|&nbsp; <strong>Access:</strong> Accountant, Admin, SysAdmin</p>
-<p><strong>Purpose:</strong> Seamless migration of legacy payment books or external bank reconciliation statements into PrathamOne Academy via structured CSV/Excel upload.</p>
+<p><strong>Purpose:</strong> Seamless migration of legacy payment books or external bank reconciliation statements into PrathamOne EduOS via structured CSV/Excel upload.</p>
 
 <div class="figure-box">
     <img src="{rel_img('14_import_fee_register.png')}" class="figure-img" alt="Import Fee Register">
@@ -775,7 +775,7 @@ def build_complete_user_manual_html():
 <!-- 4.18 Release Management -->
 <h2>4.18 Release Management & Semantic Version Audit</h2>
 <p><strong>Route:</strong> <code>/releases</code> &nbsp;|&nbsp; <strong>Access:</strong> All Users (Read-only)</p>
-<p><strong>Purpose:</strong> Enterprise release tracking showing current version (<code>v6.99.1</code>), build number (<code>2026.11.05-PROD-REL</code>), release history, and security patches.</p>
+<p><strong>Purpose:</strong> Enterprise release tracking showing current version (<code>v1.0.0</code>), build number (<code>2026.11.06-STABLE-v1.0.0</code>), release history, and security patches.</p>
 
 <div class="figure-box">
     <img src="{rel_img('27_releases_and_version_audit.png')}" class="figure-img" alt="Releases Workspace">
@@ -887,7 +887,7 @@ def build_complete_user_manual_html():
 <h1>7. Troubleshooting, Error Codes & Support</h1>
 
 <h2>7.1 Common Runtime Errors & Resolving Taxonomy Codes</h2>
-<p>PrathamOne Academy features a centralized, taxonomy-based error monitoring architecture. When an error occurs, a user-friendly modal is displayed along with a unique reference code (e.g., <code>ERR-20261106-XXXX</code>):</p>
+<p>PrathamOne EduOS features a centralized, taxonomy-based error monitoring architecture. When an error occurs, a user-friendly modal is displayed along with a unique reference code (e.g., <code>ERR-20261106-XXXX</code>):</p>
 
 <table>
     <thead>
@@ -938,7 +938,7 @@ A: No! Financial records and attendance history are permanently preserved. The s
 
 <h2>7.3 Official Support Channels & SLA</h2>
 <div class="callout callout-note">
-    <div class="callout-title">PrathamOne Academy Official Support Helpdesk</div>
+    <div class="callout-title">PrathamOne EduOS Official Support Helpdesk</div>
     <p><strong>Direct Telephone / WhatsApp Support:</strong><br>
        &bull; Primary Helpline: <strong>+91 9323 023 007</strong><br>
        &bull; Secondary Helpline: <strong>+91 9324 117 007</strong>
@@ -967,7 +967,7 @@ A: No! Financial records and attendance history are permanently preserved. The s
 def build_quick_start_guide_html():
     css = get_base_css()
     cover = get_cover_html(
-        "PrathamOne Academy",
+        "PrathamOne EduOS",
         "Quick Start & Fast-Track Onboarding Guide",
         "QUICK START GUIDE"
     )
@@ -976,7 +976,7 @@ def build_quick_start_guide_html():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PrathamOne Academy — Quick Start Guide</title>
+    <title>PrathamOne EduOS — Quick Start Guide</title>
     <style>
         {css}
     </style>
@@ -987,7 +987,7 @@ def build_quick_start_guide_html():
 
 <div style="page-break-after: always; padding-top: 30px;">
     <h2>1. Fast-Track System Setup in 5 Steps</h2>
-    <p>Welcome to <strong>PrathamOne Academy</strong>. This Quick Start Guide gets your coaching academy operational in less than 30 minutes. Follow these five core steps:</p>
+    <p>Welcome to <strong>PrathamOne EduOS</strong>. This Quick Start Guide gets your coaching academy operational in less than 30 minutes. Follow these five core steps:</p>
 
     <ol class="step-list">
         <li class="step-item">
@@ -1034,7 +1034,7 @@ def build_quick_start_guide_html():
 <div style="padding-top: 20px;">
     <h2>3. Help & Emergency Contacts</h2>
     <div class="callout callout-note">
-        <div class="callout-title">PrathamOne Academy Support Helpline</div>
+        <div class="callout-title">PrathamOne EduOS Support Helpline</div>
         <p>Helpline: <strong>+91 9323 023 007 / +91 9324 117 007</strong><br>
            Support Email: <a href="mailto:support@prathamone.com">support@prathamone.com</a><br>
            Alternate Email: <a href="mailto:prathamone@outlook.com">prathamone@outlook.com</a><br>
@@ -1055,7 +1055,7 @@ def build_quick_start_guide_html():
 def build_sysadmin_manual_html():
     css = get_base_css()
     cover = get_cover_html(
-        "PrathamOne Academy",
+        "PrathamOne EduOS",
         "SysAdmin Security & Architecture Manual",
         "SYSADMIN MANUAL"
     )
@@ -1064,7 +1064,7 @@ def build_sysadmin_manual_html():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PrathamOne Academy — SysAdmin Security Manual</title>
+    <title>PrathamOne EduOS — SysAdmin Security Manual</title>
     <style>
         {css}
     </style>
@@ -1075,7 +1075,7 @@ def build_sysadmin_manual_html():
 
 <div style="page-break-after: always; padding-top: 30px;">
     <h2>1. SysAdmin Superuser Privileges & Architecture</h2>
-    <p>The <strong>SysAdmin</strong> role represents the highest level of administrative authorization within the PrathamOne Academy enterprise architecture. SysAdmin accounts possess unrestricted visibility across all application modules, as well as exclusive capabilities:</p>
+    <p>The <strong>SysAdmin</strong> role represents the highest level of administrative authorization within the PrathamOne EduOS enterprise architecture. SysAdmin accounts possess unrestricted visibility across all application modules, as well as exclusive capabilities:</p>
     <ul>
         <li><strong>Universal Records Editor:</strong> Surgical in-place editing of master data records across 8 core database models with strict allowlist enforcement.</li>
         <li><strong>Posted Payments Security Gate:</strong> Exclusive authority to unlock and correct posted financial ledger transactions.</li>
@@ -1179,7 +1179,7 @@ def build_sysadmin_manual_html():
 
 <div style="padding-top: 20px;">
     <h2>4. Security Audit Logs & Telemetry</h2>
-    <p>All sensitive operations across PrathamOne Academy generate structured audit logs stored in the PostgreSQL <code>audit_logs</code> table. These can be reviewed in real time via the SysAdmin Center (<code>/sysadmin</code> &rarr; <em>Security Audit Logs</em>):</p>
+    <p>All sensitive operations across PrathamOne EduOS generate structured audit logs stored in the PostgreSQL <code>audit_logs</code> table. These can be reviewed in real time via the SysAdmin Center (<code>/sysadmin</code> &rarr; <em>Security Audit Logs</em>):</p>
 
     <ul>
         <li><strong>Actor & Identity:</strong> User ID, Username, and Role of the actor.</li>
@@ -1242,17 +1242,17 @@ def compile_all_manuals():
             (
                 complete_html_path,
                 "PrathamOne_Academy_Complete_User_Manual.pdf",
-                "PrathamOne Academy Coaching Institutes Enterprise Suite — Complete User Manual"
+                "PrathamOne EduOS — Coaching Institute Edition — Complete User Manual"
             ),
             (
                 quick_html_path,
                 "PrathamOne_Academy_Quick_Start_Guide.pdf",
-                "PrathamOne Academy Coaching Institutes Enterprise Suite — Quick Start Guide"
+                "PrathamOne EduOS — Coaching Institute Edition — Quick Start Guide"
             ),
             (
                 sysadmin_html_path,
                 "PrathamOne_Academy_Sysadmin_Manual.pdf",
-                "PrathamOne Academy Coaching Institutes Enterprise Suite — SysAdmin Security Manual"
+                "PrathamOne EduOS — Coaching Institute Edition — SysAdmin Security Manual"
             )
         ]
 
@@ -1284,8 +1284,11 @@ def compile_all_manuals():
             page.close()
             # Copy to root manual dir as well
             root_copy = os.path.join(ROOT_MANUAL_DIR, pdf_filename)
-            shutil.copy2(pdf_out_path, root_copy)
-            print(f"Generated: {pdf_out_path} and copied to {root_copy}")
+            try:
+                shutil.copy2(pdf_out_path, root_copy)
+                print(f"Generated: {pdf_out_path} and copied to {root_copy}")
+            except Exception as e:
+                print(f"Generated: {pdf_out_path} (root copy skipped: {e})")
 
         browser.close()
         print("\nAll 3 PDF manuals generated successfully!")

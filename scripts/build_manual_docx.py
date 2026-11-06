@@ -16,7 +16,7 @@
 #  * @description Source component for Build Manual Docx in the scripts module.
 #  */
 
-"""PrathamOne Academy - Master Manual DOCX Builder using python-docx.
+"""PrathamOne EduOS - Master Manual DOCX Builder using python-docx.
 
 Generates:
 PrathamOne_Academy_Complete_User_Manual.docx
@@ -25,7 +25,7 @@ Product: PrathamOne Coaching Institutes Enterprise Suite
 Website: https://prathamone.com
 Author: Jawahar R Mallah
 Organization: AITDL — AI Technology & Development Lab
-Version: 6.99.1 (2026.11.05-PROD-REL)
+Version: 1.0.0 (2026.11.06-STABLE-v1.0.0)
 Date: November 2026
 """
 
@@ -143,7 +143,7 @@ def build_docx_manual():
     p_title = doc.add_paragraph()
     p_title.paragraph_format.space_before = Pt(0)
     p_title.paragraph_format.space_after = Pt(6)
-    r_title = p_title.add_run("PrathamOne Academy")
+    r_title = p_title.add_run("PrathamOne EduOS")
     r_title.bold = True
     r_title.font.name = "Arial"
     r_title.font.size = Pt(32)
@@ -162,7 +162,7 @@ def build_docx_manual():
     p_desc.paragraph_format.space_after = Pt(28)
     r_desc = p_desc.add_run(
         "A comprehensive, step-by-step technical and operational manual covering every module, "
-        "role capability, financial workflow, security gate, and reporting feature in PrathamOne Academy."
+        "role capability, financial workflow, security gate, and reporting feature in PrathamOne EduOS."
     )
     r_desc.font.name = "Arial"
     r_desc.font.size = Pt(11)
@@ -176,7 +176,7 @@ def build_docx_manual():
         ("Author & Chief Architect", "Jawahar R Mallah"),
         ("Organization", "AITDL — AI Technology & Development Lab"),
         ("Official Website", "https://prathamone.com"),
-        ("Verified Release Version", "v6.99.1 (Build: 2026.11.05-PROD-REL)"),
+        ("Verified Release Version", "v1.0.0 (Build: 2026.11.06-STABLE-v1.0.0)"),
         ("Manual Revision Date", "November 06, 2026"),
     ]
     for idx, (label, val) in enumerate(meta_rows):
@@ -201,8 +201,8 @@ def build_docx_manual():
 
     p_sup = doc.add_paragraph(
         "This official manual provides authoritative operational guidance for administrators, "
-        "principals, accountants, teachers, and administrative staff using the PrathamOne Academy platform. "
-        "All instructions reflect verified system behavior under production release v6.99.1."
+        "principals, accountants, teachers, and administrative staff using the PrathamOne EduOS platform. "
+        "All instructions reflect verified system behavior under production release v1.0.0."
     )
 
     add_callout(
@@ -221,7 +221,7 @@ def build_docx_manual():
     # ------------------ CHAPTER 1 ------------------
     doc.add_heading("1. Welcome & Product Architecture Overview", level=1)
     doc.add_paragraph(
-        "PrathamOne Academy is an enterprise-grade ERP platform engineered specifically for modern coaching institutes, "
+        "PrathamOne EduOS is an enterprise-grade ERP platform engineered specifically for modern coaching institutes, "
         "exam preparation academies, and multi-branch tutorial networks. Designed by Jawahar R Mallah and AITDL, "
         "the suite unifies academic scheduling, student admissions, attendance, fees, ledger governance, examinations, "
         "and statutory compliance into a secure, cohesive web interface."
@@ -229,19 +229,19 @@ def build_docx_manual():
 
     doc.add_heading("1.1 Architecture & Production Components", level=2)
     doc.add_paragraph(
-        "PrathamOne Academy is deployed as a high-concurrency containerized platform comprising:\n"
+        "PrathamOne EduOS is deployed as a high-concurrency containerized platform comprising:\n"
         "• Single Page Application (SPA): React 18, Vite 5.4, TypeScript, TailwindCSS.\n"
         "• Asynchronous Backend API: Python 3.11, FastAPI, SQLAlchemy 2.0 Async (204 endpoints).\n"
         "• Relational Data Store: PostgreSQL 16 Enterprise with Alembic migrations.\n"
         "• Production Server: Docker Compose on Alpine Linux with Nginx 1.25 reverse proxy."
     )
 
-    add_figure(doc, "02_dashboard_overview.png", "Figure 1.1: PrathamOne Academy Master Dashboard Overview.")
+    add_figure(doc, "02_dashboard_overview.png", "Figure 1.1: PrathamOne EduOS Master Dashboard Overview.")
 
     # ------------------ CHAPTER 2 ------------------
     doc.add_heading("2. User Roles & RBAC Permission Matrix", level=1)
     doc.add_paragraph(
-        "Access control in PrathamOne Academy is governed by a strict 8-tier Role-Based Access Control (RBAC) hierarchy. "
+        "Access control in PrathamOne EduOS is governed by a strict 8-tier Role-Based Access Control (RBAC) hierarchy. "
         "The table below details verified permissions across the application modules:"
     )
 
@@ -284,7 +284,7 @@ def build_docx_manual():
         "Open your browser and navigate to http://localhost:80/login. Enter your assigned username or email and password, "
         "then click Sign In. Upon authentication, a secure JWT session token is created, and you are directed to the dashboard."
     )
-    add_figure(doc, "01_login_screen.png", "Figure 3.1: PrathamOne Academy Secure Sign-In Portal.")
+    add_figure(doc, "01_login_screen.png", "Figure 3.1: PrathamOne EduOS Secure Sign-In Portal.")
 
     # ------------------ CHAPTER 4 ------------------
     doc.add_heading("4. Complete Module-by-Module User Guide", level=1)
@@ -304,7 +304,7 @@ def build_docx_manual():
     doc.add_heading("4.2 Student Admission & Lifecycle Management", level=2)
     doc.add_paragraph(
         "Routes: /students, /students/add, /students/{id}\n"
-        "PrathamOne Academy provides complete student lifecycle management from initial inquiry to exit and reactivation:\n"
+        "PrathamOne EduOS provides complete student lifecycle management from initial inquiry to exit and reactivation:\n"
         "1. Admission Wizard: 4-step wizard capturing personal, contact, academic, and guardian records.\n"
         "2. Student Detail Profile: Central workspace displaying academics, attendance, fees ledger, and KYC documents.\n"
         "3. Profile Editing: Update contact numbers, address, or academic allocations.\n"
@@ -390,7 +390,7 @@ def build_docx_manual():
     # ------------------ CHAPTER 5 ------------------
     doc.add_heading("5. Troubleshooting, Error Codes & FAQ", level=1)
     doc.add_paragraph(
-        "PrathamOne Academy includes a centralized error tracking taxonomy. When an error occurs, "
+        "PrathamOne EduOS includes a centralized error tracking taxonomy. When an error occurs, "
         "a reference code (e.g. ERR-20261106-XXXX) is displayed. Common resolutions:\n"
         "• INTERNET_DISCONNECTED: The application enters PWA offline mode. Reconnect Wi-Fi to sync.\n"
         "• SESSION_EXPIRED (401): JWT session expired. Re-authenticate on /login.\n"

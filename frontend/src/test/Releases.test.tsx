@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Comprehensive unit and specification tests verifying the Enterprise Release & Change Management workspace, tabs, quality gates, and approval lifecycles.
  */
@@ -31,9 +31,9 @@ describe('Release & Change Management Workspace Specifications', () => {
   const mockCurrentRelease = {
     data: {
       id: 3,
-      version: '6.99.1',
-      build_number: '2026.11.05-PROD-REL',
-      title: 'Version 6.99.1 — Enterprise Edition Governance',
+      version: '1.0.0',
+      build_number: '2026.11.06-STABLE-v1.0.0',
+      title: 'PrathamOne EduOS v1.0.0 — Coaching Institute Edition',
       status: 'published',
       environment: 'production',
       published_at: '2026-11-05T08:00:00Z',
@@ -43,10 +43,10 @@ describe('Release & Change Management Workspace Specifications', () => {
 
   const mockPendingChanges = {
     data: {
-      last_published_version: '6.99.1',
+      last_published_version: '1.0.0',
       last_commit: 'b07d9c1',
       recommended_bump: 'patch',
-      next_version: '6.99.2',
+      next_version: '1.0.1',
       total_commits: 4,
       commits: [
         {
@@ -82,9 +82,9 @@ describe('Release & Change Management Workspace Specifications', () => {
       items: [
         {
           id: 4,
-          version: '6.99.2',
+          version: '1.0.1',
           build_number: '2026.11.05-STAGING-RC-C123456',
-          title: 'Release v6.99.2 Candidate',
+          title: 'Release v1.0.1 Candidate',
           status: 'release_candidate',
           environment: 'production',
           validation_status: 'passed',
@@ -98,9 +98,9 @@ describe('Release & Change Management Workspace Specifications', () => {
         },
         {
           id: 3,
-          version: '6.99.1',
-          build_number: '2026.11.05-PROD-REL',
-          title: 'Version 6.99.1 — Enterprise Edition Governance',
+          version: '1.0.0',
+          build_number: '2026.11.06-STABLE-v1.0.0',
+          title: 'PrathamOne EduOS v1.0.0 — Coaching Institute Edition',
           status: 'published',
           environment: 'production',
           validation_status: 'passed',
@@ -118,9 +118,9 @@ describe('Release & Change Management Workspace Specifications', () => {
   const mockDetail = {
     data: {
       id: 4,
-      version: '6.99.2',
+      version: '1.0.1',
       build_number: '2026.11.05-STAGING-RC-C123456',
-      title: 'Release v6.99.2 Candidate',
+      title: 'Release v1.0.1 Candidate',
       status: 'release_candidate',
       environment: 'production',
       validation_status: 'passed',
@@ -192,8 +192,8 @@ describe('Release & Change Management Workspace Specifications', () => {
     renderComponent()
 
     expect(await screen.findByText('PrathamOne Release & Change Governance')).toBeDefined()
-    expect(screen.getByText('v6.99.1')).toBeDefined()
-    expect(screen.getByText('2026.11.05-PROD-REL')).toBeDefined()
+    expect(screen.getByText('v1.0.0')).toBeDefined()
+    expect(screen.getByText('2026.11.06-STABLE-v1.0.0')).toBeDefined()
   })
 
   it('renders unreleased pending changes card with affected modules', async () => {
@@ -224,8 +224,8 @@ describe('Release & Change Management Workspace Specifications', () => {
     fireEvent.click(historyTab)
 
     expect(await screen.findByText('Filter Status:')).toBeDefined()
-    expect(screen.getByText('Release v6.99.2 Candidate')).toBeDefined()
-    expect(screen.getByText('Version 6.99.1 — Enterprise Edition Governance')).toBeDefined()
+    expect(screen.getByText('Release v1.0.1 Candidate')).toBeDefined()
+    expect(screen.getByText('PrathamOne EduOS v1.0.0 — Coaching Institute Edition')).toBeDefined()
   })
 
   it('allows switching to Current Release Notes tab', async () => {

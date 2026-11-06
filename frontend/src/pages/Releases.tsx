@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Enterprise Release & Change Management workspace governing change tracking, automated release notes, pre-flight validations, approvals, and deployment lifecycles.
  */
@@ -786,7 +786,7 @@ export default function Releases() {
                               releaseId: rel.id,
                               version: rel.version,
                               reason: '',
-                              targetVersion: '6.99.1',
+                              targetVersion: '1.0.0',
                             })
                             setRollbackModalOpen(true)
                           }}
@@ -1123,7 +1123,7 @@ export default function Releases() {
                   type="text"
                   value={rollbackForm.targetVersion}
                   onChange={(e) => setRollbackForm({ ...rollbackForm, targetVersion: e.target.value })}
-                  placeholder="e.g. 6.99.1"
+                  placeholder="e.g. 1.0.0"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-slate-900"
                 />
               </div>
