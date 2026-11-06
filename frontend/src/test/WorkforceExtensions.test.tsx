@@ -21,6 +21,18 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import EmployeeDossierDocument from '../components/workforce/EmployeeDossierDocument'
 import StaffProfileEditModal from '../components/workforce/StaffProfileEditModal'
+import TeacherAssignBatchModal from '../components/workforce/TeacherAssignBatchModal'
+import DocumentPreviewModal from '../components/workforce/DocumentPreviewModal'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
 
 const mockProfile = {
   user_id: 42,
@@ -155,5 +167,47 @@ describe('Workforce Extensions & Employee Dossier Specifications', () => {
     // Switch to Banking tab
     fireEvent.click(screen.getByText(/Salary, Banking & Compliance/i))
     expect(screen.getByText(/Primary Bank Name/i)).toBeDefined()
+  })
+
+  it('6. TeacherAssignBatchModal renders board, standard, batch, and load allocations', () => {
+    const handleClose = vi.fn()
+    const queryClient = createTestQueryClient()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TeacherAssignBatchModal
+          isOpen={true}
+          onClose={handleClose}
+          teacherId={42}
+          teacherName="Dr. Anjali Sharma"
+        />
+      </QueryClientProvider>
+    )
+
+    expect(screen.getByText(/Assign Faculty to Academic Batch/i)).toBeDefined()
+    expect(screen.getByText(/Assigning for: Dr. Anjali Sharma/i)).toBeDefined()
+    expect(screen.getByText(/Board \*/i)).toBeDefined()
+    expect(screen.getByText(/Standard \/ Class \*/i)).toBeDefined()
+    expect(screen.getByText(/Batch \/ Division \*/i)).toBeDefined()
+    expect(screen.getByText(/Weekly Teaching Hours/i)).toBeDefined()
+    expect(screen.getByText(/Designate as Class Teacher/i)).toBeDefined()
+  })
+
+  it('7. DocumentPreviewModal renders preview layout and print trigger', () => {
+    const handleClose = vi.fn()
+    const queryClient = createTestQueryClient()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DocumentPreviewModal
+          isOpen={true}
+          onClose={handleClose}
+          formId="appointment_letter"
+          userId={42}
+          title="Teacher Appointment Letter"
+        />
+      </QueryClientProvider>
+    )
+
+    expect(screen.getByText(/Teacher Appointment Letter/i)).toBeDefined()
+    expect(screen.getByText(/Print Document/i)).toBeDefined()
   })
 })
