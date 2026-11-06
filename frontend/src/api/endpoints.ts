@@ -46,6 +46,7 @@ import type {
   SystemReleaseCurrent, SystemReleaseListItem, SystemReleaseDetail,
   PendingChangesResponse, ReleaseAuditLogItem,
   PaymentWorkflowConfig, RefundRecord, PaymentAuditLog,
+  PaymentGatewayConfig, OnlineOrderResponse, OnlinePaymentVerifyPayload, OnlinePaymentVerifyResult,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -507,6 +508,14 @@ export const paymentsApi = {
     apiClient.get<{ role_name: string; role_id: number; has_edit_posted_permission: boolean; permission_id?: number }>('/sysadmin/permissions/edit-posted-status', { params: { role_name } }),
   toggleEditPosted: (data: { role_name?: string; granted: boolean; reason: string }) =>
     apiClient.post<{ success: boolean; role_name: string; edit_posted_granted: boolean; action: string; message: string }>('/sysadmin/permissions/toggle-edit-posted', data),
+  getOnlineConfig: () =>
+    apiClient.get<PaymentGatewayConfig>('/payments/online/config'),
+  updateOnlineConfig: (data: Partial<PaymentGatewayConfig>) =>
+    apiClient.put<{ status: string; message: string; config: PaymentGatewayConfig }>('/payments/online/config', data),
+  createOnlineOrder: (data: { invoice_id: number | string; amount: number; installment_id?: number }) =>
+    apiClient.post<OnlineOrderResponse>('/payments/online/create-order', data),
+  verifyOnlinePayment: (data: OnlinePaymentVerifyPayload) =>
+    apiClient.post<OnlinePaymentVerifyResult>('/payments/online/verify', data),
 }
 
 // ─── Reports ──────────────────────────────────────────────────────────────────

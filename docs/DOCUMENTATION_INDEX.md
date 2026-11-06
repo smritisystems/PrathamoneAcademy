@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-06 15:05:53  
-**Total Indexed Items:** 190  
+**Last Reindexed:** 2026-11-06 15:21:46  
+**Total Indexed Items:** 192  
 
 ---
 
@@ -23,7 +23,7 @@
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **3** | Teacher Payroll & Payment Management |
 | `07` | [07_ATTENDANCE](#07_attendance) | **5** | Attendance Register & Tracking |
 | `08` | [08_EXAMINATION](#08_examination) | **6** | Examinations, Tests & Grading |
-| `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **21** | Fee Structures, Payments & Receipts |
+| `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **23** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **0** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **5** | Reports, Analytics & Data Grids |
 | `12` | [12_RBAC_SECURITY](#12_rbac_security) | **7** | RBAC, Security & Permissions |
@@ -162,6 +162,8 @@
 | **Fees & Payments Flagship Workspace: UI & Data Reconciliation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-WORKSPACE-PIXEL-PERFECTION-REPORT_V1.md](09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-WORKSPACE-PIXEL-PERFECTION-REPORT_V1.md) | - |
 | **Fees & Payments Module Redesign & Elevation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-MODULE-ELEVATION-REPORT_V1.md](09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-MODULE-ELEVATION-REPORT_V1.md) | - |
 | **Forensic Fee Ledger Reconciliation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FORENSIC-FEE-LEDGER-RECONCILIATION-REPORT_V1.md](09_FEES_PAYMENTS/2026-11-05_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FORENSIC-FEE-LEDGER-RECONCILIATION-REPORT_V1.md) | - |
+| **Online Payment Gateway Integration (Razorpay / UPI) Implementation Plan** | `PLAN` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md](09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md) | 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 15_INTEGRATIONS |
+| **Online Payment Gateway Integration (Razorpay / UPI) Implementation Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md](09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md) | 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 15_INTEGRATIONS |
 | **Payments & Receipts Changelog** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_FEES_PAYMENTS_SPECIFICATION_PAYMENTS-CHANGELOG_V1.md](09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_SPECIFICATION_PAYMENTS-CHANGELOG_V1.md) | - |
 | **Payments & Receipts Developer Manual** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_FEES_PAYMENTS_SPECIFICATION_PAYMENTS-DEVELOPER-MANUAL_V1.md](09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_SPECIFICATION_PAYMENTS-DEVELOPER-MANUAL_V1.md) | - |
 | **Payments & Receipts Module Specification** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_FEES_PAYMENTS_SPECIFICATION_PAYMENTS-SPECIFICATION_V1.md](09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_SPECIFICATION_PAYMENTS-SPECIFICATION_V1.md) | - |

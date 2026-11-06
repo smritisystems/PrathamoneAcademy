@@ -38,6 +38,12 @@ from app.models.user import User, AuditLog
 from app.models.academic_year import AcademicYear
 from app.models.settings import InstitutionSetting
 from app.services.sequence import generate_next_receipt_number
+from app.services.payment_gateway import (
+    get_payment_gateway_config,
+    update_payment_gateway_config,
+    create_gateway_order,
+    verify_and_post_gateway_payment,
+)
 from app.services.payment_workflow_service import (
     get_payment_workflow_settings,
     check_requires_erp_approval,
@@ -102,6 +108,31 @@ class RefundRequest(BaseModel):
 
 class RefundRejectRequest(BaseModel):
     reason: str
+
+
+class OnlineOrderCreate(BaseModel):
+    invoice_id: int
+    amount: Decimal
+    installment_id: Optional[int] = None
+
+
+class OnlinePaymentVerify(BaseModel):
+    order_id: str
+    payment_id: str
+    signature: str
+    invoice_id: int
+    amount: Decimal
+    installment_id: Optional[int] = None
+
+
+class GatewayConfigUpdate(BaseModel):
+    is_enabled: Optional[bool] = None
+    mode: Optional[str] = None
+    razorpay_key_id: Optional[str] = None
+    razorpay_key_secret: Optional[str] = None
+    upi_vpa: Optional[str] = None
+    merchant_name: Optional[str] = None
+    auto_generate_receipt: Optional[bool] = None
 
 
 class WorkflowConfigUpdate(BaseModel):
@@ -1587,3 +1618,112 @@ async def get_receipt(
             check_institution_access(std.institution_id, current_user)
 
     return await build_receipt_response(db, receipt)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ONLINE PAYMENT GATEWAY & UPI ENDPOINTS (Razorpay / UPI)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/online/config")
+async def get_online_gateway_config_endpoint(
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Fetches public payment gateway configuration for Razorpay and UPI checkout."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    config = await get_payment_gateway_config(db, inst_id)
+    # Mask secret key for safety
+    secret = config.get("razorpay_key_secret", "")
+    masked_secret = f"{secret[:4]}••••••••{secret[-4:]}" if len(secret) > 8 else "••••••••"
+    safe_config = dict(config)
+    safe_config["razorpay_key_secret_masked"] = masked_secret
+    safe_config.pop("razorpay_key_secret", None)
+    return safe_config
+
+
+@router.put("/online/config")
+async def update_online_gateway_config_endpoint(
+    payload: GatewayConfigUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role(["superadmin", "sysadmin", "admin", "principal"])),
+):
+    """Updates Razorpay credentials and UPI VPA settings for the institution."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    updates = payload.model_dump(exclude_unset=True)
+    updated = await update_payment_gateway_config(db, inst_id, updates)
+    return {
+        "status": "success",
+        "message": "Payment gateway configuration updated successfully.",
+        "config": updated,
+    }
+
+
+@router.post("/online/create-order")
+async def create_online_order_endpoint(
+    payload: OnlineOrderCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Creates a verified online checkout order for a fee invoice.
+    Returns Razorpay order parameters, dynamic UPI payment link, and high-contrast SVG QR code.
+    """
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    order_data = await create_gateway_order(
+        db=db,
+        invoice_id=payload.invoice_id,
+        amount=payload.amount,
+        installment_id=payload.installment_id,
+        institution_id=inst_id,
+    )
+    return order_data
+
+
+@router.post("/online/verify")
+async def verify_online_payment_endpoint(
+    payload: OnlinePaymentVerify,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Cryptographically verifies the Razorpay/UPI payment signature and executes
+    authoritative posting: updates fee invoice balances and generates an official receipt.
+    """
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    result = await verify_and_post_gateway_payment(
+        db=db,
+        order_id=payload.order_id,
+        payment_id=payload.payment_id,
+        signature=payload.signature,
+        invoice_id=payload.invoice_id,
+        amount=payload.amount,
+        installment_id=payload.installment_id,
+        current_user_id=current_user.id,
+        institution_id=inst_id,
+    )
+    return result
+
+
+@router.post("/online/webhook")
+async def online_payment_webhook_endpoint(
+    event: Dict[str, Any],
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Server-to-server webhook callback receiver for asynchronous Razorpay events
+    (e.g., payment.captured, order.paid).
+    """
+    event_type = event.get("event", "")
+    payload_data = event.get("payload", {})
+    payment_entity = payload_data.get("payment", {}).get("entity", {})
+    order_id = payment_entity.get("order_id")
+    payment_id = payment_entity.get("id")
+    amount_in_paise = payment_entity.get("amount", 0)
+
+    return {
+        "status": "received",
+        "event": event_type,
+        "payment_id": payment_id,
+        "order_id": order_id,
+        "amount": amount_in_paise / 100 if amount_in_paise else 0,
+    }
+

@@ -2592,3 +2592,57 @@ export interface ReleaseAuditLogItem {
   new_data?: string | null
   created_at: string
 }
+
+// ─── Payment Gateway & Online Checkout (Razorpay & UPI) ──────────────────────
+
+export interface PaymentGatewayConfig {
+  is_enabled: boolean
+  mode: 'test' | 'live'
+  razorpay_key_id: string
+  razorpay_key_secret_masked: string
+  upi_vpa: string
+  merchant_name: string
+  auto_generate_receipt: boolean
+}
+
+export interface OnlineOrderResponse {
+  order_id: string
+  amount: number
+  amount_in_paise: number
+  currency: string
+  key_id: string
+  merchant_name: string
+  upi_vpa: string
+  upi_uri: string
+  upi_qr_svg: string
+  invoice_id: number
+  invoice_number: string
+  installment_id?: number | null
+  student_id: number
+  student_name: string
+  student_admission_number: string
+  created_at: string
+}
+
+export interface OnlinePaymentVerifyPayload {
+  order_id: string
+  payment_id: string
+  signature: string
+  invoice_id: number
+  amount: number
+  installment_id?: number | null
+}
+
+export interface OnlinePaymentVerifyResult {
+  status: string
+  message: string
+  payment_id: number
+  receipt_number: string
+  receipt_id?: number
+  amount: number
+  invoice_id: number
+  remaining_outstanding: number
+  transaction_reference: string
+  timestamp: string
+}
+

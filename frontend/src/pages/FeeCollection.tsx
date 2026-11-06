@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Student fee collection terminal for recording payments against outstanding installments.
  */
@@ -28,6 +28,8 @@ import {
 import type { FeeInvoice, FeeInstallment } from '../types';
 import { InstallmentStatusBadge } from '../components/Badge';
 import Modal from '../components/Modal';
+import { QrCode } from 'lucide-react';
+import OnlinePaymentModal from '../components/OnlinePaymentModal';
 import PaymentReceiptView from '../components/PaymentReceiptView';
 import { printReceiptElement } from '../utils/printReceipt';
 import { useAuthStore } from '../store/authStore';
@@ -53,6 +55,7 @@ export default function FeeCollection() {
   const [notes, setNotes] = useState('');
   const [allocations, setAllocations] = useState<AllocationRow[]>([]);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showOnlineModal, setShowOnlineModal] = useState(false);
   const [lastReceiptNumber, setLastReceiptNumber] = useState<string>('');
   const [formError, setFormError] = useState('');
 
@@ -444,6 +447,16 @@ export default function FeeCollection() {
                         </option>
                       ))}
                     </select>
+                    {paymentMethod === 'upi' && selectedInvoice && (
+                      <button
+                        type="button"
+                        onClick={() => setShowOnlineModal(true)}
+                        className="mt-2 w-full py-2 px-3 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-emerald-100 transition shadow-2xs"
+                      >
+                        <QrCode className="w-4 h-4 text-emerald-600" />
+                        Generate Dynamic UPI QR Code for Counter Payment
+                      </button>
+                    )}
                   </div>
 
                   <div>
@@ -548,6 +561,30 @@ export default function FeeCollection() {
           )}
         </div>
       </div>
+
+      {/* Online UPI Payment Modal */}
+      {showOnlineModal && selectedInvoice && student && (
+        <OnlinePaymentModal
+          isOpen={showOnlineModal}
+          onClose={() => setShowOnlineModal(false)}
+          invoiceId={selectedInvoice.id}
+          invoiceNumber={selectedInvoice.invoice_number}
+          studentId={student.id}
+          studentName={`${student.first_name} ${student.last_name}`}
+          outstandingAmount={Number(selectedInvoice.outstanding_amount)}
+          onPaymentSuccess={(res) => {
+            setShowOnlineModal(false);
+            setLastReceiptNumber(res.receipt_number);
+            setShowReceiptModal(true);
+            queryClient.invalidateQueries({ queryKey: ['student-invoices', studentId] });
+          }}
+          onViewReceipt={(rcp) => {
+            setShowOnlineModal(false);
+            setLastReceiptNumber(rcp);
+            setShowReceiptModal(true);
+          }}
+        />
+      )}
 
       {/* Receipt Modal */}
       <Modal

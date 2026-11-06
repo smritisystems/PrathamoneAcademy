@@ -20,11 +20,12 @@ import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import StudentExitModal from '../components/StudentExitModal'
 import StudentIDCardModal from '../components/StudentIDCardModal'
+import OnlinePaymentModal from '../components/OnlinePaymentModal'
 import StudentReactivateModal from '../components/StudentReactivateModal'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, CreditCard, User, BookOpen, Receipt, FileText,
-  ClipboardCheck, Award, Activity, Upload, Trash2, Eye,
+  ClipboardCheck, Award, Activity, Upload, Trash2, Eye, QrCode,
   CheckCircle, PlusCircle, Calendar, Phone, Mail, MapPin, ExternalLink,
   Edit3, AlertTriangle, X, Check, Save, Shield, Users, Printer, Share2,
   UserMinus, UserCheck, History, GraduationCap
@@ -65,6 +66,7 @@ export default function StudentDetailPage() {
   // Share Modal State
   const [showShareModal, setShowShareModal] = useState(false)
   const [showIdCardModal, setShowIdCardModal] = useState(false)
+  const [selectedOnlineInvoice, setSelectedOnlineInvoice] = useState<any | null>(null)
 
   // Student Lifecycle Modals State
   const [showExitModal, setShowExitModal] = useState(false)
@@ -950,6 +952,7 @@ export default function StudentDetailPage() {
                         <th className="py-2 px-3">Paid</th>
                         <th className="py-2 px-3">Outstanding</th>
                         <th className="py-2 px-3">Status</th>
+                        <th className="py-2 px-3 text-right">Online Pay</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -962,6 +965,18 @@ export default function StudentDetailPage() {
                           <td className="py-2 px-3 text-red-600 font-semibold">{fmt(inv.outstanding_amount)}</td>
                           <td className="py-2 px-3">
                             <StatusBadge status={inv.status} />
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            {inv.outstanding_amount > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedOnlineInvoice(inv)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition"
+                                title="Pay invoice online with UPI QR Code or Razorpay"
+                              >
+                                <QrCode className="w-3.5 h-3.5" /> Pay UPI
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -2033,6 +2048,30 @@ export default function StudentDetailPage() {
             last_name: overview.last_name,
           }}
           onSuccess={handleLifecycleSuccess}
+        />
+      )}
+
+      {showIdCardModal && (
+        <StudentIDCardModal
+          isOpen={showIdCardModal}
+          onClose={() => setShowIdCardModal(false)}
+          studentId={overview.id}
+        />
+      )}
+
+      {selectedOnlineInvoice && (
+        <OnlinePaymentModal
+          isOpen={!!selectedOnlineInvoice}
+          onClose={() => setSelectedOnlineInvoice(null)}
+          invoiceId={selectedOnlineInvoice.id}
+          invoiceNumber={selectedOnlineInvoice.invoice_number}
+          studentId={overview.id}
+          studentName={overview.full_name}
+          outstandingAmount={Number(selectedOnlineInvoice.outstanding_amount)}
+          onPaymentSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['student-fees', studentId] })
+            refetchFees()
+          }}
         />
       )}
 
