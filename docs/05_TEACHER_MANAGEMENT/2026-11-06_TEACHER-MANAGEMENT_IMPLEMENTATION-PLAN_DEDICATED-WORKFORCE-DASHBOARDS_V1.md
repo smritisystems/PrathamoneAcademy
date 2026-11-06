@@ -172,3 +172,4 @@ Unified aggregation service `get_employee_activity_history(db, user_id, limit=50
    - Staff workspace rendering and tab switching.
    - Unassigned teacher filter and assignment modal triggers.
    - Unified employee activity history timeline rendering.
+

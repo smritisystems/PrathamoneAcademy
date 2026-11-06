@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-06 16:04:27  
-**Total Indexed Items:** 195  
+**Last Reindexed:** 2026-11-06 16:36:12  
+**Total Indexed Items:** 196  
 
 ---
 
@@ -20,7 +20,7 @@
 | `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **8** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **14** | Student Directory & Admissions |
 | `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **2** | Teacher & Faculty Directory |
-| `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **3** | Teacher Payroll & Payment Management |
+| `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
 | `07` | [07_ATTENDANCE](#07_attendance) | **5** | Attendance Register & Tracking |
 | `08` | [08_EXAMINATION](#08_examination) | **6** | Examinations, Tests & Grading |
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **23** | Fee Structures, Payments & Receipts |
@@ -125,6 +125,7 @@
 | **Forensic Audit: Staff & Employee Master vs Teacher Payroll Database Architecture** | `AUDIT-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md](06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md) | 05_TEACHER_MANAGEMENT, 12_RBAC_SECURITY, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
 | **Implementation Plan — Teacher Payroll & Payment Management** | `IMPLEMENTATION-PLAN` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-PLAN_TEACHER-PAYROLL-IMPLEMENTATION-PLAN_V1.md](06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-PLAN_TEACHER-PAYROLL-IMPLEMENTATION-PLAN_V1.md) | - |
 | **PRATHAMONE EduOS — TEACHER PAYROLL & PAYMENT MANAGEMENT** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md](06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md) | - |
+| **Teacher Payroll & Payment Management — Teacher Visibility Audit & Remediation Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md](06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 16_DATABASE_API |
 
 
 ### <a id="07_attendance"></a>07_ATTENDANCE — Attendance Register & Tracking

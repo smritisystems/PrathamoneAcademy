@@ -37,8 +37,12 @@ from app.core.security import get_password_hash
 
 
 @pytest.fixture
-async def setup_payroll_data(db, test_institution, test_academic_year):
+async def setup_payroll_data(db, test_institution, test_academic_year, admin_user):
     """Creates teacher users, standard, division, and subject for payroll testing."""
+    admin_user.institution_id = test_institution.id
+    await db.commit()
+    await db.refresh(admin_user)
+
     suf = uuid.uuid4().hex[:6]
     # Teacher 1
     t1 = User(
@@ -400,3 +404,39 @@ async def test_reports_and_export(client, auth_headers, setup_payroll_data):
     assert export_resp.status_code == 200
     assert "spreadsheetml" in export_resp.headers["content-type"]
     assert len(export_resp.content) > 1000
+
+
+@pytest.mark.asyncio
+async def test_teacher_visibility_and_listings(client, auth_headers, setup_payroll_data):
+    """Verifies that all teachers are visible across dropdowns, profiles, and listing endpoints."""
+    t1 = setup_payroll_data["teacher1"]
+    t2 = setup_payroll_data["teacher2"]
+
+    # 1. Teachers list for dropdowns
+    t_resp = await client.get("/api/v1/teacher-payroll/teachers", headers=auth_headers)
+    assert t_resp.status_code == 200
+    teacher_ids = [t["id"] for t in t_resp.json()]
+    assert t1.id in teacher_ids
+    assert t2.id in teacher_ids
+
+    # 2. Profiles list for Tab 3 (Profiles & Rates)
+    p_resp = await client.get("/api/v1/teacher-payroll/profiles", headers=auth_headers)
+    assert p_resp.status_code == 200
+    profile_teacher_ids = [p["teacher_user_id"] for p in p_resp.json()]
+    assert t1.id in profile_teacher_ids
+    assert t2.id in profile_teacher_ids
+
+    # 3. Monthly payroll listing
+    m_resp = await client.get("/api/v1/teacher-payroll/monthly?month=11&year=2026", headers=auth_headers)
+    assert m_resp.status_code == 200
+    assert isinstance(m_resp.json(), list)
+
+    # 4. Teaching sessions listing
+    s_resp = await client.get("/api/v1/teacher-payroll/sessions", headers=auth_headers)
+    assert s_resp.status_code == 200
+    assert "items" in s_resp.json()
+
+    # 5. Vouchers listing
+    v_resp = await client.get("/api/v1/teacher-payroll/vouchers", headers=auth_headers)
+    assert v_resp.status_code == 200
+    assert isinstance(v_resp.json(), list)

@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.8.0"
+    VERSION: str = "1.0.0"
     BUILD_NUMBER: str = "2026.11.06-REV-009-v1.8.0-C205CE7"
     RELEASE_CHANNEL: str = "Stable"
     RELEASE_STATUS: str = "Production Candidate"

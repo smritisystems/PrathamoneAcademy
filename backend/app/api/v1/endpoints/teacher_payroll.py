@@ -179,13 +179,18 @@ async def list_available_teachers(
     current_user: User = Depends(get_current_active_user),
 ):
     """Returns list of active teachers for dropdowns and session assignments."""
+    inst_id = current_user.institution_id or 1
     stmt = (
         select(User)
+        .outerjoin(StaffProfile, StaffProfile.user_id == User.id)
         .where(
             and_(
-                User.institution_id == current_user.institution_id or 1,
+                User.institution_id == inst_id,
                 User.is_active.is_(True),
-                or_(User.role == "teacher", User.role == "staff"),
+                or_(
+                    User.role == "teacher",
+                    StaffProfile.staff_type == "teacher",
+                ),
             )
         )
         .order_by(User.first_name, User.last_name)
@@ -210,15 +215,19 @@ async def list_teacher_payment_profiles(
     current_user: User = Depends(get_current_active_user),
 ):
     """Lists payment profiles for all teachers."""
+    inst_id = current_user.institution_id or 1
     stmt = (
         select(User, TeacherPaymentProfile, StaffProfile)
-        .join(TeacherPaymentProfile, and_(TeacherPaymentProfile.teacher_user_id == User.id, TeacherPaymentProfile.is_active.is_(True)), isouter=True)
-        .join(StaffProfile, StaffProfile.user_id == User.id, isouter=True)
+        .outerjoin(TeacherPaymentProfile, and_(TeacherPaymentProfile.teacher_user_id == User.id, TeacherPaymentProfile.is_active.is_(True)))
+        .outerjoin(StaffProfile, StaffProfile.user_id == User.id)
         .where(
             and_(
-                User.institution_id == current_user.institution_id or 1,
+                User.institution_id == inst_id,
                 User.is_active.is_(True),
-                or_(User.role == "teacher", User.role == "staff"),
+                or_(
+                    User.role == "teacher",
+                    StaffProfile.staff_type == "teacher",
+                ),
             )
         )
         .order_by(User.first_name, User.last_name)
@@ -233,7 +242,7 @@ async def list_teacher_payment_profiles(
             "teacher_name": u.full_name,
             "email": u.email,
             "phone": u.phone,
-            "designation": sp.designation if sp else "Teacher",
+            "designation": u.designation or (sp.department if sp else "Teacher"),
             "department": sp.department if sp else "Academics",
             "profile_id": p.id if p else None,
             "payment_method": p.payment_method if p else "hourly",
@@ -399,11 +408,12 @@ async def list_teaching_sessions(
     current_user: User = Depends(get_current_active_user),
 ):
     """Retrieves teaching sessions register with filtering and pagination."""
+    inst_id = current_user.institution_id or 1
     # If teacher role, only allow viewing own sessions unless permission granted
     if current_user.role == "teacher":
         teacher_id = current_user.id
 
-    conditions = [TeachingSession.institution_id == current_user.institution_id or 1]
+    conditions = [TeachingSession.institution_id == inst_id]
     if teacher_id:
         conditions.append(
             or_(
@@ -596,10 +606,11 @@ async def list_monthly_payrolls(
     current_user: User = Depends(get_current_active_user),
 ):
     """Lists monthly payroll records for given month and year."""
+    inst_id = current_user.institution_id or 1
     if current_user.role == "teacher":
         teacher_id = current_user.id
 
-    conditions = [TeacherPayroll.institution_id == current_user.institution_id or 1]
+    conditions = [TeacherPayroll.institution_id == inst_id]
     if month:
         conditions.append(TeacherPayroll.month == month)
     if year:
@@ -689,11 +700,16 @@ async def bulk_calculate_monthly_payroll(
     current_user: User = Depends(get_current_active_user),
 ):
     """Calculates payroll for all active teachers for the specified month and year."""
-    teachers_stmt = select(User.id).where(
-        and_(
-            User.institution_id == current_user.institution_id or 1,
-            User.is_active.is_(True),
-            or_(User.role == "teacher", User.role == "staff"),
+    inst_id = current_user.institution_id or 1
+    teachers_stmt = (
+        select(User.id)
+        .outerjoin(StaffProfile, StaffProfile.user_id == User.id)
+        .where(
+            and_(
+                User.institution_id == inst_id,
+                User.is_active.is_(True),
+                or_(User.role == "teacher", StaffProfile.staff_type == "teacher"),
+            )
         )
     )
     t_result = await db.execute(teachers_stmt)
@@ -885,10 +901,11 @@ async def list_payment_vouchers(
     current_user: User = Depends(get_current_active_user),
 ):
     """Lists teacher payment vouchers with accounting classifications."""
+    inst_id = current_user.institution_id or 1
     if current_user.role == "teacher":
         teacher_id = current_user.id
 
-    conditions = [TeacherPaymentVoucher.institution_id == current_user.institution_id or 1]
+    conditions = [TeacherPaymentVoucher.institution_id == inst_id]
     if teacher_id:
         conditions.append(TeacherPaymentVoucher.teacher_user_id == teacher_id)
     if date_from:
@@ -1004,7 +1021,7 @@ async def get_specialized_report(
     current_user: User = Depends(get_current_active_user),
 ):
     """Generates JSON datasets for all 10 specialized reports."""
-    inst_id = current_user.institution_id or 1 or 1
+    inst_id = current_user.institution_id or 1
     today = date.today()
     s_date = start_date or date(today.year, 1, 1)
     e_date = end_date or today
@@ -1048,7 +1065,7 @@ async def export_specialized_report(
     current_user: User = Depends(get_current_active_user),
 ):
     """Exports any of the 10 reports as a styled, branded Excel spreadsheet."""
-    inst_id = current_user.institution_id or 1 or 1
+    inst_id = current_user.institution_id or 1
     today = date.today()
     s_date = start_date or date(today.year, 1, 1)
     e_date = end_date or today
