@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PrathamOne Academy — Complete User Manual</title>
+    <style>
+        
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    @page {
+        size: A4;
+        margin: 20mm 15mm 20mm 15mm;
+        @bottom-right {
+            content: "Page " counter(page);
+            font-size: 8pt;
+            color: #64748b;
+            font-family: 'Inter', sans-serif;
+        }
+        @bottom-left {
+            content: "PrathamOne Coaching Institutes Enterprise Suite · prathamone.com";
+            font-size: 8pt;
+            color: #64748b;
+            font-family: 'Inter', sans-serif;
+        }
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #1e293b;
+        background-color: #ffffff;
+        line-height: 1.6;
+        font-size: 10pt;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        color: #0f172a;
+        font-weight: 700;
+        line-height: 1.25;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+        page-break-after: avoid;
+    }
+
+    h1 {
+        font-size: 20pt;
+        color: #1e3a8a;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 6px;
+        margin-top: 2em;
+    }
+
+    h2 {
+        font-size: 14pt;
+        color: #1e40af;
+        margin-top: 1.5em;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 4px;
+    }
+
+    h3 {
+        font-size: 11pt;
+        color: #0f766e;
+    }
+
+    h4 {
+        font-size: 10pt;
+        color: #334155;
+    }
+
+    p {
+        margin: 0.6em 0;
+        text-align: justify;
+    }
+
+    ul, ol {
+        margin: 0.5em 0;
+        padding-left: 1.5em;
+    }
+
+    li {
+        margin-bottom: 0.3em;
+    }
+
+    /* Cover Page */
+    .cover-page {
+        page-break-after: always;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 30px 20px;
+        box-sizing: border-box;
+    }
+
+    .cover-top {
+        border-top: 8px solid #1e3a8a;
+        padding-top: 30px;
+    }
+
+    .cover-badge {
+        display: inline-block;
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        font-size: 9pt;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        border: 1px solid #bfdbfe;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 15px;
+    }
+
+    .cover-title {
+        font-size: 32pt;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+        margin: 0 0 10px 0;
+    }
+
+    .cover-subtitle {
+        font-size: 16pt;
+        font-weight: 500;
+        color: #0f766e;
+        margin: 0 0 25px 0;
+    }
+
+    .cover-tagline {
+        font-size: 11pt;
+        color: #475569;
+        max-width: 650px;
+        line-height: 1.5;
+        border-left: 3px solid #0ea5e9;
+        padding-left: 15px;
+        margin: 20px 0;
+    }
+
+    .cover-meta-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-top: 40px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .meta-item {
+        font-size: 9pt;
+    }
+
+    .meta-label {
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        font-size: 7.5pt;
+        letter-spacing: 0.05em;
+    }
+
+    .meta-value {
+        font-size: 10pt;
+        font-weight: 600;
+        color: #1e293b;
+        margin-top: 2px;
+    }
+
+    .cover-footer {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 8.5pt;
+        color: #64748b;
+    }
+
+    /* Table of Contents */
+    .toc-container {
+        page-break-after: always;
+        padding: 20px 0;
+    }
+
+    .toc-title {
+        font-size: 18pt;
+        color: #1e3a8a;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 8px;
+        margin-bottom: 20px;
+    }
+
+    .toc-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px dotted #cbd5e1;
+        font-size: 9.5pt;
+    }
+
+    .toc-item.level-1 {
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 8px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .toc-item.level-2 {
+        padding-left: 20px;
+        color: #334155;
+    }
+
+    /* Callout Boxes */
+    .callout {
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin: 15px 0;
+        font-size: 9.5pt;
+        page-break-inside: avoid;
+    }
+
+    .callout-note {
+        background-color: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        color: #1e40af;
+    }
+
+    .callout-tip {
+        background-color: #f0fdf4;
+        border-left: 4px solid #22c55e;
+        color: #166534;
+    }
+
+    .callout-warning {
+        background-color: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+    }
+
+    .callout-danger {
+        background-color: #fef2f2;
+        border-left: 4px solid #ef4444;
+        color: #991b1b;
+    }
+
+    .callout-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Figures & Screenshots */
+    .figure-box {
+        margin: 20px 0;
+        text-align: center;
+        page-break-inside: avoid;
+    }
+
+    .figure-img {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .figure-caption {
+        font-size: 8.5pt;
+        color: #64748b;
+        margin-top: 6px;
+        font-style: italic;
+    }
+
+    /* Data Tables */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        font-size: 9pt;
+        page-break-inside: avoid;
+    }
+
+    th, td {
+        border: 1px solid #cbd5e1;
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    th {
+        background-color: #f1f5f9;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    /* Chips & Badges */
+    .chip {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 7.5pt;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .chip-blue { background-color: #dbeafe; color: #1e40af; }
+    .chip-green { background-color: #dcfce7; color: #15803d; }
+    .chip-amber { background-color: #fef3c7; color: #b45309; }
+    .chip-red { background-color: #fee2e2; color: #b91c1c; }
+    .chip-purple { background-color: #f3e8ff; color: #7e22ce; }
+
+    /* Code Blocks */
+    code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 8.5pt;
+        background-color: #f1f5f9;
+        padding: 1px 4px;
+        border-radius: 3px;
+        color: #0f172a;
+    }
+
+    pre {
+        background-color: #0f172a;
+        color: #f8fafc;
+        padding: 12px;
+        border-radius: 6px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 8.5pt;
+        overflow-x: auto;
+        page-break-inside: avoid;
+    }
+
+    /* Steps */
+    .step-list {
+        list-style: none;
+        counter-reset: step-counter;
+        padding-left: 0;
+    }
+
+    .step-item {
+        position: relative;
+        padding-left: 36px;
+        margin-bottom: 18px;
+    }
+
+    .step-item::before {
+        counter-increment: step-counter;
+        content: counter(step-counter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 24px;
+        height: 24px;
+        background-color: #1e3a8a;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 9pt;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 24px;
+    }
+
+    .step-title {
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+
+    /* Footer Branding */
+    .page-footer-text {
+        text-align: center;
+        font-size: 8pt;
+        color: #94a3b8;
+        margin-top: 30px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 10px;
+    }
+    
+    </style>
+</head>
+<body>
+
+
+    <div class="cover-page">
+        <div class="cover-top">
+            <div class="cover-badge">COMPLETE USER MANUAL · ENTERPRISE EDITION</div>
+            <h1 class="cover-title">PrathamOne Academy</h1>
+            <div class="cover-subtitle">Complete User Manual & Operational Reference Guide</div>
+            <div class="cover-tagline">
+                Comprehensive operational, administrative, and technical manual for the complete coaching institute lifecycle management platform.
+            </div>
+
+            <div class="cover-meta-grid">
+                <div class="meta-item">
+                    <div class="meta-label">Software Platform</div>
+                    <div class="meta-value">PrathamOne Coaching Institutes Enterprise Suite</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Author & Architect</div>
+                    <div class="meta-value">Jawahar R Mallah</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Organization</div>
+                    <div class="meta-value">AITDL — AI Technology & Development Lab</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Official Website</div>
+                    <div class="meta-value"><a href="https://prathamone.com" style="color: #0284c7; text-decoration: none;">https://prathamone.com</a></div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Release Version</div>
+                    <div class="meta-value">v6.99.1 (Build: 2026.11.05-PROD-REL)</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Publication Date</div>
+                    <div class="meta-value">November 06, 2026</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cover-footer">
+            <div><strong>PrathamOne Academy</strong> · Enterprise Coaching Institute ERP</div>
+            <div>PrathamOne Coaching Institutes Enterprise Suite · prathamone.com</div>
+        </div>
+    </div>
+    
+
+<!-- Document Control & Author Attribution -->
+<div style="page-break-after: always; padding-top: 40px;">
+    <h2>Document Control & Author Attribution</h2>
+    <table style="width: 100%; margin-top: 15px;">
+        <tr>
+            <th style="width: 30%;">Document Title</th>
+            <td>PrathamOne Academy Coaching Institutes Enterprise Suite — Complete User Manual</td>
+        </tr>
+        <tr>
+            <th>Software Version</th>
+            <td><strong>v6.99.1</strong> (Release Build: <code>2026.11.05-PROD-REL</code>)</td>
+        </tr>
+        <tr>
+            <th>Author & Chief Architect</th>
+            <td><strong>Jawahar R Mallah</strong></td>
+        </tr>
+        <tr>
+            <th>Organization</th>
+            <td><strong>AITDL — AI Technology & Development Lab</strong></td>
+        </tr>
+        <tr>
+            <th>Official Website</th>
+            <td><a href="https://prathamone.com" style="color: #0284c7;">https://prathamone.com</a></td>
+        </tr>
+        <tr>
+            <th>Manual Revision Date</th>
+            <td>November 06, 2026</td>
+        </tr>
+        <tr>
+            <th>Document Classification</th>
+            <td>Official Technical & End-User Documentation (Confidential & Proprietary)</td>
+        </tr>
+        <tr>
+            <th>Primary Technical Support</th>
+            <td>Phone: <strong>+91 9323 023 007 / +91 9324 117 007</strong><br>
+                Email: <a href="mailto:support@prathamone.com">support@prathamone.com</a> | Alternate: <a href="mailto:prathamone@outlook.com">prathamone@outlook.com</a>
+            </td>
+        </tr>
+    </table>
+
+    <div class="callout callout-note" style="margin-top: 30px;">
+        <div class="callout-title">Copyright & Proprietary Notice</div>
+        <p>Copyright &copy; 2026 AITDL (AI Technology & Development Lab). All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the author and publisher.</p>
+        <p>PrathamOne Academy, PrathamOne Coaching Institutes Enterprise Suite, and the PrathamOne logo are trademarks or registered trademarks of AITDL in India and other jurisdictions.</p>
+    </div>
+</div>
+
+<!-- Table of Contents -->
+<div class="toc-container">
+    <div class="toc-title">Table of Contents</div>
+    <div class="toc-item level-1"><span>1. Welcome & Product Architecture Overview</span><span>4</span></div>
+    <div class="toc-item level-2"><span>1.1 Executive Summary & Mission</span><span>4</span></div>
+    <div class="toc-item level-2"><span>1.2 System Architecture & Technology Stack</span><span>5</span></div>
+    <div class="toc-item level-2"><span>1.3 Navigation, Layout & Responsive UI</span><span>6</span></div>
+    
+    <div class="toc-item level-1"><span>2. User Roles & RBAC Permission Matrix</span><span>7</span></div>
+    <div class="toc-item level-2"><span>2.1 Role Hierarchy Overview</span><span>7</span></div>
+    <div class="toc-item level-2"><span>2.2 Comprehensive 8-Role Permission Matrix</span><span>8</span></div>
+
+    <div class="toc-item level-1"><span>3. Getting Started & Authentication</span><span>11</span></div>
+    <div class="toc-item level-2"><span>3.1 Logging into PrathamOne Academy</span><span>11</span></div>
+    <div class="toc-item level-2"><span>3.2 Password Security & Profile Customization</span><span>12</span></div>
+
+    <div class="toc-item level-1"><span>4. Complete Module-by-Module User Guide</span><span>13</span></div>
+    <div class="toc-item level-2"><span>4.1 Executive Dashboard</span><span>13</span></div>
+    <div class="toc-item level-2"><span>4.2 Academic Structure & Batch Management</span><span>15</span></div>
+    <div class="toc-item level-2"><span>4.3 Courses & Subject Mapping</span><span>17</span></div>
+    <div class="toc-item level-2"><span>4.4 Student Admission & Lifecycle Management</span><span>19</span></div>
+    <div class="toc-item level-2"><span>4.5 Faculty & Staff Directory</span><span>23</span></div>
+    <div class="toc-item level-2"><span>4.6 Daily Attendance & Defaulter Tracking</span><span>25</span></div>
+    <div class="toc-item level-2"><span>4.7 Fee Plans, Invoicing & Discount Schemes</span><span>27</span></div>
+    <div class="toc-item level-2"><span>4.8 Payments Ledger & Posted Edit Security Gate</span><span>29</span></div>
+    <div class="toc-item level-2"><span>4.9 Import Fee Register (CSV/Excel Wizard)</span><span>32</span></div>
+    <div class="toc-item level-2"><span>4.10 Examinations, Grading & Report Cards</span><span>34</span></div>
+    <div class="toc-item level-2"><span>4.11 Communication Hub & Broadcast Notices</span><span>36</span></div>
+    <div class="toc-item level-2"><span>4.12 High-Performance Reports & Analytics Grid</span><span>38</span></div>
+    <div class="toc-item level-2"><span>4.13 Forms & Documents Printing Center (DPDP Compliant)</span><span>40</span></div>
+    <div class="toc-item level-2"><span>4.14 Data Import / Export Engine</span><span>42</span></div>
+    <div class="toc-item level-2"><span>4.15 User Management & RBAC Administration</span><span>44</span></div>
+    <div class="toc-item level-2"><span>4.16 Institute Settings & Live Branding Customizer</span><span>46</span></div>
+    <div class="toc-item level-2"><span>4.17 SysAdmin Center & Universal Records Editor</span><span>48</span></div>
+    <div class="toc-item level-2"><span>4.18 Release Management & Semantic Version Audit</span><span>51</span></div>
+
+    <div class="toc-item level-1"><span>5. End-to-End Business Workflows</span><span>53</span></div>
+    <div class="toc-item level-2"><span>5.1 Student Onboarding from Admission to Batch Enrollment</span><span>53</span></div>
+    <div class="toc-item level-2"><span>5.2 Financial Collection, Receipting, Correction & Refunds</span><span>55</span></div>
+    <div class="toc-item level-2"><span>5.3 Academic Term Setup, Subject Assignment & Timetable</span><span>57</span></div>
+    <div class="toc-item level-2"><span>5.4 Examination Lifecycle from Schedule to Report Cards</span><span>59</span></div>
+
+    <div class="toc-item level-1"><span>6. Special SysAdmin Security Manual</span><span>61</span></div>
+    <div class="toc-item level-2"><span>6.1 Universal Record Editor Guardrails & Allowlists</span><span>61</span></div>
+    <div class="toc-item level-2"><span>6.2 Posted Payment Unlock Workflow & Audit History</span><span>63</span></div>
+    <div class="toc-item level-2"><span>6.3 Real-Time Security Audit Logging</span><span>65</span></div>
+
+    <div class="toc-item level-1"><span>7. Troubleshooting, Error Codes & Support</span><span>67</span></div>
+    <div class="toc-item level-2"><span>7.1 Common Runtime Errors & Resolving Taxonomy Codes</span><span>67</span></div>
+    <div class="toc-item level-2"><span>7.2 Frequently Asked Questions (FAQ)</span><span>69</span></div>
+    <div class="toc-item level-2"><span>7.3 Official Support Channels & SLA</span><span>71</span></div>
+</div>
+
+<!-- CHAPTER 1 -->
+<h1>1. Welcome & Product Architecture Overview</h1>
+
+<h2>1.1 Executive Summary & Mission</h2>
+<p><strong>PrathamOne Academy</strong> (part of the <em>PrathamOne Coaching Institutes Enterprise Suite</em>) is an enterprise-grade ERP and academic operations platform engineered specifically for coaching institutes, competitive exam academies, tutoring centers, and multi-branch educational networks. Engineered by <strong>Jawahar R Mallah</strong> and the team at <strong>AITDL (AI Technology & Development Lab)</strong>, PrathamOne Academy consolidates fragmented institute workflows into a unified, secure, high-performance web platform.</p>
+
+<p>The platform delivers complete lifecycle management across five core institutional pillars:</p>
+<ul>
+    <li><strong>Academic Operations:</strong> Hierarchical curriculum structuring spanning Educational Boards, Standards, Subjects, Divisions, Batches, and Weekly Timetables.</li>
+    <li><strong>Student Lifecycle:</strong> Comprehensive onboarding, automated student registration number generation (<code>PA-2024-XXXXXX</code>), KYC compliance document archiving, exit/withdrawal tracking, and one-click reactivation.</li>
+    <li><strong>Financial Governance:</strong> Flexible fee plan configuration, installment scheduling, scholarship concessions, automated payment ledger, tamper-proof sequential receipting, posted-payment security gates, and linked refund processing.</li>
+    <li><strong>Faculty & Attendance:</strong> Real-time roster tracking, mobile-friendly bulk attendance marking, faculty assignment, and automated defaulter alerts.</li>
+    <li><strong>Compliance & Enterprise Security:</strong> Granular 8-tier Role-Based Access Control (RBAC), Digital Personal Data Protection (DPDP) compliance audit logs, Universal Data Editing with strict field allowlists, and immutable system event journaling.</li>
+</ul>
+
+<h2>1.2 System Architecture & Technology Stack</h2>
+<p>PrathamOne Academy is built upon a modern, cloud-native containerized architecture designed for maximum concurrency, sub-second latency, and horizontal scalability:</p>
+<table>
+    <thead>
+        <tr>
+            <th>Architectural Layer</th>
+            <th>Technology Components</th>
+            <th>Key Capabilities & Specifications</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Frontend Application</strong></td>
+            <td>React 18, Vite 5.4, TypeScript, TailwindCSS, Lucide Icons</td>
+            <td>Single Page Application (SPA), zero full-page reload lag, responsive mobile/tablet layout, PWA offline capabilities.</td>
+        </tr>
+        <tr>
+            <td><strong>Backend Services</strong></td>
+            <td>Python 3.11, FastAPI, SQLAlchemy 2.0 Async, Pydantic v2</td>
+            <td>Asynchronous REST API engine (204 endpoints), JWT Bearer authentication, centralized dependency injection, OpenAPI 3.1 schema.</td>
+        </tr>
+        <tr>
+            <td><strong>Database Layer</strong></td>
+            <td>PostgreSQL 16 Enterprise, Alembic Migrations</td>
+            <td>ACID relational storage, foreign-key cascade integrity, multi-branch tenant isolation, JSONB audit logging.</td>
+        </tr>
+        <tr>
+            <td><strong>Container Runtime</strong></td>
+            <td>Docker Compose, Alpine Linux, Nginx 1.25 Reverse Proxy</td>
+            <td>Multi-stage production build, Gzip compression, health-check probes, automated restart policies.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>1.3 Navigation, Layout & Responsive UI</h2>
+<p>The application interface is structured around an intuitive 3-zone layout:</p>
+<ol>
+    <li><strong>Top Application Bar:</strong> Displays the institute logo, active branch selector, current academic session, global search, notification bell, system version badge (<code>v6.99.1</code>), and the user profile dropdown.</li>
+    <li><strong>Collapsible Sidebar Navigation:</strong> Houses quick-access links to all 20 modules organized logically by administrative function. Features collapse/expand toggling for focused workspace utilization.</li>
+    <li><strong>Dynamic Workspace Area:</strong> The main viewport where data tables, interactive filter bars, modal dialogs, analytics charts, and printable document previews render.</li>
+    <li><strong>Collapsible Enterprise Footer:</strong> Present across all authenticated screens, displaying the verified application release version, build identifier, and the subtle enterprise attribution: <code>PrathamOne Coaching Institutes Enterprise Suite · prathamone.com</code>.</li>
+</ol>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/02_dashboard_overview.png" class="figure-img" alt="Main Dashboard Overview">
+    <div class="figure-caption">Figure 1.1: PrathamOne Academy Master Dashboard showing operational KPI metrics, quick actions, and sidebar navigation.</div>
+</div>
+
+<!-- CHAPTER 2 -->
+<h1>2. User Roles & RBAC Permission Matrix</h1>
+
+<h2>2.1 Role Hierarchy Overview</h2>
+<p>PrathamOne Academy enforces a strict 8-tier Role-Based Access Control (RBAC) hierarchy. Every user account created in the system is assigned a primary role that governs their viewing, creation, modification, approval, and administrative rights across all API endpoints and frontend screens.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/19_user_profile_rbac_matrix.png" class="figure-img" alt="RBAC Permission Matrix">
+    <div class="figure-caption">Figure 2.1: Granular Role & Permission Matrix visualizer in User Profile workspace.</div>
+</div>
+
+<h2>2.2 Comprehensive 8-Role Permission Matrix</h2>
+<p>The table below outlines the exact, verified permission capabilities for each user role across the core functional modules of PrathamOne Academy:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Application Module</th>
+            <th>SysAdmin</th>
+            <th>Superadmin</th>
+            <th>Admin</th>
+            <th>Principal</th>
+            <th>Accountant</th>
+            <th>Teacher</th>
+            <th>Staff</th>
+            <th>Student</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Dashboard Metrics</strong></td>
+            <td><span class="chip chip-green">FULL</span></td>
+            <td><span class="chip chip-green">FULL</span></td>
+            <td><span class="chip chip-green">FULL</span></td>
+            <td><span class="chip chip-green">FULL</span></td>
+            <td><span class="chip chip-blue">FINANCIAL</span></td>
+            <td><span class="chip chip-amber">ACADEMIC</span></td>
+            <td><span class="chip chip-amber">BASIC</span></td>
+            <td><span class="chip chip-purple">SELF</span></td>
+        </tr>
+        <tr>
+            <td><strong>Academic Master (Boards/Std)</strong></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-amber">VIEW</span></td>
+            <td><span class="chip chip-amber">VIEW</span></td>
+            <td><span class="chip chip-amber">VIEW</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+        </tr>
+        <tr>
+            <td><strong>Student Profiles & Admissions</strong></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-blue">VIEW/FEE</span></td>
+            <td><span class="chip chip-amber">VIEW ROSTER</span></td>
+            <td><span class="chip chip-blue">INTAKE</span></td>
+            <td><span class="chip chip-purple">SELF ONLY</span></td>
+        </tr>
+        <tr>
+            <td><strong>Student Withdrawal / Exit</strong></td>
+            <td><span class="chip chip-green">AUTHORIZE</span></td>
+            <td><span class="chip chip-green">AUTHORIZE</span></td>
+            <td><span class="chip chip-green">AUTHORIZE</span></td>
+            <td><span class="chip chip-green">AUTHORIZE</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+        </tr>
+        <tr>
+            <td><strong>Student Reactivation</strong></td>
+            <td><span class="chip chip-green">AUTHORIZE</span></td>
+            <td><span class="chip chip-green">AUTHORIZE</span></td>
+            <td><span class="chip chip-green">AUTHORIZE</span></td>
+            <td><span class="chip chip-green">AUTHORIZE</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+        </tr>
+        <tr>
+            <td><strong>Attendance Marking</strong></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-amber">VIEW</span></td>
+            <td><span class="chip chip-green">MARK OWN</span></td>
+            <td><span class="chip chip-green">MARK ROSTER</span></td>
+            <td><span class="chip chip-purple">VIEW OWN</span></td>
+        </tr>
+        <tr>
+            <td><strong>Fee Structures & Plans</strong></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">FULL CRUD</span></td>
+            <td><span class="chip chip-green">CREATE/ASSIGN</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-purple">VIEW OWN</span></td>
+        </tr>
+        <tr>
+            <td><strong>Payment Collection & Drafts</strong></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">COLLECT/POST</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-blue">DRAFT ONLY</span></td>
+            <td><span class="chip chip-purple">PAY ONLINE</span></td>
+        </tr>
+        <tr>
+            <td><strong>Posted Payment Editing Gate</strong></td>
+            <td><span class="chip chip-purple">EXPLICIT GATE</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+        </tr>
+        <tr>
+            <td><strong>Payment Refunds</strong></td>
+            <td><span class="chip chip-green">APPROVE</span></td>
+            <td><span class="chip chip-green">APPROVE</span></td>
+            <td><span class="chip chip-green">APPROVE</span></td>
+            <td><span class="chip chip-green">APPROVE</span></td>
+            <td><span class="chip chip-blue">PROCESS</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+        </tr>
+        <tr>
+            <td><strong>Examinations & Marks Entry</strong></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-green">ENTER MARKS</span></td>
+            <td><span class="chip chip-amber">VIEW</span></td>
+            <td><span class="chip chip-purple">VIEW OWN</span></td>
+        </tr>
+        <tr>
+            <td><strong>Reports & Data Export</strong></td>
+            <td><span class="chip chip-green">ALL REPORTS</span></td>
+            <td><span class="chip chip-green">ALL REPORTS</span></td>
+            <td><span class="chip chip-green">ALL REPORTS</span></td>
+            <td><span class="chip chip-green">ALL REPORTS</span></td>
+            <td><span class="chip chip-blue">FINANCIAL</span></td>
+            <td><span class="chip chip-amber">ACADEMIC</span></td>
+            <td><span class="chip chip-amber">ROSTERS</span></td>
+            <td><span class="chip chip-purple">OWN GRADES</span></td>
+        </tr>
+        <tr>
+            <td><strong>User & Role Management</strong></td>
+            <td><span class="chip chip-green">SUPERUSER</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-green">MANAGE</span></td>
+            <td><span class="chip chip-amber">VIEW STAFF</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+        </tr>
+        <tr>
+            <td><strong>Universal Records Editor</strong></td>
+            <td><span class="chip chip-purple">EXCLUSIVE</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+        </tr>
+        <tr>
+            <td><strong>Security Audit Logs</strong></td>
+            <td><span class="chip chip-green">FULL TRAIL</span></td>
+            <td><span class="chip chip-green">FULL TRAIL</span></td>
+            <td><span class="chip chip-blue">BRANCH LOGS</span></td>
+            <td><span class="chip chip-amber">VIEW</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+            <td><span class="chip chip-red">DENIED</span></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- CHAPTER 3 -->
+<h1>3. Getting Started & Authentication</h1>
+
+<h2>3.1 Logging into PrathamOne Academy</h2>
+<p>To access the system, navigate to the application URL in any modern web browser (Google Chrome, Mozilla Firefox, Microsoft Edge, or Safari):</p>
+<code>http://localhost:80/login</code> (or your institute's custom production domain).
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/01_login_screen.png" class="figure-img" alt="PrathamOne Academy Login Screen">
+    <div class="figure-caption">Figure 3.1: PrathamOne Academy Secure Sign-In Portal.</div>
+</div>
+
+<ul class="step-list">
+    <li class="step-item">
+        <div class="step-title">Enter Your Credentials</div>
+        Enter your designated Username or Registered Email address in the <strong>Username or Email</strong> input field.
+    </li>
+    <li class="step-item">
+        <div class="step-title">Enter Your Password</div>
+        Type your password into the <strong>Password</strong> field. Passwords are case-sensitive and must satisfy enterprise security policies.
+    </li>
+    <li class="step-item">
+        <div class="step-title">Submit & Authenticate</div>
+        Click the blue <strong>Sign In</strong> button. Upon successful verification, an encrypted JWT authentication token is issued, and you are automatically redirected to your role's default dashboard workspace.
+    </li>
+</ul>
+
+<div class="callout callout-warning">
+    <div class="callout-title">Default First-Time Credentials</div>
+    <p>Initial system deployment includes a pre-seeded Sysadmin superuser account (<code>sysadmin</code>). Upon first login, navigate immediately to <strong>User Profile</strong> or <strong>System Settings</strong> to rotate your password to a strong, confidential passphrase.</p>
+</div>
+
+<!-- CHAPTER 4 -->
+<h1>4. Complete Module-by-Module User Guide</h1>
+
+<!-- 4.1 Dashboard -->
+<h2>4.1 Executive Dashboard</h2>
+<p><strong>Route:</strong> <code>/dashboard</code> &nbsp;|&nbsp; <strong>Shortcut:</strong> <kbd>Alt</kbd> + <kbd>D</kbd></p>
+<p><strong>Purpose:</strong> The Executive Dashboard delivers a real-time operational bird's-eye view of your coaching institute's daily pulse. It provides actionable intelligence regarding student strength, fee realization, batch schedules, and attendance metrics without requiring manual report generation.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/02_dashboard_overview.png" class="figure-img" alt="Executive Dashboard Overview">
+    <div class="figure-caption">Figure 4.1: Real-time Executive Dashboard displaying KPI cards, attendance trends, and quick actions.</div>
+</div>
+
+<h3>Key Interface Elements:</h3>
+<ul>
+    <li><strong>Active Metric Cards:</strong> Real-time counts of Total Active Students, Active Batches, Today's Attendance %, Fees Collected This Month (₹), and Total Outstanding Dues (₹).</li>
+    <li><strong>Quick Action Launcher:</strong> Fast-track one-click buttons to Admit Student, Record Payment, Mark Batch Attendance, and View Today's Timetable.</li>
+    <li><strong>Attendance Trend Graph:</strong> Weekly graphical breakdown comparing present vs absent students across standards.</li>
+    <li><strong>Recent Transaction Feed:</strong> Real-time financial stream displaying the last 10 payments received with receipt links.</li>
+</ul>
+
+<!-- 4.2 Academic Structure -->
+<h2>4.2 Academic Structure & Batch Management</h2>
+<p><strong>Route:</strong> <code>/academic</code> &nbsp;|&nbsp; <strong>Access:</strong> SysAdmin, Superadmin, Admin, Principal</p>
+<p><strong>Purpose:</strong> The Academic Structure workspace configures the foundational organizational hierarchy of your academy. All courses, batches, timetables, and fee plans link directly to this structure.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/03_academic_workspace.png" class="figure-img" alt="Academic Workspace">
+    <div class="figure-caption">Figure 4.2: Academic Hierarchy Manager configuring Educational Boards, Standards, and Batches.</div>
+</div>
+
+<h3>Step-by-Step Task: Creating an Educational Board</h3>
+<ol>
+    <li>Navigate to <strong>Academic Structure</strong> from the sidebar.</li>
+    <li>Click on the <strong>Boards</strong> tab.</li>
+    <li>Click the blue <strong>Add Board</strong> button in the top right.</li>
+    <li>Fill in the required fields:
+        <ul>
+            <li><strong>Board Name</strong> (Required): e.g., <em>Central Board of Secondary Education</em>.</li>
+            <li><strong>Board Code</strong> (Required, Unique): e.g., <code>CBSE</code>.</li>
+            <li><strong>Description</strong> (Optional): Brief notes regarding curriculum coverage.</li>
+        </ul>
+    </li>
+    <li>Click <strong>Save Board</strong>. The board appears instantly in the active roster.</li>
+</ol>
+
+<h3>Step-by-Step Task: Creating a Standard / Grade</h3>
+<ol>
+    <li>Click on the <strong>Standards</strong> tab.</li>
+    <li>Click <strong>Add Standard</strong>.</li>
+    <li>Select the parent <strong>Board</strong> from the dropdown.</li>
+    <li>Enter <strong>Standard Name</strong> (e.g., <em>10th Standard</em>) and <strong>Level / Code</strong> (e.g., <code>STD-10</code>).</li>
+    <li>Click <strong>Save Standard</strong>.</li>
+</ol>
+
+<h3>Step-by-Step Task: Creating a Division / Batch</h3>
+<ol>
+    <li>Click on the <strong>Batches / Divisions</strong> tab.</li>
+    <li>Click <strong>Add Batch</strong>.</li>
+    <li>Select the <strong>Standard</strong> (e.g., <em>10th Standard</em>).</li>
+    <li>Enter <strong>Batch Name</strong> (e.g., <em>Morning Champions Batch A</em>) and <strong>Batch Code</strong> (<code>10-A-MORN</code>).</li>
+    <li>Set <strong>Maximum Capacity</strong> (e.g., <code>45</code>) and <strong>Room Number</strong> (e.g., <code>Classroom 204</code>).</li>
+    <li>Assign the <strong>Class Teacher / Mentor</strong> from the faculty list.</li>
+    <li>Click <strong>Save Batch</strong>.</li>
+</ol>
+
+<!-- 4.3 Courses & Subjects -->
+<h2>4.3 Courses & Subject Mapping</h2>
+<p><strong>Route:</strong> <code>/courses</code> and <code>/subjects</code></p>
+<p><strong>Purpose:</strong> Define commercial coaching programs (e.g., <em>IIT-JEE Two-Year Foundation</em>, <em>NEET Dropper Comprehensive</em>, <em>Commerce 12th Board Crash Course</em>) and granular subjects (Physics, Chemistry, Mathematics, Accountancy).</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/04_courses_management.png" class="figure-img" alt="Courses Catalog">
+    <div class="figure-caption">Figure 4.3: Commercial Course Catalog with duration, standard mapping, and pricing.</div>
+</div>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/05_subjects_management.png" class="figure-img" alt="Subjects Directory">
+    <div class="figure-caption">Figure 4.4: Subject Repository with department classification and credit hours.</div>
+</div>
+
+<!-- 4.4 Student Management -->
+<h2>4.4 Student Admission & Lifecycle Management</h2>
+<p><strong>Routes:</strong> <code>/students</code>, <code>/students/add</code>, <code>/students/{id}</code></p>
+<p><strong>Purpose:</strong> Complete student relationship management from prospective inquiry to formal admission, active enrollment, academic tracking, KYC compliance verification, withdrawal, and reactivation.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/06_students_directory.png" class="figure-img" alt="Students Directory">
+    <div class="figure-caption">Figure 4.5: Filterable Students Directory with multi-criteria search and CSV export.</div>
+</div>
+
+<h3>Step-by-Step Task: Admitting a New Student</h3>
+<ol>
+    <li>Click <strong>Students</strong> &rarr; <strong>Add Student</strong> (or navigate to <code>/students/add</code>).</li>
+    <li>Complete the 4-step wizard:
+        <ul>
+            <li><strong>Step 1: Personal Profile:</strong> First Name, Middle Name, Last Name, Date of Birth, Gender, Blood Group, Aadhaar Number, Category/Caste.</li>
+            <li><strong>Step 2: Contact Information:</strong> Student Mobile, WhatsApp Number, Email, Residential Address, City, State, Pincode.</li>
+            <li><strong>Step 3: Academic Allocation:</strong> Target Board, Standard, Division/Batch, Roll Number, Enrollment Date.</li>
+            <li><strong>Step 4: Parent / Guardian Details:</strong> Father's Name, Mother's Name, Guardian Phone, Guardian Email, Occupation, Annual Income.</li>
+        </ul>
+    </li>
+    <li>Click <strong>Submit Admission</strong>. The system assigns a unique permanent Registration Number (e.g., <code>PA-2024-000001</code>) and opens the comprehensive Student Detail Profile.</li>
+</ol>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/07_student_admission_form.png" class="figure-img" alt="Student Admission Form">
+    <div class="figure-caption">Figure 4.6: Multi-Step Student Admission Wizard.</div>
+</div>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/08_student_detail_profile.png" class="figure-img" alt="Student Detail Profile">
+    <div class="figure-caption">Figure 4.7: Student Detail Profile Workspace showing tabs for Academics, Fees, Attendance, and KYC.</div>
+</div>
+
+<h3>Student Lifecycle Actions:</h3>
+<ul>
+    <li><strong>Edit Profile Modal:</strong> Click the <strong>Edit Profile</strong> button to update address, contact numbers, or guardian details without altering registration or ledger history.</li>
+    <li><strong>Student Withdrawal / Exit:</strong> Click <strong>Exit Student</strong>. A modal prompts for mandatory <strong>Exit Date</strong>, <strong>Exit Reason</strong> (Transfer, Financial, Health, Course Completed, Other), and administrative exit notes. Once exited, the student's status changes to <span class="chip chip-red">EXITED</span> and seat capacity in the batch is freed.</li>
+    <li><strong>Student Reactivation:</strong> If a withdrawn student re-enrolls, authorized administrators (Admin, Sysadmin) can click <strong>Reactivate Student</strong>, re-assign them to an active batch, and restore active status.</li>
+    <li><strong>KYC Document Management:</strong> Upload digital scans of Aadhaar Card, Transfer Certificate, Previous Marks Sheet, and Birth Certificate. Toggle document verification status (<span class="chip chip-green">VERIFIED</span> / <span class="chip chip-amber">PENDING</span>).</li>
+</ul>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/09_student_edit_modal.png" class="figure-img" alt="Edit Student Profile Modal">
+    <div class="figure-caption">Figure 4.8: Edit Student Profile Modal dialog.</div>
+</div>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/10_student_exit_modal.png" class="figure-img" alt="Exit Student Modal">
+    <div class="figure-caption">Figure 4.9: Formal Student Withdrawal / Exit Dialogue with mandatory reason tracking.</div>
+</div>
+
+<!-- 4.5 Faculty & Staff -->
+<h2>4.5 Faculty & Staff Directory</h2>
+<p><strong>Route:</strong> <code>/staff</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, Principal, SysAdmin</p>
+<p><strong>Purpose:</strong> Maintain comprehensive faculty credentials, employee codes, designations, department allocations, and contact records.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/20_staff_management.png" class="figure-img" alt="Staff Management">
+    <div class="figure-caption">Figure 4.10: Staff & Faculty Directory with department filters and profile editor.</div>
+</div>
+
+<!-- 4.6 Attendance Management -->
+<h2>4.6 Daily Attendance & Defaulter Tracking</h2>
+<p><strong>Route:</strong> <code>/attendance</code> &nbsp;|&nbsp; <strong>Access:</strong> Teachers, Staff, Admin, Principal</p>
+<p><strong>Purpose:</strong> Quick, error-free recording of classroom attendance with real-time absentee tracking and parental notification capabilities.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/11_attendance_workspace.png" class="figure-img" alt="Attendance Workspace">
+    <div class="figure-caption">Figure 4.11: Attendance Roster Workspace with bulk toggle buttons and real-time tally.</div>
+</div>
+
+<h3>Step-by-Step Task: Marking Batch Attendance</h3>
+<ol>
+    <li>Select the target <strong>Standard</strong> and <strong>Batch</strong> from the dropdown selectors.</li>
+    <li>Select the <strong>Attendance Date</strong> (defaults to current date).</li>
+    <li>The student roster loads automatically with all students defaulted to <span class="chip chip-green">PRESENT</span>.</li>
+    <li>Click on individual student status pills to toggle between <strong>Present (P)</strong>, <strong>Absent (A)</strong>, <strong>Late (L)</strong>, or <strong>Excused (E)</strong>.</li>
+    <li>Click <strong>Save Attendance Roster</strong>. Attendance statistics update immediately across dashboards and student profiles.</li>
+</ol>
+
+<!-- 4.7 Fees & Payments -->
+<h2>4.7 Fee Plans, Invoicing & Discount Schemes</h2>
+<p><strong>Route:</strong> <code>/fees</code> &nbsp;|&nbsp; <strong>Access:</strong> Accountant, Admin, Principal, SysAdmin</p>
+<p><strong>Purpose:</strong> Define commercial fee templates, installment payment schedules, and assign customized fee commitments to enrolled students.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/13_fee_plans_structures.png" class="figure-img" alt="Fee Structures Manager">
+    <div class="figure-caption">Figure 4.12: Fee Structure Builder configuring heads, installment breakdown, and concessions.</div>
+</div>
+
+<h3>Step-by-Step Task: Creating a New Fee Structure</h3>
+<ol>
+    <li>Navigate to <code>/fees</code> and click <strong>Create Fee Plan</strong>.</li>
+    <li>Enter <strong>Structure Name</strong> (e.g., <em>10th Science Annual Academic Package 2026-27</em>).</li>
+    <li>Select target <strong>Standard</strong>.</li>
+    <li>Define <strong>Fee Heads Breakdown</strong>:
+        <ul>
+            <li>Tuition Fee: ₹ 45,000</li>
+            <li>Laboratory & Practical Fee: ₹ 10,000</li>
+            <li>Study Material & Test Series: ₹ 8,000</li>
+            <li>Examination Fee: ₹ 2,000</li>
+        </ul>
+    </li>
+    <li>Set <strong>Installment Terms</strong> (e.g., 4 quarterly installments of ₹ 16,250 each).</li>
+    <li>Click <strong>Save & Activate Structure</strong>. You can now bulk-assign this plan to all students enrolled in the standard.</li>
+</ol>
+
+<!-- 4.8 Payments Ledger & Posted Edit Security Gate -->
+<h2>4.8 Payments Ledger & Posted Edit Security Gate</h2>
+<p><strong>Route:</strong> <code>/payments</code> &nbsp;|&nbsp; <strong>Access:</strong> Accountant, Admin, Principal, SysAdmin</p>
+<p><strong>Purpose:</strong> Financial transaction ledger managing the collection, draft generation, verification, receipt generation, and posting of tuition fees.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/15_payments_ledger.png" class="figure-img" alt="Payments Ledger">
+    <div class="figure-caption">Figure 4.13: Complete Payments Financial Ledger with status filtering and receipt reprint links.</div>
+</div>
+
+<h3>Payment Status Lifecycle:</h3>
+<ul>
+    <li><span class="chip chip-amber">DRAFT</span>: Initial payment entered by front-desk staff. Editable freely by accountants and staff. No permanent receipt number is locked.</li>
+    <li><span class="chip chip-blue">SUBMITTED</span>: Payment submitted for verification. Edits require an explicit administrative reason.</li>
+    <li><span class="chip chip-green">POSTED</span>: Fully verified and posted to the general financial ledger. A permanent, sequential receipt number (e.g., <code>REC-2026-000142</code>) is generated and locked.</li>
+    <li><span class="chip chip-red">REFUNDED</span>: Transaction has undergone a full or partial refund. Refund records are maintained as distinct negative ledger entries linked to the original payment via <code>parent_payment_id</code>.</li>
+</ul>
+
+<div class="callout callout-danger">
+    <div class="callout-title">Financial Control: Posted Payment Security Gate</div>
+    <p>Ordinary staff, teachers, and accountants CANNOT edit or delete a POSTED payment. In order to protect ledger integrity and comply with accounting audit standards, only a user with the explicit <code>payments:edit_posted</code> permission (Sysadmin) can unlock and edit a posted transaction.</p>
+</div>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/16_payments_lock_unlock_gate.png" class="figure-img" alt="Posted Payment Security Gate Modal">
+    <div class="figure-caption">Figure 4.14: Posted Payment Security Gate modal enforcing authorization and mandatory reason logging.</div>
+</div>
+
+<!-- 4.9 Import Fee Register -->
+<h2>4.9 Import Fee Register (CSV/Excel Wizard)</h2>
+<p><strong>Route:</strong> <code>/fees/import</code> &nbsp;|&nbsp; <strong>Access:</strong> Accountant, Admin, SysAdmin</p>
+<p><strong>Purpose:</strong> Seamless migration of legacy payment books or external bank reconciliation statements into PrathamOne Academy via structured CSV/Excel upload.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/14_import_fee_register.png" class="figure-img" alt="Import Fee Register">
+    <div class="figure-caption">Figure 4.15: Import Fee Register Wizard showing file upload dropzone and column mapping schema.</div>
+</div>
+
+<!-- 4.10 Examinations & Results -->
+<h2>4.10 Examinations, Grading & Report Cards</h2>
+<p><strong>Route:</strong> <code>/examinations</code> &nbsp;|&nbsp; <strong>Access:</strong> Teachers, Admin, Principal, SysAdmin</p>
+<p><strong>Purpose:</strong> Schedule periodic unit tests, quarterly exams, mock tests, and final examinations. Record subject marks, calculate grade percentages, and print official report cards.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/12_examinations_results.png" class="figure-img" alt="Examinations Workspace">
+    <div class="figure-caption">Figure 4.16: Examinations Workspace showing active schedules, marks entry grid, and rank lists.</div>
+</div>
+
+<!-- 4.11 Communication Hub -->
+<h2>4.11 Communication Hub & Broadcast Notices</h2>
+<p><strong>Route:</strong> <code>/communication</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, Principal, SysAdmin</p>
+<p><strong>Purpose:</strong> Institute-wide broadcast messaging for emergency notices, holiday announcements, exam timetables, fee reminders, and parent-teacher meeting circulars.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/26_communication_center.png" class="figure-img" alt="Communication Center">
+    <div class="figure-caption">Figure 4.17: Multi-channel Communication Center with audience filters and message logs.</div>
+</div>
+
+<!-- 4.12 Reports & Analytics Grid -->
+<h2>4.12 High-Performance Reports & Analytics Grid</h2>
+<p><strong>Route:</strong> <code>/reports</code> &nbsp;|&nbsp; <strong>Access:</strong> Accountant, Admin, Principal, SysAdmin</p>
+<p><strong>Purpose:</strong> Enterprise-grade tabular reporting engine equipped with real-time column grouping, dynamic pivoting, multi-column sorting, and instant Excel/CSV download.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/17_reports_analytics_grid.png" class="figure-img" alt="Reports & Analytics Grid">
+    <div class="figure-caption">Figure 4.18: High-Performance Excel Report Grid displaying live financial realization analytics.</div>
+</div>
+
+<!-- 4.13 Forms & Documents -->
+<h2>4.13 Forms & Documents Printing Center (DPDP Compliant)</h2>
+<p><strong>Route:</strong> <code>/forms</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, Principal, Staff, SysAdmin</p>
+<p><strong>Purpose:</strong> Standardized, print-ready document rendering compliant with statutory educational regulations and Digital Personal Data Protection (DPDP) logging.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/24_forms_documents_hub.png" class="figure-img" alt="Forms & Documents Hub">
+    <div class="figure-caption">Figure 4.19: Forms & Documents Hub with pre-formatted certificates and DPDP compliance logs.</div>
+</div>
+
+<!-- 4.14 Data Import / Export -->
+<h2>4.14 Data Import / Export Engine</h2>
+<p><strong>Route:</strong> <code>/import-export</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, SysAdmin</p>
+<p><strong>Purpose:</strong> Bulk bidirectional synchronization of master data entities via CSV and JSON formats.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/23_import_export_center.png" class="figure-img" alt="Import / Export Center">
+    <div class="figure-caption">Figure 4.20: Master Data Import and Export Workspace with downloadable CSV templates.</div>
+</div>
+
+<!-- 4.15 User Management -->
+<h2>4.15 User Management & RBAC Administration</h2>
+<p><strong>Routes:</strong> <code>/users</code>, <code>/users/{id}</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, Superadmin, SysAdmin</p>
+<p><strong>Purpose:</strong> Provisioning user accounts, assigning roles, resetting credentials, and reviewing permission matrices.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/18_user_management.png" class="figure-img" alt="User Management Directory">
+    <div class="figure-caption">Figure 4.21: User Management Directory displaying user roles, last login timestamps, and status toggles.</div>
+</div>
+
+<!-- 4.16 Settings & Branding -->
+<h2>4.16 Institute Settings & Live Branding Customizer</h2>
+<p><strong>Route:</strong> <code>/settings</code> &nbsp;|&nbsp; <strong>Access:</strong> Admin, SysAdmin</p>
+<p><strong>Purpose:</strong> Configure institute name, contact info, official logo, and brand color palette with instant real-time preview.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/25_branding_settings_preview.png" class="figure-img" alt="Settings & Branding Preview">
+    <div class="figure-caption">Figure 4.22: Settings Workspace featuring the interactive Live Branding Preview card.</div>
+</div>
+
+<!-- 4.17 SysAdmin Center -->
+<h2>4.17 SysAdmin Center & Universal Records Editor</h2>
+<p><strong>Route:</strong> <code>/sysadmin</code> &nbsp;|&nbsp; <strong>Access:</strong> SysAdmin Exclusive</p>
+<p><strong>Purpose:</strong> Master control center for system diagnostics, server telemetry, immutable security logs, and the Universal Records Editor.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/21_sysadmin_center_overview.png" class="figure-img" alt="SysAdmin Center Overview">
+    <div class="figure-caption">Figure 4.23: SysAdmin Center master dashboard with system health monitors and audit feeds.</div>
+</div>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/22_sysadmin_universal_editor.png" class="figure-img" alt="Universal Records Editor">
+    <div class="figure-caption">Figure 4.24: Universal Records Editor with clickable permissible field chips and mandatory reason field.</div>
+</div>
+
+<!-- 4.18 Release Management -->
+<h2>4.18 Release Management & Semantic Version Audit</h2>
+<p><strong>Route:</strong> <code>/releases</code> &nbsp;|&nbsp; <strong>Access:</strong> All Users (Read-only)</p>
+<p><strong>Purpose:</strong> Enterprise release tracking showing current version (<code>v6.99.1</code>), build number (<code>2026.11.05-PROD-REL</code>), release history, and security patches.</p>
+
+<div class="figure-box">
+    <img src="file:///F:/PrashantAcademy/docs/user_manual/screenshots/27_releases_and_version_audit.png" class="figure-img" alt="Releases Workspace">
+    <div class="figure-caption">Figure 4.25: Software Release & Changelog Audit workspace.</div>
+</div>
+
+<!-- CHAPTER 5 -->
+<h1>5. End-to-End Business Workflows</h1>
+
+<h2>5.1 Workflow 1: Student Onboarding from Admission to Batch Enrollment</h2>
+<ol class="step-list">
+    <li class="step-item">
+        <div class="step-title">Inquiry & Registration</div>
+        Parent/Student arrives. Front desk opens <code>/students/add</code> and enters personal, contact, and academic details.
+    </li>
+    <li class="step-item">
+        <div class="step-title">Batch & Division Assignment</div>
+        Student is assigned to the appropriate Standard (e.g., 10th CBSE) and Batch (Morning Champions Batch A). Roll number is allocated.
+    </li>
+    <li class="step-item">
+        <div class="step-title">Fee Plan Commitment</div>
+        The standard fee plan is automatically mapped to the student profile, establishing the student's fee obligation and installment timeline.
+    </li>
+    <li class="step-item">
+        <div class="step-title">Identity Card & Admission Form Generation</div>
+        One-click generation of the Student ID Card and Admission Record from <code>/forms</code>.
+    </li>
+</ol>
+
+<h2>5.2 Workflow 2: Financial Collection, Receipting, Correction & Refunds</h2>
+<ol class="step-list">
+    <li class="step-item">
+        <div class="step-title">Payment Collection</div>
+        Accountant receives cash, cheque, or UPI payment via <code>/payments</code> &rarr; <em>Record Payment</em>.
+    </li>
+    <li class="step-item">
+        <div class="step-title">Sequential Receipt Issuance</div>
+        System generates permanent sequential receipt (<code>REC-2026-XXXXXX</code>) and posts to financial ledger.
+    </li>
+    <li class="step-item">
+        <div class="step-title">Posted Payment Correction (If Required)</div>
+        If a mistake occurred, Sysadmin accesses the Posted Payment Security Gate with an explicit reason. The original receipt is marked as superseded, and a new versioned receipt is issued. Historical numbers are never deleted.
+    </li>
+    <li class="step-item">
+        <div class="step-title">Processing a Refund</div>
+        If a student withdraws, an authorized accountant processes a linked refund via the Payments module. The refund references the original payment ID and updates the net balance.
+    </li>
+</ol>
+
+<!-- CHAPTER 6 -->
+<h1>6. Special SysAdmin Security Manual</h1>
+
+<h2>6.1 Universal Record Editor Guardrails & Allowlists</h2>
+<p>The <strong>Universal Records Editor</strong> (available exclusively to SysAdmin at <code>/sysadmin</code>) allows surgical data correction across 8 core database models without direct database manipulation. To prevent relational corruption or security bypasses, strict field allowlists are enforced:</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Target Model</th>
+            <th>Permissible Editable Fields</th>
+            <th>Strictly Prohibited Fields</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>student</code></td>
+            <td><code>first_name, last_name, middle_name, date_of_birth, gender, blood_group, nationality, religion, caste, aadhar_number, photo_url, address, city, state, pincode, phone, email, is_active, exit_date, exit_reason, exit_notes</code></td>
+            <td><code>id, institution_id, registration_number, created_at, updated_at</code></td>
+        </tr>
+        <tr>
+            <td><code>staff</code></td>
+            <td><code>first_name, last_name, designation, department, qualification, experience_years, phone, email, address, status, joining_date, specialization</code></td>
+            <td><code>id, institution_id, staff_code, created_at, updated_at</code></td>
+        </tr>
+        <tr>
+            <td><code>user</code></td>
+            <td><code>first_name, last_name, email, phone, role, is_active</code></td>
+            <td><code>id, institution_id, username, hashed_password, created_at</code></td>
+        </tr>
+        <tr>
+            <td><code>fee_structure</code></td>
+            <td><code>name, description, total_amount, is_active</code></td>
+            <td><code>id, institution_id, standard_id, created_at</code></td>
+        </tr>
+        <tr>
+            <td><code>division / batch</code></td>
+            <td><code>name, code, room_number, capacity, schedule_timing, status, is_active, class_teacher_id</code></td>
+            <td><code>id, institution_id, standard_id, created_at</code></td>
+        </tr>
+        <tr>
+            <td><code>standard</code></td>
+            <td><code>name, level, description, is_active</code></td>
+            <td><code>id, institution_id, board_id, created_at</code></td>
+        </tr>
+        <tr>
+            <td><code>institution</code></td>
+            <td><code>name, tagline, address, city, state, pincode, phone, email, website, logo_url, favicon_url, primary_color, secondary_color, accent_color, description, is_active</code></td>
+            <td><code>id, code, created_at</code></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="callout callout-danger">
+    <div class="callout-title">SysAdmin Anti-Lockout Safeguard</div>
+    <p>The backend actively prevents the primary SysAdmin user from deactivating their own account (User ID 128) via the Universal Editor. Any attempt to set <code>is_active = false</code> on the current SysAdmin returns <strong>HTTP 400 Bad Request</strong>.</p>
+</div>
+
+<!-- CHAPTER 7 -->
+<h1>7. Troubleshooting, Error Codes & Support</h1>
+
+<h2>7.1 Common Runtime Errors & Resolving Taxonomy Codes</h2>
+<p>PrathamOne Academy features a centralized, taxonomy-based error monitoring architecture. When an error occurs, a user-friendly modal is displayed along with a unique reference code (e.g., <code>ERR-20261106-XXXX</code>):</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Taxonomy Category</th>
+            <th>Typical Root Cause</th>
+            <th>Recommended User Resolution</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>INTERNET_DISCONNECTED</strong></td>
+            <td>Local Wi-Fi or ethernet drop.</td>
+            <td>Check router connection. The application PWA will operate in offline cache mode until connection is re-established.</td>
+        </tr>
+        <tr>
+            <td><strong>SESSION_EXPIRED</strong> (HTTP 401)</td>
+            <td>JWT token lifetime exceeded (8 hours).</td>
+            <td>The system automatically redirects you to <code>/login</code> once. Re-enter your password to renew session.</td>
+        </tr>
+        <tr>
+            <td><strong>PERMISSION_DENIED</strong> (HTTP 403)</td>
+            <td>Current user role lacks permission for the requested action.</td>
+            <td>Contact your institute Administrator or Sysadmin to assign appropriate permissions.</td>
+        </tr>
+        <tr>
+            <td><strong>RESOURCE_NOT_FOUND</strong> (HTTP 404)</td>
+            <td>Target student ID or record does not exist or was removed.</td>
+            <td>Verify the record ID in the directory. Deleted records can be inspected in the Audit Log.</td>
+        </tr>
+        <tr>
+            <td><strong>VALIDATION_FAILED</strong> (HTTP 400/422)</td>
+            <td>Missing mandatory field (e.g., Edit Reason) or duplicate unique key.</td>
+            <td>Review highlighted input fields in red. Ensure an administrative reason is provided for transaction modifications.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>7.2 Frequently Asked Questions (FAQ)</h2>
+<p><strong>Q: Can I edit a fee payment after the receipt has been printed?</strong><br>
+A: Yes, but only with authorized Sysadmin credentials via the Posted Payment Security Gate. The system preserves the original receipt for audit compliance and marks it as superseded.</p>
+
+<p><strong>Q: How do I export my student roster to Excel?</strong><br>
+A: Go to <strong>Students</strong> or <strong>Reports</strong>, set your desired filters, and click the green <strong>Export to Excel / CSV</strong> button at the top right of the table.</p>
+
+<p><strong>Q: What happens when a student withdraws? Does it delete their fee history?</strong><br>
+A: No! Financial records and attendance history are permanently preserved. The student's status is simply marked as Exited, freeing up batch capacity.</p>
+
+<h2>7.3 Official Support Channels & SLA</h2>
+<div class="callout callout-note">
+    <div class="callout-title">PrathamOne Academy Official Support Helpdesk</div>
+    <p><strong>Direct Telephone / WhatsApp Support:</strong><br>
+       &bull; Primary Helpline: <strong>+91 9323 023 007</strong><br>
+       &bull; Secondary Helpline: <strong>+91 9324 117 007</strong>
+    </p>
+    <p><strong>Official Support Email:</strong><br>
+       &bull; Primary Desk: <a href="mailto:support@prathamone.com">support@prathamone.com</a><br>
+       &bull; Alternate Desk: <a href="mailto:prathamone@outlook.com">prathamone@outlook.com</a>
+    </p>
+    <p><strong>Official Product Portal:</strong><br>
+       &bull; <a href="https://prathamone.com">https://prathamone.com</a>
+    </p>
+    <p><strong>Author & Chief Architect:</strong> Jawahar R Mallah<br>
+       <strong>Organization:</strong> AITDL — AI Technology & Development Lab
+    </p>
+</div>
+
+<div class="page-footer-text">
+    PrathamOne Coaching Institutes Enterprise Suite · prathamone.com
+</div>
+
+</body>
+</html>
