@@ -143,3 +143,4 @@ Every source code file (`.py`, `.ts`, `.tsx`, `.js`, `.jsx`, `.css`) must contai
 #  */
 ```
 Run `python scripts/manage_headers.py check` before completing your work. It must report 100% compliance.
+

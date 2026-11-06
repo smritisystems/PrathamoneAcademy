@@ -35,3 +35,4 @@ All reports, plans, audit summaries, and specifications generated during session
 - Include complete YAML frontmatter
 - Reindex using `python tools/docs_manager.py reindex`
 - Validate using `python tools/docs_manager.py validate`
+

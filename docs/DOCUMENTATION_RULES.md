@@ -166,3 +166,4 @@ python tools/docs_manager.py list --module 06_TEACHER_PAYROLL
 # Validate documentation naming, metadata completeness, links, and integrity
 python tools/docs_manager.py validate
 ```
+

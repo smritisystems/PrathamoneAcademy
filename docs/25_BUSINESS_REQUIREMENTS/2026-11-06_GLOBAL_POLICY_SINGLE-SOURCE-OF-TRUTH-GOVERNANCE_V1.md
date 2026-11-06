@@ -224,3 +224,4 @@ Every configuration must have an authoritative owner:
 - **System Settings:** Centralized key-value registry `system_settings`.
 - **RBAC & Permissions:** Managed in `roles` and `permissions` tables.
 - **Printing Templates:** Governed by the centralized printing engine.
+

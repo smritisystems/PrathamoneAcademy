@@ -93,3 +93,4 @@ python tools/docs_manager.py reindex
 # 6. Validate naming, frontmatter, and link integrity
 python tools/docs_manager.py validate
 ```
+
