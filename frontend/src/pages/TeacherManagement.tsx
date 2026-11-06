@@ -178,18 +178,22 @@ export default function TeacherManagement() {
   })
 
   // 4. Assignments list for Assignments tab
-  const { data: allAssignments = [], refetch: refetchAssignments } = useQuery({
+  const { data: assignmentsData = [], refetch: refetchAssignments } = useQuery({
     queryKey: ['all-teacher-assignments'],
     queryFn: () => staffApi.assignmentsList().then((r) => r.data),
     enabled: activeTab === 'assignments',
   })
+  const allAssignments = Array.isArray(assignmentsData) ? assignmentsData : []
 
   // 5. Teaching Sessions list for Sessions tab
-  const { data: recentSessions = [], refetch: refetchSessions } = useQuery({
+  const { data: recentSessionsData, refetch: refetchSessions } = useQuery({
     queryKey: ['recent-teaching-sessions'],
     queryFn: () => teacherPayrollApi.getSessions({ limit: 50 }).then((r) => r.data),
     enabled: activeTab === 'sessions',
   })
+  const recentSessions = Array.isArray(recentSessionsData)
+    ? recentSessionsData
+    : (recentSessionsData?.items || [])
 
   // Mutations
   const createTeacherMutation = useMutation({

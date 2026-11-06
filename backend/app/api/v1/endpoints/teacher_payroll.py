@@ -269,7 +269,7 @@ async def get_teacher_profile_details(
 
     # Get rate histories
     hist_stmt = (
-        select(TeacherRateHistory, User.full_name.label("changed_by_name"))
+        select(TeacherRateHistory, func.concat(User.first_name, ' ', User.last_name).label("changed_by_name"))
         .join(User, TeacherRateHistory.changed_by_id == User.id, isouter=True)
         .where(TeacherRateHistory.payment_profile_id == profile.id)
         .order_by(desc(TeacherRateHistory.changed_at))

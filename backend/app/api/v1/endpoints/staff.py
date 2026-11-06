@@ -605,17 +605,23 @@ async def list_teacher_assignments(
     """
     Lists teacher subject-batch allocations with workload and division student counts.
     """
+    ay_id = academic_year_id if not hasattr(academic_year_id, "default") else 1
+    t_id = teacher_id if not hasattr(teacher_id, "default") else None
+    d_id = division_id if not hasattr(division_id, "default") else None
+    s_id = standard_id if not hasattr(standard_id, "default") else None
+    sub_id = subject_id if not hasattr(subject_id, "default") else None
+
     conditions = [TeacherAssignment.is_active == True]
-    if academic_year_id:
-        conditions.append(TeacherAssignment.academic_year_id == academic_year_id)
-    if teacher_id:
-        conditions.append(TeacherAssignment.teacher_user_id == teacher_id)
-    if division_id:
-        conditions.append(TeacherAssignment.division_id == division_id)
-    if standard_id:
-        conditions.append(TeacherAssignment.standard_id == standard_id)
-    if subject_id:
-        conditions.append(TeacherAssignment.subject_id == subject_id)
+    if ay_id:
+        conditions.append(TeacherAssignment.academic_year_id == ay_id)
+    if t_id:
+        conditions.append(TeacherAssignment.teacher_user_id == t_id)
+    if d_id:
+        conditions.append(TeacherAssignment.division_id == d_id)
+    if s_id:
+        conditions.append(TeacherAssignment.standard_id == s_id)
+    if sub_id:
+        conditions.append(TeacherAssignment.subject_id == sub_id)
 
     query = (
         select(
@@ -633,7 +639,7 @@ async def list_teacher_assignments(
         .join(Subject, TeacherAssignment.subject_id == Subject.id)
         .join(Board, TeacherAssignment.board_id == Board.id)
         .where(and_(*conditions))
-        .order_by(Standard.sequence.asc(), Division.name.asc())
+        .order_by(Standard.level.asc(), Division.name.asc())
     )
     rows = (await db.execute(query)).all()
 

@@ -133,3 +133,4 @@ backend/tests/test_teacher_payroll.py::test_teacher_visibility_and_listings PASS
 ### 4.3 Live Application Validation (Playwright)
 - Verified all 4 active teachers are listed with full compensation details on Tab 3.
 - Executed live bulk payroll calculation for November 2026; generated payroll records `PRL-2026-11-0001` through `PRL-2026-11-0004` displayed in the Monthly Payroll register.
+

@@ -129,11 +129,12 @@ export default function TeacherProfileModal({
   })
 
   // 4. Fetch Teaching Sessions
-  const { data: sessionsData } = useQuery({
+  const { data: sessionsResponse } = useQuery({
     queryKey: ['teacher-sessions', teacherId],
     queryFn: () => teacherPayrollApi.getSessions({ teacher_user_id: teacherId, limit: 30 }).then((r) => r.data),
     enabled: !!teacherId && isOpen && activeTab === 'sessions',
   })
+  const sessionsData = Array.isArray(sessionsResponse) ? sessionsResponse : (sessionsResponse?.items || [])
 
   // 5. Fetch Monthly Payroll History
   const { data: payrollHistory } = useQuery({

@@ -5,7 +5,7 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-06T16:36:12.282753",
+  "generated_at": "2026-11-06T16:55:07.505014",
   "total_documents": 196,
   "modules_catalog": [
     {
@@ -1739,8 +1739,8 @@
       "filename": "2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
       "relative_path": "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
       "extension": ".md",
-      "size_bytes": 7589,
-      "sha256": "9bf9571a9930bd1dad125a26b93a5e201c27a665d4a8cb46f2122fc23242d49b",
+      "size_bytes": 7590,
+      "sha256": "f2a58252aeaa639eb8598539746e07b6132e77729a36be4a4eb9b8a8dd4ea8af",
       "module": "06_TEACHER_PAYROLL",
       "title": "Teacher Payroll & Payment Management — Teacher Visibility Audit & Remediation Report",
       "category": "AUDIT-REPORT",
