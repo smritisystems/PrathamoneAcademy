@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
     VERSION: str = "1.11.0"
-    BUILD_NUMBER: str = "2026.11.06-REV-019-v1.11.0-83EAAF6"
+    BUILD_NUMBER: str = "2026.11.06-REV-019-v1.11.0-2DCB052"
     RELEASE_CHANNEL: str = "Stable"
     RELEASE_STATUS: str = "Production Candidate"
     BUILD_DATE: str = "2026-11-06"
