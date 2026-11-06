@@ -19,3 +19,4 @@ python-dotenv==1.0.1
 psycopg2-binary==2.9.9
 slowapi==0.1.9
 
+qrcode==8.2

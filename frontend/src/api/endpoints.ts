@@ -39,7 +39,7 @@ import type {
   SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
   MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
-  ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem,
+  ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem, StudentIdCardData, ScanCheckinResult,
   StudentExitPayload, StudentReactivatePayload, StudentLifecycleHistoryResponse,
   WithdrawalReportItem, WithdrawalAnalyticsResponse,
   SystemReleaseCurrent, SystemReleaseListItem, SystemReleaseDetail,
@@ -331,6 +331,10 @@ export const studentsApi = {
   ) => apiClient.post<StudentDocumentItem>(`/students/${id}/documents`, data),
   deleteDocument: (studentId: number | string, docId: number | string) =>
     apiClient.delete(`/students/${studentId}/documents/${docId}`),
+  getIdCard: (studentId: number | string) =>
+    apiClient.get<StudentIdCardData>(`/students/${studentId}/id-card`),
+  getBatchIdCards: (params?: { standard_id?: number | string; division_id?: number | string }) =>
+    apiClient.get<{ count: number; cards: StudentIdCardData[] }>('/students/batch/id-cards', { params }),
 }
 
 // ─── Fee Categories ───────────────────────────────────────────────────────────
@@ -602,6 +606,8 @@ export const attendanceApi = {
     date: string
     entries: { student_id: number | string; enrollment_id?: number | string; status: string; remarks?: string }[]
   }) => apiClient.post('/attendance/bulk', data),
+  scanCheckin: (data: { identifier: string; date?: string; status?: string; remarks?: string }) =>
+    apiClient.post<ScanCheckinResult>('/attendance/scan-checkin', data),
 }
 
 // ─── Named Function Aliases for Page Compatibility ───────────────────────────

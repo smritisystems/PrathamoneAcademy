@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -377,6 +377,25 @@ async def create_student(
     }
 
 
+@router.get("/batch/id-cards")
+async def get_batch_student_id_cards(
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Generates printable ID card datasets with SVG QR codes for a batch of students."""
+    from app.services.id_card import get_batch_id_card_data
+    cards = await get_batch_id_card_data(
+        db=db,
+        institution_id=effective_inst_id,
+        standard_id=standard_id,
+        division_id=division_id,
+    )
+    return {"count": len(cards), "cards": cards}
+
+
 @router.get("/{student_id}")
 async def get_student(
     student_id: int,
@@ -468,6 +487,26 @@ async def get_student(
             "outstanding": float(fee_summary.outstanding),
         },
     }
+
+
+@router.get("/{student_id}/id-card")
+async def get_student_id_card(
+    student_id: int,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Generates official student ID card data with SVG QR code for thermal/PVC printing."""
+    from app.services.id_card import get_student_id_card_data
+    card = await get_student_id_card_data(
+        db=db, student_id=student_id, institution_id=effective_inst_id
+    )
+    if not card:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Student #{student_id} not found or does not belong to this institution.",
+        )
+    return card
 
 
 @router.put("/{student_id}")

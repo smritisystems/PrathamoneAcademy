@@ -19,6 +19,7 @@
 import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import StudentExitModal from '../components/StudentExitModal'
+import StudentIDCardModal from '../components/StudentIDCardModal'
 import StudentReactivateModal from '../components/StudentReactivateModal'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -63,6 +64,7 @@ export default function StudentDetailPage() {
 
   // Share Modal State
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showIdCardModal, setShowIdCardModal] = useState(false)
 
   // Student Lifecycle Modals State
   const [showExitModal, setShowExitModal] = useState(false)
@@ -541,6 +543,14 @@ export default function StudentDetailPage() {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setShowIdCardModal(true)}
+            className="px-3.5 py-2 rounded-lg border border-purple-300 text-purple-700 bg-purple-50 hover:bg-purple-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
+            title="Generate and print official CR80 Student ID Card with QR Code"
+          >
+            <CreditCard className="w-4 h-4" /> Student ID Card
+          </button>
           <Link
             to={`/forms?formId=student_kyc&recordId=${studentId}&mode=prefilled`}
             className="px-3.5 py-2 rounded-lg border border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"

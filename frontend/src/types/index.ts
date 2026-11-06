@@ -2175,6 +2175,57 @@ export interface FeeReminderQueueItem {
   whatsapp_url: string
 }
 
+export interface StudentIdCardData {
+  student_id: number
+  admission_number: string
+  first_name: string
+  last_name: string
+  full_name: string
+  date_of_birth: string
+  blood_group: string
+  photo_url?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  city?: string | null
+  standard_name: string
+  division_name: string
+  roll_number: string
+  academic_year: string
+  guardian_name: string
+  guardian_phone: string
+  guardian_relation: string
+  institution: {
+    id: number
+    name: string
+    code: string
+    short_name: string
+    tagline: string
+    address?: string
+    city?: string
+    phone?: string
+    logo_url?: string | null
+    primary_color?: string
+  }
+  qr_payload: string
+  qr_svg: string
+  valid_until: string
+}
+
+export interface ScanCheckinResult {
+  status: 'success' | 'already_marked'
+  message: string
+  student: {
+    id: number
+    name: string
+    admission_number: string
+    photo_url?: string | null
+    status: string
+    remarks?: string
+    checkin_time: string
+  }
+}
+
 
 // ─── Student Lifecycle & Withdrawal Analytics ─────────────────────────────
 
