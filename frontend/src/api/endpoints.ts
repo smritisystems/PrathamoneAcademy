@@ -348,6 +348,7 @@ export const feeStructuresApi = {
   list: (params?: { academic_year_id?: number | string; standard_id?: number | string; institution_id?: number | string }) =>
     apiClient.get<FeeStructure[]>('/fees/structures', { params }),
   create: (data: Record<string, unknown>) => apiClient.post<FeeStructure>('/fees/structures', data),
+  update: (id: number | string, data: Record<string, unknown>) => apiClient.put<FeeStructure>(`/fees/structures/${id}`, data),
 }
 
 // ─── Discounts ────────────────────────────────────────────────────────────────
@@ -401,6 +402,20 @@ export const feesApi = {
     status?: string
     search?: string
   }) => apiClient.get<FeeRegisterEntry[]>('/fees/register', { params }),
+
+  getStudentFeeDetails: (studentId: number | string) =>
+    apiClient.get(`/fees/students/${studentId}/fee-details`),
+
+  adjustStudentFees: (
+    studentId: number | string,
+    data: {
+      custom_amount?: number
+      concession_amount?: number
+      fee_structure_id?: number
+      remarks?: string
+      reason: string
+    }
+  ) => apiClient.post(`/fees/students/${studentId}/adjust-fees`, data),
 }
 
 // ─── Payments ─────────────────────────────────────────────────────────────────

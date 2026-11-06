@@ -29,8 +29,9 @@ import {
   UserMinus, UserCheck, History, GraduationCap
 } from 'lucide-react'
 import ShareModal from '../components/ShareModal'
-import { studentsApi, standardsApi, divisionsApi } from '../api/endpoints'
+import { studentsApi, standardsApi, divisionsApi, feesApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin } from '../store/authStore'
+import toast from 'react-hot-toast'
 import { StatusBadge } from '../components/Badge'
 import type { StudentDocumentItem } from '../types'
 
@@ -86,6 +87,143 @@ export default function StudentDetailPage() {
   const [editSuccessMsg, setEditSuccessMsg] = useState<string | null>(null)
   const [editErrorMsg, setEditErrorMsg] = useState<string | null>(null)
   const [confirmBatchTransfer, setConfirmBatchTransfer] = useState(false)
+
+  // Adjust Student Fees Modal State
+  const [showAdjustFeesModal, setShowAdjustFeesModal] = useState(false)
+  const [adjustFeesLoading, setAdjustFeesLoading] = useState(false)
+  const [adjustSubmitting, setAdjustSubmitting] = useState(false)
+  const [adjustFeesError, setAdjustFeesError] = useState<string | null>(null)
+  const [adjustFeesSuccess, setAdjustFeesSuccess] = useState<string | null>(null)
+  const [feeDetails, setFeeDetails] = useState<{
+    student_id: number
+    student_name: string
+    admission_number: string
+    standard_name: string
+    current_structure: {
+      id: number
+      name: string
+      amount: number
+      frequency: string
+      installments_count: number
+    } | null
+    custom_package_amount: number | null
+    concession_amount: number
+    current_invoice: {
+      id: number
+      invoice_number: string
+      total_amount: number
+      discount_amount: number
+      net_amount: number
+      paid_amount: number
+      outstanding_amount: number
+      status: string
+    } | null
+    available_structures: Array<{
+      id: number
+      name: string
+      amount: number
+      frequency: string
+      installments_count: number
+    }>
+  } | null>(null)
+
+  const [adjustForm, setAdjustForm] = useState({
+    fee_structure_id: 0,
+    package_amount: '',
+    concession_amount: '0',
+    reason: '',
+    remarks: '',
+  })
+
+  const handleOpenAdjustFees = async () => {
+    setAdjustFeesError(null)
+    setAdjustFeesSuccess(null)
+    setAdjustFeesLoading(true)
+    setShowAdjustFeesModal(true)
+    try {
+      const res = await feesApi.getStudentFeeDetails(studentId)
+      const data = res.data
+      setFeeDetails(data)
+      const currentPkg =
+        data.custom_package_amount !== null && data.custom_package_amount !== undefined
+          ? String(data.custom_package_amount)
+          : data.current_structure
+          ? String(data.current_structure.amount)
+          : '0'
+      const currentConcession =
+        data.concession_amount !== null && data.concession_amount !== undefined
+          ? String(data.concession_amount)
+          : '0'
+
+      setAdjustForm({
+        fee_structure_id: data.current_structure?.id || (data.available_structures?.[0]?.id ?? 0),
+        package_amount: currentPkg,
+        concession_amount: currentConcession,
+        reason: '',
+        remarks: '',
+      })
+    } catch (err: any) {
+      setAdjustFeesError(err?.response?.data?.detail || 'Failed to load student fee commitment.')
+    } finally {
+      setAdjustFeesLoading(false)
+    }
+  }
+
+  const handleStructureChange = (newStructId: number) => {
+    const selected = feeDetails?.available_structures?.find((s) => s.id === newStructId)
+    setAdjustForm((prev) => ({
+      ...prev,
+      fee_structure_id: newStructId,
+      package_amount: selected ? String(selected.amount) : prev.package_amount,
+    }))
+  }
+
+  const handleSaveAdjustFees = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!adjustForm.reason.trim()) {
+      setAdjustFeesError('A mandatory reason is required to adjust student fees.')
+      return
+    }
+    const pkg = parseFloat(adjustForm.package_amount)
+    const conc = parseFloat(adjustForm.concession_amount) || 0
+    if (isNaN(pkg) || pkg < 0) {
+      setAdjustFeesError('Please enter a valid package amount.')
+      return
+    }
+    if (conc < 0) {
+      setAdjustFeesError('Concession amount cannot be negative.')
+      return
+    }
+    if (conc > pkg) {
+      setAdjustFeesError('Concession amount cannot exceed total package fee.')
+      return
+    }
+
+    setAdjustSubmitting(true)
+    setAdjustFeesError(null)
+    try {
+      const res = await feesApi.adjustStudentFees(studentId, {
+        fee_structure_id: adjustForm.fee_structure_id || undefined,
+        custom_amount: pkg,
+        concession_amount: conc,
+        reason: adjustForm.reason.trim(),
+        remarks: adjustForm.remarks.trim() || undefined,
+      })
+      toast.success(res.data.message || 'Student fee adjustment applied successfully!')
+      setAdjustFeesSuccess(res.data.message || 'Fee adjusted successfully.')
+      queryClient.invalidateQueries({ queryKey: ['student-admin-profile', studentId] })
+      queryClient.invalidateQueries({ queryKey: ['student-lifecycle-history', studentId] })
+      queryClient.invalidateQueries({ queryKey: ['students'] })
+      setTimeout(() => {
+        setShowAdjustFeesModal(false)
+        setAdjustFeesSuccess(null)
+      }, 1000)
+    } catch (err: any) {
+      setAdjustFeesError(err?.response?.data?.detail || 'Failed to apply fee adjustment.')
+    } finally {
+      setAdjustSubmitting(false)
+    }
+  }
 
   // Edit Form State
   const [profileForm, setProfileForm] = useState({
@@ -766,6 +904,29 @@ export default function StudentDetailPage() {
           {/* TAB 6: FEES */}
           {activeTab === 'Fees' && (
             <div className="space-y-6">
+              {/* Fee Commitment Action Banner */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200/80 rounded-2xl p-5 shadow-xs">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-primary-600" />
+                    <span>Student Fee Commitment & Ledger</span>
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Manage agreed student package amount, scholarships/discounts, active fee structure, and invoices.
+                  </p>
+                </div>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={handleOpenAdjustFees}
+                    className="btn-primary inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm whitespace-nowrap"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Adjust Student Fees</span>
+                  </button>
+                )}
+              </div>
+
               {/* Invoices */}
               <div className="space-y-3">
                 <h4 className="font-bold text-gray-900 text-sm">Invoices</h4>
@@ -822,13 +983,22 @@ export default function StudentDetailPage() {
                           <td className="py-2 px-3 uppercase text-xs font-medium text-gray-700">{pmt.payment_method}</td>
                           <td className="py-2 px-3 font-mono text-xs text-gray-500">{pmt.transaction_reference}</td>
                           <td className="py-2 px-3 text-right font-bold text-emerald-700">{fmt(pmt.amount)}</td>
-                          <td className="py-2 px-3 text-right">
+                          <td className="py-2 px-3 text-right whitespace-nowrap">
                             <Link
                               to={`/receipts/${pmt.receipt_number}`}
-                              className="text-xs text-primary-600 hover:text-primary-800 font-medium inline-flex items-center gap-1"
+                              className="text-xs text-primary-600 hover:text-primary-800 font-medium inline-flex items-center gap-1 mr-2"
                             >
                               <Receipt className="w-3.5 h-3.5" /> View
                             </Link>
+                            {canEdit && (
+                              <Link
+                                to={`/payments?search=${pmt.receipt_number}`}
+                                className="text-xs text-amber-600 hover:text-amber-800 font-semibold inline-flex items-center gap-1"
+                                title="Edit payment details in Payments register"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" /> Edit
+                              </Link>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -1870,6 +2040,224 @@ export default function StudentDetailPage() {
           }}
           onSuccess={handleLifecycleSuccess}
         />
+      )}
+
+      {/* Adjust Student Fees Modal */}
+      {showAdjustFeesModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden my-auto animate-scale-in">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Adjust Student Fee Obligation</h3>
+                  <p className="text-xs text-gray-600">
+                    {overview.full_name} ({overview.admission_number})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdjustFeesModal(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto space-y-5 flex-1">
+              {adjustFeesLoading ? (
+                <div className="py-12 text-center text-xs text-gray-500">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
+                  Loading current fee commitment...
+                </div>
+              ) : (
+                <form onSubmit={handleSaveAdjustFees} id="adjust-fee-form" className="space-y-4">
+                  {adjustFeesError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      <span>{adjustFeesError}</span>
+                    </div>
+                  )}
+                  {adjustFeesSuccess && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 font-medium flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{adjustFeesSuccess}</span>
+                    </div>
+                  )}
+
+                  {/* Account Snapshot */}
+                  {feeDetails?.current_invoice && (
+                    <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 grid grid-cols-3 gap-2 text-center">
+                      <div>
+                        <span className="block text-[10px] font-semibold text-slate-500 uppercase">Current Net Fee</span>
+                        <span className="text-xs font-bold text-slate-900">{fmt(feeDetails.current_invoice.net_amount)}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-semibold text-slate-500 uppercase">Paid So Far</span>
+                        <span className="text-xs font-bold text-emerald-700">{fmt(feeDetails.current_invoice.paid_amount)}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-semibold text-slate-500 uppercase">Outstanding</span>
+                        <span className="text-xs font-bold text-rose-700">{fmt(feeDetails.current_invoice.outstanding_amount)}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fee Plan Selection */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Assigned Fee Structure Plan
+                    </label>
+                    <select
+                      value={adjustForm.fee_structure_id}
+                      onChange={(e) => handleStructureChange(Number(e.target.value))}
+                      className="w-full text-xs border border-gray-300 rounded-xl px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {feeDetails?.available_structures?.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} — {fmt(s.amount)} ({s.frequency}, {s.installments_count} installment{s.installments_count > 1 ? 's' : ''})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      Selecting a new structure updates the base plan template.
+                    </p>
+                  </div>
+
+                  {/* Two columns: Package Amount & Concession */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Agreed Package Amount (₹) *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        required
+                        value={adjustForm.package_amount}
+                        onChange={(e) => setAdjustForm((p) => ({ ...p, package_amount: e.target.value }))}
+                        className="w-full text-xs font-bold border border-gray-300 rounded-xl px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-[10px] text-gray-500">Agreed gross fee for academic year</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">
+                        Concession / Discount (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={adjustForm.concession_amount}
+                        onChange={(e) => setAdjustForm((p) => ({ ...p, concession_amount: e.target.value }))}
+                        className="w-full text-xs font-bold border border-gray-300 rounded-xl px-3 py-2 text-emerald-700 focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-[10px] text-gray-500">Management / sibling concession</span>
+                    </div>
+                  </div>
+
+                  {/* Live Calculation Preview Banner */}
+                  {(() => {
+                    const pkg = parseFloat(adjustForm.package_amount) || 0
+                    const conc = parseFloat(adjustForm.concession_amount) || 0
+                    const net = Math.max(0, pkg - conc)
+                    const paid = feeDetails?.current_invoice?.paid_amount || 0
+                    const newBal = Math.max(0, net - paid)
+
+                    return (
+                      <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-xl p-3 text-xs">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-gray-600 font-medium">New Net Fee:</span>
+                          <span className="font-extrabold text-blue-900 text-sm">
+                            {fmt(net)}
+                            <span className="text-[11px] font-normal text-gray-500 ml-1.5">
+                              (₹{pkg} - ₹{conc})
+                            </span>
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-blue-100">
+                          <span className="text-gray-500">New Outstanding Balance:</span>
+                          <span className="font-bold text-rose-700">
+                            {fmt(newBal)}
+                            <span className="text-gray-400 font-normal ml-1">(after ₹{paid} paid)</span>
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Mandatory Reason */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Mandatory Reason for Adjustment <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={adjustForm.reason}
+                      onChange={(e) => setAdjustForm((p) => ({ ...p, reason: e.target.value }))}
+                      placeholder="e.g. Sibling discount approved by Director, or standard fee correction..."
+                      className="w-full text-xs border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span className="text-[10px] text-gray-500">
+                      This explanation is permanently logged in the compliance audit trail.
+                    </span>
+                  </div>
+
+                  {/* Optional Remarks */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Internal Remarks (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={adjustForm.remarks}
+                      onChange={(e) => setAdjustForm((p) => ({ ...p, remarks: e.target.value }))}
+                      placeholder="Optional reference, approval letter, or note..."
+                      className="w-full text-xs border border-gray-200 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3.5 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-2.5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowAdjustFeesModal(false)}
+                className="px-4 py-2 rounded-xl border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="adjust-fee-form"
+                disabled={adjustSubmitting || adjustFeesLoading || !adjustForm.reason.trim()}
+                className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-50 transition shadow-sm inline-flex items-center gap-1.5"
+              >
+                {adjustSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
+                    <span>Applying...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save & Apply Adjustment</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

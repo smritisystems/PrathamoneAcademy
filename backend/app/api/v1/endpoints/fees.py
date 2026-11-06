@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -22,8 +22,10 @@ from sqlalchemy import select, func, and_, or_, desc, asc, case
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, is_sysadmin
 import uuid
+import json
+from app.models.user import AuditLog
 from app.models.fee import (
     FeeCategory,
     FeeStructure,
@@ -73,6 +75,24 @@ class FeeStructureCreate(BaseModel):
     due_day: Optional[int] = None
     late_fee_amount: Decimal = Decimal("0")
     late_fee_days: int = 0
+
+
+class FeeStructureUpdate(BaseModel):
+    name: Optional[str] = None
+    amount: Optional[Decimal] = None
+    category_id: Optional[int] = None
+    frequency: Optional[str] = None
+    installments_count: Optional[int] = None
+    late_fee_amount: Optional[Decimal] = None
+    is_active: Optional[bool] = None
+
+
+class StudentFeeAdjustmentRequest(BaseModel):
+    fee_structure_id: Optional[int] = None
+    custom_amount: Optional[Decimal] = None
+    concession_amount: Optional[Decimal] = None
+    remarks: Optional[str] = None
+    reason: str  # Mandatory audit justification
 
 
 class DiscountCreate(BaseModel):
@@ -197,6 +217,49 @@ async def create_fee_structure(
     }
 
 
+@router.put("/structures/{structure_id}")
+async def update_fee_structure(
+    structure_id: int,
+    data: FeeStructureUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "sysadmin")),
+):
+    """Update an existing fee structure template."""
+    res = await db.execute(select(FeeStructure).where(FeeStructure.id == structure_id))
+    structure = res.scalar_one_or_none()
+    if not structure:
+        raise HTTPException(status_code=404, detail=f"Fee structure #{structure_id} not found")
+
+    old_data = {"name": structure.name, "amount": float(structure.amount), "is_active": structure.is_active}
+    update_dict = data.model_dump(exclude_unset=True)
+    for k, v in update_dict.items():
+        setattr(structure, k, v)
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="FEE_STRUCTURE_UPDATE",
+        resource_type="fee_structure",
+        resource_id=structure_id,
+        old_data=json.dumps(old_data),
+        new_data=json.dumps({"name": structure.name, "amount": float(structure.amount), "is_active": structure.is_active}),
+        severity="INFO",
+        details=f"Fee structure #{structure_id} ('{structure.name}') updated by {current_user.username}",
+    )
+    db.add(audit)
+    await db.commit()
+    await db.refresh(structure)
+
+    return {
+        "id": structure.id,
+        "name": structure.name,
+        "amount": float(structure.amount),
+        "frequency": structure.frequency,
+        "installments_count": structure.installments_count,
+        "is_active": structure.is_active,
+        "message": "Fee structure updated successfully",
+    }
+
+
 # ---------- Discounts ----------
 @router.get("/discounts")
 async def list_discounts(
@@ -302,6 +365,239 @@ async def create_fee_assignment(
     await db.commit()
     await db.refresh(assignment)
     return {"id": assignment.id, "student_id": assignment.student_id}
+
+
+@router.get("/students/{student_id}/fee-details")
+async def get_student_fee_details(
+    student_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Retrieve full fee commitment and active invoice details for a student."""
+    student_res = await db.execute(select(Student).where(Student.id == student_id))
+    student = student_res.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student #{student_id} not found")
+
+    ay_res = await db.execute(select(AcademicYear).where(AcademicYear.is_active == True).order_by(desc(AcademicYear.id)))
+    ay = ay_res.scalars().first()
+    ay_id = ay.id if ay else 1
+
+    assign_res = await db.execute(
+        select(StudentFeeAssignment)
+        .options(selectinload(StudentFeeAssignment.fee_structure))
+        .where(
+            StudentFeeAssignment.student_id == student_id,
+            StudentFeeAssignment.academic_year_id == ay_id,
+        )
+    )
+    assignment = assign_res.scalar_one_or_none()
+
+    inv_res = await db.execute(
+        select(FeeInvoice)
+        .where(FeeInvoice.student_id == student_id)
+        .order_by(desc(FeeInvoice.created_at))
+    )
+    invoice = inv_res.scalar_one_or_none()
+
+    # Active fee structures
+    structures_res = await db.execute(select(FeeStructure).where(FeeStructure.is_active == True))
+    structures = structures_res.scalars().all()
+
+    assigned_structure = None
+    if assignment and assignment.fee_structure:
+        assigned_structure = {
+            "id": assignment.fee_structure.id,
+            "name": assignment.fee_structure.name,
+            "base_amount": float(assignment.fee_structure.amount),
+        }
+
+    return {
+        "student_id": student.id,
+        "student_name": f"{student.first_name} {student.last_name}",
+        "admission_number": student.admission_number,
+        "academic_year_id": ay_id,
+        "assigned_structure": assigned_structure,
+        "custom_amount": float(assignment.custom_amount) if (assignment and assignment.custom_amount is not None) else (assigned_structure["base_amount"] if assigned_structure else 0.0),
+        "concession_amount": float(assignment.concession_amount) if assignment else 0.0,
+        "remarks": assignment.remarks if assignment else "",
+        "invoice": {
+            "invoice_number": invoice.invoice_number if invoice else None,
+            "total_amount": float(invoice.total_amount) if invoice else 0.0,
+            "discount_amount": float(invoice.discount_amount) if invoice else 0.0,
+            "net_amount": float(invoice.net_amount) if invoice else 0.0,
+            "paid_amount": float(invoice.paid_amount) if invoice else 0.0,
+            "outstanding_amount": float(invoice.outstanding_amount) if invoice else 0.0,
+            "status": invoice.status if invoice else "none",
+        } if invoice else None,
+        "available_structures": [
+            {"id": s.id, "name": s.name, "amount": float(s.amount), "frequency": s.frequency}
+            for s in structures
+        ],
+    }
+
+
+@router.post("/students/{student_id}/adjust-fees")
+async def adjust_student_fees(
+    student_id: int,
+    data: StudentFeeAdjustmentRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "principal", "sysadmin")),
+):
+    """
+    Adjusts a student's assigned fee package, concession/scholarship discount, and synchronizes the active invoice.
+    Maintains an immutable audit record of the financial adjustment.
+    """
+    reason = (data.reason or "").strip()
+    if not reason:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A mandatory audit reason is strictly required to adjust student fees.",
+        )
+
+    student_res = await db.execute(select(Student).where(Student.id == student_id))
+    student = student_res.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail=f"Student #{student_id} not found")
+
+    ay_res = await db.execute(select(AcademicYear).where(AcademicYear.is_active == True).order_by(desc(AcademicYear.id)))
+    ay = ay_res.scalars().first()
+    ay_id = ay.id if ay else 1
+
+    assign_res = await db.execute(
+        select(StudentFeeAssignment)
+        .options(selectinload(StudentFeeAssignment.fee_structure))
+        .where(
+            StudentFeeAssignment.student_id == student_id,
+            StudentFeeAssignment.academic_year_id == ay_id,
+        )
+    )
+    assignment = assign_res.scalar_one_or_none()
+
+    target_structure_id = data.fee_structure_id or (assignment.fee_structure_id if assignment else None)
+    if not target_structure_id:
+        default_fs = (await db.execute(select(FeeStructure).where(FeeStructure.is_active == True))).scalars().first()
+        if not default_fs:
+            raise HTTPException(status_code=400, detail="No active fee structure available to assign.")
+        target_structure_id = default_fs.id
+
+    fs_res = await db.execute(select(FeeStructure).where(FeeStructure.id == target_structure_id))
+    fs_obj = fs_res.scalar_one_or_none()
+    if not fs_obj:
+        raise HTTPException(status_code=404, detail="Selected fee structure not found")
+
+    old_custom = float(assignment.custom_amount) if (assignment and assignment.custom_amount is not None) else float(fs_obj.amount)
+    old_concession = float(assignment.concession_amount) if assignment else 0.0
+
+    package_amt = data.custom_amount if data.custom_amount is not None else (assignment.custom_amount if assignment and assignment.custom_amount is not None else fs_obj.amount)
+    disc_amt = data.concession_amount if data.concession_amount is not None else (assignment.concession_amount if assignment else Decimal("0"))
+    net_amt = max(Decimal("0"), package_amt - disc_amt)
+
+    if not assignment:
+        assignment = StudentFeeAssignment(
+            student_id=student_id,
+            fee_structure_id=target_structure_id,
+            academic_year_id=ay_id,
+            custom_amount=package_amt,
+            concession_amount=disc_amt,
+            remarks=data.remarks or reason,
+        )
+        db.add(assignment)
+        await db.flush()
+    else:
+        if data.fee_structure_id:
+            assignment.fee_structure_id = data.fee_structure_id
+        assignment.custom_amount = package_amt
+        assignment.concession_amount = disc_amt
+        if data.remarks:
+            assignment.remarks = data.remarks
+
+    # Synchronize active FeeInvoice
+    inv_res = await db.execute(
+        select(FeeInvoice)
+        .where(
+            FeeInvoice.student_id == student_id,
+            FeeInvoice.assignment_id == assignment.id,
+        )
+    )
+    invoice = inv_res.scalar_one_or_none()
+
+    if not invoice:
+        # Check if any invoice exists for student
+        any_inv_res = await db.execute(
+            select(FeeInvoice).where(FeeInvoice.student_id == student_id).order_by(desc(FeeInvoice.created_at))
+        )
+        invoice = any_inv_res.scalar_one_or_none()
+
+    if not invoice:
+        invoice = FeeInvoice(
+            invoice_number=f"INV-{date.today().year}-{uuid.uuid4().hex[:6].upper()}",
+            student_id=student_id,
+            assignment_id=assignment.id,
+            academic_year_id=ay_id,
+            total_amount=package_amt,
+            discount_amount=disc_amt,
+            net_amount=net_amt,
+            paid_amount=Decimal("0"),
+            outstanding_amount=net_amt,
+            status="unpaid",
+            issue_date=date.today(),
+            notes=f"Adjusted: {reason}",
+        )
+        db.add(invoice)
+        await db.flush()
+    else:
+        invoice.assignment_id = assignment.id
+        invoice.total_amount = package_amt
+        invoice.discount_amount = disc_amt
+        invoice.net_amount = net_amt
+        invoice.outstanding_amount = max(Decimal("0"), net_amt - invoice.paid_amount)
+        if invoice.outstanding_amount == Decimal("0"):
+            invoice.status = "paid"
+        elif invoice.paid_amount > Decimal("0"):
+            invoice.status = "partial"
+        else:
+            invoice.status = "unpaid"
+        invoice.notes = (invoice.notes or "") + f" | Adjusted by {current_user.username}: {reason}"
+
+    # Log audit entry
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="STUDENT_FEE_ADJUSTMENT",
+        resource_type="student_fee",
+        resource_id=student_id,
+        old_data=json.dumps({"custom_amount": old_custom, "concession_amount": old_concession}),
+        new_data=json.dumps({
+            "custom_amount": float(package_amt),
+            "concession_amount": float(disc_amt),
+            "net_amount": float(net_amt),
+            "paid_amount": float(invoice.paid_amount),
+            "outstanding_amount": float(invoice.outstanding_amount),
+            "fee_structure_id": assignment.fee_structure_id,
+            "invoice_number": invoice.invoice_number,
+        }),
+        severity="INFO",
+        details=f"Fee adjusted for Student #{student_id} ({student.first_name} {student.last_name}) to Net: ₹{net_amt}. Reason: {reason}",
+    )
+    db.add(audit)
+
+    await db.commit()
+    await db.refresh(assignment)
+    await db.refresh(invoice)
+
+    return {
+        "success": True,
+        "message": f"Fees successfully adjusted for {student.first_name} {student.last_name}",
+        "student_id": student_id,
+        "assignment_id": assignment.id,
+        "package_amount": float(package_amt),
+        "concession_amount": float(disc_amt),
+        "net_amount": float(net_amt),
+        "paid_amount": float(invoice.paid_amount),
+        "outstanding_amount": float(invoice.outstanding_amount),
+        "invoice_number": invoice.invoice_number,
+        "status": invoice.status,
+    }
 
 
 # ---------- Invoices ----------

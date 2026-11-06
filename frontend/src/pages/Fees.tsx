@@ -25,7 +25,8 @@ import {
   XCircle, Printer, Eye, RotateCcw, Plus, Search, Shield,
   ArrowRight, Calendar, Info, Clock, AlertTriangle, Settings, FileText,
   ChevronRight, ChevronDown, Coins, Bell, Percent, Award, Trash2,
-  ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap, Sliders
+  ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap, Sliders,
+  Edit3
 } from 'lucide-react'
 import {
   ComposedChart, Bar, Line, PieChart, Pie, Cell, XAxis, YAxis,
@@ -149,6 +150,7 @@ export const numberToWordsINR = (num: number): string => {
 
 export default function Fees() {
   const { selectedAcademicYearId, selectedInstitutionId, user } = useAuthStore()
+  const canEdit = isUserAdmin(user)
   const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
 
@@ -593,6 +595,106 @@ export default function Fees() {
     enabled: !!activeReceiptModalNumber,
   })
 
+  // Edit Receipt Modal State
+  const [isEditReceiptModalOpen, setIsEditReceiptModalOpen] = useState(false)
+  const [editingReceiptItem, setEditingReceiptItem] = useState<PaymentReceiptListItem | null>(null)
+  const [loadingReceiptPayment, setLoadingReceiptPayment] = useState(false)
+  const [editReceiptForm, setEditReceiptForm] = useState({
+    payment_id: 0,
+    receipt_number: '',
+    student_name: '',
+    amount: '',
+    payment_date: '',
+    payment_method: 'cash',
+    transaction_reference: '',
+    bank_name: '',
+    cheque_number: '',
+    notes: '',
+    edit_reason: '',
+    status: '',
+  })
+
+  const handleOpenEditReceipt = async (r: PaymentReceiptListItem) => {
+    setEditingReceiptItem(r)
+    setLoadingReceiptPayment(true)
+    setIsEditReceiptModalOpen(true)
+    try {
+      const res = await paymentsApi.get(r.payment_id)
+      const p = res.data
+      setEditReceiptForm({
+        payment_id: p.id,
+        receipt_number: r.receipt_number,
+        student_name: r.student_name,
+        amount: String(p.amount),
+        payment_date: p.payment_date || '',
+        payment_method: p.payment_method || 'cash',
+        transaction_reference: p.transaction_reference || '',
+        bank_name: p.bank_name || '',
+        cheque_number: p.cheque_number || '',
+        notes: p.notes || '',
+        edit_reason: '',
+        status: p.status,
+      })
+    } catch {
+      setEditReceiptForm({
+        payment_id: r.payment_id,
+        receipt_number: r.receipt_number,
+        student_name: r.student_name,
+        amount: String(r.amount),
+        payment_date: r.payment_date || '',
+        payment_method: r.payment_method || 'cash',
+        transaction_reference: '',
+        bank_name: '',
+        cheque_number: '',
+        notes: '',
+        edit_reason: '',
+        status: r.status,
+      })
+    } finally {
+      setLoadingReceiptPayment(false)
+    }
+  }
+
+  const editReceiptMutation = useMutation({
+    mutationFn: async (form: typeof editReceiptForm) => {
+      // If sysadmin and payment is posted/completed, ensure edit_posted permission is active
+      if (isUserSysAdmin(user) && (form.status === 'posted' || form.status === 'completed')) {
+        try {
+          await paymentsApi.toggleEditPosted({
+            role_name: 'sysadmin',
+            granted: true,
+            reason: form.edit_reason.trim() || 'SysAdmin administrative receipt update',
+          })
+        } catch {
+          // ignore if already unlocked
+        }
+      }
+      return paymentsApi.update(form.payment_id, {
+        amount: parseFloat(form.amount),
+        payment_date: form.payment_date,
+        payment_method: form.payment_method,
+        transaction_reference: form.transaction_reference || undefined,
+        bank_name: form.bank_name || undefined,
+        cheque_number: form.cheque_number || undefined,
+        notes: form.notes || undefined,
+        edit_reason: form.edit_reason.trim() || 'Receipt updated by administrator',
+      })
+    },
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Payment and receipt updated successfully')
+      setIsEditReceiptModalOpen(false)
+      setEditingReceiptItem(null)
+      queryClient.invalidateQueries({ queryKey: ['receipts-list'] })
+      queryClient.invalidateQueries({ queryKey: ['fees-register'] })
+      queryClient.invalidateQueries({ queryKey: ['fee-invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['fee-overview'] })
+      queryClient.invalidateQueries({ queryKey: ['my-payment-permissions'] })
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Failed to update payment receipt')
+    },
+  })
+
   // ─────────────────────────────────────────────────────────────────────────────
   // TAB 6: FEE PLANS (STRUCTURES & CATEGORIES)
   // ─────────────────────────────────────────────────────────────────────────────
@@ -660,6 +762,66 @@ export default function Fees() {
       due_day: newStructDueDay ? Number(newStructDueDay) : undefined,
       late_fee_amount: parseFloat(newStructLateFee || '0'),
       late_fee_days: 7,
+    })
+  }
+
+  // Edit Fee Structure state
+  const [isEditStructureModalOpen, setIsEditStructureModalOpen] = useState(false)
+  const [editingStructure, setEditingStructure] = useState<FeeStructure | null>(null)
+  const [editStructName, setEditStructName] = useState('')
+  const [editStructCatId, setEditStructCatId] = useState<number | ''>('')
+  const [editStructAmount, setEditStructAmount] = useState('')
+  const [editStructFrequency, setEditStructFrequency] = useState('annual')
+  const [editStructInstallments, setEditStructInstallments] = useState(1)
+  const [editStructIsActive, setEditStructIsActive] = useState(true)
+
+  const handleOpenEditStructure = (fs: FeeStructure) => {
+    setEditingStructure(fs)
+    setEditStructName(fs.name)
+    setEditStructCatId(fs.category_id || (fs.category?.id ?? ''))
+    setEditStructAmount(String(fs.amount))
+    setEditStructFrequency(fs.frequency || 'annual')
+    setEditStructInstallments(fs.installments_count || 1)
+    setEditStructIsActive(fs.is_active !== false)
+    setIsEditStructureModalOpen(true)
+  }
+
+  const editStructureMutation = useMutation({
+    mutationFn: (data: { id: number; payload: any }) =>
+      feeStructuresApi.update(data.id, data.payload),
+    onSuccess: () => {
+      toast.success('Fee structure updated successfully')
+      setIsEditStructureModalOpen(false)
+      setEditingStructure(null)
+      queryClient.invalidateQueries({ queryKey: ['fee-structures'] })
+      queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Failed to update fee structure')
+    },
+  })
+
+  const handleSaveEditStructure = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingStructure || !editStructName.trim() || !editStructAmount) {
+      toast.error('Please complete all required fields')
+      return
+    }
+    const amt = parseFloat(editStructAmount)
+    if (isNaN(amt) || amt < 0) {
+      toast.error('Please enter a valid amount')
+      return
+    }
+    editStructureMutation.mutate({
+      id: editingStructure.id,
+      payload: {
+        name: editStructName.trim(),
+        category_id: editStructCatId ? Number(editStructCatId) : undefined,
+        amount: amt,
+        frequency: editStructFrequency,
+        installments_count: editStructInstallments,
+        is_active: editStructIsActive,
+      },
     })
   }
 
@@ -2485,13 +2647,26 @@ export default function Fees() {
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-center">
-                          <button
-                            type="button"
-                            onClick={() => setActiveReceiptModalNumber(r.receipt_number)}
-                            className="px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all"
-                          >
-                            View & Print
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setActiveReceiptModalNumber(r.receipt_number)}
+                              className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all"
+                            >
+                              View & Print
+                            </button>
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditReceipt(r)}
+                                className="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1"
+                                title="Edit receipt details"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                                <span>Edit</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -2571,6 +2746,7 @@ export default function Fees() {
                       <th className="py-2.5 px-3 text-center">Inst Count</th>
                       <th className="py-2.5 px-3 text-right">Amount</th>
                       <th className="py-2.5 px-3 text-center">Status</th>
+                      <th className="py-2.5 px-3 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -2583,9 +2759,26 @@ export default function Fees() {
                         <td className="py-2.5 px-3 text-center font-bold">{fs.installments_count}</td>
                         <td className="py-2.5 px-3 text-right font-extrabold text-slate-900">{fmt(fs.amount)}</td>
                         <td className="py-2.5 px-3 text-center">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                            Active
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              fs.is_active !== false ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                            }`}
+                          >
+                            {fs.is_active !== false ? 'Active' : 'Inactive'}
                           </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditStructure(fs)}
+                              className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1"
+                              title="Edit Fee Plan"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              <span>Edit</span>
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -3126,6 +3319,294 @@ export default function Fees() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 6: EDIT FEE STRUCTURE                                                */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {isEditStructureModalOpen && editingStructure && (
+        <Modal
+          isOpen={isEditStructureModalOpen}
+          onClose={() => setIsEditStructureModalOpen(false)}
+          title={`Edit Fee Structure: ${editingStructure.name}`}
+          size="md"
+        >
+          <form onSubmit={handleSaveEditStructure} className="space-y-3.5">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Plan Name *</label>
+              <input
+                type="text"
+                value={editStructName}
+                onChange={(e) => setEditStructName(e.target.value)}
+                placeholder="e.g. Standard 10 Full Year Coaching"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Fee Category</label>
+                <select
+                  value={editStructCatId}
+                  onChange={(e) => setEditStructCatId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
+                >
+                  <option value="">Select Category...</option>
+                  {feeCategories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Frequency</label>
+                <select
+                  value={editStructFrequency}
+                  onChange={(e) => setEditStructFrequency(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
+                >
+                  <option value="annual">Annual / Full Course</option>
+                  <option value="term">Term-wise</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="one_time">One Time</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Total Amount (₹) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={editStructAmount}
+                  onChange={(e) => setEditStructAmount(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Installments Count</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="24"
+                  value={editStructInstallments}
+                  onChange={(e) => setEditStructInstallments(parseInt(e.target.value) || 1)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={editStructIsActive}
+                  onChange={(e) => setEditStructIsActive(e.target.checked)}
+                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                />
+                <span>Active Template (available for student assignments)</span>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsEditStructureModalOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={editStructureMutation.isPending}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5"
+              >
+                {editStructureMutation.isPending ? 'Saving...' : 'Save Plan Changes'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 7: EDIT PAYMENT RECEIPT                                              */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {isEditReceiptModalOpen && (
+        <Modal
+          isOpen={isEditReceiptModalOpen}
+          onClose={() => setIsEditReceiptModalOpen(false)}
+          title={`Edit Receipt ${editReceiptForm.receipt_number}`}
+          size="md"
+        >
+          {loadingReceiptPayment ? (
+            <div className="p-8 text-center text-xs text-slate-500">
+              <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-blue-600 mx-auto mb-2" />
+              Loading payment transaction...
+            </div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!editReceiptForm.edit_reason.trim()) {
+                  toast.error('A mandatory reason is required to update receipt details')
+                  return
+                }
+                const amt = parseFloat(editReceiptForm.amount)
+                if (isNaN(amt) || amt <= 0) {
+                  toast.error('Payment amount must be greater than zero')
+                  return
+                }
+                editReceiptMutation.mutate(editReceiptForm)
+              }}
+              className="space-y-3.5"
+            >
+              {/* Alert note about financial ledger rules */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-amber-800">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                  <span>Audited Financial Modification</span>
+                </div>
+                <p className="text-[11px] text-amber-700 leading-relaxed">
+                  Student: <strong>{editReceiptForm.student_name}</strong>. Modifying the payment amount or method
+                  will supersede receipt #{editReceiptForm.receipt_number} and update the active fee invoice balance.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Amount (₹) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="any"
+                    value={editReceiptForm.amount}
+                    onChange={(e) => setEditReceiptForm((p) => ({ ...p, amount: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Payment Date *</label>
+                  <input
+                    type="date"
+                    value={editReceiptForm.payment_date}
+                    onChange={(e) => setEditReceiptForm((p) => ({ ...p, payment_date: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Payment Method *</label>
+                  <select
+                    value={editReceiptForm.payment_method}
+                    onChange={(e) => setEditReceiptForm((p) => ({ ...p, payment_method: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
+                    required
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="upi">Online / UPI</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="card">Debit / Credit Card</option>
+                    <option value="netbanking">Net Banking</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Transaction Reference</label>
+                  <input
+                    type="text"
+                    value={editReceiptForm.transaction_reference}
+                    onChange={(e) => setEditReceiptForm((p) => ({ ...p, transaction_reference: e.target.value }))}
+                    placeholder="UPI Ref / UTR / Auth Code"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
+                  />
+                </div>
+              </div>
+
+              {editReceiptForm.payment_method === 'cheque' && (
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      value={editReceiptForm.bank_name}
+                      onChange={(e) => setEditReceiptForm((p) => ({ ...p, bank_name: e.target.value }))}
+                      placeholder="e.g. HDFC Bank"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Cheque Number</label>
+                    <input
+                      type="text"
+                      value={editReceiptForm.cheque_number}
+                      onChange={(e) => setEditReceiptForm((p) => ({ ...p, cheque_number: e.target.value }))}
+                      placeholder="6-digit cheque number"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Payment Notes</label>
+                <input
+                  type="text"
+                  value={editReceiptForm.notes}
+                  onChange={(e) => setEditReceiptForm((p) => ({ ...p, notes: e.target.value }))}
+                  placeholder="Additional remarks or notes..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Mandatory Audit Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  value={editReceiptForm.edit_reason}
+                  onChange={(e) => setEditReceiptForm((p) => ({ ...p, edit_reason: e.target.value }))}
+                  placeholder="Specify reason for receipt correction (e.g. Discrepancy in recorded amount, payment mode correction)..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-[10px] text-slate-500">
+                  This justification is logged in immutable financial audit records.
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditReceiptModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editReceiptMutation.isPending || !editReceiptForm.edit_reason.trim()}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5"
+                >
+                  {editReceiptMutation.isPending ? 'Saving...' : 'Save & Update Receipt'}
+                </button>
+              </div>
+            </form>
+          )}
         </Modal>
       )}
     </div>

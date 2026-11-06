@@ -272,6 +272,7 @@ export interface FeeStructure {
   standard_id?: number
   installments_count: number
   late_fee_amount: number
+  is_active?: boolean
 }
 
 export interface FeeInvoice {
