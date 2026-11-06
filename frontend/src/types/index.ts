@@ -2779,3 +2779,105 @@ export interface EmployeeActivityHistoryItem {
   status: string
   record_id?: number | string
 }
+
+
+// ─── CodeX Engine Entities ───────────────────────────────────────────────────
+
+export interface CodexConfig {
+  id: number
+  institution_id: number
+  is_master_enabled: boolean
+  feature_numeric_to_alphabet: boolean
+  feature_alphabet_to_numeric: boolean
+  feature_custom_alphabet_mapping: boolean
+  feature_multiple_mapping_profiles: boolean
+  feature_mapping_version_history: boolean
+  feature_hide_actual_amount: boolean
+  feature_show_actual_amount: boolean
+  feature_show_both: boolean
+  feature_qr_generation: boolean
+  feature_mobile_decoder: boolean
+  feature_offline_decoder: boolean
+  feature_copy_share_code: boolean
+  feature_expiry_codes: boolean
+  feature_pin_protected_decoding: boolean
+  app_selling_price: boolean
+  app_purchase_cost: boolean
+  app_salary_payroll: boolean
+  app_commission: boolean
+  app_discounts: boolean
+  app_customer_specific_values: boolean
+  app_internal_reference_values: boolean
+  app_fee_structures: boolean
+  has_security_pin: boolean
+  decoder_expiry_seconds: number
+  max_decoding_attempts: number
+  updated_at?: string | null
+}
+
+export interface CodexMappingProfile {
+  id: number
+  profile_code: string
+  name: string
+  description?: string | null
+  version: number
+  digit_map: Record<string, string>
+  decimal_symbol: string
+  negative_symbol: string
+  prefix: string
+  suffix: string
+  is_active: boolean
+  is_default: boolean
+  updated_at?: string | null
+}
+
+export interface CodexMappingVersion {
+  id: number
+  version: number
+  digit_map: Record<string, string>
+  decimal_symbol: string
+  negative_symbol: string
+  prefix: string
+  suffix: string
+  change_reason?: string | null
+  created_at: string
+}
+
+export interface CodexScopeAssignment {
+  id: number
+  scope_type: 'business' | 'department' | 'role' | 'user'
+  scope_target: string
+  visibility_mode: 'hidden' | 'coded_only' | 'actual_only' | 'both' | 'disabled'
+  allowed_modules: string[]
+  can_decode: boolean
+  can_generate_qr: boolean
+  updated_at?: string | null
+}
+
+export interface CodexAuditLogItem {
+  id: number
+  action: string
+  entity_type: string
+  entity_id?: string | null
+  user_name?: string | null
+  status: string
+  details?: any
+  ip_address?: string | null
+  created_at: string
+}
+
+export interface CodexConfigResponse {
+  config: CodexConfig
+  default_profile: {
+    id: number
+    name: string
+    profile_code: string
+    version: number
+    prefix: string
+    digit_map: Record<string, string>
+  }
+  stats: {
+    profiles_count: number
+    scopes_count: number
+  }
+}

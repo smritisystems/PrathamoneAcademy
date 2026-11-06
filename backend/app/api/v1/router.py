@@ -45,6 +45,7 @@ from app.api.v1.endpoints import (
     communication,
     releases,
     teacher_payroll,
+    codex,
 )
 
 api_router = APIRouter()
@@ -95,3 +96,4 @@ api_router.include_router(communication.router, prefix="/communication", tags=["
 api_router.include_router(releases.router, prefix="/releases", tags=["releases"])
 
 api_router.include_router(teacher_payroll.router, prefix="/teacher-payroll", tags=["teacher-payroll"])
+api_router.include_router(codex.router, prefix="/codex", tags=["codex"])

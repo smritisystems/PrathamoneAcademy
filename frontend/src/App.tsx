@@ -59,6 +59,7 @@ const SysAdminWorkspacePage = lazyWithRetry(() => import('./pages/SysAdminWorksp
 const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
 const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), 'Communication')
 const ReleasesPage = lazyWithRetry(() => import('./pages/Releases'), 'Releases')
+const CodeXStudioPage = lazyWithRetry(() => import('./pages/CodeXStudio'), 'CodeXStudio')
 
 function PageLoader() {
   return (
@@ -182,6 +183,7 @@ export default function App() {
           <Route path="forms-documents" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
+          <Route path="codex" element={<Suspense fallback={<PageLoader />}><CodeXStudioPage /></Suspense>} />
           <Route path="communication" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
           <Route path="admin/releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />

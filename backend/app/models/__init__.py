@@ -51,6 +51,10 @@ from app.models.teacher_payroll import (
     TeacherPaymentProfile, TeacherRateHistory, TeacherContractMilestone,
     TeachingSession, TeacherPayroll, TeacherPaymentVoucher
 )
+from app.models.codex import (
+    CodexConfig, CodexMappingProfile, CodexMappingVersion,
+    CodexScopeAssignment, CodexAuditLog, CodexTemporaryToken
+)
 
 
 __all__ = [
@@ -109,6 +113,12 @@ __all__ = [
     "TeachingSession",
     "TeacherPayroll",
     "TeacherPaymentVoucher",
+    "CodexConfig",
+    "CodexMappingProfile",
+    "CodexMappingVersion",
+    "CodexScopeAssignment",
+    "CodexAuditLog",
+    "CodexTemporaryToken",
 ]
 
 

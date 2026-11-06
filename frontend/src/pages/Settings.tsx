@@ -17,6 +17,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   Building2, Palette, GraduationCap, UserCheck, Users, CreditCard,
@@ -24,7 +25,7 @@ import {
   Shield, Link2, Database, Save, RotateCcw, Search, Eye, Upload,
   Check, AlertCircle, Info, Plus, Edit, Trash2, CheckCircle2, ChevronRight,
   X, ExternalLink, RefreshCw, Lock, Bell, HelpCircle, FileText, MapPin,
-  GitFork, ShieldCheck, Download
+  GitFork, ShieldCheck, Download, KeyRound
 } from 'lucide-react'
 import { settingsApi } from '../api/endpoints'
 import type {
@@ -58,6 +59,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   { id: 'system', title: 'System Parameters', subtitle: 'Numbering, defaults, policies & feature flags', icon: SlidersHorizontal, group: 'system' },
   { id: 'permissions', title: 'Users & Permissions', subtitle: 'Roles, access rights & security', icon: Shield, group: 'system' },
   { id: 'integrations', title: 'Integrations', subtitle: 'Payment, messaging & external services', icon: Link2, group: 'system' },
+  { id: 'codex', title: 'CodeX Configuration Studio', subtitle: 'Numeric coding, value obfuscation & scope activation', icon: KeyRound, group: 'system' },
   { id: 'maintenance', title: 'Data & Maintenance', subtitle: 'Import, export, backup & audit logs', icon: Database, group: 'system' },
 ]
 
@@ -2417,6 +2419,52 @@ export default function Settings() {
                             )}
                           </tbody>
                         </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* ─────────────────────────────────────────────────────────── */}
+                {/* SECTION: CODEX CONFIGURATION STUDIO                           */}
+                {/* ─────────────────────────────────────────────────────────── */}
+                {activeCategory === 'codex' && (
+                  <div className="space-y-6">
+                    <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <KeyRound className="w-5 h-5 text-indigo-400" />
+                          <h3 className="text-lg font-bold">CodeX Configuration Studio</h3>
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+                            Enterprise Capability
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300">
+                          Configure numeric-to-alphabet bijective mappings, value obfuscation scopes, and authorized on-demand decoders.
+                        </p>
+                      </div>
+                      <Link
+                        to="/codex"
+                        className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-xs transition-all shrink-0"
+                      >
+                        <span>Open Full Studio</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
+                        <span className="text-xs font-bold text-gray-500 uppercase">System Default</span>
+                        <div className="text-lg font-bold text-gray-900">DISABLED (OFF)</div>
+                        <p className="text-xs text-gray-500">CodeX is an opt-in capability that never enables automatically on installation or upgrade.</p>
+                      </div>
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
+                        <span className="text-xs font-bold text-gray-500 uppercase">Reversible Engine</span>
+                        <div className="text-lg font-bold text-indigo-700">0–9 Bijective Mapping</div>
+                        <p className="text-xs text-gray-500">Maps 0-9 digits to unique symbols (e.g. 1250 → AZPQ) with decimal, negative, and version history support.</p>
+                      </div>
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
+                        <span className="text-xs font-bold text-gray-500 uppercase">Scoped Authorization</span>
+                        <div className="text-lg font-bold text-emerald-700">7-Tier Precedence</div>
+                        <p className="text-xs text-gray-500">Precedence: Security &gt; System &gt; Business &gt; Dept &gt; Role &gt; User. Restrictive rules always win.</p>
                       </div>
                     </div>
                   </div>

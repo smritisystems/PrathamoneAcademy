@@ -48,6 +48,7 @@ import type {
   PaymentWorkflowConfig, RefundRecord, PaymentAuditLog,
   PaymentGatewayConfig, OnlineOrderResponse, OnlinePaymentVerifyPayload, OnlinePaymentVerifyResult,
   TeacherDashboardData, StaffDashboardData, StaffLifecyclePayload, EmployeeActivityHistoryItem,
+  CodexConfig, CodexMappingProfile, CodexMappingVersion, CodexScopeAssignment, CodexAuditLogItem, CodexConfigResponse,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -1263,4 +1264,35 @@ export const teacherPayrollApi = {
     }
     return `/api/v1/teacher-payroll/reports/${reportType}/export?${q.toString()}`
   }
+}
+
+
+// ─── CodeX Engine ────────────────────────────────────────────────────────────
+
+export const codexApi = {
+  getConfig: () => apiClient.get<CodexConfigResponse>('/codex/config'),
+  updateConfig: (data: any) =>
+    apiClient.put<{ message: string; config: any }>('/codex/config', data),
+  getProfiles: () => apiClient.get<CodexMappingProfile[]>('/codex/profiles'),
+  createProfile: (data: any) => apiClient.post<{ message: string; id: number }>('/codex/profiles', data),
+  updateProfile: (profileId: number | string, data: any) =>
+    apiClient.put<{ message: string; version: number }>(`/codex/profiles/${profileId}`, data),
+  getProfileVersions: (profileId: number | string) =>
+    apiClient.get<CodexMappingVersion[]>(`/codex/profiles/${profileId}/versions`),
+  rollbackProfile: (profileId: number | string, targetVersion: number) =>
+    apiClient.post<{ message: string }>(`/codex/profiles/${profileId}/rollback/${targetVersion}`),
+  getScopes: () => apiClient.get<CodexScopeAssignment[]>('/codex/scopes'),
+  saveScope: (data: any) => apiClient.post<{ message: string; id: number }>('/codex/scopes', data),
+  deleteScope: (scopeId: number | string) =>
+    apiClient.delete<{ message: string }>(`/codex/scopes/${scopeId}`),
+  encode: (data: { value: any; profile_id?: number }) =>
+    apiClient.post<{ raw_value: any; encoded_value: string; profile_id: number; version: number }>('/codex/encode', data),
+  decode: (data: { code: string; profile_id?: number; version?: number; pin?: string }) =>
+    apiClient.post<{ code: string; decoded_value: number; formatted_value: string; version_used: number }>('/codex/decode', data),
+  generateQr: (data: { encoded_payload: string; actual_value?: number; duration_seconds?: number; requires_pin?: boolean }) =>
+    apiClient.post<{ token: string; encoded_payload: string; expires_at: string; qr_data: string }>('/codex/generate-qr', data),
+  getAuditLogs: (params?: { limit?: number; action?: string; search?: string }) =>
+    apiClient.get<CodexAuditLogItem[]>('/codex/audit-logs', { params }),
+  getUserStatus: (module?: string) =>
+    apiClient.get<{ is_enabled: boolean; visibility_mode: string; can_decode: boolean; can_generate_qr: boolean; reason: string }>('/codex/user-status', { params: { module } }),
 }

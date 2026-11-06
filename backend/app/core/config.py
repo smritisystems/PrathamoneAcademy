@@ -36,14 +36,22 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.9.0"
-    BUILD_NUMBER: str = "2026.11.06-REV-015-v1.9.0-0E748D2"
+    VERSION: str = "1.10.0"
+    BUILD_NUMBER: str = "2026.11.06-REV-016-v1.10.0-9D2489F"
     RELEASE_CHANNEL: str = "Stable"
     RELEASE_STATUS: str = "Production Candidate"
     BUILD_DATE: str = "2026-11-06"
     AUTHOR: str = "Jawahar R Mallah"
     ORGANIZATION: str = "AITDL — AI Technology & Development Lab"
     DEBUG: bool = True
+
+    # PRATHAMONE CodeX — Mandatory Default Directives (Opt-in only, System Default: DISABLED)
+    CODEX_SYSTEM_DEFAULT: bool = False
+    CODEX_AUTO_ACTIVATION: bool = False
+    CODEX_NEW_BUSINESS_DEFAULT: bool = False
+    CODEX_NEW_USER_DEFAULT: bool = False
+    CODEX_AUTO_ENABLE_ON_UPDATE: bool = False
+    CODEX_AUTO_ENABLE_ON_INSTALL: bool = False
     ALLOWED_ORIGINS: Any = [
         "http://localhost:5173",
         "http://localhost:3000",

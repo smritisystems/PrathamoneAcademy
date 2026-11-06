@@ -22,7 +22,7 @@ import {
   LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
-  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign
+  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, KeyRound
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -284,6 +284,35 @@ export default function Sidebar() {
               )}
             </div>
           )}
+
+          {/* CodeX Configuration Studio Link (Admin / SysAdmin) */}
+          {(isUserSysAdmin(user) || (user?.role || '').toLowerCase() === 'admin') && (
+            <div className={`relative group mt-1.5 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to="/codex"
+                aria-label="CodeX Studio"
+                className={`flex items-center ${
+                  isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  location.pathname === '/codex'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
+                    : 'text-violet-400 bg-violet-950/30 hover:bg-violet-900/50 hover:text-white border border-violet-800/40'
+                }`}
+              >
+                <KeyRound className="w-4 h-4 flex-shrink-0 text-violet-400" />
+                {!isCollapsed && <span className="truncate">CodeX Studio</span>}
+              </NavLink>
+
+              {isCollapsed && (
+                <div
+                  role="tooltip"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-violet-950 text-violet-200 text-xs font-semibold rounded-lg shadow-xl border border-violet-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                >
+                  CodeX Studio
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
           {/* Footer User Card */}
@@ -437,6 +466,35 @@ export default function Sidebar() {
               >
                 <EyeOff className="w-4 h-4" />
               </button>
+            </div>
+          )}
+
+          {/* CodeX Configuration Studio Link (Admin / SysAdmin) */}
+          {(isUserSysAdmin(user) || (user?.role || '').toLowerCase() === 'admin') && (
+            <div className={`relative group mt-1.5 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to="/codex"
+                aria-label="CodeX Studio"
+                className={`flex items-center ${
+                  isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  location.pathname === '/codex'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
+                    : 'text-violet-400 bg-violet-950/30 hover:bg-violet-900/50 hover:text-white border border-violet-800/40'
+                }`}
+              >
+                <KeyRound className="w-4 h-4 flex-shrink-0 text-violet-400" />
+                {!isCollapsed && <span className="truncate">CodeX Studio</span>}
+              </NavLink>
+
+              {isCollapsed && (
+                <div
+                  role="tooltip"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-violet-950 text-violet-200 text-xs font-semibold rounded-lg shadow-xl border border-violet-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                >
+                  CodeX Studio
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -648,6 +706,35 @@ export default function Sidebar() {
               )}
             </div>
           )}
+
+          {/* CodeX Configuration Studio Link (Admin / SysAdmin) */}
+          {(isUserSysAdmin(user) || (user?.role || '').toLowerCase() === 'admin') && (
+            <div className={`relative group mt-1.5 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to="/codex"
+                aria-label="CodeX Studio"
+                className={`flex items-center ${
+                  isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  location.pathname === '/codex'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
+                    : 'text-violet-400 bg-violet-950/30 hover:bg-violet-900/50 hover:text-white border border-violet-800/40'
+                }`}
+              >
+                <KeyRound className="w-4 h-4 flex-shrink-0 text-violet-400" />
+                {!isCollapsed && <span className="truncate">CodeX Studio</span>}
+              </NavLink>
+
+              {isCollapsed && (
+                <div
+                  role="tooltip"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-violet-950 text-violet-200 text-xs font-semibold rounded-lg shadow-xl border border-violet-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                >
+                  CodeX Studio
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* User Profile Footer Card */}
@@ -688,6 +775,35 @@ export default function Sidebar() {
               >
                 <LogOut className="w-4 h-4" />
               </button>
+            </div>
+          )}
+
+          {/* CodeX Configuration Studio Link (Admin / SysAdmin) */}
+          {(isUserSysAdmin(user) || (user?.role || '').toLowerCase() === 'admin') && (
+            <div className={`relative group mt-1.5 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to="/codex"
+                aria-label="CodeX Studio"
+                className={`flex items-center ${
+                  isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  location.pathname === '/codex'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md'
+                    : 'text-violet-400 bg-violet-950/30 hover:bg-violet-900/50 hover:text-white border border-violet-800/40'
+                }`}
+              >
+                <KeyRound className="w-4 h-4 flex-shrink-0 text-violet-400" />
+                {!isCollapsed && <span className="truncate">CodeX Studio</span>}
+              </NavLink>
+
+              {isCollapsed && (
+                <div
+                  role="tooltip"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-violet-950 text-violet-200 text-xs font-semibold rounded-lg shadow-xl border border-violet-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                >
+                  CodeX Studio
+                </div>
+              )}
             </div>
           )}
         </div>
