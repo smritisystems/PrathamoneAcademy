@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-07 04:15:08  
-**Total Indexed Items:** 226  
+**Last Reindexed:** 2026-11-07 05:23:31  
+**Total Indexed Items:** 244  
 
 ---
 
@@ -26,7 +26,7 @@
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **23** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **0** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **5** | Reports, Analytics & Data Grids |
-| `12` | [12_RBAC_SECURITY](#12_rbac_security) | **7** | RBAC, Security & Permissions |
+| `12` | [12_RBAC_SECURITY](#12_rbac_security) | **8** | RBAC, Security & Permissions |
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **10** | Sysadmin Center & System Settings |
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **8** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **4** | Integrations, Messaging & Importers |
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **6** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **43** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **60** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -201,6 +201,7 @@
 
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
+| **CodeX Security & Cross-Module Enforcement Forensic Audit** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md](12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md) | 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 11_REPORTS_EXPORTS, 17_UI_UX_DESIGN |
 | **Data Privacy and Security Governance** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md](12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md) | - |
 | **Role and Permission Matrix** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md](12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md) | - |
 | **User Management Changelog** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-CHANGELOG_V1.md](12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-CHANGELOG_V1.md) | - |
@@ -419,6 +420,23 @@
 | `25_branding_settings_preview.png` | `assets/screenshots` | 478.4 KB | [25_branding_settings_preview.png](assets/screenshots/25_branding_settings_preview.png) |
 | `26_communication_center.png` | `assets/screenshots` | 338.5 KB | [26_communication_center.png](assets/screenshots/26_communication_center.png) |
 | `27_releases_and_version_audit.png` | `assets/screenshots` | 517.1 KB | [27_releases_and_version_audit.png](assets/screenshots/27_releases_and_version_audit.png) |
+| `actual_values_accountant_dashboard.png` | `assets/screenshots` | 376.4 KB | [actual_values_accountant_dashboard.png](assets/screenshots/actual_values_accountant_dashboard.png) |
+| `actual_values_admin_dashboard.png` | `assets/screenshots` | 377.1 KB | [actual_values_admin_dashboard.png](assets/screenshots/actual_values_admin_dashboard.png) |
+| `actual_values_fees_ledger.png` | `assets/screenshots` | 429.1 KB | [actual_values_fees_ledger.png](assets/screenshots/actual_values_fees_ledger.png) |
+| `codex_active_decoder_modal.png` | `assets/screenshots` | 397.8 KB | [codex_active_decoder_modal.png](assets/screenshots/codex_active_decoder_modal.png) |
+| `codex_active_master_on.png` | `assets/screenshots` | 394.1 KB | [codex_active_master_on.png](assets/screenshots/codex_active_master_on.png) |
+| `codex_active_user_view_comparison.png` | `assets/screenshots` | 401.6 KB | [codex_active_user_view_comparison.png](assets/screenshots/codex_active_user_view_comparison.png) |
+| `codex_located_under_settings.png` | `assets/screenshots` | 459.6 KB | [codex_located_under_settings.png](assets/screenshots/codex_located_under_settings.png) |
+| `codex_removed_from_sidebar_header.png` | `assets/screenshots` | 377.0 KB | [codex_removed_from_sidebar_header.png](assets/screenshots/codex_removed_from_sidebar_header.png) |
+| `codex_working_activation_scopes.png` | `assets/screenshots` | 349.8 KB | [codex_working_activation_scopes.png](assets/screenshots/codex_working_activation_scopes.png) |
+| `codex_working_bijective_mapping.png` | `assets/screenshots` | 427.0 KB | [codex_working_bijective_mapping.png](assets/screenshots/codex_working_bijective_mapping.png) |
+| `codex_working_features_activation.png` | `assets/screenshots` | 429.8 KB | [codex_working_features_activation.png](assets/screenshots/codex_working_features_activation.png) |
+| `codex_working_general_overview.png` | `assets/screenshots` | 390.2 KB | [codex_working_general_overview.png](assets/screenshots/codex_working_general_overview.png) |
+| `codex_working_live_sandbox.png` | `assets/screenshots` | 398.0 KB | [codex_working_live_sandbox.png](assets/screenshots/codex_working_live_sandbox.png) |
+| `dashboard_codex_active.png` | `assets/screenshots` | 375.3 KB | [dashboard_codex_active.png](assets/screenshots/dashboard_codex_active.png) |
+| `dashboard_codex_decoder_modal.png` | `assets/screenshots` | 426.7 KB | [dashboard_codex_decoder_modal.png](assets/screenshots/dashboard_codex_decoder_modal.png) |
+| `dashboard_codex_fully_obfuscated.png` | `assets/screenshots` | 382.3 KB | [dashboard_codex_fully_obfuscated.png](assets/screenshots/dashboard_codex_fully_obfuscated.png) |
+| `dashboard_codex_masked_coded_only.png` | `assets/screenshots` | 374.9 KB | [dashboard_codex_masked_coded_only.png](assets/screenshots/dashboard_codex_masked_coded_only.png) |
 | `fix1_receipt_edit_modal.png` | `assets/screenshots` | 246.1 KB | [fix1_receipt_edit_modal.png](assets/screenshots/fix1_receipt_edit_modal.png) |
 | `fix1_receipts_with_edit_button.png` | `assets/screenshots` | 218.3 KB | [fix1_receipts_with_edit_button.png](assets/screenshots/fix1_receipts_with_edit_button.png) |
 | `fix2_fee_plan_edit_modal.png` | `assets/screenshots` | 218.9 KB | [fix2_fee_plan_edit_modal.png](assets/screenshots/fix2_fee_plan_edit_modal.png) |

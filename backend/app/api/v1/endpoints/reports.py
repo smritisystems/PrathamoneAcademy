@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-07
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -41,6 +41,7 @@ from app.models.enrollment import StudentEnrollment
 from app.models.academic_year import AcademicYear
 from app.models.portal import TimetableEntry
 from app.models.user import User
+from app.services.codex_service import CodeXService
 
 router = APIRouter()
 
@@ -116,7 +117,7 @@ async def fee_collection_report(
     result = await db.execute(query)
     rows = result.all()
 
-    return [
+    raw_rows = [
         {
             "admission_number": r.admission_number,
             "student_name": f"{r.first_name} {r.last_name}",
@@ -126,6 +127,14 @@ async def fee_collection_report(
         }
         for r in rows
     ]
+    return await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=raw_rows,
+        numeric_fields=["total_fees", "paid", "outstanding"],
+        module="reports",
+    )
 
 
 @router.get("/fee-collection/export")
@@ -147,6 +156,25 @@ async def export_fee_collection(
         current_user=current_user,
     )
 
+    user_inst_id = institution_id or getattr(current_user, "institution_id", None) or 1
+    scope_res = await CodeXService.resolve_scope(db, user_inst_id, current_user, module="reports")
+    is_coded_only = scope_res.get("is_enabled") and scope_res.get("visibility_mode") == "coded_only"
+
+    export_rows = []
+    for d in data:
+        row_dict = dict(d)
+        if is_coded_only:
+            row_dict["total_fees"] = d.get("total_fees_coded", "CX-Q")
+            row_dict["paid"] = d.get("paid_coded", "CX-Q")
+            row_dict["outstanding"] = d.get("outstanding_coded", "CX-Q")
+        export_rows.append({
+            "admission_number": row_dict.get("admission_number", ""),
+            "student_name": row_dict.get("student_name", ""),
+            "total_fees": row_dict.get("total_fees", 0.0),
+            "paid": row_dict.get("paid", 0.0),
+            "outstanding": row_dict.get("outstanding", 0.0),
+        })
+
     if format == "csv":
         import csv
 
@@ -162,7 +190,7 @@ async def export_fee_collection(
             ],
         )
         writer.writeheader()
-        writer.writerows(data)
+        writer.writerows(export_rows)
         output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
         return Response(
             content=output.getvalue(),
@@ -189,7 +217,7 @@ async def export_fee_collection(
             "Outstanding",
         ]
         ws.append(headers)
-        for row in data:
+        for row in export_rows:
             ws.append(
                 [
                     row["admission_number"],
@@ -509,7 +537,7 @@ async def export_academic_report(
             extrasaction="ignore",
         )
         writer.writeheader()
-        writer.writerows(data)
+        writer.writerows(export_rows)
         filename = "batch_capacity_report.csv"
     elif report_type == "distribution":
         data = await academic_distribution_report(db=db, current_user=current_user)
@@ -523,7 +551,7 @@ async def export_academic_report(
             extrasaction="ignore",
         )
         writer.writeheader()
-        writer.writerows(data)
+        writer.writerows(export_rows)
         filename = "academic_distribution_report.csv"
     else:
         data = await faculty_load_report(db=db, current_user=current_user)
@@ -536,7 +564,7 @@ async def export_academic_report(
             extrasaction="ignore",
         )
         writer.writeheader()
-        writer.writerows(data)
+        writer.writerows(export_rows)
         filename = "faculty_load_report.csv"
 
     output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
@@ -891,7 +919,7 @@ async def export_student_withdrawals_report(
         extrasaction="ignore",
     )
     writer.writeheader()
-    writer.writerows(data)
+    writer.writerows(export_rows)
     output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
 
     return Response(

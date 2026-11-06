@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -38,6 +38,7 @@ from app.models.user import User, AuditLog
 from app.models.academic_year import AcademicYear
 from app.models.settings import InstitutionSetting
 from app.services.sequence import generate_next_receipt_number
+from app.services.codex_service import CodeXService
 from app.services.payment_gateway import (
     get_payment_gateway_config,
     update_payment_gateway_config,
@@ -1214,7 +1215,15 @@ async def list_receipts(
             "details": receipt_meta,
         })
 
-    return receipts
+    user_inst_id = effective_inst_id or getattr(current_user, "institution_id", None) or 1
+    return await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=receipts,
+        numeric_fields=["amount"],
+        module="fees",
+    )
 
 
 @router.get("/{payment_id}")
@@ -1358,6 +1367,7 @@ async def build_receipt_response(
     db: AsyncSession,
     receipt: PaymentReceipt,
     payment: Optional[Payment] = None,
+    current_user: Optional[User] = None,
 ) -> dict:
     """
     Constructs an authoritative receipt payload containing current transaction details,
@@ -1534,7 +1544,7 @@ async def build_receipt_response(
     is_superseded = receipt.status == "superseded"
     is_voided = payment.status == "reversed" or receipt.status == "voided"
 
-    return {
+    res_payload = {
         "receipt_number": receipt.receipt_number,
         "payment_id": payment.id,
         "academic_year": academic_year_name or "2026 – 27",
@@ -1581,6 +1591,27 @@ async def build_receipt_response(
         "previous_paid": float(previous_payments_total),
     }
 
+    if current_user:
+        user_inst = getattr(current_user, "institution_id", None) or (receipt.payment.student.institution_id if receipt.payment and receipt.payment.student else 1)
+        res_payload = await CodeXService.apply_financial_masking(
+            db=db,
+            institution_id=user_inst,
+            user=current_user,
+            data=res_payload,
+            numeric_fields=["amount", "total_fees", "total_paid", "outstanding_after", "previous_paid"],
+            module="fees",
+        )
+        if "fee_summary" in res_payload and isinstance(res_payload["fee_summary"], dict):
+            res_payload["fee_summary"] = await CodeXService.apply_financial_masking(
+                db=db,
+                institution_id=user_inst,
+                user=current_user,
+                data=res_payload["fee_summary"],
+                numeric_fields=["total_fee_amount", "previous_payments_total", "current_payment_amount", "total_paid_to_date", "outstanding_balance"],
+                module="fees",
+            )
+    return res_payload
+
 
 @router.get("/receipts/{receipt_number}")
 async def get_receipt(
@@ -1617,7 +1648,7 @@ async def get_receipt(
         if std:
             check_institution_access(std.institution_id, current_user)
 
-    return await build_receipt_response(db, receipt)
+    return await build_receipt_response(db, receipt, current_user=current_user)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ONLINE PAYMENT GATEWAY & UPI ENDPOINTS (Razorpay / UPI)

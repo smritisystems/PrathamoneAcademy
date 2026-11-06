@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-07
 #  *
 #  * @description API endpoints for administrative and coaching institute executive dashboard analytics.
 #  */
@@ -33,6 +33,7 @@ from app.services.student_metrics import (
     get_authoritative_student_count,
     get_student_reconciliation_diagnostic,
 )
+from app.services.codex_service import CodeXService
 
 router = APIRouter()
 
@@ -218,7 +219,7 @@ async def get_dashboard_stats(
         for p, s, rec_num, b_name, std_name in recent_rows
     ]
 
-    return {
+    stats_payload = {
         "total_students": total_students,
         "total_fees": total_fees,
         "total_collected": total_collected,
@@ -229,6 +230,32 @@ async def get_dashboard_stats(
         "status_filter": effective_status,
         "configured_visibility": configured_visibility,
     }
+
+    # Apply backend CodeX access control and bijective presentation masking
+    await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=recent_payments,
+        numeric_fields=["amount"],
+        module="dashboard",
+    )
+    await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=monthly_trends,
+        numeric_fields=["collected"],
+        module="dashboard",
+    )
+    return await CodeXService.apply_financial_masking(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        data=stats_payload,
+        numeric_fields=["total_fees", "total_collected", "total_outstanding"],
+        module="dashboard",
+    )
 
 
 @router.get("/reconciliation")

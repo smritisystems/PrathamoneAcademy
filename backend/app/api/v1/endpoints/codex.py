@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description REST API endpoints for CodeX configurable feature activation, digit mapping management, and decoder access.
 #  */
@@ -662,18 +662,42 @@ async def test_decode_value(
     """
     institution_id = current_user.institution_id or 1
     config = await CodeXService.get_config(db, institution_id)
+    lockout_key = f"{institution_id}:{current_user.id}"
 
-    # Resolve user permissions
+    # 1. Enforce brute-force lockout prevention
+    is_locked, remaining_secs = CodeXService.get_lockout_status(lockout_key)
+    if is_locked:
+        await CodeXService.log_audit(
+            db=db,
+            institution_id=institution_id,
+            action="decode_locked",
+            entity_type="code",
+            details={"code": payload.code, "remaining_seconds": remaining_secs},
+            user=current_user,
+            status="locked",
+            ip_address=request.client.host if request.client else None,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Decoder locked due to repeated invalid PIN attempts. Try again in {remaining_secs} seconds."
+        )
+
+    # 2. Strict Permission Governance — explicit can_decode permission required
+    # When CodeX is active, strict scope resolution applies (no blanket admin bypass).
+    # When CodeX is disabled (System Default: OFF), only administrators in CodeX Studio sandbox may test-decode.
     scope_res = await CodeXService.resolve_scope(db, institution_id, current_user)
     is_admin = (current_user.role or "").lower() in {"admin", "sysadmin", "superadmin", "owner"}
+    can_decode = scope_res.get("can_decode", False)
+    if not config.is_master_enabled and is_admin:
+        can_decode = True
 
-    if not is_admin and not scope_res.get("can_decode", False):
+    if not can_decode:
         await CodeXService.log_audit(
             db=db,
             institution_id=institution_id,
             action="decode_denied",
             entity_type="code",
-            details={"code": payload.code, "reason": "User not authorized to decode."},
+            details={"code": payload.code, "reason": "User scope does not permit decoding."},
             user=current_user,
             status="unauthorized",
             ip_address=request.client.host if request.client else None,
@@ -683,7 +707,7 @@ async def test_decode_value(
             detail="Access denied: You are not authorized to decode CodeX protected values."
         )
 
-    # PIN Verification check
+    # 3. Server-side PIN Verification with Brute-Force Rate Limiting
     if config.feature_pin_protected_decoding and config.security_pin_hash:
         if not payload.pin:
             raise HTTPException(
@@ -691,20 +715,33 @@ async def test_decode_value(
                 detail="PIN required: CodeX decoding is protected by security PIN."
             )
         if not CodeXService.verify_pin(payload.pin, config.security_pin_hash):
+            max_attempts = config.max_decoding_attempts or 5
+            lockout_secs = config.decoder_expiry_seconds or 300
+            remaining, is_now_locked, lock_dur = CodeXService.record_failed_attempt(
+                lockout_key, max_attempts=max_attempts, lockout_seconds=lockout_secs
+            )
             await CodeXService.log_audit(
                 db=db,
                 institution_id=institution_id,
                 action="decode_pin_failure",
                 entity_type="code",
-                details={"code": payload.code},
+                details={"code": payload.code, "attempts_remaining": remaining, "is_locked": is_now_locked},
                 user=current_user,
                 status="failure",
                 ip_address=request.client.host if request.client else None,
             )
+            if is_now_locked:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail=f"Invalid PIN. Maximum attempts ({max_attempts}) exceeded. Decoder locked for {lock_dur} seconds."
+                )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid CodeX security PIN."
+                detail=f"Invalid CodeX security PIN. {remaining} attempt(s) remaining before temporary lockout."
             )
+        else:
+            # Valid PIN verified -> Reset failed attempt counter
+            CodeXService.reset_failed_attempts(lockout_key)
 
     # Fetch mapping profile or historical version
     if payload.profile_id:
@@ -763,13 +800,18 @@ async def test_decode_value(
         )
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err)
 
-    # Audit success
+    # Audit success without logging sensitive decoded values or secrets
     await CodeXService.log_audit(
         db=db,
         institution_id=institution_id,
         action="decode_success",
         entity_type="code",
-        details={"code": payload.code, "decoded_value": decoded_num},
+        details={
+            "code": payload.code,
+            "profile_id": profile.id,
+            "version_used": payload.version or profile.version,
+            "visibility_mode": scope_res.get("visibility_mode"),
+        },
         user=current_user,
         status="success",
         ip_address=request.client.host if request.client else None,

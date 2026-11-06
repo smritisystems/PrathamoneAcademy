@@ -126,18 +126,18 @@ export default function DashboardPage() {
     staleTime: 5000,
   })
 
-  const isCodexActive = Boolean(codexStatus?.is_enabled)
-  const codexMode = codexStatus?.visibility_mode || 'actual_only'
+  // CodeX representation calculations (prefer backend-provided authoritative bijective codes)
+  const isCodexActive = Boolean((stats as any)?._codex?.is_enabled ?? codexStatus?.is_enabled)
+  const codexMode = (stats as any)?._codex?.visibility_mode || codexStatus?.visibility_mode || 'actual_only'
 
-  // CodeX representation calculations
   const rawFees = stats?.total_fees ?? 0
-  const codeFees = isCodexActive ? encodeCodexNumber(rawFees) : undefined
+  const codeFees = (stats as any)?.total_fees_coded || (isCodexActive ? encodeCodexNumber(rawFees) : undefined)
 
   const rawCollected = stats?.total_collected ?? 0
-  const codeCollected = isCodexActive ? encodeCodexNumber(rawCollected) : undefined
+  const codeCollected = (stats as any)?.total_collected_coded || (isCodexActive ? encodeCodexNumber(rawCollected) : undefined)
 
   const rawOutstanding = stats?.total_outstanding ?? 0
-  const codeOutstanding = isCodexActive ? encodeCodexNumber(rawOutstanding) : undefined
+  const codeOutstanding = (stats as any)?.total_outstanding_coded || (isCodexActive ? encodeCodexNumber(rawOutstanding) : undefined)
 
   return (
     <div className="space-y-6">
@@ -390,30 +390,36 @@ export default function DashboardPage() {
                         {METHOD_LABELS[p.payment_method] ?? p.payment_method}
                       </td>
                       <td className="py-2.5 text-right font-semibold text-gray-900">
-                        {isCodexActive && codexMode === 'coded_only' ? (
-                          <button
-                            type="button"
-                            onClick={() => setDecoderCode(encodeCodexNumber(p.amount))}
-                            className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-violet-100 text-violet-800 border border-violet-200 hover:bg-violet-200 transition-colors"
-                            title="Click to decode with CodeX"
-                          >
-                            {encodeCodexNumber(p.amount)}
-                          </button>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <span>{fmt(p.amount)}</span>
-                            {isCodexActive && (
+                        {(() => {
+                          const paymentCode = (p as any).amount_coded || (isCodexActive ? encodeCodexNumber(p.amount) : undefined)
+                          if (isCodexActive && codexMode === 'coded_only') {
+                            return (
                               <button
                                 type="button"
-                                onClick={() => setDecoderCode(encodeCodexNumber(p.amount))}
-                                className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors cursor-pointer"
-                                title="CodeX representation — Click to decode"
+                                onClick={() => setDecoderCode(paymentCode || '')}
+                                className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-violet-100 text-violet-800 border border-violet-200 hover:bg-violet-200 transition-colors"
+                                title="Click to decode with CodeX"
                               >
-                                {encodeCodexNumber(p.amount)}
+                                {paymentCode}
                               </button>
-                            )}
-                          </div>
-                        )}
+                            )
+                          }
+                          return (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span>{fmt(p.amount)}</span>
+                              {isCodexActive && paymentCode && (
+                                <button
+                                  type="button"
+                                  onClick={() => setDecoderCode(paymentCode)}
+                                  className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors cursor-pointer"
+                                  title="CodeX representation — Click to decode"
+                                >
+                                  {paymentCode}
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </td>
                       <td className="py-2.5 text-right text-gray-500">
                         {p.payment_date}

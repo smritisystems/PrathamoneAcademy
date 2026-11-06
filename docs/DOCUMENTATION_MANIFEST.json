@@ -5,8 +5,8 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-07T04:15:08.315160",
-  "total_documents": 226,
+  "generated_at": "2026-11-07T05:23:31.010915",
+  "total_documents": 244,
   "modules_catalog": [
     {
       "id": "00_PRODUCT_OVERVIEW",
@@ -3637,6 +3637,62 @@
         "/api/v1/auth"
       ],
       "related_modules": [],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "12_RBAC_SECURITY_2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1_md",
+      "filename": "2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
+      "relative_path": "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
+      "extension": ".md",
+      "size_bytes": 14211,
+      "sha256": "b42b3ad6665d470307fe684e6673923e1f7703529ab502c3613553beaa4fafb6",
+      "module": "12_RBAC_SECURITY",
+      "title": "CodeX Security & Cross-Module Enforcement Forensic Audit",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "codex",
+        "security-audit",
+        "rbac",
+        "data-masking",
+        "cross-module-enforcement",
+        "rate-limiting"
+      ],
+      "entities": [
+        "CodexConfig",
+        "CodexMappingProfile",
+        "CodexMappingVersion",
+        "CodexScopeAssignment",
+        "CodexAuditLog",
+        "CodexTemporaryToken"
+      ],
+      "api_routes": [
+        "/api/v1/codex/config",
+        "/api/v1/codex/encode",
+        "/api/v1/codex/decode",
+        "/api/v1/codex/user-status",
+        "/api/v1/dashboard/stats",
+        "/api/v1/fees/overview",
+        "/api/v1/fees/invoices",
+        "/api/v1/fees/register",
+        "/api/v1/payments/receipts/{receipt_number}",
+        "/api/v1/reports/fee-collection/export",
+        "/api/v1/teacher-payroll/monthly"
+      ],
+      "related_modules": [
+        "09_FEES_PAYMENTS",
+        "06_TEACHER_PAYROLL",
+        "11_REPORTS_EXPORTS",
+        "17_UI_UX_DESIGN"
+      ],
       "product": "PrathamOne EduOS",
       "edition": "Coaching Institute Edition"
     },
@@ -7569,6 +7625,397 @@
       "related_modules": []
     },
     {
+      "id": "assets_screenshots_actual_values_accountant_dashboard_png",
+      "filename": "actual_values_accountant_dashboard.png",
+      "relative_path": "assets/screenshots/actual_values_accountant_dashboard.png",
+      "extension": ".png",
+      "size_bytes": 385472,
+      "sha256": "7319b69501fe1b5e836b526e94b325b19e8cb69642979da7b15ee868e610f6c2",
+      "module": "assets",
+      "title": "actual_values_accountant_dashboard.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_actual_values_admin_dashboard_png",
+      "filename": "actual_values_admin_dashboard.png",
+      "relative_path": "assets/screenshots/actual_values_admin_dashboard.png",
+      "extension": ".png",
+      "size_bytes": 386150,
+      "sha256": "022fcbb63120dc9ace4689cdc4e3c247c1b2edae1b375fdd6da64794f693f033",
+      "module": "assets",
+      "title": "actual_values_admin_dashboard.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_actual_values_fees_ledger_png",
+      "filename": "actual_values_fees_ledger.png",
+      "relative_path": "assets/screenshots/actual_values_fees_ledger.png",
+      "extension": ".png",
+      "size_bytes": 439400,
+      "sha256": "f0f4c912c42a2514b7038e425bed72c06ad3aed4897d30aa24696da55c94e84e",
+      "module": "assets",
+      "title": "actual_values_fees_ledger.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_active_decoder_modal_png",
+      "filename": "codex_active_decoder_modal.png",
+      "relative_path": "assets/screenshots/codex_active_decoder_modal.png",
+      "extension": ".png",
+      "size_bytes": 407343,
+      "sha256": "2217f7962a266320d3a0fd5649f91eafb0dd4d11e23482639a4bda14dec50ea7",
+      "module": "assets",
+      "title": "codex_active_decoder_modal.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_active_master_on_png",
+      "filename": "codex_active_master_on.png",
+      "relative_path": "assets/screenshots/codex_active_master_on.png",
+      "extension": ".png",
+      "size_bytes": 403515,
+      "sha256": "dbf5d2ccbfb159dace3a47ba90ec47e5abfad4590cd45848712a304fe2431c05",
+      "module": "assets",
+      "title": "codex_active_master_on.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_active_user_view_comparison_png",
+      "filename": "codex_active_user_view_comparison.png",
+      "relative_path": "assets/screenshots/codex_active_user_view_comparison.png",
+      "extension": ".png",
+      "size_bytes": 411244,
+      "sha256": "76da0316ee1c49c76926436e819d51ffb0183e63013e1aa4f4680361738fae86",
+      "module": "assets",
+      "title": "codex_active_user_view_comparison.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_located_under_settings_png",
+      "filename": "codex_located_under_settings.png",
+      "relative_path": "assets/screenshots/codex_located_under_settings.png",
+      "extension": ".png",
+      "size_bytes": 470652,
+      "sha256": "b80fe5183fe3da30d284162ecd97398680b30e3d01cd5ce50b08df5a2e9f6436",
+      "module": "assets",
+      "title": "codex_located_under_settings.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_removed_from_sidebar_header_png",
+      "filename": "codex_removed_from_sidebar_header.png",
+      "relative_path": "assets/screenshots/codex_removed_from_sidebar_header.png",
+      "extension": ".png",
+      "size_bytes": 386073,
+      "sha256": "2760299ae31c7b51ccdb84ea32e0e2f4476a7a4e331fd07ce6546bf77c6f7a73",
+      "module": "assets",
+      "title": "codex_removed_from_sidebar_header.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_working_activation_scopes_png",
+      "filename": "codex_working_activation_scopes.png",
+      "relative_path": "assets/screenshots/codex_working_activation_scopes.png",
+      "extension": ".png",
+      "size_bytes": 358233,
+      "sha256": "9bb342b9f100d5be221bb801965f75a86b25949bd0762742551739151f90c95e",
+      "module": "assets",
+      "title": "codex_working_activation_scopes.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_working_bijective_mapping_png",
+      "filename": "codex_working_bijective_mapping.png",
+      "relative_path": "assets/screenshots/codex_working_bijective_mapping.png",
+      "extension": ".png",
+      "size_bytes": 437202,
+      "sha256": "085cbdc0c5c223cea234e97979442d660647dcd97f47d2d79a3cc80036ee3801",
+      "module": "assets",
+      "title": "codex_working_bijective_mapping.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_working_features_activation_png",
+      "filename": "codex_working_features_activation.png",
+      "relative_path": "assets/screenshots/codex_working_features_activation.png",
+      "extension": ".png",
+      "size_bytes": 440128,
+      "sha256": "7ceca8b63a05025f2ed743d458c852ab2b25493c88dafd1bc14ca75bfefa1e3e",
+      "module": "assets",
+      "title": "codex_working_features_activation.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_working_general_overview_png",
+      "filename": "codex_working_general_overview.png",
+      "relative_path": "assets/screenshots/codex_working_general_overview.png",
+      "extension": ".png",
+      "size_bytes": 399572,
+      "sha256": "9df6f40c1a17a43eb839a3cd03b3c5338fa8a3f7139e0393d70f4acdfd922f08",
+      "module": "assets",
+      "title": "codex_working_general_overview.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_codex_working_live_sandbox_png",
+      "filename": "codex_working_live_sandbox.png",
+      "relative_path": "assets/screenshots/codex_working_live_sandbox.png",
+      "extension": ".png",
+      "size_bytes": 407566,
+      "sha256": "6ea86559fbec3645902251ed07a8dd72b83a094dab778bfa6cb6bbcce47971bf",
+      "module": "assets",
+      "title": "codex_working_live_sandbox.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_codex_active_png",
+      "filename": "dashboard_codex_active.png",
+      "relative_path": "assets/screenshots/dashboard_codex_active.png",
+      "extension": ".png",
+      "size_bytes": 384301,
+      "sha256": "5052acfb5814a8bc7705899a79d7f5b49df1a41579f9af61021b23b71e5ff8ea",
+      "module": "assets",
+      "title": "dashboard_codex_active.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_codex_decoder_modal_png",
+      "filename": "dashboard_codex_decoder_modal.png",
+      "relative_path": "assets/screenshots/dashboard_codex_decoder_modal.png",
+      "extension": ".png",
+      "size_bytes": 436985,
+      "sha256": "59dc52a15883ecbeedfa460df177d383301fdc9426ae23f30dfbbd382e6e3bb8",
+      "module": "assets",
+      "title": "dashboard_codex_decoder_modal.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_codex_fully_obfuscated_png",
+      "filename": "dashboard_codex_fully_obfuscated.png",
+      "relative_path": "assets/screenshots/dashboard_codex_fully_obfuscated.png",
+      "extension": ".png",
+      "size_bytes": 391492,
+      "sha256": "51c4ebb38dcc308566384f5f479bcc77435becd59a8824575a832d5841c91920",
+      "module": "assets",
+      "title": "dashboard_codex_fully_obfuscated.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_codex_masked_coded_only_png",
+      "filename": "dashboard_codex_masked_coded_only.png",
+      "relative_path": "assets/screenshots/dashboard_codex_masked_coded_only.png",
+      "extension": ".png",
+      "size_bytes": 383890,
+      "sha256": "c62cce50c21335f70530cdc0f8cb80f12f2c1cff6d3ee36d4520614b983bb083",
+      "module": "assets",
+      "title": "dashboard_codex_masked_coded_only.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-07",
+      "updated_date": "2026-11-07",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
       "id": "assets_screenshots_fix1_receipt_edit_modal_png",
       "filename": "fix1_receipt_edit_modal.png",
       "relative_path": "assets/screenshots/fix1_receipt_edit_modal.png",
@@ -8266,6 +8713,9 @@
     "07_printing_documents_user": [
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md"
     ],
+    "07_rbac": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md"
+    ],
     "07_student_admission_form": [
       "assets/screenshots/07_student_admission_form.png"
     ],
@@ -8394,6 +8844,7 @@
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-SPECIFICATION_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-USER-MANUAL_V1.md",
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_BRANDING-PREVIEW-AND-APPLY-AUDIT-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_INSTITUTE-SETTINGS-AND-CONFIGURATION-REPORT_V1.md",
@@ -8585,6 +9036,15 @@
     "activity": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md"
     ],
+    "actual_values_accountant_dashboard": [
+      "assets/screenshots/actual_values_accountant_dashboard.png"
+    ],
+    "actual_values_admin_dashboard": [
+      "assets/screenshots/actual_values_admin_dashboard.png"
+    ],
+    "actual_values_fees_ledger": [
+      "assets/screenshots/actual_values_fees_ledger.png"
+    ],
     "administrator": [
       "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md"
     ],
@@ -8634,6 +9094,7 @@
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md",
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_BRANDING-PREVIEW-AND-APPLY-AUDIT-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_INSTITUTE-SETTINGS-AND-CONFIGURATION-REPORT_V1.md",
@@ -8759,6 +9220,7 @@
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_SPECIFICATION_FEES-RECONCILIATION-REPORT_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_SYSADMIN-FEES-PERMISSIONS-AUDIT-AND-PLAN_V1.md",
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_BRANDING-PREVIEW-AND-APPLY-AUDIT-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_AUDIT-REPORT_SYSADMIN-COMPLETE-EDITING-OPTIONS-AUDIT_V1.md",
@@ -9016,10 +9478,20 @@
       "19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_POLICY-FRAMEWORK_CODE-ATTRIBUTION-POLICY_V1.md"
     ],
     "codex": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md"
+    ],
+    "codex_active_decoder_modal": [
+      "assets/screenshots/codex_active_decoder_modal.png"
+    ],
+    "codex_active_master_on": [
+      "assets/screenshots/codex_active_master_on.png"
+    ],
+    "codex_active_user_view_comparison": [
+      "assets/screenshots/codex_active_user_view_comparison.png"
     ],
     "codex_audit_logs": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md"
@@ -9038,11 +9510,17 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md"
     ],
+    "codex_located_under_settings": [
+      "assets/screenshots/codex_located_under_settings.png"
+    ],
     "codex_mapping_profiles": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md"
     ],
     "codex_mapping_versions": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md"
+    ],
+    "codex_removed_from_sidebar_header": [
+      "assets/screenshots/codex_removed_from_sidebar_header.png"
     ],
     "codex_scope_assignments": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md"
@@ -9050,29 +9528,50 @@
     "codex_temporary_tokens": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md"
     ],
+    "codex_working_activation_scopes": [
+      "assets/screenshots/codex_working_activation_scopes.png"
+    ],
+    "codex_working_bijective_mapping": [
+      "assets/screenshots/codex_working_bijective_mapping.png"
+    ],
+    "codex_working_features_activation": [
+      "assets/screenshots/codex_working_features_activation.png"
+    ],
+    "codex_working_general_overview": [
+      "assets/screenshots/codex_working_general_overview.png"
+    ],
+    "codex_working_live_sandbox": [
+      "assets/screenshots/codex_working_live_sandbox.png"
+    ],
     "codexauditlog": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md"
     ],
     "codexconfig": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md"
     ],
     "codexmappingprofile": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md"
     ],
     "codexmappingversion": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md"
     ],
     "codexscopeassignment": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md"
     ],
     "codextemporarytoken": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md"
     ],
     "coding": [
@@ -9176,6 +9675,9 @@
     "criteria_v1": [
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md"
     ],
+    "cross": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md"
+    ],
     "cryptography": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md"
     ],
@@ -9195,6 +9697,18 @@
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
     ],
+    "dashboard_codex_active": [
+      "assets/screenshots/dashboard_codex_active.png"
+    ],
+    "dashboard_codex_decoder_modal": [
+      "assets/screenshots/dashboard_codex_decoder_modal.png"
+    ],
+    "dashboard_codex_fully_obfuscated": [
+      "assets/screenshots/dashboard_codex_fully_obfuscated.png"
+    ],
+    "dashboard_codex_masked_coded_only": [
+      "assets/screenshots/dashboard_codex_masked_coded_only.png"
+    ],
     "dashboards": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
@@ -9209,6 +9723,7 @@
     "data": [
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-WORKSPACE-PIXEL-PERFECTION-REPORT_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md",
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md",
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_REPORT_CLEAN-PRODUCTION-DATA-CLEANUP-PREVIEW_V1.md",
@@ -9418,6 +9933,12 @@
     ],
     "endpoints": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
+    ],
+    "enforcement": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md"
+    ],
+    "enforcement_v1": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md"
     ],
     "engine": [
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md",
@@ -9692,6 +10213,7 @@
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "09_FEES_PAYMENTS/2026-11-05_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FORENSIC-FEE-LEDGER-RECONCILIATION-REPORT_V1.md",
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
@@ -10079,6 +10601,9 @@
     "like": [
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md"
     ],
+    "limiting": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md"
+    ],
     "linkage": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
     ],
@@ -10219,6 +10744,9 @@
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md"
     ],
+    "masking": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md"
+    ],
     "master": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
@@ -10284,6 +10812,7 @@
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-MODULE-ELEVATION-REPORT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-SPECIFICATION_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-SPECIFICATION_V1.md",
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_INSTITUTE-SETTINGS-AND-CONFIGURATION-REPORT_V1.md",
       "15_INTEGRATIONS/2026-11-05_INTEGRATIONS_IMPLEMENTATION-REPORT_CENTRALIZED-COMMUNICATION-AND-SHARING-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md"
@@ -10588,6 +11117,23 @@
       "assets/screenshots/25_branding_settings_preview.png",
       "assets/screenshots/26_communication_center.png",
       "assets/screenshots/27_releases_and_version_audit.png",
+      "assets/screenshots/actual_values_accountant_dashboard.png",
+      "assets/screenshots/actual_values_admin_dashboard.png",
+      "assets/screenshots/actual_values_fees_ledger.png",
+      "assets/screenshots/codex_active_decoder_modal.png",
+      "assets/screenshots/codex_active_master_on.png",
+      "assets/screenshots/codex_active_user_view_comparison.png",
+      "assets/screenshots/codex_located_under_settings.png",
+      "assets/screenshots/codex_removed_from_sidebar_header.png",
+      "assets/screenshots/codex_working_activation_scopes.png",
+      "assets/screenshots/codex_working_bijective_mapping.png",
+      "assets/screenshots/codex_working_features_activation.png",
+      "assets/screenshots/codex_working_general_overview.png",
+      "assets/screenshots/codex_working_live_sandbox.png",
+      "assets/screenshots/dashboard_codex_active.png",
+      "assets/screenshots/dashboard_codex_decoder_modal.png",
+      "assets/screenshots/dashboard_codex_fully_obfuscated.png",
+      "assets/screenshots/dashboard_codex_masked_coded_only.png",
       "assets/screenshots/fix1_receipt_edit_modal.png",
       "assets/screenshots/fix1_receipts_with_edit_button.png",
       "assets/screenshots/fix2_fee_plan_edit_modal.png",
@@ -10806,6 +11352,9 @@
     "quick_start_guide": [
       "22_USER_MANUALS/quick_start_guide.html"
     ],
+    "rate": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md"
+    ],
     "razorpay": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md"
@@ -10818,6 +11367,7 @@
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-SPECIFICATION_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-USER-MANUAL_V1.md",
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_AUDIT-REPORT_SYSADMIN-COMPLETE-EDITING-OPTIONS-AUDIT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-COMPREHENSIVE-VERIFIED-AUDIT-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RBAC-REMEDIATION-REPORT_V1.md",
@@ -11047,6 +11597,7 @@
       "19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md"
     ],
     "report_codex": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md"
     ],
     "report_collapsible": [
@@ -11392,10 +11943,14 @@
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-SPECIFICATION_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-USER-MANUAL_V1.md",
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
       "26_ARCHIVED/legacy_root/DATA_PRIVACY_AND_SECURITY.md"
+    ],
+    "security_audit": [
+      "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md"
     ],
     "security_audit_logs": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md"

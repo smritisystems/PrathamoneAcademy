@@ -206,6 +206,155 @@ def decode_coded_value(
 
 
 class CodeXService:
+    # In-memory brute-force tracker for PIN decoder attempts: { key: {"attempts": int, "locked_until": datetime} }
+    _decode_attempts: Dict[str, Dict[str, Any]] = {}
+
+    @classmethod
+    def get_lockout_status(cls, key: str) -> Tuple[bool, int]:
+        """
+        Checks if a key (e.g. 'inst:user_id') is currently locked out from decoding.
+        Returns: (is_locked, remaining_lockout_seconds)
+        """
+        now = datetime.now(timezone.utc)
+        record = cls._decode_attempts.get(key)
+        if not record:
+            return False, 0
+        locked_until = record.get("locked_until")
+        if locked_until:
+            if now < locked_until:
+                remaining = int((locked_until - now).total_seconds())
+                return True, max(1, remaining)
+            else:
+                cls._decode_attempts.pop(key, None)
+                return False, 0
+        return False, 0
+
+    @classmethod
+    def record_failed_attempt(cls, key: str, max_attempts: int, lockout_seconds: int) -> Tuple[int, bool, int]:
+        """
+        Records a failed PIN attempt.
+        Returns: (remaining_attempts, is_now_locked, lockout_seconds)
+        """
+        now = datetime.now(timezone.utc)
+        record = cls._decode_attempts.setdefault(key, {"attempts": 0, "locked_until": None})
+        record["attempts"] += 1
+        current = record["attempts"]
+        if current >= max_attempts:
+            locked_until = now + timedelta(seconds=lockout_seconds)
+            record["locked_until"] = locked_until
+            return 0, True, lockout_seconds
+        remaining = max_attempts - current
+        return remaining, False, 0
+
+    @classmethod
+    def reset_failed_attempts(cls, key: str) -> None:
+        """Resets failed attempt tracking upon successful authentication."""
+        cls._decode_attempts.pop(key, None)
+
+    @classmethod
+    async def apply_financial_masking(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        user: Optional[User],
+        data: Dict[str, Any],
+        numeric_fields: List[str],
+        module: str = "general",
+    ) -> Dict[str, Any]:
+        """
+        Applies CodeX presentation or access control masking on a financial dictionary payload.
+        - 'coded_only': Masks actual raw numeric values (sets to 0.0) and injects coded string.
+        - 'both': Retains raw numeric value and injects coded string.
+        - 'actual_only' / disabled: Retains raw numeric values unchanged.
+        """
+        scope_res = await cls.resolve_scope(db, institution_id, user, module=module)
+        is_active = scope_res.get("is_enabled", False)
+        mode = scope_res.get("visibility_mode", "actual_only")
+
+        if not is_active or mode == "disabled":
+            data["_codex"] = {
+                "is_enabled": False,
+                "visibility_mode": "disabled",
+                "can_decode": False,
+            }
+            return data
+
+        if mode == "actual_only":
+            data["_codex"] = {
+                "is_enabled": True,
+                "visibility_mode": "actual_only",
+                "can_decode": scope_res.get("can_decode", False),
+            }
+            return data
+
+        profile = await cls.get_default_profile(db, institution_id)
+        digit_map = json.loads(profile.digit_map)
+
+        for field in numeric_fields:
+            if field in data and data[field] is not None:
+                val = data[field]
+                coded_str = encode_numeric_value(
+                    val,
+                    digit_map=digit_map,
+                    prefix=profile.prefix or "CX-",
+                    suffix=profile.suffix or "",
+                    decimal_symbol=profile.decimal_symbol or ".",
+                    negative_symbol=profile.negative_symbol or "-",
+                )
+                data[f"{field}_coded"] = coded_str
+                if mode == "coded_only":
+                    # Sanitize raw amount so unauthorized raw numbers are NEVER sent over the wire
+                    data[field] = 0.0
+
+        data["_codex"] = {
+            "is_enabled": True,
+            "visibility_mode": mode,
+            "can_decode": scope_res.get("can_decode", False),
+            "profile_code": profile.profile_code,
+            "version": profile.version,
+        }
+        return data
+
+    @classmethod
+    async def mask_records_list(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        user: Optional[User],
+        records: List[Dict[str, Any]],
+        numeric_fields: List[str],
+        module: str = "general",
+    ) -> List[Dict[str, Any]]:
+        """
+        Batch masks a list of financial records according to the user's CodeX visibility mode.
+        """
+        scope_res = await cls.resolve_scope(db, institution_id, user, module=module)
+        is_active = scope_res.get("is_enabled", False)
+        mode = scope_res.get("visibility_mode", "actual_only")
+
+        if not is_active or mode in ("actual_only", "disabled"):
+            return records
+
+        profile = await cls.get_default_profile(db, institution_id)
+        digit_map = json.loads(profile.digit_map)
+
+        for rec in records:
+            for field in numeric_fields:
+                if field in rec and rec[field] is not None:
+                    val = rec[field]
+                    coded_str = encode_numeric_value(
+                        val,
+                        digit_map=digit_map,
+                        prefix=profile.prefix or "CX-",
+                        suffix=profile.suffix or "",
+                        decimal_symbol=profile.decimal_symbol or ".",
+                        negative_symbol=profile.negative_symbol or "-",
+                    )
+                    rec[f"{field}_coded"] = coded_str
+                    if mode == "coded_only":
+                        rec[field] = 0.0
+        return records
+
     @staticmethod
     async def get_config(db: AsyncSession, institution_id: int) -> CodexConfig:
         """

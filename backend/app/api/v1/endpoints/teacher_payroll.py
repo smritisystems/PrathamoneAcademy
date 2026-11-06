@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description API endpoints for Teacher Payroll, Teaching Sessions Register,
 #  */
@@ -41,6 +41,7 @@ from app.models.teacher_payroll import (
     TeacherPaymentVoucher,
 )
 from app.services import teacher_payroll_service as svc
+from app.services.codex_service import CodeXService
 
 router = APIRouter()
 
@@ -660,7 +661,18 @@ async def list_monthly_payrolls(
             "calculated_at": str(p.calculated_at),
             "notes": p.notes,
         })
-    return items
+    return await CodeXService.mask_records_list(
+        db=db,
+        institution_id=inst_id,
+        user=current_user,
+        records=items,
+        numeric_fields=[
+            "base_earnings", "approved_incentives", "approved_additional_earnings",
+            "contractual_adjustments", "gross_pay", "total_deductions", "withholdings",
+            "net_payable", "paid_amount", "pending_amount"
+        ],
+        module="teacher_payroll",
+    )
 
 
 @router.post("/monthly/calculate")

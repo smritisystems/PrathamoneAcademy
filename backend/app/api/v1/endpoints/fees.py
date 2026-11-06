@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -43,6 +43,7 @@ from app.models.standard import Standard
 from app.models.division import Division
 from app.models.academic_year import AcademicYear
 from app.models.payment import Payment, PaymentReceipt
+from app.services.codex_service import CodeXService
 from app.services.student_metrics import (
     get_authoritative_student_count,
     get_authoritative_student_counts_by_board,
@@ -618,7 +619,7 @@ async def list_invoices(
         query = query.where(FeeInvoice.status == status)
     result = await db.execute(query.order_by(FeeInvoice.created_at.desc()))
     invoices = result.scalars().all()
-    return [
+    inv_list = [
         {
             "id": inv.id,
             "invoice_number": inv.invoice_number,
@@ -634,6 +635,15 @@ async def list_invoices(
         }
         for inv in invoices
     ]
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    return await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=inv_list,
+        numeric_fields=["total_amount", "discount_amount", "net_amount", "paid_amount", "outstanding_amount"],
+        module="fees",
+    )
 
 
 @router.post("/invoices", status_code=201)
@@ -1230,14 +1240,73 @@ async def get_fees_overview(
         for p, s, r_num, b_name, st_name, bd_name in recent_rows
     ]
 
+    user_inst_id = effective_inst_id or getattr(current_user, "institution_id", None) or 1
+    summary_dict = {
+        "total_obligation": total_obligation,
+        "total_collected": total_collected,
+        "total_outstanding": total_outstanding,
+        "collection_rate": collection_rate,
+        "student_count": student_count,
+    }
+    summary_masked = await CodeXService.apply_financial_masking(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        data=summary_dict,
+        numeric_fields=["total_obligation", "total_collected", "total_outstanding"],
+        module="fees",
+    )
+    await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=board_breakdown,
+        numeric_fields=["total_fees", "collected", "outstanding"],
+        module="fees",
+    )
+    await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=batch_breakdown,
+        numeric_fields=["total_fees", "collected", "outstanding"],
+        module="fees",
+    )
+    await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=monthly_trends,
+        numeric_fields=["collected", "cumulative"],
+        module="fees",
+    )
+    await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=payment_methods,
+        numeric_fields=["amount"],
+        module="fees",
+    )
+    await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=top_overdue,
+        numeric_fields=["outstanding_amount"],
+        module="fees",
+    )
+    await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=recent_payments,
+        numeric_fields=["amount"],
+        module="fees",
+    )
+
     return {
-        "summary": {
-            "total_obligation": total_obligation,
-            "total_collected": total_collected,
-            "total_outstanding": total_outstanding,
-            "collection_rate": collection_rate,
-            "student_count": student_count,
-        },
+        "summary": summary_masked,
         "board_breakdown": board_breakdown,
         "batch_breakdown": batch_breakdown,
         "monthly_trends": monthly_trends,
@@ -1365,5 +1434,24 @@ async def get_fee_register(
             ],
         })
 
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    register_entries = await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=register_entries,
+        numeric_fields=["total_amount", "discount_amount", "net_amount", "paid_amount", "outstanding_amount"],
+        module="fees",
+    )
+    for entry in register_entries:
+        if "installments" in entry and isinstance(entry["installments"], list):
+            await CodeXService.mask_records_list(
+                db=db,
+                institution_id=user_inst_id,
+                user=current_user,
+                records=entry["installments"],
+                numeric_fields=["amount", "paid_amount"],
+                module="fees",
+            )
     return register_entries
 
