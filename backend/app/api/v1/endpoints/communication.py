@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description REST API router for Communication Center, message templates, universal document sharing, and delivery tracking.
 #  */
@@ -40,6 +40,11 @@ from app.services.communication import (
     generate_whatsapp_web_url,
     generate_secure_share_token,
     ChannelAdapter,
+    get_automation_rules,
+    update_automation_rules,
+    generate_fee_reminder_queue,
+    dispatch_fee_reminders,
+    dispatch_attendance_alert,
 )
 
 router = APIRouter()
@@ -772,3 +777,129 @@ async def run_diagnostics_test(
         "reference_id": resp_id,
     }
 
+
+
+# ================= AUTOMATION REST ENDPOINTS =================
+
+class AutomationRulesUpdate(BaseModel):
+    fee_reminders_enabled: Optional[bool] = None
+    fee_reminder_days_before: Optional[int] = None
+    fee_reminder_days_after: Optional[int] = None
+    attendance_absent_alerts_enabled: Optional[bool] = None
+    attendance_late_alerts_enabled: Optional[bool] = None
+    receipt_auto_share_enabled: Optional[bool] = None
+    default_channel: Optional[str] = None
+    institute_display_name: Optional[str] = None
+
+
+class FeeRemindersPreviewRequest(BaseModel):
+    min_balance: float = 1.0
+    search: Optional[str] = None
+
+
+class FeeRemindersDispatchRequest(BaseModel):
+    reminders: List[Dict[str, Any]]
+    channel: str = "WHATSAPP"
+
+
+class AttendanceAlertItem(BaseModel):
+    student_id: int
+    date: str
+    status: str
+    remarks: Optional[str] = None
+
+
+class AttendanceAlertsRequest(BaseModel):
+    alerts: List[AttendanceAlertItem]
+
+
+@router.get("/automation/rules")
+async def get_rules_endpoint(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Returns active automated communication rules."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    return await get_automation_rules(db, inst_id)
+
+
+@router.post("/automation/rules")
+async def update_rules_endpoint(
+    payload: AutomationRulesUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(["sysadmin", "admin", "principal"])),
+):
+    """Updates automated communication rules."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    update_data = {k: v for k, v in payload.dict().items() if v is not None}
+    return await update_automation_rules(db, inst_id, update_data)
+
+
+@router.post("/automation/fee-reminders/preview")
+async def preview_fee_reminders_endpoint(
+    payload: FeeRemindersPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Returns queue of students with outstanding fee balances and pre-filled WhatsApp links."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    queue = await generate_fee_reminder_queue(db, inst_id, min_balance=payload.min_balance, search=payload.search)
+    return {
+        "total_pending": len(queue),
+        "total_amount": sum(item["pending_amount"] for item in queue),
+        "items": queue,
+    }
+
+
+@router.post("/automation/fee-reminders/dispatch")
+async def dispatch_fee_reminders_endpoint(
+    payload: FeeRemindersDispatchRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(["sysadmin", "admin", "principal", "accountant"])),
+):
+    """Batch dispatches fee reminder notices and logs them."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    sender_name = current_user.full_name or current_user.username
+    return await dispatch_fee_reminders(
+        db,
+        institution_id=inst_id,
+        reminders=payload.reminders,
+        sender_id=current_user.id,
+        sender_name=sender_name,
+    )
+
+
+@router.post("/automation/attendance-alerts")
+async def dispatch_attendance_alerts_endpoint(
+    payload: AttendanceAlertsRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(["sysadmin", "admin", "principal", "teacher"])),
+):
+    """Dispatches real-time absentee and late arrival notifications to guardians."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    sender_name = current_user.full_name or current_user.username
+    dispatched = []
+    errors = []
+    for item in payload.alerts:
+        res = await dispatch_attendance_alert(
+            db,
+            institution_id=inst_id,
+            student_id=item.student_id,
+            att_date=item.date,
+            att_status=item.status,
+            remarks=item.remarks,
+            sender_id=current_user.id,
+            sender_name=sender_name,
+        )
+        if res.get("success"):
+            dispatched.append(res)
+        else:
+            errors.append(res.get("error"))
+
+    return {
+        "success": True,
+        "dispatched_count": len(dispatched),
+        "failed_count": len(errors),
+        "dispatched": dispatched,
+        "errors": errors,
+    }

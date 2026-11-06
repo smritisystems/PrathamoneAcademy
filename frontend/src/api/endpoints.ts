@@ -39,7 +39,7 @@ import type {
   SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
   MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
-  ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics,
+  ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem,
   StudentExitPayload, StudentReactivatePayload, StudentLifecycleHistoryResponse,
   WithdrawalReportItem, WithdrawalAnalyticsResponse,
   SystemReleaseCurrent, SystemReleaseListItem, SystemReleaseDetail,
@@ -1080,6 +1080,21 @@ export const communicationApi = {
       '/communication/diagnostics/test',
       data
     ),
+
+  getAutomationRules: () =>
+    apiClient.get<AutomationRules>('/communication/automation/rules'),
+
+  updateAutomationRules: (data: Partial<AutomationRules>) =>
+    apiClient.post<{ status: string; message: string; rules: AutomationRules }>('/communication/automation/rules', data),
+
+  previewFeeReminders: (params?: { min_balance?: number; search?: string }) =>
+    apiClient.post<{ count: number; min_balance: number; queue: FeeReminderQueueItem[] }>('/communication/automation/fee-reminders/preview', null, { params }),
+
+  dispatchFeeReminders: (data: { reminders: FeeReminderQueueItem[]; channel?: string }) =>
+    apiClient.post<{ status: string; message: string; count: number; results: any[] }>('/communication/automation/fee-reminders/dispatch', data),
+
+  dispatchAttendanceAlert: (data: { student_id: number; date: string; status: string; remarks?: string }) =>
+    apiClient.post<{ status: string; message: string; alert: any }>('/communication/automation/attendance-alerts', data),
 }
 
 // ─── Release & Change Management ─────────────────────────────────────────────
@@ -1206,5 +1221,5 @@ export const teacherPayrollApi = {
       })
     }
     return `/api/v1/teacher-payroll/reports/${reportType}/export?${q.toString()}`
-  },
+  }
 }

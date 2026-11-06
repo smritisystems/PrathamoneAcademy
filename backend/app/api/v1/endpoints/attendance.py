@@ -11,15 +11,19 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for student attendance tracking, session marking, and absenteeism reporting.
 #  */
 
+import logging
+from typing import Optional, List
+from datetime import date
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from typing import Optional, List
+
 from app.core.database import get_db
 from app.core.deps import (
     get_current_active_user,
@@ -28,8 +32,9 @@ from app.core.deps import (
 )
 from app.models.attendance import Attendance
 from app.models.student import Student
-from pydantic import BaseModel
-from datetime import date
+from app.services.communication import get_automation_rules, dispatch_attendance_alert
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -95,7 +100,32 @@ async def mark_attendance_bulk(
             )
             db.add(att)
     await db.commit()
-    return {"message": f"Attendance marked for {len(data.entries)} students"}
+
+    # Automated Real-Time Absentee / Late Alerts
+    alerts_dispatched = 0
+    try:
+        rules = await get_automation_rules(db, user_inst_id)
+        if rules.get("attendance_alerts_enabled", True):
+            for entry in data.entries:
+                if str(entry.status).lower() in ("absent", "late"):
+                    await dispatch_attendance_alert(
+                        db=db,
+                        institution_id=user_inst_id,
+                        student_id=entry.student_id,
+                        att_date=str(data.date),
+                        att_status=entry.status,
+                        remarks=entry.remarks,
+                        sender_id=current_user.id,
+                        sender_name=f"{getattr(current_user, 'first_name', '')} {getattr(current_user, 'last_name', '')}".strip() or "Attendance System",
+                    )
+                    alerts_dispatched += 1
+    except Exception as exc:
+        logger.warning("Automated attendance alert dispatch encountered non-blocking error: %s", exc)
+
+    return {
+        "message": f"Attendance marked for {len(data.entries)} students",
+        "alerts_dispatched": alerts_dispatched,
+    }
 
 
 @router.get("/")
@@ -128,4 +158,3 @@ async def get_attendance(
         }
         for a in records
     ]
-

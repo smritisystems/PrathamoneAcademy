@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-06
  *
  * @description Centralized Communication Center workspace for multichannel messaging, template authoring, delivery tracking, and gateway diagnostics.
  */
@@ -21,11 +21,13 @@ import {
   MessageSquare, Send, Mail, MessageCircle, Phone, Users, UserCheck,
   GraduationCap, Calendar, Clock, CheckCircle2, AlertCircle, RefreshCw,
   Search, Plus, Edit, Trash2, Shield, Eye, ExternalLink, Filter, X,
-  FileText, Check, Paperclip, ChevronRight, RotateCcw
+  FileText, Check, Paperclip, ChevronRight, RotateCcw,
+  Zap, Copy, CheckSquare, Square, Sliders, BellRing
 } from 'lucide-react'
 import { communicationApi } from '../api/endpoints'
 import type {
-  MessageTemplateItem, CommunicationLogItem, RecipientItem, ChannelDiagnostics
+  MessageTemplateItem, CommunicationLogItem, RecipientItem, ChannelDiagnostics,
+  AutomationRules, FeeReminderQueueItem
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useBranding } from '../config/branding'
@@ -36,7 +38,7 @@ export default function Communication() {
   const isSysAdmin = isUserSysAdmin(user)
 
   // Navigation tab
-  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'diagnostics'>('compose')
+  const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'history' | 'diagnostics' | 'automation'>('compose')
 
   // Loading & Alerts
   const [loading, setLoading] = useState<boolean>(true)
@@ -89,6 +91,85 @@ export default function Communication() {
   const [testDestination, setTestDestination] = useState<string>('')
   const [testMessage, setTestMessage] = useState<string>('PrathamOne Academy channel diagnostics verification.')
 
+  // ─── Automation State ─────────────────────────────────────────────────────
+  const [automationRules, setAutomationRules] = useState<AutomationRules>({
+    fee_reminders_enabled: true,
+    fee_reminder_days_before: 5,
+    fee_reminder_frequency_days: 7,
+    attendance_alerts_enabled: true,
+    receipt_auto_share_enabled: true,
+    default_channel: 'WHATSAPP',
+    institute_display_name: 'PrathamOne EduOS',
+  })
+  const [savingRules, setSavingRules] = useState<boolean>(false)
+  const [feeQueue, setFeeQueue] = useState<FeeReminderQueueItem[]>([])
+  const [feeQueueLoading, setFeeQueueLoading] = useState<boolean>(false)
+  const [feeQueueSearch, setFeeQueueSearch] = useState<string>('')
+  const [minBalanceFilter, setMinBalanceFilter] = useState<number>(500)
+  const [selectedQueueIds, setSelectedQueueIds] = useState<number[]>([])
+  const [dispatchingQueue, setDispatchingQueue] = useState<boolean>(false)
+  const [previewItem, setPreviewItem] = useState<FeeReminderQueueItem | null>(null)
+
+  const fetchAutomationRules = async () => {
+    try {
+      const res = await communicationApi.getAutomationRules()
+      if (res.data) setAutomationRules(res.data)
+    } catch (err: any) {
+      console.error('Failed to load automation rules:', err)
+    }
+  }
+
+  const fetchFeeReminderQueue = async () => {
+    try {
+      setFeeQueueLoading(true)
+      const res = await communicationApi.previewFeeReminders({
+        min_balance: minBalanceFilter,
+        search: feeQueueSearch,
+      })
+      setFeeQueue(res.data?.queue || [])
+      setSelectedQueueIds([])
+    } catch (err: any) {
+      console.error('Failed to load fee reminder queue:', err)
+      showNotification('error', 'Failed to load overdue fee reminders.')
+    } finally {
+      setFeeQueueLoading(false)
+    }
+  }
+
+  const handleSaveAutomationRules = async () => {
+    try {
+      setSavingRules(true)
+      await communicationApi.updateAutomationRules(automationRules)
+      showNotification('success', 'Automation triggers updated successfully.')
+    } catch (err: any) {
+      showNotification('error', err.response?.data?.detail || 'Failed to save automation rules.')
+    } finally {
+      setSavingRules(false)
+    }
+  }
+
+  const handleDispatchBatchReminders = async () => {
+    const selectedItems = feeQueue.filter((item) => selectedQueueIds.includes(item.invoice_id))
+    if (!selectedItems.length) {
+      showNotification('error', 'Please select at least one student reminder.')
+      return
+    }
+    try {
+      setDispatchingQueue(true)
+      const res = await communicationApi.dispatchFeeReminders({
+        reminders: selectedItems,
+        channel: automationRules.default_channel || 'WHATSAPP',
+      })
+      showNotification('success', `Dispatched ${res.data?.count || selectedItems.length} fee reminder(s) successfully.`)
+      fetchData()
+      fetchFeeReminderQueue()
+    } catch (err: any) {
+      showNotification('error', err.response?.data?.detail || 'Failed to dispatch batch fee reminders.')
+    } finally {
+      setDispatchingQueue(false)
+    }
+  }
+
   // Fetch initial data
   const fetchData = async () => {
     try {
@@ -113,6 +194,13 @@ export default function Communication() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'automation') {
+      fetchAutomationRules()
+      fetchFeeReminderQueue()
+    }
+  }, [activeTab])
 
   // Recipient Search
   useEffect(() => {
@@ -405,6 +493,17 @@ export default function Communication() {
             >
               <Shield className="w-3.5 h-3.5" />
               <span>Channels & Diagnostics</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('automation')}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all ${
+                activeTab === 'automation'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <span>Automations & Queues</span>
             </button>
           </div>
         </div>
@@ -1207,6 +1306,439 @@ export default function Communication() {
                     <span>Trigger Diagnostics Test</span>
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────── */}
+            {/* TAB 5: AUTOMATIONS & QUEUES                                  */}
+            {/* ─────────────────────────────────────────────────────────── */}
+            {activeTab === 'automation' && (
+              <div className="space-y-6">
+                {/* Automation Rules Configuration Card */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xs space-y-6">
+                  <div className="flex items-start justify-between border-b border-gray-100 pb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                          <Zap className="w-4 h-4" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900">
+                          Automated Outbound Rules & Real-Time Triggers
+                        </h3>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 ml-10">
+                        Configure hands-free WhatsApp and SMS notifications for overdue fees, absenteeism alerts, and payment receipts.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={savingRules}
+                      onClick={handleSaveAutomationRules}
+                      className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                      {savingRules ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      <span>Save Automation Rules</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Fee Reminders Rule */}
+                    <div className="p-4 rounded-xl border border-gray-200 bg-slate-50/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <Clock className="w-4 h-4 text-blue-600" />
+                          Overdue Fee Reminders
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={automationRules.fee_reminders_enabled}
+                            onChange={(e) =>
+                              setAutomationRules({ ...automationRules, fee_reminders_enabled: e.target.checked })
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Scans verified invoices and creates personalized payment alerts for parents.
+                      </p>
+                      <div className="pt-2 border-t border-gray-200/60 space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600">Days before due date:</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="30"
+                            value={automationRules.fee_reminder_days_before}
+                            onChange={(e) =>
+                              setAutomationRules({
+                                ...automationRules,
+                                fee_reminder_days_before: parseInt(e.target.value) || 3,
+                              })
+                            }
+                            className="w-16 px-2 py-1 text-xs border border-gray-300 rounded-md text-right font-medium"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600">Repeat frequency:</span>
+                          <span className="text-xs font-semibold text-gray-700">Every {automationRules.fee_reminder_frequency_days} Days</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Attendance Absentee Rule */}
+                    <div className="p-4 rounded-xl border border-gray-200 bg-slate-50/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <BellRing className="w-4 h-4 text-rose-600" />
+                          Absentee & Late Alerts
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={automationRules.attendance_alerts_enabled}
+                            onChange={(e) =>
+                              setAutomationRules({ ...automationRules, attendance_alerts_enabled: e.target.checked })
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Immediately dispatches real-time WhatsApp alerts to guardians when students are marked absent.
+                      </p>
+                      <div className="pt-2 border-t border-gray-200/60">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                          ✓ Active on Attendance Save
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Receipt Auto-Share Rule */}
+                    <div className="p-4 rounded-xl border border-gray-200 bg-slate-50/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <FileText className="w-4 h-4 text-emerald-600" />
+                          Auto Receipt Dispatch
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={automationRules.receipt_auto_share_enabled}
+                            onChange={(e) =>
+                              setAutomationRules({ ...automationRules, receipt_auto_share_enabled: e.target.checked })
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Automatically generates secure WhatsApp receipt download links upon fee collection.
+                      </p>
+                      <div className="pt-2 border-t border-gray-200/60">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800">
+                          ✓ Secure 7-Day Cloud Link
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Overdue Fee Reminder Queue Table Card */}
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-2xs overflow-hidden">
+                  {/* Queue Table Controls */}
+                  <div className="p-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                        <span>Pending Fee Reminder Dispatch Queue</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                          {feeQueue.length} Overdue
+                        </span>
+                      </h4>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Verified students with pending fee balances eligible for scheduled payment reminder broadcast.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      {/* Search Filter */}
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
+                        <input
+                          type="text"
+                          value={feeQueueSearch}
+                          onChange={(e) => setFeeQueueSearch(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && fetchFeeReminderQueue()}
+                          placeholder="Search student or parent..."
+                          className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg w-48 focus:w-60 transition-all"
+                        />
+                      </div>
+
+                      {/* Min Balance Filter */}
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                        <span>Min Due:</span>
+                        <select
+                          value={minBalanceFilter}
+                          onChange={(e) => {
+                            setMinBalanceFilter(Number(e.target.value))
+                          }}
+                          className="px-2 py-1 text-xs border border-gray-300 rounded-lg font-medium"
+                        >
+                          <option value={100}>₹100+</option>
+                          <option value={500}>₹500+</option>
+                          <option value={1000}>₹1,000+</option>
+                          <option value={5000}>₹5,000+</option>
+                          <option value={10000}>₹10,000+</option>
+                        </select>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={fetchFeeReminderQueue}
+                        disabled={feeQueueLoading}
+                        className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Refresh Queue"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${feeQueueLoading ? 'animate-spin' : ''}`} />
+                      </button>
+
+                      {/* Dispatch Batch Action Button */}
+                      <button
+                        type="button"
+                        disabled={dispatchingQueue || selectedQueueIds.length === 0}
+                        onClick={handleDispatchBatchReminders}
+                        className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                      >
+                        {dispatchingQueue ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Send className="w-3.5 h-3.5" />
+                        )}
+                        <span>Dispatch Reminders ({selectedQueueIds.length})</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-gray-600">
+                      <thead className="bg-gray-50/75 border-b border-gray-200 text-gray-700 font-semibold text-[11px] uppercase tracking-wider">
+                        <tr>
+                          <th className="py-3 px-4 w-10 text-center">
+                            <input
+                              type="checkbox"
+                              checked={
+                                feeQueue.length > 0 && selectedQueueIds.length === feeQueue.length
+                              }
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedQueueIds(feeQueue.map((item) => item.invoice_id))
+                                } else {
+                                  setSelectedQueueIds([])
+                                }
+                              }}
+                              className="rounded-md border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          </th>
+                          <th className="py-3 px-4">Student & Admission</th>
+                          <th className="py-3 px-4">Guardian Contact</th>
+                          <th className="py-3 px-4">Invoice #</th>
+                          <th className="py-3 px-4 text-right">Pending Amount</th>
+                          <th className="py-3 px-4">Due Date</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {feeQueueLoading ? (
+                          <tr>
+                            <td colSpan={7} className="py-10 text-center text-gray-400">
+                              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
+                              <span>Scanning invoices and preparing reminder queue...</span>
+                            </td>
+                          </tr>
+                        ) : feeQueue.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-10 text-center text-gray-400">
+                              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                              <p className="font-medium text-gray-700">No Overdue Fee Invoices Found</p>
+                              <p className="text-[11px] text-gray-400 mt-0.5">
+                                All active students are up-to-date with fee payments or balance is below minimum threshold.
+                              </p>
+                            </td>
+                          </tr>
+                        ) : (
+                          feeQueue.map((item) => {
+                            const isSelected = selectedQueueIds.includes(item.invoice_id)
+                            return (
+                              <tr
+                                key={item.invoice_id}
+                                className={`hover:bg-blue-50/40 transition-colors ${
+                                  isSelected ? 'bg-blue-50/30' : ''
+                                }`}
+                              >
+                                <td className="py-3 px-4 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedQueueIds([...selectedQueueIds, item.invoice_id])
+                                      } else {
+                                        setSelectedQueueIds(
+                                          selectedQueueIds.filter((id) => id !== item.invoice_id)
+                                        )
+                                      }
+                                    }}
+                                    className="rounded-md border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="font-bold text-gray-900">{item.student_name}</div>
+                                  <div className="text-[11px] text-gray-500 font-mono">
+                                    {item.admission_number}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="font-medium text-gray-800">
+                                    {item.guardian_name}{' '}
+                                    <span className="text-[10px] text-gray-500 font-normal">
+                                      ({item.guardian_relation})
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-emerald-700 font-mono flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    <span>{item.phone}</span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 font-mono text-gray-600">
+                                  {item.invoice_number}
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  <div className="font-bold text-rose-600 text-sm">
+                                    ₹{item.pending_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                  </div>
+                                  <div className="text-[10px] text-gray-400">
+                                    Total: ₹{item.total_amount.toLocaleString('en-IN')}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 text-gray-600">
+                                  {item.due_date || 'N/A'}
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewItem(item)}
+                                      className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                      title="View Message Preview"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(item.message)
+                                        showNotification('success', 'Message copied to clipboard!')
+                                      }}
+                                      className="p-1 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+                                      title="Copy Reminder Message"
+                                    >
+                                      <Copy className="w-3.5 h-3.5" />
+                                    </button>
+                                    <a
+                                      href={item.whatsapp_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg flex items-center gap-1 transition-colors"
+                                      title="Direct WhatsApp Dispatch"
+                                    >
+                                      <MessageCircle className="w-3 h-3 text-emerald-600" />
+                                      <span>WhatsApp</span>
+                                    </a>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Message Preview Modal */}
+                {previewItem && (
+                  <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-200 max-w-md w-full p-6 space-y-4">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                            <MessageCircle className="w-3.5 h-3.5" />
+                          </div>
+                          <h4 className="text-sm font-bold text-gray-900">Fee Reminder Preview</h4>
+                        </div>
+                        <button
+                          onClick={() => setPreviewItem(null)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between py-1 border-b border-gray-100">
+                          <span className="text-gray-500">Student:</span>
+                          <span className="font-bold text-gray-900">{previewItem.student_name}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-gray-100">
+                          <span className="text-gray-500">Recipient:</span>
+                          <span className="font-bold text-gray-900">{previewItem.guardian_name} ({previewItem.phone})</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-gray-100">
+                          <span className="text-gray-500">Pending Balance:</span>
+                          <span className="font-bold text-rose-600">₹{previewItem.pending_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-600 mb-1.5">
+                          Generated WhatsApp Message:
+                        </label>
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl font-mono text-[11px] text-gray-800 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                          {previewItem.message}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(previewItem.message)
+                            showNotification('success', 'Copied to clipboard!')
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg flex items-center gap-1"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy</span>
+                        </button>
+                        <a
+                          href={previewItem.whatsapp_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg flex items-center gap-1.5 shadow-xs"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Open in WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>

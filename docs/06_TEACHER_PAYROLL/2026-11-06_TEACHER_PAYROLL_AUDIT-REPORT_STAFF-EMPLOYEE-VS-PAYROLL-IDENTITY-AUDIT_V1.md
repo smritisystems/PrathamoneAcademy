@@ -187,3 +187,4 @@ The platform intentionally separates tables according to their **business lifecy
 ## 6. Conclusion
 
 Teachers managed in **Staff & Employee Management** (`/staff/`) and teachers managed in **Teacher Payroll & Payments** (`/teacher-payroll/`) are **the exact same database individuals**. Modifying a teacher's contact details, status, or name in Staff Management immediately updates their records across Timetables, Sessions, and Payroll calculations with zero synchronization delay or data divergence.
+

@@ -2148,6 +2148,33 @@ export interface ChannelDiagnostics {
   >
 }
 
+export interface AutomationRules {
+  fee_reminders_enabled: boolean
+  fee_reminder_days_before: number
+  fee_reminder_frequency_days: number
+  attendance_alerts_enabled: boolean
+  receipt_auto_share_enabled: boolean
+  default_channel: string
+  institute_display_name: string
+}
+
+export interface FeeReminderQueueItem {
+  invoice_id: number
+  invoice_number: string
+  student_id: number
+  student_name: string
+  admission_number: string
+  guardian_name: string
+  guardian_relation: string
+  phone: string
+  pending_amount: number
+  total_amount: number
+  paid_amount: number
+  due_date: string
+  message: string
+  whatsapp_url: string
+}
+
 
 // ─── Student Lifecycle & Withdrawal Analytics ─────────────────────────────
 

@@ -13,7 +13,7 @@
  * @created     2026-11-05
  * @updated     2026-11-06
  *
- * @description Vitest test suite for Communication Center workspace, covering compose & send, templates catalogue, delivery logs, and gateway diagnostics.
+ * @description Vitest test suite for Communication Center workspace, covering compose & send, templates catalogue, delivery logs, diagnostics, and automated outbound triggers.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -53,6 +53,11 @@ vi.mock('../api/endpoints', () => ({
     deleteTemplate: vi.fn(),
     retryLog: vi.fn(),
     testChannel: vi.fn(),
+    getAutomationRules: vi.fn(),
+    updateAutomationRules: vi.fn(),
+    previewFeeReminders: vi.fn(),
+    dispatchFeeReminders: vi.fn(),
+    dispatchAttendanceAlert: vi.fn(),
   },
 }))
 
@@ -130,6 +135,35 @@ describe('Communication Center Workspace', () => {
     },
   ]
 
+  const mockAutomationRules = {
+    fee_reminders_enabled: true,
+    fee_reminder_days_before: 5,
+    fee_reminder_frequency_days: 7,
+    attendance_alerts_enabled: true,
+    receipt_auto_share_enabled: true,
+    default_channel: 'WHATSAPP',
+    institute_display_name: 'PrathamOne EduOS',
+  }
+
+  const mockFeeQueue = [
+    {
+      invoice_id: 501,
+      invoice_number: 'INV-2026-001',
+      student_id: 10,
+      student_name: 'Rohan Sharma',
+      admission_number: 'ADM-0010',
+      guardian_name: 'Rajesh Sharma',
+      guardian_relation: 'Father',
+      phone: '+919811122233',
+      pending_amount: 15000,
+      total_amount: 35000,
+      paid_amount: 20000,
+      due_date: '2026-11-15',
+      message: 'Dear Rajesh Sharma, pending fee balance is Rs. 15,000 for Rohan Sharma.',
+      whatsapp_url: 'https://wa.me/919811122233?text=Dear%20Rajesh',
+    },
+  ]
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(communicationApi.getTemplates).mockResolvedValue({ data: mockTemplates } as any)
@@ -138,9 +172,16 @@ describe('Communication Center Workspace', () => {
     } as any)
     vi.mocked(communicationApi.getDiagnostics).mockResolvedValue({ data: mockDiagnostics } as any)
     vi.mocked(communicationApi.searchRecipients).mockResolvedValue({ data: mockRecipients } as any)
+    vi.mocked(communicationApi.getAutomationRules).mockResolvedValue({ data: mockAutomationRules } as any)
+    vi.mocked(communicationApi.previewFeeReminders).mockResolvedValue({
+      data: { count: 1, min_balance: 500, queue: mockFeeQueue },
+    } as any)
+    vi.mocked(communicationApi.dispatchFeeReminders).mockResolvedValue({
+      data: { status: 'success', message: 'Dispatched 1 fee reminder(s)', count: 1, results: [] },
+    } as any)
   })
 
-  it('renders the header and the four primary navigation tabs', async () => {
+  it('renders the header and the five primary navigation tabs', async () => {
     render(<Communication />)
 
     expect(screen.getByText('Communication Center')).toBeDefined()
@@ -148,6 +189,7 @@ describe('Communication Center Workspace', () => {
     expect(screen.getByRole('button', { name: /Templates/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /Delivery History/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /Diagnostics/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Automations & Queues/i })).toBeDefined()
 
     await waitFor(() => {
       expect(communicationApi.getTemplates).toHaveBeenCalled()
@@ -204,6 +246,46 @@ describe('Communication Center Workspace', () => {
       expect(screen.getByText('WhatsApp Integration')).toBeDefined()
       expect(screen.getByText('Email (SMTP)')).toBeDefined()
       expect(screen.getByText('SMS Gateway')).toBeDefined()
+    })
+  })
+
+  it('switches to Automations & Queues tab and displays automation rules and pending reminders queue', async () => {
+    render(<Communication />)
+
+    const automationTab = screen.getByRole('button', { name: /Automations & Queues/i })
+    fireEvent.click(automationTab)
+
+    await waitFor(() => {
+      expect(communicationApi.getAutomationRules).toHaveBeenCalled()
+      expect(communicationApi.previewFeeReminders).toHaveBeenCalled()
+      expect(screen.getByText('Automated Outbound Rules & Real-Time Triggers')).toBeDefined()
+      expect(screen.getByText('Pending Fee Reminder Dispatch Queue')).toBeDefined()
+      expect(screen.getByText('Rohan Sharma')).toBeDefined()
+      expect(screen.getByText('Rajesh Sharma')).toBeDefined()
+      expect(screen.getByText('₹15,000.00')).toBeDefined()
+    })
+  })
+
+  it('allows batch dispatching fee reminders from the automated queue', async () => {
+    render(<Communication />)
+
+    const automationTab = screen.getByRole('button', { name: /Automations & Queues/i })
+    fireEvent.click(automationTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('Rohan Sharma')).toBeDefined()
+    })
+
+    // Find and check the row checkbox
+    const checkboxes = screen.getAllByRole('checkbox')
+    // Select the second checkbox (first is header select all, second is item)
+    fireEvent.click(checkboxes[checkboxes.length - 1])
+
+    const dispatchBtn = screen.getByRole('button', { name: /Dispatch Reminders/i })
+    fireEvent.click(dispatchBtn)
+
+    await waitFor(() => {
+      expect(communicationApi.dispatchFeeReminders).toHaveBeenCalled()
     })
   })
 })
