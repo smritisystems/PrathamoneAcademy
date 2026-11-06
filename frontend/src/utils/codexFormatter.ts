@@ -51,3 +51,4 @@ export function encodeCodexNumber(
   }
   return `${prefix}${out}${suffix}`
 }
+

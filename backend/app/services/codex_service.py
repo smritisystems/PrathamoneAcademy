@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description Comprehensive domain service for CodeX configurable feature activation, digit-to-symbol encoding, and scope precedence resolution.
 #  */
@@ -456,13 +456,19 @@ class CodeXService:
         active_scope = user_scope or role_scope or dept_scope or business_scope
 
         if not active_scope:
+            default_mode = "actual_only"
+            if config.feature_hide_actual_amount:
+                default_mode = "coded_only"
+            elif config.feature_show_both:
+                default_mode = "both"
+
             return {
                 "is_enabled": True,
-                "visibility_mode": "actual_only",
-                "can_decode": False,
-                "can_generate_qr": False,
+                "visibility_mode": default_mode,
+                "can_decode": True,
+                "can_generate_qr": config.feature_qr_generation,
                 "allowed_modules": ["all"],
-                "reason": "Default business visibility.",
+                "reason": f"Default business visibility ({default_mode}).",
             }
 
         # Check module restriction

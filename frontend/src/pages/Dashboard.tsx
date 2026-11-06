@@ -228,11 +228,21 @@ export default function DashboardPage() {
         <StatCard
           title="Total Fees Invoiced"
           value={
-            isCodexActive && codexMode === 'coded_only'
-              ? codeFees
-              : fmt(rawFees)
+            isCodexActive && codexMode === 'coded_only' ? (
+              <button
+                type="button"
+                onClick={() => setDecoderCode(codeFees || '')}
+                className="font-mono text-xl font-bold tracking-widest text-violet-950 hover:text-indigo-600 transition-colors flex items-center gap-1.5 cursor-pointer text-left"
+                title="Click to decode"
+              >
+                <Lock className="w-4 h-4 text-violet-600 shrink-0" />
+                <span>{codeFees}</span>
+              </button>
+            ) : (
+              fmt(rawFees)
+            )
           }
-          codexBadge={isCodexActive ? codeFees : undefined}
+          codexBadge={isCodexActive && codexMode !== 'coded_only' ? codeFees : undefined}
           onDecodeClick={(c) => setDecoderCode(c)}
           icon={DollarSign}
           color="purple"
@@ -245,11 +255,21 @@ export default function DashboardPage() {
         <StatCard
           title="Collected Fees"
           value={
-            isCodexActive && codexMode === 'coded_only'
-              ? codeCollected
-              : fmt(rawCollected)
+            isCodexActive && codexMode === 'coded_only' ? (
+              <button
+                type="button"
+                onClick={() => setDecoderCode(codeCollected || '')}
+                className="font-mono text-xl font-bold tracking-widest text-emerald-950 hover:text-emerald-700 transition-colors flex items-center gap-1.5 cursor-pointer text-left"
+                title="Click to decode"
+              >
+                <Lock className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{codeCollected}</span>
+              </button>
+            ) : (
+              fmt(rawCollected)
+            )
           }
-          codexBadge={isCodexActive ? codeCollected : undefined}
+          codexBadge={isCodexActive && codexMode !== 'coded_only' ? codeCollected : undefined}
           onDecodeClick={(c) => setDecoderCode(c)}
           icon={TrendingUp}
           color="green"
@@ -262,11 +282,21 @@ export default function DashboardPage() {
         <StatCard
           title="Outstanding Balance"
           value={
-            isCodexActive && codexMode === 'coded_only'
-              ? codeOutstanding
-              : fmt(rawOutstanding)
+            isCodexActive && codexMode === 'coded_only' ? (
+              <button
+                type="button"
+                onClick={() => setDecoderCode(codeOutstanding || '')}
+                className="font-mono text-xl font-bold tracking-widest text-red-950 hover:text-red-700 transition-colors flex items-center gap-1.5 cursor-pointer text-left"
+                title="Click to decode"
+              >
+                <Lock className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{codeOutstanding}</span>
+              </button>
+            ) : (
+              fmt(rawOutstanding)
+            )
           }
-          codexBadge={isCodexActive ? codeOutstanding : undefined}
+          codexBadge={isCodexActive && codexMode !== 'coded_only' ? codeOutstanding : undefined}
           onDecodeClick={(c) => setDecoderCode(c)}
           icon={AlertCircle}
           color="red"
