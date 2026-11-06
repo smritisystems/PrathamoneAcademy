@@ -11,17 +11,19 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for exam creation, marks entry, grading formulas, and report card generation.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+import logging
 from typing import Optional, List
 from datetime import date
 from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
 from app.core.database import get_db
 from app.core.deps import (
     get_current_active_user,
@@ -30,6 +32,14 @@ from app.core.deps import (
 )
 from app.models.exam import Examination, ExamMark
 from app.models.standard import Standard
+from app.services.exam_reports import (
+    get_exam_marks_sheet,
+    save_exam_marks_bulk,
+    get_exam_analytics,
+    get_student_report_card,
+)
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -43,6 +53,18 @@ class ExamCreate(BaseModel):
     end_date: Optional[date] = None
     max_marks: int = 100
     passing_marks: int = 35
+
+
+class MarkEntry(BaseModel):
+    student_id: int
+    subject_id: int
+    marks_obtained: Optional[float] = None
+    is_absent: Optional[bool] = False
+    remarks: Optional[str] = None
+
+
+class BulkMarksPayload(BaseModel):
+    entries: List[MarkEntry]
 
 
 @router.get("/")
@@ -107,3 +129,77 @@ async def create_examination(
         "max_marks": exam.max_marks,
     }
 
+
+@router.get("/{exam_id}/marks")
+async def get_examination_marks(
+    exam_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Retrieves marks entry spreadsheet dataset for an examination."""
+    sheet = await get_exam_marks_sheet(db, exam_id)
+    if not sheet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Examination #{exam_id} not found.",
+        )
+    return sheet
+
+
+@router.post("/{exam_id}/marks")
+async def save_examination_marks(
+    exam_id: int,
+    data: BulkMarksPayload,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Saves student examination marks in bulk and computes standardized grades."""
+    try:
+        entries_dicts = [e.model_dump() for e in data.entries]
+        res = await save_exam_marks_bulk(db, exam_id, entries_dicts)
+        return res
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to save exam marks: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to record examination scores.",
+        )
+
+
+@router.get("/{exam_id}/analytics")
+async def get_examination_analytics(
+    exam_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Retrieves cohort performance analytics, grade distributions, and leaderboard rankings."""
+    analytics = await get_exam_analytics(db, exam_id)
+    if not analytics:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Examination #{exam_id} not found.",
+        )
+    return analytics
+
+
+@router.get("/{exam_id}/report-card/{student_id}")
+async def get_examination_student_report_card(
+    exam_id: int,
+    student_id: int,
+    effective_inst_id: int = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Compiles official printable graphical report card dataset for a student."""
+    inst_id = effective_inst_id or getattr(current_user, "institution_id", 1) or 1
+    report_card = await get_student_report_card(
+        db, exam_id=exam_id, student_id=student_id, institution_id=inst_id
+    )
+    if not report_card:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Report card for student #{student_id} in exam #{exam_id} could not be generated.",
+        )
+    return report_card

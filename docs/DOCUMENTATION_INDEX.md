@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-06 14:51:27  
-**Total Indexed Items:** 188  
+**Last Reindexed:** 2026-11-06 15:05:53  
+**Total Indexed Items:** 190  
 
 ---
 
@@ -22,7 +22,7 @@
 | `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **0** | Teacher & Faculty Directory |
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **3** | Teacher Payroll & Payment Management |
 | `07` | [07_ATTENDANCE](#07_attendance) | **5** | Attendance Register & Tracking |
-| `08` | [08_EXAMINATION](#08_examination) | **4** | Examinations, Tests & Grading |
+| `08` | [08_EXAMINATION](#08_examination) | **6** | Examinations, Tests & Grading |
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **21** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **0** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **5** | Reports, Analytics & Data Grids |
@@ -142,6 +142,8 @@
 | **Examinations Module Developer Manual** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-DEVELOPER-MANUAL_V1.md](08_EXAMINATION/2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-DEVELOPER-MANUAL_V1.md) | - |
 | **Examinations Module Specification** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-SPECIFICATION_V1.md](08_EXAMINATION/2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-SPECIFICATION_V1.md) | - |
 | **Examinations Module User Manual** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-USER-MANUAL_V1.md](08_EXAMINATION/2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-USER-MANUAL_V1.md) | - |
+| **Printable Graphical Report Cards & Exam Analytics Implementation Plan** | `PLAN` | `1.0` | 2026-11-06 | `Draft` | [2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md](08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md) | 04_STUDENT_MANAGEMENT, 07_ATTENDANCE, 14_PRINTING_DOCUMENTS |
+| **Printable Graphical Report Cards & Exam Analytics Implementation Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md](08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 14_PRINTING_DOCUMENTS |
 
 
 ### <a id="09_fees_payments"></a>09_FEES_PAYMENTS — Fee Structures, Payments & Receipts

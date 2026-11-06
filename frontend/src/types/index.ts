@@ -2226,6 +2226,126 @@ export interface ScanCheckinResult {
   }
 }
 
+export interface ExamMarksSheet {
+  exam: {
+    id: number
+    name: string
+    exam_type: string
+    standard_id: number
+    max_marks: number
+    passing_marks: number
+    start_date?: string | null
+    end_date?: string | null
+  }
+  subjects: Array<{
+    id: number
+    name: string
+    code: string
+    max_marks: number
+    pass_marks: number
+  }>
+  students: Array<{
+    student_id: number
+    admission_number: string
+    name: string
+    roll_number: string
+    scores: Record<
+      number,
+      {
+        id?: number | null
+        marks_obtained?: number | null
+        grade?: string | null
+        remarks?: string | null
+        is_absent?: boolean
+      }
+    >
+  }>
+}
+
+export interface ExamAnalyticsData {
+  examination_id: number
+  exam_name: string
+  total_candidates: number
+  appeared_candidates: number
+  pass_count: number
+  fail_count: number
+  pass_percentage: number
+  class_average: number
+  highest_score: number
+  lowest_score: number
+  grade_distribution: Record<string, number>
+  subject_analytics: Array<{
+    subject_id: number
+    subject_name: string
+    candidates_count: number
+    average_marks: number
+    highest_marks: number
+    lowest_marks: number
+  }>
+  leaderboard: Array<{
+    student_id: number
+    name: string
+    admission_number: string
+    total_obtained: number
+    total_max: number
+    percentage: number
+    grade: string
+    result: string
+    rank: number
+  }>
+}
+
+export interface StudentReportCardData {
+  student: {
+    id: number
+    admission_number: string
+    full_name: string
+    photo_url?: string | null
+    standard_name: string
+    division_name: string
+    roll_number: string
+    guardian_name: string
+    guardian_phone: string
+  }
+  examination: {
+    id: number
+    name: string
+    exam_type: string
+    start_date?: string | null
+    end_date?: string | null
+  }
+  institution: {
+    name: string
+    short_name: string
+    tagline: string
+    address?: string
+    city?: string
+    phone?: string
+    logo_url?: string | null
+  }
+  subjects: Array<{
+    subject_id: number
+    subject_name: string
+    subject_code: string
+    max_marks: number
+    passing_marks: number
+    marks_obtained: string
+    percentage: number
+    grade: string
+    status: string
+    remarks: string
+  }>
+  summary: {
+    total_max_marks: number
+    total_obtained: number
+    percentage: number
+    grade: string
+    result: string
+    class_rank: string
+    total_candidates: number
+  }
+}
+
 
 // ─── Student Lifecycle & Withdrawal Analytics ─────────────────────────────
 

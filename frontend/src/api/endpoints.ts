@@ -40,6 +40,7 @@ import type {
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
   MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
   ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem, StudentIdCardData, ScanCheckinResult,
+  ExamMarksSheet, ExamAnalyticsData, StudentReportCardData,
   StudentExitPayload, StudentReactivatePayload, StudentLifecycleHistoryResponse,
   WithdrawalReportItem, WithdrawalAnalyticsResponse,
   SystemReleaseCurrent, SystemReleaseListItem, SystemReleaseDetail,
@@ -676,6 +677,14 @@ export const examinationsApi = {
     apiClient.get<any[]>('/examinations/', { params }),
   create: (data: { academic_year_id: number | string; standard_id: number | string; name: string; exam_type?: string; max_marks?: number; passing_marks?: number }) =>
     apiClient.post('/examinations/', data),
+  getMarks: (examId: number | string) =>
+    apiClient.get<ExamMarksSheet>(`/examinations/${examId}/marks`),
+  saveMarks: (examId: number | string, data: { entries: Array<{ student_id: number; subject_id: number; marks_obtained?: number | null; grade?: string | null; remarks?: string | null; is_absent?: boolean }> }) =>
+    apiClient.post<{ status: string; saved_count: number }>(`/examinations/${examId}/marks`, data),
+  getAnalytics: (examId: number | string) =>
+    apiClient.get<ExamAnalyticsData>(`/examinations/${examId}/analytics`),
+  getReportCard: (examId: number | string, studentId: number | string) =>
+    apiClient.get<StudentReportCardData>(`/examinations/${examId}/report-card/${studentId}`),
 }
 
 // ─── Fee Register Import ──────────────────────────────────────────────────────
