@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-06
 #  *
 #  * @description API endpoints for form catalog discovery, single & bulk form rendering, DPDP consent, and audit logs.
 #  */
@@ -23,7 +23,7 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, is_sysadmin
 from app.models.user import User, AuditLog
 from app.models.enrollment import StudentEnrollment
 from app.models.student import Student
@@ -74,7 +74,7 @@ async def render_single_form(
 
     # RBAC Check
     req_roles = form_def.get("required_roles", [])
-    if req_roles and current_user.role not in req_roles and current_user.role != "admin":
+    if req_roles and current_user.role not in req_roles and not is_sysadmin(current_user) and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Access denied. Generating '{form_def['title']}' requires one of the following roles: {', '.join(req_roles)}.",
@@ -133,7 +133,7 @@ async def bulk_render_forms(
 
     # RBAC Check: Bulk print restricted to admin, accountant, teacher
     req_roles = form_def.get("required_roles", [])
-    if req_roles and current_user.role not in req_roles and current_user.role != "admin":
+    if req_roles and current_user.role not in req_roles and not is_sysadmin(current_user) and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Access denied for bulk form printing.",
@@ -228,7 +228,7 @@ async def get_form_audit_logs(
     current_user: User = Depends(get_current_user),
 ):
     """Retrieve audit trail of recent form generations (restricted to admin and compliance officers)."""
-    if current_user.role != "admin":
+    if not is_sysadmin(current_user) and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only administrators can review form generation and DPDP audit logs.",

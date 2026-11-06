@@ -1,0 +1,109 @@
+[
+  {
+    "test": "Unauthenticated POST /api/v1/boards/",
+    "status_code": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "test": "Unauthenticated POST /api/v1/standards/",
+    "status_code": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "test": "Unauthenticated POST /api/v1/divisions/",
+    "status_code": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "test": "Unauthenticated POST /api/v1/timetable/",
+    "status_code": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "test": "Unauthenticated POST /api/v1/sysadmin/universal-edit",
+    "status_code": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "test": "Unauthenticated GET /api/v1/sysadmin/security-audit-logs",
+    "status_code": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "test": "Unauthenticated GET /api/v1/forms/audit-logs",
+    "status_code": 401,
+    "expected": 401,
+    "passed": true
+  },
+  {
+    "test": "Accountant (non-admin) POST /api/v1/boards/",
+    "status_code": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "test": "Accountant (non-admin) POST /api/v1/standards/",
+    "status_code": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "test": "Accountant (non-admin) POST /api/v1/divisions/",
+    "status_code": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "test": "Accountant (non-admin) POST /api/v1/timetable/",
+    "status_code": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "test": "Accountant (non-admin) POST /api/v1/sysadmin/universal-edit",
+    "status_code": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "test": "Accountant (non-admin) GET /api/v1/sysadmin/security-audit-logs",
+    "status_code": 403,
+    "expected": 403,
+    "passed": true
+  },
+  {
+    "test": "Sysadmin GET /api/v1/sysadmin/security-audit-logs",
+    "status_code": 200,
+    "expected": 200,
+    "passed": true
+  },
+  {
+    "test": "Sysadmin GET /api/v1/forms/audit-logs",
+    "status_code": 200,
+    "expected": 200,
+    "passed": true
+  },
+  {
+    "test": "Sysadmin POST universal-edit blocked field (id)",
+    "status_code": 400,
+    "expected": 400,
+    "passed": true,
+    "response_detail": "{\"detail\":\"Field(s) ['id'] are protected or not permissible for direct universal edit on model 'student'. Permissible fi"
+  },
+  {
+    "test": "Sysadmin POST universal-edit missing reason",
+    "status_code": 400,
+    "expected": [
+      400,
+      422
+    ],
+    "passed": true,
+    "response_detail": "{\"detail\":\"Field(s) ['remarks'] are protected or not permissible for direct universal edit on model 'student'. Permissib"
+  }
+]

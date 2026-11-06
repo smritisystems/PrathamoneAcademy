@@ -1,0 +1,262 @@
+{
+  "login": true,
+  "modules": {
+    "Dashboard": {
+      "path": "/dashboard",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Overview"
+      ],
+      "page_title": "Dashboard | Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Academic Structure": {
+      "path": "/academic",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Boards",
+        "Standards",
+        "Batches",
+        "Subjects",
+        "Timetable",
+        "Enrollment"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Courses": {
+      "path": "/courses",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Course",
+        "Curriculum"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Subjects": {
+      "path": "/subjects",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Subject"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Students Directory": {
+      "path": "/students",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Add Student",
+        "Active"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Admissions Registration": {
+      "path": "/students/add",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Admission",
+        "Gender"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Student Attendance": {
+      "path": "/attendance",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Attendance",
+        "Date"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Examinations": {
+      "path": "/examinations",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Examination",
+        "Marks"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Fees & Finance": {
+      "path": "/fees",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Settings"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Fee Register Migration": {
+      "path": "/fees/import",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Fee Register"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Payments & Collections": {
+      "path": "/payments",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Payments",
+        "Receipt",
+        "Refund"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Reports & Analytics": {
+      "path": "/reports",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Fee Collection",
+        "Outstanding",
+        "Export"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Users & Roles": {
+      "path": "/users",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Add User Account",
+        "Live Directory",
+        "Total Accounts"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Staff & HR": {
+      "path": "/staff",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Staff",
+        "Assignments",
+        "Attendance",
+        "Role Dashboard"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "SysAdmin Center": {
+      "path": "/sysadmin",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "System Overview",
+        "Security Audit Log",
+        "Universal Data Editor",
+        "System Configuration"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Data Import/Export": {
+      "path": "/import-export",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Import",
+        "Export"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Forms & Documents": {
+      "path": "/forms",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Catalogue"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Institute Settings": {
+      "path": "/settings",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Institute Profile",
+        "Academic Configuration"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Communication Center": {
+      "path": "/communication",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Compose",
+        "Templates",
+        "History",
+        "Diagnostics"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    },
+    "Release Management": {
+      "path": "/releases",
+      "status": "VERIFIED",
+      "keywords_found": [
+        "Releases",
+        "Release Candidate"
+      ],
+      "page_title": "Prashant Academy \u2013 PrathamOne Academy"
+    }
+  },
+  "specific_verifications": {
+    "student_detail": {
+      "student_id": 129,
+      "has_edit_profile_btn": true,
+      "has_withdraw_btn": true,
+      "has_reactivate_btn": true,
+      "has_kyc_docs": true
+    },
+    "user_profile": {
+      "has_sysadmin_badge": true,
+      "has_reset_password": true,
+      "has_edit_account": true,
+      "has_access_roles_tab": true
+    },
+    "universal_editor": {
+      "has_allowed_tags": true,
+      "has_batch_option": true,
+      "tag_chip_interactive": true
+    },
+    "payments_gating": {
+      "has_posted_section": true,
+      "lock_modal_opened": true
+    },
+    "branding_and_footer": {
+      "has_branding_preview": true,
+      "has_global_footer_branding": true,
+      "has_v6_99_1_displayed": true
+    }
+  },
+  "modal_interactions": {
+    "student_edit_modal": true,
+    "student_exit_modal": true,
+    "user_edit_modal": true
+  },
+  "viewports": {
+    "Desktop": {
+      "width": 1280,
+      "height": 800,
+      "navigation_element_present": true,
+      "rendered_without_fatal_crash": true
+    },
+    "Tablet": {
+      "width": 768,
+      "height": 1024,
+      "navigation_element_present": true,
+      "rendered_without_fatal_crash": true
+    },
+    "Mobile": {
+      "width": 375,
+      "height": 667,
+      "navigation_element_present": true,
+      "rendered_without_fatal_crash": true
+    }
+  },
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Original Exception : AxiosError: Request failed with status code 404\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
+    "Stack Trace        :\nAxiosError: Request failed with status code 404\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "Original Exception : AxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
+    "Stack Trace        :\nAxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
+    "Error rendering form preview: AxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)\n    at hr.request (http://localhost/assets/index-CgXIhlGR.js:362:2690)\n    at async te (http://localhost/assets/FormsDocuments-CBiVpuKj.js:21:30004)",
+    "Failed to load resource: the server responded with a status of 403 (Forbidden)",
+    "Original Exception : AxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
+    "Stack Trace        :\nAxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)",
+    "Error rendering form preview: AxiosError: Request failed with status code 403\n    at by (http://localhost/assets/index-CgXIhlGR.js:358:11281)\n    at XMLHttpRequest.C (http://localhost/assets/index-CgXIhlGR.js:358:20957)\n    at hr.request (http://localhost/assets/index-CgXIhlGR.js:362:2690)\n    at async te (http://localhost/assets/FormsDocuments-CBiVpuKj.js:21:30004)"
+  ],
+  "console_warnings": [],
+  "network_errors": []
+}

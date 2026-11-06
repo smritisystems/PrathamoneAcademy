@@ -423,7 +423,7 @@ async def get_system_settings(
         "enable_mfa_requirement": False,
         "allow_self_registration": False,
         "security_audit_logging_active": True,
-        "system_version": "2.4.0",
+        "system_version": settings.VERSION,
         "app_environment": "production",
     }
 
