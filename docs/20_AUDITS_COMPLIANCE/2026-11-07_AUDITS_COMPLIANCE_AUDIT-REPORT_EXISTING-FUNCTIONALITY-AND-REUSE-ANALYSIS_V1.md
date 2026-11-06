@@ -103,3 +103,4 @@ In strict accordance with the mandatory Single Source of Truth (SSOT) and Anti-D
 3. **Frontend Integration:** Integrate `StaffProfileEditModal`, update `TeacherProfilePage` and `StaffProfilePage`, and wire the Universal Print Studio.
 4. **Automated Testing:** Run Python pytest suites and frontend Vitest suites to achieve 100% test passing.
 5. **Quality & Attribution:** Validate corporate headers and reindex repository documentation.
+

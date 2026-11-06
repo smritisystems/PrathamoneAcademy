@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -2758,8 +2758,15 @@ export interface StaffWorkforceItem {
 }
 
 export interface StaffDashboardData {
+
   metrics: StaffDashboardMetrics
+
+  department_headcounts?: { department: string; count: number }[]
+
+  designation_headcounts?: { designation: string; count: number }[]
+
   staff: StaffWorkforceItem[]
+
 }
 
 export interface StaffLifecyclePayload {

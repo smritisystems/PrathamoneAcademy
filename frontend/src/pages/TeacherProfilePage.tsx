@@ -44,6 +44,8 @@ import WorkforceHeroCard from '../components/workforce/WorkforceHeroCard'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
 import StaffProfileEditModal from '../components/workforce/StaffProfileEditModal'
 import EmployeeDossierDocument from '../components/workforce/EmployeeDossierDocument'
+import TeacherAssignBatchModal from '../components/workforce/TeacherAssignBatchModal'
+import DocumentPreviewModal from '../components/workforce/DocumentPreviewModal'
 import { useUniversalPrint } from '../components/printing'
 import { staffApi, teacherPayrollApi, timetableApi } from '../api/endpoints'
 import type { StaffProfileDetail, EmployeeActivityHistoryItem, AcademicTimetableEntry } from '../types'
@@ -92,6 +94,12 @@ export default function TeacherProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [showLifecycleModal, setShowLifecycleModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showDocPreviewModal, setShowDocPreviewModal] = useState(false)
+  const [selectedDocPreview, setSelectedDocPreview] = useState<{ formId: string; title: string }>({
+    formId: 'appointment_letter',
+    title: 'Teacher Appointment Letter',
+  })
   const { openPrint, PrintModal } = useUniversalPrint()
 
   // 1. Fetch Profile Details
@@ -216,6 +224,7 @@ export default function TeacherProfilePage() {
         onEdit={() => setShowEditModal(true)}
         onAction={(key) => {
           if (key === 'lifecycle') setShowLifecycleModal(true)
+          if (key === 'assign') setShowAssignModal(true)
           if (key === 'print') {
             openPrint({
               targetElementId: 'teacher-employee-dossier-print-content',
@@ -536,6 +545,14 @@ export default function TeacherProfilePage() {
               <h3 className="text-sm font-bold text-slate-800">
                 Batch & Division Assignments ({assignments.length})
               </h3>
+              <button
+                type="button"
+                onClick={() => setShowAssignModal(true)}
+                className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Assign New Batch
+              </button>
             </div>
             {assignments.length === 0 ? (
               <div className="py-8 text-center text-slate-400 text-xs">No active assignments recorded.</div>
@@ -704,22 +721,32 @@ export default function TeacherProfilePage() {
               HR Documents & Official Dossier
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              {['Teacher Appointment Letter', 'Faculty Service Contract', 'Degree & B.Ed. Credentials', 'Monthly Salary Payslip'].map(
-                (doc, idx) => (
-                  <div key={idx} className="p-4 border border-slate-100 bg-slate-50 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-indigo-600" />
-                      <div>
-                        <div className="font-bold text-slate-800">{doc}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">Verified PDF • Official Archive</div>
-                      </div>
+              {[
+                { title: 'Teacher Appointment Letter', formId: 'appointment_letter' },
+                { title: 'Faculty Service Contract', formId: 'service_contract' },
+                { title: 'Teacher Verification Sheet', formId: 'staff_profile' },
+                { title: 'Monthly Salary Payslip', formId: 'monthly_salary_slip' },
+              ].map((doc, idx) => (
+                <div key={idx} className="p-4 border border-slate-100 bg-slate-50 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                    <div>
+                      <div className="font-bold text-slate-800">{doc.title}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Verified PDF • Official Archive</div>
                     </div>
-                    <button className="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
-                      View
-                    </button>
                   </div>
-                )
-              )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDocPreview({ formId: doc.formId, title: doc.title })
+                      setShowDocPreviewModal(true)
+                    }}
+                    className="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    View
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}

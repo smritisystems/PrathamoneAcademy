@@ -42,6 +42,7 @@ import WorkforceHeroCard from '../components/workforce/WorkforceHeroCard'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
 import StaffProfileEditModal from '../components/workforce/StaffProfileEditModal'
 import EmployeeDossierDocument from '../components/workforce/EmployeeDossierDocument'
+import DocumentPreviewModal from '../components/workforce/DocumentPreviewModal'
 import { useUniversalPrint } from '../components/printing'
 import { staffApi } from '../api/endpoints'
 import type { StaffProfileDetail, EmployeeActivityHistoryItem } from '../types'
@@ -90,6 +91,11 @@ export default function StaffProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [showLifecycleModal, setShowLifecycleModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showDocPreviewModal, setShowDocPreviewModal] = useState(false)
+  const [selectedDocPreview, setSelectedDocPreview] = useState<{ formId: string; title: string }>({
+    formId: 'appointment_letter',
+    title: 'Staff Appointment Letter',
+  })
   const { openPrint, PrintModal } = useUniversalPrint()
 
   // 1. Fetch Staff Profile Details
@@ -587,22 +593,32 @@ export default function StaffProfilePage() {
               Staff Official Dossier & Records
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              {['Staff Appointment Letter', 'Permanent Service Agreement', 'Aadhaar & PAN Verification Proof', 'Salary Slip Archive'].map(
-                (doc, idx) => (
-                  <div key={idx} className="p-4 border border-slate-100 bg-slate-50 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-indigo-600" />
-                      <div>
-                        <div className="font-bold text-slate-800">{doc}</div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">Verified Document • Official Dossier</div>
-                      </div>
+              {[
+                { title: 'Staff Appointment Letter', formId: 'appointment_letter' },
+                { title: 'Permanent Service Agreement', formId: 'service_contract' },
+                { title: 'Staff Verification Sheet', formId: 'staff_profile' },
+                { title: 'Monthly Salary Payslip', formId: 'monthly_salary_slip' },
+              ].map((doc, idx) => (
+                <div key={idx} className="p-4 border border-slate-100 bg-slate-50 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                    <div>
+                      <div className="font-bold text-slate-800">{doc.title}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">Verified Document • Official Dossier</div>
                     </div>
-                    <button className="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
-                      View
-                    </button>
                   </div>
-                )
-              )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDocPreview({ formId: doc.formId, title: doc.title })
+                      setShowDocPreviewModal(true)
+                    }}
+                    className="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+                  >
+                    View
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -673,6 +689,14 @@ export default function StaffProfilePage() {
           profile={profile}
         />
       </div>
+
+      <DocumentPreviewModal
+        isOpen={showDocPreviewModal}
+        onClose={() => setShowDocPreviewModal(false)}
+        formId={selectedDocPreview.formId}
+        userId={staffId}
+        title={selectedDocPreview.title}
+      />
 
       {/* ─── Universal Print Studio Dialog ───────────────────────────── */}
       <PrintModal />

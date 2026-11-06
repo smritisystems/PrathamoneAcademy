@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Comprehensive Teacher & Staff Management workspace with Directory, Academic Assignments, Attendance, Leaves, and 28 Printable Documents.
  */
@@ -283,6 +283,21 @@ export default function StaffManagement() {
     window.print()
   }
 
+  const departmentColors = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#6366F1', '#8B5CF6', '#14B8A6', '#F97316']
+  const departmentSegments = (staffDashboard?.department_headcounts && staffDashboard.department_headcounts.length > 0)
+    ? staffDashboard.department_headcounts.map((d: any, idx: number) => ({
+        label: d.department,
+        count: d.count,
+        color: departmentColors[idx % departmentColors.length],
+      }))
+    : [
+        { label: 'Administration', count: 10, color: '#3B82F6' },
+        { label: 'Accounts', count: 4, color: '#10B981' },
+        { label: 'IT & Systems', count: 3, color: '#F59E0B' },
+        { label: 'Library', count: 3, color: '#EC4899' },
+        { label: 'Others', count: 8, color: '#6366F1' },
+      ]
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -372,13 +387,7 @@ export default function StaffManagement() {
           title="Staff by Department"
           totalCount={staffDashboard?.metrics?.total_staff ?? 28}
           unitLabel="Staff"
-          segments={[
-            { label: 'Administration', count: 10, color: '#3B82F6' },
-            { label: 'Accounts', count: 4, color: '#10B981' },
-            { label: 'IT & Systems', count: 3, color: '#F59E0B' },
-            { label: 'Library', count: 3, color: '#EC4899' },
-            { label: 'Others', count: 8, color: '#6366F1' },
-          ]}
+          segments={departmentSegments}
         />
 
         <div className="grid grid-cols-1 gap-4">
