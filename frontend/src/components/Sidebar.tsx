@@ -287,12 +287,13 @@ export default function Sidebar() {
             <div className={`relative group ${isCollapsed ? 'flex justify-center' : ''}`}>
               <NavLink
                 to="/student-portal"
+                style={({ isActive }) => (isActive ? { backgroundColor: branding.colors.primary } : undefined)}
                 className={({ isActive }) =>
                   `flex items-center ${
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2.5'
                   } rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'text-white shadow-sm'
                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                   }`
                 }
@@ -530,12 +531,13 @@ export default function Sidebar() {
               <NavLink
                 to={item.to}
                 aria-label={item.label}
+                style={({ isActive }) => (isActive ? { backgroundColor: branding.colors.primary } : undefined)}
                 className={({ isActive }) =>
                   `flex items-center ${
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
                   } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-md'
+                      ? 'text-white shadow-md'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`
                 }
@@ -564,10 +566,11 @@ export default function Sidebar() {
                 <NavLink
                   to="/academic"
                   aria-label="Academic Workspace"
+                  style={isAcademicActive ? { backgroundColor: branding.colors.primary } : undefined}
                   className={({ isActive }) =>
                     `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isAcademicActive
-                        ? 'bg-blue-600 text-white shadow-md'
+                        ? 'text-white shadow-md'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`
                   }
@@ -668,12 +671,13 @@ export default function Sidebar() {
               <NavLink
                 to={item.to}
                 aria-label={item.label}
+                style={({ isActive }) => (isActive ? { backgroundColor: branding.colors.primary } : undefined)}
                 className={({ isActive }) =>
                   `flex items-center ${
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
                   } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-md'
+                      ? 'text-white shadow-md'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`
                 }
@@ -702,10 +706,11 @@ export default function Sidebar() {
                 <NavLink
                   to="/leads"
                   aria-label="Lead Management & CRM"
-                  className={({ isActive }) =>
+                  style={isCrmActive ? { backgroundColor: branding.colors.primary } : undefined}
+                    className={({ isActive }) =>
                     `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isCrmActive
-                        ? 'bg-blue-600 text-white shadow-md'
+                        ? 'text-white shadow-md'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                     }`
                   }

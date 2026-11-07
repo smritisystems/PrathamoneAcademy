@@ -9,14 +9,14 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     1.2.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Production service worker with strategic caching, network-only API security, robust offline fallback, and guaranteed Response resolution.
  */
 
-const CACHE_VERSION = 'prathamone-cache-v1.1.2';
+const CACHE_VERSION = 'prathamone-cache-v1.2.0';
 const STATIC_CACHE_NAME = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `dynamic-${CACHE_VERSION}`;
 

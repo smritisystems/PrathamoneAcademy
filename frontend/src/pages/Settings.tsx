@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -34,7 +34,7 @@ import type {
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
-import { useBranding } from '../config/branding'
+import { useBranding, applyGlobalBrandTheme, BRANDING_STORAGE_KEY } from '../config/branding'
 import OrganizationBranding from '../components/OrganizationBranding'
 
 // Definition of 15 settings workspace categories matching system architecture
@@ -204,7 +204,17 @@ export default function Settings() {
 
   // Profile Form Handler
   const handleProfileChange = (field: keyof InstituteProfile, value: any) => {
-    setProfile((prev) => ({ ...prev, [field]: value }))
+    setProfile((prev) => {
+      const next = { ...prev, [field]: value }
+      if (field === 'primary_color' || field === 'secondary_color' || field === 'accent_color') {
+        applyGlobalBrandTheme({
+          primary: next.primary_color || '#1E40AF',
+          secondary: next.secondary_color || '#3B82F6',
+          accent: next.accent_color || '#8B5CF6',
+        }, next.logo_url)
+      }
+      return next
+    })
   }
 
   // Generic Setting Handler
@@ -221,7 +231,14 @@ export default function Settings() {
   // Discard Changes
   const handleDiscard = () => {
     if (activeCategory === 'profile' || activeCategory === 'branding') {
-      if (originalProfile) setProfile(originalProfile)
+      if (originalProfile) {
+        setProfile(originalProfile)
+        applyGlobalBrandTheme({
+          primary: originalProfile.primary_color || '#1E40AF',
+          secondary: originalProfile.secondary_color || '#3B82F6',
+          accent: originalProfile.accent_color || '#8B5CF6',
+        }, originalProfile.logo_url)
+      }
     }
     if (originalSettings[activeCategory]) {
       setAllSettings((prev) => ({
@@ -252,10 +269,34 @@ export default function Settings() {
             [activeCategory]: { ...categoryData },
           }))
         }
+        applyGlobalBrandTheme({
+          primary: res.data.profile.primary_color || '#1E40AF',
+          secondary: res.data.profile.secondary_color || '#3B82F6',
+          accent: res.data.profile.accent_color || '#8B5CF6',
+        }, res.data.profile.logo_url)
+        try {
+          const cached = JSON.parse(localStorage.getItem(BRANDING_STORAGE_KEY) || '{}')
+          localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify({
+            ...cached,
+            colors: {
+              ...(cached.colors || {}),
+              primary: res.data.profile.primary_color || '#1E40AF',
+              secondary: res.data.profile.secondary_color || '#3B82F6',
+              accent: res.data.profile.accent_color || '#8B5CF6',
+            },
+            academyName: res.data.profile.name || cached.academyName,
+            monogram: res.data.profile.short_name || cached.monogram,
+            assets: {
+              ...(cached.assets || {}),
+              academyLogoUrl: res.data.profile.logo_url || cached.assets?.academyLogoUrl,
+              logoUrl: res.data.profile.logo_url || cached.assets?.logoUrl,
+            }
+          }))
+        } catch {}
         await queryClient.invalidateQueries({ queryKey: ['institutions'] })
         await queryClient.invalidateQueries({ queryKey: ['public_branding'] })
         await queryClient.invalidateQueries({ queryKey: ['institute_profile'] })
-        showNotification('success', 'Institute profile and branding settings saved and applied across the application.')
+        showNotification('success', 'Institute profile and branding settings saved and applied globally across all modules.')
       } else {
         const categoryData = allSettings[activeCategory] || {}
         await settingsApi.updateBatch(
@@ -1310,17 +1351,22 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     {/* Live Branding Preview Card */}
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                        <Eye className="w-4 h-4 text-blue-600" />
-                        <div>
-                          <h3 className="text-sm font-bold text-gray-900">Branding Preview</h3>
-                          <p className="text-[11px] text-gray-500">
-                            How your institute will appear in the application
-                          </p>
+                      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-blue-600" />
+                          <div>
+                            <h3 className="text-sm font-bold text-gray-900">Real-Time Global Branding Preview</h3>
+                            <p className="text-[11px] text-gray-500">
+                              Live simulation across banner, buttons, active navigation, and official print documents
+                            </p>
+                          </div>
                         </div>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold">
+                          Tenant: {profile.short_name || 'PA'}
+                        </span>
                       </div>
 
-                      {/* Dynamic Live Banner Card */}
+                      {/* 1. Dynamic Live Banner Card */}
                       <div
                         style={{
                           background: `linear-gradient(135deg, ${profile.primary_color || '#1E40AF'} 0%, ${profile.secondary_color || '#3B82F6'} 100%)`,
@@ -1344,11 +1390,90 @@ export default function Settings() {
                         </div>
                         <div className="min-w-0 flex-1 relative z-10">
                           <h4 className="font-bold text-sm tracking-tight truncate">
-                            {profile.name || 'PrathamOne Academy'}
+                            {profile.name || 'Prashant Academy'}
                           </h4>
                           <p className="text-xs text-blue-100 font-medium truncate mt-0.5">
                             {profile.tagline || 'Learn • Practice • Achieve'}
                           </p>
+                        </div>
+                      </div>
+
+                      {/* 2. Multi-Element Interactive Component Previews */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                        {/* Primary & Secondary Buttons Preview */}
+                        <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                          <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                            Buttons & Actions
+                          </div>
+                          <div className="space-y-1.5">
+                            <button
+                              type="button"
+                              style={{ backgroundColor: profile.primary_color || '#1E40AF' }}
+                              className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold text-white shadow-2xs hover:brightness-105 transition-all text-center"
+                            >
+                              Primary Action
+                            </button>
+                            <button
+                              type="button"
+                              style={{
+                                color: profile.primary_color || '#1E40AF',
+                                borderColor: profile.primary_color || '#1E40AF',
+                              }}
+                              className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-white border hover:bg-slate-50 transition-all text-center"
+                            >
+                              Secondary Action
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Active Navigation Pill Preview */}
+                        <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2 text-white">
+                          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                            Sidebar Navigation
+                          </div>
+                          <div className="space-y-1">
+                            <div
+                              style={{ backgroundColor: profile.primary_color || '#1E40AF' }}
+                              className="py-1.5 px-2.5 rounded-lg text-xs font-semibold text-white shadow-xs flex items-center justify-between"
+                            >
+                              <span>Active Menu Tab</span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                            </div>
+                            <div className="py-1.5 px-2.5 rounded-lg text-xs font-medium text-slate-400">
+                              Inactive Item
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Document Print Header Excerpt Preview */}
+                        <div className="p-3 bg-white border-2 border-slate-900 rounded-xl space-y-1.5">
+                          <div className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
+                            Print Documents
+                          </div>
+                          <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5">
+                            <div
+                              style={{
+                                background: `linear-gradient(135deg, ${profile.primary_color || '#1E40AF'} 0%, ${profile.secondary_color || '#3B82F6'} 100%)`,
+                              }}
+                              className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-serif font-black text-white shrink-0"
+                            >
+                              {profile.short_name || 'PA'}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-[10px] font-bold text-slate-900 truncate">
+                                {profile.name || 'Prashant Academy'}
+                              </div>
+                              <div className="text-[8.5px] text-slate-500 font-mono">
+                                REF: RCP-2026-001
+                              </div>
+                            </div>
+                          </div>
+                          <div
+                            style={{ backgroundColor: profile.accent_color || '#8B5CF6' }}
+                            className="text-[9px] font-bold text-white px-2 py-0.5 rounded text-center"
+                          >
+                            Accent Status Badge
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1359,7 +1484,7 @@ export default function Settings() {
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                         <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
                           <Palette className="w-4 h-4 text-blue-600" />
-                          <span>Theme Presets</span>
+                          <span>Curated Theme Presets</span>
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {[
@@ -1367,30 +1492,55 @@ export default function Settings() {
                             { name: 'Emerald Forest', primary: '#065F46', secondary: '#10B981', accent: '#059669' },
                             { name: 'Midnight Slate', primary: '#0F172A', secondary: '#38BDF8', accent: '#6366F1' },
                             { name: 'Imperial Crimson', primary: '#881337', secondary: '#F43F5E', accent: '#FB7185' },
-                          ].map((preset) => (
-                            <button
-                              key={preset.name}
-                              type="button"
-                              onClick={() => {
-                                handleProfileChange('primary_color', preset.primary)
-                                handleProfileChange('secondary_color', preset.secondary)
-                                handleProfileChange('accent_color', preset.accent)
-                                showNotification('success', `Preset "${preset.name}" applied. Click Save Changes to commit.`)
-                              }}
-                              className="p-3 border border-gray-200 rounded-xl text-left hover:border-blue-500 hover:shadow-xs transition-all"
-                            >
-                              <div className="flex items-center gap-1.5 mb-2">
-                                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.primary }} />
-                                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
-                                <span className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.accent }} />
-                              </div>
-                              <div className="text-xs font-bold text-gray-900">{preset.name}</div>
-                            </button>
-                          ))}
+                          ].map((preset) => {
+                            const isCurrent =
+                              profile.primary_color?.toUpperCase() === preset.primary.toUpperCase() &&
+                              profile.secondary_color?.toUpperCase() === preset.secondary.toUpperCase()
+                            return (
+                              <button
+                                key={preset.name}
+                                type="button"
+                                onClick={() => {
+                                  setProfile((prev) => {
+                                    const next = {
+                                      ...prev,
+                                      primary_color: preset.primary,
+                                      secondary_color: preset.secondary,
+                                      accent_color: preset.accent,
+                                    }
+                                    applyGlobalBrandTheme({
+                                      primary: preset.primary,
+                                      secondary: preset.secondary,
+                                      accent: preset.accent,
+                                    }, next.logo_url)
+                                    return next
+                                  })
+                                  showNotification('success', `Preset "${preset.name}" applied to live preview. Click Save Changes to commit globally.`)
+                                }}
+                                className={`p-3 border rounded-xl text-left transition-all relative ${
+                                  isCurrent
+                                    ? 'border-blue-600 ring-2 ring-blue-500 bg-blue-50/20 shadow-xs'
+                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-xs'
+                                }`}
+                              >
+                                {isCurrent && (
+                                  <span className="absolute top-2 right-2 text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.2 rounded-full">
+                                    Active
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.primary }} />
+                                  <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.secondary }} />
+                                  <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.accent }} />
+                                </div>
+                                <div className="text-xs font-bold text-gray-900">{preset.name}</div>
+                              </button>
+                            )
+                          })}
                         </div>
                       </div>
 
-                      {/* Custom Palette Tweaks */}
+                      {/* Custom Palette Controls */}
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                         <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
                           <Sliders className="w-4 h-4 text-blue-600" />
@@ -1399,7 +1549,10 @@ export default function Settings() {
                         <div className="space-y-3">
                           {/* Primary */}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-gray-700">Primary Color</span>
+                            <div>
+                              <div className="text-xs font-medium text-gray-900">Primary Color</div>
+                              <div className="text-[10px] text-gray-400">Buttons, active nav, primary highlights</div>
+                            </div>
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
@@ -1417,7 +1570,10 @@ export default function Settings() {
                           </div>
                           {/* Secondary */}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-gray-700">Secondary Color</span>
+                            <div>
+                              <div className="text-xs font-medium text-gray-900">Secondary Color</div>
+                              <div className="text-[10px] text-gray-400">Supporting gradients & header accents</div>
+                            </div>
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
@@ -1435,7 +1591,10 @@ export default function Settings() {
                           </div>
                           {/* Accent */}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-gray-700">Accent Color</span>
+                            <div>
+                              <div className="text-xs font-medium text-gray-900">Accent Color</div>
+                              <div className="text-[10px] text-gray-400">Badges, indicators & ambient halos</div>
+                            </div>
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"

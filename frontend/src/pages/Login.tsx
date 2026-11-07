@@ -157,12 +157,22 @@ export default function LoginPage() {
       {/* 6. Main Login Container */}
       <div className="relative z-10 w-full max-w-md select-text">
         {/* Subtle glowing halo behind card */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/25 via-cyan-400/20 to-indigo-500/25 rounded-3xl blur-xl opacity-75 transition-opacity" />
+        <div
+          className="absolute -inset-1 rounded-3xl blur-xl opacity-70 transition-opacity"
+          style={{
+            background: `linear-gradient(135deg, ${branding.colors.primary}50 0%, ${branding.colors.secondary}40 50%, ${branding.colors.accent}40 100%)`,
+          }}
+        />
 
         {/* White Card */}
         <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl shadow-slate-950/60 overflow-hidden border border-slate-100">
           {/* Header */}
-          <div className="relative bg-gradient-to-r from-blue-800 via-primary-800 to-indigo-900 px-6 sm:px-8 py-7 sm:py-8 text-center overflow-hidden">
+          <div
+            className="relative px-6 sm:px-8 py-7 sm:py-8 text-center overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
+            }}
+          >
             {/* Subtle decorative vector rings in header */}
             <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-white/10 pointer-events-none" />
             <div className="absolute -left-6 -bottom-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
@@ -267,7 +277,11 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 mt-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 via-primary-600 to-indigo-600 hover:from-blue-700 hover:via-primary-700 hover:to-indigo-700 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-500/25"
+                style={{
+                  background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
+                  boxShadow: `0 4px 14px 0 ${branding.colors.primary}40`,
+                }}
+                className="w-full py-3 px-4 mt-2 rounded-xl text-sm font-semibold text-white hover:brightness-105 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md" 
               >
                 {loading ? (
                   <span className="inline-flex items-center gap-2">

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -31,10 +31,33 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-700 text-white px-4 py-2 rounded-lg hover:bg-primary-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: var(--brand-primary, #1e40af);
+    color: #ffffff;
+    @apply px-4 py-2 rounded-lg transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--brand-primary-hover, #1d4ed8);
   }
   .btn-secondary {
-    @apply bg-white text-primary-700 border border-primary-300 px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors font-medium text-sm;
+    color: var(--brand-primary, #1e40af);
+    border-color: var(--brand-primary-200, #bfdbfe);
+    background-color: #ffffff;
+    @apply px-4 py-2 rounded-lg transition-colors font-medium text-sm;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--brand-primary-50, #eff6ff);
+  }
+
+  /* Global Brand Identity Utilities */
+  .bg-brand-primary { background-color: var(--brand-primary, #1e40af) !important; }
+  .bg-brand-secondary { background-color: var(--brand-secondary, #3b82f6) !important; }
+  .bg-brand-accent { background-color: var(--brand-accent, #8b5cf6) !important; }
+  .text-brand-primary { color: var(--brand-primary, #1e40af) !important; }
+  .text-brand-secondary { color: var(--brand-secondary, #3b82f6) !important; }
+  .text-brand-accent { color: var(--brand-accent, #8b5cf6) !important; }
+  .border-brand-primary { border-color: var(--brand-primary, #1e40af) !important; }
+  .bg-brand-gradient {
+    background: linear-gradient(135deg, var(--brand-primary, #1e40af) 0%, var(--brand-secondary, #3b82f6) 100%) !important;
   }
   .btn-danger {
     @apply bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium text-sm;

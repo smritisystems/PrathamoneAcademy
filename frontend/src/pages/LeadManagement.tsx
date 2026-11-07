@@ -167,18 +167,41 @@ export default function LeadManagement() {
     queryKey: ['crm', 'dossier', activeLeadId],
     queryFn: async () => {
       if (!activeLeadId) return null
-      const res = await leadsApi.getLeadDossier(activeLeadId)
-      return res.data
+      try {
+        const res = await leadsApi.getLeadDossier(activeLeadId)
+        return res.data
+      } catch (err: any) {
+        if (err?.response?.status === 404) {
+          // If the selected lead does not exist (e.g. deleted or stale cache), reset selection cleanly
+          setSelectedLeadId(null)
+          return null
+        }
+        throw err
+      }
     },
     enabled: Boolean(activeLeadId),
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404) return false
+      return failureCount < 2
+    },
     staleTime: 10000,
   })
 
-  // Auto-select first lead if none selected
+  // Auto-select first lead if none selected or if currently selected lead is no longer in the list
   useEffect(() => {
+    const listItems = leadsListData?.items || []
+    const hasItems = listItems.length > 0
+    if (selectedLeadId && hasItems) {
+      const exists = listItems.some((item) => item.id === selectedLeadId)
+      if (!exists) {
+        setSelectedLeadId(listItems[0].id)
+        return
+      }
+    }
+
     if (!selectedLeadId) {
-      if (leadsListData?.items?.length) {
-        setSelectedLeadId(leadsListData.items[0].id)
+      if (hasItems) {
+        setSelectedLeadId(listItems[0].id)
       } else if (kanbanData?.columns) {
         for (const stage of ['new_enquiry', 'contacted', 'counselling_demo', 'interested', 'admission_pending', 'converted']) {
           const lead = kanbanData.columns[stage]?.items?.[0]

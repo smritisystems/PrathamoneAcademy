@@ -310,6 +310,146 @@ export const FALLBACK_BRANDING = resolveBranding(undefined)
 export const BRANDING_STORAGE_KEY = 'pratham_active_branding'
 
 /**
+ * Safely parses a hex color string into RGB integers.
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  let clean = (hex || '').replace('#', '').trim()
+  if (clean.length === 3) {
+    clean = clean.split('').map((c) => c + c).join('')
+  }
+  if (clean.length !== 6) {
+    return { r: 30, g: 64, b: 175 } // Fallback to Royal Blue (#1e40af)
+  }
+  const num = parseInt(clean, 16)
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255,
+  }
+}
+
+/**
+ * Adjusts hex color brightness by a percentage (-100 to 100).
+ */
+export function adjustBrightness(hex: string, percent: number): string {
+  const { r, g, b } = hexToRgb(hex)
+  const factor = percent / 100
+  const clamp = (val: number) => Math.min(255, Math.max(0, Math.round(val)))
+
+  let newR: number, newG: number, newB: number
+  if (percent > 0) {
+    // Lighten towards white
+    newR = clamp(r + (255 - r) * factor)
+    newG = clamp(g + (255 - g) * factor)
+    newB = clamp(b + (255 - b) * factor)
+  } else {
+    // Darken towards black
+    newR = clamp(r * (1 + factor))
+    newG = clamp(g * (1 + factor))
+    newB = clamp(b * (1 + factor))
+  }
+
+  const toHex = (n: number) => n.toString(16).padStart(2, '0')
+  return `#${toHex(newR)}${toHex(newG)}${toHex(newB)}`
+}
+
+/**
+ * Returns an RGBA string with the given alpha opacity.
+ */
+export function hexToRgba(hex: string, alpha: number): string {
+  const { r, g, b } = hexToRgb(hex)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+/**
+ * Centrally apply the resolved branding theme to the DOM, CSS custom properties, and HTML meta tags.
+ */
+export function applyGlobalBrandTheme(
+  colors: { primary: string; secondary?: string; accent?: string },
+  logoUrl?: string
+): void {
+  if (typeof document === 'undefined') return
+  try {
+    const root = document.documentElement
+    const primary = colors.primary || '#1E40AF'
+    const secondary = colors.secondary || adjustBrightness(primary, 20)
+    const accent = colors.accent || adjustBrightness(secondary, 30)
+
+    const pRgb = hexToRgb(primary)
+    const sRgb = hexToRgb(secondary)
+    const aRgb = hexToRgb(accent)
+
+    const primaryHover = adjustBrightness(primary, -12)
+    const primaryLight = adjustBrightness(primary, 25)
+    const primaryDark = adjustBrightness(primary, -25)
+    const primary50 = hexToRgba(primary, 0.06)
+    const primary100 = hexToRgba(primary, 0.12)
+    const primary200 = hexToRgba(primary, 0.22)
+    const primaryShadow = hexToRgba(primary, 0.28)
+
+    // Standard CSS Custom Properties
+    root.style.setProperty('--brand-primary', primary)
+    root.style.setProperty('--brand-primary-hover', primaryHover)
+    root.style.setProperty('--brand-primary-light', primaryLight)
+    root.style.setProperty('--brand-primary-dark', primaryDark)
+    root.style.setProperty('--brand-primary-50', primary50)
+    root.style.setProperty('--brand-primary-100', primary100)
+    root.style.setProperty('--brand-primary-200', primary200)
+    root.style.setProperty('--brand-primary-shadow', primaryShadow)
+    root.style.setProperty('--brand-primary-rgb', `${pRgb.r}, ${pRgb.g}, ${pRgb.b}`)
+
+    root.style.setProperty('--brand-secondary', secondary)
+    root.style.setProperty('--brand-secondary-hover', adjustBrightness(secondary, -12))
+    root.style.setProperty('--brand-secondary-light', adjustBrightness(secondary, 20))
+    root.style.setProperty('--brand-secondary-rgb', `${sRgb.r}, ${sRgb.g}, ${sRgb.b}`)
+
+    root.style.setProperty('--brand-accent', accent)
+    root.style.setProperty('--brand-accent-rgb', `${aRgb.r}, ${aRgb.g}, ${aRgb.b}`)
+
+    root.style.setProperty('--brand-gradient', `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`)
+
+    // Backwards-compatible legacy tokens
+    root.style.setProperty('--color-primary', primary)
+    root.style.setProperty('--color-secondary', secondary)
+    root.style.setProperty('--color-accent', accent)
+
+    // Update browser theme-color meta tag
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', primary)
+    }
+
+    // Update favicon if provided
+    if (logoUrl) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']")
+      if (!link) {
+        link = document.createElement('link')
+        link.rel = 'icon'
+        document.getElementsByTagName('head')[0].appendChild(link)
+      }
+      if (link.href !== logoUrl) {
+        link.href = logoUrl
+      }
+    }
+  } catch (err) {
+    console.warn('[BrandingEngine] Failed to apply global theme variables:', err)
+  }
+}
+
+// Immediate synchronous execution on module load for instant bootstrap
+if (typeof window !== 'undefined') {
+  try {
+    const cached = localStorage.getItem(BRANDING_STORAGE_KEY)
+    if (cached) {
+      const parsed = JSON.parse(cached)
+      if (parsed?.colors?.primary) {
+        applyGlobalBrandTheme(parsed.colors, parsed.assets?.faviconUrl)
+      }
+    }
+  } catch {}
+}
+
+/**
  * React hook accessing reactive, institution-aware branding across UI components.
  * Safely operates with or without an ambient QueryClientProvider in the tree.
  */
@@ -361,26 +501,7 @@ export function useBranding(): ResolvedBranding {
 
   // Reactively apply dynamic theme CSS variables & Favicon link to DOM
   useMemo(() => {
-    if (typeof document === 'undefined') return
-    try {
-      const root = document.documentElement
-      root.style.setProperty('--color-primary', resolved.colors.primary)
-      root.style.setProperty('--color-secondary', resolved.colors.secondary)
-      root.style.setProperty('--color-accent', resolved.colors.accent)
-
-      // Favicon link update
-      if (resolved.assets.faviconUrl) {
-        let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']")
-        if (!link) {
-          link = document.createElement('link')
-          link.rel = 'icon'
-          document.getElementsByTagName('head')[0].appendChild(link)
-        }
-        if (link.href !== resolved.assets.faviconUrl) {
-          link.href = resolved.assets.faviconUrl
-        }
-      }
-    } catch {}
+    applyGlobalBrandTheme(resolved.colors, resolved.assets.faviconUrl)
   }, [resolved.colors.primary, resolved.colors.secondary, resolved.colors.accent, resolved.assets.faviconUrl])
 
   return resolved

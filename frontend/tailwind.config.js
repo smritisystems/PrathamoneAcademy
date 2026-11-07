@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-08
  *
  * @description Tailwind CSS theme configuration, responsive breakpoints, and custom animation utilities.
  */
@@ -23,16 +23,28 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
+          50: 'var(--brand-primary-50, #eff6ff)',
+          100: 'var(--brand-primary-100, #dbeafe)',
+          200: 'var(--brand-primary-200, #bfdbfe)',
           300: '#93c5fd',
           400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          500: 'var(--brand-primary-light, #3b82f6)',
+          600: 'var(--brand-primary, #2563eb)',
+          700: 'var(--brand-primary-hover, #1d4ed8)',
+          800: 'var(--brand-primary-dark, #1e40af)',
+          900: 'var(--brand-primary-dark, #1e3a8a)',
+        },
+        brand: {
+          DEFAULT: 'var(--brand-primary, #1E40AF)',
+          primary: 'var(--brand-primary, #1E40AF)',
+          hover: 'var(--brand-primary-hover, #1D4ED8)',
+          light: 'var(--brand-primary-light, #3B82F6)',
+          dark: 'var(--brand-primary-dark, #0F172A)',
+          secondary: 'var(--brand-secondary, #3B82F6)',
+          accent: 'var(--brand-accent, #8B5CF6)',
+          50: 'var(--brand-primary-50, #eff6ff)',
+          100: 'var(--brand-primary-100, #dbeafe)',
+          200: 'var(--brand-primary-200, #bfdbfe)',
         },
       },
       fontFamily: {
