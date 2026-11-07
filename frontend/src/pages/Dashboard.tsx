@@ -162,7 +162,7 @@ export default function DashboardPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg shadow-2xs transition-colors cursor-pointer"
               title="Launch CodeX Decoder"
             >
-              <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
+              <KeyRound className="w-3.5 h-3.5 text-primary-600" />
               <span>Decoder</span>
             </button>
           </div>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => setDecoderCode(codeFees || '')}
-                className="font-mono text-xl font-bold tracking-widest text-violet-950 hover:text-indigo-600 transition-colors flex items-center gap-1.5 cursor-pointer text-left"
+                className="font-mono text-xl font-bold tracking-widest text-violet-950 hover:text-primary-600 transition-colors flex items-center gap-1.5 cursor-pointer text-left"
                 title="Click to decode"
               >
                 <Lock className="w-4 h-4 text-violet-600 shrink-0" />

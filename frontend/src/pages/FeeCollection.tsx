@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Student fee collection terminal for recording payments against outstanding installments.
  */
@@ -249,7 +249,7 @@ export default function FeeCollection() {
                     onClick={() => handleInvoiceSelect(inv.id)}
                     className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
                       selectedInvoiceId === inv.id
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-primary-500 bg-primary-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -296,23 +296,23 @@ export default function FeeCollection() {
 
           {/* Student Fee Summary */}
           {student && (
-            <div className="card bg-blue-50 border border-blue-200">
-              <h3 className="text-sm font-semibold text-blue-900 mb-3">Fee Summary</h3>
+            <div className="card bg-primary-50 border border-blue-200">
+              <h3 className="text-sm font-semibold text-primary-900 mb-3">Fee Summary</h3>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Total Billed</span>
+                  <span className="text-primary-700">Total Billed</span>
                   <span className="font-medium">
                     ₹{parseFloat(String(totalBilled)).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-blue-700">Total Paid</span>
+                  <span className="text-primary-700">Total Paid</span>
                   <span className="font-medium text-green-700">
                     ₹{parseFloat(String(totalPaid)).toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-blue-200 pt-1 mt-1">
-                  <span className="text-blue-900 font-semibold">Outstanding</span>
+                  <span className="text-primary-900 font-semibold">Outstanding</span>
                   <span className="font-bold text-red-600">
                     ₹{parseFloat(String(totalOutstanding)).toLocaleString('en-IN')}
                   </span>
@@ -358,7 +358,7 @@ export default function FeeCollection() {
                           return (
                             <tr
                               key={inst.id}
-                              className={isSelected ? 'bg-blue-50' : ''}
+                              className={isSelected ? 'bg-primary-50' : ''}
                             >
                               <td className="px-3 py-2">
                                 {outstandingNum > 0 && (
@@ -366,7 +366,7 @@ export default function FeeCollection() {
                                     type="checkbox"
                                     checked={isSelected}
                                     onChange={() => toggleAllocationRow(inst.id)}
-                                    className="rounded border-gray-300 text-blue-600"
+                                    className="rounded border-gray-300 text-primary-600"
                                   />
                                 )}
                               </td>
@@ -500,9 +500,9 @@ export default function FeeCollection() {
 
                 {/* Allocation Summary */}
                 {allocations.length > 0 && (
-                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="mt-4 p-3 bg-primary-50 rounded-lg">
                     <div className="flex justify-between text-sm">
-                      <span className="text-blue-700 font-medium">Total Allocated</span>
+                      <span className="text-primary-700 font-medium">Total Allocated</span>
                       <span
                         className={`font-bold ${
                           Math.abs(totalAllocated - parseFloat(paymentAmount || '0')) < 0.01
@@ -631,7 +631,7 @@ export default function FeeCollection() {
           />
         ) : (
           <div className="flex items-center justify-center h-32">
-            <svg className="animate-spin h-8 w-8 text-blue-600" viewBox="0 0 24 24" fill="none">
+            <svg className="animate-spin h-8 w-8 text-primary-600" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>

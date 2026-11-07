@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -66,7 +66,7 @@ const TrainingManagementPage = lazyWithRetry(() => import('./pages/TrainingManag
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[300px]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
     </div>
   )
 }

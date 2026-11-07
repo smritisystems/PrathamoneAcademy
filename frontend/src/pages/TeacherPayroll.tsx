@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Complete Teacher Payroll & Payment Management workspace:
  */
@@ -331,7 +331,7 @@ export default function TeacherPayroll() {
       <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/30 text-blue-200 border border-blue-400/30">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-500/30 text-blue-200 border border-blue-400/30">
               Coaching Institute Edition • v1.0.0
             </span>
             <span className="text-xs text-slate-300">PrathamOne EduOS</span>
@@ -361,7 +361,7 @@ export default function TeacherPayroll() {
             onClick={() => setShowLogSessionModal(true)}
             icon={Plus}
             size="md"
-            className={isEditMode ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : ''}
+            className={isEditMode ? 'bg-primary-600 hover:bg-primary-500 text-white' : ''}
           >
             Log Teaching Session
           </LockedButton>
@@ -406,7 +406,7 @@ export default function TeacherPayroll() {
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
               <span className="text-xs font-medium text-slate-500">Gross / Net Payroll</span>
               <p className="text-xl font-bold text-slate-900 mt-1">₹{kpis.totalNet.toLocaleString()}</p>
-              <span className="text-xs text-blue-600 font-medium">Month Total</span>
+              <span className="text-xs text-primary-600 font-medium">Month Total</span>
             </div>
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
               <span className="text-xs font-medium text-slate-500">Teaching Hours</span>
@@ -425,7 +425,7 @@ export default function TeacherPayroll() {
             </div>
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
               <span className="text-xs font-medium text-slate-500">Teachers Covered</span>
-              <p className="text-xl font-bold text-indigo-600 mt-1">{monthlyPayrolls.length}</p>
+              <p className="text-xl font-bold text-primary-600 mt-1">{monthlyPayrolls.length}</p>
               <span className="text-xs text-slate-500">Records in period</span>
             </div>
           </div>
@@ -438,7 +438,7 @@ export default function TeacherPayroll() {
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-primary-500 bg-white"
                 >
                   {monthNames.map((m, idx) => (
                     <option key={m} value={idx + 1}>{m}</option>
@@ -447,7 +447,7 @@ export default function TeacherPayroll() {
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-primary-500 bg-white"
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>{y}</option>
@@ -460,7 +460,7 @@ export default function TeacherPayroll() {
                 <select
                   value={selectedTeacherId}
                   onChange={(e) => setSelectedTeacherId(e.target.value)}
-                  className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-primary-500 bg-white"
                 >
                   <option value="">All Faculty</option>
                   {teachers.map((t: any) => (
@@ -474,7 +474,7 @@ export default function TeacherPayroll() {
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-primary-500 bg-white"
                 >
                   <option value="">All Statuses</option>
                   <option value="calculated">Calculated</option>
@@ -512,7 +512,7 @@ export default function TeacherPayroll() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             {isLoadingMonthly ? (
               <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
-                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+                <RefreshCw className="w-6 h-6 animate-spin text-primary-600" />
                 <span>Loading payroll calculations...</span>
               </div>
             ) : monthlyError ? (
@@ -537,7 +537,7 @@ export default function TeacherPayroll() {
                 <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
                   <button
                     onClick={() => setShowCalculateModal(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-blue-800 shadow-sm"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-xl text-sm font-semibold hover:bg-primary-800 shadow-sm"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Calculate Payroll Now
@@ -575,7 +575,7 @@ export default function TeacherPayroll() {
                       const isLocked = p.status === 'finalized' || p.status === 'paid'
                       return (
                         <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-4 font-mono text-xs font-semibold text-blue-900">
+                          <td className="py-3 px-4 font-mono text-xs font-semibold text-primary-900">
                             {p.payroll_number}
                           </td>
                           <td className="py-3 px-4">
@@ -614,9 +614,9 @@ export default function TeacherPayroll() {
                               p.status === 'paid'
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : p.status === 'finalized'
-                                ? 'bg-indigo-100 text-indigo-800'
+                                ? 'bg-primary-100 text-primary-800'
                                 : p.status === 'approved'
-                                ? 'bg-blue-100 text-blue-800'
+                                ? 'bg-primary-100 text-primary-800'
                                 : p.status === 'partially_paid'
                                 ? 'bg-amber-100 text-amber-800'
                                 : p.status === 'submitted'
@@ -635,7 +635,7 @@ export default function TeacherPayroll() {
                                   setSelectedPayroll(res.data)
                                   setShowDetailsModal(true)
                                 }}
-                                className="p-1 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                className="p-1 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                                 title="View Itemized Breakdown"
                               >
                                 <Eye className="w-4 h-4" />
@@ -743,7 +743,7 @@ export default function TeacherPayroll() {
             <div className="flex items-center gap-3 flex-wrap">
               <button
                 onClick={() => setShowLogSessionModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
               >
                 <Plus className="w-4 h-4" />
                 Log Teaching Session
@@ -764,7 +764,7 @@ export default function TeacherPayroll() {
               <select
                 value={selectedTeacherId}
                 onChange={(e) => setSelectedTeacherId(e.target.value)}
-                className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white"
+                className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-primary-500 bg-white"
               >
                 <option value="">All Faculty</option>
                 {teachers.map((t: any) => (
@@ -775,7 +775,7 @@ export default function TeacherPayroll() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white"
+                className="text-sm border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-primary-500 bg-white"
               >
                 <option value="">All Approval Statuses</option>
                 <option value="submitted">Pending Approval</option>
@@ -853,7 +853,7 @@ export default function TeacherPayroll() {
                               }}
                             />
                           </td>
-                          <td className="py-3 px-4 font-mono text-xs font-semibold text-blue-900">
+                          <td className="py-3 px-4 font-mono text-xs font-semibold text-primary-900">
                             {s.session_code}
                             {s.is_locked && (
                               <span className="block text-[10px] text-slate-400">Locked in Payroll</span>
@@ -874,7 +874,7 @@ export default function TeacherPayroll() {
                           </td>
                           <td className="py-3 px-4 text-slate-700 whitespace-nowrap">
                             <span>{s.actual_start_time || s.scheduled_start_time} - {s.actual_end_time || s.scheduled_end_time}</span>
-                            <span className="block text-xs text-indigo-600 font-medium">{s.calculated_duration_hours} hrs</span>
+                            <span className="block text-xs text-primary-600 font-medium">{s.calculated_duration_hours} hrs</span>
                           </td>
                           <td className="py-3 px-4 text-right text-slate-800 font-medium">
                             ₹{Number(s.applicable_rate).toLocaleString()}
@@ -960,7 +960,7 @@ export default function TeacherPayroll() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900">Teacher Payment Profiles & Rates</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800">
                   {profiles.length} Faculty Members
                 </span>
               </div>
@@ -976,7 +976,7 @@ export default function TeacherPayroll() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search faculty name, designation..."
-                  className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary-500 bg-white"
                 />
               </div>
               <button
@@ -991,7 +991,7 @@ export default function TeacherPayroll() {
 
           {isLoadingProfiles ? (
             <div className="p-16 text-center text-slate-500 flex flex-col items-center justify-center gap-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+              <RefreshCw className="w-8 h-8 animate-spin text-primary-600" />
               <p className="font-semibold text-slate-700">Loading Faculty Profiles & Rates...</p>
             </div>
           ) : profilesError ? (
@@ -1034,7 +1034,7 @@ export default function TeacherPayroll() {
                       <h3 className="font-bold text-slate-900 text-base">{p.teacher_name}</h3>
                       <span className="text-xs text-slate-500">{p.designation} • {p.department}</span>
                     </div>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 uppercase">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800 uppercase">
                       {p.payment_method.replace('_', ' ')}
                     </span>
                   </div>
@@ -1072,7 +1072,7 @@ export default function TeacherPayroll() {
                       setNewRateValue(String(val))
                       setShowRateModal(true)
                     }}
-                    className="flex-1 px-3 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-medium text-center transition-colors"
+                    className="flex-1 px-3 py-2 bg-blue-900 hover:bg-primary-800 text-white rounded-xl text-xs font-medium text-center transition-colors"
                   >
                     Revise Rate
                   </button>
@@ -1140,7 +1140,7 @@ export default function TeacherPayroll() {
                   <tbody className="divide-y divide-slate-100">
                     {vouchers.map((v: any) => (
                       <tr key={v.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 font-mono text-xs font-semibold text-blue-900">
+                        <td className="py-3 px-4 font-mono text-xs font-semibold text-primary-900">
                           {v.voucher_number}
                         </td>
                         <td className="py-3 px-4 text-slate-700 whitespace-nowrap">{v.payment_date}</td>
@@ -1168,7 +1168,7 @@ export default function TeacherPayroll() {
                               setSelectedVoucherForPrint(v)
                               setShowPrintStatementModal(true)
                             }}
-                            className="p-1 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            className="p-1 text-slate-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                             title="Print Voucher Receipt"
                           >
                             <Printer className="w-4 h-4" />
@@ -1196,7 +1196,7 @@ export default function TeacherPayroll() {
               <select
                 value={activeReport}
                 onChange={(e) => setActiveReport(e.target.value)}
-                className="text-sm font-semibold border border-slate-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 bg-white"
+                className="text-sm font-semibold border border-slate-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500 bg-white"
               >
                 <option value="monthly-register">1. Monthly Payment Register</option>
                 <option value="teacher-history">2. Teacher-wise Payment History</option>
@@ -1346,7 +1346,7 @@ export default function TeacherPayroll() {
                 </select>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl text-xs text-blue-800 leading-relaxed">
+              <div className="bg-primary-50 border border-blue-200 p-3 rounded-xl text-xs text-primary-800 leading-relaxed">
                 Anti-Double-Counting Rule: Only approved, unbilled teaching sessions within the calendar month will be aggregated into this calculation.
               </div>
 
@@ -1535,7 +1535,7 @@ export default function TeacherPayroll() {
                       students_present_count: logStudentsCount ? Number(logStudentsCount) : null,
                     })
                   }}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
+                  className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
                 >
                   {logSessionMutation.isPending ? 'Logging...' : 'Save & Submit Session'}
                 </button>
@@ -1566,7 +1566,7 @@ export default function TeacherPayroll() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Payroll #:</span>
-                  <span className="font-mono text-blue-900 font-semibold">{selectedPayroll.payroll_number}</span>
+                  <span className="font-mono text-primary-900 font-semibold">{selectedPayroll.payroll_number}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Pending Balance:</span>
@@ -1747,7 +1747,7 @@ export default function TeacherPayroll() {
                       data: payload,
                     })
                   }}
-                  className="flex-1 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
+                  className="flex-1 py-2.5 bg-blue-900 hover:bg-primary-800 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
                 >
                   {updateProfileMutation.isPending ? 'Updating...' : 'Confirm Rate Revision'}
                 </button>
@@ -1782,7 +1782,7 @@ export default function TeacherPayroll() {
                           <span className="font-bold text-slate-900 text-sm">
                             ₹{h.old_rate} → ₹{h.new_rate}
                           </span>
-                          <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800 uppercase font-semibold">
+                          <span className="text-xs px-2 py-0.5 rounded bg-primary-100 text-primary-800 uppercase font-semibold">
                             {h.new_payment_method}
                           </span>
                         </div>
@@ -1916,7 +1916,7 @@ export default function TeacherPayroll() {
                       reason: substituteReason,
                     })
                   }}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
+                  className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
                 >
                   {assignSubstituteMutation.isPending ? 'Assigning...' : 'Assign Substitute'}
                 </button>
@@ -1959,7 +1959,7 @@ export default function TeacherPayroll() {
                     {selectedPayroll.sessions?.map((s: any) => (
                       <tr key={s.id}>
                         <td className="py-2 px-3">{s.date}</td>
-                        <td className="py-2 px-3 font-mono text-blue-900">{s.session_code}</td>
+                        <td className="py-2 px-3 font-mono text-primary-900">{s.session_code}</td>
                         <td className="py-2 px-3">{s.batch_name} • {s.subject_name}</td>
                         <td className="py-2 px-3 text-right">{s.hours}</td>
                         <td className="py-2 px-3 text-right">₹{s.rate}</td>
@@ -1979,7 +1979,7 @@ export default function TeacherPayroll() {
                     {selectedPayroll.vouchers.map((v: any) => (
                       <div key={v.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
                         <div>
-                          <span className="font-mono font-bold text-blue-900">{v.voucher_number}</span>
+                          <span className="font-mono font-bold text-primary-900">{v.voucher_number}</span>
                           <span className="text-slate-500 block">{v.payment_date} • {v.payment_method} ({v.reference})</span>
                         </div>
                         <span className="font-bold text-emerald-700 text-sm">₹{v.amount_paid.toLocaleString()}</span>
@@ -2072,7 +2072,7 @@ export default function TeacherPayroll() {
                   </div>
                   <div className="flex justify-between py-2 text-sm border-b-2 border-slate-900 bg-slate-50 px-2 font-bold">
                     <span>Net Remuneration Payable</span>
-                    <span className="text-blue-900">₹{Number(selectedPayroll.payroll.net_payable).toLocaleString()}</span>
+                    <span className="text-primary-900">₹{Number(selectedPayroll.payroll.net_payable).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between py-1.5 border-b border-slate-200">
                     <span className="text-slate-600">Amount Paid / Disbursed</span>

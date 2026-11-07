@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-08
  *
  * @description Online Payment Gateway & UPI Checkout modal with dynamic QR code generation, Razorpay checkout, and automated receipt generation.
  */
@@ -423,7 +423,7 @@ export default function OnlinePaymentModal({
                   <button
                     onClick={() => handleVerifyPayment()}
                     disabled={verifying}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50"
                   >
                     {verifying ? (
                       <>

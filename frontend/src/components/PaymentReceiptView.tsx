@@ -482,7 +482,7 @@ export default function PaymentReceiptView({
 
           {/* Right Baby-Blue Ribbon with Receipt Number */}
           <div className="bg-[#dbeafe] text-blue-950 flex-1 px-4 py-2 flex items-center justify-end font-mono text-xs sm:text-sm tracking-wide -ml-4 pl-6">
-            <span className="font-semibold text-blue-800 mr-2 text-[11px] sm:text-xs">
+            <span className="font-semibold text-primary-800 mr-2 text-[11px] sm:text-xs">
               RECEIPT NO.
             </span>
             <span className="font-black text-blue-950 tracking-wider">
@@ -562,8 +562,8 @@ export default function PaymentReceiptView({
         <div className="border border-slate-200 rounded-2xl bg-white grid grid-cols-12 overflow-hidden shadow-2xs my-2.5 relative z-10">
           {/* Left: Student Identity (7 cols) */}
           <div className="col-span-7 p-3 flex items-start gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100/80">
-              <User className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0 border border-blue-100/80">
+              <User className="w-5 h-5 text-primary-600" />
             </div>
 
             <div className="min-w-0">
@@ -586,13 +586,13 @@ export default function PaymentReceiptView({
           </div>
 
           {/* Right: Amount Received (5 cols) */}
-          <div className="col-span-5 p-3 bg-blue-50/40 border-l border-slate-200 flex flex-col justify-center">
+          <div className="col-span-5 p-3 bg-primary-50/40 border-l border-slate-200 flex flex-col justify-center">
             <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none">
               AMOUNT RECEIVED
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
-              <Wallet className="w-5 h-5 text-blue-600 shrink-0" />
-              <span className="font-black text-blue-700 text-2xl sm:text-3xl tracking-tight leading-none">
+              <Wallet className="w-5 h-5 text-primary-600 shrink-0" />
+              <span className="font-black text-primary-700 text-2xl sm:text-3xl tracking-tight leading-none">
                 {fmt(receipt.amount)}
               </span>
             </div>
@@ -781,7 +781,7 @@ export default function PaymentReceiptView({
                             })
                           : '—'}
                       </td>
-                      <td className="py-1 px-2.5 font-mono font-bold text-blue-700 whitespace-nowrap">
+                      <td className="py-1 px-2.5 font-mono font-bold text-primary-700 whitespace-nowrap">
                         {p.receipt_number}
                       </td>
                       <td className="py-1 px-2.5 capitalize whitespace-nowrap">

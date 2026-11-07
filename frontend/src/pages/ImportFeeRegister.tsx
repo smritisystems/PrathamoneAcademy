@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Legacy fee register import wizard for spreadsheet mapping, preview, and validation.
  */
@@ -297,7 +297,7 @@ export default function ImportFeeRegister() {
             <p className="text-2xl font-bold text-gray-900 mt-1">{summary?.total_students || 0}</p>
             <p className="text-xs text-gray-500 mt-1">Across 5 Coaching Batches</p>
           </div>
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
         </div>
@@ -483,7 +483,7 @@ export default function ImportFeeRegister() {
                       const isExpanded = !!expandedStudents[s.student_index]
                       return (
                         <React.Fragment key={s.student_index}>
-                          <tr className={`hover:bg-gray-50/80 transition-colors ${isExpanded ? 'bg-blue-50/20' : ''}`}>
+                          <tr className={`hover:bg-gray-50/80 transition-colors ${isExpanded ? 'bg-primary-50/20' : ''}`}>
                             <td className="py-3 px-4 text-center text-xs text-gray-500 font-mono">
                               {s.student_index}
                             </td>
@@ -502,7 +502,7 @@ export default function ImportFeeRegister() {
                               ₹{s.total_fee.toLocaleString('en-IN')}
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                              <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-50 text-primary-700">
                                 {s.payments_count} txns
                               </span>
                             </td>
@@ -762,7 +762,7 @@ export default function ImportFeeRegister() {
         title="Confirm Fee Register Import"
       >
         <div className="space-y-4">
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 leading-relaxed">
+          <div className="p-3 bg-primary-50 border border-blue-200 rounded-lg text-xs text-primary-800 leading-relaxed">
             You are about to import <strong>39 student records</strong>, create <strong>39 fee invoices</strong> (totalling ₹2,935,000.00), and generate <strong>170 payment allocations and receipts</strong> (totalling ₹1,819,500.00) in an atomic transaction.
           </div>
 

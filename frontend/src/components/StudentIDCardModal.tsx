@@ -71,7 +71,7 @@ export default function StudentIDCardModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center">
               <CreditCard className="w-4 h-4" />
             </div>
             <div>
@@ -90,7 +90,7 @@ export default function StudentIDCardModal({
                 type="button"
                 onClick={() => setSide('both')}
                 className={`px-2.5 py-1 rounded-md font-semibold transition ${
-                  side === 'both' ? 'bg-white text-blue-700 shadow-2xs' : 'text-gray-600'
+                  side === 'both' ? 'bg-white text-primary-700 shadow-2xs' : 'text-gray-600'
                 }`}
               >
                 Both Sides
@@ -99,7 +99,7 @@ export default function StudentIDCardModal({
                 type="button"
                 onClick={() => setSide('front')}
                 className={`px-2.5 py-1 rounded-md font-semibold transition ${
-                  side === 'front' ? 'bg-white text-blue-700 shadow-2xs' : 'text-gray-600'
+                  side === 'front' ? 'bg-white text-primary-700 shadow-2xs' : 'text-gray-600'
                 }`}
               >
                 Front
@@ -108,7 +108,7 @@ export default function StudentIDCardModal({
                 type="button"
                 onClick={() => setSide('back')}
                 className={`px-2.5 py-1 rounded-md font-semibold transition ${
-                  side === 'back' ? 'bg-white text-blue-700 shadow-2xs' : 'text-gray-600'
+                  side === 'back' ? 'bg-white text-primary-700 shadow-2xs' : 'text-gray-600'
                 }`}
               >
                 Back
@@ -136,7 +136,7 @@ export default function StudentIDCardModal({
         {/* Content Body */}
         {loading ? (
           <div className="py-16 text-center text-gray-400 space-y-2">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-blue-600" />
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-primary-600" />
             <p className="text-xs font-medium">Generating digital ID card and high-contrast QR code...</p>
           </div>
         ) : !cardData ? (
@@ -194,7 +194,7 @@ export default function StudentIDCardModal({
                       <div className="text-xs font-black tracking-tight text-blue-950 uppercase line-clamp-1">
                         {cardData.full_name}
                       </div>
-                      <div className="text-[9px] font-bold text-blue-700 font-mono">
+                      <div className="text-[9px] font-bold text-primary-700 font-mono">
                         ADM: {cardData.admission_number}
                       </div>
                       <div className="text-[9px] text-slate-600 font-medium pt-0.5">
@@ -216,7 +216,7 @@ export default function StudentIDCardModal({
                   {/* Bottom Footer Stripe */}
                   <div className="bg-slate-50 border-t border-slate-200 px-3.5 py-1 flex items-center justify-between text-[8px] font-semibold text-slate-500">
                     <span>STUDENT IDENTITY CARD</span>
-                    <span className="text-blue-900 font-bold">{cardData.academic_year}</span>
+                    <span className="text-primary-900 font-bold">{cardData.academic_year}</span>
                   </div>
                 </div>
               )}
@@ -252,7 +252,7 @@ export default function StudentIDCardModal({
                       </div>
                       <div>
                         <span className="text-slate-400 font-semibold block">Emergency Phone:</span>
-                        <span className="font-mono font-bold text-blue-800">{cardData.guardian_phone}</span>
+                        <span className="font-mono font-bold text-primary-800">{cardData.guardian_phone}</span>
                       </div>
                       <div>
                         <span className="text-slate-400 font-semibold block">Card Validity:</span>
@@ -280,11 +280,11 @@ export default function StudentIDCardModal({
             </div>
 
             {/* Print Instructions / Specs */}
-            <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-900 flex items-start gap-2.5">
-              <Shield className="w-4 h-4 text-blue-700 flex-shrink-0 mt-0.5" />
+            <div className="bg-primary-50/70 border border-blue-200 rounded-xl p-3.5 text-xs text-primary-900 flex items-start gap-2.5">
+              <Shield className="w-4 h-4 text-primary-700 flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-semibold">Thermal PVC & Card Sheet Specifications:</p>
-                <p className="text-[11px] text-blue-800 leading-relaxed">
+                <p className="text-[11px] text-primary-800 leading-relaxed">
                   Engineered to international CR80 dimensions (85.6mm × 54mm). Compatible with Zebra, Evolis, Magicard, and Fargo thermal dye-sublimation card printers, or printable on 8-up heavy cardstock sheets for lamination.
                 </p>
               </div>

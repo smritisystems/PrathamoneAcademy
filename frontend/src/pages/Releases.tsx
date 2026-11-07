@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Enterprise Release & Change Management workspace governing change tracking, automated release notes, pre-flight validations, approvals, and deployment lifecycles.
  */
@@ -271,8 +271,8 @@ export default function Releases() {
         )
       case 'approved':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-            <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-blue-200">
+            <UserCheck className="w-3.5 h-3.5 text-primary-600" />
             Approved
           </span>
         )
@@ -317,7 +317,7 @@ export default function Releases() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-md text-xs font-mono font-semibold uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 bg-primary-500/20 text-blue-300 border border-blue-400/30 rounded-md text-xs font-mono font-semibold uppercase tracking-wider">
                 Enterprise Release Management
               </span>
               <span className="text-slate-400 text-xs select-none">·</span>
@@ -396,7 +396,7 @@ export default function Releases() {
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-xs text-slate-500">Proposed Version Bump</p>
-              <p className="text-sm font-bold text-blue-700 font-mono">
+              <p className="text-sm font-bold text-primary-700 font-mono">
                 v{pendingChanges?.next_version || '6.99.2'} ({pendingChanges?.recommended_bump?.toUpperCase() || 'PATCH'})
               </p>
             </div>
@@ -404,7 +404,7 @@ export default function Releases() {
             <button
               onClick={() => setDraftModalOpen(true)}
               disabled={!isSysAdmin}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-sm transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-sm transition"
             >
               <Rocket className="w-4 h-4" />
               Generate Release Candidate
@@ -419,7 +419,7 @@ export default function Releases() {
           onClick={() => setActiveTab('lifecycle')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
             activeTab === 'lifecycle'
-              ? 'bg-blue-600 text-white shadow-sm'
+              ? 'bg-primary-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
@@ -431,7 +431,7 @@ export default function Releases() {
           onClick={() => setActiveTab('history')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
             activeTab === 'history'
-              ? 'bg-blue-600 text-white shadow-sm'
+              ? 'bg-primary-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
@@ -443,7 +443,7 @@ export default function Releases() {
           onClick={() => setActiveTab('current')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
             activeTab === 'current'
-              ? 'bg-blue-600 text-white shadow-sm'
+              ? 'bg-primary-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
@@ -455,7 +455,7 @@ export default function Releases() {
           onClick={() => setActiveTab('audit')}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
             activeTab === 'audit'
-              ? 'bg-blue-600 text-white shadow-sm'
+              ? 'bg-primary-600 text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
           }`}
         >
@@ -480,7 +480,7 @@ export default function Releases() {
                     <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
                       Build: {inspectDetails.build_number}
                     </span>
-                    <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200 uppercase font-mono">
+                    <span className="text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded border border-indigo-200 uppercase font-mono">
                       {inspectDetails.environment}
                     </span>
                   </div>
@@ -532,7 +532,7 @@ export default function Releases() {
                     <button
                       onClick={() => approveMutation.mutate(inspectDetails.id)}
                       disabled={approveMutation.isPending || !isSysAdmin}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition shadow-sm"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition shadow-sm"
                     >
                       <UserCheck className="w-3.5 h-3.5" />
                       Approve Production Release
@@ -570,7 +570,7 @@ export default function Releases() {
                       key={s.step}
                       className={`p-3 rounded-lg border text-center text-xs font-semibold transition ${
                         inspectDetails.status === s.status
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300'
+                          ? 'bg-primary-600 text-white border-primary-600 shadow-md ring-2 ring-blue-300'
                           : s.active
                           ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                           : 'bg-white text-slate-400 border-slate-200'
@@ -586,7 +586,7 @@ export default function Releases() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-blue-600" />
+                    <Shield className="w-4 h-4 text-primary-600" />
                     Automated Quality Gates & Pre-Flight Checks
                   </h4>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
@@ -670,7 +670,7 @@ export default function Releases() {
                   </h4>
                   <button
                     onClick={() => setInspectModalOpen(true)}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                    className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
                   >
                     View Complete Document ➔
                   </button>
@@ -691,7 +691,7 @@ export default function Releases() {
               <button
                 onClick={() => setDraftModalOpen(true)}
                 disabled={!isSysAdmin}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-semibold hover:bg-primary-700 transition"
               >
                 <Rocket className="w-4 h-4" />
                 Prepare New Release Draft
@@ -712,7 +712,7 @@ export default function Releases() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All Statuses</option>
                 <option value="published">Published / GA</option>
@@ -817,7 +817,7 @@ export default function Releases() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <span className="text-xs font-mono font-bold text-blue-600 uppercase">
+              <span className="text-xs font-mono font-bold text-primary-600 uppercase">
                 Active Production Baseline
               </span>
               <h2 className="text-xl font-bold text-slate-900">
@@ -840,7 +840,7 @@ export default function Releases() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-indigo-600" />
+              <Shield className="w-5 h-5 text-primary-600" />
               Chronological Release Governance Audit Stream
             </h3>
             <span className="text-xs text-slate-500 font-mono">
@@ -857,7 +857,7 @@ export default function Releases() {
                       ? 'bg-rose-100 text-rose-700'
                       : log.severity === 'warning'
                       ? 'bg-amber-100 text-amber-700'
-                      : 'bg-blue-100 text-blue-700'
+                      : 'bg-primary-100 text-primary-700'
                   }`}>
                     <Shield className="w-4 h-4" />
                   </span>
@@ -892,7 +892,7 @@ export default function Releases() {
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Rocket className="w-5 h-5 text-blue-600" />
+                <Rocket className="w-5 h-5 text-primary-600" />
                 Generate Release Candidate Draft
               </h3>
               <button
@@ -968,7 +968,7 @@ export default function Releases() {
                   id="criticalSec"
                   checked={draftForm.is_critical_security}
                   onChange={(e) => setDraftForm({ ...draftForm, is_critical_security: e.target.checked })}
-                  className="rounded text-blue-600 focus:ring-blue-500"
+                  className="rounded text-primary-600 focus:ring-primary-500"
                 />
                 <label htmlFor="criticalSec" className="text-slate-700 font-medium select-none">
                   Tag as Critical Security / Integrity Update
@@ -986,7 +986,7 @@ export default function Releases() {
               <button
                 onClick={() => generateDraftMutation.mutate(draftForm)}
                 disabled={generateDraftMutation.isPending || !draftForm.version}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold shadow-sm"
               >
                 Generate Draft Notes
               </button>
@@ -1047,7 +1047,7 @@ export default function Releases() {
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Edit3 className="w-4 h-4 text-blue-600" />
+                <Edit3 className="w-4 h-4 text-primary-600" />
                 Review & Edit Release Notes
               </h3>
               <button
@@ -1096,7 +1096,7 @@ export default function Releases() {
                   })
                 }
                 disabled={updateNotesMutation.isPending}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold shadow-sm"
               >
                 Save Notes
               </button>

@@ -275,7 +275,7 @@ export default function ShareModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center shadow-xs">
               <Share2 className="w-4 h-4" />
             </div>
             <div>
@@ -310,7 +310,7 @@ export default function ShareModal({
             onClick={() => setActiveTab('email')}
             className={`pb-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all ${
               activeTab === 'email'
-                ? 'border-blue-600 text-blue-700'
+                ? 'border-primary-600 text-primary-700'
                 : 'border-transparent text-gray-500 hover:text-gray-800'
             }`}
           >
@@ -332,7 +332,7 @@ export default function ShareModal({
             onClick={() => setActiveTab('link')}
             className={`pb-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all ${
               activeTab === 'link'
-                ? 'border-indigo-600 text-indigo-700'
+                ? 'border-primary-600 text-primary-700'
                 : 'border-transparent text-gray-500 hover:text-gray-800'
             }`}
           >
@@ -370,7 +370,7 @@ export default function ShareModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Student or Parent name"
-                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>
 
@@ -384,7 +384,7 @@ export default function ShareModal({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="parent@example.com"
-                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                 />
               </div>
             ) : (
@@ -397,7 +397,7 @@ export default function ShareModal({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+91 98765 43210"
-                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 font-mono"
                 />
               </div>
             )}
@@ -413,7 +413,7 @@ export default function ShareModal({
                 rows={3}
                 value={customMessage}
                 onChange={(e) => setCustomMessage(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none text-gray-800"
+                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none text-gray-800"
               />
             </div>
           )}
@@ -424,14 +424,14 @@ export default function ShareModal({
               <div className="bg-slate-50 border border-gray-200 rounded-xl p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-semibold text-gray-900 flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-indigo-600" />
+                    <Shield className="w-3.5 h-3.5 text-primary-600" />
                     <span>Expiring Document Token Link</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleGenerateShareLink(true)}
                     disabled={loading}
-                    className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                    className="text-[11px] text-primary-600 hover:text-primary-800 font-medium flex items-center gap-1"
                   >
                     <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                     <span>Regenerate</span>
@@ -453,7 +453,7 @@ export default function ShareModal({
                     type="button"
                     onClick={handleCopyLink}
                     disabled={!shareData?.share_url}
-                    className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg flex items-center gap-1 shadow-2xs flex-shrink-0"
+                    className="px-3 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-1 shadow-2xs flex-shrink-0"
                   >
                     {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -498,7 +498,7 @@ export default function ShareModal({
                       id="pin_protect_toggle"
                       checked={isPinProtected}
                       onChange={(e) => setIsPinProtected(e.target.checked)}
-                      className="rounded text-blue-600"
+                      className="rounded text-primary-600"
                     />
                   </div>
                   <input
@@ -611,7 +611,7 @@ export default function ShareModal({
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors"
+                className="px-4 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 active:bg-indigo-800 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors"
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span>Copy Secure Link</span>

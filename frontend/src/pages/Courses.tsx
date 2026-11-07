@@ -296,7 +296,7 @@ export default function CoursesPage() {
       case 'Question Bank':
         return 'bg-amber-50 text-amber-700 border-amber-200'
       case 'Assignment':
-        return 'bg-blue-50 text-blue-700 border-blue-200'
+        return 'bg-primary-50 text-primary-700 border-blue-200'
       case 'Revision':
         return 'bg-emerald-50 text-emerald-700 border-emerald-200'
       default:
@@ -359,7 +359,7 @@ export default function CoursesPage() {
               {statsData?.total_materials ?? materialsData?.total ?? 0}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
             <BookMarked className="w-5 h-5" />
           </div>
         </div>
@@ -367,11 +367,11 @@ export default function CoursesPage() {
         <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-slate-500 block">Standards Covered</span>
-            <span className="text-2xl font-black text-indigo-700 mt-1 block">
+            <span className="text-2xl font-black text-primary-700 mt-1 block">
               {statsData?.standards_covered ?? 0}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
             <GraduationCap className="w-5 h-5" />
           </div>
         </div>
@@ -407,7 +407,7 @@ export default function CoursesPage() {
           onClick={() => setActiveTab('materials')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
             activeTab === 'materials'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-primary-600 text-primary-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -419,7 +419,7 @@ export default function CoursesPage() {
           onClick={() => setActiveTab('programs')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
             activeTab === 'programs'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-primary-600 text-primary-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -441,7 +441,7 @@ export default function CoursesPage() {
                   placeholder="Search materials by title or topic..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-hidden focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-hidden focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -451,7 +451,7 @@ export default function CoursesPage() {
               <select
                 value={selectedStandardId ?? ''}
                 onChange={(e) => setSelectedStandardId(e.target.value ? Number(e.target.value) : undefined)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All Standards</option>
                 {standards.map((s: Standard) => (
@@ -465,7 +465,7 @@ export default function CoursesPage() {
               <select
                 value={selectedSubjectId ?? ''}
                 onChange={(e) => setSelectedSubjectId(e.target.value ? Number(e.target.value) : undefined)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All Subjects</option>
                 {subjects.map((sub: Subject) => (
@@ -479,7 +479,7 @@ export default function CoursesPage() {
               <select
                 value={selectedFileType}
                 onChange={(e) => setSelectedFileType(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-primary-500"
               >
                 <option value="All">All Types</option>
                 <option value="Notes">Notes</option>
@@ -532,7 +532,7 @@ export default function CoursesPage() {
                       <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold rounded text-[11px]">
                         {m.standard_name}
                       </span>
-                      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 font-semibold rounded text-[11px]">
+                      <span className="px-2 py-0.5 bg-primary-50 text-primary-700 font-semibold rounded text-[11px]">
                         {m.subject_name}
                       </span>
                       {m.division_name && (
@@ -549,7 +549,7 @@ export default function CoursesPage() {
                       href={m.file_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download / View</span>
@@ -618,7 +618,7 @@ export default function CoursesPage() {
                         c.category === 'Competitive Exam'
                           ? 'bg-purple-100 text-purple-700 border border-purple-200'
                           : c.category === 'School Board'
-                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          ? 'bg-primary-100 text-primary-700 border border-blue-200'
                           : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                       }`}
                     >
@@ -664,7 +664,7 @@ export default function CoursesPage() {
                   </span>
                   <Link
                     to="/students/add"
-                    className="text-xs text-blue-600 hover:text-blue-800 font-bold"
+                    className="text-xs text-primary-600 hover:text-primary-800 font-bold"
                   >
                     Enroll Student →
                   </Link>
@@ -691,7 +691,7 @@ export default function CoursesPage() {
               placeholder="e.g. Class X Mathematics - Complete Formula Booklet & Theorems"
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -706,7 +706,7 @@ export default function CoursesPage() {
                   const val = e.target.value ? Number(e.target.value) : ''
                   setFormStandardId(val)
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Select Standard</option>
                 {standards.map((s: Standard) => (
@@ -724,7 +724,7 @@ export default function CoursesPage() {
               <select
                 value={formSubjectId}
                 onChange={(e) => setFormSubjectId(e.target.value ? Number(e.target.value) : '')}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Select Subject</option>
                 {filteredFormSubjects.map((sub: Subject) => (
@@ -742,7 +742,7 @@ export default function CoursesPage() {
               <select
                 value={formFileType}
                 onChange={(e) => setFormFileType(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-primary-500"
               >
                 <option value="Notes">Notes</option>
                 <option value="Formula Sheet">Formula Sheet</option>
@@ -758,7 +758,7 @@ export default function CoursesPage() {
               <select
                 value={formDivisionId}
                 onChange={(e) => setFormDivisionId(e.target.value ? Number(e.target.value) : '')}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All Batches in Standard</option>
                 {filteredFormDivisions.map((d: Division) => (
@@ -780,7 +780,7 @@ export default function CoursesPage() {
                 placeholder="/materials/sample_handbook.pdf"
                 value={formFileUrl}
                 onChange={(e) => setFormFileUrl(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
@@ -790,7 +790,7 @@ export default function CoursesPage() {
                 type="number"
                 value={formFileSizeKB}
                 onChange={(e) => setFormFileSizeKB(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
@@ -802,7 +802,7 @@ export default function CoursesPage() {
               placeholder="Brief summary of concepts, chapters, or syllabus covered in this document..."
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-primary-500"
             />
           </div>
 

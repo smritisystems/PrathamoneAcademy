@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Standardized Rule 010 View-First locked mutation controls. Renders visible locked visual treatments with Lock icons and informative tooltips in View Mode, and unlocks interactive mutation behaviors when authorized Edit Mode is active.
  */
@@ -110,7 +110,7 @@ export function LockedButton({
 
   // Active variant classes
   const activeVariantClasses = {
-    primary: 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white shadow-2xs',
+    primary: 'bg-primary-600 hover:bg-primary-700 active:bg-indigo-800 text-white shadow-2xs',
     secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200',
     danger: 'bg-rose-600 hover:bg-rose-700 text-white shadow-2xs',
     warning: 'bg-amber-600 hover:bg-amber-700 text-white shadow-2xs',
@@ -205,7 +205,7 @@ export function LockedIconButton({
 
   const toneHoverClasses = {
     danger: 'text-slate-400 hover:text-rose-600 hover:bg-rose-50',
-    primary: 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50',
+    primary: 'text-slate-400 hover:text-primary-600 hover:bg-primary-50',
     success: 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50',
     warning: 'text-slate-400 hover:text-amber-600 hover:bg-amber-50',
     default: 'text-slate-400 hover:text-slate-700 hover:bg-slate-100',
@@ -300,7 +300,7 @@ export function LockedLinkButton({
     <button
       type="button"
       onClick={handleClick}
-      className={`text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline transition-colors ${className}`}
+      className={`text-[11px] font-bold text-primary-600 hover:text-primary-800 hover:underline transition-colors ${className}`}
     >
       {label}
     </button>

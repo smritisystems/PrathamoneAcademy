@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description User management dashboard listing system accounts, roles, access scopes, and invitation workflows.
  */
@@ -303,9 +303,9 @@ export default function UsersPage() {
       case 'super_admin':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300'
       case 'admin':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300'
+        return 'bg-primary-100 text-primary-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300'
       case 'principal':
-        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300'
+        return 'bg-primary-100 text-primary-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300'
       case 'teacher':
         return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300'
       case 'accountant':
@@ -329,13 +329,13 @@ export default function UsersPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-blue-600/30 border border-blue-500/40 rounded-xl text-blue-400">
+              <div className="p-2.5 bg-primary-600/30 border border-primary-500/40 rounded-xl text-blue-400">
                 <Users className="w-7 h-7" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                   User Management & System Access
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary-500/20 text-blue-300 border border-primary-500/30">
                     Live Directory
                   </span>
                 </h1>
@@ -350,7 +350,7 @@ export default function UsersPage() {
             {isEditMode ? (
               <button
                 onClick={() => setCreateModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition"
               >
                 <Plus className="w-4 h-4" />
                 Add User Account
@@ -374,7 +374,7 @@ export default function UsersPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {/* Card 1: Total Accounts */}
         <div className="card p-4 border border-slate-200 dark:border-slate-800 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-blue-950/40 text-primary-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
             <Users className="w-6 h-6" />
           </div>
           <div>
@@ -447,7 +447,7 @@ export default function UsersPage() {
                 setPage(1)
               }}
               placeholder="Search by name, username, email, staff code, or student admission no..."
-              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-500"
             />
             {search && (
               <button
@@ -530,7 +530,7 @@ export default function UsersPage() {
             {(search || selectedRole !== 'all' || selectedStatus !== 'all' || selectedStandardId || selectedDivisionId) && (
               <button
                 onClick={handleClearFilters}
-                className="px-3 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition"
+                className="px-3 py-2 text-xs font-semibold text-primary-600 dark:text-blue-400 hover:bg-primary-50 dark:hover:bg-blue-950/30 rounded-xl transition"
               >
                 Reset
               </button>
@@ -543,7 +543,7 @@ export default function UsersPage() {
       <div className="card overflow-x-auto border border-slate-200 dark:border-slate-800 shadow-sm">
         {loading ? (
           <div className="text-center py-16 space-y-3">
-            <RefreshCw className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
+            <RefreshCw className="w-8 h-8 animate-spin text-primary-600 mx-auto" />
             <p className="text-xs text-slate-500">Loading system accounts...</p>
           </div>
         ) : users.length === 0 ? (
@@ -591,7 +591,7 @@ export default function UsersPage() {
                         <div>
                           <Link
                             to={`/users/${u.id}`}
-                            className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition"
+                            className="font-bold text-slate-900 dark:text-white hover:text-primary-600 dark:hover:text-blue-400 transition"
                           >
                             {u.full_name}
                           </Link>
@@ -622,7 +622,7 @@ export default function UsersPage() {
                       {u.linked_person ? (
                         u.linked_person.type === 'student' ? (
                           <div className="space-y-0.5">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 dark:text-blue-400">
                               <GraduationCap className="w-3.5 h-3.5" />
                               Student
                             </span>
@@ -659,7 +659,7 @@ export default function UsersPage() {
                     {/* Access Scope */}
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium">
-                        <Shield className="w-3 h-3 text-indigo-500" />
+                        <Shield className="w-3 h-3 text-primary-500" />
                         {u.scope_label}
                       </span>
                     </td>
@@ -716,7 +716,7 @@ export default function UsersPage() {
                               }}
                               className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-700 dark:text-slate-200 font-semibold"
                             >
-                              <Eye className="w-3.5 h-3.5 text-blue-500" />
+                              <Eye className="w-3.5 h-3.5 text-primary-500" />
                               View Profile Workspace
                             </button>
 
@@ -727,7 +727,7 @@ export default function UsersPage() {
                               }}
                               className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-700 dark:text-slate-200"
                             >
-                              <Printer className="w-3.5 h-3.5 text-indigo-500" />
+                              <Printer className="w-3.5 h-3.5 text-primary-500" />
                               Print Role & Access
                             </button>
 
@@ -735,7 +735,7 @@ export default function UsersPage() {
                               onClick={() => handleEditOpen(u)}
                               className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-slate-700 dark:text-slate-200"
                             >
-                              <Edit3 className="w-3.5 h-3.5 text-indigo-500" />
+                              <Edit3 className="w-3.5 h-3.5 text-primary-500" />
                               Edit User Details
                             </button>
 
@@ -1020,7 +1020,7 @@ export default function UsersPage() {
               type="checkbox"
               checked={createForm.send_invitation}
               onChange={e => setCreateForm({ ...createForm, send_invitation: e.target.checked })}
-              className="rounded text-blue-600"
+              className="rounded text-primary-600"
             />
             <span className="text-slate-700 dark:text-slate-300 font-medium">
               Send activation email invitation immediately
@@ -1147,7 +1147,7 @@ export default function UsersPage() {
                   type="checkbox"
                   checked={editForm.is_active ?? true}
                   onChange={e => setEditForm({ ...editForm, is_active: e.target.checked })}
-                  className="rounded text-blue-600"
+                  className="rounded text-primary-600"
                 />
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Account is Active</span>
               </label>

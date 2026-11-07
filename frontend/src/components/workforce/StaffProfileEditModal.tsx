@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Enterprise modal for editing comprehensive Teacher and Staff profiles (Identity, Addresses, Banking, Qualifications, Contacts, and Compliance).
  */
@@ -136,7 +136,7 @@ export default function StaffProfileEditModal({
         {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center font-bold text-white shadow-xs">
               {profile.first_name ? profile.first_name[0] : 'E'}
             </div>
             <div>
@@ -183,11 +183,11 @@ export default function StaffProfileEditModal({
                 onClick={() => setActiveTab(tab.key)}
                 className={`pb-3 px-3.5 text-xs font-semibold flex items-center gap-2 border-b-2 transition-all ${
                   isActive
-                    ? 'border-indigo-600 text-indigo-600'
+                    ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-primary-600' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
               </button>
             )
@@ -211,7 +211,7 @@ export default function StaffProfileEditModal({
                       required
                       value={formData.first_name}
                       onChange={(e) => handleChange('first_name', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -221,7 +221,7 @@ export default function StaffProfileEditModal({
                       required
                       value={formData.last_name}
                       onChange={(e) => handleChange('last_name', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -231,7 +231,7 @@ export default function StaffProfileEditModal({
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
                       placeholder="+91 98765 43210"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -240,7 +240,7 @@ export default function StaffProfileEditModal({
                       type="date"
                       value={formData.date_of_birth}
                       onChange={(e) => handleChange('date_of_birth', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -248,7 +248,7 @@ export default function StaffProfileEditModal({
                     <select
                       value={formData.gender}
                       onChange={(e) => handleChange('gender', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 capitalize"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 capitalize"
                     >
                       <option value="male">Male</option>
                       <option value="female">Female</option>
@@ -260,7 +260,7 @@ export default function StaffProfileEditModal({
                     <select
                       value={formData.blood_group}
                       onChange={(e) => handleChange('blood_group', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
                       {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
                         <option key={bg} value={bg}>
@@ -283,7 +283,7 @@ export default function StaffProfileEditModal({
                         value={formData.emergency_contact_name}
                         onChange={(e) => handleChange('emergency_contact_name', e.target.value)}
                         placeholder="Ramesh Sharma"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                     <div>
@@ -293,7 +293,7 @@ export default function StaffProfileEditModal({
                         value={formData.emergency_contact_phone}
                         onChange={(e) => handleChange('emergency_contact_phone', e.target.value)}
                         placeholder="+91 98200 11223"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                     <div>
@@ -303,7 +303,7 @@ export default function StaffProfileEditModal({
                         value={formData.emergency_contact_relation}
                         onChange={(e) => handleChange('emergency_contact_relation', e.target.value)}
                         placeholder="Spouse / Parent / Sibling"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                   </div>
@@ -314,8 +314,8 @@ export default function StaffProfileEditModal({
             {/* ─── TAB 2: ADDRESSES ────────────────────────────────────────── */}
             {activeTab === 'addresses' && (
               <div className="space-y-4">
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <div className="p-3 bg-primary-50 border border-blue-200 rounded-xl text-xs text-primary-800 flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
                   <span>
                     <strong>Single Source of Truth (SSOT):</strong> PrathamOne EduOS stores both Residential and Permanent Hometown addresses directly on the Employee profile master.
                   </span>
@@ -335,7 +335,7 @@ export default function StaffProfileEditModal({
                         value={formData.current_address}
                         onChange={(e) => handleChange('current_address', e.target.value)}
                         placeholder="Flat 402, Green View Heights, Powai"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                   </div>
@@ -343,7 +343,7 @@ export default function StaffProfileEditModal({
                   {/* Permanent Address */}
                   <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                     <h5 className="font-bold text-slate-800 flex items-center gap-1.5 text-xs uppercase tracking-wider">
-                      <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                      <span className="w-2 h-2 rounded-full bg-primary-500"></span>
                       Permanent / Hometown Address
                     </h5>
                     <div>
@@ -353,7 +353,7 @@ export default function StaffProfileEditModal({
                         value={formData.permanent_address}
                         onChange={(e) => handleChange('permanent_address', e.target.value)}
                         placeholder="Permanent native hometown residence"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                   </div>
@@ -367,7 +367,7 @@ export default function StaffProfileEditModal({
                       type="text"
                       value={formData.city}
                       onChange={(e) => handleChange('city', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -376,7 +376,7 @@ export default function StaffProfileEditModal({
                       type="text"
                       value={formData.state}
                       onChange={(e) => handleChange('state', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -385,7 +385,7 @@ export default function StaffProfileEditModal({
                       type="text"
                       value={formData.pincode}
                       onChange={(e) => handleChange('pincode', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
@@ -406,7 +406,7 @@ export default function StaffProfileEditModal({
                       value={formData.department}
                       onChange={(e) => handleChange('department', e.target.value)}
                       placeholder="Academics, Administration, Accounts"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -414,7 +414,7 @@ export default function StaffProfileEditModal({
                     <select
                       value={formData.staff_type}
                       onChange={(e) => handleChange('staff_type', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 capitalize"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 capitalize"
                     >
                       <option value="teacher">Teacher / Faculty</option>
                       <option value="admin">Administrator</option>
@@ -429,7 +429,7 @@ export default function StaffProfileEditModal({
                     <select
                       value={formData.employment_type}
                       onChange={(e) => handleChange('employment_type', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 capitalize"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 capitalize"
                     >
                       <option value="full_time">Permanent Full-Time</option>
                       <option value="part_time">Part-Time</option>
@@ -444,7 +444,7 @@ export default function StaffProfileEditModal({
                       value={formData.qualification}
                       onChange={(e) => handleChange('qualification', e.target.value)}
                       placeholder="M.Sc, B.Ed, M.Tech, Ph.D"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -454,7 +454,7 @@ export default function StaffProfileEditModal({
                       value={formData.specialization}
                       onChange={(e) => handleChange('specialization', e.target.value)}
                       placeholder="Mathematics, Physics, Chemistry"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -465,7 +465,7 @@ export default function StaffProfileEditModal({
                       min="0"
                       value={formData.experience_years}
                       onChange={(e) => handleChange('experience_years', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
@@ -479,7 +479,7 @@ export default function StaffProfileEditModal({
                     value={formData.responsibilities}
                     onChange={(e) => handleChange('responsibilities', e.target.value)}
                     placeholder="Enter key daily responsibilities, syllabus management, lab supervision, student mentoring..."
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
@@ -488,8 +488,8 @@ export default function StaffProfileEditModal({
             {/* ─── TAB 4: BANKING & COMPLIANCE ────────────────────────────── */}
             {activeTab === 'banking' && (
               <div className="space-y-4">
-                <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-900 flex items-start gap-2">
-                  <CreditCard className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <div className="p-3 bg-primary-50 border border-indigo-200 rounded-xl text-xs text-primary-900 flex items-start gap-2">
+                  <CreditCard className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />
                   <span>
                     <strong>Primary Bank Account:</strong> Synchronized directly with payroll processing engines. Additional secondary accounts can be configured via the Banking tab.
                   </span>
@@ -503,7 +503,7 @@ export default function StaffProfileEditModal({
                       value={formData.bank_name}
                       onChange={(e) => handleChange('bank_name', e.target.value)}
                       placeholder="HDFC Bank / SBI"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -513,7 +513,7 @@ export default function StaffProfileEditModal({
                       value={formData.bank_account_number}
                       onChange={(e) => handleChange('bank_account_number', e.target.value)}
                       placeholder="50100234567890"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-mono focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -523,7 +523,7 @@ export default function StaffProfileEditModal({
                       value={formData.bank_ifsc}
                       onChange={(e) => handleChange('bank_ifsc', e.target.value)}
                       placeholder="HDFC0000123"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-mono uppercase focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-mono uppercase focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
@@ -541,7 +541,7 @@ export default function StaffProfileEditModal({
                         min="0"
                         value={formData.basic_salary}
                         onChange={(e) => handleChange('basic_salary', e.target.value)}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-bold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-bold focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                     <div>
@@ -551,7 +551,7 @@ export default function StaffProfileEditModal({
                         value={formData.pan_number}
                         onChange={(e) => handleChange('pan_number', e.target.value.toUpperCase())}
                         placeholder="ABCDE1234F"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-mono uppercase focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-mono uppercase focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                     <div>
@@ -561,7 +561,7 @@ export default function StaffProfileEditModal({
                         value={formData.aadhar_number}
                         onChange={(e) => handleChange('aadhar_number', e.target.value)}
                         placeholder="1234 5678 9012"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 font-mono focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                   </div>
@@ -574,7 +574,7 @@ export default function StaffProfileEditModal({
                     value={formData.notes}
                     onChange={(e) => handleChange('notes', e.target.value)}
                     placeholder="Confidential administrative remarks or notes..."
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
@@ -599,7 +599,7 @@ export default function StaffProfileEditModal({
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-2 transition-colors disabled:opacity-50"
+                className="px-5 py-2 bg-primary-600 hover:bg-primary-700 active:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-2 transition-colors disabled:opacity-50"
               >
                 {submitting ? (
                   <>

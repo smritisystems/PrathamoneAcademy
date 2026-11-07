@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Student directory page with multi-field search, status filtering, lifecycle exit/reactivation, and fast profile navigation.
  */
@@ -207,7 +207,7 @@ export default function StudentsPage() {
               />
               <span>Include Inactive Students</span>
               {allSettings?.admission?.student_visibility_lists === 'include_all' && !userToggledInactive && (
-                <span className="text-[10px] text-blue-600 font-semibold">(Default: All)</span>
+                <span className="text-[10px] text-primary-600 font-semibold">(Default: All)</span>
               )}
             </label>
 
@@ -290,7 +290,7 @@ export default function StudentsPage() {
                       if (reason.includes('graduat')) {
                         return (
                           <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800"
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800"
                             title={`Graduated on ${s.exit_date || 'N/A'} - ${s.exit_reason || ''}`}
                           >
                             Graduated
@@ -300,7 +300,7 @@ export default function StudentsPage() {
                       if (reason.includes('complet')) {
                         return (
                           <span
-                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800"
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800"
                             title={`Completed on ${s.exit_date || 'N/A'} - ${s.exit_reason || ''}`}
                           >
                             Completed
@@ -349,7 +349,7 @@ export default function StudentsPage() {
                       </Link>
                       <Link
                         to={`/forms?formId=student_kyc&recordId=${s.id}&mode=prefilled`}
-                        className="p-1.5 rounded hover:bg-indigo-50 text-indigo-700 transition"
+                        className="p-1.5 rounded hover:bg-primary-50 text-primary-700 transition"
                         title="Print KYC / Admission Form"
                       >
                         <Printer className="w-4 h-4" />

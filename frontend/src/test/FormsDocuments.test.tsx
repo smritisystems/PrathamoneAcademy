@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-08
  *
  * @description Vitest specifications validating centralized forms workspace, prefilled & blank modes, Aadhaar masking, DPDP consent, and print triggers.
  */
@@ -261,7 +261,7 @@ describe('Print Forms & KYC System Specification', () => {
     fireEvent.click(blankBtn)
 
     await waitFor(() => {
-      expect(blankBtn.className).toContain('text-indigo-900')
+      expect(blankBtn.className).toContain('text-primary-900')
     })
   })
 

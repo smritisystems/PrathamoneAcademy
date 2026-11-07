@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-08
  *
  * @description Centralized, user-friendly error recovery interface with diagnostic drawer and safe support actions.
  */
@@ -121,11 +121,11 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({
       case 'server':
         return <ServerOff className="w-12 h-12 text-red-500" />
       case 'session':
-        return <LogIn className="w-12 h-12 text-blue-500" />
+        return <LogIn className="w-12 h-12 text-primary-500" />
       case 'update':
-        return <Sparkles className="w-12 h-12 text-indigo-500" />
+        return <Sparkles className="w-12 h-12 text-primary-500" />
       case 'module':
-        return <RefreshCw className="w-12 h-12 text-blue-600" />
+        return <RefreshCw className="w-12 h-12 text-primary-600" />
       case 'data':
       case 'general':
       default:
@@ -180,7 +180,7 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({
           <button
             type="button"
             onClick={() => handleAction(spec.primaryAction)}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-semibold shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-sm font-semibold shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
           >
             <PrimaryIcon className="w-4 h-4" />
             <span>{getActionMetadata(spec.primaryAction).label}</span>
@@ -282,7 +282,7 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({
             <div className="flex items-center gap-3">
               <a
                 href={buildSupportMailtoUrl(diagnostics)}
-                className="text-blue-600 hover:text-blue-800 font-medium underline"
+                className="text-primary-600 hover:text-primary-800 font-medium underline"
               >
                 {BRANDING_CONFIG.salesSupport.email}
               </a>

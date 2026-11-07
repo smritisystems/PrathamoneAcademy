@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-08
  *
  * @description Enterprise 6-month historical vertical bar chart for faculty teaching workload analytics.
  */
@@ -43,7 +43,7 @@ export default function MonthlyTeachingHoursChart({
         <h3 className="text-sm font-bold text-slate-800 tracking-tight">
           Monthly Teaching Hours
         </h3>
-        <div className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-xs font-bold text-indigo-700">
+        <div className="px-2.5 py-1 bg-primary-50 border border-indigo-100 rounded-lg text-xs font-bold text-primary-700">
           Total: {totalHours.toLocaleString()} hrs
         </div>
       </div>
@@ -65,7 +65,7 @@ export default function MonthlyTeachingHoursChart({
               return (
                 <div key={idx} className="flex flex-col items-center h-full justify-end group">
                   {/* Tooltip on hover */}
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-indigo-700 mb-1 pointer-events-none bg-indigo-50 px-1 rounded border border-indigo-100">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-primary-700 mb-1 pointer-events-none bg-primary-50 px-1 rounded border border-indigo-100">
                     {item.hours}h
                   </div>
 

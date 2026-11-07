@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Dedicated full-page Teacher Profile & Employee Dossier workspace with persistent hero banner, 13 specialized tabs, multi-address/bank/contact management, timetable matrix, payroll configuration, and activity timeline.
  */
@@ -385,7 +385,7 @@ export default function TeacherProfilePage() {
   if (isProfileLoading) {
     return (
       <div className="flex items-center justify-center min-h-[450px]">
-        <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-primary-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -399,7 +399,7 @@ export default function TeacherProfilePage() {
         </p>
         <button
           onClick={() => navigate('/teachers')}
-          className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold"
+          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-semibold"
         >
           Return to Teacher Workspace
         </button>
@@ -501,7 +501,7 @@ export default function TeacherProfilePage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-xs'
+                    ? 'bg-primary-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
@@ -524,10 +524,10 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-indigo-600" />
+                  <User className="w-3.5 h-3.5 text-primary-600" />
                   1. Profile Summary
                 </h3>
-                <span className="text-[10px] font-mono text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-mono text-primary-700 font-bold bg-primary-50 px-2 py-0.5 rounded">
                   {profile.employee_id}
                 </span>
               </div>
@@ -559,7 +559,7 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-indigo-600" />
+                  <Phone className="w-3.5 h-3.5 text-primary-600" />
                   2. Contact Information
                 </h3>
                 <span className="text-[10px] text-slate-400 font-medium">{addressesList.length} Addresses</span>
@@ -590,7 +590,7 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+                  <Briefcase className="w-3.5 h-3.5 text-primary-600" />
                   3. Current Employment
                 </h3>
                 <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded">
@@ -620,7 +620,7 @@ export default function TeacherProfilePage() {
                 </div>
                 <div className="flex justify-between py-1 items-center">
                   <span className="text-slate-500">Historical Changes</span>
-                  <span className="font-semibold text-indigo-700">{empHistoriesList.length} Recorded Events</span>
+                  <span className="font-semibold text-primary-700">{empHistoriesList.length} Recorded Events</span>
                 </div>
               </div>
             </div>
@@ -629,10 +629,10 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                  <Layers className="w-3.5 h-3.5 text-primary-600" />
                   4. Current Assignments
                 </h3>
-                <span className="text-[11px] font-bold text-indigo-600">{assignments.length} Batches</span>
+                <span className="text-[11px] font-bold text-primary-600">{assignments.length} Batches</span>
               </div>
               {assignments.length === 0 ? (
                 <p className="text-xs text-slate-400 py-3 text-center">No batches assigned.</p>
@@ -643,7 +643,7 @@ export default function TeacherProfilePage() {
                       <div>
                         <div className="font-bold text-slate-900">{a.standard} - {a.subject}</div>
                         <div className="text-[10px] text-slate-500">
-                          {a.batch} <span className="font-mono font-semibold text-indigo-600">[{a.batch_code || a.board}]</span> • {a.board}
+                          {a.batch} <span className="font-mono font-semibold text-primary-600">[{a.batch_code || a.board}]</span> • {a.board}
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-slate-700 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
@@ -664,7 +664,7 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                  <Clock className="w-3.5 h-3.5 text-primary-600" />
                   5. Contract Workload
                 </h3>
                 <span className="text-xs font-bold text-slate-900">{totalWeeklyContractLoad} hrs / week</span>
@@ -673,16 +673,16 @@ export default function TeacherProfilePage() {
                 <div>
                   <div className="flex justify-between text-xs font-semibold text-slate-600 mb-1">
                     <span>Workload Allocation</span>
-                    <span className="text-indigo-600">{Math.min(Math.round((totalWeeklyContractLoad / 30) * 100), 100)}%</span>
+                    <span className="text-primary-600">{Math.min(Math.round((totalWeeklyContractLoad / 30) * 100), 100)}%</span>
                   </div>
                   <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-indigo-600 rounded-full transition-all"
+                      className="h-full bg-primary-600 rounded-full transition-all"
                       style={{ width: `${Math.min(Math.round((totalWeeklyContractLoad / 30) * 100), 100)}%` }}
                     />
                   </div>
                 </div>
-                <div className="p-2.5 bg-indigo-50/50 rounded-xl border border-indigo-100/60 text-[11px] text-slate-600 space-y-1">
+                <div className="p-2.5 bg-primary-50/50 rounded-xl border border-indigo-100/60 text-[11px] text-slate-600 space-y-1">
                   <div className="flex justify-between">
                     <span>Weekly Contractual:</span>
                     <strong className="text-slate-800">{totalWeeklyContractLoad} Hours</strong>
@@ -710,9 +710,9 @@ export default function TeacherProfilePage() {
                   <div className="text-xl font-extrabold text-emerald-900 mt-1">{thisMonthSessions || 36}</div>
                   <span className="text-[10px] text-slate-400">Verified Sessions</span>
                 </div>
-                <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-center">
-                  <span className="text-[10px] font-bold text-indigo-800 uppercase">Actual Hours</span>
-                  <div className="text-xl font-extrabold text-indigo-900 mt-1">{thisMonthHours || 24} hrs</div>
+                <div className="p-3 bg-primary-50/50 rounded-xl border border-indigo-100 text-center">
+                  <span className="text-[10px] font-bold text-primary-800 uppercase">Actual Hours</span>
+                  <div className="text-xl font-extrabold text-primary-900 mt-1">{thisMonthHours || 24} hrs</div>
                   <span className="text-[10px] text-slate-400">Delivery Volume</span>
                 </div>
               </div>
@@ -722,7 +722,7 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                  <Calendar className="w-3.5 h-3.5 text-primary-600" />
                   7. Attendance Summary
                 </h3>
                 <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">100% Rate</span>
@@ -747,7 +747,7 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-primary-600" />
                   8. Leave Balances
                 </h3>
                 <span className="text-[10px] text-slate-400 font-medium">AY 2026-27</span>
@@ -778,10 +778,10 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5 text-indigo-600" />
+                  <DollarSign className="w-3.5 h-3.5 text-primary-600" />
                   9. Payroll Summary
                 </h3>
-                <span className="text-[10px] text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded capitalize">
+                <span className="text-[10px] text-primary-700 font-bold bg-primary-50 px-2 py-0.5 rounded capitalize">
                   {payProfile?.payment_method?.replace('_', ' ') || 'Hourly Rate'}
                 </span>
               </div>
@@ -836,7 +836,7 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileCheck className="w-3.5 h-3.5 text-indigo-600" />
+                  <FileCheck className="w-3.5 h-3.5 text-primary-600" />
                   11. Compliance Checklist
                 </h3>
                 <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded">Verified</span>
@@ -862,13 +862,13 @@ export default function TeacherProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-indigo-600" />
+                  <Activity className="w-3.5 h-3.5 text-primary-600" />
                   12. Recent Activity
                 </h3>
                 <button
                   type="button"
                   onClick={() => setActiveTab('activity')}
-                  className="text-[10px] text-indigo-600 font-bold hover:underline"
+                  className="text-[10px] text-primary-600 font-bold hover:underline"
                 >
                   View All
                 </button>
@@ -903,7 +903,7 @@ export default function TeacherProfilePage() {
                 <button
                   type="button"
                   onClick={() => setShowEditModal(true)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
                 >
                   Edit Personal Info
                 </button>
@@ -925,7 +925,7 @@ export default function TeacherProfilePage() {
               </div>
               <div>
                 <span className="text-slate-400 font-medium">Employee Identifier</span>
-                <p className="font-mono font-bold text-indigo-700 mt-1">{profile.employee_id || `TCH-${profile.user_id}`}</p>
+                <p className="font-mono font-bold text-primary-700 mt-1">{profile.employee_id || `TCH-${profile.user_id}`}</p>
               </div>
               <div>
                 <span className="text-slate-400 font-medium">Date of Birth</span>
@@ -983,7 +983,7 @@ export default function TeacherProfilePage() {
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
                   <span className="text-[10px] text-slate-400 font-bold uppercase block">Official Work Email</span>
                   <div className="font-bold text-slate-900 mt-1 text-sm truncate">{profile.email}</div>
-                  <span className="text-[10px] text-indigo-600 font-semibold mt-1 inline-block">Institutional SSOT</span>
+                  <span className="text-[10px] text-primary-600 font-semibold mt-1 inline-block">Institutional SSOT</span>
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
                   <span className="text-[10px] text-slate-400 font-bold uppercase block">Emergency Phone</span>
@@ -1025,11 +1025,11 @@ export default function TeacherProfilePage() {
                     <div
                       key={addr.id}
                       className={`p-4 rounded-xl border relative space-y-2 text-xs transition-all ${
-                        addr.is_primary ? 'bg-indigo-50/40 border-indigo-200' : 'bg-slate-50 border-slate-200'
+                        addr.is_primary ? 'bg-primary-50/40 border-indigo-200' : 'bg-slate-50 border-slate-200'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-[10px] uppercase tracking-wider text-indigo-700 capitalize">
+                        <span className="font-bold text-[10px] uppercase tracking-wider text-primary-700 capitalize">
                           {addr.address_type} Address
                         </span>
                         {addr.is_primary && (
@@ -1173,7 +1173,7 @@ export default function TeacherProfilePage() {
                 <button
                   type="button"
                   onClick={() => setShowLifecycleModal(true)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
                 >
                   Update Lifecycle Status
                 </button>
@@ -1181,7 +1181,7 @@ export default function TeacherProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-xs">
                 <div>
                   <span className="text-slate-400 font-medium">Employee Code</span>
-                  <p className="font-bold text-indigo-700 font-mono mt-1">{profile.employee_id || `TCH-${profile.user_id}`}</p>
+                  <p className="font-bold text-primary-700 font-mono mt-1">{profile.employee_id || `TCH-${profile.user_id}`}</p>
                 </div>
                 <div>
                   <span className="text-slate-400 font-medium">Employment Type</span>
@@ -1255,7 +1255,7 @@ export default function TeacherProfilePage() {
                       {empHistoriesList.map((h: any) => (
                         <tr key={h.id} className="hover:bg-slate-50">
                           <td className="px-3.5 py-2.5 font-mono text-slate-800">{h.effective_date}</td>
-                          <td className="px-3.5 py-2.5 font-bold capitalize text-indigo-700">{h.event_type?.replace('_', ' ')}</td>
+                          <td className="px-3.5 py-2.5 font-bold capitalize text-primary-700">{h.event_type?.replace('_', ' ')}</td>
                           <td className="px-3.5 py-2.5 text-slate-500 capitalize">{h.old_status || '—'}</td>
                           <td className="px-3.5 py-2.5 font-semibold text-emerald-700 capitalize">{h.new_status}</td>
                           <td className="px-3.5 py-2.5 text-slate-600">{h.reason || h.notes || 'Official administrative action'}</td>
@@ -1304,7 +1304,7 @@ export default function TeacherProfilePage() {
             </h3>
             <div className="flex flex-wrap gap-2.5">
               {['Mathematics', 'Advanced Calculus', 'Algebra & Trigonometry', 'Coordinate Geometry', 'Physics'].map((sub, idx) => (
-                <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-semibold">
+                <span key={idx} className="px-3 py-1.5 bg-primary-50 text-primary-700 border border-indigo-200 rounded-xl text-xs font-semibold">
                   {sub}
                 </span>
               ))}
@@ -1335,10 +1335,10 @@ export default function TeacherProfilePage() {
             </div>
 
             {/* Workload Reconciliation Strip */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-primary-50/50 border border-indigo-100 rounded-xl text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Weekly Contractual Load:</span>
-                <strong className="text-indigo-900 text-sm">{totalWeeklyContractLoad} Hours / week</strong>
+                <strong className="text-primary-900 text-sm">{totalWeeklyContractLoad} Hours / week</strong>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Actual Delivered This Month:</span>
@@ -1364,7 +1364,7 @@ export default function TeacherProfilePage() {
                   <tbody className="divide-y divide-slate-100">
                     {assignments.map((a) => (
                       <tr key={a.id} className="hover:bg-slate-50">
-                        <td className="px-3.5 py-2.5 font-bold text-indigo-700">{a.board}</td>
+                        <td className="px-3.5 py-2.5 font-bold text-primary-700">{a.board}</td>
                         <td className="px-3.5 py-2.5 text-slate-800">{a.standard}</td>
                         <td className="px-3.5 py-2.5 font-semibold text-slate-800">
                           {a.batch} {a.batch_code ? <span className="font-mono text-slate-500 font-normal">[{a.batch_code}]</span> : null}
@@ -1373,7 +1373,7 @@ export default function TeacherProfilePage() {
                         <td className="px-3.5 py-2.5 text-slate-700 font-mono font-medium">{a.weekly_hours} hrs/week</td>
                         <td className="px-3.5 py-2.5">
                           {a.is_class_teacher ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-100 text-primary-800">
                               Class Teacher
                             </span>
                           ) : (
@@ -1420,7 +1420,7 @@ export default function TeacherProfilePage() {
                         <td className="px-3.5 py-2.5 font-bold text-slate-800">{tt.day_of_week}</td>
                         <td className="px-3.5 py-2.5 font-mono text-slate-600">{tt.start_time} – {tt.end_time}</td>
                         <td className="px-3.5 py-2.5 text-slate-800">{tt.standard_name} ({tt.division_name})</td>
-                        <td className="px-3.5 py-2.5 font-semibold text-indigo-700">{tt.subject_name}</td>
+                        <td className="px-3.5 py-2.5 font-semibold text-primary-700">{tt.subject_name}</td>
                         <td className="px-3.5 py-2.5 text-slate-600">{tt.room_number || 'Room 101'}</td>
                       </tr>
                     ))}
@@ -1498,20 +1498,20 @@ export default function TeacherProfilePage() {
                 Faculty Remuneration & Payment Profile
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
-                  <span className="text-[11px] font-bold text-indigo-700 uppercase">Payment Model</span>
+                <div className="p-4 bg-primary-50/50 border border-indigo-100 rounded-xl">
+                  <span className="text-[11px] font-bold text-primary-700 uppercase">Payment Model</span>
                   <div className="text-base font-bold text-slate-900 mt-1 capitalize">
                     {payProfile?.payment_method?.replace('_', ' ') || 'Hourly Rate'}
                   </div>
                 </div>
-                <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
-                  <span className="text-[11px] font-bold text-indigo-700 uppercase">Standard Rate</span>
+                <div className="p-4 bg-primary-50/50 border border-indigo-100 rounded-xl">
+                  <span className="text-[11px] font-bold text-primary-700 uppercase">Standard Rate</span>
                   <div className="text-base font-bold text-slate-900 mt-1 font-mono">
                     ₹{payProfile?.hourly_rate || 750} / hour
                   </div>
                 </div>
-                <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
-                  <span className="text-[11px] font-bold text-indigo-700 uppercase">Disbursement Frequency</span>
+                <div className="p-4 bg-primary-50/50 border border-indigo-100 rounded-xl">
+                  <span className="text-[11px] font-bold text-primary-700 uppercase">Disbursement Frequency</span>
                   <div className="text-base font-bold text-slate-900 mt-1 capitalize">
                     {payProfile?.payment_frequency || 'Monthly'}
                   </div>
@@ -1642,7 +1642,7 @@ export default function TeacherProfilePage() {
               ].map((doc, idx) => (
                 <div key={idx} className="p-4 border border-slate-100 bg-slate-50 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-indigo-600" />
+                    <FileText className="w-5 h-5 text-primary-600" />
                     <div>
                       <div className="font-bold text-slate-800">{doc.title}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">Verified PDF • Official Archive</div>
@@ -1654,7 +1654,7 @@ export default function TeacherProfilePage() {
                       setSelectedDocPreview({ formId: doc.formId, title: doc.title })
                       setShowDocPreviewModal(true)
                     }}
-                    className="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+                    className="px-2.5 py-1 text-xs font-semibold text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded-lg transition-colors"
                   >
                     View
                   </button>
@@ -1769,7 +1769,7 @@ export default function TeacherProfilePage() {
                   id="is_primary_addr"
                   checked={addressForm.is_primary}
                   onChange={(e) => setAddressForm({ ...addressForm, is_primary: e.target.checked })}
-                  className="rounded text-indigo-600"
+                  className="rounded text-primary-600"
                 />
                 <label htmlFor="is_primary_addr" className="text-slate-700 font-medium">
                   Set as primary default address
@@ -1786,7 +1786,7 @@ export default function TeacherProfilePage() {
                 <button
                   type="submit"
                   disabled={addAddressMutation.isPending}
-                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold"
+                  className="px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold"
                 >
                   {addAddressMutation.isPending ? 'Saving...' : 'Save Address'}
                 </button>
@@ -1895,7 +1895,7 @@ export default function TeacherProfilePage() {
                 <button
                   type="submit"
                   disabled={addContactMutation.isPending}
-                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold"
+                  className="px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold"
                 >
                   {addContactMutation.isPending ? 'Saving...' : 'Save Contact'}
                 </button>
@@ -2001,7 +2001,7 @@ export default function TeacherProfilePage() {
                 <button
                   type="submit"
                   disabled={addBankMutation.isPending}
-                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold"
+                  className="px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold"
                 >
                   {addBankMutation.isPending ? 'Saving...' : 'Save Bank Account'}
                 </button>
@@ -2036,7 +2036,7 @@ export default function TeacherProfilePage() {
                     type="checkbox"
                     checked={(printSections as any)[s.key]}
                     onChange={(e) => setPrintSections({ ...printSections, [s.key]: e.target.checked })}
-                    className="rounded text-indigo-600"
+                    className="rounded text-primary-600"
                   />
                 </div>
               ))}
@@ -2061,7 +2061,7 @@ export default function TeacherProfilePage() {
               <button
                 type="button"
                 onClick={handleTriggerPrint}
-                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                className="px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
               >
                 <Printer className="w-3.5 h-3.5" />
                 Proceed to Print

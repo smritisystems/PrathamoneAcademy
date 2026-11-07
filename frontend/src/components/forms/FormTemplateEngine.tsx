@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Standardized A4 print and preview template engine with DPDP Act 2023 compliance, Aadhaar masking, and signatures.
  */
@@ -73,7 +73,7 @@ export default function FormTemplateEngine({
                 <h1 className="text-2xl font-black uppercase tracking-wide text-slate-950 font-serif leading-none">
                   {institution.name}
                 </h1>
-                <p className="text-[11px] font-semibold tracking-wider uppercase text-indigo-800 mt-1">
+                <p className="text-[11px] font-semibold tracking-wider uppercase text-primary-800 mt-1">
                   {institution.tagline}
                 </p>
                 <p className="text-[10px] text-slate-600 mt-0.5 leading-tight">
@@ -98,7 +98,7 @@ export default function FormTemplateEngine({
             <h2 className="text-sm font-bold uppercase tracking-wider font-serif">
               {form.title}
             </h2>
-            <span className="text-[10px] font-mono font-semibold bg-indigo-700 text-white px-2 py-0.5 rounded print:border print:border-white">
+            <span className="text-[10px] font-mono font-semibold bg-primary-700 text-white px-2 py-0.5 rounded print:border print:border-white">
               {form.code} &bull; {form.version}
             </span>
           </div>
@@ -255,7 +255,7 @@ export default function FormTemplateEngine({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Primary Guardian */}
               <div className="border border-slate-100 p-2 rounded bg-slate-50/50 space-y-1">
-                <div className="text-[10px] font-bold uppercase text-indigo-900 border-b pb-0.5">
+                <div className="text-[10px] font-bold uppercase text-primary-900 border-b pb-0.5">
                   Primary Guardian ({data.guardians.primary?.relation || 'Father'})
                 </div>
                 <div>
@@ -286,7 +286,7 @@ export default function FormTemplateEngine({
 
               {/* Secondary Guardian */}
               <div className="border border-slate-100 p-2 rounded bg-slate-50/50 space-y-1">
-                <div className="text-[10px] font-bold uppercase text-indigo-900 border-b pb-0.5">
+                <div className="text-[10px] font-bold uppercase text-primary-900 border-b pb-0.5">
                   Secondary Guardian ({data.guardians.secondary?.relation || 'Mother'})
                 </div>
                 <div>
@@ -427,7 +427,7 @@ export default function FormTemplateEngine({
                   {data.permissions.map((p, idx) => (
                     <div key={idx} className="border border-slate-200 p-1.5 rounded text-[10px] bg-slate-50">
                       <div className="font-bold text-slate-900 uppercase">{p.resource}</div>
-                      <div className="text-indigo-800 text-[9px]">{p.action}</div>
+                      <div className="text-primary-800 text-[9px]">{p.action}</div>
                     </div>
                   ))}
                 </div>
@@ -528,7 +528,7 @@ export default function FormTemplateEngine({
                     <td className="border border-slate-300 px-2 py-1 text-center font-bold text-slate-950 font-mono">
                       {renderValue(row.marks_obtained)}
                     </td>
-                    <td className="border border-slate-300 px-2 py-1 text-center font-bold text-indigo-900">
+                    <td className="border border-slate-300 px-2 py-1 text-center font-bold text-primary-900">
                       {renderValue(row.grade)}
                     </td>
                     <td className="border border-slate-300 px-2 py-1 text-center font-mono text-slate-600">
@@ -560,8 +560,8 @@ export default function FormTemplateEngine({
                 <span className="text-[9px] text-amber-800 uppercase block">Outstanding Dues</span>
                 <span className="text-sm font-bold text-amber-900">₹{data.financial.outstanding_dues.toLocaleString('en-IN')}</span>
               </div>
-              <div className="border border-indigo-200 p-2 rounded bg-indigo-50/40">
-                <span className="text-[9px] text-indigo-800 uppercase block">Collection Rate</span>
+              <div className="border border-indigo-200 p-2 rounded bg-primary-50/40">
+                <span className="text-[9px] text-primary-800 uppercase block">Collection Rate</span>
                 <span className="text-sm font-bold text-indigo-950">{data.financial.collection_percentage}%</span>
               </div>
             </div>
@@ -602,9 +602,9 @@ export default function FormTemplateEngine({
 
         {/* DPDP Act 2023 Statutory Purpose & Parental Consent Notice */}
         {isSectionActive('dpdp_notice') && (
-          <div className="mb-4 border border-indigo-200 bg-indigo-50/30 rounded p-3 text-[10px] text-slate-700 leading-normal">
+          <div className="mb-4 border border-indigo-200 bg-primary-50/30 rounded p-3 text-[10px] text-slate-700 leading-normal">
             <div className="flex items-start gap-2">
-              <ShieldCheck className="w-4 h-4 text-indigo-700 shrink-0 mt-0.5" />
+              <ShieldCheck className="w-4 h-4 text-primary-700 shrink-0 mt-0.5" />
               <div>
                 <strong className="text-indigo-950 uppercase tracking-wide block mb-0.5">
                   Statutory Notice & Consent (Digital Personal Data Protection Act, 2023)

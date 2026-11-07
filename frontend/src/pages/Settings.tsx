@@ -551,7 +551,7 @@ export default function Settings() {
       {/* Top Search & Utilities Bar (Matching Screenshot Header) */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-700 text-white font-bold text-sm flex items-center justify-center shadow-xs">
+          <div className="w-9 h-9 rounded-lg bg-primary-700 text-white font-bold text-sm flex items-center justify-center shadow-xs">
             {profile.short_name || 'PA'}
           </div>
           <div>
@@ -570,7 +570,7 @@ export default function Settings() {
             value={globalSearch}
             onChange={(e) => setGlobalSearch(e.target.value)}
             placeholder="Search settings, e.g., 'fee receipt', 'academic year'..."
-            className="w-full pl-10 pr-4 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-800"
+            className="w-full pl-10 pr-4 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all text-gray-800"
           />
           {globalSearch && (
             <button
@@ -589,7 +589,7 @@ export default function Settings() {
             className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 relative transition-colors"
           >
             <Bell className="w-4 h-4" />
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 absolute top-1.5 right-1.5" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-600 absolute top-1.5 right-1.5" />
           </button>
           <button
             title="Help & Documentation"
@@ -624,7 +624,7 @@ export default function Settings() {
                 value={categorySearch}
                 onChange={(e) => setCategorySearch(e.target.value)}
                 placeholder="Search settings..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white text-gray-800"
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:bg-white text-gray-800"
               />
               {categorySearch && (
                 <button
@@ -648,13 +648,13 @@ export default function Settings() {
                   onClick={() => setActiveCategory(cat.id)}
                   className={`w-full text-left p-2.5 rounded-lg flex items-start gap-3 transition-all ${
                     isActive
-                      ? 'bg-blue-50 text-blue-900 shadow-xs border-l-4 border-blue-600 rounded-l-none'
+                      ? 'bg-primary-50 text-primary-900 shadow-xs border-l-4 border-primary-600 rounded-l-none'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
                   <div
                     className={`mt-0.5 p-1 rounded-md ${
-                      isActive ? 'text-blue-700 bg-blue-100' : 'text-gray-500 bg-gray-100'
+                      isActive ? 'text-primary-700 bg-primary-100' : 'text-gray-500 bg-gray-100'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -663,7 +663,7 @@ export default function Settings() {
                     <div className="text-xs font-semibold leading-snug truncate">{cat.title}</div>
                     <div
                       className={`text-[11px] truncate leading-tight ${
-                        isActive ? 'text-blue-600' : 'text-gray-500'
+                        isActive ? 'text-primary-600' : 'text-gray-500'
                       }`}
                     >
                       {cat.subtitle}
@@ -690,7 +690,7 @@ export default function Settings() {
           {/* Top Bar for Active Category with Actions */}
           <div className="bg-white border-b border-gray-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
+              <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center shadow-xs">
                 <ActiveIcon className="w-5 h-5" />
               </div>
               <div>
@@ -745,7 +745,7 @@ export default function Settings() {
           <div className="p-6 flex-1">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-24 gap-3 text-gray-500">
-                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+                <RefreshCw className="w-6 h-6 animate-spin text-primary-600" />
                 <span className="text-xs">Loading institute configuration...</span>
               </div>
             ) : (
@@ -773,7 +773,7 @@ export default function Settings() {
                         onClick={() => setProfileSubTab('basic')}
                         className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                           profileSubTab === 'basic'
-                            ? 'bg-blue-600 text-white shadow-xs'
+                            ? 'bg-primary-600 text-white shadow-xs'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                         }`}
                       >
@@ -785,7 +785,7 @@ export default function Settings() {
                         onClick={() => setProfileSubTab('address')}
                         className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                           profileSubTab === 'address'
-                            ? 'bg-blue-600 text-white shadow-xs'
+                            ? 'bg-primary-600 text-white shadow-xs'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                         }`}
                       >
@@ -797,7 +797,7 @@ export default function Settings() {
                         onClick={() => setProfileSubTab('branches')}
                         className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                           profileSubTab === 'branches'
-                            ? 'bg-blue-600 text-white shadow-xs'
+                            ? 'bg-primary-600 text-white shadow-xs'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                         }`}
                       >
@@ -809,7 +809,7 @@ export default function Settings() {
                         onClick={() => setProfileSubTab('affiliations')}
                         className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                           profileSubTab === 'affiliations'
-                            ? 'bg-blue-600 text-white shadow-xs'
+                            ? 'bg-primary-600 text-white shadow-xs'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                         }`}
                       >
@@ -821,7 +821,7 @@ export default function Settings() {
                         onClick={() => setProfileSubTab('compliance')}
                         className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
                           profileSubTab === 'compliance'
-                            ? 'bg-blue-600 text-white shadow-xs'
+                            ? 'bg-primary-600 text-white shadow-xs'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                         }`}
                       >
@@ -837,7 +837,7 @@ export default function Settings() {
                           {/* Basic Institute Details Card */}
                           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-gray-100">
-                              <Building2 className="w-4 h-4 text-blue-600" />
+                              <Building2 className="w-4 h-4 text-primary-600" />
                               <div>
                                 <h3 className="text-sm font-bold text-gray-900">
                                   Basic Institute Details
@@ -857,7 +857,7 @@ export default function Settings() {
                                   type="text"
                                   value={profile.name}
                                   onChange={(e) => handleProfileChange('name', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                                 />
                               </div>
                               <div>
@@ -868,7 +868,7 @@ export default function Settings() {
                                   type="text"
                                   value={profile.short_name}
                                   onChange={(e) => handleProfileChange('short_name', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 uppercase"
                                 />
                               </div>
                             </div>
@@ -881,7 +881,7 @@ export default function Settings() {
                                 <select
                                   value={profile.institute_type}
                                   onChange={(e) => handleProfileChange('institute_type', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
                                 >
                                   <option value="Coaching Institute">Coaching Institute</option>
                                   <option value="Tuition Center">Tuition Center</option>
@@ -900,7 +900,7 @@ export default function Settings() {
                                     onChange={(e) =>
                                       handleProfileChange('establishment_year', parseInt(e.target.value) || 2018)
                                     }
-                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                                   />
                                 </div>
                               </div>
@@ -915,7 +915,7 @@ export default function Settings() {
                                   type="text"
                                   value={profile.registration_number}
                                   onChange={(e) => handleProfileChange('registration_number', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
                                 />
                               </div>
                               <div>
@@ -926,7 +926,7 @@ export default function Settings() {
                                   type="text"
                                   value={profile.tax_id}
                                   onChange={(e) => handleProfileChange('tax_id', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
                                 />
                               </div>
                             </div>
@@ -940,7 +940,7 @@ export default function Settings() {
                                 value={profile.tagline}
                                 onChange={(e) => handleProfileChange('tagline', e.target.value)}
                                 placeholder="Learn • Practice • Achieve"
-                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
 
@@ -958,7 +958,7 @@ export default function Settings() {
                                 maxLength={250}
                                 value={profile.description}
                                 onChange={(e) => handleProfileChange('description', e.target.value)}
-                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none text-gray-800"
+                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none text-gray-800"
                               />
                             </div>
                           </div>
@@ -966,7 +966,7 @@ export default function Settings() {
                           {/* Status & Preferences Card */}
                           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                             <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                              <Sliders className="w-4 h-4 text-blue-600" />
+                              <Sliders className="w-4 h-4 text-primary-600" />
                               <h3 className="text-sm font-bold text-gray-900">
                                 Status & Preferences
                               </h3>
@@ -1002,7 +1002,7 @@ export default function Settings() {
                                 <select
                                   value={profile.default_language}
                                   onChange={(e) => handleProfileChange('default_language', e.target.value)}
-                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
                                 >
                                   <option value="en">English</option>
                                   <option value="hi">Hindi (हिंदी)</option>
@@ -1018,7 +1018,7 @@ export default function Settings() {
                                 <select
                                   value={profile.timezone}
                                   onChange={(e) => handleProfileChange('timezone', e.target.value)}
-                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
                                 >
                                   <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
                                   <option value="UTC">UTC (Coordinated)</option>
@@ -1033,7 +1033,7 @@ export default function Settings() {
                           {/* Live Branding Preview Card */}
                           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                             <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                              <Eye className="w-4 h-4 text-blue-600" />
+                              <Eye className="w-4 h-4 text-primary-600" />
                               <div>
                                 <h3 className="text-sm font-bold text-gray-900">Branding Preview</h3>
                                 <p className="text-[11px] text-gray-500">
@@ -1199,8 +1199,8 @@ export default function Settings() {
                             </div>
 
                             {/* Informational Box */}
-                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-[11px] text-blue-900">
-                              <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div className="p-3 bg-primary-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-[11px] text-primary-900">
+                              <Info className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" />
                               <span>
                                 These branding settings will be applied to the app header, login page, receipts, reports, and all official documents.
                               </span>
@@ -1214,7 +1214,7 @@ export default function Settings() {
                     {profileSubTab === 'address' && (
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
                         <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-blue-600" />
+                          <MapPin className="w-4 h-4 text-primary-600" />
                           <span>Campus Address & Public Contact Information</span>
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1226,7 +1226,7 @@ export default function Settings() {
                               type="text"
                               value={profile.address}
                               onChange={(e) => handleProfileChange('address', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                           <div>
@@ -1235,7 +1235,7 @@ export default function Settings() {
                               type="text"
                               value={profile.city}
                               onChange={(e) => handleProfileChange('city', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                           <div>
@@ -1244,7 +1244,7 @@ export default function Settings() {
                               type="text"
                               value={profile.state}
                               onChange={(e) => handleProfileChange('state', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                           <div>
@@ -1253,7 +1253,7 @@ export default function Settings() {
                               type="text"
                               value={profile.pincode}
                               onChange={(e) => handleProfileChange('pincode', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                           <div>
@@ -1262,7 +1262,7 @@ export default function Settings() {
                               type="text"
                               value={profile.phone}
                               onChange={(e) => handleProfileChange('phone', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                           <div>
@@ -1271,7 +1271,7 @@ export default function Settings() {
                               type="email"
                               value={profile.email}
                               onChange={(e) => handleProfileChange('email', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                           <div>
@@ -1280,7 +1280,7 @@ export default function Settings() {
                               type="text"
                               value={profile.website}
                               onChange={(e) => handleProfileChange('website', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                         </div>
@@ -1292,7 +1292,7 @@ export default function Settings() {
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
                         <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                            <GitFork className="w-4 h-4 text-blue-600" />
+                            <GitFork className="w-4 h-4 text-primary-600" />
                             <span>Campus Centers & Branches</span>
                           </h3>
                         </div>
@@ -1316,20 +1316,20 @@ export default function Settings() {
                     {profileSubTab === 'affiliations' && (
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
                         <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-blue-600" />
+                          <ShieldCheck className="w-4 h-4 text-primary-600" />
                           <span>Educational Boards & Accreditations</span>
                         </h3>
                         <p className="text-xs text-gray-600">
                           PrathamOne Academy supports multi-board coaching curriculums:
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="p-3 border border-blue-200 bg-blue-50 rounded-lg">
-                            <div className="text-xs font-bold text-blue-900">CBSE Curriculum</div>
-                            <div className="text-[11px] text-blue-700">Central Board of Secondary Education</div>
+                          <div className="p-3 border border-blue-200 bg-primary-50 rounded-lg">
+                            <div className="text-xs font-bold text-primary-900">CBSE Curriculum</div>
+                            <div className="text-[11px] text-primary-700">Central Board of Secondary Education</div>
                           </div>
-                          <div className="p-3 border border-indigo-200 bg-indigo-50 rounded-lg">
-                            <div className="text-xs font-bold text-indigo-900">ICSE Curriculum</div>
-                            <div className="text-[11px] text-indigo-700">Council for the Indian School Certificate</div>
+                          <div className="p-3 border border-indigo-200 bg-primary-50 rounded-lg">
+                            <div className="text-xs font-bold text-primary-900">ICSE Curriculum</div>
+                            <div className="text-[11px] text-primary-700">Council for the Indian School Certificate</div>
                           </div>
                           <div className="p-3 border border-emerald-200 bg-emerald-50 rounded-lg">
                             <div className="text-xs font-bold text-emerald-900">State Board (MH)</div>
@@ -1343,7 +1343,7 @@ export default function Settings() {
                     {profileSubTab === 'compliance' && (
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
                         <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-blue-600" />
+                          <FileText className="w-4 h-4 text-primary-600" />
                           <span>Legal, DPDP & Regulatory Compliance</span>
                         </h3>
                         <div className="space-y-3">
@@ -1384,7 +1384,7 @@ export default function Settings() {
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <div className="flex items-center justify-between pb-2 border-b border-gray-100">
                         <div className="flex items-center gap-2">
-                          <Eye className="w-4 h-4 text-blue-600" />
+                          <Eye className="w-4 h-4 text-primary-600" />
                           <div>
                             <h3 className="text-sm font-bold text-gray-900">Real-Time Global Branding Preview</h3>
                             <p className="text-[11px] text-gray-500">
@@ -1514,7 +1514,7 @@ export default function Settings() {
                       {/* Theme Presets */}
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                         <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <Palette className="w-4 h-4 text-blue-600" />
+                          <Palette className="w-4 h-4 text-primary-600" />
                           <span>Curated Theme Presets</span>
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1550,12 +1550,12 @@ export default function Settings() {
                                 }}
                                 className={`p-3 border rounded-xl text-left transition-all relative ${
                                   isCurrent
-                                    ? 'border-blue-600 ring-2 ring-blue-500 bg-blue-50/20 shadow-xs'
+                                    ? 'border-primary-600 ring-2 ring-blue-500 bg-primary-50/20 shadow-xs'
                                     : 'border-gray-200 hover:border-gray-300 hover:shadow-xs'
                                 }`}
                               >
                                 {isCurrent && (
-                                  <span className="absolute top-2 right-2 text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.2 rounded-full">
+                                  <span className="absolute top-2 right-2 text-[10px] font-bold text-primary-600 bg-primary-100 px-1.5 py-0.2 rounded-full">
                                     Active
                                   </span>
                                 )}
@@ -1780,7 +1780,7 @@ export default function Settings() {
                       {/* Custom Palette Controls */}
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                         <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <Sliders className="w-4 h-4 text-blue-600" />
+                          <Sliders className="w-4 h-4 text-primary-600" />
                           <span>Custom Color Controls</span>
                         </h3>
                         <div className="space-y-3">
@@ -1860,7 +1860,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4 text-blue-600" />
+                        <GraduationCap className="w-4 h-4 text-primary-600" />
                         <span>Academic Session & Batch Management Defaults</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1872,7 +1872,7 @@ export default function Settings() {
                             type="text"
                             value={allSettings.academic?.default_academic_year || '2026-27'}
                             onChange={(e) => handleSettingChange('academic', 'default_academic_year', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
                           />
                         </div>
                         <div>
@@ -1882,7 +1882,7 @@ export default function Settings() {
                           <select
                             value={allSettings.academic?.term_structure || 'Quarterly'}
                             onChange={(e) => handleSettingChange('academic', 'term_structure', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500 bg-white"
                           >
                             <option value="Quarterly">Quarterly (4 Terms)</option>
                             <option value="Trimester">Trimester (3 Terms)</option>
@@ -1897,7 +1897,7 @@ export default function Settings() {
                           <select
                             value={allSettings.academic?.standard_naming || 'Roman'}
                             onChange={(e) => handleSettingChange('academic', 'standard_naming', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-white"
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500 bg-white"
                           >
                             <option value="Roman">Roman (VIII, IX, X, XI, XII)</option>
                             <option value="Numeric">Numeric (8th, 9th, 10th)</option>
@@ -1912,7 +1912,7 @@ export default function Settings() {
                             type="number"
                             value={allSettings.academic?.timetable_slot_duration || 45}
                             onChange={(e) => handleSettingChange('academic', 'timetable_slot_duration', parseInt(e.target.value) || 45)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
                           />
                         </div>
                         <div>
@@ -1923,7 +1923,7 @@ export default function Settings() {
                             type="number"
                             value={allSettings.academic?.batch_capacity_warning || 40}
                             onChange={(e) => handleSettingChange('academic', 'batch_capacity_warning', parseInt(e.target.value) || 40)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
                           />
                         </div>
                       </div>
@@ -1938,7 +1938,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-blue-600" />
+                        <UserCheck className="w-4 h-4 text-primary-600" />
                         <span>Admission Numbering & Student Policies</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1994,7 +1994,7 @@ export default function Settings() {
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <div className="border-b border-gray-100 pb-2">
                         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                          <Eye className="w-4 h-4 text-blue-600" />
+                          <Eye className="w-4 h-4 text-primary-600" />
                           <span>Student Status & Operational Visibility</span>
                         </h3>
                         <p className="text-xs text-gray-500 mt-0.5">
@@ -2015,7 +2015,7 @@ export default function Settings() {
                             data-testid="setting-student-visibility-dashboard"
                             value={allSettings.admission?.student_visibility_dashboard || 'active_only'}
                             onChange={(e) => handleSettingChange('admission', 'student_visibility_dashboard', e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
                           >
                             <option value="active_only">Active students only (default)</option>
                             <option value="include_all">Include all student statuses</option>
@@ -2034,7 +2034,7 @@ export default function Settings() {
                             data-testid="setting-student-visibility-reports"
                             value={allSettings.admission?.student_visibility_reports || 'include_all'}
                             onChange={(e) => handleSettingChange('admission', 'student_visibility_reports', e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
                           >
                             <option value="include_all">Include all statuses by default</option>
                             <option value="active_only">Active students only by default</option>
@@ -2053,7 +2053,7 @@ export default function Settings() {
                             data-testid="setting-student-visibility-lists"
                             value={allSettings.admission?.student_visibility_lists || 'active_only'}
                             onChange={(e) => handleSettingChange('admission', 'student_visibility_lists', e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
                           >
                             <option value="active_only">Show active students by default</option>
                             <option value="include_all">Show all students by default</option>
@@ -2071,7 +2071,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Users className="w-4 h-4 text-blue-600" />
+                        <Users className="w-4 h-4 text-primary-600" />
                         <span>Staff Member ID & Leave Policies</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2131,7 +2131,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-blue-600" />
+                        <CreditCard className="w-4 h-4 text-primary-600" />
                         <span>Fee Receipt Numbering & Monetary Settings</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2192,7 +2192,7 @@ export default function Settings() {
                         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                           (allSettings.fees?.workflow_mode || 'simple') === 'erp'
                             ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
+                            : 'bg-primary-100 text-primary-800'
                         }`}>
                           {(allSettings.fees?.workflow_mode || 'simple') === 'erp' ? 'Standard ERP Mode' : 'Simple Mode'}
                         </span>
@@ -2321,7 +2321,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <CalendarCheck className="w-4 h-4 text-blue-600" />
+                        <CalendarCheck className="w-4 h-4 text-primary-600" />
                         <span>Daily & Batch Attendance Rules</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2362,7 +2362,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Award className="w-4 h-4 text-blue-600" />
+                        <Award className="w-4 h-4 text-primary-600" />
                         <span>Exam Grading & Report Card Evaluation</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2403,7 +2403,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 text-blue-600" />
+                        <MessageSquare className="w-4 h-4 text-primary-600" />
                         <span>Automated Messaging & SMS / WhatsApp Gateways</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2441,7 +2441,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Printer className="w-4 h-4 text-blue-600" />
+                        <Printer className="w-4 h-4 text-primary-600" />
                         <span>Document Paper Sizes, Signatures & Receipt Layout</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2499,7 +2499,7 @@ export default function Settings() {
                           <select
                             value={selectedLookupCategory}
                             onChange={(e) => setSelectedLookupCategory(e.target.value)}
-                            className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                            className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium"
                           >
                             <option value="ALL">All Categories ({lookups.length})</option>
                             {lookupCategories.map((c) => (
@@ -2516,7 +2516,7 @@ export default function Settings() {
                               value={lookupSearch}
                               onChange={(e) => setLookupSearch(e.target.value)}
                               placeholder="Search code or label..."
-                              className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                         </div>
@@ -2524,7 +2524,7 @@ export default function Settings() {
                         <button
                           type="button"
                           onClick={handleOpenAddLookup}
-                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
+                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Add New Lookup</span>
@@ -2554,7 +2554,7 @@ export default function Settings() {
                                     {item.category}
                                   </span>
                                 </td>
-                                <td className="px-4 py-2.5 font-mono font-bold text-blue-900">
+                                <td className="px-4 py-2.5 font-mono font-bold text-primary-900">
                                   {item.code}
                                 </td>
                                 <td className="px-4 py-2.5 font-semibold text-gray-900">
@@ -2579,7 +2579,7 @@ export default function Settings() {
                                 </td>
                                 <td className="px-4 py-2.5 text-center">
                                   {item.is_system ? (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary-50 text-primary-700 border border-blue-200">
                                       Core
                                     </span>
                                   ) : (
@@ -2592,7 +2592,7 @@ export default function Settings() {
                                       onClick={() => handleOpenEditLookup(item)}
                                       icon={<Edit className="w-3.5 h-3.5" />}
                                       tooltip="Edit lookup"
-                                      className="p-1 text-gray-500 hover:text-blue-600 rounded transition-colors"
+                                      className="p-1 text-gray-500 hover:text-primary-600 rounded transition-colors"
                                     />
                                     <LockedIconButton
                                       isEditMode={isEditMode}
@@ -2625,7 +2625,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <SlidersHorizontal className="w-4 h-4 text-blue-600" />
+                        <SlidersHorizontal className="w-4 h-4 text-primary-600" />
                         <span>System Regional & Feature Defaults</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2663,7 +2663,7 @@ export default function Settings() {
                   <div className="space-y-6 max-w-4xl">
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-blue-600" />
+                        <Shield className="w-4 h-4 text-primary-600" />
                         <span>Role-Based Access Control Matrices</span>
                       </h3>
                       <p className="text-xs text-gray-600">
@@ -2680,12 +2680,12 @@ export default function Settings() {
                           </thead>
                           <tbody className="divide-y divide-gray-100">
                             <tr>
-                              <td className="px-4 py-2 font-bold text-blue-900">sysadmin</td>
+                              <td className="px-4 py-2 font-bold text-primary-900">sysadmin</td>
                               <td className="px-4 py-2 text-gray-700">Global Full Enterprise Superuser</td>
                               <td className="px-4 py-2 text-emerald-600 font-semibold">Enabled</td>
                             </tr>
                             <tr>
-                              <td className="px-4 py-2 font-bold text-indigo-900">admin / principal</td>
+                              <td className="px-4 py-2 font-bold text-primary-900">admin / principal</td>
                               <td className="px-4 py-2 text-gray-700">Institution Leadership & Settings</td>
                               <td className="px-4 py-2 text-emerald-600 font-semibold">Enabled</td>
                             </tr>
@@ -2747,7 +2747,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
                         <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                          <Download className="w-4 h-4 text-blue-600" />
+                          <Download className="w-4 h-4 text-primary-600" />
                           <span>Backup Configuration Snapshot</span>
                         </h4>
                         <p className="text-xs text-gray-500">
@@ -2756,7 +2756,7 @@ export default function Settings() {
                         <button
                           type="button"
                           onClick={handleDownloadSnapshot}
-                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
+                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
                         >
                           <Download className="w-3.5 h-3.5" />
                           <span>Download Snapshot</span>
@@ -2785,7 +2785,7 @@ export default function Settings() {
                     {/* Audit Logs Trail */}
                     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                       <h4 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Database className="w-4 h-4 text-blue-600" />
+                        <Database className="w-4 h-4 text-primary-600" />
                         <span>Settings Configuration Audit Trail</span>
                       </h4>
                       <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -2805,7 +2805,7 @@ export default function Settings() {
                                 <td className="px-4 py-2.5 font-mono text-gray-500">
                                   {new Date(log.created_at).toLocaleString()}
                                 </td>
-                                <td className="px-4 py-2.5 font-semibold text-blue-900">
+                                <td className="px-4 py-2.5 font-semibold text-primary-900">
                                   {log.category}
                                 </td>
                                 <td className="px-4 py-2.5 font-mono text-gray-800">
@@ -2842,7 +2842,7 @@ export default function Settings() {
                         <div className="flex items-center gap-2">
                           <KeyRound className="w-5 h-5 text-indigo-400" />
                           <h3 className="text-lg font-bold">CodeX Configuration Studio</h3>
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-500/30 text-indigo-200 border border-indigo-400/30">
                             Enterprise Capability
                           </span>
                         </div>
@@ -2852,7 +2852,7 @@ export default function Settings() {
                       </div>
                       <Link
                         to="/codex"
-                        className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-xs transition-all shrink-0"
+                        className="px-4 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-xs transition-all shrink-0"
                       >
                         <span>Open Full Studio</span>
                         <ExternalLink className="w-4 h-4" />
@@ -2867,7 +2867,7 @@ export default function Settings() {
                       </div>
                       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
                         <span className="text-xs font-bold text-gray-500 uppercase">Reversible Engine</span>
-                        <div className="text-lg font-bold text-indigo-700">0–9 Bijective Mapping</div>
+                        <div className="text-lg font-bold text-primary-700">0–9 Bijective Mapping</div>
                         <p className="text-xs text-gray-500">Maps 0-9 digits to unique symbols (e.g. 1250 → AZPQ) with decimal, negative, and version history support.</p>
                       </div>
                       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
@@ -2976,7 +2976,7 @@ export default function Settings() {
                     id="is_active_toggle"
                     checked={lookupForm.is_active}
                     onChange={(e) => setLookupForm({ ...lookupForm, is_active: e.target.checked })}
-                    className="rounded text-blue-600 focus:ring-blue-500"
+                    className="rounded text-primary-600 focus:ring-primary-500"
                   />
                   <label htmlFor="is_active_toggle" className="text-xs font-medium text-gray-700">
                     Active Status
@@ -2994,7 +2994,7 @@ export default function Settings() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs transition-colors"
+                  className="px-4 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-2xs transition-colors"
                 >
                   {editingLookup ? 'Update Lookup' : 'Create Lookup'}
                 </button>

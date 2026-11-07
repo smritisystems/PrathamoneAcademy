@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Centralized print settings control panel for paper size, orientation, fit modes, and margins.
  */
@@ -121,7 +121,7 @@ export default function PrintSettingsPanel({
         <select
           value={settings.paperSize}
           onChange={(e) => onChange({ paperSize: e.target.value as StandardPaperSize })}
-          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs"
+          className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-2xs"
         >
           {paperOptions.map((opt) => (
             <option key={opt} value={opt}>
@@ -186,7 +186,7 @@ export default function PrintSettingsPanel({
                 onClick={() => onChange({ orientation: orient })}
                 className={`py-2 px-2.5 rounded-xl border text-center font-semibold capitalize transition-all ${
                   isSelected
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                    ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
                     : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
                 }`}
               >
@@ -201,7 +201,7 @@ export default function PrintSettingsPanel({
       <div className="space-y-1.5">
         <label className="font-bold text-slate-800 flex items-center justify-between">
           <span>Intelligent Scaling & Fit</span>
-          <span className="text-[10px] font-bold text-indigo-700 font-mono">
+          <span className="text-[10px] font-bold text-primary-700 font-mono">
             {layout.scalePercentage}% scale
           </span>
         </label>
@@ -215,7 +215,7 @@ export default function PrintSettingsPanel({
                 onClick={() => onChange({ fitOption: fit.key, autoScale: true })}
                 className={`w-full p-2 rounded-xl border text-left flex items-start justify-between transition-all ${
                   isSelected
-                    ? 'bg-indigo-50/70 border-indigo-500 text-indigo-950 font-bold shadow-2xs'
+                    ? 'bg-primary-50/70 border-primary-500 text-indigo-950 font-bold shadow-2xs'
                     : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
                 }`}
               >
@@ -225,7 +225,7 @@ export default function PrintSettingsPanel({
                     {fit.desc}
                   </div>
                 </div>
-                {isSelected && <Check className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />}
+                {isSelected && <Check className="w-4 h-4 text-primary-600 shrink-0 mt-0.5" />}
               </button>
             )
           })}
@@ -236,7 +236,7 @@ export default function PrintSettingsPanel({
       <div className="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
         <div className="flex items-center justify-between font-bold text-slate-800">
           <span>Manual Zoom & Scale</span>
-          <span className="font-mono text-indigo-700 text-xs">{settings.scale}%</span>
+          <span className="font-mono text-primary-700 text-xs">{settings.scale}%</span>
         </div>
         <input
           type="range"
@@ -267,7 +267,7 @@ export default function PrintSettingsPanel({
                 onClick={() => onChange({ marginPreset: m.key })}
                 className={`py-1.5 px-2 rounded-lg border text-center transition-all ${
                   isSelected
-                    ? 'bg-indigo-600 text-white border-indigo-600 font-bold shadow-2xs'
+                    ? 'bg-primary-600 text-white border-primary-600 font-bold shadow-2xs'
                     : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
                 }`}
               >
@@ -285,7 +285,7 @@ export default function PrintSettingsPanel({
       <div className="space-y-3 pt-2 border-t border-slate-200">
         <label className="font-bold text-slate-800 flex items-center justify-between">
           <span>Print Footer & Governance</span>
-          <span className="text-[10px] text-indigo-600 font-mono">Row 1 & 2 Standard</span>
+          <span className="text-[10px] text-primary-600 font-mono">Row 1 & 2 Standard</span>
         </label>
 
         <div className="space-y-1.5">
@@ -305,7 +305,7 @@ export default function PrintSettingsPanel({
                   onClick={() => onChange({ confidentiality: c.id })}
                   className={`py-1 px-2 rounded-lg text-[10px] font-semibold border text-center transition-all ${
                     isSelected
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
                       : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
                   }`}
                 >
@@ -333,7 +333,7 @@ export default function PrintSettingsPanel({
             type="checkbox"
             checked={settings.fixedFooter ?? true}
             onChange={(e) => onChange({ fixedFooter: e.target.checked })}
-            className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
+            className="w-4 h-4 rounded text-primary-600 accent-indigo-600"
           />
         </label>
 
@@ -343,7 +343,7 @@ export default function PrintSettingsPanel({
             type="checkbox"
             checked={settings.showSoftwareBranding ?? true}
             onChange={(e) => onChange({ showSoftwareBranding: e.target.checked })}
-            className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
+            className="w-4 h-4 rounded text-primary-600 accent-indigo-600"
           />
         </label>
       </div>
@@ -356,7 +356,7 @@ export default function PrintSettingsPanel({
             type="checkbox"
             checked={settings.printBackground}
             onChange={(e) => onChange({ printBackground: e.target.checked })}
-            className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
+            className="w-4 h-4 rounded text-primary-600 accent-indigo-600"
           />
         </label>
 
@@ -366,7 +366,7 @@ export default function PrintSettingsPanel({
             type="checkbox"
             checked={settings.repeatTableHeaders}
             onChange={(e) => onChange({ repeatTableHeaders: e.target.checked })}
-            className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
+            className="w-4 h-4 rounded text-primary-600 accent-indigo-600"
           />
         </label>
 
@@ -376,7 +376,7 @@ export default function PrintSettingsPanel({
             type="checkbox"
             checked={settings.pageNumbering}
             onChange={(e) => onChange({ pageNumbering: e.target.checked })}
-            className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
+            className="w-4 h-4 rounded text-primary-600 accent-indigo-600"
           />
         </label>
       </div>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Academic Subject Management with Canonical Master Catalogue, Standard/Board Applicability Mappings, and Duplicate Prevention.
  */
@@ -463,7 +463,7 @@ export default function SubjectsPage() {
                               cs.standards_summary.map((std) => (
                                 <span
                                   key={std}
-                                  className="text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 font-medium"
+                                  className="text-[11px] px-2 py-0.5 rounded bg-primary-50 text-primary-700 border border-blue-100 font-medium"
                                 >
                                   {std}
                                 </span>
@@ -702,7 +702,7 @@ export default function SubjectsPage() {
                             className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${
                               map.is_optional
                                 ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                                : 'bg-primary-100 text-primary-800 border border-blue-200'
                             }`}
                           >
                             {map.is_optional ? 'Elective' : 'Compulsory'}
@@ -784,8 +784,8 @@ export default function SubjectsPage() {
           {/* MODE 1: MAP EXISTING CANONICAL SUBJECT */}
           {modalMode === 'map_existing' && (
             <div className="space-y-3.5">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-primary-50 border border-blue-200 rounded-lg p-3 text-xs text-primary-800 flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold">Single Source of Truth Rule:</span> Select a canonical subject from the master catalog and map it to a specific standard and examination board. This prevents duplicate subject records.
                 </div>

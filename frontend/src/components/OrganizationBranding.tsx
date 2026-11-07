@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Responsive organization branding and product ecosystem component displaying AITDL parent identity, product portfolio, and verified sales/support contact details.
  */
@@ -66,13 +66,13 @@ export default function OrganizationBranding({
           {/* Parent Org & Products */}
           <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap min-w-0">
             <div className="flex items-center gap-1 font-semibold text-slate-800">
-              <Building2 className="w-3 h-3 text-blue-600 shrink-0" aria-hidden="true" />
+              <Building2 className="w-3 h-3 text-primary-600 shrink-0" aria-hidden="true" />
               <span>{parentOrganization.name}:</span>
               <a
                 href={parentOrganization.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 hover:underline font-medium inline-flex items-center gap-0.5"
+                className="text-primary-600 hover:text-primary-800 hover:underline font-medium inline-flex items-center gap-0.5"
                 title={`Visit ${parentOrganization.name} website`}
               >
                 {parentOrganization.websiteDisplay}
@@ -97,8 +97,8 @@ export default function OrganizationBranding({
                       rel="noopener noreferrer"
                       className={`hover:underline font-medium inline-flex items-center gap-0.5 ${
                         prod.isCurrent
-                          ? 'text-blue-700 font-semibold'
-                          : 'text-slate-600 hover:text-blue-600'
+                          ? 'text-primary-700 font-semibold'
+                          : 'text-slate-600 hover:text-primary-600'
                       }`}
                       title={`${prod.name} — ${prod.description}`}
                     >
@@ -106,7 +106,7 @@ export default function OrganizationBranding({
                       <ExternalLink className="w-2 h-2 opacity-50" aria-hidden="true" />
                     </a>
                     {prod.isCurrent && (
-                      <span className="text-[9px] bg-blue-100/70 text-blue-700 px-1 py-0.2 rounded font-mono font-medium">
+                      <span className="text-[9px] bg-primary-100/70 text-primary-700 px-1 py-0.2 rounded font-mono font-medium">
                         Active
                       </span>
                     )}
@@ -129,7 +129,7 @@ export default function OrganizationBranding({
                     {pIdx > 0 && <span className="text-slate-300 select-none">|</span>}
                     <a
                       href={`tel:${phone.replace(/\s+/g, '')}`}
-                      className="text-slate-700 hover:text-blue-600 hover:underline font-semibold"
+                      className="text-slate-700 hover:text-primary-600 hover:underline font-semibold"
                       title={`Call support at ${phone}`}
                     >
                       {phone}
@@ -157,13 +157,13 @@ export default function OrganizationBranding({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-slate-800">
-              <Building2 className="w-4 h-4 text-blue-600" aria-hidden="true" />
+              <Building2 className="w-4 h-4 text-primary-600" aria-hidden="true" />
               <span>{parentOrganization.name}</span>
               <a
                 href={parentOrganization.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:underline font-semibold text-[11px] inline-flex items-center gap-0.5 ml-1"
+                className="text-primary-600 hover:underline font-semibold text-[11px] inline-flex items-center gap-0.5 ml-1"
               >
                 {parentOrganization.websiteDisplay}
                 <ExternalLink className="w-3 h-3 opacity-60" aria-hidden="true" />
@@ -176,7 +176,7 @@ export default function OrganizationBranding({
                     href={prod.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:underline text-blue-700 font-medium"
+                    className="hover:underline text-primary-700 font-medium"
                     title={prod.description}
                   >
                     {prod.name}
@@ -210,7 +210,7 @@ export default function OrganizationBranding({
             <Building2 className="w-6 h-6" aria-hidden="true" />
           </div>
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+            <div className="text-xs font-semibold uppercase tracking-wider text-primary-600">
               Parent Organization
             </div>
             <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
@@ -226,7 +226,7 @@ export default function OrganizationBranding({
           href={parentOrganization.website}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-xl text-xs transition border border-blue-200/80 shrink-0 shadow-2xs"
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 font-semibold rounded-xl text-xs transition border border-blue-200/80 shrink-0 shadow-2xs"
           title={`Visit ${parentOrganization.name}`}
         >
           <span>Visit aitdl.com</span>
@@ -251,7 +251,7 @@ export default function OrganizationBranding({
                 key={product.id}
                 className={`flex flex-col justify-between p-4 rounded-xl border transition-all duration-200 ${
                   product.isCurrent
-                    ? 'bg-blue-50/40 border-blue-200 ring-1 ring-blue-500/10'
+                    ? 'bg-primary-50/40 border-blue-200 ring-1 ring-blue-500/10'
                     : 'bg-slate-50/60 border-slate-200/80 hover:bg-slate-50 hover:border-slate-300'
                 }`}
               >
@@ -278,7 +278,7 @@ export default function OrganizationBranding({
                       <span className="font-bold text-sm text-slate-900">{product.name}</span>
                     </div>
                     {product.isCurrent ? (
-                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-600 text-white">
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary-600 text-white">
                         Active App
                       </span>
                     ) : (
@@ -298,7 +298,7 @@ export default function OrganizationBranding({
                     href={product.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:text-primary-800 hover:underline"
                     title={`Visit ${product.name} website`}
                   >
                     <span>{product.websiteDisplay}</span>
@@ -325,7 +325,7 @@ export default function OrganizationBranding({
                   {idx > 0 && <span className="text-slate-300">·</span>}
                   <a
                     href={`tel:${phone.replace(/\s+/g, '')}`}
-                    className="text-slate-800 hover:text-blue-600 hover:underline font-semibold"
+                    className="text-slate-800 hover:text-primary-600 hover:underline font-semibold"
                   >
                     {phone}
                   </a>
@@ -335,7 +335,7 @@ export default function OrganizationBranding({
             <span className="text-slate-300 hidden sm:inline">|</span>
             <a
               href={`mailto:${salesSupport.email}`}
-              className="text-blue-600 hover:underline inline-flex items-center gap-1 font-medium"
+              className="text-primary-600 hover:underline inline-flex items-center gap-1 font-medium"
             >
               <Mail className="w-3 h-3" aria-hidden="true" />
               {salesSupport.email}
@@ -345,7 +345,7 @@ export default function OrganizationBranding({
 
         {showLegalNotice && (
           <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" aria-hidden="true" />
+            <ShieldCheck className="w-3.5 h-3.5 text-primary-600 shrink-0" aria-hidden="true" />
             <span>DPDP Act 2023 Compliant</span>
             <span className="text-slate-300">·</span>
             <span className="font-mono text-slate-600">{versionDisplay} ({buildNumber})</span>

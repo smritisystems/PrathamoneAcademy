@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-08
  *
  * @description On-demand secure numeric decoder modal with PIN authorization and compliance audit logging.
  */
@@ -80,7 +80,7 @@ export default function QuickDecoderModal({ isOpen, onClose, initialCode = '' }:
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-900 to-indigo-950 text-white">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary-500/20 border border-indigo-400/30 flex items-center justify-center">
               <KeyRound className="w-5 h-5 text-indigo-300" />
             </div>
             <div>
@@ -108,7 +108,7 @@ export default function QuickDecoderModal({ isOpen, onClose, initialCode = '' }:
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="e.g. CX-AZPQ or AZPQ"
               required
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm uppercase tracking-widest focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm uppercase tracking-widest focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
             />
           </div>
 
@@ -123,7 +123,7 @@ export default function QuickDecoderModal({ isOpen, onClose, initialCode = '' }:
                 onChange={(e) => setPin(e.target.value)}
                 placeholder="Enter 4-6 digit PIN"
                 maxLength={8}
-                className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm tracking-widest focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm tracking-widest focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
               />
               <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
             </div>
@@ -171,7 +171,7 @@ export default function QuickDecoderModal({ isOpen, onClose, initialCode = '' }:
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium shadow-sm shadow-indigo-200 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+              className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-medium shadow-sm shadow-indigo-200 flex items-center justify-center gap-2 transition-all disabled:opacity-60"
             >
               {loading ? (
                 <>
@@ -191,7 +191,7 @@ export default function QuickDecoderModal({ isOpen, onClose, initialCode = '' }:
         {/* Footer Audit Notice */}
         <div className="px-6 py-2.5 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
           <span>Enterprise Audit Trail Active</span>
-          <span className="text-indigo-600 font-medium">PrathamOne CodeX</span>
+          <span className="text-primary-600 font-medium">PrathamOne CodeX</span>
         </div>
       </div>
     </div>

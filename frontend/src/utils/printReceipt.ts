@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
@@ -336,8 +336,8 @@ export function printReceiptElement(
           .bg-\\[\\#dbeafe\\] { background-color: #dbeafe !important; }
           .bg-\\[\\#0256b9\\] { background-color: #0256b9 !important; color: #ffffff !important; }
           .bg-\\[\\#eff6ff\\] { background-color: #eff6ff !important; }
-          .bg-blue-50 { background-color: #eff6ff !important; }
-          .bg-blue-50\\/40 { background-color: rgba(239, 246, 255, 0.4) !important; }
+          .bg-primary-50 { background-color: #eff6ff !important; }
+          .bg-primary-50\\/40 { background-color: rgba(239, 246, 255, 0.4) !important; }
           .bg-emerald-50 { background-color: #ecfdf5 !important; }
           .bg-emerald-50\\/90 { background-color: rgba(236, 253, 245, 0.9) !important; }
           .bg-emerald-600 { background-color: #059669 !important; }
@@ -356,9 +356,9 @@ export function printReceiptElement(
           .text-slate-500 { color: #64748b !important; }
           .text-slate-400 { color: #94a3b8 !important; }
           .text-slate-300 { color: #cbd5e1 !important; }
-          .text-blue-600 { color: #2563eb !important; }
-          .text-blue-700 { color: #1d4ed8 !important; }
-          .text-blue-800 { color: #1e40af !important; }
+          .text-primary-600 { color: #2563eb !important; }
+          .text-primary-700 { color: #1d4ed8 !important; }
+          .text-primary-800 { color: #1e40af !important; }
           .text-blue-950 { color: #172554 !important; }
           .text-sky-600 { color: #0284c7 !important; }
           .text-emerald-600 { color: #059669 !important; }

@@ -319,9 +319,9 @@ export default function Sidebar() {
                 aria-label="SysAdmin Center"
                 className={`flex items-center ${
                   isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
-                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   location.pathname === '/sysadmin'
-                    ? 'bg-indigo-600 text-white shadow-md'
+                    ? 'bg-primary-600 text-white shadow-md'
                     : 'text-indigo-400 bg-indigo-950/40 hover:bg-indigo-900/60 hover:text-white border border-indigo-800/40'
                 }`}
               >
@@ -842,9 +842,9 @@ export default function Sidebar() {
                 aria-label="SysAdmin Center"
                 className={`flex items-center ${
                   isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
-                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   location.pathname === '/sysadmin'
-                    ? 'bg-indigo-600 text-white shadow-md'
+                    ? 'bg-primary-600 text-white shadow-md'
                     : 'text-indigo-400 bg-indigo-950/40 hover:bg-indigo-900/60 hover:text-white border border-indigo-800/40'
                 }`}
               >

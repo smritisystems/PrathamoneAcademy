@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Centralized Print Forms & KYC workspace supporting prefilled & blank A4 templates, bulk exports, and DPDP audit logs.
  */
@@ -244,7 +244,7 @@ export default function FormsDocuments() {
             <span className="text-slate-900 font-semibold">Print Forms & KYC</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-950 flex items-center gap-2.5">
-            <Printer className="w-6 h-6 text-indigo-700" />
+            <Printer className="w-6 h-6 text-primary-700" />
             Centralized Printable Forms & KYC Workspace
           </h1>
           <p className="text-xs text-slate-600 mt-0.5">
@@ -263,7 +263,7 @@ export default function FormsDocuments() {
           <button
             onClick={handlePrint}
             disabled={isRendering || renderedForms.length === 0}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-700 rounded-lg hover:bg-indigo-800 shadow-sm transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-primary-700 rounded-lg hover:bg-primary-800 shadow-sm transition-colors disabled:opacity-50"
           >
             <Printer className="w-4 h-4" />
             Print Form(s)
@@ -271,7 +271,7 @@ export default function FormsDocuments() {
           <button
             onClick={handlePrint}
             disabled={isRendering || renderedForms.length === 0}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 shadow-sm transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-primary-700 bg-primary-50 border border-indigo-200 rounded-lg hover:bg-primary-100 shadow-sm transition-colors disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             Download PDF
@@ -287,7 +287,7 @@ export default function FormsDocuments() {
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center justify-between">
               <span>Form Generation Mode</span>
-              <span className="text-[10px] text-indigo-700 font-semibold bg-indigo-50 px-2 py-0.5 rounded">
+              <span className="text-[10px] text-primary-700 font-semibold bg-primary-50 px-2 py-0.5 rounded">
                 A4 Portrait
               </span>
             </h3>
@@ -299,7 +299,7 @@ export default function FormsDocuments() {
                 onClick={() => setMode('prefilled')}
                 className={`py-1.5 text-xs font-bold rounded-md transition-all ${
                   mode === 'prefilled'
-                    ? 'bg-white text-indigo-900 shadow-sm'
+                    ? 'bg-white text-primary-900 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -310,7 +310,7 @@ export default function FormsDocuments() {
                 onClick={() => setMode('blank')}
                 className={`py-1.5 text-xs font-bold rounded-md transition-all ${
                   mode === 'blank'
-                    ? 'bg-white text-indigo-900 shadow-sm'
+                    ? 'bg-white text-primary-900 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -325,7 +325,7 @@ export default function FormsDocuments() {
                 onClick={() => setScope('single')}
                 className={`py-1.5 text-xs font-bold rounded-md transition-all ${
                   scope === 'single'
-                    ? 'bg-white text-indigo-900 shadow-sm'
+                    ? 'bg-white text-primary-900 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -336,7 +336,7 @@ export default function FormsDocuments() {
                 onClick={() => setScope('bulk')}
                 className={`py-1.5 text-xs font-bold rounded-md transition-all ${
                   scope === 'bulk'
-                    ? 'bg-white text-indigo-900 shadow-sm'
+                    ? 'bg-white text-primary-900 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -356,7 +356,7 @@ export default function FormsDocuments() {
                   <select
                     value={selectedRecordId}
                     onChange={(e) => setSelectedRecordId(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium"
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none bg-white font-medium"
                   >
                     {staffUsers.map((u) => (
                       <option key={u.id} value={u.id}>
@@ -368,7 +368,7 @@ export default function FormsDocuments() {
                   <select
                     value={selectedRecordId}
                     onChange={(e) => setSelectedRecordId(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium"
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none bg-white font-medium"
                   >
                     {students.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -392,7 +392,7 @@ export default function FormsDocuments() {
                       setSelectedStandardId(e.target.value)
                       setSelectedDivisionId('')
                     }}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none bg-white"
                   >
                     <option value="">All Standards</option>
                     {standards.map((std) => (
@@ -410,7 +410,7 @@ export default function FormsDocuments() {
                   <select
                     value={selectedDivisionId}
                     onChange={(e) => setSelectedDivisionId(e.target.value)}
-                    className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                    className="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-primary-500 focus:outline-none bg-white"
                   >
                     <option value="">All Batches</option>
                     {divisions.map((div) => (
@@ -441,7 +441,7 @@ export default function FormsDocuments() {
                 placeholder="Search forms by title or code..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full text-xs pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
+                className="w-full text-xs pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50/50"
               />
             </div>
 
@@ -472,7 +472,7 @@ export default function FormsDocuments() {
                     onClick={() => setSelectedFormId(form.id)}
                     className={`p-2.5 rounded-lg border transition-all cursor-pointer flex flex-col gap-1 ${
                       isSelected
-                        ? 'border-indigo-600 bg-indigo-50/60 shadow-xs'
+                        ? 'border-primary-600 bg-primary-50/60 shadow-xs'
                         : 'border-slate-200 bg-white hover:bg-slate-50/80'
                     }`}
                   >
@@ -480,7 +480,7 @@ export default function FormsDocuments() {
                       <span className="font-bold text-slate-950 text-xs leading-tight">
                         {form.title}
                       </span>
-                      <span className="font-mono text-[9px] font-bold text-indigo-700 bg-indigo-100/70 px-1.5 py-0.2 rounded">
+                      <span className="font-mono text-[9px] font-bold text-primary-700 bg-primary-100/70 px-1.5 py-0.2 rounded">
                         {form.code}
                       </span>
                     </div>
@@ -528,7 +528,7 @@ export default function FormsDocuments() {
                       type="checkbox"
                       checked={activeSections.includes(sec.key)}
                       onChange={() => toggleSection(sec.key)}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                     />
                     <span>{sec.label}</span>
                   </label>
@@ -595,7 +595,7 @@ export default function FormsDocuments() {
           <div className="preview-canvas-viewport bg-slate-100 p-4 md:p-8 rounded-2xl border border-slate-300 min-h-[900px] overflow-auto flex flex-col items-center print:bg-white print:p-0 print:border-none">
             {isRendering ? (
               <div className="flex flex-col items-center justify-center py-32 space-y-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                 <span className="text-xs text-slate-500 font-medium">
                   Rendering authoritative A4 printable form...
                 </span>
@@ -652,7 +652,7 @@ export default function FormsDocuments() {
 
             {isLoadingAudit ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto" />
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto" />
               </div>
             ) : auditLogs.length === 0 ? (
               <div className="text-center py-8 text-slate-400 italic">

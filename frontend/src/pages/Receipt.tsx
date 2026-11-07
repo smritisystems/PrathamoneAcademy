@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-08
  *
  * @description Official printable fee receipt voucher page with historical payment details and fee summary.
  */
@@ -34,7 +34,7 @@ export default function Receipt() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
       </div>
     )
   }
@@ -55,7 +55,7 @@ export default function Receipt() {
       {/* Navigation Breadcrumb Controls (hidden on print) */}
       <div className="flex items-center justify-between pb-2 border-b border-gray-200 print:hidden">
         <div className="flex items-center gap-3">
-          <Link to="/fees?tab=receipts" className="text-blue-600 hover:underline text-sm font-semibold">
+          <Link to="/fees?tab=receipts" className="text-primary-600 hover:underline text-sm font-semibold">
             &larr; Receipts Register
           </Link>
           <span className="text-gray-300">|</span>

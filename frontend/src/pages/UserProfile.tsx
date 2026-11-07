@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Dedicated user profile management workspace for inspecting activity logs, scopes, and passwords.
  */
@@ -216,9 +216,9 @@ export default function UserProfilePage() {
       case 'super_admin':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300'
       case 'admin':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300'
+        return 'bg-primary-100 text-primary-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300'
       case 'principal':
-        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300'
+        return 'bg-primary-100 text-primary-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300'
       case 'teacher':
         return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300'
       case 'accountant':
@@ -256,7 +256,7 @@ export default function UserProfilePage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] space-y-4">
-        <RefreshCw className="w-10 h-10 animate-spin text-blue-600" />
+        <RefreshCw className="w-10 h-10 animate-spin text-primary-600" />
         <p className="text-sm font-medium text-slate-500">Loading user profile workspace...</p>
       </div>
     )
@@ -305,7 +305,7 @@ export default function UserProfilePage() {
       <div className="flex items-center justify-between">
         <Link
           to="/users"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-primary-600 dark:hover:text-blue-400 transition"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to User Accounts Directory
@@ -375,7 +375,7 @@ export default function UserProfilePage() {
                   </span>
                 )}
                 <span className="flex items-center gap-1">
-                  <Shield className="w-3.5 h-3.5 text-indigo-500" />
+                  <Shield className="w-3.5 h-3.5 text-primary-500" />
                   {user.scope_label}
                 </span>
               </div>
@@ -401,7 +401,7 @@ export default function UserProfilePage() {
                 setUseAutoGenerate(true)
                 setResetModalOpen(true)
               }}
-              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/70 transition flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-primary-50 dark:bg-indigo-950/40 text-primary-600 dark:text-indigo-400 hover:bg-primary-100 dark:hover:bg-indigo-950/70 transition flex items-center gap-1.5"
             >
               <KeyRound className="w-3.5 h-3.5" />
               Reset Password
@@ -440,13 +440,13 @@ export default function UserProfilePage() {
               <span className="text-slate-400">Linked Identity:</span>
               {linked_student ? (
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <span className="inline-flex items-center gap-1 font-semibold text-primary-600 dark:text-blue-400 bg-primary-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-lg border border-blue-200 dark:border-blue-800">
                     <GraduationCap className="w-3.5 h-3.5" />
                     Student Admission: {linked_student.admission_number}
                   </span>
                   <Link
                     to={`/students/${linked_student.id}`}
-                    className="inline-flex items-center gap-1 font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 transition"
+                    className="inline-flex items-center gap-1 font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 transition"
                   >
                     View Student Profile
                     <ExternalLink className="w-3 h-3" />
@@ -501,7 +501,7 @@ export default function UserProfilePage() {
                 onClick={() => setActiveTab(tabKey)}
                 className={`flex items-center gap-2 py-3 px-3.5 text-xs sm:text-sm font-semibold rounded-t-xl border-b-2 transition whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20'
+                    ? 'border-primary-600 text-primary-600 dark:text-blue-400 bg-primary-50/50 dark:bg-blue-950/20'
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 hover:border-slate-300'
                 }`}
               >
@@ -520,7 +520,7 @@ export default function UserProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Identity Card */}
             <div className="card p-4 border border-slate-200 dark:border-slate-800 flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-blue-950 flex items-center justify-center text-primary-600 dark:text-blue-400 flex-shrink-0">
                 <UserIcon className="w-5 h-5" />
               </div>
               <div className="min-w-0">
@@ -605,12 +605,12 @@ export default function UserProfilePage() {
                 <div className="card p-5 border border-slate-200 dark:border-slate-800 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <GraduationCap className="w-5 h-5 text-blue-600" />
+                      <GraduationCap className="w-5 h-5 text-primary-600" />
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white">Linked Student Record</h3>
                     </div>
                     <Link
                       to={`/students/${linked_student.id}`}
-                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                      className="text-xs font-semibold text-primary-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
                     >
                       Open Full Student Profile
                       <ExternalLink className="w-3 h-3" />
@@ -673,7 +673,7 @@ export default function UserProfilePage() {
               {/* Account Security & Lifecycle Overview */}
               <div className="card p-5 border border-slate-200 dark:border-slate-800 space-y-3">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                  <ShieldCheck className="w-4 h-4 text-primary-600" />
                   Account Security & Access Summary
                 </h3>
 
@@ -704,7 +704,7 @@ export default function UserProfilePage() {
                   </div>
                   <div className="py-2.5 flex justify-between items-center">
                     <span className="text-slate-500">Effective Permissions Count</span>
-                    <span className="font-bold text-blue-600 dark:text-blue-400">
+                    <span className="font-bold text-primary-600 dark:text-blue-400">
                       {permissions.length} actions authorized
                     </span>
                   </div>
@@ -723,7 +723,7 @@ export default function UserProfilePage() {
                     className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200"
                   >
                     <span className="flex items-center gap-2">
-                      <Edit3 className="w-4 h-4 text-blue-500" />
+                      <Edit3 className="w-4 h-4 text-primary-500" />
                       Edit Profile Details
                     </span>
                     <span className="text-slate-400">→</span>
@@ -739,7 +739,7 @@ export default function UserProfilePage() {
                     className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-200"
                   >
                     <span className="flex items-center gap-2">
-                      <KeyRound className="w-4 h-4 text-indigo-500" />
+                      <KeyRound className="w-4 h-4 text-primary-500" />
                       Reset Account Password
                     </span>
                     <span className="text-slate-400">→</span>
@@ -775,12 +775,12 @@ export default function UserProfilePage() {
               <div className="card p-5 border border-slate-200 dark:border-slate-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-blue-600" />
+                    <Activity className="w-4 h-4 text-primary-600" />
                     Recent Activity
                   </h3>
                   <button
                     onClick={() => setActiveTab('activity')}
-                    className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-[11px] font-semibold text-primary-600 dark:text-blue-400 hover:underline"
                   >
                     View All
                   </button>
@@ -791,7 +791,7 @@ export default function UserProfilePage() {
                 ) : (
                   <div className="space-y-3">
                     {activity_logs.slice(0, 5).map((log) => (
-                      <div key={log.id} className="text-xs border-l-2 border-blue-500 pl-3 py-1 space-y-0.5">
+                      <div key={log.id} className="text-xs border-l-2 border-primary-500 pl-3 py-1 space-y-0.5">
                         <div className="flex items-center justify-between">
                           <span className="font-semibold text-slate-800 dark:text-slate-200 capitalize">
                             {log.action.replace(/_/g, ' ')}
@@ -881,11 +881,11 @@ export default function UserProfilePage() {
           </div>
 
           {/* Separation of Concerns Note */}
-          <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-600" />
+          <div className="p-4 rounded-xl bg-primary-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-xs text-primary-800 dark:text-blue-300 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5 text-primary-600" />
             <div>
               <p className="font-semibold mb-0.5">Strict Identity & Audit Separation</p>
-              <p className="text-[11px] leading-relaxed text-blue-700 dark:text-blue-400">
+              <p className="text-[11px] leading-relaxed text-primary-700 dark:text-blue-400">
                 User credentials and login authentication remain strictly decoupled from student and faculty master records.
                 Editing these profile details updates the user account directly, preserving all historic batch enrollments,
                 attendance records, and fee ledgers.
@@ -931,7 +931,7 @@ export default function UserProfilePage() {
 
             <div className="card p-5 border border-slate-200 dark:border-slate-800 space-y-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Layers className="w-4 h-4 text-indigo-600" />
+                <Layers className="w-4 h-4 text-primary-600" />
                 Access Scope Boundary
               </h3>
               <div className="space-y-2 text-xs">
@@ -962,7 +962,7 @@ export default function UserProfilePage() {
                   Actions authorized for this account across academic, student, examination, fee, and administrative modules.
                 </p>
               </div>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary-50 text-primary-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                 {permissions.length} Authorized
               </span>
             </div>
@@ -984,7 +984,7 @@ export default function UserProfilePage() {
                       </span>
                       <p className="text-[10px] text-slate-400 font-mono">resource: {p.resource}</p>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800 capitalize">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-primary-100 text-primary-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800 capitalize">
                       {p.action}
                     </span>
                   </div>
@@ -1035,7 +1035,7 @@ export default function UserProfilePage() {
                           <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
                             {enr.standard_name}
                           </td>
-                          <td className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">
+                          <td className="px-4 py-3 font-semibold text-primary-600 dark:text-blue-400">
                             {enr.batch_name}
                           </td>
                           <td className="px-4 py-3 font-mono">{enr.roll_number || '—'}</td>
@@ -1126,7 +1126,7 @@ export default function UserProfilePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="card p-4 border border-slate-200 dark:border-slate-800 text-center">
               <span className="text-[11px] font-medium text-slate-400 uppercase">Rate %</span>
-              <p className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">
+              <p className="text-2xl font-black text-primary-600 dark:text-blue-400 mt-1">
                 {attendance.summary ? `${attendance.summary.rate_percentage}%` : 'N/A'}
               </p>
             </div>
@@ -1248,7 +1248,7 @@ export default function UserProfilePage() {
                                 res.percentage >= 75
                                   ? 'bg-emerald-500'
                                   : res.percentage >= 50
-                                  ? 'bg-blue-500'
+                                  ? 'bg-primary-500'
                                   : 'bg-rose-500'
                               }`}
                               style={{ width: `${Math.min(res.percentage, 100)}%` }}
@@ -1257,7 +1257,7 @@ export default function UserProfilePage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className="px-2.5 py-0.5 rounded-md font-bold text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                        <span className="px-2.5 py-0.5 rounded-md font-bold text-xs bg-primary-100 text-primary-800 dark:bg-indigo-950 dark:text-indigo-300">
                           {res.grade || '—'}
                         </span>
                       </td>
@@ -1427,7 +1427,7 @@ export default function UserProfilePage() {
                         {log.created_at ? new Date(log.created_at).toLocaleString() : '—'}
                       </td>
                       <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
-                        <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-mono text-[11px] border border-blue-200 dark:border-blue-900">
+                        <span className="px-2 py-0.5 rounded bg-primary-50 dark:bg-blue-950 text-primary-700 dark:text-blue-300 font-mono text-[11px] border border-blue-200 dark:border-blue-900">
                           {log.action}
                         </span>
                       </td>
@@ -1616,7 +1616,7 @@ export default function UserProfilePage() {
               id="user_active_toggle"
               checked={editForm.is_active ?? true}
               onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
-              className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4"
+              className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4"
             />
             <label htmlFor="user_active_toggle" className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Account is Active and allowed to authenticate
@@ -1691,7 +1691,7 @@ export default function UserProfilePage() {
                   name="reset_type"
                   checked={useAutoGenerate}
                   onChange={() => setUseAutoGenerate(true)}
-                  className="text-blue-600"
+                  className="text-primary-600"
                 />
                 <label htmlFor="opt_auto" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Auto-generate a secure temporary password (recommended)
@@ -1705,7 +1705,7 @@ export default function UserProfilePage() {
                   name="reset_type"
                   checked={!useAutoGenerate}
                   onChange={() => setUseAutoGenerate(false)}
-                  className="text-blue-600"
+                  className="text-primary-600"
                 />
                 <label htmlFor="opt_manual" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Specify a custom password

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Source component for Teacherassignbatchmodal in the src.components.workforce module.
  */
@@ -135,7 +135,7 @@ export default function TeacherAssignBatchModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+            <div className="p-2 bg-primary-50 text-primary-600 rounded-lg">
               <Layers className="w-5 h-5" />
             </div>
             <div>
@@ -169,7 +169,7 @@ export default function TeacherAssignBatchModal({
               <select
                 value={form.board_id}
                 onChange={(e) => setForm({ ...form, board_id: Number(e.target.value) })}
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
               >
                 {boards.map((b: any) => (
                   <option key={b.id} value={b.id}>
@@ -184,7 +184,7 @@ export default function TeacherAssignBatchModal({
               <select
                 value={form.standard_id}
                 onChange={(e) => setForm({ ...form, standard_id: Number(e.target.value) })}
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
               >
                 {standards.map((s: any) => (
                   <option key={s.id} value={s.id}>
@@ -201,7 +201,7 @@ export default function TeacherAssignBatchModal({
               <select
                 value={form.division_id}
                 onChange={(e) => setForm({ ...form, division_id: Number(e.target.value) })}
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
               >
                 {divisions.map((d: any) => (
                   <option key={d.id} value={d.id}>
@@ -216,7 +216,7 @@ export default function TeacherAssignBatchModal({
               <select
                 value={form.subject_id}
                 onChange={(e) => setForm({ ...form, subject_id: Number(e.target.value) })}
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
               >
                 {subjects.map((sub: any) => (
                   <option key={sub.id} value={sub.id}>
@@ -237,7 +237,7 @@ export default function TeacherAssignBatchModal({
                 max="40"
                 value={form.weekly_hours}
                 onChange={(e) => setForm({ ...form, weekly_hours: parseFloat(e.target.value) || 1.0 })}
-                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
               />
             </div>
 
@@ -247,7 +247,7 @@ export default function TeacherAssignBatchModal({
                   type="checkbox"
                   checked={form.is_class_teacher}
                   onChange={(e) => setForm({ ...form, is_class_teacher: e.target.checked })}
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                 />
                 <span className="text-xs font-semibold text-slate-700">Designate as Class Teacher</span>
               </label>
@@ -261,7 +261,7 @@ export default function TeacherAssignBatchModal({
               placeholder="e.g. Primary Mathematics Mentor for Term 1"
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
             />
           </div>
 
@@ -276,7 +276,7 @@ export default function TeacherAssignBatchModal({
             <button
               type="submit"
               disabled={createAssignmentMutation.isPending}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs disabled:opacity-50"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-xs disabled:opacity-50"
             >
               {createAssignmentMutation.isPending ? 'Assigning...' : 'Confirm Batch Assignment'}
             </button>

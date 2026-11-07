@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -569,7 +569,7 @@ export default function StudentDetailPage() {
           </button>
           <Link
             to={`/forms?formId=student_kyc&recordId=${studentId}&mode=prefilled`}
-            className="px-3.5 py-2 rounded-lg border border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
+            className="px-3.5 py-2 rounded-lg border border-indigo-300 text-primary-700 bg-primary-50 hover:bg-primary-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
             title="Print Student KYC, Admission & KYC Dossier"
           >
             <Printer className="w-4 h-4" /> Print Form / KYC
@@ -1247,7 +1247,7 @@ export default function StudentDetailPage() {
                   <div key={act.id} className="p-3.5 rounded-xl border border-gray-200 bg-gray-50 flex items-start gap-3">
                     <div className={`p-1.5 rounded-lg mt-0.5 ${
                       act.type === 'communication'
-                        ? 'bg-blue-100 text-blue-700'
+                        ? 'bg-primary-100 text-primary-700'
                         : act.type === 'payment'
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-primary-100 text-primary-700'
@@ -2176,7 +2176,7 @@ export default function StudentDetailPage() {
             {/* Header */}
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-sm">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
@@ -2199,7 +2199,7 @@ export default function StudentDetailPage() {
             <div className="p-6 overflow-y-auto space-y-5 flex-1">
               {adjustFeesLoading ? (
                 <div className="py-12 text-center text-xs text-gray-500">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-2" />
                   Loading current fee commitment...
                 </div>
               ) : (
@@ -2243,7 +2243,7 @@ export default function StudentDetailPage() {
                     <select
                       value={adjustForm.fee_structure_id}
                       onChange={(e) => handleStructureChange(Number(e.target.value))}
-                      className="w-full text-xs border border-gray-300 rounded-xl px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full text-xs border border-gray-300 rounded-xl px-3 py-2 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
                       {feeDetails?.available_structures?.map((s) => (
                         <option key={s.id} value={s.id}>
@@ -2269,7 +2269,7 @@ export default function StudentDetailPage() {
                         required
                         value={adjustForm.package_amount}
                         onChange={(e) => setAdjustForm((p) => ({ ...p, package_amount: e.target.value }))}
-                        className="w-full text-xs font-bold border border-gray-300 rounded-xl px-3 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                        className="w-full text-xs font-bold border border-gray-300 rounded-xl px-3 py-2 text-gray-900 focus:ring-2 focus:ring-primary-500"
                       />
                       <span className="text-[10px] text-gray-500">Agreed gross fee for academic year</span>
                     </div>
@@ -2284,7 +2284,7 @@ export default function StudentDetailPage() {
                         step="any"
                         value={adjustForm.concession_amount}
                         onChange={(e) => setAdjustForm((p) => ({ ...p, concession_amount: e.target.value }))}
-                        className="w-full text-xs font-bold border border-gray-300 rounded-xl px-3 py-2 text-emerald-700 focus:ring-2 focus:ring-blue-500"
+                        className="w-full text-xs font-bold border border-gray-300 rounded-xl px-3 py-2 text-emerald-700 focus:ring-2 focus:ring-primary-500"
                       />
                       <span className="text-[10px] text-gray-500">Management / sibling concession</span>
                     </div>
@@ -2302,7 +2302,7 @@ export default function StudentDetailPage() {
                       <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-xl p-3 text-xs">
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-gray-600 font-medium">New Net Fee:</span>
-                          <span className="font-extrabold text-blue-900 text-sm">
+                          <span className="font-extrabold text-primary-900 text-sm">
                             {fmt(net)}
                             <span className="text-[11px] font-normal text-gray-500 ml-1.5">
                               (₹{pkg} - ₹{conc})
@@ -2331,7 +2331,7 @@ export default function StudentDetailPage() {
                       value={adjustForm.reason}
                       onChange={(e) => setAdjustForm((p) => ({ ...p, reason: e.target.value }))}
                       placeholder="e.g. Sibling discount approved by Director, or standard fee correction..."
-                      className="w-full text-xs border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-xs border border-gray-300 rounded-xl p-2.5 focus:ring-2 focus:ring-primary-500"
                     />
                     <span className="text-[10px] text-gray-500">
                       This explanation is permanently logged in the compliance audit trail.
@@ -2348,7 +2348,7 @@ export default function StudentDetailPage() {
                       value={adjustForm.remarks}
                       onChange={(e) => setAdjustForm((p) => ({ ...p, remarks: e.target.value }))}
                       placeholder="Optional reference, approval letter, or note..."
-                      className="w-full text-xs border border-gray-200 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-xs border border-gray-200 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
                 </form>
@@ -2368,7 +2368,7 @@ export default function StudentDetailPage() {
                 type="submit"
                 form="adjust-fee-form"
                 disabled={adjustSubmitting || adjustFeesLoading || !adjustForm.reason.trim()}
-                className="px-5 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-50 transition shadow-sm inline-flex items-center gap-1.5"
+                className="px-5 py-2 rounded-xl bg-primary-600 text-white text-xs font-bold hover:bg-primary-700 disabled:opacity-50 transition shadow-sm inline-flex items-center gap-1.5"
               >
                 {adjustSubmitting ? (
                   <>

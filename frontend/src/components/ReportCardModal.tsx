@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Official Printable Graphical Student Report Card modal with A4 transcript layout, progress bars, and analytics.
  */
@@ -92,7 +92,7 @@ export default function ReportCardModal({
       case 'A':
         return 'bg-green-100 text-green-800 border-green-300'
       case 'B':
-        return 'bg-blue-100 text-blue-800 border-blue-300'
+        return 'bg-primary-100 text-primary-800 border-blue-300'
       case 'C':
         return 'bg-amber-100 text-amber-800 border-amber-300'
       case 'D':
@@ -104,7 +104,7 @@ export default function ReportCardModal({
 
   const getProgressColor = (pct: number) => {
     if (pct >= 80) return 'bg-emerald-600'
-    if (pct >= 60) return 'bg-blue-600'
+    if (pct >= 60) return 'bg-primary-600'
     if (pct >= 35) return 'bg-amber-500'
     return 'bg-rose-600'
   }

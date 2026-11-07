@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Centralized universal print dialog and live preview modal supporting A4, A5, A3, Letter, Legal, Thermal, and Custom paper.
  */
@@ -187,7 +187,7 @@ export default function UniversalPrintModal({
                 <h2 id="print-dialog-title" className="text-base font-extrabold text-slate-900">
                   Universal Print & Page Layout Studio
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-100 text-primary-800 border border-indigo-200">
                   {docPreset.label}
                 </span>
               </div>
@@ -201,9 +201,9 @@ export default function UniversalPrintModal({
             <button
               type="button"
               onClick={() => handleSettingsChange({ fitOption: 'fit-one-page', autoScale: true })}
-              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
+              className="px-3 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <Sparkles className="w-3.5 h-3.5 text-primary-600" />
               <span>Fit One Page</span>
             </button>
 
@@ -270,7 +270,7 @@ export default function UniversalPrintModal({
               type="button"
               onClick={() => handleExecutePrint(false)}
               disabled={isPrinting}
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-colors disabled:opacity-50"
+              className="px-5 py-2 bg-primary-600 hover:bg-primary-700 active:bg-indigo-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-colors disabled:opacity-50"
             >
               <Printer className="w-4 h-4" />
               <span>{isPrinting ? 'Preparing Print...' : 'Print Document'}</span>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-06
+ * @updated     2026-11-08
  *
  * @description Dedicated Progressive Web App installation portal with platform-specific setup guides and launch actions.
  */
@@ -70,8 +70,8 @@ export default function InstallApp() {
       {/* HERO BANNER SECTION                                                        */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 sm:p-10 shadow-xl border border-blue-800/40">
-        <div className="absolute -right-12 -top-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute right-1/4 -bottom-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -right-12 -top-12 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute right-1/4 -bottom-12 w-64 h-64 bg-primary-500/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start sm:items-center gap-5">
@@ -85,14 +85,14 @@ export default function InstallApp() {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-              <span className="text-blue-900 font-black text-2xl hidden" id="logo-text-fallback">
+              <span className="text-primary-900 font-black text-2xl hidden" id="logo-text-fallback">
                 PA
               </span>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-500/20 text-blue-200 border border-blue-400/30">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-primary-500/20 text-blue-200 border border-blue-400/30">
                   Progressive Web App
                 </span>
                 {isInstalled || installSuccess ? (
@@ -137,7 +137,7 @@ export default function InstallApp() {
                 type="button"
                 disabled={installing}
                 onClick={handleInstallClick}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-900/40 transition-all hover:scale-[1.02] disabled:opacity-50"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-bold text-sm shadow-lg shadow-blue-900/40 transition-all hover:scale-[1.02] disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
                 <span>{installing ? 'Installing App...' : 'Install App on this Device'}</span>
@@ -160,13 +160,13 @@ export default function InstallApp() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       <div>
         <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-blue-600" />
+          <Sparkles className="w-5 h-5 text-primary-600" />
           <span>Why Install PrathamOne EduOS as a Dedicated App?</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
               <Zap className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-slate-900 text-sm">Lightning Fast Launch</h3>
@@ -176,7 +176,7 @@ export default function InstallApp() {
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-2">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
               <Monitor className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-slate-900 text-sm">Distraction-Free Window</h3>
@@ -226,7 +226,7 @@ export default function InstallApp() {
               onClick={() => setActiveTab('chrome')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'chrome'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -239,7 +239,7 @@ export default function InstallApp() {
               onClick={() => setActiveTab('edge')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'edge'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -252,7 +252,7 @@ export default function InstallApp() {
               onClick={() => setActiveTab('android')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'android'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -265,7 +265,7 @@ export default function InstallApp() {
               onClick={() => setActiveTab('ios')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'ios'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -279,26 +279,26 @@ export default function InstallApp() {
         {activeTab === 'chrome' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-              <Chrome className="w-4 h-4 text-blue-600" />
+              <Chrome className="w-4 h-4 text-primary-600" />
               <span>Installing via Google Chrome (Windows, macOS, Chromebook)</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">1</div>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white font-bold text-xs flex items-center justify-center">1</div>
                 <h4 className="font-bold text-slate-900 text-xs">Look at the Address Bar</h4>
                 <p className="text-xs text-slate-600">
                   Look to the far right of Chrome's address bar for the <span className="font-semibold text-slate-800">Install icon</span> (monitor with down arrow).
                 </p>
               </div>
               <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">2</div>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white font-bold text-xs flex items-center justify-center">2</div>
                 <h4 className="font-bold text-slate-900 text-xs">Click "Install"</h4>
                 <p className="text-xs text-slate-600">
                   Click the install icon or click the blue button above. Chrome will display the <span className="font-semibold text-slate-800">Install App</span> prompt.
                 </p>
               </div>
               <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">3</div>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white font-bold text-xs flex items-center justify-center">3</div>
                 <h4 className="font-bold text-slate-900 text-xs">Launch Instantly</h4>
                 <p className="text-xs text-slate-600">
                   The app will open immediately in its own standalone window and create a shortcut on your Desktop and Start Menu.
@@ -312,26 +312,26 @@ export default function InstallApp() {
         {activeTab === 'edge' && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-              <Laptop className="w-4 h-4 text-blue-600" />
+              <Laptop className="w-4 h-4 text-primary-600" />
               <span>Installing via Microsoft Edge (Windows 10 / 11 & macOS)</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">1</div>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white font-bold text-xs flex items-center justify-center">1</div>
                 <h4 className="font-bold text-slate-900 text-xs">App Available Icon</h4>
                 <p className="text-xs text-slate-600">
                   Click the <span className="font-semibold text-slate-800">App available</span> icon (three squares + plus) on the right side of Edge's address bar.
                 </p>
               </div>
               <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">2</div>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white font-bold text-xs flex items-center justify-center">2</div>
                 <h4 className="font-bold text-slate-900 text-xs">Confirm Installation</h4>
                 <p className="text-xs text-slate-600">
                   Click <span className="font-semibold text-slate-800">Install</span>. Edge will register PrathamOne EduOS as a recognized Windows desktop application.
                 </p>
               </div>
               <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">3</div>
+                <div className="w-7 h-7 rounded-full bg-primary-600 text-white font-bold text-xs flex items-center justify-center">3</div>
                 <h4 className="font-bold text-slate-900 text-xs">Pin to Taskbar</h4>
                 <p className="text-xs text-slate-600">
                   Select <span className="font-semibold text-slate-800">Pin to Taskbar</span> and <span className="font-semibold text-slate-800">Pin to Start</span> for one-click access every morning.
@@ -386,7 +386,7 @@ export default function InstallApp() {
                 <div className="w-7 h-7 rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center">1</div>
                 <h4 className="font-bold text-slate-900 text-xs">Tap the Share Button</h4>
                 <p className="text-xs text-slate-600">
-                  In Safari, tap the <span className="font-semibold text-slate-800">Share icon</span> <Share2 className="w-3.5 h-3.5 inline mx-1 text-blue-600" /> (square with upward arrow) at the bottom toolbar.
+                  In Safari, tap the <span className="font-semibold text-slate-800">Share icon</span> <Share2 className="w-3.5 h-3.5 inline mx-1 text-primary-600" /> (square with upward arrow) at the bottom toolbar.
                 </p>
               </div>
               <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-2">
@@ -413,7 +413,7 @@ export default function InstallApp() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-xs text-slate-600 space-y-2">
         <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
-          <ShieldCheck className="w-4 h-4 text-blue-600" />
+          <ShieldCheck className="w-4 h-4 text-primary-600" />
           <span>Security & Data Architecture Note</span>
         </h3>
         <p>

@@ -367,7 +367,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               placeholder="Search report records..."
-              className="w-full text-xs pl-9 pr-8 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all shadow-xs"
+              className="w-full text-xs pl-9 pr-8 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-600 transition-all shadow-xs"
             />
             {globalSearch && (
               <button
@@ -432,7 +432,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                               }
                               setColumnVisibility((prev) => ({ ...prev, [colId]: checked }))
                             }}
-                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                           />
                           <span className="truncate">{col.header}</span>
                         </label>
@@ -466,7 +466,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                       initialColumns.forEach((c) => (all[c.id] = true))
                       setColumnVisibility(all)
                     }}
-                    className="text-blue-600 hover:underline font-semibold"
+                    className="text-primary-600 hover:underline font-semibold"
                   >
                     Show All
                   </button>
@@ -492,7 +492,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
               type="button"
               onClick={handleClearFilters}
               title="Clear all active filters"
-              className="flex items-center gap-1 px-2.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-xl border border-blue-200 transition-colors shadow-xs"
+              className="flex items-center gap-1 px-2.5 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-semibold rounded-xl border border-blue-200 transition-colors shadow-xs"
             >
               <X className="w-3.5 h-3.5" />
               <span>Clear Filters ({activeFiltersCount})</span>
@@ -591,9 +591,9 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                   <button
                     type="button"
                     onClick={() => handleExport('csv')}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-blue-50 hover:text-blue-800 rounded-lg transition-colors group"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-primary-50 hover:text-primary-800 rounded-lg transition-colors group"
                   >
-                    <FileText className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+                    <FileText className="w-4 h-4 text-primary-600 group-hover:scale-110 transition-transform" />
                     <div>
                       <span>CSV Spreadsheet (.csv)</span>
                       <p className="text-[10.5px] text-slate-400 font-normal">
@@ -632,7 +632,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
             <strong className="text-slate-800 font-bold">{data.length}</strong> total records
           </span>
           {activeFiltersCount > 0 && (
-            <span className="text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60">
+            <span className="text-primary-600 font-semibold bg-primary-50 px-2 py-0.5 rounded-full border border-blue-200/60">
               Filtered
             </span>
           )}
@@ -668,7 +668,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                     key={col.id}
                     style={{ width: `${width}px`, minWidth: `${width}px` }}
                     className={`relative py-2.5 px-3 font-bold text-slate-700 border-r border-slate-200/80 select-none transition-colors group ${
-                      isSorted ? 'bg-blue-50/60 text-blue-900' : 'hover:bg-slate-200/50'
+                      isSorted ? 'bg-primary-50/60 text-primary-900' : 'hover:bg-slate-200/50'
                     }`}
                   >
                     <div className={`flex items-center gap-1.5 ${alignClass}`}>
@@ -700,9 +700,9 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                         {col.sortable !== false && (
                           <span className="shrink-0 text-slate-400 group-hover:text-slate-600">
                             {sortDir === 'asc' ? (
-                              <ArrowUp className="w-3.5 h-3.5 text-blue-600 font-bold" />
+                              <ArrowUp className="w-3.5 h-3.5 text-primary-600 font-bold" />
                             ) : sortDir === 'desc' ? (
-                              <ArrowDown className="w-3.5 h-3.5 text-blue-600 font-bold" />
+                              <ArrowDown className="w-3.5 h-3.5 text-primary-600 font-bold" />
                             ) : (
                               <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                             )}
@@ -723,7 +723,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                             }}
                             className={`p-1 rounded hover:bg-slate-300/60 transition-colors ${
                               hasFilter
-                                ? 'text-blue-600 bg-blue-100 font-bold'
+                                ? 'text-primary-600 bg-primary-100 font-bold'
                                 : 'text-slate-400 opacity-60 hover:opacity-100'
                             }`}
                             title={`Filter ${col.header}`}
@@ -763,7 +763,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                                       }))
                                     }
                                     placeholder="Search text..."
-                                    className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                                   />
                                 </div>
                               )}
@@ -842,7 +842,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                                                   return { ...prev, [col.id]: newList }
                                                 })
                                               }}
-                                              className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                              className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                                             />
                                             <span className="truncate">{opt.label}</span>
                                           </div>
@@ -887,7 +887,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                     {/* Drag Handle to Resize Column */}
                     <div
                       onMouseDown={(e) => handleResizeStart(e, col.id)}
-                      className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-blue-500 transition-colors z-20"
+                      className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary-500 transition-colors z-20"
                       title="Drag to resize column"
                     />
                   </th>
@@ -901,7 +901,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
             {loading ? (
               <tr>
                 <td colSpan={visibleColumns.length} className="text-center py-16">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
                   <p className="text-xs text-slate-500 mt-3 font-semibold">
                     Loading report dataset...
                   </p>
@@ -915,7 +915,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                     <button
                       type="button"
                       onClick={handleClearFilters}
-                      className="mt-3 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-colors"
+                      className="mt-3 px-3 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-bold rounded-xl transition-colors"
                     >
                       Reset Active Filters
                     </button>
@@ -927,7 +927,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                 return (
                   <tr
                     key={row.id ?? rowIdx}
-                    className="hover:bg-blue-50/40 transition-colors group"
+                    className="hover:bg-primary-50/40 transition-colors group"
                   >
                     {visibleColumns.map((col) => {
                       const rawVal = getRawCellValue(row, col)
@@ -1028,7 +1028,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
           <select
             value={pageSize}
             onChange={(e) => setPageSize(Number(e.target.value))}
-            className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-xs"
+            className="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary-500 shadow-xs"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>

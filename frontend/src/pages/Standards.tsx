@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Standards page redirected to Academic Workspace classes management tab.
  */
@@ -118,7 +118,7 @@ export default function Standards() {
                     onClick={() => setSelectedStdId(std.id === selectedStdId ? null : std.id)}
                     className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
                       selectedStdId === std.id
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-primary-500 bg-primary-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
@@ -131,11 +131,11 @@ export default function Standards() {
                       <div className="text-right">
                         {std.student_count !== undefined ? (
                           <>
-                            <p className="text-lg font-bold text-blue-600">{std.student_count}</p>
+                            <p className="text-lg font-bold text-primary-600">{std.student_count}</p>
                             <p className="text-xs text-gray-400">students</p>
                           </>
                         ) : (
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded bg-blue-50 text-blue-700">
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded bg-primary-50 text-primary-700">
                             Level {std.level ?? 1}
                           </span>
                         )}
@@ -189,7 +189,7 @@ export default function Standards() {
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-blue-600">
+                          <p className="text-2xl font-bold text-primary-600">
                             {div.student_count || 0}
                           </p>
                           <p className="text-xs text-gray-400">

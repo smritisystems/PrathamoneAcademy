@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Data Import/Export workspace featuring Excel copy-paste spreadsheet grid and file upload.
  */
@@ -571,7 +571,7 @@ export default function ImportExportPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-indigo-600/30 border border-indigo-500/40 rounded-xl text-indigo-400">
+              <div className="p-2.5 bg-primary-600/30 border border-primary-500/40 rounded-xl text-indigo-400">
                 <FileSpreadsheet className="w-7 h-7" />
               </div>
               <div>
@@ -640,7 +640,7 @@ export default function ImportExportPage() {
           onClick={() => setActiveTab('paste')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
             activeTab === 'paste'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+              ? 'bg-primary-600 text-white shadow-md shadow-blue-500/20'
               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
           }`}
         >
@@ -653,7 +653,7 @@ export default function ImportExportPage() {
           onClick={() => setActiveTab('upload')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
             activeTab === 'upload'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+              ? 'bg-primary-600 text-white shadow-md shadow-blue-500/20'
               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
           }`}
         >
@@ -666,7 +666,7 @@ export default function ImportExportPage() {
           onClick={() => setActiveTab('export')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
             activeTab === 'export'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+              ? 'bg-primary-600 text-white shadow-md shadow-blue-500/20'
               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
           }`}
         >
@@ -678,7 +678,7 @@ export default function ImportExportPage() {
           onClick={() => setActiveTab('history')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
             activeTab === 'history'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+              ? 'bg-primary-600 text-white shadow-md shadow-blue-500/20'
               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'
           }`}
         >
@@ -698,7 +698,7 @@ export default function ImportExportPage() {
               <select
                 value={selectedEntityKey}
                 onChange={e => setSelectedEntityKey(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none"
               >
                 {entities.map(ent => (
                   <option key={ent.key} value={ent.key}>
@@ -714,25 +714,25 @@ export default function ImportExportPage() {
                   Import Mode
                 </label>
                 <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-1 rounded-lg border border-slate-300 dark:border-slate-700 text-xs">
-                  <label className="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer font-medium hover:text-blue-600">
+                  <label className="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer font-medium hover:text-primary-600">
                     <input
                       type="radio"
                       name="mode"
                       value="create_only"
                       checked={mode === 'create_only'}
                       onChange={() => setMode('create_only')}
-                      className="text-blue-600"
+                      className="text-primary-600"
                     />
                     <span>Create Only (Skip Duplicates)</span>
                   </label>
-                  <label className="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer font-medium hover:text-blue-600">
+                  <label className="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer font-medium hover:text-primary-600">
                     <input
                       type="radio"
                       name="mode"
                       value="update_existing"
                       checked={mode === 'update_existing'}
                       onChange={() => setMode('update_existing')}
-                      className="text-blue-600"
+                      className="text-primary-600"
                     />
                     <span>Update Existing (Upsert)</span>
                   </label>
@@ -747,7 +747,7 @@ export default function ImportExportPage() {
               <select
                 value={selectedAyId || ''}
                 onChange={e => setSelectedAyId(e.target.value ? Number(e.target.value) : undefined)}
-                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
               >
                 <option value="">Default (Active Academic Year)</option>
                 {academicYears.map(ay => (
@@ -778,7 +778,7 @@ export default function ImportExportPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePasteFromClipboardButton}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-xs font-semibold shadow-sm transition"
               >
                 <ClipboardCheck className="w-3.5 h-3.5" />
                 Paste from Clipboard
@@ -787,7 +787,7 @@ export default function ImportExportPage() {
                 onClick={handleLoadSampleData}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 text-xs font-medium transition"
               >
-                <FileText className="w-3.5 h-3.5 text-blue-500" />
+                <FileText className="w-3.5 h-3.5 text-primary-500" />
                 Load Sample Data
               </button>
               <button
@@ -811,13 +811,13 @@ export default function ImportExportPage() {
                 onClick={handleAddColumn}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 text-xs font-medium transition"
               >
-                <Plus className="w-3.5 h-3.5 text-indigo-500" />
+                <Plus className="w-3.5 h-3.5 text-primary-500" />
                 Add Column
               </button>
               <button
                 onClick={handleValidateGrid}
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-xs font-semibold shadow-sm transition disabled:opacity-50"
               >
                 {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                 Validate & Preview
@@ -854,7 +854,7 @@ export default function ImportExportPage() {
             ref={gridContainerRef}
             tabIndex={0}
             onPaste={handleGridPaste}
-            className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
             style={{ maxHeight: '520px' }}
           >
             <table className="w-full text-left text-xs border-collapse">
@@ -897,7 +897,7 @@ export default function ImportExportPage() {
                             }}
                             className={`w-full text-[11px] px-2 py-1 rounded border outline-none font-medium ${
                               currentMapping
-                                ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-400 text-indigo-700 dark:text-indigo-300'
+                                ? 'bg-primary-50 dark:bg-indigo-950/60 border-indigo-400 text-primary-700 dark:text-indigo-300'
                                 : 'bg-white dark:bg-slate-700 border-slate-300 text-slate-500'
                             }`}
                           >
@@ -1009,7 +1009,7 @@ export default function ImportExportPage() {
                               <span
                                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
                                   mode === 'update_existing'
-                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                                    ? 'bg-primary-100 text-primary-700 dark:bg-blue-950 dark:text-blue-300'
                                     : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
                                 }`}
                                 title={mode === 'update_existing' ? 'Will update existing record' : 'Will skip existing record'}
@@ -1047,7 +1047,7 @@ export default function ImportExportPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
             <div className="text-xs text-slate-500 space-y-0.5">
               <p className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <HelpCircle className="w-3.5 h-3.5 text-blue-500" />
+                <HelpCircle className="w-3.5 h-3.5 text-primary-500" />
                 Excel Copy-Paste Tips:
               </p>
               <p>• Copy any table from Excel or Google Sheets and click inside the grid then press <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border rounded font-mono">Ctrl+V</kbd>.</p>
@@ -1126,7 +1126,7 @@ export default function ImportExportPage() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => setActiveTab('history')}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold transition"
+                  className="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-xs font-semibold transition"
                 >
                   View Import History Log
                 </button>
@@ -1142,8 +1142,8 @@ export default function ImportExportPage() {
       {activeTab === 'upload' && (
         <div className="space-y-6">
           {/* Drag & Drop Zone */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary-500 dark:hover:border-primary-500 transition text-center space-y-4 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-primary-50 dark:bg-blue-950/40 text-primary-600 dark:text-blue-400 mx-auto flex items-center justify-center">
               <Upload className="w-8 h-8" />
             </div>
             <div>
@@ -1156,7 +1156,7 @@ export default function ImportExportPage() {
             </div>
 
             <div className="flex items-center justify-center gap-3">
-              <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold cursor-pointer shadow-md shadow-blue-500/20 transition">
+              <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold cursor-pointer shadow-md shadow-blue-500/20 transition">
                 <FileSpreadsheet className="w-4 h-4" />
                 <span>Browse Files</span>
                 <input
@@ -1179,7 +1179,7 @@ export default function ImportExportPage() {
           {/* File Parsing Loading */}
           {fileParsing && (
             <div className="p-8 text-center space-y-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-              <RefreshCw className="w-8 h-8 animate-spin text-blue-500 mx-auto" />
+              <RefreshCw className="w-8 h-8 animate-spin text-primary-500 mx-auto" />
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Parsing spreadsheet and validating records against database...
               </p>
@@ -1318,7 +1318,7 @@ export default function ImportExportPage() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Download className="w-5 h-5 text-indigo-500" />
+                <Download className="w-5 h-5 text-primary-500" />
                 Filtered Data Export
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1340,7 +1340,7 @@ export default function ImportExportPage() {
                       value="xlsx"
                       checked={exportFormat === 'xlsx'}
                       onChange={() => setExportFormat('xlsx')}
-                      className="text-blue-600"
+                      className="text-primary-600"
                     />
                     <span>Excel (.XLSX)</span>
                   </label>
@@ -1351,7 +1351,7 @@ export default function ImportExportPage() {
                       value="csv"
                       checked={exportFormat === 'csv'}
                       onChange={() => setExportFormat('csv')}
-                      className="text-blue-600"
+                      className="text-primary-600"
                     />
                     <span>CSV (.CSV)</span>
                   </label>
@@ -1365,7 +1365,7 @@ export default function ImportExportPage() {
                 <select
                   value={selectedBoardId || ''}
                   onChange={e => setSelectedBoardId(e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">All Boards</option>
                   {boards.map(b => (
@@ -1383,7 +1383,7 @@ export default function ImportExportPage() {
                 <select
                   value={selectedStandardId || ''}
                   onChange={e => setSelectedStandardId(e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">All Classes</option>
                   {standards.map(s => (
@@ -1401,7 +1401,7 @@ export default function ImportExportPage() {
                 <select
                   value={selectedDivisionId || ''}
                   onChange={e => setSelectedDivisionId(e.target.value ? Number(e.target.value) : undefined)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">All Batches</option>
                   {divisions.map(d => (
@@ -1442,7 +1442,7 @@ export default function ImportExportPage() {
                 <select
                   value={exportStatus}
                   onChange={e => setExportStatus(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3 py-2 text-xs font-medium outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">All Statuses</option>
                   <option value="active">Active Only</option>
@@ -1459,10 +1459,10 @@ export default function ImportExportPage() {
                   Formula Injection Sanitization Enabled
                 </p>
                 <p>
-                  Any cell starting with formula trigger symbols (<code className="text-indigo-500 font-mono">=</code>,{' '}
-                  <code className="text-indigo-500 font-mono">+</code>,{' '}
-                  <code className="text-indigo-500 font-mono">-</code>,{' '}
-                  <code className="text-indigo-500 font-mono">@</code>) is safely escaped with a leading apostrophe to prevent spreadsheet formula injection attacks when opened in Microsoft Excel.
+                  Any cell starting with formula trigger symbols (<code className="text-primary-500 font-mono">=</code>,{' '}
+                  <code className="text-primary-500 font-mono">+</code>,{' '}
+                  <code className="text-primary-500 font-mono">-</code>,{' '}
+                  <code className="text-primary-500 font-mono">@</code>) is safely escaped with a leading apostrophe to prevent spreadsheet formula injection attacks when opened in Microsoft Excel.
                 </p>
               </div>
             </div>
@@ -1471,7 +1471,7 @@ export default function ImportExportPage() {
               <button
                 onClick={handleExportData}
                 disabled={exporting}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition disabled:opacity-50"
               >
                 {exporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 Export & Download File
@@ -1622,9 +1622,9 @@ export default function ImportExportPage() {
                         {selectedHistoryDetail.reconciliation.created || 0}
                       </p>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200">
+                    <div className="p-2.5 rounded-lg bg-primary-50 dark:bg-blue-950/40 border border-blue-200">
                       <span className="text-slate-500">Updated</span>
-                      <p className="text-base font-bold text-blue-600">
+                      <p className="text-base font-bold text-primary-600">
                         {selectedHistoryDetail.reconciliation.updated || 0}
                       </p>
                     </div>

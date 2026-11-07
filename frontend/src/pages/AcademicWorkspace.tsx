@@ -437,7 +437,7 @@ export default function AcademicWorkspace() {
         sortable: true,
         filterable: true,
         filterType: 'number',
-        render: (val) => <span className="font-extrabold text-blue-700">{val}</span>,
+        render: (val) => <span className="font-extrabold text-primary-700">{val}</span>,
       },
       {
         id: 'available_seats',
@@ -463,7 +463,7 @@ export default function AcademicWorkspace() {
         filterType: 'number',
         render: (pct) => {
           const val = Number(pct || 0)
-          const barColor = val >= 90 ? 'bg-red-500' : val >= 70 ? 'bg-blue-600' : 'bg-emerald-500'
+          const barColor = val >= 90 ? 'bg-red-500' : val >= 70 ? 'bg-primary-600' : 'bg-emerald-500'
           return (
             <div className="flex items-center justify-center gap-2">
               <div className="w-16 bg-slate-200 rounded-full h-2 overflow-hidden">
@@ -520,7 +520,7 @@ export default function AcademicWorkspace() {
       },
       enrolled: (rows: BatchCapacityReportRow[]) => {
         const sum = rows.reduce((acc, r) => acc + Number(r.enrolled || 0), 0)
-        return <span className="font-extrabold text-blue-700">{sum}</span>
+        return <span className="font-extrabold text-primary-700">{sum}</span>
       },
       available_seats: (rows: BatchCapacityReportRow[]) => {
         const sum = rows.reduce((acc, r) => acc + Number(r.available_seats || 0), 0)
@@ -530,7 +530,7 @@ export default function AcademicWorkspace() {
         const totalCap = rows.reduce((acc, r) => acc + Number(r.capacity || 0), 0)
         const totalEnr = rows.reduce((acc, r) => acc + Number(r.enrolled || 0), 0)
         const avg = totalCap > 0 ? Math.round((totalEnr / totalCap) * 100) : 0
-        return <span className="font-extrabold text-blue-700">{avg}% Avg</span>
+        return <span className="font-extrabold text-primary-700">{avg}% Avg</span>
       },
     }),
     []
@@ -574,7 +574,7 @@ export default function AcademicWorkspace() {
         sortable: true,
         filterable: true,
         filterType: 'number',
-        render: (val) => <span className="font-mono text-blue-600 font-semibold">Level {val}</span>,
+        render: (val) => <span className="font-mono text-primary-600 font-semibold">Level {val}</span>,
       },
       {
         id: 'batches_count',
@@ -634,7 +634,7 @@ export default function AcademicWorkspace() {
         sortable: true,
         filterable: true,
         filterType: 'number',
-        render: (val) => <span className="font-extrabold text-blue-600">{val}%</span>,
+        render: (val) => <span className="font-extrabold text-primary-600">{val}%</span>,
       },
     ],
     []
@@ -667,7 +667,7 @@ export default function AcademicWorkspace() {
         const totalCap = rows.reduce((acc, r) => acc + Number(r.total_capacity || 0), 0)
         const totalEnr = rows.reduce((acc, r) => acc + Number(r.enrolled_count || 0), 0)
         const avg = totalCap > 0 ? Math.round((totalEnr / totalCap) * 100) : 0
-        return <span className="font-extrabold text-blue-700">{avg}% Avg</span>
+        return <span className="font-extrabold text-primary-700">{avg}% Avg</span>
       },
     }),
     []
@@ -726,7 +726,7 @@ export default function AcademicWorkspace() {
         sortable: true,
         filterable: true,
         filterType: 'number',
-        render: (val) => <span className="font-bold text-blue-700">{val}</span>,
+        render: (val) => <span className="font-bold text-primary-700">{val}</span>,
       },
       {
         id: 'weekly_sessions_count',
@@ -765,7 +765,7 @@ export default function AcademicWorkspace() {
       ),
       assigned_batches_count: (rows: FacultyLoadReportRow[]) => {
         const sum = rows.reduce((acc, r) => acc + Number(r.assigned_batches_count || 0), 0)
-        return <span className="font-extrabold text-blue-700">{sum}</span>
+        return <span className="font-extrabold text-primary-700">{sum}</span>
       },
       weekly_sessions_count: (rows: FacultyLoadReportRow[]) => {
         const sum = rows.reduce((acc, r) => acc + Number(r.weekly_sessions_count || 0), 0)
@@ -1319,7 +1319,7 @@ export default function AcademicWorkspace() {
               onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-sm shadow-primary-500/20'
+                  ? 'bg-primary-600 text-white shadow-sm shadow-primary-500/20'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
@@ -1342,7 +1342,7 @@ export default function AcademicWorkspace() {
               <div className="relative">
                 <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-3 pointer-events-none" />
                 <select
-                  className="w-full bg-gray-50/80 border border-gray-300/80 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none"
+                  className="w-full bg-gray-50/80 border border-gray-300/80 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all appearance-none"
                   value={selectedAcademicYearId || ''}
                   disabled
                 >
@@ -1366,7 +1366,7 @@ export default function AcademicWorkspace() {
                       setSelectedTreeBoardId(Number(e.target.value))
                     }
                   }}
-                  className="w-full bg-gray-50/80 border border-gray-300/80 rounded-xl px-3 pr-8 py-2 text-xs sm:text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none"
+                  className="w-full bg-gray-50/80 border border-gray-300/80 rounded-xl px-3 pr-8 py-2 text-xs sm:text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all appearance-none"
                 >
                   <option value="all">All Boards</option>
                   {boards.map((b) => (
@@ -1393,7 +1393,7 @@ export default function AcademicWorkspace() {
                       setSelectedTreeStandardId(Number(e.target.value))
                     }
                   }}
-                  className="w-full bg-gray-50/80 border border-gray-300/80 rounded-xl px-3 pr-8 py-2 text-xs sm:text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all appearance-none"
+                  className="w-full bg-gray-50/80 border border-gray-300/80 rounded-xl px-3 pr-8 py-2 text-xs sm:text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all appearance-none"
                 >
                   <option value="all">All Classes</option>
                   {standards.map((s) => (
@@ -1418,7 +1418,7 @@ export default function AcademicWorkspace() {
                   placeholder="Search batch, teacher, room, student..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-gray-50/80 border border-gray-300/80 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
+                  className="w-full bg-gray-50/80 border border-gray-300/80 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -1447,7 +1447,7 @@ export default function AcademicWorkspace() {
             {/* Card 1: Total Students */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200/80 flex items-center justify-between">
               <div className="space-y-1">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
                   <Users className="w-5 h-5" />
                 </div>
                 <div className="pt-2">
@@ -1482,7 +1482,7 @@ export default function AcademicWorkspace() {
             {/* Card 3: Active Batches */}
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200/80 flex items-center justify-between">
               <div className="space-y-1">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <div className="pt-2">
@@ -1561,7 +1561,7 @@ export default function AcademicWorkspace() {
             <div className="lg:col-span-3">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 p-4 sticky top-6">
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
-                  <Layers className="w-4 h-4 text-blue-600" />
+                  <Layers className="w-4 h-4 text-primary-600" />
                   <h2 className="text-sm font-bold text-gray-900">Academic Structure</h2>
                 </div>
 
@@ -1582,7 +1582,7 @@ export default function AcademicWorkspace() {
                             ) : (
                               <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                             )}
-                            <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-extrabold">
+                            <span className="px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 font-extrabold">
                               {boardNode.board_code}
                             </span>
                           </div>
@@ -1604,7 +1604,7 @@ export default function AcademicWorkspace() {
                                   }}
                                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                     isClassSelected
-                                      ? 'bg-blue-600 text-white shadow-sm shadow-primary-500/20'
+                                      ? 'bg-primary-600 text-white shadow-sm shadow-primary-500/20'
                                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                   }`}
                                 >
@@ -1632,14 +1632,14 @@ export default function AcademicWorkspace() {
                 <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
                   <button
                     onClick={handleOpenAddStandard}
-                    className="w-full py-2 px-3 border border-dashed border-gray-300 hover:border-blue-500 text-gray-600 hover:text-blue-600 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                    className="w-full py-2 px-3 border border-dashed border-gray-300 hover:border-primary-500 text-gray-600 hover:text-primary-600 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add Class / Standard
                   </button>
                   <button
                     onClick={handleOpenAddBoard}
-                    className="w-full py-2 px-3 border border-dashed border-gray-300 hover:border-blue-500 text-gray-600 hover:text-blue-600 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                    className="w-full py-2 px-3 border border-dashed border-gray-300 hover:border-primary-500 text-gray-600 hover:text-primary-600 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add Board
@@ -1654,7 +1654,7 @@ export default function AcademicWorkspace() {
                 {/* Class Header & View Toggle */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
                       <GraduationCap className="w-5 h-5" />
                     </div>
                     <div>
@@ -1714,7 +1714,7 @@ export default function AcademicWorkspace() {
                       onClick={() => setWorkspaceSubTab(subTab.id as any)}
                       className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
                         workspaceSubTab === subTab.id
-                          ? 'border-blue-600 text-blue-600'
+                          ? 'border-primary-600 text-primary-600'
                           : 'border-transparent text-gray-500 hover:text-gray-900'
                       }`}
                     >
@@ -1752,7 +1752,7 @@ export default function AcademicWorkspace() {
                               <div>
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="flex items-start gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center flex-shrink-0">
                                       <Users className="w-5 h-5" />
                                     </div>
                                     <div>
@@ -1765,7 +1765,7 @@ export default function AcademicWorkspace() {
                                             isActive
                                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                               : isPlanned
-                                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                              ? 'bg-primary-50 text-primary-700 border border-blue-200'
                                               : 'bg-gray-100 text-gray-600'
                                           }`}
                                         >
@@ -1816,7 +1816,7 @@ export default function AcademicWorkspace() {
                               <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
                                 <button
                                   onClick={() => handleOpenRoster(batch.id)}
-                                  className="flex-1 py-1.5 px-3 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-gray-200 transition-colors"
+                                  className="flex-1 py-1.5 px-3 bg-gray-50 hover:bg-primary-50 hover:text-primary-600 text-gray-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-gray-200 transition-colors"
                                 >
                                   <Users className="w-3.5 h-3.5" />
                                   View Roster ({batch.enrolled_count || 0})
@@ -1893,7 +1893,7 @@ export default function AcademicWorkspace() {
                                     className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
                                       b.status === 'active'
                                         ? 'bg-emerald-50 text-emerald-700'
-                                        : 'bg-blue-50 text-blue-700'
+                                        : 'bg-primary-50 text-primary-700'
                                     }`}
                                   >
                                     {b.status}
@@ -1902,7 +1902,7 @@ export default function AcademicWorkspace() {
                                 <td className="py-3 px-3 text-right space-x-1">
                                   <button
                                     onClick={() => handleOpenRoster(b.id)}
-                                    className="px-2.5 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[11px] font-bold"
+                                    className="px-2.5 py-1 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-lg text-[11px] font-bold"
                                   >
                                     Roster
                                   </button>
@@ -1931,7 +1931,7 @@ export default function AcademicWorkspace() {
                       </p>
                       <button
                         onClick={() => handleOpenAddSubject(currentTreeStandard?.id)}
-                        className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+                        className="text-xs font-bold text-primary-600 hover:text-primary-700 inline-flex items-center gap-1"
                       >
                         <Plus className="w-3.5 h-3.5" /> Add Subject to Class
                       </button>
@@ -1943,13 +1943,13 @@ export default function AcademicWorkspace() {
                           className="p-3.5 rounded-xl border border-gray-200/80 bg-gray-50/50 flex items-center justify-between hover:border-blue-300 transition-colors"
                         >
                           <div className="flex items-center gap-2.5">
-                            <BookOpen className="w-4 h-4 text-blue-500" />
+                            <BookOpen className="w-4 h-4 text-primary-500" />
                             <div>
                               <p className="text-xs font-bold text-gray-800">{sub.name}</p>
                               <p className="text-[10px] text-gray-400 font-mono">{sub.code || 'CORE'}</p>
                             </div>
                           </div>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100/70 text-blue-700">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-100/70 text-primary-700">
                             {sub.max_marks} Marks
                           </span>
                         </div>
@@ -1961,12 +1961,12 @@ export default function AcademicWorkspace() {
                 {/* Sub-tab 3: Timetable */}
                 {workspaceSubTab === 'timetable' && (
                   <div className="pt-5 space-y-4">
-                    <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 flex items-center justify-between">
+                    <div className="p-4 rounded-xl bg-primary-50/60 border border-blue-200 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-blue-600" />
+                        <Calendar className="w-5 h-5 text-primary-600" />
                         <div>
-                          <h4 className="text-xs font-bold text-blue-900">Weekly Schedule Active</h4>
-                          <p className="text-[11px] text-blue-700">
+                          <h4 className="text-xs font-bold text-primary-900">Weekly Schedule Active</h4>
+                          <p className="text-[11px] text-primary-700">
                             Zero schedule or room conflicts detected across active batches.
                           </p>
                         </div>
@@ -1997,7 +1997,7 @@ export default function AcademicWorkspace() {
                                   <p className="text-gray-600">
                                     {s.subject_name} • {s.room_number}
                                   </p>
-                                  <p className="text-blue-600 font-semibold text-[10px]">{s.division_name}</p>
+                                  <p className="text-primary-600 font-semibold text-[10px]">{s.division_name}</p>
                                 </div>
                               ))}
                               {daySessions.length === 0 && (
@@ -2020,7 +2020,7 @@ export default function AcademicWorkspace() {
                       </p>
                       <button
                         onClick={() => handleTabChange('enrollment')}
-                        className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+                        className="text-xs font-bold text-primary-600 hover:text-primary-700 inline-flex items-center gap-1"
                       >
                         Open Enrollment Manager <ArrowUpRight className="w-3.5 h-3.5" />
                       </button>
@@ -2035,13 +2035,13 @@ export default function AcademicWorkspace() {
                           <div>
                             <p className="font-bold text-sm text-gray-900">{b.name}</p>
                             <p className="text-xs text-gray-500 font-medium">{b.code}</p>
-                            <p className="text-xs text-blue-600 font-semibold mt-1">
+                            <p className="text-xs text-primary-600 font-semibold mt-1">
                               {b.enrolled_count || 0} students enrolled
                             </p>
                           </div>
                           <button
                             onClick={() => handleOpenRoster(b.id)}
-                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs transition-colors"
+                            className="px-3 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 font-bold rounded-xl text-xs transition-colors"
                           >
                             Roster
                           </button>
@@ -2116,7 +2116,7 @@ export default function AcademicWorkspace() {
                 <div>
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-extrabold text-xs">
+                      <span className="px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 font-extrabold text-xs">
                         {b.code}
                       </span>
                       <h3 className="font-extrabold text-base text-gray-900 mt-2">{b.name}</h3>
@@ -2143,7 +2143,7 @@ export default function AcademicWorkspace() {
                       <p className="text-[10px] text-gray-500 font-medium">Batches</p>
                     </div>
                     <div className="p-2 bg-gray-50 rounded-xl">
-                      <p className="text-sm font-extrabold text-blue-700">{b.students_count ?? 18}</p>
+                      <p className="text-sm font-extrabold text-primary-700">{b.students_count ?? 18}</p>
                       <p className="text-[10px] text-gray-500 font-medium">Students</p>
                     </div>
                   </div>
@@ -2208,7 +2208,7 @@ export default function AcademicWorkspace() {
                 <tbody className="divide-y divide-gray-100 font-medium">
                   {standards.map((s) => (
                     <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-blue-600">Level {s.level}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-primary-600">Level {s.level}</td>
                       <td className="py-3 px-4 font-bold text-gray-900">{s.name}</td>
                       <td className="py-3 px-4 text-gray-500">{s.description || 'Standard curriculum'}</td>
                       <td className="py-3 px-4 font-bold text-gray-800">{s.batches_count ?? 3}</td>
@@ -2217,7 +2217,7 @@ export default function AcademicWorkspace() {
                       <td className="py-3 px-4 text-right space-x-2">
                         <button
                           onClick={() => handleOpenEditStandard(s)}
-                          className="px-2.5 py-1 bg-gray-100 hover:bg-blue-50 hover:text-blue-600 rounded-lg text-[11px] font-bold"
+                          className="px-2.5 py-1 bg-gray-100 hover:bg-primary-50 hover:text-primary-600 rounded-lg text-[11px] font-bold"
                         >
                           Edit
                         </button>
@@ -2226,7 +2226,7 @@ export default function AcademicWorkspace() {
                             setSelectedStandardId(String(s.id))
                             handleTabChange('batches')
                           }}
-                          className="px-2.5 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[11px] font-bold"
+                          className="px-2.5 py-1 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-lg text-[11px] font-bold"
                         >
                           View Batches
                         </button>
@@ -2283,7 +2283,7 @@ export default function AcademicWorkspace() {
                     {subjects.map((sub) => (
                       <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
                         <td className="py-3 px-4 font-bold text-gray-900 flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                          <BookOpen className="w-4 h-4 text-primary-500 flex-shrink-0" />
                           {sub.name}
                         </td>
                         <td className="py-3 px-4 font-mono font-bold text-gray-700">{sub.code}</td>
@@ -2293,7 +2293,7 @@ export default function AcademicWorkspace() {
                         <td className="py-3 px-4">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              sub.is_core ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                              sub.is_core ? 'bg-primary-50 text-primary-700' : 'bg-purple-50 text-purple-700'
                             }`}
                           >
                             {sub.is_core ? 'Core' : 'Elective'}
@@ -2302,7 +2302,7 @@ export default function AcademicWorkspace() {
                         <td className="py-3 px-4 text-right space-x-1">
                           <button
                             onClick={() => handleOpenEditSubject(sub)}
-                            className="p-1 text-gray-400 hover:text-blue-600"
+                            className="p-1 text-gray-400 hover:text-primary-600"
                             title="Edit Subject"
                           >
                             <Edit2 className="w-3.5 h-3.5 inline" />
@@ -2390,14 +2390,14 @@ export default function AcademicWorkspace() {
                             className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full capitalize ${
                               batch.status === 'active'
                                 ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-blue-50 text-blue-700'
+                                : 'bg-primary-50 text-primary-700'
                             }`}
                           >
                             {batch.status}
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 font-mono mt-0.5">{batch.code}</p>
-                        <p className="text-xs text-blue-600 font-semibold mt-1">
+                        <p className="text-xs text-primary-600 font-semibold mt-1">
                           {batch.board_name || 'Board'} • {batch.standard_name}
                         </p>
                       </div>
@@ -2428,7 +2428,7 @@ export default function AcademicWorkspace() {
                   <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
                     <button
                       onClick={() => handleOpenRoster(batch.id)}
-                      className="flex-1 py-1.5 px-3 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 border"
+                      className="flex-1 py-1.5 px-3 bg-gray-50 hover:bg-primary-50 hover:text-primary-600 text-gray-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 border"
                     >
                       <Users className="w-3.5 h-3.5" /> Roster ({batch.enrolled_count || 0})
                     </button>
@@ -2490,7 +2490,7 @@ export default function AcademicWorkspace() {
                         <td className="py-3 px-4 text-right space-x-1">
                           <button
                             onClick={() => handleOpenRoster(b.id)}
-                            className="px-2.5 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[11px] font-bold"
+                            className="px-2.5 py-1 bg-primary-50 text-primary-600 hover:bg-primary-100 rounded-lg text-[11px] font-bold"
                           >
                             Roster
                           </button>
@@ -2563,7 +2563,7 @@ export default function AcademicWorkspace() {
                 <div key={day} className="bg-white rounded-2xl p-3 border border-gray-200/80 shadow-sm flex flex-col">
                   <div className="flex items-center justify-between pb-2 border-b mb-2">
                     <p className="font-extrabold text-xs text-gray-900">{day}</p>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-700">
                       {daySessions.length}
                     </span>
                   </div>
@@ -2572,7 +2572,7 @@ export default function AcademicWorkspace() {
                     {daySessions.map((s) => (
                       <div
                         key={s.id}
-                        className="p-2.5 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-blue-50/30 hover:border-blue-200 transition-all text-xs space-y-1 relative group"
+                        className="p-2.5 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-primary-50/30 hover:border-blue-200 transition-all text-xs space-y-1 relative group"
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-extrabold text-gray-900 text-[11px]">{s.subject_name}</span>
@@ -2592,7 +2592,7 @@ export default function AcademicWorkspace() {
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
                           />
                         </div>
-                        <p className="text-[11px] font-semibold text-blue-600">{s.division_name}</p>
+                        <p className="text-[11px] font-semibold text-primary-600">{s.division_name}</p>
                         <p className="text-[10px] text-gray-500 font-mono">
                           {s.start_time} - {s.end_time}
                         </p>
@@ -2627,7 +2627,7 @@ export default function AcademicWorkspace() {
                   {enrollmentStats?.total_active_enrollments ?? 39}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
                 <UserCheck className="w-5 h-5" />
               </div>
             </div>
@@ -2735,7 +2735,7 @@ export default function AcademicWorkspace() {
                           <span className="text-[10px] text-gray-400 ml-1">({enr.board_code || 'ICSE'})</span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold">
+                          <span className="px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 font-bold">
                             {enr.division_name}
                           </span>
                         </td>
@@ -2765,7 +2765,7 @@ export default function AcademicWorkspace() {
                           )}
                           <Link
                             to={`/students/${enr.student_id}`}
-                            className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-lg text-[11px] inline-flex items-center gap-1"
+                            className="px-2.5 py-1 bg-primary-50 hover:bg-primary-100 text-primary-600 font-bold rounded-lg text-[11px] inline-flex items-center gap-1"
                           >
                             Profile <ArrowUpRight className="w-3 h-3" />
                           </Link>
@@ -2797,7 +2797,7 @@ export default function AcademicWorkspace() {
                 <button
                   onClick={() => setActiveReportType('batch-capacity')}
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    activeReportType === 'batch-capacity' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+                    activeReportType === 'batch-capacity' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
                   }`}
                 >
                   Batch Capacity
@@ -2805,7 +2805,7 @@ export default function AcademicWorkspace() {
                 <button
                   onClick={() => setActiveReportType('distribution')}
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    activeReportType === 'distribution' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+                    activeReportType === 'distribution' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
                   }`}
                 >
                   Board Distribution
@@ -2813,7 +2813,7 @@ export default function AcademicWorkspace() {
                 <button
                   onClick={() => setActiveReportType('faculty-load')}
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    activeReportType === 'faculty-load' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'
+                    activeReportType === 'faculty-load' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
                   }`}
                 >
                   Faculty Load
@@ -2896,9 +2896,9 @@ export default function AcademicWorkspace() {
               </div>
               <Link
                 to="/settings?category=academic"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50/80 hover:bg-blue-100/80 px-3 py-1.5 rounded-xl border border-blue-200/60 shadow-2xs transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-800 bg-primary-50/80 hover:bg-primary-100/80 px-3 py-1.5 rounded-xl border border-blue-200/60 shadow-2xs transition-colors"
               >
-                <Sliders className="w-3.5 h-3.5 text-blue-600" />
+                <Sliders className="w-3.5 h-3.5 text-primary-600" />
                 <span>Full Institute Settings</span>
                 <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
               </Link>
@@ -2937,7 +2937,7 @@ export default function AcademicWorkspace() {
                     onChange={(e) =>
                       setAcademicSettings({ ...academicSettings, enforceCapacityStrict: e.target.checked })
                     }
-                    className="rounded text-blue-600"
+                    className="rounded text-primary-600"
                   />
                   <label htmlFor="strictCap" className="font-semibold text-gray-700">
                     Enforce strict capacity check (disallow student enrollment when batch is full)
@@ -2955,7 +2955,7 @@ export default function AcademicWorkspace() {
                     onChange={(e) =>
                       setAcademicSettings({ ...academicSettings, preventTimetableConflicts: e.target.checked })
                     }
-                    className="rounded text-blue-600"
+                    className="rounded text-primary-600"
                   />
                   <label htmlFor="preventConflict" className="font-semibold text-gray-700">
                     Prevent overlapping sessions in the same classroom or for the same batch
@@ -3544,7 +3544,7 @@ export default function AcademicWorkspace() {
               id="isCore"
               checked={subjectForm.is_core}
               onChange={(e) => setSubjectForm({ ...subjectForm, is_core: e.target.checked })}
-              className="rounded text-blue-600"
+              className="rounded text-primary-600"
             />
             <label htmlFor="isCore" className="font-semibold text-gray-700">
               Core mandatory subject (unchecked = elective/optional)
@@ -3680,7 +3680,7 @@ export default function AcademicWorkspace() {
               type="button"
               onClick={handleCheckScheduleConflict}
               disabled={isCheckingConflict}
-              className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+              className="text-xs font-bold text-primary-600 hover:text-primary-700 inline-flex items-center gap-1"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               {isCheckingConflict ? 'Checking...' : 'Check Schedule Conflict'}
@@ -3822,9 +3822,9 @@ export default function AcademicWorkspace() {
           }}
           className="space-y-4 text-xs"
         >
-          <div className="p-3 bg-blue-50 text-blue-900 rounded-xl space-y-1">
+          <div className="p-3 bg-primary-50 text-primary-900 rounded-xl space-y-1">
             <p className="font-bold">Current Batch Assignment</p>
-            <p className="text-[11px] text-blue-700">
+            <p className="text-[11px] text-primary-700">
               {selectedEnrollmentForTransfer?.division_name} ({selectedEnrollmentForTransfer?.standard_name})
             </p>
           </div>
@@ -3904,7 +3904,7 @@ export default function AcademicWorkspace() {
                 placeholder="Search students..."
                 value={rosterSearch}
                 onChange={(e) => setRosterSearch(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div className="flex items-center gap-3">
@@ -3952,7 +3952,7 @@ export default function AcademicWorkspace() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 font-medium">
                   {filteredRosterStudents.map((s: BatchRosterStudent) => (
-                    <tr key={s.id} className="hover:bg-blue-50/40 transition-colors">
+                    <tr key={s.id} className="hover:bg-primary-50/40 transition-colors">
                       <td className="py-2 px-3 font-mono font-bold text-gray-700">{s.roll_number}</td>
                       <td className="py-2 px-3 font-mono text-gray-500">{s.admission_number}</td>
                       <td className="py-2 px-3 font-bold text-gray-900">{s.full_name}</td>
@@ -3974,7 +3974,7 @@ export default function AcademicWorkspace() {
                       <td className="py-2 px-3 text-right">
                         <Link
                           to={`/students/${s.id}`}
-                          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-lg text-[11px] inline-flex items-center gap-1"
+                          className="px-2.5 py-1 bg-primary-50 hover:bg-primary-100 text-primary-600 font-bold rounded-lg text-[11px] inline-flex items-center gap-1"
                         >
                           View <ArrowUpRight className="w-3 h-3" />
                         </Link>
@@ -4020,7 +4020,7 @@ export default function AcademicWorkspace() {
               <div className="p-2.5 bg-gray-50 rounded-xl border">
                 <p className="font-bold text-gray-900">Monday - Friday</p>
                 <p className="text-gray-500 font-mono mt-0.5">{scheduleBatch?.schedule_timing}</p>
-                <p className="text-blue-600 font-semibold mt-1">Room: {scheduleBatch?.room_number}</p>
+                <p className="text-primary-600 font-semibold mt-1">Room: {scheduleBatch?.room_number}</p>
               </div>
               <div className="p-2.5 bg-gray-50 rounded-xl border">
                 <p className="font-bold text-gray-900">Faculty In-Charge</p>

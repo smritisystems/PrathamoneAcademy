@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Attendance management page for daily batch roll call, attendance registers, and absenteeism tracking.
  */
@@ -558,7 +558,7 @@ export default function Attendance() {
             <span className="text-green-600 font-semibold">Present: {presentCount}</span>
             <span className="text-red-600 font-semibold">Absent: {absentCount}</span>
             <span className="text-yellow-600 font-semibold">Late: {lateCount}</span>
-            <span className="text-blue-600 font-semibold">
+            <span className="text-primary-600 font-semibold">
               Attendance:{' '}
               {rows.length > 0 ? Math.round((presentCount / rows.length) * 100) : 0}%
             </span>
@@ -592,7 +592,7 @@ export default function Attendance() {
             </div>
           ) : loadingStudents ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
               <p className="text-sm text-gray-500 mt-2">Loading students roster...</p>
             </div>
           ) : rows.length === 0 ? (

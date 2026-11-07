@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Examinations workspace managing exam schedules, marks entry, class analytics, and graphical report cards.
  */
@@ -329,7 +329,7 @@ export default function ExaminationsPage() {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setActiveMarksExam({ id: ex.id, name: ex.name })}
-                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-200 transition"
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-lg border border-indigo-200 transition"
                           title="Enter student marks for all subjects"
                         >
                           <FileEdit className="w-3.5 h-3.5" /> Marks
@@ -463,7 +463,7 @@ export default function ExaminationsPage() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-600 rounded-xl">
+                <div className="p-2 bg-primary-600 rounded-xl">
                   <FileEdit className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -506,7 +506,7 @@ export default function ExaminationsPage() {
             <div className="p-6 overflow-y-auto flex-1">
               {isLoadingMarks ? (
                 <div className="flex items-center justify-center py-20">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                 </div>
               ) : !marksSheet || marksSheet.students.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
@@ -698,12 +698,12 @@ export default function ExaminationsPage() {
                         {analytics.pass_count} passed • {analytics.fail_count} failed
                       </span>
                     </div>
-                    <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200">
-                      <span className="text-xs font-semibold text-indigo-700 uppercase block">Class Average</span>
-                      <div className="text-2xl font-black text-indigo-800 mt-1">
+                    <div className="p-4 rounded-xl bg-primary-50 border border-indigo-200">
+                      <span className="text-xs font-semibold text-primary-700 uppercase block">Class Average</span>
+                      <div className="text-2xl font-black text-primary-800 mt-1">
                         {analytics.class_average}%
                       </div>
-                      <span className="text-[11px] text-indigo-600 font-medium">Aggregate mean</span>
+                      <span className="text-[11px] text-primary-600 font-medium">Aggregate mean</span>
                     </div>
                     <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
                       <span className="text-xs font-semibold text-amber-700 uppercase block">Highest Score</span>
@@ -750,7 +750,7 @@ export default function ExaminationsPage() {
                   {analytics.subject_analytics && analytics.subject_analytics.length > 0 && (
                     <div className="p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
                       <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-blue-600" /> Subject-Wise Performance
+                        <TrendingUp className="w-4 h-4 text-primary-600" /> Subject-Wise Performance
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {analytics.subject_analytics.map((sub) => (

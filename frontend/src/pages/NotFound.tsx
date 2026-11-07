@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-08
  *
  * @description 404 Not Found error page with navigation shortcuts back to dashboard.
  */
@@ -32,7 +32,7 @@ export default function NotFoundPage() {
       </p>
       <Link
         to="/"
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
       >
         <Home className="w-4 h-4" />
         Go to Dashboard

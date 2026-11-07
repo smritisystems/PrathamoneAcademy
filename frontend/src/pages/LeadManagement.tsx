@@ -250,7 +250,7 @@ export default function LeadManagement() {
   const getStageBadge = (stage: string) => {
     switch (stage) {
       case 'new_enquiry':
-        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">New</span>
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-50 text-primary-700 border border-blue-200">New</span>
       case 'contacted':
         return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">Contacted</span>
       case 'counselling_demo':
@@ -378,7 +378,7 @@ export default function LeadManagement() {
         <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">Total Leads</span>
-            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center">
               <Users className="w-3.5 h-3.5" />
             </div>
           </div>
@@ -544,7 +544,7 @@ export default function LeadManagement() {
           <select
             value={selectedCounsellorId ?? ''}
             onChange={(e) => setSelectedCounsellorId(e.target.value ? Number(e.target.value) : undefined)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-primary-500"
           >
             <option value="">All Counsellors</option>
             {counsellors.map((c: User) => (
@@ -558,7 +558,7 @@ export default function LeadManagement() {
           <select
             value={selectedSource}
             onChange={(e) => setSelectedSource(e.target.value)}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-medium text-slate-700 outline-hidden focus:ring-2 focus:ring-primary-500"
           >
             <option value="All Sources">All Sources</option>
             <option value="Website">Website</option>
@@ -577,7 +577,7 @@ export default function LeadManagement() {
               onClick={() => setViewMode('list')}
               title="List View"
               className={`p-1.5 rounded-md transition-all ${
-                viewMode === 'list' ? 'bg-white shadow-2xs text-blue-600' : 'text-slate-500 hover:text-slate-800'
+                viewMode === 'list' ? 'bg-white shadow-2xs text-primary-600' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
@@ -586,7 +586,7 @@ export default function LeadManagement() {
               onClick={() => setViewMode('pipeline')}
               title="Kanban Pipeline View"
               className={`p-1.5 rounded-md transition-all ${
-                viewMode === 'pipeline' ? 'bg-white shadow-2xs text-blue-600' : 'text-slate-500 hover:text-slate-800'
+                viewMode === 'pipeline' ? 'bg-white shadow-2xs text-primary-600' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
@@ -609,7 +609,7 @@ export default function LeadManagement() {
                   }
 
                   const stageHeaderColor = {
-                    new_enquiry: 'bg-blue-50 text-blue-700 border-blue-200',
+                    new_enquiry: 'bg-primary-50 text-primary-700 border-blue-200',
                     contacted: 'bg-amber-50 text-amber-700 border-amber-200',
                     counselling_demo: 'bg-purple-50 text-purple-700 border-purple-200',
                     interested: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -645,12 +645,12 @@ export default function LeadManagement() {
                               onClick={() => setSelectedLeadId(leadItem.id)}
                               className={`p-3 rounded-xl bg-white border cursor-pointer transition-all shadow-2xs hover:shadow-sm ${
                                 isSelected
-                                  ? 'border-blue-500 ring-2 ring-blue-500/20'
+                                  ? 'border-primary-500 ring-2 ring-blue-500/20'
                                   : 'border-slate-200/80 hover:border-slate-300'
                               }`}
                             >
                               <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
+                                <div className="w-7 h-7 rounded-full bg-primary-100 text-primary-700 font-bold text-xs flex items-center justify-center shrink-0">
                                   {leadItem.first_name?.[0] || 'L'}
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -695,7 +695,7 @@ export default function LeadManagement() {
                             }
                             setIsNewLeadModalOpen(true)
                           }}
-                          className="w-full py-1.5 text-center text-xs font-semibold text-slate-600 hover:text-blue-700 hover:bg-white rounded-lg transition-colors border border-dashed border-slate-300 hover:border-blue-300"
+                          className="w-full py-1.5 text-center text-xs font-semibold text-slate-600 hover:text-primary-700 hover:bg-white rounded-lg transition-colors border border-dashed border-slate-300 hover:border-blue-300"
                         >
                           + Add Lead
                         </button>
@@ -745,7 +745,7 @@ export default function LeadManagement() {
               setViewMode('list')
               setTableFilter('recent')
             }}
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+            className="text-xs font-bold text-primary-600 hover:text-primary-700 inline-flex items-center gap-1"
           >
             <span>View All Leads</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -760,7 +760,7 @@ export default function LeadManagement() {
                 <th className="w-10 px-4 py-3 text-center">
                   <input
                     type="checkbox"
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                     aria-label="Select all leads"
                   />
                 </th>
@@ -784,13 +784,13 @@ export default function LeadManagement() {
                     key={item.id}
                     onClick={() => setSelectedLeadId(item.id)}
                     className={`hover:bg-slate-50/80 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-blue-50/40' : ''
+                      isSelected ? 'bg-primary-50/40' : ''
                     }`}
                   >
                     <td className="w-10 px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                         aria-label={`Select lead ${item.lead_number}`}
                       />
                     </td>
@@ -821,7 +821,7 @@ export default function LeadManagement() {
                     <td className="px-4 py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
                       <a
                         href={`tel:${item.phone}`}
-                        className="p-1 text-slate-400 hover:text-blue-600 inline-block rounded"
+                        className="p-1 text-slate-400 hover:text-primary-600 inline-block rounded"
                         title="Call"
                       >
                         <Phone className="w-3.5 h-3.5" />
@@ -877,7 +877,7 @@ export default function LeadManagement() {
                 {/* Dossier Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-indigo-600" />
+                    <Users className="w-4 h-4 text-primary-600" />
                     <h3 className="text-sm font-black text-slate-900 tracking-tight">Lead Dossier</h3>
                   </div>
                   <div className="flex items-center gap-2">
@@ -905,7 +905,7 @@ export default function LeadManagement() {
                       onClick={() => {
                         toast('Full Dossier Profile view docked inline.')
                       }}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary-600 hover:text-primary-700"
                     >
                       <span>Open Full Profile</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />
@@ -917,7 +917,7 @@ export default function LeadManagement() {
                 <div id="lead-dossier-printable" className="space-y-4">
                 {/* Lead Identity Hero */}
                 <div className="flex items-start gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 text-lg font-black flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-primary-100 text-primary-700 text-lg font-black flex items-center justify-center shrink-0">
                     {leadDossier.first_name?.[0] || 'L'}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -936,7 +936,7 @@ export default function LeadManagement() {
                 {/* Contact Quick Strip */}
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs text-slate-700">
                   <div className="flex items-center gap-1.5 font-semibold">
-                    <Phone className="w-3.5 h-3.5 text-blue-600" />
+                    <Phone className="w-3.5 h-3.5 text-primary-600" />
                     <span>{leadDossier.phone}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -974,7 +974,7 @@ export default function LeadManagement() {
                       onClick={() => setDossierTab(tab.id)}
                       className={`px-3 py-1.5 text-xs font-bold border-b-2 transition-all ${
                         dossierTab === tab.id
-                          ? 'border-blue-600 text-blue-600'
+                          ? 'border-primary-600 text-primary-600'
                           : 'border-transparent text-slate-500 hover:text-slate-800'
                       }`}
                     >
@@ -1041,7 +1041,7 @@ export default function LeadManagement() {
                       <div key={fu.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-slate-800 capitalize flex items-center gap-1.5">
-                            <PhoneCall className="w-3 h-3 text-blue-600" />
+                            <PhoneCall className="w-3 h-3 text-primary-600" />
                             {fu.follow_up_type} • {fu.outcome}
                           </span>
                           <span className="text-[10px] text-slate-400">
@@ -1085,7 +1085,7 @@ export default function LeadManagement() {
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-blue-600" />
+                        <FileText className="w-4 h-4 text-primary-600" />
                         <div>
                           <p className="font-bold text-slate-800">Enquiry Form</p>
                           <span className="text-[10px] text-slate-400">PDF • Generated on registration</span>
@@ -1093,7 +1093,7 @@ export default function LeadManagement() {
                       </div>
                       <button
                         onClick={() => toast('Enquiry registration form downloaded')}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                        className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
                       >
                         View
                       </button>
@@ -1185,7 +1185,7 @@ export default function LeadManagement() {
                       onClick={() => setIsFollowUpModalOpen(true)}
                       className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 text-center text-slate-700 flex flex-col items-center gap-1 transition-colors"
                     >
-                      <Phone className="w-4 h-4 text-blue-600" />
+                      <Phone className="w-4 h-4 text-primary-600" />
                       <span className="text-[10px] font-bold">Call</span>
                     </button>
 
@@ -1228,7 +1228,7 @@ export default function LeadManagement() {
                       {leadDossier.converted_student_id && (
                         <Link
                           to={`/students/${leadDossier.converted_student_id}`}
-                          className="text-xs text-blue-600 font-semibold underline hover:text-blue-700 inline-block"
+                          className="text-xs text-primary-600 font-semibold underline hover:text-primary-700 inline-block"
                         >
                           View Student Profile →
                         </Link>
@@ -1956,9 +1956,9 @@ function ConvertToAdmissionModal({
       <div className="space-y-4 max-h-[75vh] overflow-y-auto px-1">
         {/* Banner */}
         <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-xl flex items-start gap-3">
-          <GraduationCap className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+          <GraduationCap className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" />
           <div className="text-xs">
-            <span className="font-bold text-indigo-900 block">Seamless Lead-to-Admission Transition</span>
+            <span className="font-bold text-primary-900 block">Seamless Lead-to-Admission Transition</span>
             <span className="text-slate-600">
               Converts <strong>{lead.full_name}</strong> into the canonical student roster. A sequential admission number
               will be auto-generated and parent guardian records linked.

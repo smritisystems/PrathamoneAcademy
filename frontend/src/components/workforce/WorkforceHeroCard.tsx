@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Enterprise reusable Hero Card banner for dedicated Teacher and Staff profiles with breadcrumbs, status badges, metrics chips, and action menus.
  */
@@ -98,7 +98,7 @@ export default function WorkforceHeroCard({
     statusBadgeClass = 'bg-slate-100 text-slate-700 border-slate-300'
     statusLabel = 'Inactive'
   } else if (normalizedStatus === 'upcoming_joining' || normalizedStatus === 'selected') {
-    statusBadgeClass = 'bg-blue-100 text-blue-800 border-blue-300'
+    statusBadgeClass = 'bg-primary-100 text-primary-800 border-blue-300'
     statusLabel = 'Upcoming Joining'
   }
 
@@ -106,7 +106,7 @@ export default function WorkforceHeroCard({
     <div className="space-y-3">
       {/* ─── Breadcrumb Navigation ─────────────────────────────────── */}
       <nav className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-        <Link to={parentPath} className="hover:text-indigo-600 transition-colors">
+        <Link to={parentPath} className="hover:text-primary-600 transition-colors">
           {parentLabel}
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
@@ -150,7 +150,7 @@ export default function WorkforceHeroCard({
               </div>
 
               <div className="text-xs sm:text-sm font-semibold text-slate-600 flex flex-wrap items-center gap-1.5">
-                <span className="text-indigo-700 font-mono font-bold">{code}</span>
+                <span className="text-primary-700 font-mono font-bold">{code}</span>
                 <span className="text-slate-300">•</span>
                 <span>{designation}</span>
                 {(specialization || department) && (
@@ -164,7 +164,7 @@ export default function WorkforceHeroCard({
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-slate-500">
                 <a
                   href={`mailto:${email}`}
-                  className="flex items-center gap-1 hover:text-indigo-600 transition-colors"
+                  className="flex items-center gap-1 hover:text-primary-600 transition-colors"
                 >
                   <Mail className="w-3.5 h-3.5 text-slate-400" />
                   <span>{email}</span>
@@ -172,7 +172,7 @@ export default function WorkforceHeroCard({
                 {phone && (
                   <a
                     href={`tel:${phone}`}
-                    className="flex items-center gap-1 hover:text-indigo-600 transition-colors"
+                    className="flex items-center gap-1 hover:text-primary-600 transition-colors"
                   >
                     <Phone className="w-3.5 h-3.5 text-slate-400" />
                     <span>{phone}</span>
@@ -217,7 +217,7 @@ export default function WorkforceHeroCard({
                   className={`px-3.5 py-2 text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-colors ${
                     isEditMode === false
                       ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed hover:bg-slate-100'
-                      : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white'
+                      : 'bg-primary-600 hover:bg-primary-700 active:bg-indigo-800 text-white'
                   }`}
                 >
                   {isEditMode === false ? (
@@ -260,7 +260,7 @@ export default function WorkforceHeroCard({
                         className={`w-full text-left px-3.5 py-2 flex items-center gap-2 font-medium ${
                           isEditMode === false
                             ? 'text-slate-400 cursor-not-allowed'
-                            : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700'
+                            : 'text-slate-700 hover:bg-primary-50 hover:text-primary-700'
                         }`}
                       >
                         {isEditMode === false ? (
@@ -286,7 +286,7 @@ export default function WorkforceHeroCard({
                           className={`w-full text-left px-3.5 py-2 flex items-center gap-2 font-medium ${
                             isEditMode === false
                               ? 'text-slate-400 cursor-not-allowed'
-                              : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700'
+                              : 'text-slate-700 hover:bg-primary-50 hover:text-primary-700'
                           }`}
                         >
                           {isEditMode === false ? (
@@ -304,7 +304,7 @@ export default function WorkforceHeroCard({
                           setShowDropdown(false)
                           onAction?.('print')
                         }}
-                        className="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-2 font-medium"
+                        className="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-primary-50 hover:text-primary-700 flex items-center gap-2 font-medium"
                       >
                         <Printer className="w-3.5 h-3.5 text-slate-400" />
                         <span>Print Employee Dossier</span>

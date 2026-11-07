@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Print-optimized Master Employee Dossier document layout for Teachers and Staff.
  */
@@ -142,7 +142,7 @@ export default function EmployeeDossierDocument({
       <div className="border-b-2 border-slate-900 pb-4 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-indigo-700 text-white font-bold flex items-center justify-center text-sm shadow-xs">
+            <span className="w-8 h-8 rounded-lg bg-primary-700 text-white font-bold flex items-center justify-center text-sm shadow-xs">
               P
             </span>
             <div>
@@ -189,7 +189,7 @@ export default function EmployeeDossierDocument({
               </span>
             </div>
             <div className="text-[11px] text-slate-600 font-medium">
-              Employee ID: <span className="font-mono font-bold text-indigo-700">{profile.employee_id || `ID-${profile.user_id}`}</span> • Designation: <span className="font-semibold">{profile.role?.toUpperCase() === 'TEACHER' ? 'Senior Faculty Member' : profile.role || 'Staff'}</span>
+              Employee ID: <span className="font-mono font-bold text-primary-700">{profile.employee_id || `ID-${profile.user_id}`}</span> • Designation: <span className="font-semibold">{profile.role?.toUpperCase() === 'TEACHER' ? 'Senior Faculty Member' : profile.role || 'Staff'}</span>
             </div>
             <div className="text-[10px] text-slate-500">
               Department: <span className="font-semibold text-slate-700">{profile.department || 'Academics'}</span> • Classification: <span className="font-semibold capitalize">{profile.staff_type || 'Teacher'}</span>
@@ -208,7 +208,7 @@ export default function EmployeeDossierDocument({
       {sections.addresses !== false && (
         <div className="space-y-2">
           <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
-            <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+            <MapPin className="w-3.5 h-3.5 text-primary-600" />
             1. Residential, Permanent & Alternate Addresses
           </h3>
 
@@ -216,7 +216,7 @@ export default function EmployeeDossierDocument({
             {addresses.map((addr: any, idx: number) => (
               <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-[10px] uppercase tracking-wider text-indigo-700">
+                  <span className="font-bold text-[10px] uppercase tracking-wider text-primary-700">
                     {addr.address_type === 'current'
                       ? 'Current / Residential Address'
                       : addr.address_type === 'permanent'
@@ -245,7 +245,7 @@ export default function EmployeeDossierDocument({
       {sections.contacts !== false && (
         <div className="space-y-2">
           <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
-            <Phone className="w-3.5 h-3.5 text-indigo-600" />
+            <Phone className="w-3.5 h-3.5 text-primary-600" />
             2. Key Emergency Contacts & Family Nominees
           </h3>
 
@@ -292,7 +292,7 @@ export default function EmployeeDossierDocument({
       {sections.payroll !== false && (
         <div className="space-y-2">
           <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
-            <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
+            <CreditCard className="w-3.5 h-3.5 text-primary-600" />
             3. Bank Accounts & Remuneration Details
           </h3>
 
@@ -358,7 +358,7 @@ export default function EmployeeDossierDocument({
       {sections.assignments !== false && assignments.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
-            <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+            <Briefcase className="w-3.5 h-3.5 text-primary-600" />
             4. Academic Subject & Batch Allocations
           </h3>
 
@@ -375,7 +375,7 @@ export default function EmployeeDossierDocument({
             <tbody className="divide-y divide-slate-200">
               {assignments.map((a: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50">
-                  <td className="py-1.5 px-3 font-semibold text-indigo-700">{a.board}</td>
+                  <td className="py-1.5 px-3 font-semibold text-primary-700">{a.board}</td>
                   <td className="py-1.5 px-3 text-slate-800">{a.standard}</td>
                   <td className="py-1.5 px-3 font-medium text-slate-700">
                     {a.batch} {a.batch_code ? <span className="font-mono text-slate-500">[{a.batch_code}]</span> : null}

@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
@@ -452,7 +452,7 @@ export default function Payments() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-gray-900">Payment History & Transactions</h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-100 text-primary-800">
               Audit Ledger
             </span>
             {isSysAdmin && (
@@ -673,7 +673,7 @@ export default function Payments() {
                                 : isApproved
                                 ? 'bg-purple-100 text-purple-800'
                                 : isSubmitted
-                                ? 'bg-blue-100 text-blue-800'
+                                ? 'bg-primary-100 text-primary-800'
                                 : isDraft
                                 ? 'bg-slate-100 text-slate-700'
                                 : 'bg-red-100 text-red-800'
@@ -700,10 +700,10 @@ export default function Payments() {
                                 type="button"
                                 onClick={() => submitMutation.mutate(p.id)}
                                 disabled={submitMutation.isPending}
-                                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-blue-700 hover:text-blue-800"
+                                className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-primary-700 hover:text-primary-800"
                                 title="Submit draft payment for review/posting"
                               >
-                                <Send className="w-3 h-3 text-blue-600" />
+                                <Send className="w-3 h-3 text-primary-600" />
                                 <span>Submit</span>
                               </button>
                               <button
@@ -1072,9 +1072,9 @@ export default function Payments() {
         size="md"
       >
         <form onSubmit={handleConfirmRefund} className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-lg text-xs text-blue-900 space-y-1">
+          <div className="bg-primary-50 border border-blue-200 p-3.5 rounded-lg text-xs text-primary-900 space-y-1">
             <p className="font-bold flex items-center gap-1.5 text-blue-950 text-sm">
-              <DollarSign className="w-4 h-4 text-blue-600" />
+              <DollarSign className="w-4 h-4 text-primary-600" />
               Refund Limits & Balance Protection
             </p>
             <p>

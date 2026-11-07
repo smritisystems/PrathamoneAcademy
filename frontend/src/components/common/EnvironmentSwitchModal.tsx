@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Confirmation modal for switching between Live Production and Isolated Training & Demo environments.
  */
@@ -107,7 +107,7 @@ export function EnvironmentSwitchModal({
 
         <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
           <div className="font-bold text-slate-800 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-600" />
             Environment Governance
           </div>
           <p>

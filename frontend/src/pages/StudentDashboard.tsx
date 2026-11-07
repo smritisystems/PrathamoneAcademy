@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-08
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -423,7 +423,7 @@ export default function StudentDashboardPage() {
           <div className="card space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-indigo-600" />
+                <Award className="w-5 h-5 text-primary-600" />
                 <h3 className="font-bold text-gray-900">Recent Test Results</h3>
               </div>
               <button

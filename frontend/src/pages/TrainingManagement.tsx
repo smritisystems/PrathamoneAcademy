@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Central Administrator Control Center for Global Training & Demo Environment: policy configuration, session monitor, and atomic reset engine.
  */
@@ -178,12 +178,12 @@ export default function TrainingManagement() {
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-2">
             <span>Sample Students</span>
-            <Users className="w-4 h-4 text-blue-600" />
+            <Users className="w-4 h-4 text-primary-600" />
           </div>
           <div className="text-2xl font-black text-slate-900">
             {status?.record_counts?.students ?? 0}
           </div>
-          <span className="text-[11px] text-blue-700 font-medium">
+          <span className="text-[11px] text-primary-700 font-medium">
             Enrolled & converted
           </span>
         </div>
@@ -191,12 +191,12 @@ export default function TrainingManagement() {
         <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between text-xs text-slate-500 font-semibold mb-2">
             <span>Follow-up Logs</span>
-            <Clock className="w-4 h-4 text-indigo-600" />
+            <Clock className="w-4 h-4 text-primary-600" />
           </div>
           <div className="text-2xl font-black text-slate-900">
             {status?.record_counts?.follow_ups ?? 0}
           </div>
-          <span className="text-[11px] text-indigo-700 font-medium">
+          <span className="text-[11px] text-primary-700 font-medium">
             Chronological call & visit notes
           </span>
         </div>

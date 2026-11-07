@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -162,7 +162,7 @@ export default function Layout() {
             type="button"
             onClick={toggleMobileOpen}
             aria-label="Open navigation menu"
-            className="p-2 -ml-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden transition-colors"
+            className="p-2 -ml-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 md:hidden transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -174,9 +174,9 @@ export default function Layout() {
               onClick={expandSidebar}
               aria-label="Show sidebar (Ctrl+B)"
               title="Show sidebar (Ctrl+B)"
-              className="hidden md:flex items-center gap-2 p-1.5 -ml-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-xs"
+              className="hidden md:flex items-center gap-2 p-1.5 -ml-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all shadow-xs"
             >
-              <PanelLeftOpen className="w-4 h-4 text-blue-600" />
+              <PanelLeftOpen className="w-4 h-4 text-primary-600" />
               <span className="text-xs font-semibold pr-1">Show Sidebar</span>
             </button>
           ) : (
@@ -185,7 +185,7 @@ export default function Layout() {
               onClick={toggleCollapse}
               aria-label={desktopState === 'collapsed' ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
               title={desktopState === 'collapsed' ? 'Expand sidebar (Ctrl+B)' : 'Collapse sidebar (Ctrl+B)'}
-              className="hidden md:flex p-1.5 -ml-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              className="hidden md:flex p-1.5 -ml-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
             >
               <PanelLeft className="w-5 h-5" />
             </button>
@@ -261,9 +261,9 @@ export default function Layout() {
             <Link
               to="/install"
               title="Install PrathamOne EduOS Desktop & Mobile App"
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-colors shadow-2xs"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-blue-200 rounded-xl transition-colors shadow-2xs"
             >
-              <Download className="w-3.5 h-3.5 text-blue-600" />
+              <Download className="w-3.5 h-3.5 text-primary-600" />
               <span>Install App</span>
             </Link>
           )}

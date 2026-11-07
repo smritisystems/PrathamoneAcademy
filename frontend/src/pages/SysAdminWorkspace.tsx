@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Source component for Sysadminworkspace in the src.pages module.
  */
@@ -219,13 +219,13 @@ export default function SysAdminWorkspace() {
       {/* Superuser Banner */}
       <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-6 rounded-2xl border border-slate-800 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+          <div className="p-3 bg-primary-500/20 text-indigo-400 rounded-xl border border-primary-500/30">
             <Terminal className="w-7 h-7" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-extrabold tracking-tight">System Administrator Governance</h1>
-              <span className="px-2.5 py-0.5 bg-indigo-500 text-white rounded-full text-xs font-mono font-bold tracking-wider">
+              <span className="px-2.5 py-0.5 bg-primary-500 text-white rounded-full text-xs font-mono font-bold tracking-wider">
                 SUPERUSER
               </span>
             </div>
@@ -269,14 +269,14 @@ export default function SysAdminWorkspace() {
               onClick={() => setActiveTab(tab.key as any)}
               className={`flex items-center gap-2 px-4 py-3.5 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
                 isActive
-                  ? 'border-indigo-600 text-indigo-600'
+                  ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
               }`}
             >
               <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
               {tab.badge !== undefined && tab.badge > 0 && (
-                <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-indigo-100 text-indigo-700">
+                <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-primary-100 text-primary-700">
                   {tab.badge}
                 </span>
               )}
@@ -292,7 +292,7 @@ export default function SysAdminWorkspace() {
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <span>Total User Accounts</span>
-                <Users className="w-4 h-4 text-blue-600" />
+                <Users className="w-4 h-4 text-primary-600" />
               </div>
               <div className="text-2xl font-bold text-slate-900 mt-1">
                 {overview?.users_summary?.total_accounts ?? 0}
@@ -305,7 +305,7 @@ export default function SysAdminWorkspace() {
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <span>Active Students</span>
-                <Users className="w-4 h-4 text-indigo-600" />
+                <Users className="w-4 h-4 text-primary-600" />
               </div>
               <div className="text-2xl font-bold text-slate-900 mt-1">
                 {overview?.academic_summary?.active_students ?? 39}
@@ -348,7 +348,7 @@ export default function SysAdminWorkspace() {
               <div className="flex items-center gap-2">
                 <GitBranch className="w-5 h-5 text-indigo-300" />
                 <h3 className="text-sm font-bold text-white">Enterprise Release & Change Governance</h3>
-                <span className="px-2 py-0.5 bg-blue-500/30 text-blue-200 border border-blue-400/40 rounded text-[11px] font-mono">
+                <span className="px-2 py-0.5 bg-primary-500/30 text-blue-200 border border-blue-400/40 rounded text-[11px] font-mono">
                   {branding.versionDisplay}
                 </span>
               </div>
@@ -358,7 +358,7 @@ export default function SysAdminWorkspace() {
             </div>
             <Link
               to="/releases"
-              className="px-4 py-2 bg-white hover:bg-blue-50 text-blue-900 font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 shrink-0"
+              className="px-4 py-2 bg-white hover:bg-primary-50 text-primary-900 font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 shrink-0"
             >
               Open Releases Workspace ➔
             </Link>
@@ -393,7 +393,7 @@ export default function SysAdminWorkspace() {
                   placeholder="Search security audits by action, details, actor..."
                   value={auditSearch}
                   onChange={(e) => setAuditSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50/50"
                 />
               </div>
             </div>
@@ -469,7 +469,7 @@ export default function SysAdminWorkspace() {
                             ? 'bg-rose-100 text-rose-800 border border-rose-200'
                             : log.severity === 'warning'
                             ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                            : 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : 'bg-primary-100 text-primary-800 border border-blue-200'
                         }`}>
                           {log.severity}
                         </span>
@@ -479,7 +479,7 @@ export default function SysAdminWorkspace() {
                         <div className="text-[11px] text-slate-400">{log.actor_role}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-bold text-indigo-700">{log.action}</div>
+                        <div className="font-bold text-primary-700">{log.action}</div>
                         <div className="text-[11px] text-slate-400 font-sans">
                           {log.resource_type} (ID: #{log.resource_id})
                         </div>
@@ -524,7 +524,7 @@ export default function SysAdminWorkspace() {
                 <select
                   value={editPayload.model_name}
                   onChange={(e) => setEditPayload({ ...editPayload, model_name: e.target.value })}
-                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                 >
                   <option value="student">Student Profile</option>
                   <option value="staff">Staff Profile</option>
@@ -543,7 +543,7 @@ export default function SysAdminWorkspace() {
                   type="number"
                   value={editPayload.record_id}
                   onChange={(e) => setEditPayload({ ...editPayload, record_id: Number(e.target.value) })}
-                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   placeholder="e.g. 114"
                 />
               </div>
@@ -564,7 +564,7 @@ export default function SysAdminWorkspace() {
                       onClick={() => setFieldKey(allowedField)}
                       className={`px-2 py-0.5 rounded text-[10px] font-mono transition border ${
                         fieldKey === allowedField
-                          ? 'bg-indigo-100 text-indigo-700 border-indigo-300 font-bold'
+                          ? 'bg-primary-100 text-primary-700 border-indigo-300 font-bold'
                           : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
@@ -580,7 +580,7 @@ export default function SysAdminWorkspace() {
                     type="text"
                     value={fieldKey}
                     onChange={(e) => setFieldKey(e.target.value)}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white font-mono text-indigo-700 outline-none"
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white font-mono text-primary-700 outline-none"
                     placeholder="e.g. phone, address, status"
                   />
                 </div>
@@ -603,7 +603,7 @@ export default function SysAdminWorkspace() {
                 rows={2}
                 value={editPayload.reason}
                 onChange={(e) => setEditPayload({ ...editPayload, reason: e.target.value })}
-                className="w-full text-sm border border-slate-200 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-sm border border-slate-200 rounded-lg p-3 focus:ring-2 focus:ring-primary-500 outline-none"
                 placeholder="State the audit reason for this direct superuser record change..."
               />
             </div>
@@ -623,7 +623,7 @@ export default function SysAdminWorkspace() {
                     universalEditMutation.mutate(finalPayload)
                   }
                 }}
-                className={!isEditMode ? 'inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-400 text-sm font-semibold rounded-xl cursor-not-allowed border border-dashed border-slate-300' : 'inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-xs transition-colors'}
+                className={!isEditMode ? 'inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-400 text-sm font-semibold rounded-xl cursor-not-allowed border border-dashed border-slate-300' : 'inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl shadow-xs transition-colors'}
               >
                 {!isEditMode ? <Lock className="w-4 h-4 text-slate-400" /> : <Save className="w-4 h-4" />}
                 <span>{!isEditMode ? 'Execute Universal Edit (Locked)' : 'Execute Universal Edit'}</span>
@@ -645,7 +645,7 @@ export default function SysAdminWorkspace() {
                 type="text"
                 value={settingsForm.site_name}
                 onChange={(e) => setSettingsForm({ ...settingsForm, site_name: e.target.value })}
-                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
               />
             </div>
 
@@ -656,7 +656,7 @@ export default function SysAdminWorkspace() {
                   type="email"
                   value={settingsForm.contact_email}
                   onChange={(e) => setSettingsForm({ ...settingsForm, contact_email: e.target.value })}
-                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                 />
               </div>
               <div>
@@ -665,7 +665,7 @@ export default function SysAdminWorkspace() {
                   type="text"
                   value={settingsForm.contact_phone}
                   onChange={(e) => setSettingsForm({ ...settingsForm, contact_phone: e.target.value })}
-                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                 />
               </div>
             </div>
@@ -676,7 +676,7 @@ export default function SysAdminWorkspace() {
                 type="number"
                 value={settingsForm.session_timeout_minutes}
                 onChange={(e) => setSettingsForm({ ...settingsForm, session_timeout_minutes: Number(e.target.value) })}
-                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
               />
             </div>
           </div>
@@ -684,7 +684,7 @@ export default function SysAdminWorkspace() {
           <div className="pt-4 border-t border-slate-100 flex justify-end">
             <button
               onClick={() => updateSettingsMutation.mutate(settingsForm)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-xs transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl shadow-xs transition-colors"
             >
               <Save className="w-4 h-4" />
               <span>Save System Settings</span>
@@ -706,7 +706,7 @@ export default function SysAdminWorkspace() {
 
             <div className="text-xs space-y-3 font-mono">
               <div>
-                <span className="text-slate-500">Action:</span> <strong className="text-indigo-600">{inspectAuditLog.action}</strong>
+                <span className="text-slate-500">Action:</span> <strong className="text-primary-600">{inspectAuditLog.action}</strong>
               </div>
               <div>
                 <span className="text-slate-500">Resource:</span> {inspectAuditLog.resource_type} (ID: #{inspectAuditLog.resource_id})

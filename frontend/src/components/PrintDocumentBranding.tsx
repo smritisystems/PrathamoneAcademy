@@ -71,7 +71,7 @@ export function PrintDocumentHeader({
   const hasValidLogo = !!logoUrl && logoUrl !== '/logo.svg' && !logoError
 
   const badgeBg = {
-    blue: 'bg-blue-50 text-blue-900 border-blue-200',
+    blue: 'bg-primary-50 text-primary-900 border-blue-200',
     emerald: 'bg-emerald-50 text-emerald-900 border-emerald-200',
     amber: 'bg-amber-50 text-amber-900 border-amber-200',
     rose: 'bg-rose-50 text-rose-900 border-rose-200',
@@ -117,7 +117,7 @@ export function PrintDocumentHeader({
               {academyName}
             </h1>
             <p
-              className={`font-bold tracking-wide uppercase text-blue-800 mt-1 leading-tight ${
+              className={`font-bold tracking-wide uppercase text-primary-800 mt-1 leading-tight ${
                 compact ? 'text-[9.5px]' : 'text-[11px]'
               }`}
             >
@@ -169,7 +169,7 @@ export function PrintDocumentHeader({
             </span>
           )}
           {documentRef && (
-            <span className="text-[10px] font-mono font-bold bg-blue-700 text-white px-2 py-0.5 rounded print:border print:border-white">
+            <span className="text-[10px] font-mono font-bold bg-primary-700 text-white px-2 py-0.5 rounded print:border print:border-white">
               REF: {documentRef}
             </span>
           )}

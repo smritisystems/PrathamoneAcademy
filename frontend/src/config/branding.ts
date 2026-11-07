@@ -420,6 +420,8 @@ export function applyGlobalBrandTheme(
     const primary50 = hexToRgba(primary, 0.06)
     const primary100 = hexToRgba(primary, 0.12)
     const primary200 = hexToRgba(primary, 0.22)
+    const primary300 = hexToRgba(primary, 0.38)
+    const primary400 = hexToRgba(primary, 0.55)
     const primaryShadow = hexToRgba(primary, 0.28)
 
     // Standard CSS Custom Properties
@@ -430,6 +432,8 @@ export function applyGlobalBrandTheme(
     root.style.setProperty('--brand-primary-50', primary50)
     root.style.setProperty('--brand-primary-100', primary100)
     root.style.setProperty('--brand-primary-200', primary200)
+    root.style.setProperty('--brand-primary-300', primary300)
+    root.style.setProperty('--brand-primary-400', primary400)
     root.style.setProperty('--brand-primary-shadow', primaryShadow)
     root.style.setProperty('--brand-primary-rgb', `${pRgb.r}, ${pRgb.g}, ${pRgb.b}`)
 

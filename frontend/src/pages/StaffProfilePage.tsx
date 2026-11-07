@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Dedicated full-page Non-Teaching Staff Profile workspace with hero banner, 12 specialized administrative tabs, reporting manager hierarchy, duties checklist, and activity history.
  */
@@ -131,7 +131,7 @@ export default function StaffProfilePage() {
   if (isProfileLoading) {
     return (
       <div className="flex items-center justify-center min-h-[450px]">
-        <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-3 border-primary-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -145,7 +145,7 @@ export default function StaffProfilePage() {
         </p>
         <button
           onClick={() => navigate('/staff')}
-          className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold"
+          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-semibold"
         >
           Return to Staff Workspace
         </button>
@@ -229,7 +229,7 @@ export default function StaffProfilePage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-xs'
+                    ? 'bg-primary-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
@@ -268,7 +268,7 @@ export default function StaffProfilePage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-50">
                   <span className="text-slate-500">Reporting Manager</span>
-                  <span className="font-semibold text-indigo-700">
+                  <span className="font-semibold text-primary-700">
                     {profile.reporting_manager_name || 'Principal'}
                   </span>
                 </div>
@@ -429,7 +429,7 @@ export default function StaffProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-xs">
               <div>
                 <span className="text-slate-400 font-medium">Staff ID</span>
-                <p className="font-bold text-indigo-700 font-mono mt-1">{profile.employee_id || `STF-${profile.user_id}`}</p>
+                <p className="font-bold text-primary-700 font-mono mt-1">{profile.employee_id || `STF-${profile.user_id}`}</p>
               </div>
               <div>
                 <span className="text-slate-400 font-medium">Employment Type</span>
@@ -473,7 +473,7 @@ export default function StaffProfilePage() {
               Designation & Role Authority
             </h3>
             <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-xs">
-              <div className="font-bold text-indigo-700 text-sm">Office Administrator</div>
+              <div className="font-bold text-primary-700 text-sm">Office Administrator</div>
               <p className="text-slate-500">
                 Authorized for staff registration, attendance tracking, documentation verification, and visitor management.
               </p>
@@ -489,7 +489,7 @@ export default function StaffProfilePage() {
             </h3>
             <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-indigo-600" />
+                <Users className="w-5 h-5 text-primary-600" />
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Direct Reporting Manager</span>
                   <div className="text-sm font-bold text-slate-800">
@@ -497,7 +497,7 @@ export default function StaffProfilePage() {
                   </div>
                 </div>
               </div>
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary-100 text-primary-800">
                 Direct Line
               </span>
             </div>
@@ -580,8 +580,8 @@ export default function StaffProfilePage() {
               Salary & Banking Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
-                <span className="text-[11px] font-bold text-indigo-700 uppercase">Basic Monthly Salary</span>
+              <div className="p-4 bg-primary-50/50 border border-indigo-100 rounded-xl">
+                <span className="text-[11px] font-bold text-primary-700 uppercase">Basic Monthly Salary</span>
                 <div className="text-base font-bold text-slate-900 mt-1">
                   ₹{profile.basic_salary?.toLocaleString() || '45,000'}
                 </div>
@@ -620,7 +620,7 @@ export default function StaffProfilePage() {
               ].map((doc, idx) => (
                 <div key={idx} className="p-4 border border-slate-100 bg-slate-50 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-indigo-600" />
+                    <FileText className="w-5 h-5 text-primary-600" />
                     <div>
                       <div className="font-bold text-slate-800">{doc.title}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">Verified Document • Official Dossier</div>
@@ -632,7 +632,7 @@ export default function StaffProfilePage() {
                       setSelectedDocPreview({ formId: doc.formId, title: doc.title })
                       setShowDocPreviewModal(true)
                     }}
-                    className="px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+                    className="px-2.5 py-1 text-xs font-semibold text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded-lg transition-colors"
                   >
                     View
                   </button>

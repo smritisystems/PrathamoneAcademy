@@ -478,7 +478,7 @@ export default function Communication() {
               onClick={() => setActiveTab('compose')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all ${
                 activeTab === 'compose'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -489,7 +489,7 @@ export default function Communication() {
               onClick={() => setActiveTab('templates')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all ${
                 activeTab === 'templates'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -500,7 +500,7 @@ export default function Communication() {
               onClick={() => setActiveTab('history')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all ${
                 activeTab === 'history'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -511,7 +511,7 @@ export default function Communication() {
               onClick={() => setActiveTab('diagnostics')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all ${
                 activeTab === 'diagnostics'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -522,7 +522,7 @@ export default function Communication() {
               onClick={() => setActiveTab('automation')}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all ${
                 activeTab === 'automation'
-                  ? 'bg-white text-blue-700 shadow-xs'
+                  ? 'bg-white text-primary-700 shadow-xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -558,7 +558,7 @@ export default function Communication() {
       <div className="p-6 flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3 text-gray-500">
-            <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+            <RefreshCw className="w-6 h-6 animate-spin text-primary-600" />
             <span className="text-xs">Loading Communication Center...</span>
           </div>
         ) : (
@@ -572,7 +572,7 @@ export default function Communication() {
                 <div className="lg:col-span-7 space-y-5">
                   <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                     <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                      <Send className="w-4 h-4 text-blue-600" />
+                      <Send className="w-4 h-4 text-primary-600" />
                       <span>Message Composer</span>
                     </h3>
 
@@ -584,9 +584,9 @@ export default function Communication() {
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         {[
                           { id: 'WHATSAPP', label: 'WhatsApp', icon: MessageCircle, color: 'text-emerald-600' },
-                          { id: 'EMAIL', label: 'Email', icon: Mail, color: 'text-blue-600' },
+                          { id: 'EMAIL', label: 'Email', icon: Mail, color: 'text-primary-600' },
                           { id: 'SMS', label: 'SMS', icon: MessageSquare, color: 'text-purple-600' },
-                          { id: 'ALL', label: 'All Channels', icon: Send, color: 'text-indigo-600' },
+                          { id: 'ALL', label: 'All Channels', icon: Send, color: 'text-primary-600' },
                         ].map((ch) => {
                           const Icon = ch.icon
                           const isSelected = channel === ch.id
@@ -597,7 +597,7 @@ export default function Communication() {
                               onClick={() => setChannel(ch.id as any)}
                               className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                                 isSelected
-                                  ? 'border-blue-600 bg-blue-50 text-blue-900 shadow-2xs'
+                                  ? 'border-primary-600 bg-primary-50 text-primary-900 shadow-2xs'
                                   : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
                               }`}
                             >
@@ -628,7 +628,7 @@ export default function Communication() {
                       <select
                         value={selectedTemplate}
                         onChange={(e) => handleSelectTemplate(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                        className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium"
                       >
                         <option value="">-- Compose Custom Blank Message --</option>
                         {templates.map((tpl) => (
@@ -661,7 +661,7 @@ export default function Communication() {
                             key={token}
                             type="button"
                             onClick={() => handleInsertToken(token)}
-                            className="px-2 py-0.5 text-[11px] font-mono bg-slate-100 hover:bg-blue-100 text-slate-700 hover:text-blue-800 rounded-md border border-slate-200 transition-colors"
+                            className="px-2 py-0.5 text-[11px] font-mono bg-slate-100 hover:bg-primary-100 text-slate-700 hover:text-primary-800 rounded-md border border-slate-200 transition-colors"
                           >
                             +{`{${token}}`}
                           </button>
@@ -680,7 +680,7 @@ export default function Communication() {
                           value={subject}
                           onChange={(e) => setSubject(e.target.value)}
                           placeholder="e.g. Official Update: Term Assessment Schedule"
-                          className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                         />
                       </div>
                     )}
@@ -701,7 +701,7 @@ export default function Communication() {
                         value={messageBody}
                         onChange={(e) => setMessageBody(e.target.value)}
                         placeholder="Type message text or select a template above..."
-                        className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none text-gray-800"
+                        className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none text-gray-800"
                       />
                     </div>
 
@@ -713,7 +713,7 @@ export default function Communication() {
                           id="schedule_toggle"
                           checked={isScheduled}
                           onChange={(e) => setIsScheduled(e.target.checked)}
-                          className="rounded text-blue-600 focus:ring-blue-500"
+                          className="rounded text-primary-600 focus:ring-primary-500"
                         />
                         <label htmlFor="schedule_toggle" className="text-xs font-medium text-gray-700">
                           Schedule for Later Delivery
@@ -807,10 +807,10 @@ export default function Communication() {
                   <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                     <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                       <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                        <Users className="w-4 h-4 text-blue-600" />
+                        <Users className="w-4 h-4 text-primary-600" />
                         <span>Recipient Selection</span>
                       </h3>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary-100 text-primary-800">
                         {selectedRecipients.length} Selected
                       </span>
                     </div>
@@ -836,7 +836,7 @@ export default function Communication() {
                             value={recipientQuery}
                             onChange={(e) => setRecipientQuery(e.target.value)}
                             placeholder="Search name, phone, roll..."
-                            className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                           />
                         </div>
                       </div>
@@ -853,7 +853,7 @@ export default function Communication() {
                             key={idx}
                             onClick={() => handleToggleRecipient(item)}
                             className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors ${
-                              isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'
+                              isSelected ? 'bg-primary-50' : 'hover:bg-slate-50'
                             }`}
                           >
                             <div className="min-w-0 flex-1">
@@ -861,7 +861,7 @@ export default function Communication() {
                                 <span
                                   className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
                                     item.type === 'STUDENT'
-                                      ? 'bg-blue-100 text-blue-800'
+                                      ? 'bg-primary-100 text-primary-800'
                                       : item.type === 'PARENT'
                                       ? 'bg-amber-100 text-amber-800'
                                       : item.type === 'STAFF'
@@ -920,7 +920,7 @@ export default function Communication() {
                       <button
                         type="button"
                         onClick={handleAddCustomRecipient}
-                        className="w-full py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+                        className="w-full py-1 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg border border-blue-200 transition-colors"
                       >
                         + Add Custom Recipient
                       </button>
@@ -1030,7 +1030,7 @@ export default function Communication() {
                       >
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 font-mono">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-100 text-primary-800 font-mono">
                               {tpl.code}
                             </span>
                             <span className="text-[10px] font-semibold text-gray-500 uppercase">
@@ -1059,7 +1059,7 @@ export default function Communication() {
                                 handleSelectTemplate(tpl.code)
                                 setActiveTab('compose')
                               }}
-                              className="px-2 py-0.5 text-blue-600 hover:bg-blue-50 rounded font-medium"
+                              className="px-2 py-0.5 text-primary-600 hover:bg-primary-50 rounded font-medium"
                             >
                               Use
                             </button>
@@ -1079,7 +1079,7 @@ export default function Communication() {
                               }}
                               icon={<Edit className="w-3.5 h-3.5" />}
                               tooltip="Edit Template"
-                              className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                              className="p-1 text-gray-400 hover:text-primary-600 rounded"
                             />
                             <LockedIconButton
                               isEditMode={isEditMode}
@@ -1178,10 +1178,10 @@ export default function Communication() {
                                   log.channel === 'WHATSAPP'
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : log.channel === 'EMAIL'
-                                    ? 'bg-blue-100 text-blue-800'
+                                    ? 'bg-primary-100 text-primary-800'
                                     : log.channel === 'SMS'
                                     ? 'bg-purple-100 text-purple-800'
-                                    : 'bg-indigo-100 text-indigo-800'
+                                    : 'bg-primary-100 text-primary-800'
                                 }`}
                               >
                                 {log.channel}
@@ -1216,7 +1216,7 @@ export default function Communication() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedLogDetail(log)}
-                                className="p-1 text-gray-500 hover:text-blue-600 rounded"
+                                className="p-1 text-gray-500 hover:text-primary-600 rounded"
                                 title="View full message details"
                               >
                                 <Eye className="w-3.5 h-3.5" />
@@ -1285,7 +1285,7 @@ export default function Communication() {
                 {/* Diagnostics Test Dispatch Tool */}
                 <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                   <h4 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-blue-600" />
+                    <Shield className="w-4 h-4 text-primary-600" />
                     <span>Run Connection Test & Ping</span>
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1371,7 +1371,7 @@ export default function Communication() {
                     <div className="p-4 rounded-xl border border-gray-200 bg-slate-50/50 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-blue-600" />
+                          <Clock className="w-4 h-4 text-primary-600" />
                           Overdue Fee Reminders
                         </span>
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -1465,7 +1465,7 @@ export default function Communication() {
                         Automatically generates secure WhatsApp receipt download links upon fee collection.
                       </p>
                       <div className="pt-2 border-t border-gray-200/60">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary-100 text-primary-800">
                           ✓ Secure 7-Day Cloud Link
                         </span>
                       </div>
@@ -1566,7 +1566,7 @@ export default function Communication() {
                                   setSelectedQueueIds([])
                                 }
                               }}
-                              className="rounded-md border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="rounded-md border-gray-300 text-primary-600 focus:ring-primary-500"
                             />
                           </th>
                           <th className="py-3 px-4">Student & Admission</th>
@@ -1581,7 +1581,7 @@ export default function Communication() {
                         {feeQueueLoading ? (
                           <tr>
                             <td colSpan={7} className="py-10 text-center text-gray-400">
-                              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
+                              <RefreshCw className="w-6 h-6 animate-spin mx-auto text-primary-600 mb-2" />
                               <span>Scanning invoices and preparing reminder queue...</span>
                             </td>
                           </tr>
@@ -1601,8 +1601,8 @@ export default function Communication() {
                             return (
                               <tr
                                 key={item.invoice_id}
-                                className={`hover:bg-blue-50/40 transition-colors ${
-                                  isSelected ? 'bg-blue-50/30' : ''
+                                className={`hover:bg-primary-50/40 transition-colors ${
+                                  isSelected ? 'bg-primary-50/30' : ''
                                 }`}
                               >
                                 <td className="py-3 px-4 text-center">
@@ -1618,7 +1618,7 @@ export default function Communication() {
                                         )
                                       }
                                     }}
-                                    className="rounded-md border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    className="rounded-md border-gray-300 text-primary-600 focus:ring-primary-500"
                                   />
                                 </td>
                                 <td className="py-3 px-4">
@@ -1658,7 +1658,7 @@ export default function Communication() {
                                     <button
                                       type="button"
                                       onClick={() => setPreviewItem(item)}
-                                      className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                      className="p-1 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
                                       title="View Message Preview"
                                     >
                                       <Eye className="w-3.5 h-3.5" />
@@ -1774,7 +1774,7 @@ export default function Communication() {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 max-w-md w-full p-6 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center flex-shrink-0">
                 <Send className="w-5 h-5" />
               </div>
               <div>
@@ -1790,11 +1790,11 @@ export default function Communication() {
             <div className="bg-gray-50 rounded-xl p-3.5 space-y-2 text-xs text-gray-700">
               <div className="flex justify-between">
                 <span className="text-gray-500">Channel:</span>
-                <span className="font-bold text-blue-900">{channel}</span>
+                <span className="font-bold text-primary-900">{channel}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Recipient Count:</span>
-                <span className="font-bold text-blue-900">{selectedRecipients.length} Recipient(s)</span>
+                <span className="font-bold text-primary-900">{selectedRecipients.length} Recipient(s)</span>
               </div>
               {subject && (
                 <div className="flex justify-between">

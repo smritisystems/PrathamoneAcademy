@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Dedicated Teacher & Faculty Workspace with live workforce counters, assignment statuses (assigned vs unassigned vs without timetable), activity tracking, and lifecycle governance.
  */
@@ -335,7 +335,7 @@ export default function TeacherManagement() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-100">
+            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white shadow-md shadow-indigo-100">
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
@@ -353,7 +353,7 @@ export default function TeacherManagement() {
           <select
             value={selectedAcademicYearId || ''}
             onChange={(e) => setSelectedAcademicYearId(e.target.value ? Number(e.target.value) : undefined)}
-            className="text-xs font-medium border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 shadow-2xs focus:ring-2 focus:ring-indigo-500 outline-none"
+            className="text-xs font-medium border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 shadow-2xs focus:ring-2 focus:ring-primary-500 outline-none"
           >
             <option value="">All Academic Years</option>
             {academicYears.map((ay: any) => (
@@ -375,7 +375,7 @@ export default function TeacherManagement() {
             isEditMode ? (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Add New Teacher</span>
@@ -402,7 +402,7 @@ export default function TeacherManagement() {
           onClick={() => setActiveTab('all')}
           className={`p-3 rounded-xl border cursor-pointer transition-all ${
             activeTab === 'all'
-              ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-500'
+              ? 'border-primary-600 bg-primary-50/50 shadow-xs ring-1 ring-indigo-500'
               : 'border-slate-200 bg-white hover:border-slate-300 shadow-2xs'
           }`}
         >
@@ -432,15 +432,15 @@ export default function TeacherManagement() {
           onClick={() => setActiveTab('assigned')}
           className={`p-3 rounded-xl border cursor-pointer transition-all ${
             activeTab === 'assigned'
-              ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-500'
+              ? 'border-primary-600 bg-primary-50/50 shadow-xs ring-1 ring-indigo-500'
               : 'border-slate-200 bg-white hover:border-slate-300 shadow-2xs'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wide">Assigned</span>
-            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-[10px] font-bold text-primary-700 uppercase tracking-wide">Assigned</span>
+            <Layers className="w-3.5 h-3.5 text-primary-600" />
           </div>
-          <div className="text-xl font-bold text-blue-700 mt-1">{metrics.assigned_teachers}</div>
+          <div className="text-xl font-bold text-primary-700 mt-1">{metrics.assigned_teachers}</div>
           <div className="text-[10px] text-slate-400 mt-0.5">Has batch allocations</div>
         </div>
 
@@ -475,7 +475,7 @@ export default function TeacherManagement() {
           onClick={() => setActiveTab('without_timetable')}
           className={`p-3 rounded-xl border cursor-pointer transition-all ${
             activeTab === 'without_timetable'
-              ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-500'
+              ? 'border-primary-600 bg-primary-50/50 shadow-xs ring-1 ring-indigo-500'
               : 'border-slate-200 bg-white hover:border-slate-300 shadow-2xs'
           }`}
         >
@@ -492,7 +492,7 @@ export default function TeacherManagement() {
           onClick={() => setActiveTab('on_leave')}
           className={`p-3 rounded-xl border cursor-pointer transition-all ${
             activeTab === 'on_leave'
-              ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-500'
+              ? 'border-primary-600 bg-primary-50/50 shadow-xs ring-1 ring-indigo-500'
               : 'border-slate-200 bg-white hover:border-slate-300 shadow-2xs'
           }`}
         >
@@ -509,7 +509,7 @@ export default function TeacherManagement() {
           onClick={() => setActiveTab('departed')}
           className={`p-3 rounded-xl border cursor-pointer transition-all ${
             activeTab === 'departed'
-              ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-500'
+              ? 'border-primary-600 bg-primary-50/50 shadow-xs ring-1 ring-indigo-500'
               : 'border-slate-200 bg-white hover:border-slate-300 shadow-2xs'
           }`}
         >
@@ -573,7 +573,7 @@ export default function TeacherManagement() {
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
                     isActive
-                      ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                      ? 'bg-primary-600 text-white font-semibold shadow-xs'
                       : tab.alert
                       ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 font-bold'
                       : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50'
@@ -607,7 +607,7 @@ export default function TeacherManagement() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search faculty by name, ID, subject..."
-                className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500 outline-none shadow-2xs"
+                className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-primary-500 outline-none shadow-2xs"
               />
             </div>
           )}
@@ -649,13 +649,13 @@ export default function TeacherManagement() {
                         {/* Name & Contact */}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center flex-shrink-0 text-xs">
+                            <div className="w-9 h-9 rounded-full bg-primary-100 text-primary-700 font-bold flex items-center justify-center flex-shrink-0 text-xs">
                               {tch.name?.split(' ').map((n) => n[0]).join('').slice(0, 2) || 'T'}
                             </div>
                             <div>
                               <div
                                 onClick={() => navigate(`/teachers/${tch.id}`)}
-                                className="font-bold text-slate-900 hover:text-indigo-600 cursor-pointer flex items-center gap-1.5"
+                                className="font-bold text-slate-900 hover:text-primary-600 cursor-pointer flex items-center gap-1.5"
                               >
                                 {tch.name}
                               </div>
@@ -680,7 +680,7 @@ export default function TeacherManagement() {
                         {/* Academic Batches (Assigned vs Unassigned) */}
                         <td className="px-4 py-3">
                           {tch.is_assigned ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary-50 text-primary-700 border border-blue-200">
                               <Layers className="w-3 h-3" />
                               {tch.assignment_count} Batch{tch.assignment_count > 1 ? 'es' : ''} ({tch.weekly_hours}h/wk)
                             </span>
@@ -732,7 +732,7 @@ export default function TeacherManagement() {
                             tch.status === 'active' ? 'bg-emerald-100 text-emerald-800' :
                             tch.status === 'on_leave' ? 'bg-purple-100 text-purple-800' :
                             tch.is_departed ? 'bg-rose-100 text-rose-800' :
-                            tch.is_upcoming ? 'bg-blue-100 text-blue-800' :
+                            tch.is_upcoming ? 'bg-primary-100 text-primary-800' :
                             'bg-slate-100 text-slate-800'
                           }`}>
                             {tch.status}
@@ -745,7 +745,7 @@ export default function TeacherManagement() {
                             <button
                               type="button"
                               onClick={() => navigate(`/teachers/${tch.id}`)}
-                              className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                               title="View Full Teacher Profile (15 Tabs)"
                             >
                               <Eye className="w-4 h-4" />
@@ -754,7 +754,7 @@ export default function TeacherManagement() {
                             <button
                               type="button"
                               onClick={() => handleOpenAssignModal(tch.id)}
-                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                               title="Assign Batches & Subjects"
                             >
                               <Layers className="w-4 h-4" />
@@ -772,7 +772,7 @@ export default function TeacherManagement() {
                                     status: tch.status,
                                   })
                                 }
-                                className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                className="p-1.5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                                 title="Manage Lifecycle (Activate, Leave, Resign, Rehire)"
                               >
                                 <Activity className="w-4 h-4" />
@@ -803,7 +803,7 @@ export default function TeacherManagement() {
                   setAssignTargetTeacherId(null)
                   setShowAssignModal(true)
                 }}
-                className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-xs flex items-center gap-1.5"
+                className="px-3 py-1.5 text-xs font-semibold bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow-xs flex items-center gap-1.5"
               >
                 <Layers className="w-3.5 h-3.5" />
                 Assign Faculty to Batch
@@ -828,11 +828,11 @@ export default function TeacherManagement() {
                       <td className="px-4 py-2.5 font-bold text-slate-900">{a.teacher_name}</td>
                       <td className="px-4 py-2.5 text-slate-700">{a.board_name} - {a.standard_name}</td>
                       <td className="px-4 py-2.5 text-slate-700">{a.batch_name}</td>
-                      <td className="px-4 py-2.5 font-semibold text-indigo-700">{a.subject_name}</td>
+                      <td className="px-4 py-2.5 font-semibold text-primary-700">{a.subject_name}</td>
                       <td className="px-4 py-2.5 text-slate-800">{a.weekly_hours} hrs/wk</td>
                       <td className="px-4 py-2.5">
                         {a.is_class_teacher ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-100 text-indigo-800">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary-100 text-primary-800">
                             Class Teacher
                           </span>
                         ) : (
@@ -927,7 +927,7 @@ export default function TeacherManagement() {
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2.5">
-                <GraduationCap className="w-5 h-5 text-indigo-600" />
+                <GraduationCap className="w-5 h-5 text-primary-600" />
                 <h3 className="font-bold text-slate-900 text-sm">Register New Teacher / Faculty</h3>
               </div>
               <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">
@@ -944,7 +944,7 @@ export default function TeacherManagement() {
                     required
                     value={newTeacher.first_name}
                     onChange={(e) => setNewTeacher({ ...newTeacher, first_name: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="e.g. Ramesh"
                   />
                 </div>
@@ -955,7 +955,7 @@ export default function TeacherManagement() {
                     required
                     value={newTeacher.last_name}
                     onChange={(e) => setNewTeacher({ ...newTeacher, last_name: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="e.g. Sharma"
                   />
                 </div>
@@ -966,7 +966,7 @@ export default function TeacherManagement() {
                     required
                     value={newTeacher.username}
                     onChange={(e) => setNewTeacher({ ...newTeacher, username: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="e.g. ramesh.sharma"
                   />
                 </div>
@@ -977,7 +977,7 @@ export default function TeacherManagement() {
                     required
                     value={newTeacher.email}
                     onChange={(e) => setNewTeacher({ ...newTeacher, email: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="sharma@prashantacademy.com"
                   />
                 </div>
@@ -987,7 +987,7 @@ export default function TeacherManagement() {
                     type="text"
                     value={newTeacher.specialization}
                     onChange={(e) => setNewTeacher({ ...newTeacher, specialization: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="e.g. Mathematics & Calculus"
                   />
                 </div>
@@ -997,7 +997,7 @@ export default function TeacherManagement() {
                     type="text"
                     value={newTeacher.qualification}
                     onChange={(e) => setNewTeacher({ ...newTeacher, qualification: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="e.g. M.Sc., B.Ed."
                   />
                 </div>
@@ -1007,7 +1007,7 @@ export default function TeacherManagement() {
                     type="text"
                     value={newTeacher.phone}
                     onChange={(e) => setNewTeacher({ ...newTeacher, phone: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="+91 98200 12345"
                   />
                 </div>
@@ -1017,7 +1017,7 @@ export default function TeacherManagement() {
                     type="number"
                     value={newTeacher.basic_salary}
                     onChange={(e) => setNewTeacher({ ...newTeacher, basic_salary: Number(e.target.value) })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -1028,7 +1028,7 @@ export default function TeacherManagement() {
                     type="text"
                     value={newTeacher.password}
                     onChange={(e) => setNewTeacher({ ...newTeacher, password: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="Leave empty for secure auto-generated temporary password"
                   />
                 </div>
@@ -1047,7 +1047,7 @@ export default function TeacherManagement() {
                 type="button"
                 onClick={() => createTeacherMutation.mutate(newTeacher)}
                 disabled={!newTeacher.first_name || !newTeacher.username || !newTeacher.email || createTeacherMutation.isPending}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs disabled:opacity-50"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-xs disabled:opacity-50"
               >
                 {createTeacherMutation.isPending ? 'Registering...' : 'Create Teacher Profile'}
               </button>
@@ -1087,7 +1087,7 @@ export default function TeacherManagement() {
                 {createdCredentials.temporary_password && (
                   <div className="flex justify-between items-center pt-1 border-t border-slate-200">
                     <span className="text-slate-500">Temporary Password:</span>
-                    <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    <span className="font-mono font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-indigo-200">
                       {createdCredentials.temporary_password}
                     </span>
                   </div>
@@ -1111,7 +1111,7 @@ export default function TeacherManagement() {
               <button
                 type="button"
                 onClick={() => setCreatedCredentials(null)}
-                className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs"
+                className="px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-xs"
               >
                 Done
               </button>
@@ -1137,7 +1137,7 @@ export default function TeacherManagement() {
                 <select
                   value={newAssignment.teacher_user_id || assignTargetTeacherId || ''}
                   onChange={(e) => setNewAssignment({ ...newAssignment, teacher_user_id: Number(e.target.value) })}
-                  className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                 >
                   <option value="">Select Faculty Member</option>
                   {rawTeachers.map((t) => (
@@ -1154,7 +1154,7 @@ export default function TeacherManagement() {
                   <select
                     value={newAssignment.board_id}
                     onChange={(e) => setNewAssignment({ ...newAssignment, board_id: Number(e.target.value) })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   >
                     {boards.map((b: any) => (
                       <option key={b.id} value={b.id}>{b.name}</option>
@@ -1166,7 +1166,7 @@ export default function TeacherManagement() {
                   <select
                     value={newAssignment.standard_id}
                     onChange={(e) => setNewAssignment({ ...newAssignment, standard_id: Number(e.target.value) })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   >
                     {standards.map((st: any) => (
                       <option key={st.id} value={st.id}>{st.name}</option>
@@ -1181,7 +1181,7 @@ export default function TeacherManagement() {
                   <select
                     value={newAssignment.division_id}
                     onChange={(e) => setNewAssignment({ ...newAssignment, division_id: Number(e.target.value) })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   >
                     {divisions.map((d: any) => (
                       <option key={d.id} value={d.id}>{d.name}</option>
@@ -1193,7 +1193,7 @@ export default function TeacherManagement() {
                   <select
                     value={newAssignment.subject_id}
                     onChange={(e) => setNewAssignment({ ...newAssignment, subject_id: Number(e.target.value) })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   >
                     {subjects.map((s: any) => (
                       <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
@@ -1210,7 +1210,7 @@ export default function TeacherManagement() {
                     step="0.5"
                     value={newAssignment.weekly_hours}
                     onChange={(e) => setNewAssignment({ ...newAssignment, weekly_hours: Number(e.target.value) })}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
                   />
                 </div>
                 <div className="flex items-center pt-5">
@@ -1219,7 +1219,7 @@ export default function TeacherManagement() {
                       type="checkbox"
                       checked={newAssignment.is_class_teacher}
                       onChange={(e) => setNewAssignment({ ...newAssignment, is_class_teacher: e.target.checked })}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                      className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
                     />
                     <span className="text-xs font-semibold text-slate-700">Designate as Class Teacher</span>
                   </label>
@@ -1239,7 +1239,7 @@ export default function TeacherManagement() {
                 type="button"
                 onClick={() => createAssignmentMutation.mutate(newAssignment)}
                 disabled={!newAssignment.teacher_user_id || createAssignmentMutation.isPending}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-xs disabled:opacity-50"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-xs disabled:opacity-50"
               >
                 {createAssignmentMutation.isPending ? 'Assigning...' : 'Confirm Batch Assignment'}
               </button>

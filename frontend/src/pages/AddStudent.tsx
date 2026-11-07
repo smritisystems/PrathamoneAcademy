@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Multi-step student admission form capturing personal details, parent info, and initial enrollment.
  */
@@ -266,7 +266,7 @@ export default function AddStudent() {
                   i < step
                     ? 'bg-green-500 text-white'
                     : i === step
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary-600 text-white'
                     : 'bg-gray-200 text-gray-500'
                 }`}
               >
@@ -274,7 +274,7 @@ export default function AddStudent() {
               </div>
               <span
                 className={`text-sm ${
-                  i === step ? 'font-medium text-blue-700' : 'text-gray-500'
+                  i === step ? 'font-medium text-primary-700' : 'text-gray-500'
                 }`}
               >
                 {s}

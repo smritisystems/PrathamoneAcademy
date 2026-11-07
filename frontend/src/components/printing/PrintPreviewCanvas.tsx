@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description True-to-scale visual print preview viewport with physical margin guides, scaling indicators, and page boundaries.
  */
@@ -90,7 +90,7 @@ export default function PrintPreviewCanvas({
               type="checkbox"
               checked={showMarginGuides}
               onChange={(e) => setShowMarginGuides(e.target.checked)}
-              className="w-3.5 h-3.5 rounded text-indigo-600 accent-indigo-600"
+              className="w-3.5 h-3.5 rounded text-primary-600 accent-indigo-600"
             />
             <span>Guides</span>
           </label>
@@ -166,7 +166,7 @@ export default function PrintPreviewCanvas({
               className="absolute pointer-events-none border border-dashed border-indigo-400/50 z-20"
               title="Printable Area Boundary"
             >
-              <span className="absolute -top-3 left-1 text-[8px] font-mono text-indigo-500 font-bold bg-white/90 px-1 rounded">
+              <span className="absolute -top-3 left-1 text-[8px] font-mono text-primary-500 font-bold bg-white/90 px-1 rounded">
                 Printable: {layout.printableAreaMm.width} × {layout.printableAreaMm.height} mm
               </span>
             </div>

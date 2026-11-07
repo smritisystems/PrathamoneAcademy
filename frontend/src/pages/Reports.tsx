@@ -684,11 +684,11 @@ export default function Reports() {
 
   // 1. Student Master Directory Columns
   const studentMasterColumns = useMemo<ColumnConfig<any>[]>(() => [
-    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, filterable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
     { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true },
     { id: 'division_name', header: 'Batch / Division', accessorKey: 'division_name', type: 'text', width: 150, sortable: true, filterable: true },
-    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, render: (val) => <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-semibold">{val}</span> },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
     { id: 'gender', header: 'Gender', accessorKey: 'gender', type: 'text', width: 90, sortable: true, render: (val) => <span className="capitalize">{val}</span> },
     { id: 'date_of_birth', header: 'DOB', accessorKey: 'date_of_birth', type: 'date', width: 110, sortable: true },
     { id: 'phone', header: 'Guardian Phone', accessorKey: 'phone', type: 'text', width: 130, render: (val) => <span className="font-mono">{val}</span> },
@@ -698,7 +698,7 @@ export default function Reports() {
 
   // 2. Attendance Summary Columns
   const attendanceColumns = useMemo<ColumnConfig<any>[]>(() => [
-    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
     { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 130, sortable: true },
     { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 140, sortable: true },
@@ -711,7 +711,7 @@ export default function Reports() {
 
   // 3. Fee Collection Columns
   const collectionColumns = useMemo<ColumnConfig<any>[]>(() => [
-    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, filterable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
     { id: 'total_fees', header: 'Net Invoiced (₹)', accessorKey: 'total_fees', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className="font-bold text-slate-900">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
     { id: 'paid', header: 'Realized Paid (₹)', accessorKey: 'paid', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
@@ -732,7 +732,7 @@ export default function Reports() {
 
   // 5. Daily Collection Columns
   const dailyCollectionColumns = useMemo<ColumnConfig<any>[]>(() => [
-    { id: 'receipt_number', header: 'Receipt #', accessorKey: 'receipt_number', type: 'text', width: 140, sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'receipt_number', header: 'Receipt #', accessorKey: 'receipt_number', type: 'text', width: 140, sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'payment_date', header: 'Date', accessorKey: 'payment_date', type: 'date', width: 110, sortable: true },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 120 },
@@ -745,12 +745,12 @@ export default function Reports() {
   // 6. Exam Merit Columns
   const examMeritColumns = useMemo<ColumnConfig<any>[]>(() => [
     { id: 'rank', header: 'Rank', accessorKey: 'rank', type: 'number', width: 80, align: 'center', sortable: true, render: (val) => <span className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs mx-auto ${val === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300' : val === 2 ? 'bg-slate-200 text-slate-800' : val === 3 ? 'bg-amber-50 text-amber-900' : 'bg-slate-50 text-slate-600'}`}>{val}</span> },
-    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
     { id: 'exam_name', header: 'Exam', accessorKey: 'exam_name', type: 'text', width: 150 },
     { id: 'marks_obtained', header: 'Marks Obtained', accessorKey: 'marks_obtained', type: 'number', width: 130, align: 'center', sortable: true, render: (val, row) => <span className="font-mono font-bold text-slate-900">{val} / {row.max_marks}</span> },
-    { id: 'percentage', header: 'Percentage', accessorKey: 'percentage', type: 'number', width: 120, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}%</span> },
-    { id: 'grade', header: 'Grade', accessorKey: 'grade', type: 'text', width: 90, align: 'center', render: (val) => <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 font-bold rounded">{val}</span> },
+    { id: 'percentage', header: 'Percentage', accessorKey: 'percentage', type: 'number', width: 120, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}%</span> },
+    { id: 'grade', header: 'Grade', accessorKey: 'grade', type: 'text', width: 90, align: 'center', render: (val) => <span className="px-2.5 py-0.5 bg-primary-100 text-primary-800 font-bold rounded">{val}</span> },
     { id: 'status', header: 'Result', accessorKey: 'status', type: 'text', width: 100, align: 'center', render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'Pass' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{val}</span> },
   ], [])
 
@@ -758,9 +758,9 @@ export default function Reports() {
   const auditColumns = useMemo<ColumnConfig<any>[]>(() => [
     { id: 'timestamp', header: 'Timestamp', accessorKey: 'timestamp', type: 'date', width: 160, sortable: true, render: (val) => <span className="font-mono text-xs text-slate-600">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
     { id: 'actor_name', header: 'Actor User', accessorKey: 'actor_name', type: 'text', width: 160, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
-    { id: 'action', header: 'Action', accessorKey: 'action', type: 'text', width: 160, render: (val) => <span className="font-mono text-xs text-indigo-700 font-semibold">{val}</span> },
+    { id: 'action', header: 'Action', accessorKey: 'action', type: 'text', width: 160, render: (val) => <span className="font-mono text-xs text-primary-700 font-semibold">{val}</span> },
     { id: 'resource_type', header: 'Resource', accessorKey: 'resource_type', type: 'text', width: 130 },
-    { id: 'severity', header: 'Severity', accessorKey: 'severity', type: 'text', width: 100, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'critical' ? 'bg-rose-100 text-rose-800' : val === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-blue-50 text-blue-700'}`}>{val}</span> },
+    { id: 'severity', header: 'Severity', accessorKey: 'severity', type: 'text', width: 100, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'critical' ? 'bg-rose-100 text-rose-800' : val === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-primary-50 text-primary-700'}`}>{val}</span> },
     { id: 'ip_address', header: 'IP Address', accessorKey: 'ip_address', type: 'text', width: 130, render: (val) => <span className="font-mono text-xs text-slate-500">{val}</span> },
     { id: 'details', header: 'Event Details', accessorKey: 'details', type: 'text', width: 250 },
   ], [])
@@ -791,7 +791,7 @@ export default function Reports() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Reporting & Analytics Centre</h1>
-            <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-full font-bold text-xs uppercase">
+            <span className="px-2.5 py-0.5 bg-primary-100 text-primary-800 border border-indigo-200 rounded-full font-bold text-xs uppercase">
               24 Enterprise Reports
             </span>
           </div>
@@ -808,7 +808,7 @@ export default function Reports() {
             placeholder="Search all 24 reports..."
             value={globalSearch}
             onChange={(e) => setGlobalSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-xs"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-xs"
           />
         </div>
       </div>
@@ -830,7 +830,7 @@ export default function Reports() {
                   setActiveReportId(r.id)
                   setGlobalSearch('')
                 }}
-                className="p-2.5 hover:bg-indigo-50 rounded-lg cursor-pointer flex items-center justify-between transition-colors"
+                className="p-2.5 hover:bg-primary-50 rounded-lg cursor-pointer flex items-center justify-between transition-colors"
               >
                 <div className="space-y-0.5">
                   <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
@@ -839,7 +839,7 @@ export default function Reports() {
                   </div>
                   <div className="text-xs text-slate-500 line-clamp-1">{r.description}</div>
                 </div>
-                <ArrowUpRight className="w-4 h-4 text-indigo-600 shrink-0" />
+                <ArrowUpRight className="w-4 h-4 text-primary-600 shrink-0" />
               </div>
             ))
           )}
@@ -861,15 +861,15 @@ export default function Reports() {
               }}
               className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
                 isActive
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-300'
+                  ? 'bg-primary-600 text-white border-primary-600 shadow-md ring-2 ring-indigo-300'
                   : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-indigo-600'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-primary-600'}`} />
                 <span
                   className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                    isActive ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-600'
+                    isActive ? 'bg-primary-700 text-white' : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {cat.count}
@@ -917,7 +917,7 @@ export default function Reports() {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-slate-900">{activeReport.name}</h2>
-              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-bold">
+              <span className="px-2 py-0.5 bg-primary-50 text-primary-700 border border-blue-200 rounded text-[10px] font-bold">
                 {activeReport.badge}
               </span>
             </div>
@@ -1136,7 +1136,7 @@ export default function Reports() {
               title="Outstanding Receivables & Due Dates"
               subtitle="Detailed invoice receivables categorized by due dates and student commitments"
               columns={[
-                { id: 'invoice_number', header: 'Invoice #', accessorKey: 'invoice_number', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+                { id: 'invoice_number', header: 'Invoice #', accessorKey: 'invoice_number', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
                 { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 120 },
                 { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
                 { id: 'due_date', header: 'Due Date', accessorKey: 'due_date', type: 'date', width: 110, sortable: true },
@@ -1234,7 +1234,7 @@ export default function Reports() {
                 title="Payment Methods Transaction Table"
                 subtitle="Tabulated count and realized volume per transaction instrument"
                 columns={[
-                  { id: 'payment_method', header: 'Payment Method', accessorKey: 'payment_method', type: 'text', width: 200, render: (val) => <span className="font-bold uppercase text-indigo-700">{val}</span> },
+                  { id: 'payment_method', header: 'Payment Method', accessorKey: 'payment_method', type: 'text', width: 200, render: (val) => <span className="font-bold uppercase text-primary-700">{val}</span> },
                   { id: 'count', header: 'Transaction Count', accessorKey: 'count', type: 'number', width: 180, align: 'center', sortable: true },
                   { id: 'total', header: 'Realized Volume (₹)', accessorKey: 'total', type: 'currency', width: 200, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
                 ]}
@@ -1279,7 +1279,7 @@ export default function Reports() {
                   { id: 'total_obligation', header: 'Invoiced (₹)', accessorKey: 'total_obligation', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
                   { id: 'total_collected', header: 'Collected (₹)', accessorKey: 'total_collected', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
                   { id: 'total_outstanding', header: 'Outstanding (₹)', accessorKey: 'total_outstanding', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span className="font-bold text-rose-600">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                  { id: 'collection_rate', header: 'Collection Rate', accessorKey: 'collection_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}%</span> },
+                  { id: 'collection_rate', header: 'Collection Rate', accessorKey: 'collection_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}%</span> },
                 ]}
                 data={overviewData.batch_breakdown || []}
                 loading={loadingOverview}
@@ -1298,11 +1298,11 @@ export default function Reports() {
               columns={[
                 { id: 'batch_name', header: 'Batch / Division', accessorKey: 'batch_name', type: 'text', width: 180, sortable: true, render: (val, r: any) => <span className="font-semibold text-slate-900">{val} {r.batch_code ? `[${r.batch_code}]` : ''}</span> },
                 { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
-                { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-semibold">{val}</span> },
+                { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
                 { id: 'total_capacity', header: 'Capacity', accessorKey: 'total_capacity', type: 'number', width: 110, align: 'center', sortable: true },
-                { id: 'enrolled_count', header: 'Enrolled', accessorKey: 'enrolled_count', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-indigo-700">{val}</span> },
+                { id: 'enrolled_count', header: 'Enrolled', accessorKey: 'enrolled_count', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-primary-700">{val}</span> },
                 { id: 'available_seats', header: 'Vacant', accessorKey: 'available_seats', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className={`font-bold ${val <= 5 ? 'text-amber-600' : 'text-emerald-700'}`}>{val}</span> },
-                { id: 'occupancy_rate', header: 'Occupancy %', accessorKey: 'occupancy_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-800">{val}%</span> },
+                { id: 'occupancy_rate', header: 'Occupancy %', accessorKey: 'occupancy_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-800">{val}%</span> },
               ]}
               data={batchCapacityData}
               loading={loadingBatchCapacity}
@@ -1336,12 +1336,12 @@ export default function Reports() {
                 title="Board & Standard Distribution Audit"
                 subtitle="Comprehensive breakdown of student distribution and capacity across educational boards"
                 columns={[
-                  { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 160, sortable: true, render: (val) => <span className="font-bold text-indigo-700">{val}</span> },
+                  { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 160, sortable: true, render: (val) => <span className="font-bold text-primary-700">{val}</span> },
                   { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
                   { id: 'batches_count', header: 'Batches', accessorKey: 'batches_count', type: 'number', width: 110, align: 'center', sortable: true },
                   { id: 'total_capacity', header: 'Capacity', accessorKey: 'total_capacity', type: 'number', width: 120, align: 'center', sortable: true },
                   { id: 'enrolled_count', header: 'Enrolled', accessorKey: 'enrolled_count', type: 'number', width: 120, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
-                  { id: 'occupancy_rate', header: 'Occupancy %', accessorKey: 'occupancy_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-800">{val}%</span> },
+                  { id: 'occupancy_rate', header: 'Occupancy %', accessorKey: 'occupancy_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-800">{val}%</span> },
                 ]}
                 data={distributionData}
                 loading={loadingDistribution}
@@ -1359,11 +1359,11 @@ export default function Reports() {
               subtitle="Standardized curriculum mapping across educational boards with allocated faculty"
               columns={[
                 { id: 'subject_name', header: 'Subject Name', accessorKey: 'subject_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
-                { id: 'subject_code', header: 'Code', accessorKey: 'subject_code', type: 'text', width: 110, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+                { id: 'subject_code', header: 'Code', accessorKey: 'subject_code', type: 'text', width: 110, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
                 { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
-                { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-semibold">{val}</span> },
+                { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
                 { id: 'weekly_hours', header: 'Weekly Load', accessorKey: 'weekly_hours', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold text-slate-700">{val} hrs/wk</span> },
-                { id: 'assigned_teachers_count', header: 'Teachers', accessorKey: 'assigned_teachers_count', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-indigo-700">{val}</span> },
+                { id: 'assigned_teachers_count', header: 'Teachers', accessorKey: 'assigned_teachers_count', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-primary-700">{val}</span> },
                 { id: 'teachers_list', header: 'Allocated Faculty Members', accessorKey: 'teachers_list', type: 'text', width: 280, render: (val) => <span className="text-slate-700 font-medium">{val}</span> },
               ]}
               data={curriculumMatrixData}
@@ -1380,7 +1380,7 @@ export default function Reports() {
               title="Timetable Room & Batch Utilization"
               subtitle="Classroom scheduling distribution and day-wise slot commitments"
               columns={[
-                { id: 'day_of_week', header: 'Day', accessorKey: 'day_of_week', type: 'text', width: 120, sortable: true, render: (val) => <span className="font-bold text-indigo-700 uppercase">{val}</span> },
+                { id: 'day_of_week', header: 'Day', accessorKey: 'day_of_week', type: 'text', width: 120, sortable: true, render: (val) => <span className="font-bold text-primary-700 uppercase">{val}</span> },
                 { id: 'start_time', header: 'Start Time', accessorKey: 'start_time', type: 'text', width: 110 },
                 { id: 'end_time', header: 'End Time', accessorKey: 'end_time', type: 'text', width: 110 },
                 { id: 'room_number', header: 'Room / Hall', accessorKey: 'room_number', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-slate-100 font-bold text-slate-800 rounded">{val}</span> },
@@ -1403,10 +1403,10 @@ export default function Reports() {
               subtitle="Weekly session commitments, assigned classroom batches, and supervised students"
               columns={[
                 { id: 'teacher_name', header: 'Faculty Member', accessorKey: 'teacher_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
-                { id: 'staff_code', header: 'Staff Code', accessorKey: 'staff_code', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+                { id: 'staff_code', header: 'Staff Code', accessorKey: 'staff_code', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
                 { id: 'department', header: 'Department', accessorKey: 'department', type: 'text', width: 140 },
                 { id: 'assigned_batches_count', header: 'Active Batches', accessorKey: 'assigned_batches_count', type: 'number', width: 130, align: 'center', sortable: true },
-                { id: 'total_weekly_hours', header: 'Weekly Hours', accessorKey: 'total_weekly_hours', type: 'number', width: 130, align: 'center', sortable: true, render: (val) => <span className="font-bold text-indigo-700">{val} hrs</span> },
+                { id: 'total_weekly_hours', header: 'Weekly Hours', accessorKey: 'total_weekly_hours', type: 'number', width: 130, align: 'center', sortable: true, render: (val) => <span className="font-bold text-primary-700">{val} hrs</span> },
                 { id: 'total_students_supervised', header: 'Supervised Students', accessorKey: 'total_students_supervised', type: 'number', width: 160, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-800">{val}</span> },
               ]}
               data={facultyLoadData}
@@ -1458,7 +1458,7 @@ export default function Reports() {
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200">
                   <div className="text-xs text-slate-500 font-semibold uppercase">Appeared Students</div>
-                  <div className="text-xl font-bold text-indigo-700 mt-1">{examAnalyticsData.appeared_candidates}</div>
+                  <div className="text-xl font-bold text-primary-700 mt-1">{examAnalyticsData.appeared_candidates}</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200">
                   <div className="text-xs text-slate-500 font-semibold uppercase">Class Average</div>
@@ -1466,7 +1466,7 @@ export default function Reports() {
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200">
                   <div className="text-xs text-slate-500 font-semibold uppercase">Overall Pass %</div>
-                  <div className="text-xl font-bold text-blue-700 mt-1">{examAnalyticsData.pass_percentage}%</div>
+                  <div className="text-xl font-bold text-primary-700 mt-1">{examAnalyticsData.pass_percentage}%</div>
                 </div>
               </div>
 
@@ -1535,7 +1535,7 @@ export default function Reports() {
               columns={[
                 { id: 'created_at', header: 'Import Date', accessorKey: 'created_at', type: 'date', width: 150, sortable: true, render: (val) => <span className="font-mono text-xs">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
                 { id: 'file_name', header: 'File Name', accessorKey: 'file_name', type: 'text', width: 200 },
-                { id: 'entity_type', header: 'Target Entity', accessorKey: 'entity_type', type: 'text', width: 140, render: (val) => <span className="font-bold text-indigo-700 capitalize">{val}</span> },
+                { id: 'entity_type', header: 'Target Entity', accessorKey: 'entity_type', type: 'text', width: 140, render: (val) => <span className="font-bold text-primary-700 capitalize">{val}</span> },
                 { id: 'total_rows', header: 'Rows', accessorKey: 'total_rows', type: 'number', width: 100, align: 'center' },
                 { id: 'success_rows', header: 'Imported', accessorKey: 'success_rows', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
                 { id: 'error_rows', header: 'Errors', accessorKey: 'error_rows', type: 'number', width: 100, align: 'center', render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{val}</span> },
@@ -1563,7 +1563,7 @@ export default function Reports() {
                 { id: 'exit_reason', header: 'Reason', accessorKey: 'exit_reason', type: 'text', width: 150 },
                 { id: 'gross_paid', header: 'Gross Paid (₹)', accessorKey: 'gross_paid', type: 'currency', width: 140, align: 'right', render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
                 { id: 'refund_amount', header: 'Refunded (₹)', accessorKey: 'refund_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span className="font-bold text-amber-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                { id: 'net_retained', header: 'Net Retained (₹)', accessorKey: 'net_retained', type: 'currency', width: 150, align: 'right', render: (val) => <span className="font-bold text-indigo-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                { id: 'net_retained', header: 'Net Retained (₹)', accessorKey: 'net_retained', type: 'currency', width: 150, align: 'right', render: (val) => <span className="font-bold text-primary-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
               ]}
               data={withdrawalsReport}
               loading={loadingWithdrawals}
@@ -1591,7 +1591,7 @@ export default function Reports() {
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200">
                   <div className="text-xs text-slate-500 font-semibold uppercase">Net Retained</div>
-                  <div className="text-xl font-bold text-indigo-700 mt-1">₹{Number(analyticsData.summary?.net_retained || 0).toLocaleString('en-IN')}</div>
+                  <div className="text-xl font-bold text-primary-700 mt-1">₹{Number(analyticsData.summary?.net_retained || 0).toLocaleString('en-IN')}</div>
                 </div>
               </div>
 

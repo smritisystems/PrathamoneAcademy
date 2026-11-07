@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-08
  *
  * @description Modal dialog for managing employee lifecycle state transitions (activate, leave, resignation, termination, rehire).
  */
@@ -90,7 +90,7 @@ const ACTION_DESCRIPTIONS: Record<LifecycleActionType, { label: string; desc: st
     label: 'Rehire / Reinstate Personnel',
     desc: 'Re-activates former employee preserving continuous historical identity.',
     icon: RotateCcw,
-    color: 'text-blue-600 bg-blue-50 border-blue-200',
+    color: 'text-primary-600 bg-primary-50 border-blue-200',
   },
 }
 
@@ -282,7 +282,7 @@ export default function StaffLifecycleModal({
               value={effectiveDate}
               onChange={(e) => setEffectiveDate(e.target.value)}
               required
-              className="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5"
+              className="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 py-1.5"
             />
           </div>
 
@@ -293,7 +293,7 @@ export default function StaffLifecycleModal({
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5"
+              className="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 py-1.5"
             >
               {(COMMON_REASONS[action] || []).map((r) => (
                 <option key={r} value={r}>
@@ -317,7 +317,7 @@ export default function StaffLifecycleModal({
               onChange={(e) => setCustomReason(e.target.value)}
               placeholder="Enter official justification..."
               required
-              className="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5"
+              className="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 py-1.5"
             />
           </div>
         )}
@@ -330,7 +330,7 @@ export default function StaffLifecycleModal({
                 type="checkbox"
                 checked={rehireEligible}
                 onChange={(e) => setRehireEligible(e.target.checked)}
-                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
               />
               <span className="text-xs font-semibold text-slate-800">
                 Mark as Eligible for Future Rehire / Re-engagement
@@ -352,7 +352,7 @@ export default function StaffLifecycleModal({
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder="Optional internal remarks, handover notes, or board meeting references..."
-            className="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="w-full text-xs rounded-lg border-slate-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           />
         </div>
 
@@ -369,7 +369,7 @@ export default function StaffLifecycleModal({
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+            className="px-4 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 flex items-center gap-1.5 shadow-sm disabled:opacity-50"
           >
             {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             Confirm Status Transition

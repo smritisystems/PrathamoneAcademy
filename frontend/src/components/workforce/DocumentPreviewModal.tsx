@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Official institutional document preview modal rendering dynamic staff documents with Universal Print integration.
  */
@@ -68,7 +68,7 @@ export default function DocumentPreviewModal({
           {/* Modal Header */}
           <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 print:hidden">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+              <div className="p-2 bg-primary-50 text-primary-600 rounded-lg">
                 <FileText className="w-5 h-5" />
               </div>
               <div>
@@ -86,7 +86,7 @@ export default function DocumentPreviewModal({
                 type="button"
                 onClick={handlePrint}
                 disabled={isLoading || isError}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print Document</span>
@@ -105,7 +105,7 @@ export default function DocumentPreviewModal({
           <div className="flex-1 overflow-y-auto p-6 bg-slate-100/60">
             {isLoading ? (
               <div className="py-24 text-center flex flex-col items-center justify-center gap-3">
-                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
                 <p className="text-xs font-semibold text-slate-500">
                   Generating verified official document snapshot...
                 </p>
