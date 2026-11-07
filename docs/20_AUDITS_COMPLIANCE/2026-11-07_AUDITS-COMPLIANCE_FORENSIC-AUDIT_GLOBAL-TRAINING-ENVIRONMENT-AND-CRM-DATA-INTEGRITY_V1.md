@@ -353,3 +353,4 @@ The Global Training Environment and Lead Management & CRM architecture in Pratha
 - **Tenant Isolation:** 100% strict tenant boundaries enforced across all 74 database tables.
 - **High Fidelity:** Full visual parity with the approved UI design and dynamic derivation of all metrics.
 - **Enterprise Reset Safety:** High-speed reset engine restoring baseline training data in under 1 second without any risk of production data loss.
+
