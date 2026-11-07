@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Premium user authentication page featuring abstract educational wave aesthetics, secure credential validation, and role redirection.
  */
@@ -164,9 +164,9 @@ export default function LoginPage() {
             <div className="absolute -left-6 -bottom-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
 
             {/* Official PrathamOne EduOS Emblem Badge */}
-            <div className="relative inline-flex items-center justify-center bg-white p-2 w-16 h-16 rounded-2xl shadow-lg border border-white/40 mx-auto mb-3.5 group transition-transform hover:scale-105 duration-300">
+            <div className="relative inline-flex items-center justify-center bg-white p-1.5 w-16 h-16 rounded-2xl shadow-lg border border-white/40 mx-auto mb-3.5 group transition-transform hover:scale-105 duration-300">
               <img
-                src={branding.assets.symbolMarkTransparentUrl || branding.assets.prathamOneMarkTransparentUrl}
+                src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
                 alt="PrathamOne EduOS Official Emblem"
                 className="w-full h-full object-contain filter drop-shadow-xs"
               />
@@ -295,12 +295,12 @@ export default function LoginPage() {
             </div>
 
             {/* Security / Attribution Footer */}
-            <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col items-center gap-1.5 text-center">
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                <span>{branding.suiteName}</span>
-                <span className="text-slate-300">•</span>
-                <span className="font-semibold text-blue-700">{branding.edition}</span>
-              </div>
+            <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col items-center gap-2 text-center select-none">
+              <img
+                src={branding.assets.horizontalLogoTransparentUrl}
+                alt="PrathamOne EduOS — Coaching Institutes Suite"
+                className="h-7 w-auto object-contain filter drop-shadow-xs opacity-90 hover:opacity-100 transition-opacity"
+              />
               <p className="text-[10.5px] text-slate-400">
                 {branding.copyright} • DPDP Act 2023 Compliant
               </p>

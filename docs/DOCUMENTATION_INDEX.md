@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-08 00:35:40  
-**Total Indexed Items:** 295  
+**Last Reindexed:** 2026-11-08 00:46:32  
+**Total Indexed Items:** 297  
 
 ---
 
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **6** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **79** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **81** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -480,11 +480,11 @@
 | `guide_step3_payments_edit_active.png` | `assets/screenshots` | 236.0 KB | [guide_step3_payments_edit_active.png](assets/screenshots/guide_step3_payments_edit_active.png) |
 | `guide_step4_fee_structure_editor.png` | `assets/screenshots` | 223.2 KB | [guide_step4_fee_structure_editor.png](assets/screenshots/guide_step4_fee_structure_editor.png) |
 | `payroll_login_check.png` | `assets/screenshots` | 611.7 KB | [payroll_login_check.png](assets/screenshots/payroll_login_check.png) |
-| `prathamone-app-icon-192.png` | `assets/branding` | 26.2 KB | [prathamone-app-icon-192.png](assets/branding/prathamone-app-icon-192.png) |
-| `prathamone-app-icon-512.png` | `assets/branding` | 125.6 KB | [prathamone-app-icon-512.png](assets/branding/prathamone-app-icon-512.png) |
+| `prathamone-app-icon-192.png` | `assets/branding` | 59.4 KB | [prathamone-app-icon-192.png](assets/branding/prathamone-app-icon-192.png) |
+| `prathamone-app-icon-512.png` | `assets/branding` | 309.3 KB | [prathamone-app-icon-512.png](assets/branding/prathamone-app-icon-512.png) |
 | `prathamone-eduos-horizontal-dark.png` | `assets/branding` | 894.1 KB | [prathamone-eduos-horizontal-dark.png](assets/branding/prathamone-eduos-horizontal-dark.png) |
-| `prathamone-eduos-horizontal-transparent.png` | `assets/branding` | 1660.5 KB | [prathamone-eduos-horizontal-transparent.png](assets/branding/prathamone-eduos-horizontal-transparent.png) |
-| `prathamone-eduos-horizontal.png` | `assets/branding` | 1660.5 KB | [prathamone-eduos-horizontal.png](assets/branding/prathamone-eduos-horizontal.png) |
+| `prathamone-eduos-horizontal-transparent.png` | `assets/branding` | 300.9 KB | [prathamone-eduos-horizontal-transparent.png](assets/branding/prathamone-eduos-horizontal-transparent.png) |
+| `prathamone-eduos-horizontal.png` | `assets/branding` | 265.2 KB | [prathamone-eduos-horizontal.png](assets/branding/prathamone-eduos-horizontal.png) |
 | `prathamone-eduos-logo-original.jpg` | `assets/branding` | 34.8 KB | [prathamone-eduos-logo-original.jpg](assets/branding/prathamone-eduos-logo-original.jpg) |
 | `prathamone-eduos-logo-transparent.png` | `assets/branding` | 190.3 KB | [prathamone-eduos-logo-transparent.png](assets/branding/prathamone-eduos-logo-transparent.png) |
 | `prathamone-eduos-logo.png` | `assets/branding` | 162.7 KB | [prathamone-eduos-logo.png](assets/branding/prathamone-eduos-logo.png) |
@@ -493,12 +493,14 @@
 | `prathamone-eduos-primary-dark.png` | `assets/branding` | 1157.1 KB | [prathamone-eduos-primary-dark.png](assets/branding/prathamone-eduos-primary-dark.png) |
 | `prathamone-eduos-primary-transparent.png` | `assets/branding` | 1939.8 KB | [prathamone-eduos-primary-transparent.png](assets/branding/prathamone-eduos-primary-transparent.png) |
 | `prathamone-eduos-primary.png` | `assets/branding` | 1779.6 KB | [prathamone-eduos-primary.png](assets/branding/prathamone-eduos-primary.png) |
+| `prathamone-eduos-seal-transparent.png` | `assets/branding` | 871.3 KB | [prathamone-eduos-seal-transparent.png](assets/branding/prathamone-eduos-seal-transparent.png) |
+| `prathamone-eduos-seal.png` | `assets/branding` | 871.3 KB | [prathamone-eduos-seal.png](assets/branding/prathamone-eduos-seal.png) |
 | `prathamone-master-logo-dark.png` | `assets/branding` | 646.4 KB | [prathamone-master-logo-dark.png](assets/branding/prathamone-master-logo-dark.png) |
 | `prathamone-master-logo-transparent.png` | `assets/branding` | 1256.3 KB | [prathamone-master-logo-transparent.png](assets/branding/prathamone-master-logo-transparent.png) |
 | `prathamone-master-logo.png` | `assets/branding` | 1155.9 KB | [prathamone-master-logo.png](assets/branding/prathamone-master-logo.png) |
 | `prathamone-symbol-icon-dark.png` | `assets/branding` | 111.8 KB | [prathamone-symbol-icon-dark.png](assets/branding/prathamone-symbol-icon-dark.png) |
-| `prathamone-symbol-icon-transparent.png` | `assets/branding` | 279.2 KB | [prathamone-symbol-icon-transparent.png](assets/branding/prathamone-symbol-icon-transparent.png) |
-| `prathamone-symbol-icon.png` | `assets/branding` | 256.4 KB | [prathamone-symbol-icon.png](assets/branding/prathamone-symbol-icon.png) |
+| `prathamone-symbol-icon-transparent.png` | `assets/branding` | 309.3 KB | [prathamone-symbol-icon-transparent.png](assets/branding/prathamone-symbol-icon-transparent.png) |
+| `prathamone-symbol-icon.png` | `assets/branding` | 309.3 KB | [prathamone-symbol-icon.png](assets/branding/prathamone-symbol-icon.png) |
 | `tab1_monthly_payroll.png` | `assets/screenshots` | 252.0 KB | [tab1_monthly_payroll.png](assets/screenshots/tab1_monthly_payroll.png) |
 | `tab2_session_register.png` | `assets/screenshots` | 228.7 KB | [tab2_session_register.png](assets/screenshots/tab2_session_register.png) |
 | `tab3_profiles_and_rates.png` | `assets/screenshots` | 225.7 KB | [tab3_profiles_and_rates.png](assets/screenshots/tab3_profiles_and_rates.png) |

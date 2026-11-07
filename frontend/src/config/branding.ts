@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Master branding configuration and dynamic identity resolver for PrathamOne Academy and tenant institutions.
  */
@@ -134,35 +134,40 @@ export const BRANDING_CONFIG = {
     accent: '#0284c7',        // Cyan-600
     gold: '#f59e0b',          // Amber-500
     success: '#10b981',       // Emerald-500
-    prathamNavy: '#1A1A50',   // PrathamOne Official Deep Navy
-    prathamOrange: '#EE8B36', // PrathamOne Official Vibrant Orange
+    prathamNavy: '#161C3B',   // PrathamOne Official Deep Navy (Official Artwork Spec)
+    prathamOrange: '#F47B20', // PrathamOne Official Vibrant Orange (Official Artwork Spec)
+    prathamGold: '#F89D2B',   // PrathamOne Official Gold / Amber Accent
   },
   assets: {
-    logoUrl: '/logo.svg' as string,
-    logoDarkUrl: '/logo.svg' as string,
+    logoUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    logoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
     faviconUrl: '/favicon.svg' as string,
+    faviconPngUrl: '/favicon.png' as string,
     faviconIcoUrl: '/favicon.ico' as string,
     icon192Url: '/icons/icon-192x192.png' as string,
     icon512Url: '/icons/icon-512x512.png' as string,
+    // Official Circular Seal (Elephant 'P' Seal)
+    sealMarkUrl: '/media/logo/prathamone-eduos-seal.png' as string,
+    sealMarkTransparentUrl: '/media/logo/prathamone-eduos-seal-transparent.png' as string,
     // Parent Brand Master Logo
-    masterLogoUrl: '/media/logo/prathamone-master-logo.png' as string,
-    masterLogoTransparentUrl: '/media/logo/prathamone-master-logo-transparent.png' as string,
-    masterLogoDarkUrl: '/media/logo/prathamone-master-logo-dark.png' as string,
-    // Product Brand Stacked Primary Logo
-    primaryLogoUrl: '/media/logo/prathamone-eduos-primary.png' as string,
-    primaryLogoTransparentUrl: '/media/logo/prathamone-eduos-primary-transparent.png' as string,
-    primaryLogoDarkUrl: '/media/logo/prathamone-eduos-primary-dark.png' as string,
+    masterLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
+    masterLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    masterLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    // Product Brand Primary Logo
+    primaryLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
+    primaryLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    primaryLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
     // Horizontal Lockup Logo
     horizontalLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
     horizontalLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
-    horizontalLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-dark.png' as string,
+    horizontalLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
     // Official Symbol Mark (Elephant 'P' Emblem)
     symbolMarkUrl: '/media/logo/prathamone-symbol-icon.png' as string,
     symbolMarkTransparentUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
-    symbolMarkDarkUrl: '/media/logo/prathamone-symbol-icon-dark.png' as string,
+    symbolMarkDarkUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
     // Legacy / Convenience aliases
-    prathamOneLogoUrl: '/media/logo/prathamone-eduos-primary.png' as string,
-    prathamOneLogoTransparentUrl: '/media/logo/prathamone-eduos-primary-transparent.png' as string,
+    prathamOneLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
+    prathamOneLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
     prathamOneMarkUrl: '/media/logo/prathamone-symbol-icon.png' as string,
     prathamOneMarkTransparentUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
     prathamOneAppIcon512: '/media/logo/prathamone-app-icon-512.png' as string,
