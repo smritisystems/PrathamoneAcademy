@@ -233,4 +233,78 @@ describe('Canonical Subject Master & Applicability Mappings Suite', () => {
       expect(screen.getByText(/Reuse 'Mathematics' \(MATH001\) Instead/i)).toBeDefined()
     })
   })
+
+  it('RULE 6: Filters mappings by examination board and renders board badges', async () => {
+    vi.mocked(subjectsApi.listMappings).mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          canonical_subject_id: 1,
+          canonical_name: 'Mathematics',
+          canonical_code: 'MATH001',
+          standard_id: 10,
+          standard_name: 'Class X',
+          board_id: 1,
+          board_code: 'ICSE',
+          curriculum_code: 'MATH-10',
+          display_name: 'Mathematics (ICSE)',
+          max_marks: 100,
+          pass_marks: 35,
+          is_optional: false,
+          display_order: 1,
+          is_active: true,
+        },
+        {
+          id: 2,
+          canonical_subject_id: 1,
+          canonical_name: 'Mathematics',
+          canonical_code: 'MATH001',
+          standard_id: 10,
+          standard_name: 'Class X',
+          board_id: 2,
+          board_code: 'CBSE',
+          curriculum_code: '041',
+          display_name: 'Mathematics (CBSE)',
+          max_marks: 80,
+          pass_marks: 26,
+          is_optional: false,
+          display_order: 2,
+          is_active: true,
+        },
+      ],
+    } as any)
+
+    renderComponent()
+
+    const mappingsTab = screen.getByText(/Standard & Board Mappings/i)
+    fireEvent.click(mappingsTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('Mathematics (ICSE)')).toBeDefined()
+      expect(screen.getByText('Mathematics (CBSE)')).toBeDefined()
+      expect(screen.getAllByText('ICSE').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getAllByText('CBSE').length).toBeGreaterThanOrEqual(1)
+    })
+  })
+
+  it('RULE 7: Protects mapping deactivation behind scoped Edit Mode and confirmation modal', async () => {
+    useEditModeStore.getState().enableEditMode('academic:subjects', adminUser)
+
+    renderComponent()
+
+    const mappingsTab = screen.getByText(/Standard & Board Mappings/i)
+    fireEvent.click(mappingsTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('MATH-10')).toBeDefined()
+    })
+
+    const deleteBtn = screen.getAllByTitle(/Remove mapping/i)[0]
+    fireEvent.click(deleteBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Confirm Curriculum Mapping Deletion/i)).toBeDefined()
+      expect(screen.getByText(/Target Entity for Removal:/i)).toBeDefined()
+    })
+  })
 })

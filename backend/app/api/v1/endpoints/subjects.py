@@ -509,16 +509,23 @@ async def create_subject_mapping(
         SubjectMapping.standard_id == data.standard_id,
         SubjectMapping.is_active == True,
     )
-    if data.board_id:
+    if data.board_id is not None:
         check_query = check_query.where(SubjectMapping.board_id == data.board_id)
-    if data.academic_year_id:
+    else:
+        check_query = check_query.where(SubjectMapping.board_id.is_(None))
+
+    if data.academic_year_id is not None:
         check_query = check_query.where(SubjectMapping.academic_year_id == data.academic_year_id)
+    else:
+        check_query = check_query.where(SubjectMapping.academic_year_id.is_(None))
 
     existing = (await db.execute(check_query)).scalar_one_or_none()
     if existing:
+        board_label = f" for board ID {data.board_id}" if data.board_id else ""
+        ay_label = f" in academic year ID {data.academic_year_id}" if data.academic_year_id else ""
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Subject '{cs.name}' is already mapped to {std.name}",
+            detail=f"Subject '{cs.name}' is already mapped to {std.name}{board_label}{ay_label}",
         )
 
     # Maintain backward compatibility with legacy Subject table

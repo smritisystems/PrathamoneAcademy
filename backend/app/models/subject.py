@@ -81,6 +81,7 @@ class SubjectMapping(Base):
             "academic_year_id",
             unique=True,
             postgresql_where=text("is_active = true"),
+            postgresql_nulls_not_distinct=True,
         ),
     )
 

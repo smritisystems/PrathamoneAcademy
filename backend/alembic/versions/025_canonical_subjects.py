@@ -139,6 +139,7 @@ def upgrade():
             ["canonical_subject_id", "standard_id", "board_id", "academic_year_id"],
             unique=True,
             postgresql_where=sa.text("is_active = true"),
+            postgresql_nulls_not_distinct=True,
         )
 
     # 4. Seed Canonical Subjects Master
