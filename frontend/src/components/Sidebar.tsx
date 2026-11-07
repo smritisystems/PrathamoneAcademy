@@ -535,7 +535,7 @@ export default function Sidebar() {
                 className={({ isActive }) =>
                   `flex items-center ${
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
-                  } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isActive
                       ? 'text-white shadow-md'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
@@ -568,7 +568,7 @@ export default function Sidebar() {
                   aria-label="Academic Workspace"
                   style={isAcademicActive ? { backgroundColor: branding.colors.primary } : undefined}
                   className={({ isActive }) =>
-                    `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       isAcademicActive
                         ? 'text-white shadow-md'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -619,7 +619,7 @@ export default function Sidebar() {
                   type="button"
                   onClick={toggleAcademicOpen}
                   aria-expanded={academicOpen}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isAcademicActive
                       ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
@@ -648,7 +648,7 @@ export default function Sidebar() {
                         <NavLink
                           key={sub.to}
                           to={sub.to}
-                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isSubActive
                               ? 'bg-primary-600 text-white shadow-sm'
                               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
@@ -675,7 +675,7 @@ export default function Sidebar() {
                 className={({ isActive }) =>
                   `flex items-center ${
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
-                  } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isActive
                       ? 'text-white shadow-md'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
@@ -708,7 +708,7 @@ export default function Sidebar() {
                   aria-label="Lead Management & CRM"
                   style={isCrmActive ? { backgroundColor: branding.colors.primary } : undefined}
                     className={({ isActive }) =>
-                    `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       isCrmActive
                         ? 'text-white shadow-md'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -755,7 +755,7 @@ export default function Sidebar() {
                   type="button"
                   onClick={toggleCrmOpen}
                   aria-expanded={crmOpen}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isCrmActive
                       ? 'bg-primary-600 text-white shadow-md font-semibold'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
@@ -780,7 +780,7 @@ export default function Sidebar() {
                         <NavLink
                           key={sub.to}
                           to={sub.to}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isSubActive
                               ? 'bg-primary-600 text-white font-semibold shadow-sm'
                               : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
@@ -809,9 +809,10 @@ export default function Sidebar() {
                 <NavLink
                   to={item.to}
                   aria-label={item.label}
+                  style={isItemActive ? { backgroundColor: branding.colors.primary } : undefined}
                   className={`flex items-center ${
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
-                  } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isItemActive
                       ? 'bg-primary-600 text-white shadow-md'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'

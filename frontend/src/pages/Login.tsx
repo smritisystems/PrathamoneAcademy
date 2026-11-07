@@ -89,25 +89,39 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-slate-950 overflow-hidden select-none">
-      {/* 1. Deep Academic Blue Gradient Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-[#071739] to-[#0a1e47] pointer-events-none" />
+      {/* 1. Dynamic Institution-Themed Atmospheric Backdrop */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(circle at 10% 20%, ${branding.colors.primary}25 0%, #020617 55%), radial-gradient(circle at 90% 80%, ${branding.colors.secondary}20 0%, #020617 65%)`,
+        }}
+      />
 
-      {/* 2. Soft Ambient Light Effects (Cyan & Indigo Halos) */}
-      <div className="absolute -top-36 -left-36 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/4 -right-24 w-80 h-80 bg-cyan-400/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-36 left-1/4 w-[32rem] h-[32rem] bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
+      {/* 2. Soft Dynamic Ambient Light Effects */}
+      <div
+        className="absolute -top-36 -left-36 w-96 h-96 rounded-full blur-3xl pointer-events-none"
+        style={{ backgroundColor: `${branding.colors.primary}35` }}
+      />
+      <div
+        className="absolute top-1/4 -right-24 w-80 h-80 rounded-full blur-3xl pointer-events-none"
+        style={{ backgroundColor: `${branding.colors.secondary}25` }}
+      />
+      <div
+        className="absolute -bottom-36 left-1/4 w-[32rem] h-[32rem] rounded-full blur-3xl pointer-events-none"
+        style={{ backgroundColor: `${branding.colors.accent}20` }}
+      />
 
       {/* 3. Subtle Technology Dot Grid Pattern */}
       <div
         className="absolute inset-0 opacity-[0.06] pointer-events-none"
         style={{
-          backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, #93c5fd 1.5px, transparent 0)',
+          backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, #ffffff 1.5px, transparent 0)',
           backgroundSize: '28px 28px',
         }}
       />
 
-      {/* 4. Elegant Abstract Flowing Waves SVG Layer */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-35">
+      {/* 4. Elegant Abstract Flowing Waves SVG Layer (Dynamic Brand Hues) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
         <svg
           className="w-full h-full min-w-[900px] object-cover"
           viewBox="0 0 1440 900"
@@ -117,18 +131,18 @@ export default function LoginPage() {
         >
           <defs>
             <linearGradient id="wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
-              <stop offset="45%" stopColor="#2563eb" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#0f172a" stopOpacity="0" />
+              <stop offset="0%" stopColor={branding.colors.secondary} stopOpacity="0.45" />
+              <stop offset="45%" stopColor={branding.colors.primary} stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#020617" stopOpacity="0" />
             </linearGradient>
             <linearGradient id="wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.35" />
-              <stop offset="50%" stopColor="#1d4ed8" stopOpacity="0.15" />
+              <stop offset="0%" stopColor={branding.colors.accent} stopOpacity="0.35" />
+              <stop offset="50%" stopColor={branding.colors.secondary} stopOpacity="0.15" />
               <stop offset="100%" stopColor="#020617" stopOpacity="0" />
             </linearGradient>
             <linearGradient id="wave3" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#818cf8" stopOpacity="0.3" />
-              <stop offset="60%" stopColor="#3b82f6" stopOpacity="0.1" />
+              <stop offset="0%" stopColor={branding.colors.primary} stopOpacity="0.3" />
+              <stop offset="60%" stopColor={branding.colors.secondary} stopOpacity="0.1" />
               <stop offset="100%" stopColor="#020617" stopOpacity="0" />
             </linearGradient>
           </defs>
@@ -233,7 +247,7 @@ export default function LoginPage() {
                   <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
                   <input
                     {...register('username')}
-                    className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-400 transition-colors shadow-2xs"
+                    className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-slate-900 placeholder-slate-400 transition-colors shadow-2xs"
                     placeholder="e.g. admin"
                     autoComplete="username"
                   />
@@ -254,7 +268,7 @@ export default function LoginPage() {
                   <input
                     {...register('password')}
                     type={showPassword ? 'text' : 'password'}
-                    className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-11 py-2.5 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 placeholder-slate-400 transition-colors shadow-2xs"
+                    className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-11 py-2.5 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-slate-900 placeholder-slate-400 transition-colors shadow-2xs"
                     placeholder="••••••••"
                     autoComplete="current-password"
                   />
@@ -309,17 +323,17 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => fillCredentials('admin', 'admin123')}
-                  className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 transition-colors text-left group"
+                  className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-primary-400 hover:bg-primary-50/40 transition-colors text-left group"
                 >
-                  <span className="font-semibold text-slate-800 group-hover:text-blue-700">Administrator</span>
+                  <span className="font-semibold text-slate-800 group-hover:text-primary-700">Administrator</span>
                   <span className="text-[11px] text-slate-500 font-mono">admin / admin123</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => fillCredentials('accountant', 'account123')}
-                  className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 transition-colors text-left group"
+                  className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-primary-400 hover:bg-primary-50/40 transition-colors text-left group"
                 >
-                  <span className="font-semibold text-slate-800 group-hover:text-blue-700">Accountant</span>
+                  <span className="font-semibold text-slate-800 group-hover:text-primary-700">Accountant</span>
                   <span className="text-[11px] text-slate-500 font-mono">accountant / •••</span>
                 </button>
               </div>
