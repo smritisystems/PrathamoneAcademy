@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Main executive dashboard displaying institute KPIs, admissions trend, upcoming batches, fee status, and optional CodeX obfuscation presentation.
  */
@@ -180,7 +180,7 @@ export default function DashboardPage() {
         {/* Student Lifecycle & Status Filter Override */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-2xs text-xs">
           <div className="flex items-center gap-2 text-gray-700 font-medium">
-            <SlidersHorizontal className="w-4 h-4 text-blue-600" />
+            <SlidersHorizontal className="w-4 h-4 text-primary-600" />
             <span>Student Status Scope:</span>
             <span className="text-gray-500 font-normal">
               ({(stats as any)?.configured_visibility === 'include_all' ? 'Institute Default: All Statuses' : 'Institute Default: Active Only'})
@@ -196,7 +196,7 @@ export default function DashboardPage() {
               data-testid="dashboard-status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-blue-500"
+              className="px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-primary-500"
             >
               <option value="default">Institute Setting Default</option>
               <option value="active">Active Students Only</option>
@@ -216,7 +216,7 @@ export default function DashboardPage() {
           title="Total Students"
           value={stats?.total_students ?? 0}
           icon={Users}
-          color="blue"
+          color="primary"
           subtitle={
             (stats as any)?.status_filter === 'all'
               ? 'All student statuses'
@@ -325,14 +325,21 @@ export default function DashboardPage() {
           {stats?.monthly_trends && stats.monthly_trends.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={stats.monthly_trends} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                <defs>
+                  <linearGradient id="dashboardMonthlyFeeBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={branding.colors.primary} stopOpacity={0.95} />
+                    <stop offset="100%" stopColor={branding.colors.secondary || branding.colors.primary} stopOpacity={0.8} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`} />
                 <Tooltip
                   formatter={(val: number) => [fmt(val), 'Collected']}
-                  contentStyle={{ fontSize: 12, borderRadius: 6 }}
+                  contentStyle={{ fontSize: 12, borderRadius: 6, borderColor: '#e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                  cursor={{ fill: `${branding.colors.primary}18` }}
                 />
-                <Bar dataKey="collected" fill="#1d4ed8" radius={[4, 4, 0, 0]} barSize={36} />
+                <Bar dataKey="collected" fill="url(#dashboardMonthlyFeeBar)" radius={[4, 4, 0, 0]} barSize={36} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

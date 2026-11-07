@@ -45,6 +45,7 @@ import PaymentReceiptView from '../components/PaymentReceiptView'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import { printReceiptElement } from '../utils/printReceipt'
+import { useBranding } from '../config/branding'
 import type {
   FeeRegisterEntry, FeeRegisterInstallment, PaymentReceiptListItem,
   PaymentTransactionItem, FeeCategory, FeeStructure, Student, FeeInvoice,
@@ -151,6 +152,7 @@ export const numberToWordsINR = (num: number): string => {
 }
 
 export default function Fees() {
+  const branding = useBranding()
   const editScope = 'finance:fees'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const { selectedAcademicYearId, selectedInstitutionId, user } = useAuthStore()
@@ -1770,7 +1772,7 @@ export default function Fees() {
                             />
                             <Bar
                               dataKey="collected"
-                              fill="#6366f1"
+                              fill={branding.colors.primary}
                               radius={[4, 4, 0, 0]}
                               barSize={24}
                             >
@@ -1784,17 +1786,17 @@ export default function Fees() {
                             <Line
                               type="monotone"
                               dataKey="cumulative"
-                              stroke="#3b82f6"
+                              stroke={branding.colors.secondary || branding.colors.primary}
                               strokeWidth={2.5}
                               dot={(props: any) => {
                                 const { cx, cy, index } = props
                                 const isLast = index === overviewData.monthly_trends.length - 1
                                 return (
                                   <g key={`dot-${index}`}>
-                                    <circle cx={cx} cy={cy} r={3.5} fill="#3b82f6" stroke="#fff" strokeWidth={1.5} />
+                                    <circle cx={cx} cy={cy} r={3.5} fill={branding.colors.primary} stroke="#fff" strokeWidth={1.5} />
                                     {isLast && (
                                       <g transform={`translate(${cx - 36}, ${cy - 26})`}>
-                                        <rect width={72} height={20} rx={6} fill="#2563eb" />
+                                        <rect width={72} height={20} rx={6} fill={branding.colors.primary} />
                                         <text x={36} y={13} textAnchor="middle" fill="#fff" fontSize={10} fontWeight="bold">
                                           {fmt(props.payload.cumulative)}
                                         </text>

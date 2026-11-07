@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description KPI metric stat card component with icon container, trend indicator, and status badge.
  */
@@ -22,18 +22,30 @@ interface StatCardProps {
   title: string
   value: string | number | React.ReactNode
   icon: LucideIcon
-  color: 'blue' | 'green' | 'purple' | 'red' | 'orange'
+  color: 'blue' | 'green' | 'purple' | 'red' | 'orange' | 'primary' | 'brand'
   subtitle?: string
   codexBadge?: string
   onDecodeClick?: (code: string) => void
 }
 
 const colorMap = {
+  primary: {
+    bg: 'bg-primary-50',
+    icon: 'bg-primary-100 text-primary-700',
+    value: 'text-primary-900',
+    title: 'text-primary-700',
+  },
+  brand: {
+    bg: 'bg-primary-50',
+    icon: 'bg-primary-100 text-primary-700',
+    value: 'text-primary-900',
+    title: 'text-primary-700',
+  },
   blue: {
-    bg: 'bg-blue-50',
-    icon: 'bg-blue-100 text-blue-700',
-    value: 'text-blue-900',
-    title: 'text-blue-700',
+    bg: 'bg-primary-50',
+    icon: 'bg-primary-100 text-primary-700',
+    value: 'text-primary-900',
+    title: 'text-primary-700',
   },
   green: {
     bg: 'bg-green-50',

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
@@ -32,6 +32,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { InvoiceStatusBadge } from '../components/Badge'
+import { useBranding } from '../config/branding'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import {
   Users,
@@ -356,6 +357,7 @@ const CATEGORIES: { key: ReportCategoryKey; label: string; icon: any; count: num
 ]
 
 export default function Reports() {
+  const branding = useBranding()
   const { user, selectedAcademicYearId, selectedInstitutionId } = useAuthStore()
 
   // ── Navigation & Catalog State ──
@@ -1204,7 +1206,7 @@ export default function Reports() {
                         <XAxis dataKey="payment_method" />
                         <YAxis />
                         <RechartsTooltip formatter={(val: any) => `₹${Number(val).toLocaleString('en-IN')}`} />
-                        <Bar dataKey="total" fill="#4f46e5" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="total" fill={branding.colors.primary} radius={[6, 6, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1324,7 +1326,7 @@ export default function Reports() {
                       <RechartsTooltip />
                       <Legend />
                       <Bar dataKey="total_capacity" fill="#94a3b8" name="Total Capacity" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="enrolled_count" fill="#4f46e5" name="Enrolled Students" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="enrolled_count" fill={branding.colors.primary} name="Enrolled Students" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
