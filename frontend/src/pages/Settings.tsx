@@ -1767,6 +1767,45 @@ export default function Settings() {
                                 />
                               </div>
                             </div>
+                            {/* Video Display Overlay Controls */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
+                              {/* Dark Contrast Overlay Tint */}
+                              <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                  <span>Video Contrast Tint</span>
+                                  <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_overlay_opacity || '40'}%</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="10"
+                                  max="90"
+                                  step="5"
+                                  value={allSettings.branding?.login_bg_overlay_opacity || '40'}
+                                  onChange={(e) => handleSettingChange('branding', 'login_bg_overlay_opacity', e.target.value)}
+                                  className="w-full accent-primary-600"
+                                />
+                                <div className="text-[10px] text-slate-400 mt-0.5">Controls background darkness behind login card</div>
+                              </div>
+
+                              {/* Backdrop Glassmorphism Blur */}
+                              <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                  <span>Video Backdrop Blur</span>
+                                  <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_blur || '0'}px</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="16"
+                                  step="2"
+                                  value={allSettings.branding?.login_bg_blur || '0'}
+                                  onChange={(e) => handleSettingChange('branding', 'login_bg_blur', e.target.value)}
+                                  className="w-full accent-primary-600"
+                                />
+                                <div className="text-[10px] text-slate-400 mt-0.5">Soft glassmorphic video softening (0px = crystal clear)</div>
+                              </div>
+                            </div>
+
                             <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
                               <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                               <span>
