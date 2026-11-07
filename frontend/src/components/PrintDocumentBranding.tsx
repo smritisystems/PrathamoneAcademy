@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Canonical document branding header, statutory compliance notices, and authorized signatory layout for printable documents.
  */
@@ -20,6 +20,10 @@ import React from 'react'
 import { ShieldCheck, FileCheck2 } from 'lucide-react'
 import { useBranding, BRANDING_CONFIG, PRINT_SHARE_BRANDING } from '../config/branding'
 import type { Institution } from '../types'
+import PrintFooter, { PrintFooterProps } from './printing/PrintFooter'
+
+export { PrintFooter }
+export type { PrintFooterProps }
 
 export interface PrintDocumentHeaderProps {
   title: string
@@ -172,6 +176,12 @@ export interface PrintDocumentSignatoryProps {
   showDPDPNotice?: boolean
   compact?: boolean
   className?: string
+  documentRef?: string
+  classification?: string
+  showPrintFooter?: boolean
+  fixedBottom?: boolean
+  pageNumber?: number
+  totalPages?: number
 }
 
 export function PrintDocumentSignatory({
@@ -185,6 +195,12 @@ export function PrintDocumentSignatory({
   showDPDPNotice = true,
   compact = false,
   className = '',
+  documentRef,
+  classification,
+  showPrintFooter = true,
+  fixedBottom = false,
+  pageNumber = 1,
+  totalPages = 1,
 }: PrintDocumentSignatoryProps) {
   const globalBranding = useBranding()
 
@@ -262,11 +278,19 @@ export function PrintDocumentSignatory({
       </div>
 
       {/* Global Understated Print & Share Branding */}
-      <PrintBrandingFooter className="pt-1 mt-1" />
+      <PrintBrandingFooter
+        className="pt-1 mt-1"
+        documentId={documentRef}
+        classification={classification}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+        fixedBottom={fixedBottom}
+      />
     </div>
   )
 }
-export interface PrintBrandingFooterProps {
+
+export interface PrintBrandingFooterProps extends Partial<PrintFooterProps> {
   className?: string
   align?: 'center' | 'left' | 'right'
   fixedBottom?: boolean
@@ -277,6 +301,7 @@ export interface PrintBrandingFooterProps {
 /**
  * Consistent, understated PrathamOne branding footer for printable and shareable outputs.
  * Designed with a thin, light, low-contrast font (8-9pt print) that remains readable in grayscale.
+ * Integrates directly with the Canonical Two-Row Print Standard when document metadata is provided.
  */
 export function PrintBrandingFooter({
   className = '',
@@ -284,7 +309,34 @@ export function PrintBrandingFooter({
   fixedBottom = false,
   showDivider = false,
   customText,
+  documentId,
+  pageNumber = 1,
+  totalPages = 1,
+  classification,
+  softwareBrandingText,
+  showSoftwareBranding = true,
+  showPagination,
+  showDocumentId,
 }: PrintBrandingFooterProps) {
+  // If document metadata is provided or two-row layout is active, render canonical PrintFooter
+  if (documentId || classification) {
+    return (
+      <PrintFooter
+        documentId={documentId}
+        classification={classification || 'Confidential'}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+        fixedBottom={fixedBottom}
+        showDivider={showDivider}
+        softwareBrandingText={customText || softwareBrandingText || PRINT_SHARE_BRANDING.text}
+        showSoftwareBranding={showSoftwareBranding}
+        showPagination={showPagination}
+        showDocumentId={showDocumentId}
+        className={className}
+      />
+    )
+  }
+
   const alignmentClass = {
     center: 'text-center justify-center',
     left: 'text-left justify-start',

@@ -28,9 +28,12 @@ import { teacherPayrollApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
+import { PrintFooter, useUniversalPrint } from '../components/printing'
+import { PrintDocumentHeader } from '../components/PrintDocumentBranding'
 import toast from 'react-hot-toast'
 
 export default function TeacherPayroll() {
+  const { openPrint, PrintModal } = useUniversalPrint()
   const { user } = useAuthStore()
   const editScope = 'workforce:payroll'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
@@ -2000,7 +2003,19 @@ export default function TeacherPayroll() {
               <span className="text-sm font-semibold">Official Payment Document Print Preview</span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => {
+                    openPrint({
+                      targetElementId: 'printable-payroll-doc',
+                      documentType: selectedVoucherForPrint ? 'teacher_payment' : 'payroll_report',
+                      documentTitle: `Teacher Payment Document - ${selectedPayroll?.payroll?.teacher_name || selectedVoucherForPrint?.teacher_name || 'Faculty'}`,
+                      initialSettings: {
+                        paperSize: selectedVoucherForPrint ? 'A5' : 'A4',
+                        orientation: 'portrait',
+                        confidentiality: 'Confidential Remuneration Record',
+                        documentId: selectedPayroll ? selectedPayroll.payroll.payroll_number : (selectedVoucherForPrint?.voucher_number || 'VCH-001'),
+                      },
+                    })
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-medium"
                 >
                   <Printer className="w-3.5 h-3.5" />
@@ -2012,28 +2027,13 @@ export default function TeacherPayroll() {
 
             {/* Printable Document Body */}
             <div className="p-8 space-y-6 overflow-y-auto bg-white text-slate-900" id="printable-payroll-doc">
-              {/* Header with PrathamOne EduOS Branding */}
-              <div className="border-b-2 border-slate-900 pb-4 flex justify-between items-start">
-                <div>
-                  <h1 className="text-xl font-extrabold tracking-tight text-blue-900 uppercase">
-                    PRATHAMONE EduOS
-                  </h1>
-                  <span className="text-xs font-semibold text-slate-600 uppercase block tracking-wider">
-                    Coaching Institute Edition • Faculty Remuneration Statement
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    The Power of Enterprise Education. The Simplicity of WhatsApp.
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold font-mono text-slate-900 block">
-                    {selectedPayroll ? selectedPayroll.payroll.payroll_number : selectedVoucherForPrint?.voucher_number}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    Date: {new Date().toLocaleDateString('en-IN')}
-                  </span>
-                </div>
-              </div>
+              {/* Official Document Header with Decoupled Institute Branding */}
+              <PrintDocumentHeader
+                title={selectedVoucherForPrint ? 'Teacher Payment Voucher' : 'Faculty Remuneration Statement'}
+                documentRef={selectedPayroll ? selectedPayroll.payroll.payroll_number : selectedVoucherForPrint?.voucher_number}
+                documentDate={new Date().toLocaleDateString('en-IN')}
+                compact={!!selectedVoucherForPrint}
+              />
 
               {/* Recipient / Faculty Info */}
               <div className="grid grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -2116,12 +2116,20 @@ export default function TeacherPayroll() {
                   <div className="border-t border-slate-400 pt-2 font-semibold">Authorized Institute Signatory</div>
                 </div>
               </div>
+
+              {/* Canonical Two-Row Global Print Footer Standard */}
+              <PrintFooter
+                documentId={selectedPayroll ? selectedPayroll.payroll.payroll_number : (selectedVoucherForPrint?.voucher_number || 'VCH-001')}
+                classification="Confidential Remuneration Record"
+                className="mt-6"
+              />
             </div>
           </div>
         </div>
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════ */}
+      <PrintModal />
       {/* MODAL 10: ADJUST PAYROLL MODAL                                       */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
       {showAdjustModal && selectedPayroll && (

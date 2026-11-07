@@ -17,6 +17,7 @@
  */
 
 import React from 'react'
+import { PrintFooter } from '../printing'
 import {
   User,
   MapPin,
@@ -416,6 +417,14 @@ export default function EmployeeDossierDocument({
           </div>
         </div>
       </div>
+
+      {/* ─── 8. CANONICAL TWO-ROW GLOBAL PRINT FOOTER ────────────────────── */}
+      <PrintFooter
+        documentId={`EMP-${profile.employee_id || profile.id || '001'}`}
+        classification="Strictly Confidential"
+        fixedBottom={true}
+        className="mt-6"
+      />
     </div>
   )
 }

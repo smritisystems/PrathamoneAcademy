@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-07 18:53:46  
-**Total Indexed Items:** 254  
+**Last Reindexed:** 2026-11-07 19:28:48  
+**Total Indexed Items:** 255  
 
 ---
 
@@ -28,7 +28,7 @@
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **7** | Reports, Analytics & Data Grids |
 | `12` | [12_RBAC_SECURITY](#12_rbac_security) | **10** | RBAC, Security & Permissions |
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **10** | Sysadmin Center & System Settings |
-| `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **8** | Document Generation & Print Engine |
+| `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **9** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **4** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **3** | Database Schema & REST API Standards |
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **4** | UI/UX Design, Components & Footer |
@@ -242,6 +242,7 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **Centralized Printable Forms & KYC System Implementation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md](14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md) | - |
+| **Global Print & PDF Governance Engine Implementation & Acceptance Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-PDF-GOVERNANCE-ENGINE_V1.md](14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-PDF-GOVERNANCE-ENGINE_V1.md) | 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 08_EXAMINATION, 09_FEES_PAYMENTS, 14_PRINTING_DOCUMENTS |
 | **Official Fee Receipt — Premium A5 Portrait Redesign Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md](14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md) | - |
 | **PrathamOne Academy — Fees & Payments Workflow Implementation** | `AUDIT-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md](14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md) | - |
 | **PrathamOne Academy — Global Print & Share Branding Implementation & Audit Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md](14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md) | - |

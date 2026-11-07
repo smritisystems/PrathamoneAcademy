@@ -89,6 +89,11 @@ export interface PrintSettings {
   minimumScaleThreshold: number // default 50%
   documentType?: DocumentType
   documentTitle?: string
+  documentId?: string
+  confidentiality?: string
+  showSoftwareBranding?: boolean
+  softwareBrandingText?: string
+  fixedFooter?: boolean
 }
 
 export interface PrintLayoutCalculation {

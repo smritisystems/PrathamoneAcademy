@@ -281,7 +281,74 @@ export default function PrintSettingsPanel({
         </div>
       </div>
 
-      {/* ── 6. Advanced Toggles ── */}
+      {/* ── 6. Global Footer Governance Controls ── */}
+      <div className="space-y-3 pt-2 border-t border-slate-200">
+        <label className="font-bold text-slate-800 flex items-center justify-between">
+          <span>Print Footer & Governance</span>
+          <span className="text-[10px] text-indigo-600 font-mono">Row 1 & 2 Standard</span>
+        </label>
+
+        <div className="space-y-1.5">
+          <span className="text-[11px] text-slate-600 font-medium">Confidentiality Classification</span>
+          <div className="grid grid-cols-2 gap-1">
+            {[
+              { id: 'Confidential', label: 'Confidential' },
+              { id: 'Strictly Confidential', label: 'Strictly Confid.' },
+              { id: 'Official Record', label: 'Official Record' },
+              { id: 'Internal Only', label: 'Internal Only' },
+            ].map((c) => {
+              const isSelected = (settings.confidentiality || 'Confidential') === c.id
+              return (
+                <button
+                  type="button"
+                  key={c.id}
+                  onClick={() => onChange({ confidentiality: c.id })}
+                  className={`py-1 px-2 rounded-lg text-[10px] font-semibold border text-center transition-all ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                      : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <span className="text-[11px] text-slate-600 font-medium">Document ID Reference</span>
+          <input
+            type="text"
+            value={settings.documentId || ''}
+            onChange={(e) => onChange({ documentId: e.target.value })}
+            placeholder="DOC-001"
+            className="w-full text-xs font-mono border border-slate-200 rounded-lg p-1.5 bg-white text-slate-800"
+          />
+        </div>
+
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="font-medium text-slate-800">Repeat Fixed Footer on Multi-Page</span>
+          <input
+            type="checkbox"
+            checked={settings.fixedFooter ?? true}
+            onChange={(e) => onChange({ fixedFooter: e.target.checked })}
+            className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
+          />
+        </label>
+
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="font-medium text-slate-800">Show Software Branding (Row 2)</span>
+          <input
+            type="checkbox"
+            checked={settings.showSoftwareBranding ?? true}
+            onChange={(e) => onChange({ showSoftwareBranding: e.target.checked })}
+            className="w-4 h-4 rounded text-indigo-600 accent-indigo-600"
+          />
+        </label>
+      </div>
+
+      {/* ── 7. Advanced Toggles ── */}
       <div className="space-y-2 pt-1 border-t border-slate-200">
         <label className="flex items-center justify-between cursor-pointer">
           <span className="font-medium text-slate-800">Print Background Graphics & Colors</span>
@@ -314,7 +381,7 @@ export default function PrintSettingsPanel({
         </label>
       </div>
 
-      {/* ── 7. Reset to Document Defaults ── */}
+      {/* ── 8. Reset to Document Defaults ── */}
       <button
         type="button"
         onClick={onReset}

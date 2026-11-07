@@ -38,8 +38,11 @@ import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal } from '../components/common'
 import Modal from '../components/Modal'
+import { Printer } from 'lucide-react'
+import { PrintFooter, useUniversalPrint } from '../components/printing'
 
 export default function LeadManagement() {
+  const { openPrint, PrintModal } = useUniversalPrint()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
@@ -617,17 +620,41 @@ export default function LeadManagement() {
                     <Users className="w-4 h-4 text-indigo-600" />
                     <h3 className="text-sm font-black text-slate-900 tracking-tight">Lead Dossier</h3>
                   </div>
-                  <button
-                    onClick={() => {
-                      toast('Full Dossier Profile view docked inline.')
-                    }}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
-                  >
-                    <span>Open Full Profile</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        openPrint({
+                          targetElementId: 'lead-dossier-printable',
+                          documentType: 'employee_dossier',
+                          documentTitle: `Lead Dossier - ${leadDossier?.first_name || ''} ${leadDossier?.last_name || ''}`,
+                          initialSettings: {
+                            paperSize: 'A4',
+                            orientation: 'portrait',
+                            confidentiality: 'Confidential CRM Dossier',
+                            documentId: leadDossier?.lead_number || 'LD-001',
+                          },
+                        })
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 px-2 py-0.5 rounded-lg hover:bg-slate-50 transition-colors"
+                      title="Print Lead Dossier"
+                    >
+                      <Printer className="w-3 h-3 text-slate-500" />
+                      <span>Print</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        toast('Full Dossier Profile view docked inline.')
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
+                    >
+                      <span>Open Full Profile</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
+                {/* Printable Lead Dossier Wrapper */}
+                <div id="lead-dossier-printable" className="space-y-4">
                 {/* Lead Identity Hero */}
                 <div className="flex items-start gap-3.5">
                   <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 text-lg font-black flex items-center justify-center shrink-0">
@@ -844,8 +871,16 @@ export default function LeadManagement() {
                   </LockedButton>
                 </div>
 
-                {/* Quick Actions Grid */}
-                <div className="space-y-2 pt-1">
+                {/* Canonical Two-Row Global Print Footer Standard */}
+                <PrintFooter
+                  documentId={leadDossier.lead_number || 'LD-001'}
+                  classification="Confidential CRM Dossier"
+                  className="mt-4"
+                />
+              </div>
+
+              {/* Quick Actions Grid */}
+              <div className="space-y-2 pt-1">
                   <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Quick Actions</span>
                   <div className="grid grid-cols-4 gap-2">
                     <button

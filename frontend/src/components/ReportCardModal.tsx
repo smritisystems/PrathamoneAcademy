@@ -11,12 +11,13 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Official Printable Graphical Student Report Card modal with A4 transcript layout, progress bars, and analytics.
  */
 
 import React, { useState, useEffect } from 'react'
+import { PrintFooter, useUniversalPrint } from './printing'
 import {
   X, Printer, Award, User, GraduationCap, CheckCircle2,
   XCircle, AlertCircle, TrendingUp, Calendar, Trophy, Download
@@ -40,6 +41,7 @@ export default function ReportCardModal({
   studentId,
   initialData,
 }: ReportCardModalProps) {
+  const { openPrint, PrintModal } = useUniversalPrint()
   const [loading, setLoading] = useState<boolean>(false)
   const [report, setReport] = useState<StudentReportCardData | null>(initialData || null)
 
@@ -70,7 +72,17 @@ export default function ReportCardModal({
   if (!isOpen) return null
 
   const handlePrint = () => {
-    window.print()
+    openPrint({
+      targetElementId: 'printable-report-card',
+      documentType: 'report_card',
+      documentTitle: `Academic Report Card - ${report?.student?.full_name || 'Student'}`,
+      initialSettings: {
+        paperSize: 'A4',
+        orientation: 'portrait',
+        confidentiality: 'Official Academic Transcript',
+        documentId: `EXAM-${report?.student?.admission_number || report?.student?.id || studentId || '001'}`,
+      },
+    })
   }
 
   const getGradeBadge = (grade: string) => {
@@ -336,10 +348,12 @@ export default function ReportCardModal({
               </div>
             </div>
 
-            {/* Print Footer Watermark */}
-            <div className="pt-4 text-center text-[10px] text-gray-400 border-t border-gray-100">
-              Generated via <strong>PrathamOne EduOS — Coaching Institute Edition</strong> • Author: Jawahar R. Mallah • AITDL
-            </div>
+            {/* Canonical Global Print Footer Standard */}
+            <PrintFooter
+              documentId={`EXAM-${report?.student?.admission_number || report?.student?.id || studentId || '001'}`}
+              classification="Official Academic Transcript"
+              className="mt-6"
+            />
           </div>
         )}
       </div>

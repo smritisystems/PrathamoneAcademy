@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -886,10 +886,10 @@ export default function PaymentReceiptView({
               display: grid !important;
               visibility: visible !important;
             }
-            #${containerId} .print-branding-footer {
+            #${containerId} .print-branding-footer,
+            #${containerId} .pratham-global-print-footer {
               display: block !important;
               visibility: visible !important;
-              text-align: center !important;
               margin-top: 6px !important;
               padding-top: 4px !important;
             }
@@ -898,6 +898,19 @@ export default function PaymentReceiptView({
               color: #64748b !important;
               font-weight: 300 !important;
               letter-spacing: 0.025em !important;
+            }
+            #${containerId} [data-testid="print-footer-row-1"] {
+              display: flex !important;
+              justify-content: flex-end !important;
+              text-align: right !important;
+              color: #475569 !important;
+              font-size: 8pt !important;
+            }
+            #${containerId} [data-testid="print-footer-row-2"] {
+              display: block !important;
+              text-align: center !important;
+              color: #94a3b8 !important;
+              font-size: 6.5pt !important;
             }
             .print\\:hidden, button {
               display: none !important;
@@ -911,8 +924,12 @@ export default function PaymentReceiptView({
           aria-hidden="true"
         />
 
-        {/* Global Print & Share Branding */}
-        <PrintBrandingFooter className="pt-2 pb-0.5 print:pb-0" />
+        {/* Global Canonical Print Footer Standard */}
+        <PrintBrandingFooter
+          className="pt-2 pb-0.5 print:pb-0"
+          documentId={receipt?.receipt_number || 'RCP-001'}
+          classification="Official Fee Voucher"
+        />
       </div>
     </div>
   )

@@ -55,6 +55,8 @@ export default function DocumentPreviewModal({
       initialSettings: {
         paperSize: 'A4',
         orientation: 'portrait',
+        confidentiality: 'Official Staff Document',
+        documentId: renderedDoc?.reference_number || 'STF-DOC-001',
       },
     })
   }

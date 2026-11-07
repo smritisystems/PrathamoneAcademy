@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Standardized A4 print and preview template engine with DPDP Act 2023 compliance, Aadhaar masking, and signatures.
  */
@@ -19,7 +19,7 @@
 import React from 'react'
 import { ShieldCheck, CheckSquare, Square, Building2, AlertCircle, FileText } from 'lucide-react'
 import type { RenderedFormPayload } from '../../types/forms'
-import { PrintBrandingFooter } from '../PrintDocumentBranding'
+import { PrintFooter } from '../printing'
 
 interface Props {
   form: RenderedFormPayload
@@ -668,18 +668,21 @@ export default function FormTemplateEngine({
           </div>
         </div>
 
-        {/* Footer Audit Notice & Pagination */}
-        <div className="mt-4 pt-2 border-t border-slate-200 flex items-center justify-between text-[8px] text-slate-500 font-mono">
+        {/* Institutional Statutory Audit Notice */}
+        <div className="mt-4 pt-2 border-t border-slate-200 text-[8px] text-slate-500 font-mono">
           <span>
-            {institution?.name || 'Prashant Academy'} IMS &bull; DPDP Compliance Certified &bull; Ref: {form.document_ref}
-          </span>
-          <span>
-            Page {pageNumber} of {totalPages}
+            {institution?.name || 'Prashant Academy'} IMS &bull; DPDP Compliance Certified
           </span>
         </div>
 
-        {/* Global Print & Share Branding */}
-        <PrintBrandingFooter className="mt-1.5" />
+        {/* Global Canonical Two-Row Print Footer Standard */}
+        <PrintFooter
+          documentId={form.document_ref || 'DOC-001'}
+          classification="Official Statutory Form"
+          pageNumber={pageNumber}
+          totalPages={totalPages}
+          className="mt-2"
+        />
       </div>
     </div>
   )

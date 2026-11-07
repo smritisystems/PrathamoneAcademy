@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
@@ -19,6 +19,8 @@
 export interface PrintReceiptOptions {
   elementId?: string;
   documentTitle?: string;
+  documentId?: string;
+  classification?: string;
   paperSize?: 'A5' | 'A4' | 'auto';
   onAfterPrint?: () => void;
 }
@@ -144,7 +146,33 @@ export function printReceiptElement(
             }
           }
 
-          /* Global Print & Share Branding */
+          /* Global Print & Share Branding & Canonical Footer */
+          .pratham-global-print-footer {
+            display: block !important;
+            visibility: visible !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            margin-top: 8px !important;
+            padding-top: 6px !important;
+            border-top: 1px solid #cbd5e1 !important;
+          }
+          [data-testid="print-footer-row-1"] {
+            display: flex !important;
+            justify-content: flex-end !important;
+            text-align: right !important;
+            color: #475569 !important;
+            font-size: 8pt !important;
+            font-family: 'Inter', -apple-system, sans-serif !important;
+          }
+          [data-testid="print-footer-row-2"] {
+            display: block !important;
+            text-align: center !important;
+            color: #94a3b8 !important;
+            font-size: 6.5pt !important;
+            font-family: 'Inter', -apple-system, sans-serif !important;
+            letter-spacing: 0.015em !important;
+            margin-top: 2px !important;
+          }
           .print-branding-footer {
             display: block !important;
             visibility: visible !important;

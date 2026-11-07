@@ -113,11 +113,15 @@
   }
   .no-print,
   aside,
-  header,
+  header:not(.print-header),
   nav,
-  footer,
+  footer:not(.pratham-global-print-footer):not(.receipt-footer),
   .print-controls-panel {
     display: none !important;
+  }
+  .pratham-global-print-footer {
+    display: block !important;
+    visibility: visible !important;
   }
   .print-only {
     display: block !important;
