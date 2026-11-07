@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Enterprise Release & Change Management workspace governing change tracking, automated release notes, pre-flight validations, approvals, and deployment lifecycles.
  */
@@ -27,6 +27,8 @@ import {
 import toast from 'react-hot-toast'
 import { releasesApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import { useBranding } from '../config/branding'
 import type {
   SystemReleaseListItem,
@@ -37,6 +39,8 @@ import type {
 
 export default function Releases() {
   const { user } = useAuthStore()
+  const editScope = 'system:releases'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const branding = useBranding()
   const queryClient = useQueryClient()
   const isSysAdmin = isUserSysAdmin(user) || user?.role === 'admin'
@@ -305,6 +309,9 @@ export default function Releases() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Release Management & Deployment History" isDirty={draftModalOpen || editModalOpen} />
+
       {/* ─── Top Header Banner ──────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 rounded-2xl p-6 text-white shadow-xl border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

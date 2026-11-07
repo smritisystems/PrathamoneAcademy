@@ -29,12 +29,18 @@ import {
 } from 'lucide-react'
 import { staffApi, boardsApi, standardsApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import { Lock } from 'lucide-react'
 import StaffProfileModal from '../components/StaffProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
+import toast from 'react-hot-toast'
 import type { StaffMember, TeacherAssignmentItem, StaffDocumentTemplate } from '../types'
 
 export default function StaffManagement() {
   const { user } = useAuthStore()
+  const editScope = 'workforce:staff'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isAdmin = isUserAdmin(user)
@@ -300,6 +306,9 @@ export default function StaffManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Non-Teaching Staff & Administrative Workforce" isDirty={showCreateModal || showAssignModal} />
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
@@ -318,13 +327,25 @@ export default function StaffManagement() {
 
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-colors"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Add Staff Member</span>
-            </button>
+            isEditMode ? (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Add Staff Member</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to add staff members.')}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 text-sm font-semibold rounded-xl cursor-not-allowed shadow-2xs"
+                title="Locked in View Mode: Enable Edit Mode above to add staff members"
+              >
+                <Lock className="w-4 h-4 text-slate-400" />
+                <span>Add Staff Member (Locked)</span>
+              </button>
+            )
           )}
         </div>
       </div>

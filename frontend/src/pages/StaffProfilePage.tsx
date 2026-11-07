@@ -45,6 +45,9 @@ import EmployeeDossierDocument from '../components/workforce/EmployeeDossierDocu
 import DocumentPreviewModal from '../components/workforce/DocumentPreviewModal'
 import { useUniversalPrint } from '../components/printing'
 import { staffApi } from '../api/endpoints'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import toast from 'react-hot-toast'
 import type { StaffProfileDetail, EmployeeActivityHistoryItem } from '../types'
 
 type TabKey =
@@ -87,6 +90,8 @@ export default function StaffProfilePage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const staffId = Number(id)
+  const editScope = `workforce:staff:profile:${staffId}`
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [showLifecycleModal, setShowLifecycleModal] = useState(false)
@@ -160,6 +165,9 @@ export default function StaffProfilePage() {
 
   return (
     <div className="space-y-5">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title={`Staff Dossier — ${profile.full_name}`} isDirty={showEditModal} />
+
       {/* ─── Persistent Hero Card ────────────────────────────────────── */}
       <WorkforceHeroCard
         type="staff"
@@ -184,8 +192,18 @@ export default function StaffProfilePage() {
               : '01 Aug 2019',
           },
         ]}
-        onEdit={() => setShowEditModal(true)}
+        onEdit={() => {
+          if (!isEditMode) {
+            toast.error('Locked in View Mode: Please enable Edit Mode above to modify employee records.')
+            return
+          }
+          setShowEditModal(true)
+        }}
         onAction={(key) => {
+          if (key === 'lifecycle' && !isEditMode) {
+            toast.error('Locked in View Mode: Please enable Edit Mode above before modifying employee lifecycle.')
+            return
+          }
           if (key === 'lifecycle') setShowLifecycleModal(true)
           if (key === 'print') {
             openPrint({

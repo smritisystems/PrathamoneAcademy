@@ -11,17 +11,19 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Attendance management page for daily batch roll call, attendance registers, and absenteeism tracking.
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { QrCode, CheckCircle2, AlertCircle, RefreshCw, Volume2, Clock, Check, Sparkles, X, User } from 'lucide-react'
+import { QrCode, CheckCircle2, AlertCircle, RefreshCw, Volume2, Clock, Check, Sparkles, X, User, Lock } from 'lucide-react'
 import type { ScanCheckinResult } from '../types'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { standardsApi, divisionsApi, studentsApi, attendanceApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import toast from 'react-hot-toast'
 
 interface StudentAttendanceRow {
@@ -35,6 +37,8 @@ interface StudentAttendanceRow {
 
 export default function Attendance() {
   const { selectedInstitutionId, selectedAcademicYearId } = useAuthStore()
+  const editScope = 'academic:attendance'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const [selectedStandardId, setSelectedStandardId] = useState<number | ''>('')
   const [selectedDivisionId, setSelectedDivisionId] = useState<number | ''>('')
   const [attendanceDate, setAttendanceDate] = useState<string>(
@@ -101,6 +105,10 @@ export default function Attendance() {
 
   const handleScanSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to scan attendance.')
+      return
+    }
     const trimmed = scanInput.trim()
     if (!trimmed) return
 
@@ -258,6 +266,10 @@ export default function Attendance() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to save attendance.')
+      return
+    }
     if (rows.length === 0) {
       toast.error('No students loaded to mark attendance')
       return
@@ -279,6 +291,9 @@ export default function Attendance() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Student Attendance Register & Scanner" />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -381,14 +396,26 @@ export default function Attendance() {
                   )}
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={scanLoading || !scanInput.trim()}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-xs transition disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Record Scan Check-In</span>
-                </button>
+                {isEditMode ? (
+                  <button
+                    type="submit"
+                    disabled={scanLoading || !scanInput.trim()}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-xs transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Record Scan Check-In</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to record scan check-ins.')}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold bg-purple-900/40 text-purple-300 border border-purple-500/30 cursor-not-allowed flex items-center justify-center gap-1.5"
+                    title="Locked in View Mode: Enable Edit Mode above to record scan check-ins"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-purple-300" />
+                    <span>Scan Check-In (Locked)</span>
+                  </button>
+                )}
               </form>
 
               <div className="text-[11px] text-slate-400 space-y-1.5 pt-4 border-t border-white/10">
@@ -631,13 +658,25 @@ export default function Attendance() {
 
         {rows.length > 0 && (
           <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={markMutation.isPending}
-              className="btn-primary flex items-center gap-2"
-            >
-              {markMutation.isPending ? 'Saving Attendance...' : '💾 Save Attendance Register'}
-            </button>
+            {isEditMode ? (
+              <button
+                type="submit"
+                disabled={markMutation.isPending}
+                className="btn-primary flex items-center gap-2"
+              >
+                {markMutation.isPending ? 'Saving Attendance...' : '💾 Save Attendance Register'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to save attendance register.')}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                title="Locked in View Mode: Enable Edit Mode above to save attendance"
+              >
+                <Lock className="w-4 h-4 text-slate-400" />
+                <span>Save Attendance Register (Locked)</span>
+              </button>
+            )}
           </div>
         )}
       </form>

@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
@@ -28,6 +28,9 @@ import {
 import ShareModal from '../components/ShareModal'
 import { paymentsApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin, hasPermission, canUserEditPosted } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import { Lock } from 'lucide-react'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
 import Modal from '../components/Modal'
 import type { PaymentTransactionItem, PaymentAuditLog } from '../types'
@@ -52,6 +55,8 @@ const APPROVER_ROLES = ['superadmin', 'sysadmin', 'admin', 'director', 'principa
 
 export default function Payments() {
   const { user, selectedAcademicYearId } = useAuthStore()
+  const editScope = 'finance:payments'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const queryClient = useQueryClient()
   const userRole = (user?.role || '').toLowerCase()
   const isSysAdmin = isUserSysAdmin(user)
@@ -271,6 +276,10 @@ export default function Payments() {
   })
 
   const handleOpenReverse = (payment: PaymentTransactionItem) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to reverse payments.')
+      return
+    }
     setSelectedPayment(payment)
     setReversalReason('')
     setReversalModalOpen(true)
@@ -287,6 +296,10 @@ export default function Payments() {
   }
 
   const handleOpenEdit = (payment: PaymentTransactionItem) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to modify payment records.')
+      return
+    }
     setEditingPayment(payment)
     setEditForm({
       amount: Number(payment.amount),
@@ -327,6 +340,10 @@ export default function Payments() {
   }
 
   const handleOpenRefund = (payment: PaymentTransactionItem) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to process refunds.')
+      return
+    }
     setRefundingPayment(payment)
     const maxRefund = Number(payment.refundable_balance ?? payment.amount)
     setRefundForm({
@@ -427,6 +444,9 @@ export default function Payments() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Payment History & Transactions Ledger" isDirty={editModalOpen || refundModalOpen || reversalModalOpen} />
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

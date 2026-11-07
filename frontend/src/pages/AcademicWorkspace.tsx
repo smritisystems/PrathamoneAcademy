@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -26,13 +26,15 @@ import {
   AlertTriangle, CheckCircle2, UserCheck, BarChart2, Settings as SettingsIcon,
   CalendarDays, ArrowUpRight, School, X, ShieldAlert, Sparkles,
   ExternalLink, User, Download, RefreshCw, ArrowRightLeft, UserPlus,
-  Filter, Check, ShieldCheck, AlertCircle, Trash2, Power, Sliders
+  Filter, Check, ShieldCheck, AlertCircle, Trash2, Power, Sliders, Lock
 } from 'lucide-react'
 import {
   standardsApi, divisionsApi, boardsApi, academicYearsApi, usersApi,
   subjectsApi, timetableApi, enrollmentsApi, academicReportsApi, settingsApi
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import Modal from '../components/Modal'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import toast from 'react-hot-toast'
@@ -47,6 +49,10 @@ export default function AcademicWorkspace() {
   const activeTabParam = searchParams.get('tab') || 'overview'
   const qc = useQueryClient()
   const { selectedInstitutionId, selectedAcademicYearId } = useAuthStore()
+
+  // ── Global View-First & Scoped Edit Mode Governance ──
+  const editScope = 'academic:workspace'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   // ── Top Navigation Tabs ──
   const [activeTab, setActiveTab] = useState<string>(activeTabParam)
@@ -1002,6 +1008,10 @@ export default function AcademicWorkspace() {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const handleOpenCreateBatch = () => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to create new batches.')
+      return
+    }
     setBatchFormData({
       name: '',
       code: '',
@@ -1017,6 +1027,10 @@ export default function AcademicWorkspace() {
   }
 
   const handleOpenEditBatch = (batch: Division) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to edit batch details.')
+      return
+    }
     setSelectedBatchForEdit(batch)
     setBatchFormData({
       name: batch.name || '',
@@ -1229,6 +1243,8 @@ export default function AcademicWorkspace() {
 
   return (
     <div className="space-y-5 pb-12 animate-fadeIn">
+      {/* ── Global View-First & Scoped Edit Mode Bar ── */}
+      <EditModeBar scope={editScope} title="Academic Structure & Batch Management" isDirty={showCreateBatchModal || showEditBatchModal} />
       {/* ── 1. Page Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -1247,13 +1263,25 @@ export default function AcademicWorkspace() {
 
         {/* Action Button */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleOpenCreateBatch}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" />
-            Create Batch
-          </button>
+          {isEditMode ? (
+            <button
+              onClick={handleOpenCreateBatch}
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              Create Batch
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to create new batches.')}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+              title="Locked in View Mode: Enable Edit Mode above to create new batches"
+            >
+              <Lock className="w-4 h-4 text-slate-400" />
+              <span>Create Batch (Locked)</span>
+            </button>
+          )}
         </div>
       </div>
 

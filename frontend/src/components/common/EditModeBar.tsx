@@ -29,7 +29,7 @@ import {
   ShieldAlert,
   Info,
 } from 'lucide-react'
-import { useAuthStore, isUserAdmin, hasPermission } from '../../store/authStore'
+import { useAuthStore } from '../../store/authStore'
 import { useEditModeStore } from '../../store/editModeStore'
 
 export interface EditModeBarProps {
@@ -75,9 +75,13 @@ export default function EditModeBar({
   // Check if current user is authorized to edit
   const canActivateEdit = (): boolean => {
     if (!user) return false
-    if (requiredPermission) return hasPermission(user, requiredPermission)
     const role = (user.role || '').toLowerCase()
-    return isUserAdmin(user) || ['staff', 'teacher', 'accountant'].includes(role)
+    const isAdmin = ['sysadmin', 'superadmin', 'super_admin', 'admin', 'principal'].includes(role)
+    if (requiredPermission) {
+      if (isAdmin) return true
+      return (Array.isArray(user.permissions) && user.permissions.includes(requiredPermission)) || false
+    }
+    return isAdmin || ['staff', 'teacher', 'accountant'].includes(role)
   }
 
   const handleEnable = () => {

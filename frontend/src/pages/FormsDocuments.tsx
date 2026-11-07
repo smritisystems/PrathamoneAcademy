@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-07
  *
  * @description Centralized Print Forms & KYC workspace supporting prefilled & blank A4 templates, bulk exports, and DPDP audit logs.
  */
@@ -25,6 +25,8 @@ import {
 } from 'lucide-react'
 
 import { formsApi, studentsApi, usersApi, divisionsApi, standardsApi } from '../api/endpoints'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import type { FormCatalogItem, FormConfigSection, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 import type { Student, UserListItem, Division, Standard } from '../types'
 import FormTemplateEngine from '../components/forms/FormTemplateEngine'
@@ -32,6 +34,8 @@ import Modal from '../components/Modal'
 
 export default function FormsDocuments() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const editScope = 'academic:forms_documents'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   // Catalogue & selection state
   const [catalogue, setCatalogue] = useState<FormCatalogItem[]>([])
@@ -226,6 +230,9 @@ export default function FormsDocuments() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Printable Forms & Official Documents Engine" />
+
       {/* ── Page Header & Quick Bar (Hidden during Print) ── */}
       <div className="no-print flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-4">
         <div>

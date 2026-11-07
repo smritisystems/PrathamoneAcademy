@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Complete Teacher Payroll & Payment Management workspace:
  */
@@ -26,9 +26,14 @@ import {
 } from 'lucide-react'
 import { teacherPayrollApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import toast from 'react-hot-toast'
 
 export default function TeacherPayroll() {
   const { user } = useAuthStore()
+  const editScope = 'workforce:payroll'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const queryClient = useQueryClient()
   const isAdmin = isUserAdmin(user)
   const isSysAdmin = isUserSysAdmin(user)
@@ -316,6 +321,9 @@ export default function TeacherPayroll() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Teacher Hourly & Session Payroll Engine" isDirty={showLogSessionModal || showCalculateModal || showAdjustModal} />
+
       {/* ── Top Header & Product Identity Banner ── */}
       <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

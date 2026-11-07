@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Dedicated user profile management workspace for inspecting activity logs, scopes, and passwords.
  */
@@ -27,6 +27,9 @@ import {
 } from 'lucide-react'
 import { usersApi, standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import { Lock } from 'lucide-react'
 import Modal from '../components/Modal'
 import type {
   UserProfileWorkspaceData, Standard, Division,
@@ -52,6 +55,8 @@ const ROLES = [
 
 export default function UserProfilePage() {
   const { id } = useParams<{ id: string }>()
+  const editScope = `admin:user:${id || 'me'}`
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const navigate = useNavigate()
   const { user: currentUser } = useAuthStore()
 
@@ -293,6 +298,9 @@ export default function UserProfilePage() {
 
   return (
     <div className="space-y-6 pb-20">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title={`User Profile — @${user?.username || ''}`} isDirty={editModalOpen} />
+
       {/* ── Breadcrumb & Navigation ─────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <Link

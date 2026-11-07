@@ -18,7 +18,6 @@
 
 import { create } from 'zustand'
 import type { User } from '../types'
-import { isUserAdmin, hasPermission } from './authStore'
 
 export interface EditModeState {
   /** Map of scope strings to active edit status (default: false / view mode) */
@@ -77,8 +76,16 @@ export const useEditModeStore = create<EditModeState>()((set, get) => ({
     }
 
     // Role & Permission Verification
+    const role = (user.role || '').toLowerCase()
+    const isSuperAdmin = ['sysadmin', 'superadmin', 'super_admin'].includes(role)
+
     if (requiredPermission) {
-      const permitted = hasPermission(user, requiredPermission)
+      const perms = Array.isArray(user.permissions) ? user.permissions : []
+      const permitted =
+        perms.includes(requiredPermission) ||
+        isSuperAdmin ||
+        perms.includes('*:*') ||
+        perms.includes('*.*')
       if (!permitted) {
         return {
           success: false,
@@ -87,7 +94,6 @@ export const useEditModeStore = create<EditModeState>()((set, get) => ({
       }
     } else {
       // Default: Administrative or staff role required for mutating application records
-      const role = (user.role || '').toLowerCase()
       const allowedRoles = ['sysadmin', 'superadmin', 'super_admin', 'admin', 'principal', 'staff', 'teacher', 'accountant']
       if (!allowedRoles.includes(role)) {
         return {

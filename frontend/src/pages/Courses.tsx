@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-07
  *
  * @description Courses and study materials catalog page managing syllabi and learning resources.
  */
@@ -22,6 +22,8 @@ import { Layers, BookOpen, Users, Clock, Award, CheckCircle } from 'lucide-react
 import { Link } from 'react-router-dom'
 import { standardsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 
 interface CourseItem {
   id: string
@@ -92,6 +94,8 @@ const COURSES: CourseItem[] = [
 
 export default function CoursesPage() {
   const { selectedInstitutionId } = useAuthStore()
+  const editScope = 'academic:courses'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
   const { data: standards = [] } = useQuery({
@@ -106,6 +110,9 @@ export default function CoursesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Coaching Courses & Programs Catalog" />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Vitest test suite for Digital Student ID Card generation, SVG QR codes, and QR Attendance Terminal check-in.
  */
@@ -172,6 +172,10 @@ describe('Digital Student ID Cards & QR Attendance Scanner', () => {
         <Attendance />
       </QueryClientProvider>
     )
+
+    // Enable Edit Mode in compliance with Rule 010 View-First governance
+    const enableEditBtn = screen.getByRole('button', { name: /Enable Edit Mode/i })
+    fireEvent.click(enableEditBtn)
 
     // Verify terminal toggle button
     const terminalToggle = screen.getByRole('button', { name: /Open QR Attendance Terminal/i })

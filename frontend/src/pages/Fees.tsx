@@ -151,6 +151,8 @@ export const numberToWordsINR = (num: number): string => {
 }
 
 export default function Fees() {
+  const editScope = 'finance:fees'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const { selectedAcademicYearId, selectedInstitutionId, user } = useAuthStore()
   const canEdit = isUserAdmin(user)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -473,6 +475,10 @@ export default function Fees() {
 
   const handleRecordPayment = (e?: React.FormEvent, action: 'draft' | 'post' = 'post') => {
     if (e) e.preventDefault()
+    if (!isEditMode) {
+      toast.error('Action locked: You must explicitly enable Edit Mode first.')
+      return
+    }
     if (!selectedCollectStudentId || !activeInvoice) {
       toast.error('Please select a student with an active fee invoice')
       return
@@ -555,6 +561,10 @@ export default function Fees() {
 
   const handleConfirmReversal = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isEditMode) {
+      toast.error('Action locked: You must explicitly enable Edit Mode first.')
+      return
+    }
     if (!reversalTargetPayment) return
     if (!reversalReason.trim()) {
       toast.error('Reversal reason is mandatory for financial audit')
@@ -617,6 +627,10 @@ export default function Fees() {
   })
 
   const handleOpenEditReceipt = async (r: PaymentReceiptListItem) => {
+    if (!isEditMode) {
+      toast.error('Action locked: You must explicitly enable Edit Mode first.')
+      return
+    }
     setEditingReceiptItem(r)
     setLoadingReceiptPayment(true)
     setIsEditReceiptModalOpen(true)
@@ -748,6 +762,10 @@ export default function Fees() {
 
   const handleCreateStructure = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isEditMode) {
+      toast.error('Action locked: You must explicitly enable Edit Mode first.')
+      return
+    }
     if (!newStructName || !newStructCatId || !newStructAmount) {
       toast.error('Please complete all required fields')
       return
@@ -778,6 +796,10 @@ export default function Fees() {
   const [editStructIsActive, setEditStructIsActive] = useState(true)
 
   const handleOpenEditStructure = (fs: FeeStructure) => {
+    if (!isEditMode) {
+      toast.error('Action locked: You must explicitly enable Edit Mode first.')
+      return
+    }
     setEditingStructure(fs)
     setEditStructName(fs.name)
     setEditStructCatId(fs.category_id || (fs.category?.id ?? ''))
@@ -847,6 +869,10 @@ export default function Fees() {
 
   const handleCreateCategory = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isEditMode) {
+      toast.error('Action locked: You must explicitly enable Edit Mode first.')
+      return
+    }
     if (!newCatName) {
       toast.error('Category name is required')
       return
@@ -1358,6 +1384,10 @@ export default function Fees() {
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isEditMode) {
+      toast.error('Action locked: You must explicitly enable Edit Mode first.')
+      return
+    }
     try {
       await settingsApi.updateBatch('fees', {
         receipt_prefix: settingsState.receiptPrefix.replace(/-$/, ''),
@@ -1395,7 +1425,7 @@ export default function Fees() {
   return (
     <div className="space-y-5 pb-12">
       {/* Global View-First & Explicit Edit Mode Governance Bar */}
-      <EditModeBar scope="finance:fees" title="Fee Schedules & Accounting Centre" />
+      <EditModeBar scope={editScope} title="Fee Schedules & Accounting Centre" isDirty={isNewStructureModalOpen || isEditStructureModalOpen || isNewCategoryModalOpen || isEditReceiptModalOpen} />
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP HEADER & BREADCRUMBS                                               */}

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Dedicated Teacher & Faculty Workspace with live workforce counters, assignment statuses (assigned vs unassigned vs without timetable), activity tracking, and lifecycle governance.
  */
@@ -58,8 +58,12 @@ import {
   teacherPayrollApi,
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import { Lock } from 'lucide-react'
 import TeacherProfileModal from '../components/TeacherProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
+import toast from 'react-hot-toast'
 import type { TeacherWorkforceItem, TeacherDashboardData, TeacherAssignmentItem } from '../types'
 
 type FilterTabKey =
@@ -76,6 +80,8 @@ type FilterTabKey =
 
 export default function TeacherManagement() {
   const { user } = useAuthStore()
+  const editScope = 'workforce:teachers'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isAdmin = isUserAdmin(user)
@@ -322,6 +328,9 @@ export default function TeacherManagement() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Teacher Workforce & Faculty Management" isDirty={showCreateModal || showAssignModal} />
+
       {/* ─── TOP WORKSPACE HEADER ────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -363,13 +372,25 @@ export default function TeacherManagement() {
           </button>
 
           {(isAdmin || isSysAdmin) && (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Add New Teacher</span>
-            </button>
+            isEditMode ? (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Add New Teacher</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to add teachers.')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 text-slate-400 border border-slate-200 text-xs font-semibold rounded-lg cursor-not-allowed shadow-2xs"
+                title="Locked in View Mode: Enable Edit Mode above to add teachers"
+              >
+                <Lock className="w-4 h-4 text-slate-400" />
+                <span>Add Teacher (Locked)</span>
+              </button>
+            )
           )}
         </div>
       </div>

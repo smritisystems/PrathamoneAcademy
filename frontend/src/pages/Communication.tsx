@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Centralized Communication Center workspace for multichannel messaging, template authoring, delivery tracking, and gateway diagnostics.
  */
@@ -30,10 +30,15 @@ import type {
   AutomationRules, FeeReminderQueueItem
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import { Lock } from 'lucide-react'
 import { useBranding } from '../config/branding'
 
 export default function Communication() {
   const { user } = useAuthStore()
+  const editScope = 'communication:broadcasts'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const branding = useBranding()
   const isSysAdmin = isUserSysAdmin(user)
 
@@ -137,6 +142,10 @@ export default function Communication() {
   }
 
   const handleSaveAutomationRules = async () => {
+    if (!isEditMode) {
+      showNotification('error', 'Locked in View Mode: Please enable Edit Mode above to update automation triggers.')
+      return
+    }
     try {
       setSavingRules(true)
       await communicationApi.updateAutomationRules(automationRules)
@@ -275,6 +284,10 @@ export default function Communication() {
 
   // Send Message Dispatch
   const handleExecuteSend = async () => {
+    if (!isEditMode) {
+      showNotification('error', 'Locked in View Mode: Please enable Edit Mode above to send messages.')
+      return
+    }
     if (selectedRecipients.length === 0) {
       showNotification('error', 'Please select at least one recipient.')
       setIsConfirmModalOpen(false)
@@ -332,6 +345,10 @@ export default function Communication() {
   // Template Save / Edit
   const handleSaveTemplate = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isEditMode) {
+      showNotification('error', 'Locked in View Mode: Please enable Edit Mode above to save templates.')
+      return
+    }
     try {
       if (editingTemplate) {
         await communicationApi.updateTemplate(editingTemplate.id, {
@@ -431,6 +448,9 @@ export default function Communication() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Communication Center & Multichannel Broadcasts" />
+
       {/* Workspace Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-20 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-4">

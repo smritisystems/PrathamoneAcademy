@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Comprehensive administrative CodeX Configuration Studio featuring 11 specialized sections, 0-9 bijective mapping, and interactive testing.
  */
@@ -30,12 +30,16 @@ import type {
   CodexScopeAssignment, CodexAuditLogItem, CodexConfigResponse
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import { useBranding } from '../config/branding'
 import OrganizationBranding from '../components/OrganizationBranding'
 import QuickDecoderModal from '../components/codex/QuickDecoderModal'
 
 export default function CodeXStudio() {
   const { user } = useAuthStore()
+  const editScope = 'security:codex'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const branding = useBranding()
   const isAdmin = isUserSysAdmin(user) || (user?.role || '').toLowerCase() === 'admin'
 
@@ -169,6 +173,10 @@ export default function CodeXStudio() {
 
   // Master Toggle Change Handler
   const handleToggleMaster = async () => {
+    if (!isEditMode) {
+      setNotification({ type: 'error', message: 'Locked in View Mode: Please enable Edit Mode above to modify CodeX settings.' })
+      return
+    }
     if (!config) return
     const newMasterState = !config.is_master_enabled
     try {
@@ -194,6 +202,10 @@ export default function CodeXStudio() {
 
   // Feature Toggle Handler
   const handleToggleFeature = async (featureKey: keyof CodexConfig) => {
+    if (!isEditMode) {
+      setNotification({ type: 'error', message: 'Locked in View Mode: Please enable Edit Mode above to toggle features.' })
+      return
+    }
     if (!config) return
     const newVal = !config[featureKey]
     try {
@@ -209,6 +221,10 @@ export default function CodeXStudio() {
 
   // Save Mapping Profile
   const handleSaveProfile = async () => {
+    if (!isEditMode) {
+      setNotification({ type: 'error', message: 'Locked in View Mode: Please enable Edit Mode above to save mapping profiles.' })
+      return
+    }
     if (!activeProfileId) return
     if (duplicateSymbols.length > 0) {
       setNotification({
@@ -321,6 +337,10 @@ export default function CodeXStudio() {
   // Save Scope
   const handleSaveScope = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!isEditMode) {
+      setNotification({ type: 'error', message: 'Locked in View Mode: Please enable Edit Mode above to save scopes.' })
+      return
+    }
     try {
       await codexApi.saveScope({
         scope_type: scopeType,
@@ -390,6 +410,9 @@ export default function CodeXStudio() {
 
   return (
     <div className="space-y-6 pb-16">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="CodeX Cryptographic Obfuscation Studio" />
+
       {/* Top Header & Master Switch Banner */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

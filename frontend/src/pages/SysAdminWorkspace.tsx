@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Dedicated System Administrator governance workspace with protected security audits, universal records editor, and system controls.
  */
@@ -26,6 +26,8 @@ import {
 } from 'lucide-react'
 import { sysadminApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import type { SecurityAuditLogItem, UniversalEditPayload } from '../types'
 import OrganizationBranding from '../components/OrganizationBranding'
 import { useBranding } from '../config/branding'
@@ -69,6 +71,8 @@ const MODEL_ALLOWLISTS: Record<string, string[]> = {
 
 export default function SysAdminWorkspace() {
   const { user } = useAuthStore()
+  const editScope = 'sysadmin:workspace'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const queryClient = useQueryClient()
   const isSysAdmin = isUserSysAdmin(user)
   const branding = useBranding()
@@ -190,6 +194,9 @@ export default function SysAdminWorkspace() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="System Administrator Governance Workspace" />
+
       {/* Superuser Banner */}
       <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-6 rounded-2xl border border-slate-800 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -588,6 +595,10 @@ export default function SysAdminWorkspace() {
                   const finalPayload = {
                     ...editPayload,
                     fields: { [fieldKey]: fieldVal },
+                  }
+                  if (!isEditMode) {
+                    alert('Locked in View Mode: Please enable Edit Mode above to execute universal data edits.')
+                    return
                   }
                   if (confirm(`Execute universal edit on ${editPayload.model_name} #${editPayload.record_id}?`)) {
                     universalEditMutation.mutate(finalPayload)

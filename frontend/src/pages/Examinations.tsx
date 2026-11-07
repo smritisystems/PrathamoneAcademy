@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Examinations workspace managing exam schedules, marks entry, class analytics, and graphical report cards.
  */
@@ -21,10 +21,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Award, Plus, Calendar, CheckCircle, FileSpreadsheet,
   BarChart3, FileEdit, FileText, Users, Trophy, TrendingUp,
-  CheckCircle2, XCircle, AlertCircle, Save, X, Printer
+  CheckCircle2, XCircle, AlertCircle, Save, X, Printer, Lock
 } from 'lucide-react'
 import { standardsApi, academicYearsApi, examinationsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import Modal from '../components/Modal'
 import ReportCardModal from '../components/ReportCardModal'
 import type { ExamMarksSheet, ExamAnalyticsData } from '../types'
@@ -32,6 +34,8 @@ import toast from 'react-hot-toast'
 
 export default function ExaminationsPage() {
   const { selectedInstitutionId, selectedAcademicYearId } = useAuthStore()
+  const editScope = 'academic:examinations'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const qc = useQueryClient()
   const [selectedStandardId, setSelectedStandardId] = useState<string>('')
   const [showExamModal, setShowExamModal] = useState(false)
@@ -196,6 +200,9 @@ export default function ExaminationsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Examinations & Test Series Workspace" isDirty={showExamModal} />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -204,19 +211,31 @@ export default function ExaminationsPage() {
             Schedule exams, record subject marks, analyze class performance, and print graphical report cards
           </p>
         </div>
-        <button
-          onClick={() => {
-            setExamForm((f) => ({
-              ...f,
-              academic_year_id: selectedAcademicYearId ? String(selectedAcademicYearId) : '',
-              standard_id: currentStandardId,
-            }))
-            setShowExamModal(true)
-          }}
-          className="btn-primary flex items-center gap-1.5 shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Schedule Examination
-        </button>
+        {isEditMode ? (
+          <button
+            onClick={() => {
+              setExamForm((f) => ({
+                ...f,
+                academic_year_id: selectedAcademicYearId ? String(selectedAcademicYearId) : '',
+                standard_id: currentStandardId,
+              }))
+              setShowExamModal(true)
+            }}
+            className="btn-primary flex items-center gap-1.5 shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> Schedule Examination
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to schedule examinations.')}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-sm"
+            title="Locked in View Mode: Enable Edit Mode above to schedule examinations"
+          >
+            <Lock className="w-4 h-4 text-slate-400" />
+            <span>Schedule Examination (Locked)</span>
+          </button>
+        )}
       </div>
 
       {/* Standard Selector Tabs */}
@@ -455,13 +474,25 @@ export default function ExaminationsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => saveMarksMutation.mutate()}
-                  disabled={saveMarksMutation.isPending || isLoadingMarks}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow transition disabled:opacity-50"
-                >
-                  <Save className="w-4 h-4" /> {saveMarksMutation.isPending ? 'Saving…' : 'Save All Marks'}
-                </button>
+                {isEditMode ? (
+                  <button
+                    onClick={() => saveMarksMutation.mutate()}
+                    disabled={saveMarksMutation.isPending || isLoadingMarks}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow transition disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" /> {saveMarksMutation.isPending ? 'Saving…' : 'Save All Marks'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to save marks.')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 text-xs font-bold rounded-lg cursor-not-allowed"
+                    title="Locked in View Mode: Enable Edit Mode above to save marks"
+                  >
+                    <Lock className="w-4 h-4 text-slate-400" />
+                    <span>Save All Marks (Locked)</span>
+                  </button>
+                )}
                 <button
                   onClick={() => setActiveMarksExam(null)}
                   className="p-1.5 text-white/70 hover:text-white rounded-lg hover:bg-white/10"

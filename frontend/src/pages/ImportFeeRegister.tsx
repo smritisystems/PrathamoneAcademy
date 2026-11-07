@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-07
  *
  * @description Legacy fee register import wizard for spreadsheet mapping, preview, and validation.
  */
@@ -25,6 +25,9 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { feeRegisterImportApi } from '../api/endpoints'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import { Lock } from 'lucide-react'
 import type {
   FeeRegisterPreviewResponse,
   FeeRegisterStudent,
@@ -35,6 +38,8 @@ import type {
 import Modal from '../components/Modal'
 
 export default function ImportFeeRegister() {
+  const editScope = 'finance:import_fee_register'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const [loading, setLoading] = useState<boolean>(true)
   const [executing, setExecuting] = useState<boolean>(false)
   const [previewData, setPreviewData] = useState<FeeRegisterPreviewResponse | null>(null)
@@ -181,6 +186,9 @@ export default function ImportFeeRegister() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Legacy Fee Register Import Wizard" isDirty={executing} />
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div>
@@ -210,21 +218,33 @@ export default function ImportFeeRegister() {
             <Upload className="w-4 h-4" /> Upload Other Register
             <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />
           </label>
-          <button
-            onClick={() => setShowConfirmModal(true)}
-            disabled={executing}
-            className="btn btn-primary flex items-center gap-2 text-sm shadow-md shadow-primary-600/20"
-          >
-            {executing ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" /> Importing...
-              </>
-            ) : (
-              <>
-                <ShieldCheck className="w-4 h-4" /> Confirm & Execute Import
-              </>
-            )}
-          </button>
+          {isEditMode ? (
+            <button
+              onClick={() => setShowConfirmModal(true)}
+              disabled={executing}
+              className="btn btn-primary flex items-center gap-2 text-sm shadow-md shadow-primary-600/20"
+            >
+              {executing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" /> Importing...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" /> Confirm & Execute Import
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to execute fee imports.')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-2xs"
+              title="Locked in View Mode: Enable Edit Mode above to execute fee imports"
+            >
+              <Lock className="w-4 h-4 text-slate-400" />
+              <span>Confirm & Execute Import (Locked)</span>
+            </button>
+          )}
         </div>
       </div>
 

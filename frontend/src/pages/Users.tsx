@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description User management dashboard listing system accounts, roles, access scopes, and invitation workflows.
  */
@@ -27,6 +27,8 @@ import {
 } from 'lucide-react'
 import { usersApi, standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import Modal from '../components/Modal'
 import type {
   UserManagementStats, UserListItem, Standard, Division,
@@ -51,6 +53,8 @@ const ROLES = [
 export default function UsersPage() {
   const navigate = useNavigate()
   const { user: currentUser, selectedInstitutionId } = useAuthStore()
+  const editScope = 'admin:users'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   // ── States ──────────────────────────────────────────────────────────────────
   const [stats, setStats] = useState<UserManagementStats | null>(null)
@@ -317,6 +321,9 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6 pb-16">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="User Management & System Access" isDirty={createModalOpen || Boolean(editModalUser)} />
+
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl border border-indigo-900/40">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -340,13 +347,25 @@ export default function UsersPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition"
-            >
-              <Plus className="w-4 h-4" />
-              Add User Account
-            </button>
+            {isEditMode ? (
+              <button
+                onClick={() => setCreateModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition"
+              >
+                <Plus className="w-4 h-4" />
+                Add User Account
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to create new user accounts.')}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 text-xs font-bold cursor-not-allowed shadow-2xs"
+                title="Locked in View Mode: Enable Edit Mode above to create user accounts"
+              >
+                <Lock className="w-4 h-4 text-slate-400" />
+                <span>Add User Account (Locked)</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

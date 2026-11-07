@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Multi-step student admission form capturing personal details, parent info, and initial enrollment.
  */
@@ -21,6 +21,9 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createStudent, getStandards, getDivisions } from '../api/endpoints';
 import { useAuthStore } from '../store/authStore';
+import { useEditModeStore } from '../store/editModeStore';
+import { EditModeBar } from '../components/common';
+import { Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const STEPS = ['Personal Info', 'Guardian Info', 'Academic Info', 'Review'];
@@ -106,6 +109,9 @@ export default function AddStudent() {
   const standards = Array.isArray(standardsData) ? standardsData : (standardsData as any)?.items || [];
   const divisions = Array.isArray(divisionsData) ? divisionsData : (divisionsData as any)?.items || [];
 
+  const editScope = 'students:admission';
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope]);
+
   const mutation = useMutation({
     mutationFn: createStudent,
     onSuccess: (data) => {
@@ -148,6 +154,10 @@ export default function AddStudent() {
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleSubmit = () => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to register students.');
+      return;
+    }
     if (!validateStep()) return;
     const nameParts = form.full_name.trim().split(/\s+/);
     const firstName = nameParts[0] || '';
@@ -237,6 +247,9 @@ export default function AddStudent() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Student Admission & Registration" isDirty={Boolean(form.full_name || form.phone)} />
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Add New Student</h1>
@@ -450,7 +463,7 @@ export default function AddStudent() {
           <button type="button" onClick={next} className="btn-primary">
             Next →
           </button>
-        ) : (
+        ) : isEditMode ? (
           <button
             type="button"
             onClick={handleSubmit}
@@ -458,6 +471,16 @@ export default function AddStudent() {
             className="btn-primary"
           >
             {mutation.isPending ? 'Registering…' : '✓ Register Student'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to register students.')}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+            title="Locked in View Mode: Enable Edit Mode above to register students"
+          >
+            <Lock className="w-4 h-4 text-slate-400" />
+            <span>Register Student (Locked)</span>
           </button>
         )}
       </div>

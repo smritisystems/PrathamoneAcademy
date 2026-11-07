@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-07
  *
  * @description Data Import/Export workspace featuring Excel copy-paste spreadsheet grid and file upload.
  */
@@ -26,6 +26,9 @@ import {
 import {
   importExportApi, academicYearsApi, boardsApi, standardsApi, divisionsApi
 } from '../api/endpoints'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import { Lock } from 'lucide-react'
 import type {
   SupportedEntity, ImportPreviewResponse, ImportPreviewRow,
   ImportHistoryItem, ImportHistoryDetail, AcademicYear, Board,
@@ -35,6 +38,8 @@ import type {
 type ActiveTab = 'paste' | 'upload' | 'export' | 'history'
 
 export default function ImportExportPage() {
+  const editScope = 'system:import_export'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const [activeTab, setActiveTab] = useState<ActiveTab>('paste')
   const [entities, setEntities] = useState<SupportedEntity[]>([])
   const [selectedEntityKey, setSelectedEntityKey] = useState<string>('students')
@@ -388,6 +393,10 @@ export default function ImportExportPage() {
 
   // ── Commit & Execute Grid Import ──────────────────────────────────────────
   const handleCommitGridImport = async () => {
+    if (!isEditMode) {
+      setFeedbackMsg({ type: 'error', text: 'Locked in View Mode: Please enable Edit Mode above before executing database imports.' })
+      return
+    }
     if (!gridPreview || !currentEntity) return
     const rowsToExecute = gridPreview.row_previews
     if (!rowsToExecute || rowsToExecute.length === 0) return
@@ -443,6 +452,10 @@ export default function ImportExportPage() {
   }
 
   const handleCommitFileImport = async () => {
+    if (!isEditMode) {
+      setFeedbackMsg({ type: 'error', text: 'Locked in View Mode: Please enable Edit Mode above before executing database imports.' })
+      return
+    }
     if (!filePreview || !selectedFile) return
     try {
       setFileExecuting(true)
@@ -550,6 +563,9 @@ export default function ImportExportPage() {
 
   return (
     <div className="space-y-6 pb-16">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Data Ingestion and Bulk Export Hub" isDirty={gridExecuting || fileExecuting} />
+
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl border border-indigo-900/40">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

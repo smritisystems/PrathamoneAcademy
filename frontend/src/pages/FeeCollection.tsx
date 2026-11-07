@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Student fee collection terminal for recording payments against outstanding installments.
  */
@@ -28,11 +28,14 @@ import {
 import type { FeeInvoice, FeeInstallment } from '../types';
 import { InstallmentStatusBadge } from '../components/Badge';
 import Modal from '../components/Modal';
-import { QrCode } from 'lucide-react';
+import { QrCode, Lock } from 'lucide-react';
+import { useEditModeStore } from '../store/editModeStore';
+import { EditModeBar } from '../components/common';
 import OnlinePaymentModal from '../components/OnlinePaymentModal';
 import PaymentReceiptView from '../components/PaymentReceiptView';
 import { printReceiptElement } from '../utils/printReceipt';
 import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 const PAYMENT_METHODS = ['cash', 'upi', 'bank_transfer', 'cheque', 'other'] as const;
 type PaymentMethod = (typeof PAYMENT_METHODS)[number];
@@ -44,6 +47,8 @@ interface AllocationRow {
 
 export default function FeeCollection() {
   const { studentId } = useParams<{ studentId: string }>();
+  const editScope = 'finance:collection';
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { selectedAcademicYearId } = useAuthStore();
@@ -131,6 +136,10 @@ export default function FeeCollection() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to record payments.');
+      return;
+    }
     setFormError('');
 
     if (!selectedInvoiceId) {
@@ -196,6 +205,9 @@ export default function FeeCollection() {
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Student Fee Collection Terminal" isDirty={Boolean(paymentAmount)} />
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
@@ -519,23 +531,35 @@ export default function FeeCollection() {
                 )}
 
                 <div className="mt-6 flex gap-3">
-                  <button
-                    type="submit"
-                    disabled={payMutation.isPending}
-                    className="btn-primary flex items-center gap-2"
-                  >
-                    {payMutation.isPending ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                        Processing…
-                      </>
-                    ) : (
-                      '💳 Record Payment'
-                    )}
-                  </button>
+                  {isEditMode ? (
+                    <button
+                      type="submit"
+                      disabled={payMutation.isPending}
+                      className="btn-primary flex items-center gap-2"
+                    >
+                      {payMutation.isPending ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                          </svg>
+                          Processing…
+                        </>
+                      ) : (
+                        '💳 Record Payment'
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to record payments.')}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                      title="Locked in View Mode: Enable Edit Mode above to record payments"
+                    >
+                      <Lock className="w-4 h-4 text-slate-400" />
+                      <span>Record Payment (Locked)</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
