@@ -222,7 +222,7 @@ export default function StaffManagement() {
           name: `${newStaff.first_name} ${newStaff.last_name}`,
         })
       } else {
-        alert('Staff member registered successfully!')
+        toast.success('Staff member registered successfully!')
       }
       setNewStaff({
         username: '',
@@ -242,7 +242,7 @@ export default function StaffManagement() {
       })
     },
     onError: (err: any) => {
-      alert(err.response?.data?.detail || 'Failed to register staff member')
+      toast.error(err.response?.data?.detail || 'Failed to register staff member')
     },
   })
 
@@ -252,10 +252,10 @@ export default function StaffManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teacher-assignments'] })
       setShowAssignModal(false)
-      alert('Teacher assignment recorded successfully!')
+      toast.success('Teacher assignment recorded successfully!')
     },
     onError: (err: any) => {
-      alert(err.response?.data?.detail || 'Failed to record assignment')
+      toast.error(err.response?.data?.detail || 'Failed to record assignment')
     },
   })
 
@@ -281,7 +281,7 @@ export default function StaffManagement() {
       staffApi.actionLeave(leaveId, { action }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-leaves'] })
-      alert('Leave application processed successfully!')
+      toast.success('Leave application processed successfully!')
     },
   })
 

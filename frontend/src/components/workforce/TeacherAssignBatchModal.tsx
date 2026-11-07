@@ -1,6 +1,25 @@
 /**
  * @file        TeacherAssignBatchModal.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
+ * @module      src.components.workforce
+ *
+ * @author      Jawahar R. Mallah
+ * @organization AITDL (AI Technology & Development Lab)
+ * @client      Prashant Academy Coaching Institute
+ * @copyright   Copyright (c) 2026 AITDL
+ * @license     Proprietary
+ *
+ * @version     1.0.0
+ * @created     2026-11-07
+ * @updated     2026-11-07
+ *
+ * @description Source component for Teacherassignbatchmodal in the src.components.workforce module.
+ */
+
+import toast from 'react-hot-toast'
+/**
+ * @file        TeacherAssignBatchModal.tsx
+ * @project     PrathamOne Academy Coaching Institute Management System
  * @module      frontend.components.workforce
  *
  * @author      Jawahar R. Mallah
@@ -91,7 +110,7 @@ export default function TeacherAssignBatchModal({
       queryClient.invalidateQueries({ queryKey: ['staff-profile', teacherId] })
       onSuccess?.()
       onClose()
-      alert('Academic batch assignment created successfully!')
+      toast.success('Academic batch assignment created successfully!')
     },
     onError: (err: any) => {
       setErrorMsg(err.response?.data?.detail || err.message || 'Failed to create assignment')

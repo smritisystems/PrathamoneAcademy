@@ -1475,7 +1475,7 @@ export default function Fees() {
 
             <button
               type="button"
-              onClick={() => alert('Billing Alerts: All daily fee collection reconciliations and payment postings are current.')}
+              onClick={() => toast.success('Billing Alerts: All daily fee collection reconciliations and payment postings are current.')}
               className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 shadow-xs relative transition-colors"
               title="Notifications"
             >

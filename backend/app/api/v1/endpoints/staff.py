@@ -725,6 +725,10 @@ async def update_staff_profile(
 
     check_institution_access(profile.institution_id, current_user)
 
+    old_dept = profile.department
+    old_emp_type = profile.employment_type
+    old_status = profile.status
+
     if data.first_name is not None:
         user.first_name = data.first_name.strip()
     if data.last_name is not None:
@@ -739,6 +743,27 @@ async def update_staff_profile(
             profile.basic_salary = Decimal(str(v))
         elif hasattr(profile, k) and v is not None:
             setattr(profile, k, v)
+
+    # Automatically record career/profile transition in employment history
+    changes = []
+    if data.department and data.department != old_dept:
+        changes.append(f"Department transferred from '{old_dept}' to '{data.department}'")
+    if data.employment_type and data.employment_type != old_emp_type:
+        changes.append(f"Employment type changed from '{old_emp_type}' to '{data.employment_type}'")
+
+    if changes:
+        history_entry = StaffEmploymentHistory(
+            staff_profile_id=profile.id,
+            user_id=profile.user_id,
+            event_type="role_or_department_update",
+            old_status=old_status,
+            new_status=profile.status,
+            effective_date=date.today(),
+            reason="Profile Details Update",
+            notes="; ".join(changes),
+            recorded_by_id=current_user.id,
+        )
+        db.add(history_entry)
 
     await db.commit()
     return {"success": True, "message": "Staff profile updated successfully"}

@@ -1,6 +1,25 @@
 /**
  * @file        SysAdminWorkspace.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
+ * @module      src.pages
+ *
+ * @author      Jawahar R. Mallah
+ * @organization AITDL (AI Technology & Development Lab)
+ * @client      Prashant Academy Coaching Institute
+ * @copyright   Copyright (c) 2026 AITDL
+ * @license     Proprietary
+ *
+ * @version     1.0.0
+ * @created     2026-11-06
+ * @updated     2026-11-07
+ *
+ * @description Source component for Sysadminworkspace in the src.pages module.
+ */
+
+import toast from 'react-hot-toast'
+/**
+ * @file        SysAdminWorkspace.tsx
+ * @project     PrathamOne Academy Coaching Institute Management System
  * @module      frontend.pages
  *
  * @author      Jawahar R. Mallah
@@ -159,10 +178,10 @@ export default function SysAdminWorkspace() {
     onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ['sysadmin-overview'] })
       queryClient.invalidateQueries({ queryKey: ['sysadmin-security-audits'] })
-      alert(`Universal Edit Success: ${res.data.message}. Security audit entry #${res.data.audit_id} generated.`)
+      toast.success(`Universal Edit Success: ${res.data.message}. Security audit entry #${res.data.audit_id} generated.`)
     },
     onError: (err: any) => {
-      alert(`Universal Edit Rejected: ${err.response?.data?.detail || err.message}`)
+      toast.error(`Universal Edit Rejected: ${err.response?.data?.detail || err.message}`)
     },
   })
 
@@ -171,10 +190,10 @@ export default function SysAdminWorkspace() {
     mutationFn: (payload: any) => sysadminApi.updateSystemSettings(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sysadmin-system-settings'] })
-      alert('System and security configurations saved successfully!')
+      toast.success('System and security configurations saved successfully!')
     },
     onError: (err: any) => {
-      alert(`Failed to save settings: ${err.response?.data?.detail || err.message}`)
+      toast.error(`Failed to save settings: ${err.response?.data?.detail || err.message}`)
     },
   })
 
@@ -597,7 +616,7 @@ export default function SysAdminWorkspace() {
                     fields: { [fieldKey]: fieldVal },
                   }
                   if (!isEditMode) {
-                    alert('Locked in View Mode: Please enable Edit Mode above to execute universal data edits.')
+                    toast.error('Locked in View Mode: Please enable Edit Mode above to execute universal data edits.')
                     return
                   }
                   if (confirm(`Execute universal edit on ${editPayload.model_name} #${editPayload.record_id}?`)) {

@@ -235,7 +235,7 @@ export default function TeacherManagement() {
       })
     },
     onError: (err: any) => {
-      alert(`Registration Failed: ${err.response?.data?.detail || err.message}`)
+      toast.error(`Registration Failed: ${err.response?.data?.detail || err.message}`)
     },
   })
 
@@ -246,10 +246,10 @@ export default function TeacherManagement() {
       queryClient.invalidateQueries({ queryKey: ['teacher-workforce-dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['all-teacher-assignments'] })
       queryClient.invalidateQueries({ queryKey: ['teacher-profile'] })
-      alert('Academic batch assignment created successfully!')
+      toast.success('Academic batch assignment created successfully!')
     },
     onError: (err: any) => {
-      alert(`Assignment Failed: ${err.response?.data?.detail || err.message}`)
+      toast.error(`Assignment Failed: ${err.response?.data?.detail || err.message}`)
     },
   })
 
