@@ -805,15 +805,31 @@ export interface TimetableSlot {
 
 export interface StudyMaterialItem {
   id: number
+  institution_id?: number
+  standard_id?: number
+  standard_name: string
+  subject_id: number
+  subject_name: string
+  division_id?: number | null
+  division_name?: string | null
   title: string
   description?: string
   file_type: string
   file_url: string
   file_size_bytes: number
-  subject_id: number
-  subject_name: string
-  standard_name: string
   created_at: string
+}
+
+export interface StudyMaterialStats {
+  total_materials: number
+  standards_covered: number
+  subjects_covered: number
+  question_banks: number
+  formula_sheets: number
+  notes: number
+  assignments: number
+  revision: number
+  type_breakdown: Record<string, number>
 }
 
 export interface AnnouncementItem {

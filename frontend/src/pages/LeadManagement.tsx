@@ -155,10 +155,20 @@ export default function LeadManagement() {
 
   // Auto-select first lead if none selected
   useEffect(() => {
-    if (!selectedLeadId && leadsListData?.items?.length) {
-      setSelectedLeadId(leadsListData.items[0].id)
+    if (!selectedLeadId) {
+      if (leadsListData?.items?.length) {
+        setSelectedLeadId(leadsListData.items[0].id)
+      } else if (kanbanData?.columns) {
+        for (const stage of ['new_enquiry', 'contacted', 'counselling_demo', 'interested', 'admission_pending', 'converted']) {
+          const lead = kanbanData.columns[stage]?.items?.[0]
+          if (lead) {
+            setSelectedLeadId(lead.id)
+            break
+          }
+        }
+      }
     }
-  }, [leadsListData, selectedLeadId])
+  }, [leadsListData, kanbanData, selectedLeadId])
 
   // ─── Mutations ────────────────────────────────────────────────────────────
 
@@ -518,13 +528,11 @@ export default function LeadManagement() {
         </div>
       </div>
 
-      {/* ─── MAIN SPLIT CONTENT: KANBAN BOARD + LEAD DOSSIER PANEL ────────── */}
+      {/* ─── KANBAN PIPELINE BOARD (FULL-WIDTH 6-COLUMN GRID) ─────────────── */}
       {viewMode === 'pipeline' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left 8/12: Kanban Pipeline Columns */}
-          <div className="lg:col-span-8 overflow-x-auto pb-4">
-            <div className="flex gap-3.5 min-w-[900px]">
-              {['new_enquiry', 'contacted', 'counselling_demo', 'interested', 'admission_pending', 'converted'].map(
+        <div className="overflow-x-auto pb-2 -mx-1 px-1 custom-scrollbar">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 min-w-[1100px]">
+            {['new_enquiry', 'contacted', 'counselling_demo', 'interested', 'admission_pending', 'converted'].map(
                 (stageKey) => {
                   const col = kanbanData?.columns?.[stageKey] || {
                     key: stageKey,
@@ -545,7 +553,7 @@ export default function LeadManagement() {
                   return (
                     <div
                       key={stageKey}
-                      className="w-56 shrink-0 bg-slate-100/60 p-3 rounded-2xl border border-slate-200/80 flex flex-col max-h-[720px]"
+                      className="w-full bg-slate-100/60 p-3 rounded-2xl border border-slate-200/80 flex flex-col min-h-[360px] max-h-[500px]"
                     >
                       {/* Column Header */}
                       <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200/70">
@@ -629,12 +637,175 @@ export default function LeadManagement() {
                   )
                 }
               )}
-            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── LOWER SECTION: FILTERED LEADS TABLE + LEAD DOSSIER PANEL ─────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left 8/12: Filtered Leads Table */}
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          {/* Table Filter Tabs */}
+        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {(['recent', 'my', 'overdue', 'converted', 'lost'] as const).map((tabKey) => {
+              const labels = {
+                recent: 'Recent Leads',
+                my: 'My Follow-ups',
+                overdue: `Overdue (${metricsData?.overdue_follow_ups ?? 0})`,
+                converted: 'Converted',
+                lost: 'Lost',
+              }
+
+              return (
+                <button
+                  key={tabKey}
+                  onClick={() => setTableFilter(tabKey)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    tableFilter === tabKey
+                      ? 'bg-slate-900 text-white shadow-2xs'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {labels[tabKey]}
+                </button>
+              )
+            })}
           </div>
 
-          {/* Right 4/12: Lead Dossier Side-Panel */}
-          <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 space-y-4">
-            {leadDossier ? (
+          <button
+            onClick={() => {
+              setViewMode('list')
+              setTableFilter('recent')
+            }}
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+          >
+            <span>View All Leads</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Table Content */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50/70 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+              <tr>
+                <th className="w-10 px-4 py-3 text-center">
+                  <input
+                    type="checkbox"
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    aria-label="Select all leads"
+                  />
+                </th>
+                <th className="px-4 py-3">Lead ID</th>
+                <th className="px-4 py-3">Student Name</th>
+                <th className="px-4 py-3">Class</th>
+                <th className="px-4 py-3">Interested Course</th>
+                <th className="px-4 py-3">Source</th>
+                <th className="px-4 py-3">Counsellor</th>
+                <th className="px-4 py-3">Next Follow-up</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {leadsListData?.items?.map((item: LeadItem) => {
+                const isSelected = selectedLeadId === item.id
+
+                return (
+                  <tr
+                    key={item.id}
+                    onClick={() => setSelectedLeadId(item.id)}
+                    className={`hover:bg-slate-50/80 cursor-pointer transition-colors ${
+                      isSelected ? 'bg-blue-50/40' : ''
+                    }`}
+                  >
+                    <td className="w-10 px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        aria-label={`Select lead ${item.lead_number}`}
+                      />
+                    </td>
+                    <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.lead_number}</td>
+                    <td className="px-4 py-3 font-bold text-slate-900">
+                      <div>{item.full_name}</div>
+                      <span className="text-[11px] text-slate-400 font-normal">{item.phone}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700">{item.class_display || 'N/A'}</td>
+                    <td className="px-4 py-3 text-slate-700 font-medium">{item.interested_course || 'Foundation'}</td>
+                    <td className="px-4 py-3 text-slate-600">{item.source}</td>
+                    <td className="px-4 py-3 text-slate-600 font-medium">{item.assigned_to_name || 'Unassigned'}</td>
+                    <td className="px-4 py-3">
+                      {item.next_follow_up_at ? (
+                        <span className="text-slate-800 font-semibold">
+                          {new Date(item.next_follow_up_at).toLocaleDateString([], {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">None</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">{getStageBadge(item.stage)}</td>
+                    <td className="px-4 py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                      <a
+                        href={`tel:${item.phone}`}
+                        className="p-1 text-slate-400 hover:text-blue-600 inline-block rounded"
+                        title="Call"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                      </a>
+                      <a
+                        href={`https://wa.me/${item.phone?.replace(/[^\d]/g, '')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1 text-slate-400 hover:text-emerald-600 inline-block rounded"
+                        title="WhatsApp"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                      </a>
+                      <LockedIconButton
+                        isEditMode={isEditMode}
+                        onClick={() => {
+                          setSelectedLeadId(item.id)
+                          setIsFollowUpModalOpen(true)
+                        }}
+                        icon={<Calendar className="w-3.5 h-3.5" />}
+                        tooltip="Schedule Follow-up"
+                        className="p-1 text-slate-400 hover:text-amber-600 rounded"
+                      />
+                      <LockedIconButton
+                        isEditMode={isEditMode}
+                        onClick={() => setLeadToDelete(item)}
+                        icon={<Trash2 className="w-3.5 h-3.5" />}
+                        tooltip="Archive Lead"
+                        tone="danger"
+                        className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                      />
+                    </td>
+                  </tr>
+                )
+              })}
+
+              {!leadsListData?.items?.length && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-slate-400 font-medium">
+                    No leads found matching current filter criteria
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        </div>
+
+        {/* Right 4/12: Lead Dossier Side-Panel */}
+        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 space-y-4">
+          {leadDossier ? (
               <>
                 {/* Dossier Header */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -1013,167 +1184,6 @@ export default function LeadManagement() {
                 Select a lead to inspect dossier
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ─── BOTTOM FILTERED LEADS TABLE VIEW ────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        {/* Table Filter Tabs */}
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto">
-            {(['recent', 'my', 'overdue', 'converted', 'lost'] as const).map((tabKey) => {
-              const labels = {
-                recent: 'Recent Leads',
-                my: 'My Follow-ups',
-                overdue: `Overdue (${metricsData?.overdue_follow_ups ?? 0})`,
-                converted: 'Converted',
-                lost: 'Lost',
-              }
-
-              return (
-                <button
-                  key={tabKey}
-                  onClick={() => setTableFilter(tabKey)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    tableFilter === tabKey
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {labels[tabKey]}
-                </button>
-              )
-            })}
-          </div>
-
-          <button
-            onClick={() => {
-              setViewMode('list')
-              setTableFilter('recent')
-            }}
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
-          >
-            <span>View All Leads</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Table Content */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/70 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
-              <tr>
-                <th className="w-10 px-4 py-3 text-center">
-                  <input
-                    type="checkbox"
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    aria-label="Select all leads"
-                  />
-                </th>
-                <th className="px-4 py-3">Lead ID</th>
-                <th className="px-4 py-3">Student Name</th>
-                <th className="px-4 py-3">Class</th>
-                <th className="px-4 py-3">Interested Course</th>
-                <th className="px-4 py-3">Source</th>
-                <th className="px-4 py-3">Counsellor</th>
-                <th className="px-4 py-3">Next Follow-up</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {leadsListData?.items?.map((item: LeadItem) => {
-                const isSelected = selectedLeadId === item.id
-
-                return (
-                  <tr
-                    key={item.id}
-                    onClick={() => setSelectedLeadId(item.id)}
-                    className={`hover:bg-slate-50/80 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-blue-50/40' : ''
-                    }`}
-                  >
-                    <td className="w-10 px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                        aria-label={`Select lead ${item.lead_number}`}
-                      />
-                    </td>
-                    <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.lead_number}</td>
-                    <td className="px-4 py-3 font-bold text-slate-900">
-                      <div>{item.full_name}</div>
-                      <span className="text-[11px] text-slate-400 font-normal">{item.phone}</span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">{item.class_display || 'N/A'}</td>
-                    <td className="px-4 py-3 text-slate-700 font-medium">{item.interested_course || 'Foundation'}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.source}</td>
-                    <td className="px-4 py-3 text-slate-600 font-medium">{item.assigned_to_name || 'Unassigned'}</td>
-                    <td className="px-4 py-3">
-                      {item.next_follow_up_at ? (
-                        <span className="text-slate-800 font-semibold">
-                          {new Date(item.next_follow_up_at).toLocaleDateString([], {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">None</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">{getStageBadge(item.stage)}</td>
-                    <td className="px-4 py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
-                      <a
-                        href={`tel:${item.phone}`}
-                        className="p-1 text-slate-400 hover:text-blue-600 inline-block rounded"
-                        title="Call"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                      </a>
-                      <a
-                        href={`https://wa.me/${item.phone?.replace(/[^\d]/g, '')}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1 text-slate-400 hover:text-emerald-600 inline-block rounded"
-                        title="WhatsApp"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                      </a>
-                      <LockedIconButton
-                        isEditMode={isEditMode}
-                        onClick={() => {
-                          setSelectedLeadId(item.id)
-                          setIsFollowUpModalOpen(true)
-                        }}
-                        icon={<Calendar className="w-3.5 h-3.5" />}
-                        tooltip="Schedule Follow-up"
-                        className="p-1 text-slate-400 hover:text-amber-600 rounded"
-                      />
-                      <LockedIconButton
-                        isEditMode={isEditMode}
-                        onClick={() => setLeadToDelete(item)}
-                        icon={<Trash2 className="w-3.5 h-3.5" />}
-                        tooltip="Archive Lead"
-                        tone="danger"
-                        className="p-1 text-slate-400 hover:text-rose-600 rounded"
-                      />
-                    </td>
-                  </tr>
-                )
-              })}
-
-              {!leadsListData?.items?.length && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-slate-400 font-medium">
-                    No leads found matching current filter criteria
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
 

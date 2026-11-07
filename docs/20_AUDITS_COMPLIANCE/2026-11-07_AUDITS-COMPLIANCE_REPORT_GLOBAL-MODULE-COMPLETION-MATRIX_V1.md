@@ -93,3 +93,4 @@ Completion scoring is strictly derived from 9 objective, verifiable dimensions:
 - **UI ONLY (1 Module, 4.8%):**
   - `MOD-11` (Study Materials & Student Portal): Administrative view on `/courses` renders a static mockup list with zero backend persistence or teacher upload capabilities.
 - **NOT STARTED / BLOCKED / BACKEND ONLY:** 0 Modules.
+

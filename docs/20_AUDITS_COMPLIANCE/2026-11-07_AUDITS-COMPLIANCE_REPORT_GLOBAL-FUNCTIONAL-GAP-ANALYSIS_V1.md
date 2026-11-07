@@ -155,3 +155,4 @@ Priorities are classified according to strict operational criteria:
 | **P2** | **1** | Teaching sessions timetable hook & teacher payment vouchers |
 | **P3** | **2** | Replace 15 `window.alert` calls with toast notifications; staff history logging |
 | **P4** | **4** | Clean operational zero-row optional tables (`refunds`, `discounts`, etc.) |
+

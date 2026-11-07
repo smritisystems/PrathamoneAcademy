@@ -94,3 +94,4 @@ An automated and manual forensic discovery was performed across the entire codeb
    - Routes `/standards` and `/batches` in `App.tsx` re-route to `AcademicWorkspacePage`. This is intentional by architectural design to maintain a unified SSOT academic workspace.
 3. **Hidden / Administrative Views:**
    - `CodeXStudio.tsx` (`/codex`) and `SysAdminWorkspace.tsx` (`/sysadmin`) are restricted to `sysadmin` role and hidden from general staff navigation.
+

@@ -48,6 +48,7 @@ from app.api.v1.endpoints import (
     codex,
     leads,
     training,
+    study_materials,
 )
 
 api_router = APIRouter()
@@ -101,3 +102,4 @@ api_router.include_router(teacher_payroll.router, prefix="/teacher-payroll", tag
 api_router.include_router(codex.router, prefix="/codex", tags=["codex"])
 api_router.include_router(leads.router, prefix="/leads", tags=["leads"])
 api_router.include_router(training.router, prefix="/training", tags=["training"])
+api_router.include_router(study_materials.router, prefix="/study-materials", tags=["study-materials"])

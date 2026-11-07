@@ -24,7 +24,7 @@ import type {
   FeeInstallment, Payment, Receipt, DashboardStats,
   FeeCollectionRow, OutstandingRow, PaginatedResponse, User,
   FeeRegisterPreviewResponse, FeeRegisterImportExecutionResponse, FeeRegisterImportLog,
-  StudentPortalDashboard, StudentAdminProfile, TimetableSlot, StudyMaterialItem,
+  StudentPortalDashboard, StudentAdminProfile, TimetableSlot, StudyMaterialItem, StudyMaterialStats,
   StudentDocumentItem, TestResultItem, UpcomingTestItem,
   FeeOverviewData, FeeRegisterEntry, PaymentReceiptListItem, PaymentTransactionItem,
   AcademicOverviewResponse, BatchRosterResponse,
@@ -893,6 +893,56 @@ export const studentPortalApi = {
     apiClient.put<{ message: string; student: any }>('/student-portal/profile', data, {
       params: student_id ? { student_id } : undefined,
     }),
+}
+
+// ─── Study Materials & Academic Syllabi ───────────────────────────────────────
+
+export const studyMaterialsApi = {
+  list: (params?: {
+    standard_id?: number
+    subject_id?: number
+    division_id?: number
+    file_type?: string
+    search?: string
+    skip?: number
+    limit?: number
+  }) =>
+    apiClient.get<{
+      items: StudyMaterialItem[]
+      total: number
+      skip: number
+      limit: number
+    }>('/study-materials', { params }),
+
+  getStats: () => apiClient.get<StudyMaterialStats>('/study-materials/stats'),
+
+  create: (data: {
+    standard_id: number
+    subject_id: number
+    division_id?: number | null
+    title: string
+    description?: string
+    file_type: string
+    file_url: string
+    file_size_bytes?: number
+  }) => apiClient.post<{ success: boolean; message: string; id: number; title: string }>('/study-materials', data),
+
+  update: (
+    id: number,
+    data: {
+      standard_id?: number
+      subject_id?: number
+      division_id?: number | null
+      title?: string
+      description?: string
+      file_type?: string
+      file_url?: string
+      file_size_bytes?: number
+    }
+  ) => apiClient.put<{ success: boolean; message: string; id: number; title: string }>(`/study-materials/${id}`, data),
+
+  delete: (id: number) =>
+    apiClient.delete<{ success: boolean; message: string; id: number }>(`/study-materials/${id}`),
 }
 
 // ─── Import & Export ──────────────────────────────────────────────────────────
