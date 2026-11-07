@@ -151,8 +151,17 @@ class DemoClassScheduleRequest(BaseModel):
     feedback: Optional[str] = None
 
 
+class LeadCommunicationCreateRequest(BaseModel):
+    channel: str = "whatsapp"  # whatsapp, sms, email, call
+    content: str
+    subject: Optional[str] = None
+    recipient_name: Optional[str] = None
+    recipient_destination: Optional[str] = None
+
+
 class ConvertToAdmissionRequest(BaseModel):
     existing_student_id: Optional[int] = None
+    confirm_duplicate: bool = False
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     middle_name: Optional[str] = None
@@ -325,7 +334,6 @@ async def list_leads(
     Returns paginated list of enquiries/leads with search, stage filters, and counsellor scoping.
     """
     effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
-    await seed_initial_leads_if_empty(db, effective_inst_id)
 
     conditions = [
         Lead.institution_id == effective_inst_id,
@@ -410,7 +418,6 @@ async def get_kanban_pipeline(
     Returns pipeline leads organized by stage columns for Kanban representation.
     """
     effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
-    await seed_initial_leads_if_empty(db, effective_inst_id)
 
     stages = [
         "new_enquiry",
@@ -476,7 +483,6 @@ async def get_crm_metrics(
     Returns real-time CRM KPIs matching the 7 cards in the dashboard.
     """
     effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
-    await seed_initial_leads_if_empty(db, effective_inst_id)
 
     base = [Lead.institution_id == effective_inst_id, Lead.is_active == True]
 
@@ -539,16 +545,64 @@ async def get_crm_metrics(
     ).all()
     pipeline_counts = {r[0]: r[1] for r in stage_counts}
 
+    # Dynamic real database trends
+    leads_last_30 = (
+        await db.execute(
+            select(func.count(Lead.id)).where(and_(*base, Lead.created_at >= now - timedelta(days=30)))
+        )
+    ).scalar() or 0
+    leads_prev_30 = (
+        await db.execute(
+            select(func.count(Lead.id)).where(
+                and_(*base, Lead.created_at >= now - timedelta(days=60), Lead.created_at < now - timedelta(days=30))
+            )
+        )
+    ).scalar() or 0
+    if leads_prev_30 > 0:
+        pct = round(((leads_last_30 - leads_prev_30) / leads_prev_30) * 100, 1)
+        total_leads_trend = f"{'+' if pct >= 0 else ''}{pct}%"
+    elif leads_last_30 > 0:
+        total_leads_trend = f"+{leads_last_30}"
+    else:
+        total_leads_trend = "0%"
+
+    conv_last_30 = (
+        await db.execute(
+            select(func.count(Lead.id)).where(
+                and_(*base, Lead.stage == "converted", Lead.converted_at >= now - timedelta(days=30))
+            )
+        )
+    ).scalar() or 0
+    conv_prev_30 = (
+        await db.execute(
+            select(func.count(Lead.id)).where(
+                and_(
+                    *base,
+                    Lead.stage == "converted",
+                    Lead.converted_at >= now - timedelta(days=60),
+                    Lead.converted_at < now - timedelta(days=30),
+                )
+            )
+        )
+    ).scalar() or 0
+    if conv_prev_30 > 0:
+        pct_c = round(((conv_last_30 - conv_prev_30) / conv_prev_30) * 100, 1)
+        conversion_rate_trend = f"{'+' if pct_c >= 0 else ''}{pct_c}%"
+    elif conv_last_30 > 0:
+        conversion_rate_trend = f"+{conv_last_30}"
+    else:
+        conversion_rate_trend = "0%"
+
     return {
         "total_leads": total_leads,
-        "total_leads_trend": "+12%",
+        "total_leads_trend": total_leads_trend,
         "new_enquiries": new_enquiries,
         "follow_ups_today": follow_ups_today,
         "overdue_follow_ups": overdue_follow_ups,
         "converted": converted_leads,
         "lost_leads": lost_leads,
         "conversion_rate": conversion_rate,
-        "conversion_rate_trend": "+5.2%",
+        "conversion_rate_trend": conversion_rate_trend,
         "pipeline_counts": pipeline_counts,
         "sources": source_stats,
         "counsellors": counsellor_stats,
@@ -719,32 +773,37 @@ async def get_lead_dossier(
             "created_at": d.created_at.isoformat() if d.created_at else None,
         })
 
-    # Communications History from communication_logs
+    # Communications History from canonical communication_logs
     comm_logs = []
+    comm_conds = [CommunicationLog.institution_id == effective_inst_id]
+    or_clauses = [CommunicationLog.lead_id == lead.id]
     if lead.phone:
         clean_phone = re.sub(r"[^\d]", "", lead.phone)[-10:]
-        logs = (
-            await db.execute(
-                select(CommunicationLog)
-                .where(
-                    CommunicationLog.institution_id == effective_inst_id,
-                    CommunicationLog.recipient_destination.ilike(f"%{clean_phone}%"),
-                )
-                .order_by(desc(CommunicationLog.sent_at))
-                .limit(10)
-            )
-        ).scalars().all()
+        if clean_phone:
+            or_clauses.append(CommunicationLog.recipient_destination.ilike(f"%{clean_phone}%"))
+    if lead.email:
+        or_clauses.append(func.lower(CommunicationLog.recipient_destination) == lead.email.lower().strip())
+    comm_conds.append(or_(*or_clauses))
 
-        for l in logs:
-            comm_logs.append({
-                "id": l.id,
-                "channel": l.channel,
-                "subject": l.subject,
-                "content": l.content,
-                "status": l.status,
-                "sent_at": l.sent_at.isoformat() if l.sent_at else None,
-                "sender_name": l.sender_name,
-            })
+    logs = (
+        await db.execute(
+            select(CommunicationLog)
+            .where(and_(*comm_conds))
+            .order_by(desc(CommunicationLog.created_at))
+            .limit(25)
+        )
+    ).scalars().all()
+
+    for l in logs:
+        comm_logs.append({
+            "id": l.id,
+            "channel": l.channel,
+            "subject": l.subject,
+            "content": l.content,
+            "status": l.status,
+            "sent_at": (l.sent_at or l.created_at).isoformat() if (l.sent_at or l.created_at) else None,
+            "sender_name": l.sender_name,
+        })
 
     # Duplicate student detection preview
     potential_students = []
@@ -1021,6 +1080,77 @@ async def schedule_demo_class(
     }
 
 
+@router.post("/{lead_id}/communications")
+async def log_lead_communication(
+    lead_id: int,
+    data: LeadCommunicationCreateRequest,
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*LEAD_WRITE_ROLES)),
+):
+    """
+    Dispatches and logs a communication directly into canonical communication_logs table,
+    and creates a corresponding LeadFollowUp entry for pipeline tracking.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    lead = (
+        await db.execute(
+            select(Lead).where(Lead.id == lead_id, Lead.institution_id == effective_inst_id)
+        )
+    ).scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    dest = data.recipient_destination or lead.phone or lead.email or "N/A"
+    sender_name = f"{current_user.first_name} {current_user.last_name}".strip()
+
+    # 1. Canonical CommunicationLog
+    comm_log = CommunicationLog(
+        institution_id=effective_inst_id,
+        channel=data.channel.upper(),
+        recipient_type="LEAD",
+        recipient_id=lead.id,
+        lead_id=lead.id,
+        recipient_name=data.recipient_name or lead.full_name,
+        recipient_destination=dest,
+        subject=data.subject or f"Enquiry Communication - {lead.lead_number}",
+        content=data.content,
+        status="SENT",
+        sender_id=current_user.id,
+        sender_name=sender_name,
+        sent_at=datetime.now(timezone.utc),
+    )
+    db.add(comm_log)
+
+    # 2. Associated LeadFollowUp
+    follow_up = LeadFollowUp(
+        lead_id=lead.id,
+        institution_id=effective_inst_id,
+        follow_up_type=data.channel.lower(),
+        stage_at_time=lead.stage,
+        status="completed",
+        scheduled_at=datetime.now(timezone.utc),
+        completed_at=datetime.now(timezone.utc),
+        outcome="message_sent",
+        remarks=f"[{data.channel.upper()}] {data.content[:200]}",
+        performed_by_id=current_user.id,
+    )
+    db.add(follow_up)
+    await db.commit()
+    await db.refresh(comm_log)
+
+    return {
+        "success": True,
+        "message": f"Communication logged to canonical communication_logs #{comm_log.id}",
+        "communication_id": comm_log.id,
+        "channel": comm_log.channel,
+        "lead_id": lead.id,
+        "content": comm_log.content,
+        "sent_at": comm_log.sent_at.isoformat() if comm_log.sent_at else None,
+        "sender_name": comm_log.sender_name,
+    }
+
+
 @router.post("/{lead_id}/convert")
 async def convert_lead_to_admission(
     lead_id: int,
@@ -1047,6 +1177,24 @@ async def convert_lead_to_admission(
         raise HTTPException(status_code=404, detail="Lead not found")
 
     if lead.stage == "converted" and lead.converted_student_id:
+        student = (
+            await db.execute(
+                select(Student).where(
+                    Student.id == lead.converted_student_id,
+                    Student.institution_id == effective_inst_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if student:
+            return {
+                "success": True,
+                "already_converted": True,
+                "message": f"Lead {lead.lead_number} was already converted to student {student.admission_number}",
+                "lead_id": lead.id,
+                "student_id": student.id,
+                "admission_number": student.admission_number,
+                "student_name": f"{student.first_name} {student.last_name}",
+            }
         raise HTTPException(status_code=400, detail="This lead is already converted to an admission.")
 
     student: Optional[Student] = None
@@ -1060,6 +1208,38 @@ async def convert_lead_to_admission(
         if not student:
             raise HTTPException(status_code=404, detail="Selected existing student not found")
     else:
+        # Duplicate Student Prevention
+        if not data.confirm_duplicate:
+            ph = data.phone or data.mobile or lead.phone
+            em = data.email or lead.email
+            dup_conds = []
+            if ph:
+                clean_p = re.sub(r"[^\d]", "", ph)[-10:]
+                if len(clean_p) >= 10:
+                    dup_conds.append(Student.phone.ilike(f"%{clean_p}%"))
+            if em:
+                dup_conds.append(func.lower(Student.email) == em.lower().strip())
+            if dup_conds:
+                matched_student = (
+                    await db.execute(
+                        select(Student).where(
+                            Student.institution_id == effective_inst_id,
+                            or_(*dup_conds),
+                        )
+                    )
+                ).scalars().first()
+                if matched_student:
+                    raise HTTPException(
+                        status_code=409,
+                        detail={
+                            "code": "DUPLICATE_STUDENT_DETECTED",
+                            "message": f"A student with matching contact already exists: {matched_student.first_name} {matched_student.last_name} ({matched_student.admission_number}). Supply existing_student_id={matched_student.id} to link, or confirm_duplicate=true to create a separate student.",
+                            "matched_student_id": matched_student.id,
+                            "matched_admission_number": matched_student.admission_number,
+                            "matched_student_name": f"{matched_student.first_name} {matched_student.last_name}",
+                        },
+                    )
+
         # Generate admission number if missing
         adm_no = data.admission_number
         if not adm_no:
@@ -1237,21 +1417,50 @@ async def delete_or_archive_lead(
     return {"success": True, "message": f"Lead {lead.lead_number} archived successfully"}
 
 
+@router.post("/seed-demo")
+async def seed_demo_crm_data(
+    confirm: bool = Query(False, description="Explicit confirmation required to seed demo data"),
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("superadmin", "super_admin", "admin", "principal")),
+):
+    """
+    Explicit, opt-in endpoint to seed demonstration CRM records.
+    Requires explicit query parameter confirm=true and administrative privileges.
+    Production customer environments are protected by default.
+    """
+    if not confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Demo data seeding requires explicit query parameter 'confirm=true'.",
+        )
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    count = await seed_initial_leads_if_empty(db, effective_inst_id, force=True)
+    return {
+        "success": True,
+        "message": f"Successfully seeded {count} demo leads for institution #{effective_inst_id}.",
+        "seeded_count": count,
+    }
+
+
 # ─── Mock Seeder for High-Fidelity UI Match ───────────────────────────────────
 
-async def seed_initial_leads_if_empty(db: AsyncSession, institution_id: Optional[int]):
-    """Seeds realistic leads matching user screenshot if leads table is empty."""
+async def seed_initial_leads_if_empty(db: AsyncSession, institution_id: Optional[int], force: bool = False) -> int:
+    """Seeds realistic leads matching user screenshot ONLY if explicitly requested with force=True."""
+    if not force:
+        return 0
+
     if not institution_id:
         inst_res = await db.execute(select(Institution.id).limit(1))
         institution_id = inst_res.scalar_one_or_none()
     if not institution_id:
-        return
+        return 0
 
     existing_count = (
         await db.execute(select(func.count(Lead.id)).where(Lead.institution_id == institution_id))
     ).scalar() or 0
     if existing_count > 0:
-        return
+        return 0
 
     # Fetch reference IDs
     std_rows = (await db.execute(select(Standard).where(Standard.institution_id == institution_id))).scalars().all()
@@ -1399,3 +1608,4 @@ async def seed_initial_leads_if_empty(db: AsyncSession, institution_id: Optional
         )
 
     await db.commit()
+    return len(demo_leads)

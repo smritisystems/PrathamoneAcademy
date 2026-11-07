@@ -303,8 +303,10 @@ export default function LeadManagement() {
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">{metricsData?.total_leads ?? 286}</span>
-            <span className="text-[11px] font-bold text-emerald-600">↑ +12%</span>
+            <span className="text-2xl font-black text-slate-900">{metricsData?.total_leads ?? 0}</span>
+            {metricsData?.total_leads_trend && (
+              <span className="text-[11px] font-bold text-emerald-600">{metricsData.total_leads_trend}</span>
+            )}
           </div>
         </div>
 
@@ -317,7 +319,7 @@ export default function LeadManagement() {
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-black text-cyan-700">{metricsData?.new_enquiries ?? 48}</span>
+            <span className="text-2xl font-black text-cyan-700">{metricsData?.new_enquiries ?? 0}</span>
           </div>
         </div>
 
@@ -330,7 +332,7 @@ export default function LeadManagement() {
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-black text-slate-900">{metricsData?.follow_ups_today ?? 19}</span>
+            <span className="text-2xl font-black text-slate-900">{metricsData?.follow_ups_today ?? 0}</span>
           </div>
         </div>
 
@@ -343,7 +345,7 @@ export default function LeadManagement() {
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-black text-rose-600">{metricsData?.overdue_follow_ups ?? 7}</span>
+            <span className="text-2xl font-black text-rose-600">{metricsData?.overdue_follow_ups ?? 0}</span>
           </div>
         </div>
 
@@ -356,8 +358,10 @@ export default function LeadManagement() {
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-emerald-700">{metricsData?.converted ?? 96}</span>
-            <span className="text-[11px] font-semibold text-slate-400">33.6%</span>
+            <span className="text-2xl font-black text-emerald-700">{metricsData?.converted ?? 0}</span>
+            <span className="text-[11px] font-semibold text-slate-400">
+              {metricsData?.conversion_rate ? `${metricsData.conversion_rate}%` : '0%'}
+            </span>
           </div>
         </div>
 
@@ -370,7 +374,7 @@ export default function LeadManagement() {
             </div>
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-black text-slate-600">{metricsData?.lost_leads ?? 18}</span>
+            <span className="text-2xl font-black text-slate-600">{metricsData?.lost_leads ?? 0}</span>
           </div>
         </div>
 
@@ -383,8 +387,10 @@ export default function LeadManagement() {
             </div>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-purple-700">{metricsData?.conversion_rate ?? 33.6}%</span>
-            <span className="text-[11px] font-bold text-emerald-600">↑ +5.2%</span>
+            <span className="text-2xl font-black text-purple-700">{metricsData?.conversion_rate ?? 0}%</span>
+            {metricsData?.conversion_rate_trend && (
+              <span className="text-[11px] font-bold text-emerald-600">{metricsData.conversion_rate_trend}</span>
+            )}
           </div>
         </div>
       </div>
@@ -1703,6 +1709,7 @@ function ConvertToAdmissionModal({
       setIsSubmitting(true)
       const res = await leadsApi.convertToAdmission(lead.id, {
         existing_student_id: selectedExistingId || undefined,
+        confirm_duplicate: selectedExistingId ? false : true,
         first_name: lead.first_name,
         last_name: lead.last_name,
         date_of_birth: lead.date_of_birth || '2010-01-01',
@@ -1725,7 +1732,8 @@ function ConvertToAdmissionModal({
       toast.success(res.data.message)
       onSuccess(res.data)
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Failed to convert lead to admission')
+      const errorMsg = err?.response?.data?.detail?.message || err?.response?.data?.detail || 'Failed to convert lead to admission'
+      toast.error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg))
     } finally {
       setIsSubmitting(false)
     }

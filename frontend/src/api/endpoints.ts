@@ -1497,6 +1497,12 @@ export const leadsApi = {
   convertToAdmission: (id: number | string, data: any) =>
     apiClient.post<{ success: boolean; message: string; student_id: number; admission_number: string; student_name: string }>(`/leads/${id}/convert`, data),
 
+  logCommunication: (id: number | string, data: { channel: string; content: string; subject?: string; recipient_name?: string; recipient_destination?: string }) =>
+    apiClient.post<{ success: boolean; message: string; communication_id: number }>(`/leads/${id}/communications`, data),
+
+  seedDemo: (confirm = true) =>
+    apiClient.post<{ success: boolean; message: string; seeded_count: number }>('/leads/seed-demo', null, { params: { confirm } }),
+
   deleteLead: (id: number | string) =>
     apiClient.delete<{ success: boolean; message: string }>(`/leads/${id}`),
 }

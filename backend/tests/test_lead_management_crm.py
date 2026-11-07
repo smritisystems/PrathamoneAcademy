@@ -27,6 +27,7 @@ from app.models.crm import Lead, LeadFollowUp, LeadDemoClass
 from app.models.academic_year import AcademicYear
 from app.models.standard import Standard
 from app.models.student import Student
+from app.models.communication import CommunicationLog
 
 pytestmark = pytest.mark.asyncio
 
@@ -299,6 +300,44 @@ async def test_lead_to_admission_conversion(client, auth_headers, db, test_insti
     assert lead.stage == "converted"
     assert lead.converted_student_id == student.id
 
+    # 1. Test IDEMPOTENCY: Re-converting the same lead must safely return 200 with existing details
+    resp_retry = await client.post(
+        f"/api/v1/leads/{lead_id}/convert",
+        json={"send_welcome_sms": False},
+        headers=auth_headers,
+    )
+    assert resp_retry.status_code == 200
+    retry_data = resp_retry.json()
+    assert retry_data["success"] is True
+    assert retry_data.get("already_converted") is True
+    assert retry_data["student_id"] == conv_data["student_id"]
+    assert retry_data["admission_number"] == conv_data["admission_number"]
+
+    # 2. Test DUPLICATE STUDENT DETECTION: Another lead with same phone must be rejected with 409
+    dup_lead_resp = await client.post(
+        "/api/v1/leads",
+        json={"student_name": "Gaurav Dup", "mobile": "9833445566"},
+        headers=auth_headers,
+    )
+    dup_lead_id = dup_lead_resp.json()["id"]
+    resp_dup = await client.post(
+        f"/api/v1/leads/{dup_lead_id}/convert",
+        json={"send_welcome_sms": False},
+        headers=auth_headers,
+    )
+    assert resp_dup.status_code == 409
+    dup_err = resp_dup.json()
+    assert "DUPLICATE_STUDENT_DETECTED" in str(dup_err)
+
+    # 3. Test duplicate override with confirm_duplicate=True
+    resp_dup_override = await client.post(
+        f"/api/v1/leads/{dup_lead_id}/convert",
+        json={"send_welcome_sms": False, "confirm_duplicate": True},
+        headers=auth_headers,
+    )
+    assert resp_dup_override.status_code == 200
+    assert resp_dup_override.json()["success"] is True
+
 
 async def test_crm_security_and_permissions(client, db, test_institution):
     # 1. Unauthenticated request must return 401
@@ -340,3 +379,56 @@ async def test_crm_security_and_permissions(client, db, test_institution):
     audit = audit_res.scalar_one_or_none()
     assert audit is not None
     assert audit.user_id == admin_user.id
+
+
+async def test_lead_canonical_communication_logging(client, auth_headers, db, test_institution):
+    # 1. Create test lead
+    resp = await client.post(
+        "/api/v1/leads",
+        json={"student_name": "Ketan Verma", "mobile": "9877665544", "email": "ketan.v@example.com"},
+        headers=auth_headers,
+    )
+    lead_id = resp.json()["id"]
+
+    # 2. Post communication directly to canonical communication_logs
+    comm_resp = await client.post(
+        f"/api/v1/leads/{lead_id}/communications",
+        json={
+            "channel": "whatsapp",
+            "content": "Hello Ketan, sharing the syllabus and fee schedule for Standard 10 coaching.",
+            "subject": "Syllabus and Fee Schedule",
+        },
+        headers=auth_headers,
+    )
+    assert comm_resp.status_code == 200
+    comm_data = comm_resp.json()
+    assert comm_data["success"] is True
+    comm_id = comm_data["communication_id"]
+    assert comm_id is not None
+
+    # 3. Verify record in canonical communication_logs table
+    log_res = await db.execute(select(CommunicationLog).where(CommunicationLog.id == comm_id))
+    log = log_res.scalar_one_or_none()
+    assert log is not None
+    assert log.channel == "WHATSAPP"
+    assert log.recipient_type == "LEAD"
+    assert log.lead_id == lead_id
+    assert "Syllabus and Fee Schedule" in log.subject
+
+    # 4. Verify dossier includes this communication under communication_history
+    dossier_resp = await client.get(f"/api/v1/leads/{lead_id}", headers=auth_headers)
+    assert dossier_resp.status_code == 200
+    dossier = dossier_resp.json()
+    assert any(c["id"] == comm_id for c in dossier.get("communication_history", []))
+
+
+async def test_demo_data_protection_and_opt_in(client, auth_headers, test_institution):
+    # 1. Calling seed-demo without confirm=true must fail with 400
+    resp_fail = await client.post("/api/v1/leads/seed-demo", headers=auth_headers)
+    assert resp_fail.status_code == 400
+    assert "confirm=true" in resp_fail.text
+
+    # 2. Calling seed-demo with confirm=true succeeds
+    resp_ok = await client.post("/api/v1/leads/seed-demo?confirm=true", headers=auth_headers)
+    assert resp_ok.status_code == 200
+    assert resp_ok.json()["success"] is True

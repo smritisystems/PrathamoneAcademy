@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-07
 #  *
 #  * @description SQLAlchemy ORM models for Message Templates, Communication Logs, and Expiring Shared Document Tokens.
 #  */
@@ -75,6 +75,9 @@ class CommunicationLog(Base):
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     sender_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    lead_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("leads.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -83,6 +86,7 @@ class CommunicationLog(Base):
 
     institution = relationship("Institution", back_populates="communication_logs")
     sender = relationship("User", foreign_keys=[sender_id])
+    lead = relationship("Lead", back_populates="communications", lazy="selectin")
 
 
 class SharedDocumentToken(Base):

@@ -129,6 +129,14 @@ class Lead(Base):
         "LeadDemoClass", back_populates="lead", cascade="all, delete-orphan",
         order_by="desc(LeadDemoClass.scheduled_at)", lazy="selectin"
     )
+    communications = relationship(
+        "CommunicationLog", back_populates="lead",
+        order_by="desc(CommunicationLog.created_at)", lazy="selectin"
+    )
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
 
 
 class LeadFollowUp(Base):

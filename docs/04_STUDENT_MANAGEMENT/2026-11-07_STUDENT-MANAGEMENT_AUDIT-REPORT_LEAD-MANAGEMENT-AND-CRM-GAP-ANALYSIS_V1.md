@@ -251,3 +251,4 @@ flowchart TD
    - Frontend unit tests: `frontend/src/test/LeadManagementCRM.test.tsx`.
    - Automated governance audit: `python scripts/check_view_first_governance.py`.
    - Re-index documentation: `python tools/docs_manager.py reindex` and `validate`.
+
