@@ -1026,7 +1026,26 @@ export interface StudentAdminProfile {
     action: string
     description: string
     timestamp: string
+    status?: string
   }[]
+  communications?: {
+    id: number
+    channel: string
+    recipient_name: string
+    recipient_destination: string
+    subject?: string
+    content: string
+    status: string
+    is_lead_history: boolean
+    created_at: string
+  }[]
+  linked_lead?: {
+    id: number
+    lead_number: string
+    stage: string
+    source: string
+    created_at: string
+  } | null
 }
 
 // ─── Import & Export Types ──────────────────────────────────────────────────

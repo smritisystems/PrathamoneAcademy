@@ -515,7 +515,7 @@ export default function StudentDetailPage() {
     return <div className="card text-center text-gray-400 py-20">Student profile not found.</div>
   }
 
-  const { overview, enrollment, classes, attendance, tests, fees, documents, activity } = profile
+  const { overview, enrollment, classes, attendance, tests, fees, documents, activity, communications, linked_lead } = profile
   const totalFees = overview.fee_summary?.total_fees ?? 0
   const totalPaid = overview.fee_summary?.total_paid ?? 0
   const outstanding = overview.fee_summary?.outstanding ?? 0
@@ -1215,12 +1215,50 @@ export default function StudentDetailPage() {
           {/* TAB 8: ACTIVITY */}
           {activeTab === 'Activity' && (
             <div className="space-y-4">
-              <h3 className="font-bold text-gray-900">Student System Timeline & Activity</h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-900">Student System Timeline & Communication Activity</h3>
+                  <p className="text-xs text-gray-500">Universal audit logs, payments, and canonical communication ledger trail</p>
+                </div>
+                {linked_lead && (
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1.5">
+                    <History className="w-3.5 h-3.5 text-purple-600" />
+                    Enquiry Lead: {linked_lead.lead_number}
+                  </span>
+                )}
+              </div>
+
+              {linked_lead && (
+                <div className="p-3.5 rounded-xl border border-purple-200 bg-purple-50/60 flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100 text-purple-700 mt-0.5">
+                    <History className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-purple-900">Converted from CRM Lead #{linked_lead.lead_number}</p>
+                    <p className="text-xs text-purple-700 mt-0.5">
+                      Enquiry registered via {linked_lead.source || 'Walk-in'}. All pre-admission counselling, trial sessions, and communication logs are linked seamlessly from the single source of truth ledger.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-3">
                 {activity.map((act) => (
                   <div key={act.id} className="p-3.5 rounded-xl border border-gray-200 bg-gray-50 flex items-start gap-3">
-                    <div className="p-1.5 rounded-lg bg-primary-100 text-primary-700 mt-0.5">
-                      <Activity className="w-4 h-4" />
+                    <div className={`p-1.5 rounded-lg mt-0.5 ${
+                      act.type === 'communication'
+                        ? 'bg-blue-100 text-blue-700'
+                        : act.type === 'payment'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-primary-100 text-primary-700'
+                    }`}>
+                      {act.type === 'communication' ? (
+                        <Mail className="w-4 h-4" />
+                      ) : act.type === 'payment' ? (
+                        <CreditCard className="w-4 h-4" />
+                      ) : (
+                        <Activity className="w-4 h-4" />
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">{act.description}</p>

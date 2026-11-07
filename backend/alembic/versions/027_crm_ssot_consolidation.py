@@ -89,3 +89,4 @@ def downgrade():
         if "lead_id" in comm_cols:
             op.drop_index(op.f("ix_communication_logs_lead_id"), table_name="communication_logs")
             op.drop_column("communication_logs", "lead_id")
+

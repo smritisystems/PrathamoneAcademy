@@ -44,6 +44,8 @@ from app.models.attendance import Attendance
 from app.models.exam import Examination, ExamMark
 from app.models.portal import StudentDocument, TimetableEntry
 from app.models.user import User, AuditLog
+from app.models.communication import CommunicationLog
+from app.models.crm import Lead
 from pydantic import BaseModel, Field
 from datetime import date
 from decimal import Decimal
@@ -1017,6 +1019,62 @@ async def get_student_admin_profile(
             "timestamp": str(p.payment_date),
         })
 
+    # 9. Communication History & Linked Lead Integration (Canonical SSOT Ledger)
+    lead_row = (await db.execute(
+        select(Lead).where(Lead.converted_student_id == student_id)
+    )).scalar_one_or_none()
+    lead_id = lead_row.id if lead_row else None
+
+    comm_conditions = [
+        and_(CommunicationLog.recipient_type == "STUDENT", CommunicationLog.recipient_id == student_id),
+    ]
+    if lead_id:
+        comm_conditions.append(CommunicationLog.lead_id == lead_id)
+    if student.phone or student.email:
+        dest_conditions = []
+        if student.phone:
+            dest_conditions.append(CommunicationLog.recipient_destination == student.phone)
+        if student.email:
+            dest_conditions.append(CommunicationLog.recipient_destination == student.email)
+        comm_conditions.append(and_(CommunicationLog.institution_id == student.institution_id, or_(*dest_conditions)))
+
+    comm_stmt = (
+        select(CommunicationLog)
+        .where(or_(*comm_conditions))
+        .order_by(desc(CommunicationLog.created_at))
+        .limit(30)
+    )
+    comms = (await db.execute(comm_stmt)).scalars().all()
+    seen_comm_ids = set()
+    communications_list = []
+    for c in comms:
+        if c.id in seen_comm_ids:
+            continue
+        seen_comm_ids.add(c.id)
+        is_lead = bool(lead_id and c.lead_id == lead_id)
+        origin_label = "Enquiry CRM Lead" if is_lead else "Student Communication"
+        communications_list.append({
+            "id": c.id,
+            "channel": c.channel,
+            "recipient_name": c.recipient_name,
+            "recipient_destination": c.recipient_destination,
+            "subject": c.subject or "Communication Notification",
+            "content": c.content,
+            "status": c.status,
+            "is_lead_history": is_lead,
+            "created_at": str(c.created_at),
+        })
+        activity_timeline.append({
+            "id": f"comm-{c.id}",
+            "type": "communication",
+            "action": c.channel.lower(),
+            "description": f"[{c.channel.upper()}] {c.subject or c.content[:60]} ({origin_label})",
+            "timestamp": str(c.created_at),
+        })
+
+    # Sort combined activity timeline in reverse chronological order
+    activity_timeline.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
+
     if not activity_timeline:
         activity_timeline.append({
             "id": f"enroll-{student.id}",
@@ -1097,6 +1155,14 @@ async def get_student_admin_profile(
         "fees": fee_details,
         "documents": documents_list,
         "activity": activity_timeline,
+        "communications": communications_list,
+        "linked_lead": {
+            "id": lead_row.id,
+            "lead_number": lead_row.lead_number,
+            "stage": lead_row.stage,
+            "source": lead_row.source,
+            "created_at": str(lead_row.created_at),
+        } if lead_row else None,
     }
 
 

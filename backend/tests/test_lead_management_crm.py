@@ -432,3 +432,70 @@ async def test_demo_data_protection_and_opt_in(client, auth_headers, test_instit
     resp_ok = await client.post("/api/v1/leads/seed-demo?confirm=true", headers=auth_headers)
     assert resp_ok.status_code == 200
     assert resp_ok.json()["success"] is True
+
+
+async def test_converted_student_dossier_displays_linked_lead_communication_history(client, auth_headers, db, test_institution):
+    """
+    Verifies that when a lead is converted into a student, the student's comprehensive profile/dossier
+    seamlessly displays all communication history logged during the enquiry phase without duplicating ledger records.
+    """
+    # 1. Create a fresh lead
+    lead_payload = {
+        "student_name": "Tanya Saxena",
+        "parent_name": "Rajesh Saxena",
+        "mobile": "9823456789",
+        "email": "tanya.saxena@example.com",
+        "class_name": "Std. 10",
+        "board_name": "CBSE",
+        "interested_course": "Science Foundation",
+        "source": "Website",
+        "priority": "hot",
+    }
+    create_resp = await client.post("/api/v1/leads", json=lead_payload, headers=auth_headers)
+    assert create_resp.status_code == 201
+    lead_data = create_resp.json()
+    lead_id = lead_data["id"]
+
+    # 2. Dispatch/log communication to canonical SSOT communication_logs
+    comm_resp = await client.post(
+        f"/api/v1/leads/{lead_id}/communications",
+        json={
+            "channel": "whatsapp",
+            "content": "Official course prospectus and fee discount offer dispatched to parent.",
+            "subject": "Course Prospectus and Welcome Pack",
+        },
+        headers=auth_headers,
+    )
+    assert comm_resp.status_code == 200
+    comm_id = comm_resp.json()["communication_id"]
+
+    # 3. Convert lead to admission
+    convert_resp = await client.post(
+        f"/api/v1/leads/{lead_id}/convert",
+        json={"confirm_duplicate": True},
+        headers=auth_headers,
+    )
+    assert convert_resp.status_code == 200
+    student_id = convert_resp.json()["student_id"]
+
+    # 4. Fetch the converted student's admin profile / dossier
+    student_profile_resp = await client.get(f"/api/v1/students/{student_id}/profile", headers=auth_headers)
+    assert student_profile_resp.status_code == 200
+    profile_data = student_profile_resp.json()
+
+    # 5. Verify linked_lead metadata
+    assert profile_data.get("linked_lead") is not None
+    assert profile_data["linked_lead"]["id"] == lead_id
+
+    # 6. Verify communication is present in student dossier with lead flag
+    student_comms = profile_data.get("communications", [])
+    matching_comms = [c for c in student_comms if c["id"] == comm_id]
+    assert len(matching_comms) == 1, "Must contain exactly 1 entry without duplicate ledger records"
+    assert matching_comms[0]["is_lead_history"] is True
+    assert "Course Prospectus" in matching_comms[0]["subject"]
+
+    # 7. Verify unified activity timeline includes the communication
+    activity = profile_data.get("activity", [])
+    matching_activity = [a for a in activity if a.get("id") == f"comm-{comm_id}"]
+    assert len(matching_activity) == 1
+    assert "CRM Lead" in matching_activity[0]["description"]
