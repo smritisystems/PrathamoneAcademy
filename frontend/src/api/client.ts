@@ -11,13 +11,14 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Axios HTTP client instance configured with base URL, authentication headers, error classification, and response interceptors.
  */
 
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
+import { useEnvironmentStore } from '../store/environmentStore'
 import {
   classifyError,
   generateErrorReferenceId,
@@ -35,6 +36,10 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  const dataEnv = typeof useEnvironmentStore?.getState === 'function'
+    ? useEnvironmentStore.getState()?.dataEnvironment
+    : 'PRODUCTION'
+  config.headers['X-Data-Environment'] = dataEnv || 'PRODUCTION'
   return config
 })
 

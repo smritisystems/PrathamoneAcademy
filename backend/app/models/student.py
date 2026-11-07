@@ -11,11 +11,12 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-07
 #  *
 #  * @description SQLAlchemy model defining student personal profile, contact information, and parent records.
 #  */
 
+from typing import Optional
 from sqlalchemy import String, Boolean, DateTime, ForeignKey, func, Date, Text, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, date
@@ -54,6 +55,9 @@ class Student(Base):
     exit_date: Mapped[date] = mapped_column(Date, nullable=True)
     exit_reason: Mapped[str] = mapped_column(String(100), nullable=True)
     exit_notes: Mapped[str] = mapped_column(Text, nullable=True)
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
+    demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -108,6 +112,9 @@ class Guardian(Base):
     aadhar_number: Mapped[str] = mapped_column(String(12), nullable=True)
     annual_income: Mapped[float] = mapped_column(Float, nullable=True)
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
+    demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

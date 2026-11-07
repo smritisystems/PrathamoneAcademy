@@ -59,6 +59,9 @@ from app.models.codex import (
 from app.models.crm import (
     Lead, LeadFollowUp, LeadDemoClass
 )
+from app.models.training import (
+    TrainingEnvironmentConfig, TrainingSession, TrainingResetLog
+)
 
 
 __all__ = [
@@ -130,6 +133,9 @@ __all__ = [
     "Lead",
     "LeadFollowUp",
     "LeadDemoClass",
+    "TrainingEnvironmentConfig",
+    "TrainingSession",
+    "TrainingResetLog",
 ]
 
 

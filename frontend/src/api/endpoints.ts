@@ -1506,3 +1506,43 @@ export const leadsApi = {
   deleteLead: (id: number | string) =>
     apiClient.delete<{ success: boolean; message: string }>(`/leads/${id}`),
 }
+
+export interface TrainingStatusResponse {
+  is_enabled: boolean
+  reset_policy: string
+  inactivity_timeout_minutes: number
+  daily_reset_time: string
+  dataset_version: string
+  institution_id: number
+  institution_code: string
+  record_counts: {
+    leads: number
+    students: number
+    receipts: number
+    follow_ups: number
+  }
+  active_sessions_count: number
+  active_sessions: Array<{
+    id: number
+    user_id: number
+    started_at: string | null
+    last_active_at: string | null
+  }>
+  last_reset: {
+    timestamp: string
+    status: string
+    version: string
+  } | null
+}
+
+export const trainingApi = {
+  getStatus: () => apiClient.get<TrainingStatusResponse>('/training/status'),
+  pingSession: () => apiClient.post<{ status: string; session_id: number; last_active_at: string }>('/training/session/ping'),
+  exitSession: () => apiClient.post<{ status: string }>('/training/session/exit'),
+  resetEnvironment: (data: { force?: boolean; restore_baseline?: boolean; dataset_version?: string }) =>
+    apiClient.post<{ status: string; dataset_version: string; records_cleared: number; records_seeded: number; duration_ms: number; timestamp: string }>('/training/reset', data),
+  seedDataset: () => apiClient.post<{ status: string; details: any }>('/training/seed'),
+  getResetLogs: (limit = 50) => apiClient.get<Array<any>>('/training/reset-logs', { params: { limit } }),
+  updateConfig: (data: { is_enabled?: boolean; reset_policy?: string; inactivity_timeout_minutes?: number; daily_reset_time?: string }) =>
+    apiClient.put<{ status: string; is_enabled: boolean; reset_policy: string; inactivity_timeout_minutes: number; daily_reset_time: string }>('/training/config', data),
+}

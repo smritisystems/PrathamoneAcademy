@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, get_data_environment, enforce_institution_access
 from app.models.student import Student
 from app.models.payment import Payment, PaymentReceipt
 from app.models.fee import FeeInvoice
@@ -47,6 +47,8 @@ async def get_dashboard_stats(
     board_id: Optional[int] = None,
     status: Optional[str] = Query(default=None),
     include_all_statuses: Optional[bool] = Query(default=None),
+    data_env: str = Depends(get_data_environment),
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "sysadmin", "super_admin", "admin", "principal", "accountant", "staff", "teacher")),
 ):
@@ -58,11 +60,8 @@ async def get_dashboard_stats(
     - Recent payments with receipt, student, batch, method, and date
     """
     # Verify institution_id validity; if client passed an ID with 0 students (e.g. stale client state), fallback
-    effective_inst_id = institution_id
-    if institution_id:
-        inst_count = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
-        if inst_count == 0:
-            effective_inst_id = None
+    # Determine demo filter according to active data environment
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
 
     # Resolve student visibility mode from settings or explicit user override
     user_inst_id = effective_inst_id or getattr(current_user, "institution_id", None) or 1
@@ -88,6 +87,7 @@ async def get_dashboard_stats(
         standard_id=standard_id,
         division_id=division_id,
         status=effective_status,
+        is_demo=is_demo_filter,
     )
 
     # 2. Fee Stats (Total Fees, Total Collected, Outstanding)
@@ -268,11 +268,8 @@ async def get_dashboard_reconciliation(
     """
     Produce student count diagnostic reconciliation comparing active enrollments against fee records.
     """
-    effective_inst_id = institution_id
-    if institution_id:
-        inst_count = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
-        if inst_count == 0:
-            effective_inst_id = None
+    # Determine demo filter according to active data environment
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
 
     return await get_student_reconciliation_diagnostic(
         db=db,

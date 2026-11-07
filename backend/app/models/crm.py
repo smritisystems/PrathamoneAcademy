@@ -105,6 +105,10 @@ class Lead(Base):
     lost_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Global Training & Demo Environment Metadata
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
+    demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -172,6 +176,10 @@ class LeadFollowUp(Base):
     performed_by_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=True
     )
+    # Global Training & Demo Environment Metadata
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
+    demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -207,6 +215,10 @@ class LeadDemoClass(Base):
     )  # scheduled, attended, absent, cancelled
     feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     rating: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # 1 to 5
+    # Global Training & Demo Environment Metadata
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
+    demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -32,3 +32,7 @@ export type {
   LockedIconButtonProps,
   LockedLinkButtonProps,
 } from './LockedAction'
+
+export { default as DemoBadge } from './DemoBadge'
+export { default as TrainingModeBanner } from './TrainingModeBanner'
+export { default as EnvironmentSwitchModal } from './EnvironmentSwitchModal'

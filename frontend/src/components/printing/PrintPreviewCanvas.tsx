@@ -26,6 +26,7 @@ import {
   Info,
   Layers,
 } from 'lucide-react'
+import { useEnvironmentStore } from '../../store/environmentStore'
 import type {
   PrintSettings,
   PrintLayoutCalculation,
@@ -139,6 +140,20 @@ export default function PrintPreviewCanvas({
           }}
           className="bg-white text-slate-900 rounded-sm shadow-2xl relative transition-all mx-auto select-none overflow-hidden"
         >
+          {/* Global Training / Demo Mode Watermark */}
+          {typeof useEnvironmentStore?.getState === 'function' && useEnvironmentStore.getState()?.isTrainingMode && (
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-30 select-none overflow-hidden opacity-15">
+              <div className="transform -rotate-45 text-center">
+                <div className="text-3xl md:text-5xl font-black tracking-widest text-amber-700 uppercase border-4 border-dashed border-amber-700 px-6 py-3 rounded-2xl">
+                  DEMO REPORT — NOT FOR ACTUAL BUSINESS USE
+                </div>
+                <div className="text-xs md:text-sm font-bold text-amber-800 mt-2 tracking-wider">
+                  PrathamOne EduOS · Training & Simulation Environment
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Visual Margin Guides Overlay */}
           {showMarginGuides && (
             <div

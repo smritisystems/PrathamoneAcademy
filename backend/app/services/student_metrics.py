@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-07
 #  *
 #  * @description Authoritative student metrics and counting service ensuring consistent active enrollment counts across dashboards.
 #  */
@@ -68,6 +68,7 @@ async def get_authoritative_student_count(
     division_id: Optional[int] = None,
     status: Optional[str] = None,
     include_inactive: bool = False,
+    is_demo: Optional[bool] = None,
 ) -> int:
     """
     Authoritative student count rule:
@@ -89,6 +90,8 @@ async def get_authoritative_student_count(
 
     if institution_id:
         query = query.where(Student.institution_id == institution_id)
+    if is_demo is not None:
+        query = query.where(Student.is_demo == is_demo)
 
     if academic_year_id:
         query = query.where(StudentEnrollment.academic_year_id == academic_year_id)
@@ -135,6 +138,8 @@ async def get_authoritative_student_counts_by_board(
 
     if institution_id:
         query = query.where(Student.institution_id == institution_id)
+    if is_demo is not None:
+        query = query.where(Student.is_demo == is_demo)
     if academic_year_id:
         query = query.where(StudentEnrollment.academic_year_id == academic_year_id)
     if board_id:
@@ -179,6 +184,8 @@ async def get_authoritative_student_counts_by_batch(
 
     if institution_id:
         query = query.where(Student.institution_id == institution_id)
+    if is_demo is not None:
+        query = query.where(Student.is_demo == is_demo)
     if academic_year_id:
         query = query.where(StudentEnrollment.academic_year_id == academic_year_id)
     if board_id:
@@ -232,6 +239,8 @@ async def get_student_reconciliation_diagnostic(
 
     if institution_id:
         query = query.where(Student.institution_id == institution_id)
+    if is_demo is not None:
+        query = query.where(Student.is_demo == is_demo)
     if academic_year_id:
         query = query.where(StudentEnrollment.academic_year_id == academic_year_id)
 

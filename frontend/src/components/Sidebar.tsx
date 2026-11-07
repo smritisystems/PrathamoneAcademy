@@ -22,7 +22,7 @@ import {
   LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
-  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers
+  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -79,6 +79,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/install', label: 'Install App (PWA)', icon: Download },
   { to: '/users', label: 'Users & Roles', icon: Shield },
   { to: '/releases', label: 'Releases & Changes', icon: GitBranch },
+  { to: '/training', label: 'Training & Demo Lab', icon: FlaskConical },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 

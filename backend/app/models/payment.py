@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-07
 #  *
 #  * @description SQLAlchemy models defining financial transactions, ERP payment workflow lifecycle, receipt versioning, and refunds.
 #  */
@@ -78,6 +78,9 @@ class Payment(Base):
     collected_by_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
+    demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -162,6 +165,9 @@ class PaymentReceipt(Base):
     superseded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     superseded_by_receipt_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     reprint_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
+    demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     generated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

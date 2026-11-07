@@ -78,6 +78,9 @@ class CommunicationLog(Base):
     lead_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("leads.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
+    demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

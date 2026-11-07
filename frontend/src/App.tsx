@@ -61,6 +61,7 @@ const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), '
 const ReleasesPage = lazyWithRetry(() => import('./pages/Releases'), 'Releases')
 const CodeXStudioPage = lazyWithRetry(() => import('./pages/CodeXStudio'), 'CodeXStudio')
 const LeadManagementPage = lazyWithRetry(() => import('./pages/LeadManagement'), 'LeadManagement')
+const TrainingManagementPage = lazyWithRetry(() => import('./pages/TrainingManagement'), 'TrainingManagement')
 
 function PageLoader() {
   return (
@@ -190,6 +191,8 @@ export default function App() {
           <Route path="communication" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
           <Route path="admin/releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
+          <Route path="training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />
+          <Route path="admin/training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />
           {/* 404 within authenticated shell */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

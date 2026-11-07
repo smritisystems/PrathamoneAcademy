@@ -30,6 +30,11 @@ import { institutionsApi, academicYearsApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
 import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useState } from 'react'
+import { useEnvironmentStore, DataEnvironment } from '../store/environmentStore'
+import TrainingModeBanner from './common/TrainingModeBanner'
+import EnvironmentSwitchModal from './common/EnvironmentSwitchModal'
+import { FlaskConical, ShieldCheck } from 'lucide-react'
 
 // Fallback authoritative academic sessions ensuring zero blank dropdown states
 const DEFAULT_ACADEMIC_YEARS = [
@@ -40,6 +45,8 @@ const DEFAULT_ACADEMIC_YEARS = [
 
 export default function Layout() {
   const branding = useBranding()
+  const { dataEnvironment, isTrainingMode } = useEnvironmentStore()
+  const [switchTarget, setSwitchTarget] = useState<DataEnvironment | null>(null)
   useDocumentTitle()
 
   const {
@@ -220,6 +227,34 @@ export default function Layout() {
             <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
 
+          {/* Environment Switcher Pill */}
+          <button
+            type="button"
+            onClick={() => setSwitchTarget(isTrainingMode ? 'PRODUCTION' : 'TRAINING')}
+            title={
+              isTrainingMode
+                ? 'Currently in Training Mode with sample data. Click to switch to Live Mode.'
+                : 'Currently in Live Production Mode. Click to explore Training Mode.'
+            }
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-2xs ${
+              isTrainingMode
+                ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 animate-pulse'
+                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+            }`}
+          >
+            {isTrainingMode ? (
+              <>
+                <FlaskConical className="w-3.5 h-3.5 text-white" />
+                <span>TRAINING MODE</span>
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Live Mode</span>
+              </>
+            )}
+          </button>
+
           <div className="flex-1" />
 
           {!isInstalled && (
@@ -238,6 +273,9 @@ export default function Layout() {
           </p>
         </header>
 
+        {/* Global Persistent Training Mode Banner */}
+        <TrainingModeBanner />
+
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 min-h-0 min-w-0 print:h-auto print:overflow-visible print:p-0">
           <RouteErrorBoundary>
@@ -248,6 +286,14 @@ export default function Layout() {
         {/* Application Fixed Bottom Footer */}
         <Footer />
       </div>
+
+      {switchTarget && (
+        <EnvironmentSwitchModal
+          isOpen={!!switchTarget}
+          onClose={() => setSwitchTarget(null)}
+          targetEnvironment={switchTarget}
+        />
+      )}
     </div>
   )
 }

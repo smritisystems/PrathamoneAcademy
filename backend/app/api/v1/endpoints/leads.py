@@ -287,6 +287,9 @@ def serialize_lead(lead: Lead) -> Dict[str, Any]:
         "lost_reason": lead.lost_reason,
         "lost_notes": lead.lost_notes,
         "is_active": lead.is_active,
+        "is_demo": getattr(lead, "is_demo", False),
+        "data_environment": getattr(lead, "data_environment", "PRODUCTION"),
+        "demo_dataset_id": getattr(lead, "demo_dataset_id", None),
         "created_at": lead.created_at.isoformat() if lead.created_at else None,
         "updated_at": lead.updated_at.isoformat() if lead.updated_at else None,
     }
@@ -670,6 +673,9 @@ async def create_lead(
         next_follow_up_at=data.next_follow_up_at,
         notes=data.notes,
         is_active=True,
+        is_demo=(effective_inst_id != 1),
+        data_environment="TRAINING" if effective_inst_id != 1 else "PRODUCTION",
+        demo_dataset_id="CRM-STAFF-TRAINING-V1" if effective_inst_id != 1 else None,
     )
     db.add(new_lead)
     await db.flush()
@@ -678,6 +684,9 @@ async def create_lead(
     initial_log = LeadFollowUp(
         lead_id=new_lead.id,
         institution_id=effective_inst_id,
+        is_demo=(effective_inst_id != 1),
+        data_environment="TRAINING" if effective_inst_id != 1 else "PRODUCTION",
+        demo_dataset_id="CRM-STAFF-TRAINING-V1" if effective_inst_id != 1 else None,
         follow_up_type="enquiry",
         stage_at_time=new_lead.stage,
         status="completed",

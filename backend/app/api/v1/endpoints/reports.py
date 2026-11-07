@@ -26,11 +26,36 @@ import io
 import csv
 from app.core.database import get_db
 from app.services.settings_service import get_institution_setting
+from app.models.institution import Institution
 from app.core.deps import (
     get_current_active_user,
     enforce_institution_access,
     check_institution_access,
+    get_data_environment,
+    TRAINING_INSTITUTION_CODE,
 )
+
+async def resolve_report_institution_id(db: AsyncSession, current_user, data_env: str) -> int:
+    if data_env == "TRAINING":
+        res = await db.execute(
+            select(Institution.id).where(Institution.code == TRAINING_INSTITUTION_CODE)
+        )
+        t_id = res.scalar_one_or_none()
+        if not t_id:
+            res_any = await db.execute(
+                select(Institution.id).where(Institution.code.like("%DEMO%"))
+            )
+            t_id = res_any.scalar_one_or_none()
+        return t_id or 2
+    return getattr(current_user, "institution_id", None) or 1
+
+
+def apply_report_environment_filter(query, model, data_env: str):
+    if data_env == "TRAINING":
+        return query.where(model.is_demo == True)
+    elif data_env == "PRODUCTION":
+        return query.where(model.is_demo == False)
+    return query
 from app.models.payment import Payment, Refund
 from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
@@ -56,6 +81,7 @@ async def fee_collection_report(
     institution_id: Optional[int] = None,
     status: Optional[str] = Query(default=None),
     include_inactive: Optional[bool] = Query(default=None),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -117,6 +143,8 @@ async def fee_collection_report(
     else:
         if configured_report_mode == "active_only":
             query = query.where(Student.is_active == True)
+
+    query = apply_report_environment_filter(query, Student, data_env)
 
     result = await db.execute(query)
     rows = result.all()
@@ -963,6 +991,7 @@ async def student_master_directory_report(
     division_id: Optional[int] = None,
     status: Optional[str] = None,
     search: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -970,7 +999,7 @@ async def student_master_directory_report(
     Exportable Demographic Roster of all enrolled students with academic allocations,
     guardian contact, and status.
     """
-    inst_id = current_user.institution_id or 1
+    inst_id = await resolve_report_institution_id(db, current_user, data_env)
     query = (
         select(Student, StudentEnrollment, Standard, Division, Board)
         .outerjoin(
@@ -1006,6 +1035,8 @@ async def student_master_directory_report(
                 Student.phone.ilike(s_term),
             )
         )
+
+    query = apply_report_environment_filter(query, Student, data_env)
 
     res = await db.execute(query.order_by(Student.admission_number))
     rows = res.all()
@@ -1052,7 +1083,7 @@ async def student_attendance_summary_report(
     Cohort and batch-level student attendance summary with percentage computation
     and chronic defaulter (<75%) identification.
     """
-    inst_id = current_user.institution_id or 1
+    inst_id = await resolve_report_institution_id(db, current_user, data_env)
 
     enr_query = (
         select(Student, StudentEnrollment, Standard, Division)
@@ -1134,7 +1165,7 @@ async def academic_curriculum_matrix_report(
     Cross-tabulation matrix of subjects taught per standard and board,
     weekly instructional workload, and assigned faculty members.
     """
-    inst_id = current_user.institution_id or 1
+    inst_id = await resolve_report_institution_id(db, current_user, data_env)
     query = (
         select(Subject, Standard)
         .join(Standard, Subject.standard_id == Standard.id)
@@ -1198,7 +1229,7 @@ async def timetable_utilization_report(
     Weekly schedule occupancy analysis showing room utilization, weekday distribution,
     and instructional session coverage.
     """
-    inst_id = current_user.institution_id or 1
+    inst_id = await resolve_report_institution_id(db, current_user, data_env)
     query = (
         select(TimetableEntry, Division, Subject, User)
         .join(Division, TimetableEntry.division_id == Division.id)
@@ -1244,7 +1275,7 @@ async def exam_consolidated_merit_report(
     Consolidated cohort exam merit ranking and performance register
     with aggregate marks, percentage, letter grades, and ranks.
     """
-    inst_id = current_user.institution_id or 1
+    inst_id = await resolve_report_institution_id(db, current_user, data_env)
 
     target_exam_id = exam_id
     if not target_exam_id:
@@ -1433,7 +1464,7 @@ async def daily_payment_collection_report(
     Day-wise cashier intake register showing receipt numbers, student admissions,
     payment modes, and transaction references with CodeX masking.
     """
-    inst_id = current_user.institution_id or 1
+    inst_id = await resolve_report_institution_id(db, current_user, data_env)
     today = date.today()
 
     s_date = start_date or date_val or today

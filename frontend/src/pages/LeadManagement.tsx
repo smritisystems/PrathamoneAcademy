@@ -50,8 +50,8 @@ export default function LeadManagement() {
   const editScope = 'crm:leads'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
-  // View Mode: pipeline (Kanban), list, followups, analytics
-  const [viewMode, setViewMode] = useState<'pipeline' | 'list' | 'followups' | 'analytics'>('pipeline')
+  // View Mode: pipeline (Kanban), list, followups, calendar, analytics
+  const [viewMode, setViewMode] = useState<'pipeline' | 'list' | 'followups' | 'calendar' | 'analytics'>('pipeline')
   const [tableFilter, setTableFilter] = useState<'recent' | 'my' | 'overdue' | 'converted' | 'lost'>('recent')
 
   // Filters
@@ -61,7 +61,7 @@ export default function LeadManagement() {
 
   // Selected Lead for Dossier
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null)
-  const [dossierTab, setDossierTab] = useState<'overview' | 'followups' | 'communication' | 'demo'>('overview')
+  const [dossierTab, setDossierTab] = useState<'overview' | 'followups' | 'communication' | 'documents' | 'demo'>('overview')
 
   // Modals
   const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false)
@@ -438,6 +438,18 @@ export default function LeadManagement() {
           </button>
 
           <button
+            onClick={() => setViewMode('calendar')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              viewMode === 'calendar'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Calendar</span>
+          </button>
+
+          <button
             onClick={() => setViewMode('analytics')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'analytics'
@@ -482,16 +494,26 @@ export default function LeadManagement() {
             <option value="Campaign">Campaign</option>
           </select>
 
-          {/* Quick Search Input */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search lead, student, mobile..."
-              className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 w-48 sm:w-60 outline-hidden focus:ring-2 focus:ring-blue-500"
-            />
+          {/* View Toggle Icon Buttons */}
+          <div className="flex items-center gap-1 border border-slate-200 p-0.5 rounded-lg bg-slate-50">
+            <button
+              onClick={() => setViewMode('list')}
+              title="List View"
+              className={`p-1.5 rounded-md transition-all ${
+                viewMode === 'list' ? 'bg-white shadow-2xs text-blue-600' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setViewMode('pipeline')}
+              title="Kanban Pipeline View"
+              className={`p-1.5 rounded-md transition-all ${
+                viewMode === 'pipeline' ? 'bg-white shadow-2xs text-blue-600' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
@@ -703,17 +725,22 @@ export default function LeadManagement() {
 
                 {/* Dossier Tabs */}
                 <div className="flex border-b border-slate-100">
-                  {(['overview', 'followups', 'communication', 'demo'] as const).map((tab) => (
+                  {([
+                    { id: 'overview', label: 'Overview' },
+                    { id: 'followups', label: 'Follow-ups' },
+                    { id: 'communication', label: 'Communication' },
+                    { id: 'documents', label: 'Documents' },
+                  ] as const).map((tab) => (
                     <button
-                      key={tab}
-                      onClick={() => setDossierTab(tab)}
-                      className={`px-3 py-1.5 text-xs font-bold border-b-2 capitalize transition-all ${
-                        dossierTab === tab
+                      key={tab.id}
+                      onClick={() => setDossierTab(tab.id)}
+                      className={`px-3 py-1.5 text-xs font-bold border-b-2 transition-all ${
+                        dossierTab === tab.id
                           ? 'border-blue-600 text-blue-600'
                           : 'border-transparent text-slate-500 hover:text-slate-800'
                       }`}
                     >
-                      {tab}
+                      {tab.label}
                     </button>
                   ))}
                 </div>
@@ -812,6 +839,39 @@ export default function LeadManagement() {
                     {!leadDossier.communication_history?.length && (
                       <p className="text-xs text-slate-400 text-center py-4">No communication history</p>
                     )}
+                  </div>
+                )}
+
+                                {/* Tab: Documents */}
+                {dossierTab === 'documents' && (
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <div>
+                          <p className="font-bold text-slate-800">Enquiry Form</p>
+                          <span className="text-[10px] text-slate-400">PDF • Generated on registration</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => toast('Enquiry registration form downloaded')}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                      >
+                        View
+                      </button>
+                    </div>
+                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-emerald-600" />
+                        <div>
+                          <p className="font-bold text-slate-800">Previous Marksheet</p>
+                          <span className="text-[10px] text-slate-400">Uploaded by counsellor</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Verified
+                      </span>
+                    </div>
                   </div>
                 )}
 
@@ -1004,6 +1064,13 @@ export default function LeadManagement() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/70 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
               <tr>
+                <th className="w-10 px-4 py-3 text-center">
+                  <input
+                    type="checkbox"
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    aria-label="Select all leads"
+                  />
+                </th>
                 <th className="px-4 py-3">Lead ID</th>
                 <th className="px-4 py-3">Student Name</th>
                 <th className="px-4 py-3">Class</th>
@@ -1027,6 +1094,13 @@ export default function LeadManagement() {
                       isSelected ? 'bg-blue-50/40' : ''
                     }`}
                   >
+                    <td className="w-10 px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        aria-label={`Select lead ${item.lead_number}`}
+                      />
+                    </td>
                     <td className="px-4 py-3 font-mono font-bold text-slate-900">{item.lead_number}</td>
                     <td className="px-4 py-3 font-bold text-slate-900">
                       <div>{item.full_name}</div>

@@ -11,13 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description FastAPI dependency injection providers for database sessions and authenticated user context.
 #  */
 
 from typing import Optional
-from fastapi import Depends, HTTPException, Query, status
+from fastapi import Depends, HTTPException, Query, Header, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -96,20 +96,63 @@ def require_sysadmin(
     return current_user
 
 
-def enforce_institution_access(
+TRAINING_INSTITUTION_CODE = "PA001-DEMO"
+TRAINING_ALLOWED_ROLES = {"sysadmin", "superadmin", "super_admin", "admin", "principal", "staff", "accountant", "teacher"}
+
+
+def get_data_environment(
+    x_data_env: Optional[str] = Header(None, alias="X-Data-Environment"),
+    data_environment: Optional[str] = Query(None, description="PRODUCTION, TRAINING, or ALL"),
+) -> str:
+    """
+    Resolves active data environment context from X-Data-Environment header or query parameter.
+    Defaults strictly to 'PRODUCTION'.
+    """
+    env = (x_data_env or data_environment or "PRODUCTION").strip().upper()
+    if env not in ("PRODUCTION", "TRAINING", "ALL"):
+        return "PRODUCTION"
+    return env
+
+
+async def enforce_institution_access(
     institution_id: Optional[int] = Query(None, description="Target institution ID"),
+    data_env: str = Depends(get_data_environment),
     current_user=Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
 ) -> Optional[int]:
     """
-    Enforces multi-tenant data isolation.
-    - If user is a SysAdmin/Superadmin or has no assigned tenant: allows querying target institution_id.
-    - If user is assigned to an institution:
-      - If institution_id is provided and differs from current_user.institution_id: raises HTTP 403 Forbidden.
-      - Otherwise returns current_user.institution_id.
+    Enforces multi-tenant data isolation and Global Training & Demo Environment routing.
+    - If in TRAINING mode:
+      - Validates user role/permission for training access.
+      - Resolves and binds institution to the isolated Training Tenant ('PA001-DEMO').
+    - If in PRODUCTION mode:
+      - Standard multi-tenant boundary checks (live tenant only).
+      - Strictly forbids routing to or querying training tenant in production context.
     """
-    user_inst_id = getattr(current_user, "institution_id", None)
+    from app.models.institution import Institution
 
-    if is_sysadmin(current_user) or user_inst_id is None:
+    if data_env == "TRAINING":
+        user_role = (getattr(current_user, "role", "") or "").lower()
+        if not (is_sysadmin(current_user) or user_role in TRAINING_ALLOWED_ROLES):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: You do not have permission to access the Training / Demo Environment.",
+            )
+        res = await db.execute(
+            select(Institution.id).where(Institution.code == TRAINING_INSTITUTION_CODE)
+        )
+        training_id = res.scalar_one_or_none()
+        if not training_id:
+            res_any = await db.execute(
+                select(Institution.id).where(Institution.code.like("%DEMO%"))
+            )
+            training_id = res_any.scalar_one_or_none()
+        return training_id or 2
+
+    # PRODUCTION mode
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+
+    if is_sysadmin(current_user) or getattr(current_user, "institution_id", None) is None:
         return institution_id or user_inst_id
 
     if institution_id is not None and institution_id != user_inst_id:
