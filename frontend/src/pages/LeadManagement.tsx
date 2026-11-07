@@ -282,7 +282,7 @@ export default function LeadManagement() {
             className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/90 text-xs font-semibold rounded-xl transition-colors shadow-2xs"
           >
             <Clock className="w-3.5 h-3.5 text-amber-600" />
-            <span>Follow-ups ({metricsData?.overdue_follow_ups ?? 12})</span>
+            <span>Follow-ups ({metricsData?.overdue_follow_ups ?? 0})</span>
           </button>
 
           <button
@@ -1026,7 +1026,7 @@ export default function LeadManagement() {
               const labels = {
                 recent: 'Recent Leads',
                 my: 'My Follow-ups',
-                overdue: `Overdue (${metricsData?.overdue_follow_ups ?? 7})`,
+                overdue: `Overdue (${metricsData?.overdue_follow_ups ?? 0})`,
                 converted: 'Converted',
                 lost: 'Lost',
               }

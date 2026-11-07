@@ -134,3 +134,4 @@ Testing was executed using headless Chromium (`chrome.exe --headless --disable-g
 - **Production Build:** `npm --prefix frontend run build` (`tsc && vite build`) passed with 0 errors.
 - **Nginx Deployment:** Assets deployed to `prashant_academy_frontend`.
 - **Attribution Headers:** `python scripts/manage_headers.py check` verified 364/364 files (100% compliance).
+
