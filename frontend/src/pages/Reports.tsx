@@ -11,1002 +11,1622 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
- * @description Institute reports center offering Excel-like spreadsheet exploration, interactive filtering, sorting, and multi-format exports for fee collection, outstanding dues, and payment methods.
+ * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { reportsApi } from '../api/endpoints'
+import {
+  reportsApi,
+  academicReportsApi,
+  teacherPayrollApi,
+  examinationsApi,
+  feesApi,
+  communicationApi,
+  importExportApi,
+  standardsApi,
+  divisionsApi,
+  academicYearsApi,
+} from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { InvoiceStatusBadge } from '../components/Badge'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
+  Users,
+  GraduationCap,
+  DollarSign,
+  Briefcase,
+  Award,
+  ShieldCheck,
+  Search,
+  Star,
+  RefreshCw,
+  Calendar,
+  Filter,
+  CheckCircle2,
+  AlertTriangle,
+  FileSpreadsheet,
+  BarChart3,
+  Lock,
+  ArrowUpRight,
+} from 'lucide-react'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
 } from 'recharts'
+import toast from 'react-hot-toast'
+
+// ── Types & Metadata ──────────────────────────────────────────────────────────
+
+type ReportCategoryKey = 'students' | 'academics' | 'fees' | 'workforce' | 'examinations' | 'system'
+
+interface ReportMeta {
+  id: string
+  name: string
+  category: ReportCategoryKey
+  categoryLabel: string
+  description: string
+  badge: string
+  icon: any
+  requiresFinancialRole?: boolean
+  requiresSysAdminRole?: boolean
+}
+
+const REPORT_CATALOG: ReportMeta[] = [
+  // 1. Students & Admissions
+  {
+    id: 'student-master',
+    name: 'Student Master Directory & Demographic Roster',
+    category: 'students',
+    categoryLabel: 'Students & Admissions',
+    description: 'Comprehensive exportable directory of enrolled students with guardian contact, academic allocation, and demographic details.',
+    badge: 'Master Roster',
+    icon: Users,
+  },
+  {
+    id: 'student-attendance',
+    name: 'Student Attendance Percentage & Defaulters',
+    category: 'students',
+    categoryLabel: 'Students & Admissions',
+    description: 'Cohort and batch-level attendance percentage tracking with quick filtering for chronic attendance defaulters (<75%).',
+    badge: 'Compliance',
+    icon: CheckCircle2,
+  },
+  {
+    id: 'withdrawals',
+    name: 'Student Withdrawals & Exit Ledger',
+    category: 'students',
+    categoryLabel: 'Students & Admissions',
+    description: 'Formal record of withdrawn students, institutional retention, refund reconciliations, and recorded exit reasons.',
+    badge: 'Financial Exit',
+    icon: AlertTriangle,
+  },
+  {
+    id: 'withdrawal-analytics',
+    name: 'Student Attrition & Retention Analytics',
+    category: 'students',
+    categoryLabel: 'Students & Admissions',
+    description: 'Executive dashboard visualizing monthly attrition trends, exit reason distributions, and cohort retention metrics.',
+    badge: 'Executive KPI',
+    icon: BarChart3,
+  },
+
+  // 2. Academics & Batches
+  {
+    id: 'batch-capacity',
+    name: 'Batch Capacity & Occupancy Analysis',
+    category: 'academics',
+    categoryLabel: 'Academics & Batches',
+    description: 'Batch-level seat allocation audit, occupancy percentages, and classroom timing distribution across boards.',
+    badge: 'Operations',
+    icon: GraduationCap,
+  },
+  {
+    id: 'academic-distribution',
+    name: 'Board & Standard Distribution Audit',
+    category: 'academics',
+    categoryLabel: 'Academics & Batches',
+    description: 'Student enrollment distribution and intake capacity categorized across state and national educational boards.',
+    badge: 'Demographics',
+    icon: BarChart3,
+  },
+  {
+    id: 'curriculum-matrix',
+    name: 'Subject & Curriculum Offering Matrix',
+    category: 'academics',
+    categoryLabel: 'Academics & Batches',
+    description: 'Cross-tabulation matrix of subjects taught per standard and board, weekly hours, and assigned faculty members.',
+    badge: 'Curriculum',
+    icon: FileSpreadsheet,
+  },
+  {
+    id: 'timetable-utilization',
+    name: 'Timetable Room & Batch Utilization',
+    category: 'academics',
+    categoryLabel: 'Academics & Batches',
+    description: 'Weekly schedule occupancy analysis showing classroom room utilization, weekday spread, and instructional coverage.',
+    badge: 'Scheduling',
+    icon: Calendar,
+  },
+
+  // 3. Fees & Financials
+  {
+    id: 'collection',
+    name: 'Fee Collection Register',
+    category: 'fees',
+    categoryLabel: 'Fees & Financials',
+    description: 'Primary financial register displaying student fee obligations, realized banking receipts, and net balance dues.',
+    badge: 'Financial Master',
+    icon: DollarSign,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'outstanding',
+    name: 'Outstanding Dues & Overdue Aging',
+    category: 'fees',
+    categoryLabel: 'Fees & Financials',
+    description: 'Student-level outstanding balances, invoice schedules, due dates, and collection recovery targets.',
+    badge: 'Receivables',
+    icon: DollarSign,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'fee-defaulters',
+    name: 'Consolidated Fee Defaulters & Overdue Aging',
+    category: 'fees',
+    categoryLabel: 'Fees & Financials',
+    description: 'Consolidated overdue fee aging register with guardian contacts, days overdue, and CodeX privacy masking.',
+    badge: 'Recovery',
+    icon: AlertTriangle,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'daily-collection',
+    name: 'Daily Payment Intake & Cashier Register',
+    category: 'fees',
+    categoryLabel: 'Fees & Financials',
+    description: 'Day-wise cashier intake register showing receipt numbers, student admissions, payment modes, and transaction references.',
+    badge: 'Cashier Ledger',
+    icon: FileSpreadsheet,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'summary',
+    name: 'Payment Methods & Gateway Volume',
+    category: 'fees',
+    categoryLabel: 'Fees & Financials',
+    description: 'Breakdown of fee transaction count and total inflow per payment method (UPI, Net Banking, Card, Cash, Cheque).',
+    badge: 'Gateways',
+    icon: BarChart3,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'fee-reconciliation',
+    name: 'Financial Audit & Reconciliation Ledger',
+    category: 'fees',
+    categoryLabel: 'Fees & Financials',
+    description: 'Balancing reconciliation between total invoiced billing, realized banking inflows, and outstanding deficits.',
+    badge: 'Reconciliation',
+    icon: ShieldCheck,
+    requiresFinancialRole: true,
+  },
+
+  // 4. Teachers & Payroll
+  {
+    id: 'faculty-load',
+    name: 'Faculty Teaching Load & Mentorship Audit',
+    category: 'workforce',
+    categoryLabel: 'Teachers & Payroll',
+    description: 'Weekly instructional workload commitments, assigned classroom batches, and supervised students per teacher.',
+    badge: 'Workload',
+    icon: Briefcase,
+  },
+  {
+    id: 'payroll-monthly-register',
+    name: 'Monthly Teacher Payment Register',
+    category: 'workforce',
+    categoryLabel: 'Teachers & Payroll',
+    description: 'Audited monthly payroll register with base compensation, teaching session bonuses, and net disbursements.',
+    badge: 'Payroll Master',
+    icon: DollarSign,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'payroll-teaching-hours',
+    name: 'Teaching Hours & Delivery Report',
+    category: 'workforce',
+    categoryLabel: 'Teachers & Payroll',
+    description: 'Reconciled teaching sessions, delivered instructional hours, and hourly rate calculations per faculty member.',
+    badge: 'Instruction',
+    icon: Calendar,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'payroll-batch-cost',
+    name: 'Batch-wise Teaching Cost Report',
+    category: 'workforce',
+    categoryLabel: 'Teachers & Payroll',
+    description: 'Cost accounting ledger distributing faculty teaching compensation across individual classroom batches.',
+    badge: 'Cost Accounting',
+    icon: FileSpreadsheet,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'payroll-subject-cost',
+    name: 'Subject-wise Teaching Cost Report',
+    category: 'workforce',
+    categoryLabel: 'Teachers & Payroll',
+    description: 'Departmental curriculum expenditure allocating teacher payroll across subjects and academic disciplines.',
+    badge: 'Subject Cost',
+    icon: FileSpreadsheet,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'payroll-vouchers',
+    name: 'Disbursement Voucher Register',
+    category: 'workforce',
+    categoryLabel: 'Teachers & Payroll',
+    description: 'Detailed payment voucher ledger recording transaction reference numbers, disbursement dates, and recipient accounts.',
+    badge: 'Vouchers',
+    icon: FileSpreadsheet,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'payroll-monthly-summary',
+    name: 'Annual Payroll Cost Summary',
+    category: 'workforce',
+    categoryLabel: 'Teachers & Payroll',
+    description: 'Month-by-month financial summary of institutional teacher compensation and instructional expenditure.',
+    badge: 'Annual Cost',
+    icon: BarChart3,
+    requiresFinancialRole: true,
+  },
+
+  // 5. Examinations & Merit
+  {
+    id: 'exam-merit',
+    name: 'Consolidated Exam Marks & Merit Roster',
+    category: 'examinations',
+    categoryLabel: 'Examinations & Merit',
+    description: 'Official merit roster showing student ranks, total marks obtained, percentage, letter grades, and pass/fail status.',
+    badge: 'Merit Roster',
+    icon: Award,
+  },
+  {
+    id: 'exam-analytics',
+    name: 'Subject-wise Exam Analytics & Pass Distribution',
+    category: 'examinations',
+    categoryLabel: 'Examinations & Merit',
+    description: 'Comparative statistical analysis of exams showing highest/lowest scores, subject averages, and pass percentages.',
+    badge: 'Cohort Analytics',
+    icon: BarChart3,
+  },
+
+  // 6. System & Audit
+  {
+    id: 'audit-logs',
+    name: 'Security & Access Audit Trail',
+    category: 'system',
+    categoryLabel: 'System & Audit',
+    description: 'Protected immutable audit trail of user access, logins, permission elevations, and system security events.',
+    badge: 'Security Audit',
+    icon: ShieldCheck,
+    requiresSysAdminRole: true,
+  },
+  {
+    id: 'comm-logs',
+    name: 'Communication & Notification Dispatch Logs',
+    category: 'system',
+    categoryLabel: 'System & Audit',
+    description: 'Delivery tracking records for SMS, WhatsApp, and email communications dispatched to students and guardians.',
+    badge: 'Communications',
+    icon: FileSpreadsheet,
+  },
+  {
+    id: 'import-history',
+    name: 'Data Import & Migration History',
+    category: 'system',
+    categoryLabel: 'System & Audit',
+    description: 'Historical audit log of bulk Excel data migrations, fee registers, student enrollments, and validation outcomes.',
+    badge: 'Data Exchange',
+    icon: FileSpreadsheet,
+  },
+]
+
+const CATEGORIES: { key: ReportCategoryKey; label: string; icon: any; count: number }[] = [
+  { key: 'students', label: 'Students & Admissions', icon: Users, count: 4 },
+  { key: 'academics', label: 'Academics & Batches', icon: GraduationCap, count: 4 },
+  { key: 'fees', label: 'Fees & Financials', icon: DollarSign, count: 6 },
+  { key: 'workforce', label: 'Teachers & Payroll', icon: Briefcase, count: 7 },
+  { key: 'examinations', label: 'Examinations & Merit', icon: Award, count: 2 },
+  { key: 'system', label: 'System & Audit', icon: ShieldCheck, count: 3 },
+]
 
 export default function Reports() {
-  const { selectedAcademicYearId, selectedInstitutionId } = useAuthStore()
-  const [activeTab, setActiveTab] = useState<'collection' | 'outstanding' | 'summary' | 'withdrawals' | 'withdrawal-analytics'>('collection')
+  const { user, selectedAcademicYearId, selectedInstitutionId } = useAuthStore()
+
+  // ── Navigation & Catalog State ──
+  const [activeCategory, setActiveCategory] = useState<ReportCategoryKey>('students')
+  const [activeReportId, setActiveReportId] = useState<string>('student-master')
+  const [globalSearch, setGlobalSearch] = useState<string>('')
+  const [pinnedReports, setPinnedReports] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('prashant_pinned_reports')
+      return saved ? JSON.parse(saved) : ['student-master', 'collection', 'batch-capacity', 'exam-merit']
+    } catch {
+      return ['student-master', 'collection', 'batch-capacity', 'exam-merit']
+    }
+  })
+
+  // ── Global Filter State ──
+  const [selectedStandardId, setSelectedStandardId] = useState<string>('')
+  const [selectedDivisionId, setSelectedDivisionId] = useState<string>('')
+  const [selectedBoardId, setSelectedBoardId] = useState<string>('')
+  const [selectedExamId, setSelectedExamId] = useState<string>('')
   const [reportStatusFilter, setReportStatusFilter] = useState<'default' | 'all' | 'active' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('default')
-
-  // 1. Fee Collection Report
-  const { data: collectionReport = [], isLoading: loadingCollection } = useQuery({
-    queryKey: ['report-collection', selectedAcademicYearId, selectedInstitutionId, reportStatusFilter],
-    queryFn: async () => {
-      const res = await reportsApi.feeCollection({
-        academic_year_id: selectedAcademicYearId || undefined,
-        institution_id: selectedInstitutionId || undefined,
-        status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
-      })
-      return res.data
-    },
-    enabled: activeTab === 'collection',
+  const [startDate, setStartDate] = useState<string>(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-01-01`
   })
+  const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0])
+  const [defaultersOnly, setDefaultersOnly] = useState<boolean>(false)
 
-  // 2. Outstanding Dues Report
-  const { data: outstandingReport = [], isLoading: loadingOutstanding } = useQuery({
-    queryKey: ['report-outstanding', selectedAcademicYearId, selectedInstitutionId, reportStatusFilter],
-    queryFn: async () => {
-      const res = await reportsApi.outstanding({
-        academic_year_id: selectedAcademicYearId || undefined,
-        institution_id: selectedInstitutionId || undefined,
-        status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
-      })
-      return res.data
-    },
-    enabled: activeTab === 'outstanding',
-  })
-
-  // 4. Student Withdrawals Report
-  const { data: withdrawalsReport = [], isLoading: loadingWithdrawals } = useQuery({
-    queryKey: ['report-withdrawals', selectedAcademicYearId, selectedInstitutionId],
-    queryFn: async () => {
-      const res = await reportsApi.withdrawals({
-        academic_year_id: selectedAcademicYearId || undefined,
-      })
-      return res.data
-    },
-    enabled: activeTab === 'withdrawals',
-  })
-
-  // 5. Withdrawal Analytics
-  const { data: analyticsData, isLoading: loadingAnalytics } = useQuery({
-    queryKey: ['report-withdrawal-analytics', selectedAcademicYearId],
-    queryFn: async () => {
-      const res = await reportsApi.withdrawalAnalytics({
-        academic_year_id: selectedAcademicYearId || undefined,
-      })
-      return res.data
-    },
-    enabled: activeTab === 'withdrawal-analytics',
-  })
-
-  // 3. Payments Summary
-  const { data: summaryReport, isLoading: loadingSummary } = useQuery({
-    queryKey: ['report-summary', selectedAcademicYearId],
-    queryFn: async () => {
-      const res = await reportsApi.paymentsSummary({
-        academic_year_id: selectedAcademicYearId || undefined,
-      })
-      return res.data
-    },
-    enabled: activeTab === 'summary',
-  })
-
-  // ── Column Definitions: Fee Collection ──
-  const collectionColumns = useMemo<ColumnConfig<any>[]>(
-    () => [
-      {
-        id: 'admission_number',
-        header: 'Admission #',
-        accessorKey: 'admission_number',
-        type: 'text',
-        width: 150,
-        sortable: true,
-        filterable: true,
-        filterType: 'text',
-        render: (val) => <span className="font-mono font-medium text-slate-800">{val}</span>,
-      },
-      {
-        id: 'student_name',
-        header: 'Student Name',
-        accessorKey: 'student_name',
-        type: 'text',
-        width: 230,
-        sortable: true,
-        filterable: true,
-        filterType: 'text',
-        render: (val) => <span className="font-semibold text-slate-900">{val}</span>,
-      },
-      {
-        id: 'total_fees',
-        header: 'Total Fees (₹)',
-        accessorFn: (row: any) => Number(row.total_fees || 0),
-        type: 'currency',
-        width: 160,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-semibold text-slate-900">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'paid',
-        header: 'Paid (₹)',
-        accessorFn: (row: any) => Number(row.paid || 0),
-        type: 'currency',
-        width: 160,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-bold text-emerald-600">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'outstanding',
-        header: 'Outstanding (₹)',
-        accessorFn: (row: any) => Number(row.outstanding || 0),
-        type: 'currency',
-        width: 160,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-extrabold text-red-600">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'collection_pct',
-        header: 'Collection %',
-        accessorFn: (row: any) => {
-          const tot = Number(row.total_fees || 0)
-          const pd = Number(row.paid || 0)
-          return tot > 0 ? Math.round((pd / tot) * 100) : 0
-        },
-        type: 'number',
-        width: 140,
-        align: 'center',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (pct) => {
-          const n = Number(pct || 0)
-          const badgeClass =
-            n === 100
-              ? 'bg-emerald-100 text-emerald-800'
-              : n >= 50
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-amber-100 text-amber-800'
-          return (
-            <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}`}>
-              {n}%
-            </span>
-          )
-        },
-      },
-    ],
-    []
-  )
-
-  const collectionSummaryCalculations = useMemo(
-    () => ({
-      admission_number: () => (
-        <span className="text-xs uppercase tracking-wider font-extrabold text-slate-700">
-          Total Collection Summary
-        </span>
-      ),
-      total_fees: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0)
-        return <span className="font-extrabold text-slate-900">₹{sum.toLocaleString('en-IN')}</span>
-      },
-      paid: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.paid || 0), 0)
-        return <span className="font-extrabold text-emerald-700">₹{sum.toLocaleString('en-IN')}</span>
-      },
-      outstanding: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0)
-        return <span className="font-extrabold text-red-700">₹{sum.toLocaleString('en-IN')}</span>
-      },
-      collection_pct: (rows: any[]) => {
-        const total = rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0)
-        const paid = rows.reduce((acc, r) => acc + Number(r.paid || 0), 0)
-        const pct = total > 0 ? Math.round((paid / total) * 100) : 0
-        return (
-          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800">
-            {pct}% Avg
-          </span>
-        )
-      },
-    }),
-    []
-  )
-
-  // ── Column Definitions: Outstanding Dues ──
-  const outstandingColumns = useMemo<ColumnConfig<any>[]>(
-    () => [
-      {
-        id: 'invoice_number',
-        header: 'Invoice #',
-        accessorKey: 'invoice_number',
-        type: 'text',
-        width: 150,
-        sortable: true,
-        filterable: true,
-        filterType: 'text',
-        render: (val) => <span className="font-mono font-bold text-blue-600">{val}</span>,
-      },
-      {
-        id: 'admission_number',
-        header: 'Admission #',
-        accessorKey: 'admission_number',
-        type: 'text',
-        width: 140,
-        sortable: true,
-        filterable: true,
-        filterType: 'text',
-        render: (val) => <span className="font-mono text-slate-600">{val}</span>,
-      },
-      {
-        id: 'student_name',
-        header: 'Student Name',
-        accessorKey: 'student_name',
-        type: 'text',
-        width: 220,
-        sortable: true,
-        filterable: true,
-        filterType: 'text',
-        render: (val) => <span className="font-semibold text-slate-900">{val}</span>,
-      },
-      {
-        id: 'net_amount',
-        header: 'Net Bill (₹)',
-        accessorFn: (row: any) => Number(row.net_amount || 0),
-        type: 'currency',
-        width: 150,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => <span>₹{Number(val || 0).toLocaleString('en-IN')}</span>,
-      },
-      {
-        id: 'paid_amount',
-        header: 'Paid (₹)',
-        accessorFn: (row: any) => Number(row.paid_amount || 0),
-        type: 'currency',
-        width: 150,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="text-emerald-600 font-semibold">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'outstanding',
-        header: 'Outstanding (₹)',
-        accessorFn: (row: any) => Number(row.outstanding || 0),
-        type: 'currency',
-        width: 160,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-extrabold text-red-600">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'due_date',
-        header: 'Due Date',
-        accessorKey: 'due_date',
-        type: 'date',
-        width: 140,
-        sortable: true,
-        filterable: true,
-        filterType: 'date',
-        render: (val) => (
-          <span className="text-slate-600 font-medium">
-            {val ? new Date(val).toLocaleDateString('en-IN') : '—'}
-          </span>
-        ),
-      },
-      {
-        id: 'status',
-        header: 'Status',
-        accessorKey: 'status',
-        type: 'select',
-        width: 130,
-        align: 'center',
-        sortable: true,
-        filterable: true,
-        filterType: 'select',
-        render: (val) => <InvoiceStatusBadge status={val} />,
-      },
-    ],
-    []
-  )
-
-  const outstandingSummaryCalculations = useMemo(
-    () => ({
-      invoice_number: () => (
-        <span className="text-xs uppercase tracking-wider font-extrabold text-slate-700">
-          Total Overdue Dues
-        </span>
-      ),
-      net_amount: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.net_amount || 0), 0)
-        return <span className="font-extrabold text-slate-900">₹{sum.toLocaleString('en-IN')}</span>
-      },
-      paid_amount: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.paid_amount || 0), 0)
-        return <span className="font-extrabold text-emerald-700">₹{sum.toLocaleString('en-IN')}</span>
-      },
-      outstanding: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0)
-        return <span className="font-extrabold text-red-700">₹{sum.toLocaleString('en-IN')}</span>
-      },
-    }),
-    []
-  )
-
-  // ── Flattened Payment Methods Breakdown Data ──
-  const methodsData = useMemo(() => {
-    if (!summaryReport || !summaryReport.by_method) return []
-    return Object.entries(summaryReport.by_method).map(([methodKey, val]: [string, any]) => {
-      const count = Number(val?.count || 0)
-      const total = Number(val?.total || 0)
-      const avg = count > 0 ? Math.round(total / count) : 0
-      return {
-        id: methodKey,
-        method: methodKey.replace(/_/g, ' ').toUpperCase(),
-        count,
-        total,
-        avg,
-      }
+  // Toggle Pinned
+  const togglePin = (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setPinnedReports((prev) => {
+      const next = prev.includes(reportId) ? prev.filter((id) => id !== reportId) : [...prev, reportId]
+      try {
+        localStorage.setItem('prashant_pinned_reports', JSON.stringify(next))
+      } catch {}
+      return next
     })
-  }, [summaryReport])
+  }
 
-  const methodsColumns = useMemo<ColumnConfig<any>[]>(
-    () => [
-      {
-        id: 'method',
-        header: 'Payment Method',
-        accessorKey: 'method',
-        type: 'select',
-        width: 220,
-        sortable: true,
-        filterable: true,
-        filterType: 'select',
-        render: (val) => <span className="font-bold text-slate-800">{val}</span>,
-      },
-      {
-        id: 'count',
-        header: 'Transactions',
-        accessorKey: 'count',
-        type: 'number',
-        width: 150,
-        align: 'center',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => <span className="font-semibold text-slate-700">{val}</span>,
-      },
-      {
-        id: 'total',
-        header: 'Total Volume (₹)',
-        accessorKey: 'total',
-        type: 'currency',
-        width: 180,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-bold text-blue-900">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'avg',
-        header: 'Average Ticket (₹)',
-        accessorKey: 'avg',
-        type: 'currency',
-        width: 180,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-semibold text-slate-600">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-    ],
-    []
-  )
+  // Active Report Meta
+  const activeReport = useMemo(() => {
+    return REPORT_CATALOG.find((r) => r.id === activeReportId) || REPORT_CATALOG[0]
+  }, [activeReportId])
 
-  const methodsSummaryCalculations = useMemo(
-    () => ({
-      method: () => (
-        <span className="text-xs uppercase tracking-wider font-extrabold text-slate-700">
-          Total Payment Gateway Inflow
-        </span>
-      ),
-      count: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.count || 0), 0)
-        return <span className="font-extrabold text-slate-900">{sum}</span>
-      },
-      total: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.total || 0), 0)
-        return <span className="font-extrabold text-blue-900">₹{sum.toLocaleString('en-IN')}</span>
-      },
-      avg: (rows: any[]) => {
-        const total = rows.reduce((acc, r) => acc + Number(r.total || 0), 0)
-        const count = rows.reduce((acc, r) => acc + Number(r.count || 0), 0)
-        const avg = count > 0 ? Math.round(total / count) : 0
-        return <span className="font-extrabold text-slate-700">₹{avg.toLocaleString('en-IN')}</span>
-      },
-    }),
-    []
-  )
+  // Filtered Catalog by search
+  const filteredCatalog = useMemo(() => {
+    if (!globalSearch.trim()) return []
+    const term = globalSearch.toLowerCase()
+    return REPORT_CATALOG.filter(
+      (r) => r.name.toLowerCase().includes(term) || r.description.toLowerCase().includes(term) || r.categoryLabel.toLowerCase().includes(term)
+    )
+  }, [globalSearch])
 
-  // ── Column Definitions: Student Withdrawals ──
-  const withdrawalsColumns = useMemo<ColumnConfig<any>[]>(
-    () => [
-      {
-        id: 'admission_number',
-        header: 'Admission #',
-        accessorKey: 'admission_number',
-        type: 'text',
-        width: 140,
-        sortable: true,
-        filterable: true,
-        filterType: 'text',
-        render: (val) => <span className="font-mono font-medium text-slate-800">{val}</span>,
-      },
-      {
-        id: 'student_name',
-        header: 'Student Name',
-        accessorKey: 'student_name',
-        type: 'text',
-        width: 200,
-        sortable: true,
-        filterable: true,
-        filterType: 'text',
-        render: (val) => <span className="font-semibold text-slate-900">{val}</span>,
-      },
-      {
-        id: 'standard_name',
-        header: 'Class / Standard',
-        accessorKey: 'standard_name',
-        type: 'select',
-        width: 130,
-        sortable: true,
-        filterable: true,
-        filterType: 'select',
-        render: (val) => <span className="text-slate-700">{val}</span>,
-      },
-      {
-        id: 'division_name',
-        header: 'Batch',
-        accessorKey: 'division_name',
-        type: 'select',
-        width: 120,
-        sortable: true,
-        filterable: true,
-        filterType: 'select',
-        render: (val) => <span className="text-slate-700">{val || '—'}</span>,
-      },
-      {
-        id: 'exit_date',
-        header: 'Exit Date',
-        accessorKey: 'exit_date',
-        type: 'date',
-        width: 120,
-        sortable: true,
-        filterable: true,
-        filterType: 'date',
-        render: (val) => <span className="font-mono text-slate-700">{val || '—'}</span>,
-      },
-      {
-        id: 'exit_reason',
-        header: 'Withdrawal Reason',
-        accessorKey: 'exit_reason',
-        type: 'select',
-        width: 190,
-        sortable: true,
-        filterable: true,
-        filterType: 'select',
-        render: (val) => <span className="text-slate-800">{val || '—'}</span>,
-      },
-      {
-        id: 'paid_classification',
-        header: 'Paid Classification',
-        accessorKey: 'paid_classification',
-        type: 'select',
-        width: 150,
-        sortable: true,
-        filterable: true,
-        filterType: 'select',
-        render: (val) => (
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
-              val === 'Paid'
-                ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-amber-100 text-amber-800'
-            }`}
-          >
-            {val === 'Paid' ? 'Paid Attrition' : 'Unpaid Attrition'}
-          </span>
-        ),
-      },
-      {
-        id: 'installment_at_exit',
-        header: 'Installment at Exit',
-        accessorKey: 'installment_at_exit',
-        type: 'select',
-        width: 160,
-        sortable: true,
-        filterable: true,
-        filterType: 'select',
-        render: (val) => <span className="text-slate-600 font-medium">{val || '—'}</span>,
-      },
-      {
-        id: 'gross_paid',
-        header: 'Gross Paid (₹)',
-        accessorFn: (row: any) => Number(row.gross_paid || 0),
-        type: 'currency',
-        width: 140,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-semibold text-emerald-700">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'refund_amount',
-        header: 'Refund (₹)',
-        accessorFn: (row: any) => Number(row.refund_amount || 0),
-        type: 'currency',
-        width: 130,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-semibold text-amber-700">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'net_retained',
-        header: 'Net Retained (₹)',
-        accessorFn: (row: any) => Number(row.net_retained || 0),
-        type: 'currency',
-        width: 150,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-bold text-blue-900">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-      {
-        id: 'outstanding_at_exit',
-        header: 'Outstanding at Exit (₹)',
-        accessorFn: (row: any) => Number(row.outstanding_at_exit || 0),
-        type: 'currency',
-        width: 160,
-        align: 'right',
-        sortable: true,
-        filterable: true,
-        filterType: 'number',
-        render: (val) => (
-          <span className="font-semibold text-red-600">
-            ₹{Number(val || 0).toLocaleString('en-IN')}
-          </span>
-        ),
-      },
-    ],
-    []
-  )
+  // Category Reports
+  const categoryReports = useMemo(() => {
+    return REPORT_CATALOG.filter((r) => r.category === activeCategory)
+  }, [activeCategory])
 
-  const withdrawalsSummaryCalculations = useMemo(
-    () => ({
-      admission_number: (rows: any[]) => (
-        <span className="text-xs uppercase tracking-wider font-extrabold text-slate-700">
-          Total: {rows.length} Withdrawn
-        </span>
-      ),
-      gross_paid: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.gross_paid || 0), 0)
-        return <span className="font-extrabold text-emerald-800">₹{sum.toLocaleString('en-IN')}</span>
+  // RBAC Permission Check
+  const hasAccess = useMemo(() => {
+    if (!user) return false
+    const role = user.role?.toLowerCase() || ''
+    const isFinancialAuthorized = ['admin', 'accountant', 'principal', 'sysadmin'].includes(role)
+    const isSysAdminAuthorized = role === 'sysadmin' || role === 'admin'
+
+    if (activeReport.requiresSysAdminRole && !isSysAdminAuthorized) return false
+    if (activeReport.requiresFinancialRole && !isFinancialAuthorized) return false
+    return true
+  }, [user, activeReport])
+
+  // ── Reference Dropdown Queries ──
+  const { data: standards = [] } = useQuery({
+    queryKey: ['reports-standards', selectedInstitutionId],
+    queryFn: () => standardsApi.list().then((r) => r.data),
+  })
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['reports-divisions', selectedStandardId],
+    queryFn: () => divisionsApi.list(selectedStandardId ? Number(selectedStandardId) : undefined).then((r) => r.data),
+  })
+
+  const { data: examinations = [] } = useQuery({
+    queryKey: ['reports-examinations', selectedAcademicYearId],
+    queryFn: () => examinationsApi.list({ academic_year_id: selectedAcademicYearId || undefined }).then((r) => r.data),
+  })
+
+  // Auto-select latest exam if none selected
+  useEffect(() => {
+    if (examinations.length > 0 && !selectedExamId) {
+      setSelectedExamId(String(examinations[0].id))
+    }
+  }, [examinations, selectedExamId])
+
+  // ── Category Report Queries ────────────────────────────────────────────────
+
+  // 1. Students: Master Directory
+  const { data: studentMasterData = [], isLoading: loadingMaster, refetch: refetchMaster } = useQuery({
+    queryKey: ['report-student-master', selectedAcademicYearId, selectedStandardId, selectedDivisionId, reportStatusFilter],
+    queryFn: () =>
+      reportsApi.studentMasterDirectory({
+        academic_year_id: selectedAcademicYearId || undefined,
+        standard_id: selectedStandardId || undefined,
+        division_id: selectedDivisionId || undefined,
+        status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'student-master',
+  })
+
+  // 2. Students: Attendance Summary
+  const { data: attendanceSummaryData = [], isLoading: loadingAttendance, refetch: refetchAttendance } = useQuery({
+    queryKey: ['report-attendance-summary', selectedAcademicYearId, selectedStandardId, selectedDivisionId, startDate, endDate, defaultersOnly],
+    queryFn: () =>
+      reportsApi.attendanceSummary({
+        academic_year_id: selectedAcademicYearId || undefined,
+        standard_id: selectedStandardId || undefined,
+        division_id: selectedDivisionId || undefined,
+        start_date: startDate,
+        end_date: endDate,
+        defaulters_only: defaultersOnly,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'student-attendance',
+  })
+
+  // 3. Students: Withdrawals
+  const { data: withdrawalsReport = [], isLoading: loadingWithdrawals, refetch: refetchWithdrawals } = useQuery({
+    queryKey: ['report-withdrawals', selectedAcademicYearId, selectedStandardId, selectedDivisionId],
+    queryFn: () =>
+      reportsApi.withdrawals({
+        academic_year_id: selectedAcademicYearId || undefined,
+        standard_id: selectedStandardId || undefined,
+        division_id: selectedDivisionId || undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'withdrawals',
+  })
+
+  // 4. Students: Withdrawal Analytics
+  const { data: analyticsData, isLoading: loadingAnalytics, refetch: refetchAnalytics } = useQuery({
+    queryKey: ['report-withdrawal-analytics', selectedAcademicYearId],
+    queryFn: () => reportsApi.withdrawalAnalytics({ academic_year_id: selectedAcademicYearId || undefined }).then((r) => r.data),
+    enabled: activeReportId === 'withdrawal-analytics',
+  })
+
+  // 5. Academics: Batch Capacity
+  const { data: batchCapacityData = [], isLoading: loadingBatchCapacity, refetch: refetchBatchCapacity } = useQuery({
+    queryKey: ['report-batch-capacity', selectedBoardId, selectedStandardId],
+    queryFn: () => academicReportsApi.getBatchCapacity({ board_id: selectedBoardId || undefined, standard_id: selectedStandardId || undefined }).then((r) => r.data),
+    enabled: activeReportId === 'batch-capacity',
+  })
+
+  // 6. Academics: Board Distribution
+  const { data: distributionData = [], isLoading: loadingDistribution, refetch: refetchDistribution } = useQuery({
+    queryKey: ['report-distribution'],
+    queryFn: () => academicReportsApi.getDistribution().then((r) => r.data),
+    enabled: activeReportId === 'academic-distribution',
+  })
+
+  // 7. Academics: Curriculum Matrix
+  const { data: curriculumMatrixData = [], isLoading: loadingCurriculum, refetch: refetchCurriculum } = useQuery({
+    queryKey: ['report-curriculum-matrix', selectedBoardId, selectedStandardId],
+    queryFn: () => reportsApi.curriculumMatrix({ board_id: selectedBoardId || undefined, standard_id: selectedStandardId || undefined }).then((r) => r.data),
+    enabled: activeReportId === 'curriculum-matrix',
+  })
+
+  // 8. Academics: Timetable Utilization
+  const { data: timetableData = [], isLoading: loadingTimetable, refetch: refetchTimetable } = useQuery({
+    queryKey: ['report-timetable-utilization', selectedDivisionId],
+    queryFn: () => reportsApi.timetableUtilization({ division_id: selectedDivisionId || undefined }).then((r) => r.data),
+    enabled: activeReportId === 'timetable-utilization',
+  })
+
+  // 9. Fees: Fee Collection
+  const { data: collectionReport = [], isLoading: loadingCollection, refetch: refetchCollection } = useQuery({
+    queryKey: ['report-collection', selectedAcademicYearId, selectedInstitutionId, reportStatusFilter],
+    queryFn: () =>
+      reportsApi.feeCollection({
+        academic_year_id: selectedAcademicYearId || undefined,
+        institution_id: selectedInstitutionId || undefined,
+        status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'collection',
+  })
+
+  // 10. Fees: Outstanding Dues
+  const { data: outstandingReport = [], isLoading: loadingOutstanding, refetch: refetchOutstanding } = useQuery({
+    queryKey: ['report-outstanding', selectedAcademicYearId, selectedInstitutionId, reportStatusFilter],
+    queryFn: () =>
+      reportsApi.outstanding({
+        academic_year_id: selectedAcademicYearId || undefined,
+        institution_id: selectedInstitutionId || undefined,
+        status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'outstanding',
+  })
+
+  // 11. Fees: Defaulters Aging
+  const { data: feeDefaultersData = [], isLoading: loadingFeeDefaulters, refetch: refetchFeeDefaulters } = useQuery({
+    queryKey: ['report-fee-defaulters', selectedAcademicYearId, selectedStandardId, selectedDivisionId],
+    queryFn: () =>
+      reportsApi.feeDefaulters({
+        academic_year_id: selectedAcademicYearId || undefined,
+        standard_id: selectedStandardId || undefined,
+        division_id: selectedDivisionId || undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'fee-defaulters',
+  })
+
+  // 12. Fees: Daily Collection
+  const { data: dailyCollectionData = [], isLoading: loadingDailyCollection, refetch: refetchDailyCollection } = useQuery({
+    queryKey: ['report-daily-collection', startDate, endDate],
+    queryFn: () =>
+      reportsApi.dailyCollection({
+        start_date: startDate,
+        end_date: endDate,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'daily-collection',
+  })
+
+  // 13. Fees: Payment Methods Summary
+  const { data: summaryReport = [], isLoading: loadingSummary, refetch: refetchSummary } = useQuery({
+    queryKey: ['report-summary', selectedAcademicYearId],
+    queryFn: () => reportsApi.paymentsSummary({ academic_year_id: selectedAcademicYearId || undefined }).then((r) => r.data),
+    enabled: activeReportId === 'summary',
+  })
+
+  // 14. Fees: Financial Reconciliation
+  const { data: overviewData, isLoading: loadingOverview, refetch: refetchOverview } = useQuery({
+    queryKey: ['report-fee-overview', selectedAcademicYearId],
+    queryFn: () => feesApi.getOverview({ academic_year_id: selectedAcademicYearId || undefined }).then((r) => r.data),
+    enabled: activeReportId === 'fee-reconciliation',
+  })
+
+  // 15. Workforce: Faculty Load
+  const { data: facultyLoadData = [], isLoading: loadingFacultyLoad, refetch: refetchFacultyLoad } = useQuery({
+    queryKey: ['report-faculty-load'],
+    queryFn: () => academicReportsApi.getFacultyLoad().then((r) => r.data),
+    enabled: activeReportId === 'faculty-load',
+  })
+
+  // 16. Workforce: Specialized Payroll Reports
+  const payrollReportType = useMemo(() => {
+    if (activeReportId.startsWith('payroll-')) {
+      return activeReportId.replace('payroll-', '')
+    }
+    return 'monthly-register'
+  }, [activeReportId])
+
+  const { data: payrollReportData = [], isLoading: loadingPayroll, refetch: refetchPayroll } = useQuery({
+    queryKey: ['teacher-payroll-report', payrollReportType, startDate, endDate],
+    queryFn: () =>
+      teacherPayrollApi.getReport(payrollReportType, {
+        start_date: startDate,
+        end_date: endDate,
+      }).then((r) => r.data),
+    enabled: activeReportId.startsWith('payroll-'),
+  })
+
+  // 17. Examinations: Merit Register
+  const { data: examMeritData = [], isLoading: loadingExamMerit, refetch: refetchExamMerit } = useQuery({
+    queryKey: ['report-exam-merit', selectedExamId, selectedAcademicYearId],
+    queryFn: () =>
+      reportsApi.examMeritRegister({
+        exam_id: selectedExamId ? Number(selectedExamId) : undefined,
+        academic_year_id: selectedAcademicYearId || undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'exam-merit',
+  })
+
+  // 18. Examinations: Analytics
+  const { data: examAnalyticsData, isLoading: loadingExamAnalytics, refetch: refetchExamAnalytics } = useQuery({
+    queryKey: ['report-exam-analytics', selectedExamId],
+    queryFn: () => examinationsApi.getAnalytics(Number(selectedExamId)).then((r) => r.data),
+    enabled: activeReportId === 'exam-analytics' && !!selectedExamId,
+  })
+
+  // 19. System: Security Audit Logs
+  const { data: auditLogsData = [], isLoading: loadingAuditLogs, refetch: refetchAuditLogs } = useQuery({
+    queryKey: ['report-audit-logs', startDate, endDate],
+    queryFn: () => reportsApi.systemAuditSummary({ start_date: startDate, end_date: endDate, limit: 200 }).then((r) => r.data),
+    enabled: activeReportId === 'audit-logs',
+  })
+
+  // 20. System: Communication Logs
+  const { data: commLogsData = [], isLoading: loadingCommLogs, refetch: refetchCommLogs } = useQuery({
+    queryKey: ['report-comm-logs'],
+    queryFn: () => communicationApi.getLogs().then((r) => (r.data as any)?.items || []),
+    enabled: activeReportId === 'comm-logs',
+  })
+
+  // 21. System: Import History
+  const { data: importHistoryData = [], isLoading: loadingImportHistory, refetch: refetchImportHistory } = useQuery({
+    queryKey: ['report-import-history'],
+    queryFn: () => importExportApi.getHistory().then((r) => (r.data as any)?.items || []),
+    enabled: activeReportId === 'import-history',
+  })
+
+  // Master Refetch Trigger
+  const handleRefetch = () => {
+    if (activeReportId === 'student-master') refetchMaster()
+    else if (activeReportId === 'student-attendance') refetchAttendance()
+    else if (activeReportId === 'withdrawals') refetchWithdrawals()
+    else if (activeReportId === 'withdrawal-analytics') refetchAnalytics()
+    else if (activeReportId === 'batch-capacity') refetchBatchCapacity()
+    else if (activeReportId === 'academic-distribution') refetchDistribution()
+    else if (activeReportId === 'curriculum-matrix') refetchCurriculum()
+    else if (activeReportId === 'timetable-utilization') refetchTimetable()
+    else if (activeReportId === 'collection') refetchCollection()
+    else if (activeReportId === 'outstanding') refetchOutstanding()
+    else if (activeReportId === 'fee-defaulters') refetchFeeDefaulters()
+    else if (activeReportId === 'daily-collection') refetchDailyCollection()
+    else if (activeReportId === 'summary') refetchSummary()
+    else if (activeReportId === 'fee-reconciliation') refetchOverview()
+    else if (activeReportId === 'faculty-load') refetchFacultyLoad()
+    else if (activeReportId.startsWith('payroll-')) refetchPayroll()
+    else if (activeReportId === 'exam-merit') refetchExamMerit()
+    else if (activeReportId === 'exam-analytics') refetchExamAnalytics()
+    else if (activeReportId === 'audit-logs') refetchAuditLogs()
+    else if (activeReportId === 'comm-logs') refetchCommLogs()
+    else if (activeReportId === 'import-history') refetchImportHistory()
+    toast.success('Report data refreshed')
+  }
+
+  // ── Column Configurations ──────────────────────────────────────────────────
+
+  // 1. Student Master Directory Columns
+  const studentMasterColumns = useMemo<ColumnConfig<any>[]>(() => [
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, filterable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
+    { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true },
+    { id: 'division_name', header: 'Batch / Division', accessorKey: 'division_name', type: 'text', width: 150, sortable: true, filterable: true },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 110, sortable: true, filterable: true, render: (val) => <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-semibold">{val}</span> },
+    { id: 'gender', header: 'Gender', accessorKey: 'gender', type: 'text', width: 90, sortable: true, render: (val) => <span className="capitalize">{val}</span> },
+    { id: 'date_of_birth', header: 'DOB', accessorKey: 'date_of_birth', type: 'date', width: 110, sortable: true },
+    { id: 'phone', header: 'Guardian Phone', accessorKey: 'phone', type: 'text', width: 130, render: (val) => <span className="font-mono">{val}</span> },
+    { id: 'city', header: 'City', accessorKey: 'city', type: 'text', width: 110 },
+    { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'enrolled' || val === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}>{val}</span> },
+  ], [])
+
+  // 2. Attendance Summary Columns
+  const attendanceColumns = useMemo<ColumnConfig<any>[]>(() => [
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
+    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 130, sortable: true },
+    { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 140, sortable: true },
+    { id: 'total_days', header: 'Total Sessions', accessorKey: 'total_days', type: 'number', width: 120, align: 'center', sortable: true },
+    { id: 'present_days', header: 'Attended', accessorKey: 'present_days', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
+    { id: 'absent_days', header: 'Absent', accessorKey: 'absent_days', type: 'number', width: 100, align: 'center', sortable: true, render: (val) => <span className="font-bold text-rose-700">{val}</span> },
+    { id: 'attendance_percentage', header: 'Attendance %', accessorKey: 'attendance_percentage', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className={`font-mono font-bold text-sm ${val < 75 ? 'text-rose-600' : 'text-emerald-700'}`}>{val}%</span> },
+    { id: 'status', header: 'Compliance', accessorKey: 'status', type: 'text', width: 140, render: (val, row) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${row.is_defaulter ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-700'}`}>{val}</span> },
+  ], [])
+
+  // 3. Fee Collection Columns
+  const collectionColumns = useMemo<ColumnConfig<any>[]>(() => [
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, filterable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
+    { id: 'total_fees', header: 'Net Invoiced (₹)', accessorKey: 'total_fees', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className="font-bold text-slate-900">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+    { id: 'paid', header: 'Realized Paid (₹)', accessorKey: 'paid', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+    { id: 'outstanding', header: 'Balance Due (₹)', accessorKey: 'outstanding', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+  ], [])
+
+  // 4. Fee Defaulters Columns
+  const feeDefaultersColumns = useMemo<ColumnConfig<any>[]>(() => [
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-rose-700">{val}</span> },
+    { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
+    { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 130, sortable: true },
+    { id: 'guardian_phone', header: 'Guardian Phone', accessorKey: 'guardian_phone', type: 'text', width: 140, render: (val) => <span className="font-mono">{val}</span> },
+    { id: 'installment_name', header: 'Overdue Milestone', accessorKey: 'installment_name', type: 'text', width: 150 },
+    { id: 'days_overdue', header: 'Days Overdue', accessorKey: 'days_overdue', type: 'number', width: 120, align: 'center', sortable: true, render: (val) => <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded font-bold">{val} days</span> },
+    { id: 'overdue_amount', header: 'Overdue Dues (₹)', accessorKey: 'overdue_amount', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className="font-bold text-rose-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+    { id: 'total_outstanding', header: 'Total Balance (₹)', accessorKey: 'total_outstanding', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className="font-bold text-slate-900">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+  ], [])
+
+  // 5. Daily Collection Columns
+  const dailyCollectionColumns = useMemo<ColumnConfig<any>[]>(() => [
+    { id: 'receipt_number', header: 'Receipt #', accessorKey: 'receipt_number', type: 'text', width: 140, sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'payment_date', header: 'Date', accessorKey: 'payment_date', type: 'date', width: 110, sortable: true },
+    { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 120 },
+    { id: 'payment_mode', header: 'Mode', accessorKey: 'payment_mode', type: 'text', width: 110, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
+    { id: 'transaction_reference', header: 'Reference', accessorKey: 'transaction_reference', type: 'text', width: 150, render: (val) => <span className="font-mono text-xs">{val}</span> },
+    { id: 'collector_name', header: 'Cashier / Collector', accessorKey: 'collector_name', type: 'text', width: 160 },
+    { id: 'amount', header: 'Amount (₹)', accessorKey: 'amount', type: 'currency', width: 140, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+  ], [])
+
+  // 6. Exam Merit Columns
+  const examMeritColumns = useMemo<ColumnConfig<any>[]>(() => [
+    { id: 'rank', header: 'Rank', accessorKey: 'rank', type: 'number', width: 80, align: 'center', sortable: true, render: (val) => <span className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs mx-auto ${val === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300' : val === 2 ? 'bg-slate-200 text-slate-800' : val === 3 ? 'bg-amber-50 text-amber-900' : 'bg-slate-50 text-slate-600'}`}>{val}</span> },
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+    { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
+    { id: 'exam_name', header: 'Exam', accessorKey: 'exam_name', type: 'text', width: 150 },
+    { id: 'marks_obtained', header: 'Marks Obtained', accessorKey: 'marks_obtained', type: 'number', width: 130, align: 'center', sortable: true, render: (val, row) => <span className="font-mono font-bold text-slate-900">{val} / {row.max_marks}</span> },
+    { id: 'percentage', header: 'Percentage', accessorKey: 'percentage', type: 'number', width: 120, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}%</span> },
+    { id: 'grade', header: 'Grade', accessorKey: 'grade', type: 'text', width: 90, align: 'center', render: (val) => <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 font-bold rounded">{val}</span> },
+    { id: 'status', header: 'Result', accessorKey: 'status', type: 'text', width: 100, align: 'center', render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'Pass' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{val}</span> },
+  ], [])
+
+  // 7. Security Audit Columns
+  const auditColumns = useMemo<ColumnConfig<any>[]>(() => [
+    { id: 'timestamp', header: 'Timestamp', accessorKey: 'timestamp', type: 'date', width: 160, sortable: true, render: (val) => <span className="font-mono text-xs text-slate-600">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
+    { id: 'actor_name', header: 'Actor User', accessorKey: 'actor_name', type: 'text', width: 160, sortable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
+    { id: 'action', header: 'Action', accessorKey: 'action', type: 'text', width: 160, render: (val) => <span className="font-mono text-xs text-indigo-700 font-semibold">{val}</span> },
+    { id: 'resource_type', header: 'Resource', accessorKey: 'resource_type', type: 'text', width: 130 },
+    { id: 'severity', header: 'Severity', accessorKey: 'severity', type: 'text', width: 100, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'critical' ? 'bg-rose-100 text-rose-800' : val === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-blue-50 text-blue-700'}`}>{val}</span> },
+    { id: 'ip_address', header: 'IP Address', accessorKey: 'ip_address', type: 'text', width: 130, render: (val) => <span className="font-mono text-xs text-slate-500">{val}</span> },
+    { id: 'details', header: 'Event Details', accessorKey: 'details', type: 'text', width: 250 },
+  ], [])
+
+  // 8. Generic dynamic columns for payroll reports
+  const dynamicPayrollColumns = useMemo<ColumnConfig<any>[]>(() => {
+    if (!payrollReportData.length) return []
+    return Object.keys(payrollReportData[0]).map((key) => ({
+      id: key,
+      header: key.replace(/_/g, ' ').toUpperCase(),
+      accessorKey: key,
+      type: typeof payrollReportData[0][key] === 'number' ? 'number' : 'text',
+      sortable: true,
+      filterable: true,
+      render: (val: any) => {
+        if (typeof val === 'number' && (key.includes('amount') || key.includes('cost') || key.includes('net') || key.includes('salary'))) {
+          return <span className="font-mono font-bold text-slate-900">₹{val.toLocaleString('en-IN')}</span>
+        }
+        return <span>{String(val ?? 'N/A')}</span>
       },
-      refund_amount: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.refund_amount || 0), 0)
-        return <span className="font-extrabold text-amber-800">₹{sum.toLocaleString('en-IN')}</span>
-      },
-      net_retained: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.net_retained || 0), 0)
-        return <span className="font-extrabold text-blue-900">₹{sum.toLocaleString('en-IN')}</span>
-      },
-      outstanding_at_exit: (rows: any[]) => {
-        const sum = rows.reduce((acc, r) => acc + Number(r.outstanding_at_exit || 0), 0)
-        return <span className="font-extrabold text-red-700">₹{sum.toLocaleString('en-IN')}</span>
-      },
-    }),
-    []
-  )
+    }))
+  }, [payrollReportData])
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Financial & Academic Reports</h1>
-        <p className="text-sm text-gray-500">
-          Spreadsheet-grade report grid with sticky headers, multi-column search, column filters, and Excel/CSV/JSON exports
-        </p>
-      </div>
-
-      {/* Tabs & Status Scope Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200">
-        <nav className="flex space-x-6 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('collection')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'collection'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Fee Collection Report
-          </button>
-          <button
-            onClick={() => setActiveTab('outstanding')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'outstanding'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Outstanding Dues Report
-          </button>
-          <button
-            onClick={() => setActiveTab('summary')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'summary'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Payment Methods Breakdown
-          </button>
-          <button
-            onClick={() => setActiveTab('withdrawals')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'withdrawals'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Student Withdrawals
-          </button>
-          <button
-            onClick={() => setActiveTab('withdrawal-analytics')}
-            className={`py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'withdrawal-analytics'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Withdrawal Analytics
-          </button>
-        </nav>
-
-        {/* Status Scope Selector for Financial Reports */}
-        {(activeTab === 'collection' || activeTab === 'outstanding') && (
-          <div className="flex items-center gap-2 pb-2 sm:pb-0 text-xs self-end sm:self-auto">
-            <label htmlFor="report-status-filter" className="text-gray-600 font-medium whitespace-nowrap">
-              Student Scope:
-            </label>
-            <select
-              id="report-status-filter"
-              data-testid="report-status-filter"
-              value={reportStatusFilter}
-              onChange={(e) => setReportStatusFilter(e.target.value as any)}
-              className="px-2.5 py-1 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="default">Institute Default (All Statuses)</option>
-              <option value="active">Active Students Only</option>
-              <option value="all">Include All Statuses</option>
-              <option value="withdrawn">Withdrawn Students</option>
-              <option value="completed">Completed Students</option>
-              <option value="graduated">Graduated Students</option>
-              <option value="inactive">Inactive Students</option>
-            </select>
+      {/* ── Header & Global Search Bar ───────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Reporting & Analytics Centre</h1>
+            <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-full font-bold text-xs uppercase">
+              24 Enterprise Reports
+            </span>
           </div>
-        )}
-      </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Centralized institutional business intelligence, audited spreadsheets, financial reconciliations, and cohort analytics
+          </p>
+        </div>
 
-      {/* Tab Content */}
-      {activeTab === 'collection' && (
-        <ExcelReportGrid
-          title="Student Fee Collection Audit"
-          subtitle="Real-time collection rates, total fee obligations, and outstanding balances per student"
-          columns={collectionColumns}
-          data={collectionReport}
-          loading={loadingCollection}
-          exportFilename="prashant_academy_fee_collection_report"
-          sheetName="Fee Collection"
-          showSummaryRow={true}
-          summaryCalculations={collectionSummaryCalculations}
-          defaultSort={{ columnId: 'outstanding', direction: 'desc' }}
-        />
-      )}
-
-      {activeTab === 'outstanding' && (
-        <ExcelReportGrid
-          title="Outstanding Dues Ledger"
-          subtitle="Pending and overdue student fee invoices with due dates and payment statuses"
-          columns={outstandingColumns}
-          data={outstandingReport}
-          loading={loadingOutstanding}
-          exportFilename="prashant_academy_outstanding_dues_report"
-          sheetName="Outstanding Dues"
-          showSummaryRow={true}
-          summaryCalculations={outstandingSummaryCalculations}
-          defaultSort={{ columnId: 'outstanding', direction: 'desc' }}
-          emptyMessage="🎉 All fees are fully paid! No outstanding invoices recorded."
-        />
-      )}
-
-      {activeTab === 'summary' && (
-        <div className="space-y-6">
-          <ExcelReportGrid
-            title="Payment Methods & Gateway Volume"
-            subtitle="Breakdown of fee collections across payment modes (UPI, Cash, Cheque, Bank Transfer)"
-            columns={methodsColumns}
-            data={methodsData}
-            loading={loadingSummary}
-            exportFilename="prashant_academy_payment_methods_report"
-            sheetName="Payment Methods"
-            showSummaryRow={true}
-            summaryCalculations={methodsSummaryCalculations}
-            defaultSort={{ columnId: 'total', direction: 'desc' }}
+        {/* Global Search Bar */}
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search all 24 reports..."
+            value={globalSearch}
+            onChange={(e) => setGlobalSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-xs"
           />
+        </div>
+      </div>
 
-          <div className="card">
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Export & Reconciliation Guidelines</h2>
-            <div className="text-sm text-gray-600 space-y-1.5">
-              <p>• <strong>Excel (.xlsx):</strong> Preserves numeric data types for spreadsheet calculations (SUM, AVERAGE, VLOOKUP) and auto-fits column widths.</p>
-              <p>• <strong>CSV (.csv):</strong> Includes UTF-8 BOM encoding for correct Indian Rupee (₹) symbol rendering in Microsoft Excel, with formula injection protection.</p>
-              <p>• <strong>JSON (.json):</strong> Formatted structure for API integrations, external ERP systems, or automated auditing pipelines.</p>
-              <p>• <strong>Scope:</strong> Choose between exporting all filtered rows matching your search/filters or only the current page view.</p>
-            </div>
+      {/* ── Search Dropdown Overlay (When searching across entire catalog) ───── */}
+      {globalSearch.trim() && (
+        <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-3 space-y-2 max-h-80 overflow-y-auto">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2">
+            Matching Reports ({filteredCatalog.length})
           </div>
+          {filteredCatalog.length === 0 ? (
+            <div className="text-sm text-slate-500 p-4 text-center">No reports match "{globalSearch}"</div>
+          ) : (
+            filteredCatalog.map((r) => (
+              <div
+                key={r.id}
+                onClick={() => {
+                  setActiveCategory(r.category)
+                  setActiveReportId(r.id)
+                  setGlobalSearch('')
+                }}
+                className="p-2.5 hover:bg-indigo-50 rounded-lg cursor-pointer flex items-center justify-between transition-colors"
+              >
+                <div className="space-y-0.5">
+                  <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    {r.name}
+                    <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">{r.categoryLabel}</span>
+                  </div>
+                  <div className="text-xs text-slate-500 line-clamp-1">{r.description}</div>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-indigo-600 shrink-0" />
+              </div>
+            ))
+          )}
         </div>
       )}
 
-      {activeTab === 'withdrawals' && (
-        <ExcelReportGrid
-          title="Student Withdrawal & Exit Ledger"
-          subtitle="Detailed roster of withdrawn students with paid/unpaid status, gross collections, refunds, net retained amounts, and outstanding balances"
-          columns={withdrawalsColumns}
-          data={withdrawalsReport}
-          loading={loadingWithdrawals}
-          exportFilename="prathamone_student_withdrawals_report"
-          sheetName="Student Withdrawals"
-          showSummaryRow={true}
-          summaryCalculations={withdrawalsSummaryCalculations}
-          defaultSort={{ columnId: 'exit_date', direction: 'desc' }}
-        />
-      )}
-
-      {activeTab === 'withdrawal-analytics' && (
-        <div className="space-y-6">
-          {loadingAnalytics || !analyticsData ? (
-            <div className="card text-center py-16 text-gray-400">Loading withdrawal analytics...</div>
-          ) : (
-            <>
-              {/* Executive KPI Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="card p-4 text-center">
-                  <p className="text-xs text-gray-500 mb-1">Total Enrolled vs Active</p>
-                  <p className="text-xl font-bold text-gray-800">
-                    {analyticsData.summary.active_students} <span className="text-sm font-normal text-gray-500">/ {analyticsData.summary.total_enrolled}</span>
-                  </p>
-                  <p className="text-xs text-emerald-600 font-medium mt-1">
-                    {analyticsData.summary.total_enrolled > 0
-                      ? Math.round((analyticsData.summary.active_students / analyticsData.summary.total_enrolled) * 100)
-                      : 0}% Retention
-                  </p>
-                </div>
-
-                <div className="card p-4 text-center">
-                  <p className="text-xs text-gray-500 mb-1">Attrition Rate</p>
-                  <p className="text-xl font-bold text-red-600">{analyticsData.summary.attrition_rate}%</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {analyticsData.summary.withdrawn_students} Total Withdrawn
-                  </p>
-                </div>
-
-                <div className="card p-4 text-center">
-                  <p className="text-xs text-gray-500 mb-1">Paid vs Unpaid Attrition</p>
-                  <p className="text-xl font-bold text-slate-800">
-                    <span className="text-emerald-700">{analyticsData.summary.paid_withdrawn_count}</span>
-                    <span className="text-gray-400 text-sm font-normal"> Paid / </span>
-                    <span className="text-amber-700">{analyticsData.summary.unpaid_withdrawn_count}</span>
-                    <span className="text-gray-400 text-sm font-normal"> Unpaid</span>
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {analyticsData.summary.withdrawn_students > 0
-                      ? Math.round((analyticsData.summary.paid_withdrawn_count / analyticsData.summary.withdrawn_students) * 100)
-                      : 0}% Paid Prior to Exit
-                  </p>
-                </div>
-
-                <div className="card p-4 text-center">
-                  <p className="text-xs text-gray-500 mb-1">Net Retained Collections</p>
-                  <p className="text-xl font-bold text-blue-900">
-                    ₹{analyticsData.summary.net_retained.toLocaleString('en-IN')}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Gross: ₹{analyticsData.summary.gross_paid.toLocaleString('en-IN')} &bull; Refunds: ₹{analyticsData.summary.refund_amount.toLocaleString('en-IN')}
-                  </p>
-                </div>
+      {/* ── Primary Category Switcher Tabs ──────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        {CATEGORIES.map((cat) => {
+          const Icon = cat.icon
+          const isActive = activeCategory === cat.key
+          return (
+            <button
+              key={cat.key}
+              onClick={() => {
+                setActiveCategory(cat.key)
+                const firstInCat = REPORT_CATALOG.find((r) => r.category === cat.key)
+                if (firstInCat) setActiveReportId(firstInCat.id)
+              }}
+              className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
+                isActive
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-300'
+                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-indigo-600'}`} />
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    isActive ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {cat.count}
+                </span>
               </div>
+              <div className="font-bold text-xs leading-tight line-clamp-1">{cat.label}</div>
+            </button>
+          )
+        })}
+      </div>
 
-              {/* Chart: Monthly Withdrawal Trend */}
-              {analyticsData.trends_monthly.length > 0 && (
-                <div className="card p-5">
-                  <h3 className="text-sm font-bold text-gray-800 mb-4">
-                    Monthly Student Withdrawal & Net Retained Inflow Trends
-                  </h3>
-                  <div className="h-64 w-full">
+      {/* ── Sub-Report Selector Pills & Pinning Bar ─────────────────────────── */}
+      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between gap-3 overflow-x-auto">
+        <div className="flex items-center gap-2 overflow-x-auto py-1">
+          {categoryReports.map((r) => {
+            const isSelected = activeReportId === r.id
+            const isPinned = pinnedReports.includes(r.id)
+            return (
+              <button
+                key={r.id}
+                onClick={() => setActiveReportId(r.id)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
+                  isSelected
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <span>{r.name}</span>
+                <span
+                  onClick={(e) => togglePin(r.id, e)}
+                  title={isPinned ? 'Unpin report' : 'Pin to favorites'}
+                  className={`cursor-pointer ${isPinned ? 'text-amber-400' : 'text-slate-400 hover:text-amber-400'}`}
+                >
+                  <Star className={`w-3.5 h-3.5 ${isPinned ? 'fill-amber-400' : ''}`} />
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Active Report Control & Filter Header ───────────────────────────── */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900">{activeReport.name}</h2>
+              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-bold">
+                {activeReport.badge}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">{activeReport.description}</p>
+          </div>
+
+          <button
+            onClick={handleRefetch}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors shrink-0 self-start sm:self-auto"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+            Refresh Data
+          </button>
+        </div>
+
+        {/* Granular Context Filters */}
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          {/* Standard Selector */}
+          {(activeReportId === 'student-master' ||
+            activeReportId === 'student-attendance' ||
+            activeReportId === 'withdrawals' ||
+            activeReportId === 'batch-capacity' ||
+            activeReportId === 'curriculum-matrix' ||
+            activeReportId === 'fee-defaulters') && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-semibold">Standard:</span>
+              <select
+                value={selectedStandardId}
+                onChange={(e) => {
+                  setSelectedStandardId(e.target.value)
+                  setSelectedDivisionId('')
+                }}
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium"
+              >
+                <option value="">All Standards</option>
+                {standards.map((s: any) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Division / Batch Selector */}
+          {(activeReportId === 'student-master' ||
+            activeReportId === 'student-attendance' ||
+            activeReportId === 'withdrawals' ||
+            activeReportId === 'timetable-utilization' ||
+            activeReportId === 'fee-defaulters') && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-semibold">Batch:</span>
+              <select
+                value={selectedDivisionId}
+                onChange={(e) => setSelectedDivisionId(e.target.value)}
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium"
+              >
+                <option value="">All Batches</option>
+                {divisions.map((d: any) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name} {d.code ? `[${d.code}]` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Exam Selector */}
+          {(activeReportId === 'exam-merit' || activeReportId === 'exam-analytics') && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-semibold">Select Examination:</span>
+              <select
+                value={selectedExamId}
+                onChange={(e) => setSelectedExamId(e.target.value)}
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium font-semibold"
+              >
+                {examinations.map((ex: any) => (
+                  <option key={ex.id} value={ex.id}>
+                    {ex.name} ({ex.exam_type})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Date Range Pickers */}
+          {(activeReportId === 'student-attendance' ||
+            activeReportId === 'daily-collection' ||
+            activeReportId.startsWith('payroll-') ||
+            activeReportId === 'audit-logs') && (
+            <div className="flex items-center gap-2">
+              <span className="text-slate-500 font-semibold">Date Range:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800"
+              />
+              <span className="text-slate-400">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800"
+              />
+            </div>
+          )}
+
+          {/* Chronic Defaulter Toggle */}
+          {activeReportId === 'student-attendance' && (
+            <label className="flex items-center gap-2 cursor-pointer font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+              <input
+                type="checkbox"
+                checked={defaultersOnly}
+                onChange={(e) => setDefaultersOnly(e.target.checked)}
+                className="rounded text-rose-600 focus:ring-rose-500"
+              />
+              Show Defaulters Only (&lt;75%)
+            </label>
+          )}
+
+          {/* Student Status Scope Filter for Financial & Master Reports */}
+          {(activeReportId === 'student-master' || activeReportId === 'collection' || activeReportId === 'outstanding') && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 font-semibold">Student Scope:</span>
+              <select
+                value={reportStatusFilter}
+                onChange={(e) => setReportStatusFilter(e.target.value as any)}
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium"
+              >
+                <option value="default">Institute Default</option>
+                <option value="active">Active Only</option>
+                <option value="all">Include All Statuses</option>
+                <option value="withdrawn">Withdrawn</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Security Authorization Gate ─────────────────────────────────────── */}
+      {!hasAccess ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto font-bold">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900">Restricted Access Report</h3>
+          <p className="text-sm text-slate-600 max-w-md mx-auto">
+            You do not possess the necessary RBAC permissions to inspect {activeReport.name}. This report contains confidential institutional, banking, or payroll metrics restricted to verified financial authorities.
+          </p>
+        </div>
+      ) : (
+        /* ── Report Body Container ─────────────────────────────────────────── */
+        <div>
+          {/* 1. Student Master Directory */}
+          {activeReportId === 'student-master' && (
+            <ExcelReportGrid
+              title="Student Master Directory & Demographic Roster"
+              subtitle="Official demographic register of all enrolled students with guardian contact and status"
+              columns={studentMasterColumns}
+              data={studentMasterData}
+              loading={loadingMaster}
+              exportFilename="student_master_directory"
+              sheetName="Students"
+              showSummaryRow={true}
+              summaryCalculations={{
+                admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
+              }}
+            />
+          )}
+
+          {/* 2. Attendance Summary */}
+          {activeReportId === 'student-attendance' && (
+            <ExcelReportGrid
+              title="Student Attendance Summary & Defaulter Audit"
+              subtitle="Aggregated session check-in percentages and chronic defaulter flags"
+              columns={attendanceColumns}
+              data={attendanceSummaryData}
+              loading={loadingAttendance}
+              exportFilename="student_attendance_summary"
+              sheetName="Attendance"
+              showSummaryRow={true}
+              summaryCalculations={{
+                admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
+                total_days: (rows) => <span className="font-extrabold">{rows.reduce((acc, r) => acc + (r.total_days || 0), 0)}</span>,
+                present_days: (rows) => <span className="font-extrabold text-emerald-700">{rows.reduce((acc, r) => acc + (r.present_days || 0), 0)}</span>,
+                absent_days: (rows) => <span className="font-extrabold text-rose-700">{rows.reduce((acc, r) => acc + (r.absent_days || 0), 0)}</span>,
+              }}
+            />
+          )}
+
+          {/* 3. Fee Collection Register */}
+          {activeReportId === 'collection' && (
+            <ExcelReportGrid
+              title="Fee Collection Register"
+              subtitle="Total student fee assessments, realized banking collections, and outstanding deficits"
+              columns={collectionColumns}
+              data={collectionReport}
+              loading={loadingCollection}
+              exportFilename="fee_collection_register"
+              sheetName="Collections"
+              showSummaryRow={true}
+              summaryCalculations={{
+                admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
+                total_fees: (rows) => <span className="font-extrabold text-slate-900">₹{rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                paid: (rows) => <span className="font-extrabold text-emerald-800">₹{rows.reduce((acc, r) => acc + Number(r.paid || 0), 0).toLocaleString('en-IN')}</span>,
+                outstanding: (rows) => <span className="font-extrabold text-rose-700">₹{rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0).toLocaleString('en-IN')}</span>,
+              }}
+            />
+          )}
+
+          {/* 4. Outstanding Dues */}
+          {activeReportId === 'outstanding' && (
+            <ExcelReportGrid
+              title="Outstanding Receivables & Due Dates"
+              subtitle="Detailed invoice receivables categorized by due dates and student commitments"
+              columns={[
+                { id: 'invoice_number', header: 'Invoice #', accessorKey: 'invoice_number', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+                { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 120 },
+                { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
+                { id: 'due_date', header: 'Due Date', accessorKey: 'due_date', type: 'date', width: 110, sortable: true },
+                { id: 'net_amount', header: 'Total Invoiced (₹)', accessorKey: 'net_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                { id: 'paid_amount', header: 'Paid Amount (₹)', accessorKey: 'paid_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span className="text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                { id: 'outstanding', header: 'Outstanding Due (₹)', accessorKey: 'outstanding', type: 'currency', width: 150, align: 'right', render: (val) => <span className="font-bold text-rose-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <InvoiceStatusBadge status={val} /> },
+              ]}
+              data={outstandingReport}
+              loading={loadingOutstanding}
+              exportFilename="outstanding_dues_report"
+              sheetName="Outstanding"
+              showSummaryRow={true}
+              summaryCalculations={{
+                invoice_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
+                outstanding: (rows) => <span className="font-extrabold text-rose-700">₹{rows.reduce((acc, r) => acc + Number(r.outstanding || 0), 0).toLocaleString('en-IN')}</span>,
+              }}
+            />
+          )}
+
+          {/* 5. Fee Defaulters Aging */}
+          {activeReportId === 'fee-defaulters' && (
+            <ExcelReportGrid
+              title="Consolidated Fee Defaulters Aging Roster"
+              subtitle="Overdue installment ledgers with days overdue, guardian contacts, and recovery escalation"
+              columns={feeDefaultersColumns}
+              data={feeDefaultersData}
+              loading={loadingFeeDefaulters}
+              exportFilename="fee_defaulters_aging_report"
+              sheetName="Defaulters"
+              showSummaryRow={true}
+              summaryCalculations={{
+                admission_number: (rows) => <span className="font-extrabold text-rose-900">Defaulters: {rows.length}</span>,
+                overdue_amount: (rows) => <span className="font-extrabold text-rose-700">₹{rows.reduce((acc, r) => acc + Number(r.overdue_amount || 0), 0).toLocaleString('en-IN')}</span>,
+              }}
+            />
+          )}
+
+          {/* 6. Daily Collection */}
+          {activeReportId === 'daily-collection' && (
+            <ExcelReportGrid
+              title="Daily Payment Collection & Cashier Register"
+              subtitle="Day-wise realized payment receipts, cash desk collections, and gateway transactions"
+              columns={dailyCollectionColumns}
+              data={dailyCollectionData}
+              loading={loadingDailyCollection}
+              exportFilename="daily_payment_collection"
+              sheetName="Daily Inflow"
+              showSummaryRow={true}
+              summaryCalculations={{
+                receipt_number: (rows) => <span className="font-extrabold text-slate-900">Transactions: {rows.length}</span>,
+                amount: (rows) => <span className="font-extrabold text-emerald-800">₹{rows.reduce((acc, r) => acc + Number(r.amount || 0), 0).toLocaleString('en-IN')}</span>,
+              }}
+            />
+          )}
+
+          {/* 7. Payment Methods Breakdown */}
+          {activeReportId === 'summary' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+                  <h3 className="font-bold text-slate-900 text-sm mb-4">Payment Methods Volume Distribution</h3>
+                  <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={analyticsData.trends_monthly} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="month_label" />
-                        <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
-                        <YAxis yAxisId="right" orientation="right" stroke="#ef4444" />
-                        <RechartsTooltip />
-                        <Legend />
-                        <Bar yAxisId="right" dataKey="count" name="Withdrawn Count" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                        <Bar yAxisId="left" dataKey="net_retained" name="Net Retained (₹)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      <BarChart data={summaryReport}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="payment_method" />
+                        <YAxis />
+                        <RechartsTooltip formatter={(val: any) => `₹${Number(val).toLocaleString('en-IN')}`} />
+                        <Bar dataKey="total" fill="#4f46e5" radius={[6, 6, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-              )}
 
-              {/* Section: Reason Breakdown & Class/Batch Breakdown */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Reason Breakdown */}
-                <div className="card p-5 space-y-4">
-                  <h3 className="text-sm font-bold text-gray-800">Withdrawals by Primary Reason</h3>
-                  <div className="space-y-3">
-                    {analyticsData.by_reason.map((item, idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="font-medium text-gray-800">{item.reason}</span>
-                          <span className="text-gray-500">
-                            {item.count} student(s) &bull; <strong className="text-slate-900">{item.percentage}%</strong> &bull; Retained: ₹{item.net_retained.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${Math.min(item.percentage, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    {analyticsData.by_reason.length === 0 && (
-                      <p className="text-xs text-gray-400 py-4 text-center">No withdrawal reason data available.</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Class & Batch Attrition Table */}
-                <div className="card p-5 space-y-4">
-                  <h3 className="text-sm font-bold text-gray-800">Class & Batch Attrition Rates</h3>
-                  <div className="overflow-x-auto max-h-80 overflow-y-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold sticky top-0">
-                        <tr>
-                          <th className="p-2">Standard</th>
-                          <th className="p-2">Batch</th>
-                          <th className="p-2 text-center">Enrolled</th>
-                          <th className="p-2 text-center">Withdrawn</th>
-                          <th className="p-2 text-center">Attrition</th>
-                          <th className="p-2 text-right">Retained (₹)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {analyticsData.by_class_batch.map((cb, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50/50">
-                            <td className="p-2 font-medium text-gray-800">{cb.standard_name}</td>
-                            <td className="p-2 text-gray-600">{cb.division_name || '—'}</td>
-                            <td className="p-2 text-center font-mono">{cb.total_enrolled}</td>
-                            <td className="p-2 text-center font-mono text-red-600 font-bold">{cb.withdrawn_count}</td>
-                            <td className="p-2 text-center font-mono">
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[11px] font-semibold ${
-                                  cb.attrition_rate > 15
-                                    ? 'bg-red-100 text-red-800'
-                                    : cb.attrition_rate > 0
-                                    ? 'bg-amber-100 text-amber-800'
-                                    : 'bg-emerald-100 text-emerald-800'
-                                }`}
-                              >
-                                {cb.attrition_rate}%
-                              </span>
-                            </td>
-                            <td className="p-2 text-right font-mono font-semibold text-blue-900">
-                              ₹{cb.net_retained.toLocaleString('en-IN')}
-                            </td>
-                          </tr>
-                        ))}
-                        {analyticsData.by_class_batch.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="p-4 text-center text-gray-400">
-                              No class attrition data.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+                  <h3 className="font-bold text-slate-900 text-sm mb-4">Transaction Count per Channel</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={summaryReport} dataKey="count" nameKey="payment_method" cx="50%" cy="50%" outerRadius={80} label>
+                          {summaryReport.map((_: any, idx: number) => (
+                            <Cell key={`cell-${idx}`} fill={['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'][idx % 5]} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>
 
-              {/* Section: Installment Attrition Table */}
-              {analyticsData.by_installment.length > 0 && (
-                <div className="card p-5 space-y-3">
-                  <h3 className="text-sm font-bold text-gray-800">Installment-wise Attrition Distribution</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {analyticsData.by_installment.map((inst, idx) => (
-                      <div key={idx} className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                        <p className="text-xs text-gray-500 mb-1">{inst.installment_at_exit}</p>
-                        <p className="text-lg font-bold text-slate-800">{inst.count} Student(s)</p>
-                        <p className="text-xs font-semibold text-blue-900 mt-1">
-                          ₹{inst.net_retained.toLocaleString('en-IN')} Retained
-                        </p>
-                      </div>
-                    ))}
+              <ExcelReportGrid
+                title="Payment Methods Transaction Table"
+                subtitle="Tabulated count and realized volume per transaction instrument"
+                columns={[
+                  { id: 'payment_method', header: 'Payment Method', accessorKey: 'payment_method', type: 'text', width: 200, render: (val) => <span className="font-bold uppercase text-indigo-700">{val}</span> },
+                  { id: 'count', header: 'Transaction Count', accessorKey: 'count', type: 'number', width: 180, align: 'center', sortable: true },
+                  { id: 'total', header: 'Realized Volume (₹)', accessorKey: 'total', type: 'currency', width: 200, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                ]}
+                data={summaryReport}
+                loading={loadingSummary}
+                exportFilename="payment_methods_summary"
+                sheetName="Payment Methods"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  payment_method: (rows) => <span className="font-extrabold text-slate-900">Total Channels: {rows.length}</span>,
+                  count: (rows) => <span className="font-extrabold">{rows.reduce((acc, r) => acc + (r.count || 0), 0)}</span>,
+                  total: (rows) => <span className="font-extrabold text-emerald-800">₹{rows.reduce((acc, r) => acc + Number(r.total || 0), 0).toLocaleString('en-IN')}</span>,
+                }}
+              />
+            </div>
+          )}
+
+          {/* 8. Financial Reconciliation */}
+          {activeReportId === 'fee-reconciliation' && overviewData && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Total Invoiced Commitment</div>
+                  <div className="text-xl font-bold text-slate-900 mt-1">₹{Number(overviewData.summary?.total_obligation || 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Realized Banking Inflow</div>
+                  <div className="text-xl font-bold text-emerald-700 mt-1">₹{Number(overviewData.summary?.total_collected || 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Outstanding Deficit</div>
+                  <div className="text-xl font-bold text-rose-600 mt-1">₹{Number(overviewData.summary?.total_outstanding || 0).toLocaleString('en-IN')}</div>
+                </div>
+              </div>
+
+              <ExcelReportGrid
+                title="Batch-wise Financial Reconciliation Ledger"
+                subtitle="Audited breakdown of student fee obligations and realized collection rates per batch"
+                columns={[
+                  { id: 'batch_name', header: 'Batch / Course', accessorKey: 'batch_name', type: 'text', width: 220, sortable: true },
+                  { id: 'student_count', header: 'Students', accessorKey: 'student_count', type: 'number', width: 110, align: 'center', sortable: true },
+                  { id: 'total_obligation', header: 'Invoiced (₹)', accessorKey: 'total_obligation', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'total_collected', header: 'Collected (₹)', accessorKey: 'total_collected', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'total_outstanding', header: 'Outstanding (₹)', accessorKey: 'total_outstanding', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span className="font-bold text-rose-600">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'collection_rate', header: 'Collection Rate', accessorKey: 'collection_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}%</span> },
+                ]}
+                data={overviewData.batch_breakdown || []}
+                loading={loadingOverview}
+                exportFilename="financial_reconciliation_report"
+                sheetName="Reconciliation"
+                showSummaryRow={true}
+              />
+            </div>
+          )}
+
+          {/* 9. Batch Capacity */}
+          {activeReportId === 'batch-capacity' && (
+            <ExcelReportGrid
+              title="Batch Capacity & Occupancy Analysis"
+              subtitle="Audited batch-level seat allotments, occupancy rates, and classroom timing"
+              columns={[
+                { id: 'batch_name', header: 'Batch / Division', accessorKey: 'batch_name', type: 'text', width: 180, sortable: true, render: (val, r: any) => <span className="font-semibold text-slate-900">{val} {r.batch_code ? `[${r.batch_code}]` : ''}</span> },
+                { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
+                { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-semibold">{val}</span> },
+                { id: 'total_capacity', header: 'Capacity', accessorKey: 'total_capacity', type: 'number', width: 110, align: 'center', sortable: true },
+                { id: 'enrolled_count', header: 'Enrolled', accessorKey: 'enrolled_count', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-indigo-700">{val}</span> },
+                { id: 'available_seats', header: 'Vacant', accessorKey: 'available_seats', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className={`font-bold ${val <= 5 ? 'text-amber-600' : 'text-emerald-700'}`}>{val}</span> },
+                { id: 'occupancy_rate', header: 'Occupancy %', accessorKey: 'occupancy_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-800">{val}%</span> },
+              ]}
+              data={batchCapacityData}
+              loading={loadingBatchCapacity}
+              exportFilename="batch_capacity_report"
+              sheetName="Batch Capacity"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 10. Board Distribution */}
+          {activeReportId === 'academic-distribution' && (
+            <div className="space-y-6">
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+                <h3 className="font-bold text-slate-900 text-sm mb-4">Board Enrollment Distribution</h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={distributionData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="board_name" />
+                      <YAxis />
+                      <RechartsTooltip />
+                      <Legend />
+                      <Bar dataKey="total_capacity" fill="#94a3b8" name="Total Capacity" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="enrolled_count" fill="#4f46e5" name="Enrolled Students" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <ExcelReportGrid
+                title="Board & Standard Distribution Audit"
+                subtitle="Comprehensive breakdown of student distribution and capacity across educational boards"
+                columns={[
+                  { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 160, sortable: true, render: (val) => <span className="font-bold text-indigo-700">{val}</span> },
+                  { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
+                  { id: 'batches_count', header: 'Batches', accessorKey: 'batches_count', type: 'number', width: 110, align: 'center', sortable: true },
+                  { id: 'total_capacity', header: 'Capacity', accessorKey: 'total_capacity', type: 'number', width: 120, align: 'center', sortable: true },
+                  { id: 'enrolled_count', header: 'Enrolled', accessorKey: 'enrolled_count', type: 'number', width: 120, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
+                  { id: 'occupancy_rate', header: 'Occupancy %', accessorKey: 'occupancy_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-800">{val}%</span> },
+                ]}
+                data={distributionData}
+                loading={loadingDistribution}
+                exportFilename="board_distribution_report"
+                sheetName="Distribution"
+                showSummaryRow={true}
+              />
+            </div>
+          )}
+
+          {/* 11. Curriculum Matrix */}
+          {activeReportId === 'curriculum-matrix' && (
+            <ExcelReportGrid
+              title="Subject & Curriculum Offering Matrix"
+              subtitle="Standardized curriculum mapping across educational boards with allocated faculty"
+              columns={[
+                { id: 'subject_name', header: 'Subject Name', accessorKey: 'subject_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
+                { id: 'subject_code', header: 'Code', accessorKey: 'subject_code', type: 'text', width: 110, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+                { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
+                { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs font-semibold">{val}</span> },
+                { id: 'weekly_hours', header: 'Weekly Load', accessorKey: 'weekly_hours', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold text-slate-700">{val} hrs/wk</span> },
+                { id: 'assigned_teachers_count', header: 'Teachers', accessorKey: 'assigned_teachers_count', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-indigo-700">{val}</span> },
+                { id: 'teachers_list', header: 'Allocated Faculty Members', accessorKey: 'teachers_list', type: 'text', width: 280, render: (val) => <span className="text-slate-700 font-medium">{val}</span> },
+              ]}
+              data={curriculumMatrixData}
+              loading={loadingCurriculum}
+              exportFilename="curriculum_matrix_report"
+              sheetName="Curriculum"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 12. Timetable Utilization */}
+          {activeReportId === 'timetable-utilization' && (
+            <ExcelReportGrid
+              title="Timetable Room & Batch Utilization"
+              subtitle="Classroom scheduling distribution and day-wise slot commitments"
+              columns={[
+                { id: 'day_of_week', header: 'Day', accessorKey: 'day_of_week', type: 'text', width: 120, sortable: true, render: (val) => <span className="font-bold text-indigo-700 uppercase">{val}</span> },
+                { id: 'start_time', header: 'Start Time', accessorKey: 'start_time', type: 'text', width: 110 },
+                { id: 'end_time', header: 'End Time', accessorKey: 'end_time', type: 'text', width: 110 },
+                { id: 'room_number', header: 'Room / Hall', accessorKey: 'room_number', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-slate-100 font-bold text-slate-800 rounded">{val}</span> },
+                { id: 'batch_name', header: 'Batch / Division', accessorKey: 'batch_name', type: 'text', width: 160, sortable: true },
+                { id: 'subject_name', header: 'Subject', accessorKey: 'subject_name', type: 'text', width: 160, sortable: true },
+                { id: 'teacher_name', header: 'Assigned Teacher', accessorKey: 'teacher_name', type: 'text', width: 180 },
+              ]}
+              data={timetableData}
+              loading={loadingTimetable}
+              exportFilename="timetable_utilization_report"
+              sheetName="Timetable"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 13. Faculty Load */}
+          {activeReportId === 'faculty-load' && (
+            <ExcelReportGrid
+              title="Faculty Teaching Load & Mentorship Audit"
+              subtitle="Weekly session commitments, assigned classroom batches, and supervised students"
+              columns={[
+                { id: 'teacher_name', header: 'Faculty Member', accessorKey: 'teacher_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
+                { id: 'staff_code', header: 'Staff Code', accessorKey: 'staff_code', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}</span> },
+                { id: 'department', header: 'Department', accessorKey: 'department', type: 'text', width: 140 },
+                { id: 'assigned_batches_count', header: 'Active Batches', accessorKey: 'assigned_batches_count', type: 'number', width: 130, align: 'center', sortable: true },
+                { id: 'total_weekly_hours', header: 'Weekly Hours', accessorKey: 'total_weekly_hours', type: 'number', width: 130, align: 'center', sortable: true, render: (val) => <span className="font-bold text-indigo-700">{val} hrs</span> },
+                { id: 'total_students_supervised', header: 'Supervised Students', accessorKey: 'total_students_supervised', type: 'number', width: 160, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-800">{val}</span> },
+              ]}
+              data={facultyLoadData}
+              loading={loadingFacultyLoad}
+              exportFilename="faculty_teaching_load"
+              sheetName="Faculty Load"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 14. Specialized Payroll Reports */}
+          {activeReportId.startsWith('payroll-') && (
+            <ExcelReportGrid
+              title={activeReport.name}
+              subtitle={activeReport.description}
+              columns={dynamicPayrollColumns}
+              data={payrollReportData}
+              loading={loadingPayroll}
+              exportFilename={`payroll_${payrollReportType}_report`}
+              sheetName="Payroll"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 15. Exam Merit Register */}
+          {activeReportId === 'exam-merit' && (
+            <ExcelReportGrid
+              title="Consolidated Exam Marks & Merit Roster"
+              subtitle="Ranked cohort performance register with total score, percentage, and letter grade"
+              columns={examMeritColumns}
+              data={examMeritData}
+              loading={loadingExamMerit}
+              exportFilename="exam_merit_roster"
+              sheetName="Merit Roster"
+              showSummaryRow={true}
+              summaryCalculations={{
+                admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
+              }}
+            />
+          )}
+
+          {/* 16. Exam Analytics */}
+          {activeReportId === 'exam-analytics' && examAnalyticsData && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Exam Name</div>
+                  <div className="text-base font-bold text-slate-900 mt-1">{examAnalyticsData.exam_name}</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Appeared Students</div>
+                  <div className="text-xl font-bold text-indigo-700 mt-1">{examAnalyticsData.appeared_candidates}</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Class Average</div>
+                  <div className="text-xl font-bold text-emerald-700 mt-1">{examAnalyticsData.class_average}%</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Overall Pass %</div>
+                  <div className="text-xl font-bold text-blue-700 mt-1">{examAnalyticsData.pass_percentage}%</div>
+                </div>
+              </div>
+
+              <ExcelReportGrid
+                title="Subject-wise Score & Pass Analytics"
+                subtitle="Comparative statistical breakdown of student performance per examination subject"
+                columns={[
+                  { id: 'subject_name', header: 'Subject', accessorKey: 'subject_name', type: 'text', width: 200, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
+                  { id: 'candidates_count', header: 'Candidates', accessorKey: 'candidates_count', type: 'number', width: 120, align: 'center', sortable: true },
+                  { id: 'average_marks', header: 'Average Score', accessorKey: 'average_marks', type: 'number', width: 140, align: 'center', sortable: true, render: (val) => <span className="font-bold text-slate-800">{val}</span> },
+                  { id: 'highest_marks', header: 'Highest', accessorKey: 'highest_marks', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
+                  { id: 'lowest_marks', header: 'Lowest', accessorKey: 'lowest_marks', type: 'number', width: 120, align: 'center', render: (val) => <span className="font-bold text-rose-700">{val}</span> },
+                ]}
+                data={examAnalyticsData.subject_analytics || []}
+                loading={loadingExamAnalytics}
+                exportFilename="exam_subject_analytics"
+                sheetName="Subject Analytics"
+                showSummaryRow={true}
+              />
+            </div>
+          )}
+
+          {/* 17. Security Audit Trail */}
+          {activeReportId === 'audit-logs' && (
+            <ExcelReportGrid
+              title="Security & System Access Audit Trail"
+              subtitle="Immutable log of user authentication, permission elevation, and administrative events"
+              columns={auditColumns}
+              data={auditLogsData}
+              loading={loadingAuditLogs}
+              exportFilename="security_audit_logs"
+              sheetName="Security Logs"
+              showSummaryRow={true}
+              summaryCalculations={{
+                timestamp: (rows) => <span className="font-extrabold text-slate-900">Total Events: {rows.length}</span>,
+              }}
+            />
+          )}
+
+          {/* 18. Communication Logs */}
+          {activeReportId === 'comm-logs' && (
+            <ExcelReportGrid
+              title="Communication & Notification Dispatch Logs"
+              subtitle="Delivery records for institutional SMS, WhatsApp, and email messages"
+              columns={[
+                { id: 'created_at', header: 'Sent At', accessorKey: 'created_at', type: 'date', width: 150, sortable: true, render: (val) => <span className="font-mono text-xs">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
+                { id: 'recipient_name', header: 'Recipient', accessorKey: 'recipient_name', type: 'text', width: 160 },
+                { id: 'recipient_contact', header: 'Contact #', accessorKey: 'recipient_contact', type: 'text', width: 130 },
+                { id: 'channel', header: 'Channel', accessorKey: 'channel', type: 'text', width: 100, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
+                { id: 'template_title', header: 'Message Type', accessorKey: 'template_title', type: 'text', width: 160 },
+                { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'delivered' || val === 'sent' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{val}</span> },
+              ]}
+              data={commLogsData}
+              loading={loadingCommLogs}
+              exportFilename="communication_logs"
+              sheetName="Communications"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 19. Import/Export Migration History */}
+          {activeReportId === 'import-history' && (
+            <ExcelReportGrid
+              title="Data Import & Migration History"
+              subtitle="Historical records of bulk spreadsheet uploads and data migrations"
+              columns={[
+                { id: 'created_at', header: 'Import Date', accessorKey: 'created_at', type: 'date', width: 150, sortable: true, render: (val) => <span className="font-mono text-xs">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
+                { id: 'file_name', header: 'File Name', accessorKey: 'file_name', type: 'text', width: 200 },
+                { id: 'entity_type', header: 'Target Entity', accessorKey: 'entity_type', type: 'text', width: 140, render: (val) => <span className="font-bold text-indigo-700 capitalize">{val}</span> },
+                { id: 'total_rows', header: 'Rows', accessorKey: 'total_rows', type: 'number', width: 100, align: 'center' },
+                { id: 'success_rows', header: 'Imported', accessorKey: 'success_rows', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
+                { id: 'error_rows', header: 'Errors', accessorKey: 'error_rows', type: 'number', width: 100, align: 'center', render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{val}</span> },
+                { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
+              ]}
+              data={importHistoryData}
+              loading={loadingImportHistory}
+              exportFilename="data_import_history"
+              sheetName="Imports"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 20. Student Withdrawals Ledger */}
+          {activeReportId === 'withdrawals' && (
+            <ExcelReportGrid
+              title="Student Withdrawals Ledger"
+              subtitle="Comprehensive record of exited students, retained fees, and refunded amounts"
+              columns={[
+                { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-slate-800">{val}</span> },
+                { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
+                { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 120 },
+                { id: 'division_name', header: 'Batch', accessorKey: 'division_name', type: 'text', width: 130 },
+                { id: 'exit_date', header: 'Exit Date', accessorKey: 'exit_date', type: 'date', width: 110, sortable: true },
+                { id: 'exit_reason', header: 'Reason', accessorKey: 'exit_reason', type: 'text', width: 150 },
+                { id: 'gross_paid', header: 'Gross Paid (₹)', accessorKey: 'gross_paid', type: 'currency', width: 140, align: 'right', render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                { id: 'refund_amount', header: 'Refunded (₹)', accessorKey: 'refund_amount', type: 'currency', width: 140, align: 'right', render: (val) => <span className="font-bold text-amber-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                { id: 'net_retained', header: 'Net Retained (₹)', accessorKey: 'net_retained', type: 'currency', width: 150, align: 'right', render: (val) => <span className="font-bold text-indigo-800">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+              ]}
+              data={withdrawalsReport}
+              loading={loadingWithdrawals}
+              exportFilename="student_withdrawals_report"
+              sheetName="Withdrawals"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 21. Student Attrition Analytics */}
+          {activeReportId === 'withdrawal-analytics' && analyticsData && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Total Exits</div>
+                  <div className="text-2xl font-black text-rose-700 mt-1">{analyticsData.summary?.withdrawn_students || 0}</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Total Paid at Exit</div>
+                  <div className="text-xl font-bold text-slate-900 mt-1">₹{Number(analyticsData.summary?.gross_paid || 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Total Refunded</div>
+                  <div className="text-xl font-bold text-amber-700 mt-1">₹{Number(analyticsData.summary?.refund_amount || 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold uppercase">Net Retained</div>
+                  <div className="text-xl font-bold text-indigo-700 mt-1">₹{Number(analyticsData.summary?.net_retained || 0).toLocaleString('en-IN')}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+                  <h3 className="font-bold text-slate-900 text-sm mb-4">Exits by Reason</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={analyticsData.by_reason || []} dataKey="count" nameKey="reason" cx="50%" cy="50%" outerRadius={80} label>
+                          {(analyticsData.by_reason || []).map((_: any, idx: number) => (
+                            <Cell key={`cell-${idx}`} fill={['#f43f5e', '#f59e0b', '#06b6d4', '#6366f1', '#8b5cf6'][idx % 5]} />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
-              )}
-            </>
+
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+                  <h3 className="font-bold text-slate-900 text-sm mb-4">Monthly Attrition Trend</h3>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={analyticsData.trends_monthly || []}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Line type="monotone" dataKey="count" stroke="#e11d48" strokeWidth={2} dot={{ r: 4 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}

@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, Response, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_, desc
 from typing import Optional, List, Dict, Any
-from datetime import date
+from datetime import datetime, date
 from decimal import Decimal
 import io
 import csv
@@ -40,7 +40,11 @@ from app.models.board import Board
 from app.models.enrollment import StudentEnrollment
 from app.models.academic_year import AcademicYear
 from app.models.portal import TimetableEntry
-from app.models.user import User
+from app.models.attendance import Attendance
+from app.models.exam import Examination, ExamMark
+from app.models.subject import Subject
+from app.models.staff import TeacherAssignment
+from app.models.user import User, AuditLog
 from app.services.codex_service import CodeXService
 
 router = APIRouter()
@@ -296,7 +300,7 @@ async def outstanding_report(
     
     result = await db.execute(query)
     rows = result.all()
-    return [
+    records = [
         {
             "invoice_id": inv.id,
             "invoice_number": inv.invoice_number,
@@ -311,6 +315,15 @@ async def outstanding_report(
         }
         for inv, s in rows
     ]
+    user_inst_id = institution_id or getattr(current_user, "institution_id", None) or 1
+    return await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=records,
+        numeric_fields=["net_amount", "paid_amount", "outstanding"],
+        module="reports",
+    )
 
 
 @router.get("/payments-summary")
@@ -331,7 +344,7 @@ async def payments_summary(
     query = query.group_by(Payment.payment_method)
     result = await db.execute(query)
     rows = result.all()
-    return [
+    records = [
         {
             "payment_method": r.payment_method,
             "count": r.count,
@@ -339,6 +352,15 @@ async def payments_summary(
         }
         for r in rows
     ]
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    return await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=records,
+        numeric_fields=["total"],
+        module="reports",
+    )
 
 
 # ─── Academic Reports ──────────────────────────────────────────────────────────
@@ -919,7 +941,7 @@ async def export_student_withdrawals_report(
         extrasaction="ignore",
     )
     writer.writeheader()
-    writer.writerows(export_rows)
+    writer.writerows(data)
     output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
 
     return Response(
@@ -927,6 +949,588 @@ async def export_student_withdrawals_report(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=student_withdrawals_report.csv"},
     )
+
+
+# ============================================================================
+# 5. NEW CENTRAL REPORTING & ANALYTICS MODULE-WISE ENDPOINTS
+# ============================================================================
+
+@router.get("/students/master-directory")
+async def student_master_directory_report(
+    academic_year_id: Optional[int] = None,
+    board_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Exportable Demographic Roster of all enrolled students with academic allocations,
+    guardian contact, and status.
+    """
+    inst_id = current_user.institution_id or 1
+    query = (
+        select(Student, StudentEnrollment, Standard, Division, Board)
+        .outerjoin(
+            StudentEnrollment,
+            (Student.id == StudentEnrollment.student_id)
+            & (
+                (StudentEnrollment.academic_year_id == academic_year_id)
+                if academic_year_id
+                else (StudentEnrollment.status == "enrolled")
+            ),
+        )
+        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .where(Student.institution_id == inst_id)
+    )
+
+    if board_id:
+        query = query.where(Board.id == board_id)
+    if standard_id:
+        query = query.where(Standard.id == standard_id)
+    if division_id:
+        query = query.where(Division.id == division_id)
+    if status and status != "all":
+        query = query.where(StudentEnrollment.status == status)
+    if search:
+        s_term = f"%{search}%"
+        query = query.where(
+            or_(
+                Student.first_name.ilike(s_term),
+                Student.last_name.ilike(s_term),
+                Student.admission_number.ilike(s_term),
+                Student.phone.ilike(s_term),
+            )
+        )
+
+    res = await db.execute(query.order_by(Student.admission_number))
+    rows = res.all()
+
+    return [
+        {
+            "id": s.id,
+            "admission_number": s.admission_number,
+            "student_name": f"{s.first_name} {s.last_name}",
+            "first_name": s.first_name,
+            "last_name": s.last_name,
+            "gender": s.gender or "N/A",
+            "date_of_birth": s.date_of_birth.isoformat() if s.date_of_birth else None,
+            "phone": s.phone,
+            "email": s.email,
+            "blood_group": getattr(s, "blood_group", None) or "N/A",
+            "emergency_contact": getattr(s, "emergency_contact", None) or s.phone,
+            "standard_name": std.name if std else "Unassigned",
+            "division_name": div.name if div else "Unassigned",
+            "batch_code": div.code if div else None,
+            "board_name": brd.name if brd else "N/A",
+            "admission_date": s.admission_date.isoformat() if s.admission_date else None,
+            "status": enr.status if enr else ("active" if s.is_active else "inactive"),
+            "is_active": s.is_active,
+            "city": s.city or "Mumbai",
+            "address": getattr(s, "current_address", None) or s.city or "",
+        }
+        for s, enr, std, div, brd in rows
+    ]
+
+
+@router.get("/attendance/summary")
+async def student_attendance_summary_report(
+    academic_year_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    defaulters_only: bool = Query(False),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Cohort and batch-level student attendance summary with percentage computation
+    and chronic defaulter (<75%) identification.
+    """
+    inst_id = current_user.institution_id or 1
+
+    enr_query = (
+        select(Student, StudentEnrollment, Standard, Division)
+        .join(StudentEnrollment, Student.id == StudentEnrollment.student_id)
+        .join(Standard, StudentEnrollment.standard_id == Standard.id)
+        .join(Division, StudentEnrollment.division_id == Division.id)
+        .where(Student.institution_id == inst_id)
+    )
+    if academic_year_id:
+        enr_query = enr_query.where(StudentEnrollment.academic_year_id == academic_year_id)
+    if standard_id:
+        enr_query = enr_query.where(Standard.id == standard_id)
+    if division_id:
+        enr_query = enr_query.where(Division.id == division_id)
+
+    students_res = await db.execute(enr_query)
+    student_records = students_res.all()
+
+    att_conditions = [Student.institution_id == inst_id]
+    if start_date:
+        att_conditions.append(Attendance.date >= start_date)
+    if end_date:
+        att_conditions.append(Attendance.date <= end_date)
+
+    att_query = (
+        select(
+            Attendance.student_id,
+            func.count(Attendance.id).label("total_days"),
+            func.count(func.nullif(Attendance.status.notin_(["present", "late"]), True)).label("present_days"),
+            func.count(func.nullif(Attendance.status != "absent", True)).label("absent_days"),
+            func.count(func.nullif(Attendance.status != "late", True)).label("late_days"),
+        )
+        .join(Student, Attendance.student_id == Student.id)
+        .where(and_(*att_conditions))
+        .group_by(Attendance.student_id)
+    )
+    att_res = await db.execute(att_query)
+    att_map = {row.student_id: row for row in att_res.all()}
+
+    output = []
+    for s, enr, std, div in student_records:
+        att = att_map.get(s.id)
+        tot = att.total_days if att else 0
+        pres = att.present_days if att else 0
+        ab = att.absent_days if att else 0
+        lt = att.late_days if att else 0
+        pct = round((pres / tot) * 100, 1) if tot > 0 else 100.0
+        is_def = tot > 0 and pct < 75.0
+
+        if defaulters_only and not is_def:
+            continue
+
+        output.append({
+            "student_id": s.id,
+            "admission_number": s.admission_number,
+            "student_name": f"{s.first_name} {s.last_name}",
+            "standard_name": std.name,
+            "division_name": div.name,
+            "total_days": tot,
+            "present_days": pres,
+            "absent_days": ab,
+            "late_days": lt,
+            "attendance_percentage": pct,
+            "is_defaulter": is_def,
+            "status": "Defaulter (<75%)" if is_def else ("Good" if pct >= 85.0 else "Average"),
+        })
+
+    return output
+
+
+@router.get("/academic/curriculum-matrix")
+async def academic_curriculum_matrix_report(
+    board_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Cross-tabulation matrix of subjects taught per standard and board,
+    weekly instructional workload, and assigned faculty members.
+    """
+    inst_id = current_user.institution_id or 1
+    query = (
+        select(Subject, Standard)
+        .join(Standard, Subject.standard_id == Standard.id)
+        .where(Standard.institution_id == inst_id)
+    )
+    if standard_id:
+        query = query.where(Standard.id == standard_id)
+    if board_id:
+        query = query.where(
+            Standard.id.in_(
+                select(Division.standard_id).where(Division.board_id == board_id)
+            )
+        )
+
+    res = await db.execute(query.order_by(Standard.level, Subject.name))
+    rows = res.all()
+
+    # Map standards to their boards via divisions
+    div_boards_res = await db.execute(
+        select(Division.standard_id, Board.name)
+        .join(Board, Division.board_id == Board.id)
+        .distinct()
+    )
+    std_board_map: Dict[int, List[str]] = {}
+    for sid, bname in div_boards_res.all():
+        std_board_map.setdefault(sid, []).append(bname)
+
+    assign_query = (
+        select(TeacherAssignment.subject_id, User.first_name, User.last_name)
+        .join(User, TeacherAssignment.teacher_user_id == User.id)
+        .where(TeacherAssignment.is_active == True)
+    )
+    assign_res = await db.execute(assign_query)
+    teacher_map: Dict[int, List[str]] = {}
+    for sub_id, fn, ln in assign_res.all():
+        teacher_map.setdefault(sub_id, []).append(f"{fn} {ln}")
+
+    return [
+        {
+            "subject_id": sub.id,
+            "subject_name": sub.name,
+            "subject_code": sub.code or "N/A",
+            "standard_name": std.name,
+            "board_name": ", ".join(std_board_map.get(std.id, ["All Boards"])),
+            "weekly_hours": getattr(sub, "weekly_hours", 4.0) or 4.0,
+            "assigned_teachers_count": len(teacher_map.get(sub.id, [])),
+            "teachers_list": ", ".join(set(teacher_map.get(sub.id, []))) or "Unassigned",
+        }
+        for sub, std in rows
+    ]
+
+
+@router.get("/academic/timetable-utilization")
+async def timetable_utilization_report(
+    division_id: Optional[int] = None,
+    day_of_week: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Weekly schedule occupancy analysis showing room utilization, weekday distribution,
+    and instructional session coverage.
+    """
+    inst_id = current_user.institution_id or 1
+    query = (
+        select(TimetableEntry, Division, Subject, User)
+        .join(Division, TimetableEntry.division_id == Division.id)
+        .join(Subject, TimetableEntry.subject_id == Subject.id)
+        .outerjoin(User, TimetableEntry.teacher_id == User.id)
+        .join(Standard, Division.standard_id == Standard.id)
+        .where(Standard.institution_id == inst_id)
+    )
+    if division_id:
+        query = query.where(Division.id == division_id)
+    if day_of_week:
+        query = query.where(TimetableEntry.day_of_week.ilike(day_of_week))
+
+    res = await db.execute(query.order_by(TimetableEntry.day_of_week, TimetableEntry.start_time))
+    rows = res.all()
+
+    return [
+        {
+            "id": te.id,
+            "day_of_week": te.day_of_week,
+            "start_time": te.start_time,
+            "end_time": te.end_time,
+            "room_number": te.room_number or "Room A1",
+            "batch_name": div.name,
+            "batch_code": div.code or div.name,
+            "subject_name": sub.name,
+            "teacher_name": f"{u.first_name} {u.last_name}" if u else "Unassigned",
+            "is_active": te.is_active,
+        }
+        for te, div, sub, u in rows
+    ]
+
+
+@router.get("/examinations/consolidated-merit")
+async def exam_consolidated_merit_report(
+    exam_id: Optional[int] = None,
+    academic_year_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Consolidated cohort exam merit ranking and performance register
+    with aggregate marks, percentage, letter grades, and ranks.
+    """
+    inst_id = current_user.institution_id or 1
+
+    target_exam_id = exam_id
+    if not target_exam_id:
+        exam_q = (
+            select(Examination.id)
+            .join(Standard, Examination.standard_id == Standard.id)
+            .where(Standard.institution_id == inst_id)
+        )
+        if academic_year_id:
+            exam_q = exam_q.where(Examination.academic_year_id == academic_year_id)
+        if standard_id:
+            exam_q = exam_q.where(Examination.standard_id == standard_id)
+        target_exam_id = (await db.execute(exam_q.order_by(Examination.id.desc()).limit(1))).scalar_one_or_none()
+
+    if not target_exam_id:
+        return []
+
+    exam = (await db.execute(select(Examination).where(Examination.id == target_exam_id))).scalar_one_or_none()
+    if not exam:
+        return []
+
+    marks_query = (
+        select(ExamMark, Student, Subject)
+        .join(Student, ExamMark.student_id == Student.id)
+        .join(Subject, ExamMark.subject_id == Subject.id)
+        .where(ExamMark.examination_id == target_exam_id)
+    )
+    marks_res = await db.execute(marks_query)
+    marks_rows = marks_res.all()
+
+    student_marks_map: Dict[int, Dict[str, Any]] = {}
+    for m, s, sub in marks_rows:
+        if s.id not in student_marks_map:
+            student_marks_map[s.id] = {
+                "student_id": s.id,
+                "admission_number": s.admission_number,
+                "student_name": f"{s.first_name} {s.last_name}",
+                "exam_name": exam.name,
+                "marks_obtained": Decimal("0.00"),
+                "max_marks": Decimal("0.00"),
+                "subject_count": 0,
+                "has_failed_subject": False,
+            }
+        sm = student_marks_map[s.id]
+        obt = m.marks_obtained or Decimal("0.00")
+        sm["marks_obtained"] += obt
+        sm["max_marks"] += Decimal(str(exam.max_marks))
+        sm["subject_count"] += 1
+        if obt < Decimal(str(exam.passing_marks)):
+            sm["has_failed_subject"] = True
+
+    results = []
+    for sm in student_marks_map.values():
+        max_m = float(sm["max_marks"]) if sm["max_marks"] > 0 else 100.0
+        obt_m = float(sm["marks_obtained"])
+        pct = round((obt_m / max_m) * 100, 1)
+
+        if pct >= 90:
+            grade = "A+"
+        elif pct >= 80:
+            grade = "A"
+        elif pct >= 70:
+            grade = "B"
+        elif pct >= 60:
+            grade = "C"
+        elif pct >= 50:
+            grade = "D"
+        else:
+            grade = "E"
+
+        status = "Pass" if not sm["has_failed_subject"] and pct >= 35.0 else "Fail"
+
+        results.append({
+            "student_id": sm["student_id"],
+            "admission_number": sm["admission_number"],
+            "student_name": sm["student_name"],
+            "exam_name": sm["exam_name"],
+            "marks_obtained": obt_m,
+            "max_marks": max_m,
+            "percentage": pct,
+            "grade": grade,
+            "status": status,
+            "subject_count": sm["subject_count"],
+        })
+
+    results.sort(key=lambda x: x["percentage"], reverse=True)
+    for idx, r in enumerate(results, 1):
+        r["rank"] = idx
+
+    return results
+
+
+@router.get("/fees/defaulters")
+async def fee_defaulters_aging_report(
+    academic_year_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    institution_id: Optional[int] = None,
+    min_days_overdue: int = Query(0),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Consolidated overdue fee aging register with guardian contacts, days overdue,
+    and CodeX privacy masking.
+    """
+    inst_id = institution_id or getattr(current_user, "institution_id", None)
+    today = date.today()
+
+    query = (
+        select(FeeInstallment, FeeInvoice, Student, StudentEnrollment, Standard, Division)
+        .join(FeeInvoice, FeeInstallment.invoice_id == FeeInvoice.id)
+        .join(Student, FeeInvoice.student_id == Student.id)
+        .outerjoin(
+            StudentEnrollment,
+            (Student.id == StudentEnrollment.student_id)
+            & (
+                (StudentEnrollment.academic_year_id == academic_year_id)
+                if academic_year_id
+                else (StudentEnrollment.status == "enrolled")
+            ),
+        )
+        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .where(
+            FeeInstallment.status.in_(["unpaid", "overdue", "partially_paid"]),
+            FeeInstallment.due_date < today,
+        )
+    )
+
+    if inst_id:
+        query = query.where(Student.institution_id == inst_id)
+
+    if academic_year_id:
+        query = query.where(FeeInvoice.academic_year_id == academic_year_id)
+    if standard_id:
+        query = query.where(Standard.id == standard_id)
+    if division_id:
+        query = query.where(Division.id == division_id)
+
+    res = await db.execute(query.order_by(FeeInstallment.due_date))
+    rows = res.all()
+
+    records = []
+    for inst, inv, s, enr, std, div in rows:
+        days = (today - inst.due_date).days if inst.due_date else 0
+        if days < min_days_overdue:
+            continue
+
+        records.append({
+            "installment_id": inst.id,
+            "invoice_id": inv.id,
+            "admission_number": s.admission_number,
+            "student_name": f"{s.first_name} {s.last_name}",
+            "standard_name": std.name if std else "N/A",
+            "division_name": div.name if div else "N/A",
+            "guardian_phone": s.phone or "N/A",
+            "installment_name": inst.description or f"Installment #{inst.installment_number}",
+            "due_date": inst.due_date.isoformat() if inst.due_date else None,
+            "days_overdue": days,
+            "overdue_amount": float(inst.amount - (inst.paid_amount or 0)),
+            "total_outstanding": float(inv.outstanding_amount),
+            "status": "Severely Overdue" if days > 60 else ("Overdue" if days > 30 else "Grace Period"),
+        })
+
+    return await CodeXService.mask_records_list(
+        db=db,
+        institution_id=inst_id or 1,
+        user=current_user,
+        records=records,
+        numeric_fields=["overdue_amount", "total_outstanding"],
+        module="reports",
+    )
+
+
+@router.get("/fees/daily-collection")
+async def daily_payment_collection_report(
+    date_val: Optional[date] = Query(None, alias="date"),
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    payment_mode: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Day-wise cashier intake register showing receipt numbers, student admissions,
+    payment modes, and transaction references with CodeX masking.
+    """
+    inst_id = current_user.institution_id or 1
+    today = date.today()
+
+    s_date = start_date or date_val or today
+    e_date = end_date or date_val or today
+
+    query = (
+        select(Payment, Student, User)
+        .join(Student, Payment.student_id == Student.id)
+        .outerjoin(User, Payment.collected_by_id == User.id)
+        .where(
+            Student.institution_id == inst_id,
+            Payment.status.in_(["completed", "posted"]),
+            Payment.payment_date >= s_date,
+            Payment.payment_date <= e_date,
+        )
+    )
+
+    if payment_mode and payment_mode != "all":
+        query = query.where(Payment.payment_method == payment_mode)
+
+    res = await db.execute(query.order_by(Payment.payment_date.desc(), Payment.id.desc()))
+    rows = res.all()
+
+    records = [
+        {
+            "payment_id": p.id,
+            "receipt_number": getattr(p, "receipt_number", None) or f"REC-{p.id:06d}",
+            "payment_date": p.payment_date.isoformat() if p.payment_date else None,
+            "admission_number": s.admission_number,
+            "student_name": f"{s.first_name} {s.last_name}",
+            "amount": float(p.amount),
+            "payment_mode": p.payment_method or "cash",
+            "transaction_reference": p.transaction_reference or "N/A",
+            "collector_name": f"{u.first_name} {u.last_name}" if u else "Self/Online",
+            "status": p.status,
+        }
+        for p, s, u in rows
+    ]
+
+    return await CodeXService.mask_records_list(
+        db=db,
+        institution_id=inst_id,
+        user=current_user,
+        records=records,
+        numeric_fields=["amount"],
+        module="reports",
+    )
+
+
+@router.get("/system/audit-summary")
+async def system_audit_summary_report(
+    severity: Optional[str] = None,
+    resource_type: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    limit: int = Query(100, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Institutional user activity, login, and authorization verification audit log.
+    """
+    query = (
+        select(AuditLog, User)
+        .outerjoin(User, AuditLog.user_id == User.id)
+    )
+
+    conditions = []
+    if severity:
+        conditions.append(AuditLog.severity == severity)
+    if resource_type:
+        conditions.append(AuditLog.resource_type == resource_type)
+    if start_date:
+        conditions.append(AuditLog.created_at >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        conditions.append(AuditLog.created_at <= datetime.combine(end_date, datetime.max.time()))
+
+    if conditions:
+        query = query.where(and_(*conditions))
+
+    res = await db.execute(query.order_by(AuditLog.created_at.desc()).limit(limit))
+    rows = res.all()
+
+    return [
+        {
+            "id": a.id,
+            "timestamp": a.created_at.isoformat() if a.created_at else None,
+            "actor_name": f"{u.first_name} {u.last_name}" if u else "System / Anonymous",
+            "action": a.action,
+            "resource_type": a.resource_type,
+            "resource_id": a.resource_id,
+            "severity": a.severity or "info",
+            "ip_address": a.ip_address or "127.0.0.1",
+            "details": a.details or a.new_data or "N/A",
+        }
+        for a, u in rows
+    ]
 
 
 

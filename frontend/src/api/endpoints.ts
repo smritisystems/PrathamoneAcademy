@@ -572,6 +572,54 @@ export const reportsApi = {
       params,
       responseType: 'blob',
     }),
+  studentMasterDirectory: (params?: {
+    academic_year_id?: number | string
+    board_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+    status?: string
+    search?: string
+  }) => apiClient.get<any[]>('/reports/students/master-directory', { params }),
+  attendanceSummary: (params?: {
+    academic_year_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+    start_date?: string
+    end_date?: string
+    defaulters_only?: boolean
+  }) => apiClient.get<any[]>('/reports/attendance/summary', { params }),
+  curriculumMatrix: (params?: {
+    board_id?: number | string
+    standard_id?: number | string
+  }) => apiClient.get<any[]>('/reports/academic/curriculum-matrix', { params }),
+  timetableUtilization: (params?: {
+    division_id?: number | string
+    day_of_week?: string
+  }) => apiClient.get<any[]>('/reports/academic/timetable-utilization', { params }),
+  examMeritRegister: (params?: {
+    exam_id?: number | string
+    academic_year_id?: number | string
+    standard_id?: number | string
+  }) => apiClient.get<any[]>('/reports/examinations/consolidated-merit', { params }),
+  feeDefaulters: (params?: {
+    academic_year_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+    min_days_overdue?: number
+  }) => apiClient.get<any[]>('/reports/fees/defaulters', { params }),
+  dailyCollection: (params?: {
+    date?: string
+    start_date?: string
+    end_date?: string
+    payment_mode?: string
+  }) => apiClient.get<any[]>('/reports/fees/daily-collection', { params }),
+  systemAuditSummary: (params?: {
+    severity?: string
+    resource_type?: string
+    start_date?: string
+    end_date?: string
+    limit?: number
+  }) => apiClient.get<any[]>('/reports/system/audit-summary', { params }),
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
