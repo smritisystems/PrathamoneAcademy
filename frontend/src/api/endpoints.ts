@@ -49,6 +49,7 @@ import type {
   PaymentGatewayConfig, OnlineOrderResponse, OnlinePaymentVerifyPayload, OnlinePaymentVerifyResult,
   TeacherDashboardData, StaffDashboardData, StaffLifecyclePayload, EmployeeActivityHistoryItem,
   CodexConfig, CodexMappingProfile, CodexMappingVersion, CodexScopeAssignment, CodexAuditLogItem, CodexConfigResponse,
+  LeadItem, LeadFollowUpItem, LeadDemoClassItem, LeadDossierResponse, LeadKanbanResponse, LeadMetricsSummary,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -1451,4 +1452,51 @@ export const codexApi = {
     apiClient.get<CodexAuditLogItem[]>('/codex/audit-logs', { params }),
   getUserStatus: (module?: string) =>
     apiClient.get<{ is_enabled: boolean; visibility_mode: string; can_decode: boolean; can_generate_qr: boolean; reason: string }>('/codex/user-status', { params: { module } }),
+}
+
+// ─── Lead Management & CRM ───────────────────────────────────────────────────
+
+export const leadsApi = {
+  getLeads: (params?: {
+    stage?: string
+    priority?: string
+    source?: string
+    assigned_to_id?: number
+    standard_id?: number
+    academic_year_id?: number
+    search?: string
+    follow_up_filter?: string
+    page?: number
+    limit?: number
+  }) => apiClient.get<{ items: LeadItem[]; total: number; page: number; limit: number; total_pages: number }>('/leads', { params }),
+
+  getKanban: (params?: { source?: string; assigned_to_id?: number }) =>
+    apiClient.get<LeadKanbanResponse>('/leads/kanban', { params }),
+
+  getMetrics: () =>
+    apiClient.get<LeadMetricsSummary>('/leads/metrics/summary'),
+
+  getLeadDossier: (id: number | string) =>
+    apiClient.get<LeadDossierResponse>(`/leads/${id}`),
+
+  createLead: (data: any) =>
+    apiClient.post<LeadItem>('/leads', data),
+
+  updateLead: (id: number | string, data: any) =>
+    apiClient.put<LeadItem>(`/leads/${id}`, data),
+
+  updateStage: (id: number | string, data: { stage: string; remarks?: string; lost_reason?: string; lost_notes?: string }) =>
+    apiClient.patch<LeadItem>(`/leads/${id}/stage`, data),
+
+  addFollowUp: (id: number | string, data: { follow_up_type: string; outcome?: string; remarks: string; next_follow_up_at?: string | null; update_lead_stage?: string }) =>
+    apiClient.post<{ success: boolean; message: string }>(`/leads/${id}/follow-ups`, data),
+
+  scheduleDemo: (id: number | string, data: { standard_id?: number; subject_id?: number; teacher_id?: number; scheduled_at: string; feedback?: string }) =>
+    apiClient.post<{ success: boolean; message: string }>(`/leads/${id}/demo-classes`, data),
+
+  convertToAdmission: (id: number | string, data: any) =>
+    apiClient.post<{ success: boolean; message: string; student_id: number; admission_number: string; student_name: string }>(`/leads/${id}/convert`, data),
+
+  deleteLead: (id: number | string) =>
+    apiClient.delete<{ success: boolean; message: string }>(`/leads/${id}`),
 }

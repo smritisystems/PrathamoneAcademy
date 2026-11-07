@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-07
  *
  * @description Zustand state store managing responsive sidebar layout state, collapsed rails, and mobile drawer.
  */
@@ -25,6 +25,7 @@ interface SidebarStore {
   desktopState: DesktopSidebarState
   mobileOpen: boolean
   academicOpen: boolean
+  crmOpen: boolean
   setDesktopState: (state: DesktopSidebarState) => void
   toggleCollapse: () => void
   toggleHidden: () => void
@@ -34,6 +35,8 @@ interface SidebarStore {
   closeMobile: () => void
   setAcademicOpen: (open: boolean | ((prev: boolean) => boolean)) => void
   toggleAcademicOpen: () => void
+  setCrmOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  toggleCrmOpen: () => void
 }
 
 const getInitialDesktopState = (): DesktopSidebarState => {
@@ -62,6 +65,7 @@ export const useSidebarStore = create<SidebarStore>()(
       desktopState: getInitialDesktopState(),
       mobileOpen: false,
       academicOpen: true,
+      crmOpen: true,
 
       setDesktopState: (desktopState) => set({ desktopState }),
 
@@ -90,12 +94,21 @@ export const useSidebarStore = create<SidebarStore>()(
 
       toggleAcademicOpen: () =>
         set((state) => ({ academicOpen: !state.academicOpen })),
+
+      setCrmOpen: (updater) =>
+        set((state) => ({
+          crmOpen: typeof updater === 'function' ? updater(state.crmOpen) : updater,
+        })),
+
+      toggleCrmOpen: () =>
+        set((state) => ({ crmOpen: !state.crmOpen })),
     }),
     {
       name: 'prashant_sidebar_state',
       partialize: (state) => ({
         desktopState: state.desktopState,
         academicOpen: state.academicOpen,
+        crmOpen: state.crmOpen,
       }),
     }
   )

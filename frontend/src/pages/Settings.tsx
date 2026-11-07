@@ -33,7 +33,7 @@ import type {
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
 import { useBranding } from '../config/branding'
 import OrganizationBranding from '../components/OrganizationBranding'
 
@@ -408,6 +408,10 @@ export default function Settings() {
   }
 
   const handleDeleteLookup = async (item: LookupItem) => {
+    if (!isEditMode) {
+      showNotification('error', 'Activate Edit Mode to delete or deactivate lookup items.')
+      return
+    }
     if (!confirm(`Are you sure you want to ${item.is_system ? 'deactivate' : 'delete'} lookup "${item.label}" (${item.code})?`)) {
       return
     }
@@ -451,6 +455,10 @@ export default function Settings() {
 
   // Reset category defaults
   const handleResetDefaults = async (category: string) => {
+    if (!isEditMode) {
+      showNotification('error', 'Activate Edit Mode to reset category settings.')
+      return
+    }
     if (!confirm(`Are you sure you want to reset "${category}" settings to system defaults? Custom values will be reverted.`)) {
       return
     }
@@ -2182,24 +2190,22 @@ export default function Settings() {
                                     <span className="text-[10px] text-gray-400">Custom</span>
                                   )}
                                 </td>
-                                <td className="px-4 py-2.5 text-right space-x-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEditLookup(item)}
-                                    className="p-1 text-gray-500 hover:text-blue-600 rounded transition-colors"
-                                    title="Edit lookup"
-                                  >
-                                    <Edit className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteLookup(item)}
-                                    className="p-1 text-gray-500 hover:text-rose-600 rounded transition-colors"
-                                    title={item.is_system ? 'Deactivate system lookup' : 'Delete lookup'}
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </td>
+                                  <td className="px-4 py-2.5 text-right space-x-1.5">
+                                    <LockedIconButton
+                                      isEditMode={isEditMode}
+                                      onClick={() => handleOpenEditLookup(item)}
+                                      icon={<Edit className="w-3.5 h-3.5" />}
+                                      tooltip="Edit lookup"
+                                      className="p-1 text-gray-500 hover:text-blue-600 rounded transition-colors"
+                                    />
+                                    <LockedIconButton
+                                      isEditMode={isEditMode}
+                                      onClick={() => handleDeleteLookup(item)}
+                                      icon={<Trash2 className="w-3.5 h-3.5" />}
+                                      tooltip={item.is_system ? 'Deactivate system lookup' : 'Delete lookup'}
+                                      className="p-1 text-gray-500 hover:text-rose-600 rounded transition-colors"
+                                    />
+                                  </td>
                               </tr>
                             ))}
                             {filteredLookups.length === 0 && (
@@ -2369,14 +2375,14 @@ export default function Settings() {
                         <p className="text-xs text-gray-500">
                           Restore factory settings baseline for any operational category. Custom values will be cleared.
                         </p>
-                        <button
-                          type="button"
+                        <LockedButton
+                          isEditMode={isEditMode}
                           onClick={() => handleResetDefaults('academic')}
+                          icon={RotateCcw}
                           className="px-3.5 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 rounded-lg flex items-center gap-1.5 shadow-2xs"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Reset Academic Defaults</span>
-                        </button>
+                          Reset Academic Defaults
+                        </LockedButton>
                       </div>
                     </div>
 

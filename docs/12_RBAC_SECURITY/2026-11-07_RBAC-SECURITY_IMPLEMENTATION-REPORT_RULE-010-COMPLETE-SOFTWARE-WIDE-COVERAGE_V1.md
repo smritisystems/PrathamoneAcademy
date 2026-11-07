@@ -190,3 +190,4 @@ To prevent future regressions, an automated verification engine was built and ad
 1. **New Pages / Workspaces:** Any future workspace added to `frontend/src/pages/` must immediately define an `editScope`, import and render `EditModeBar`, and guard all mutation triggers with `if (!isEditMode)`.
 2. **Automated Verification in CI/CD:** Include `python scripts/check_view_first_governance.py` in pre-commit and deployment verification pipelines.
 3. **Ledger Immutability:** Never expose `DELETE` endpoints for financial transactions. Adjustments must follow double-entry reversals with auditable reasons.
+

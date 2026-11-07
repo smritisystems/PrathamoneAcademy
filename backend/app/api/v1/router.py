@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description Central v1 API router registering all domain endpoint routers.
 #  */
@@ -46,6 +46,7 @@ from app.api.v1.endpoints import (
     releases,
     teacher_payroll,
     codex,
+    leads,
 )
 
 api_router = APIRouter()
@@ -97,3 +98,4 @@ api_router.include_router(releases.router, prefix="/releases", tags=["releases"]
 
 api_router.include_router(teacher_payroll.router, prefix="/teacher-payroll", tags=["teacher-payroll"])
 api_router.include_router(codex.router, prefix="/codex", tags=["codex"])
+api_router.include_router(leads.router, prefix="/leads", tags=["leads"])

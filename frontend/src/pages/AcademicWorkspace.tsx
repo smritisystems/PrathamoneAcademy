@@ -34,7 +34,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton } from '../components/common'
 import Modal from '../components/Modal'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import toast from 'react-hot-toast'
@@ -53,6 +53,19 @@ export default function AcademicWorkspace() {
   // ── Global View-First & Scoped Edit Mode Governance ──
   const editScope = 'academic:workspace'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
+
+  // Delete & Archive Confirmation Protection Modal State
+  const [deleteModalState, setDeleteModalState] = useState<{
+    isOpen: boolean
+    targetType: 'batch' | 'subject' | 'session' | null
+    id: number | null
+    name: string
+  }>({
+    isOpen: false,
+    targetType: null,
+    id: null,
+    name: '',
+  })
 
   // ── Top Navigation Tabs ──
   const [activeTab, setActiveTab] = useState<string>(activeTabParam)
@@ -1822,17 +1835,20 @@ export default function AcademicWorkspace() {
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => {
-                                    if (window.confirm(`Are you sure you want to archive batch '${batch.name}'?`)) {
-                                      archiveBatchMutation.mutate(batch.id)
-                                    }
+                                    setDeleteModalState({
+                                      isOpen: true,
+                                      targetType: 'batch',
+                                      id: batch.id,
+                                      name: `Batch '${batch.name}'`,
+                                    })
                                   }}
-                                  className="p-1.5 bg-gray-50 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-xl border border-gray-200 transition-colors"
+                                  icon={Archive}
                                   title="Archive Batch"
-                                >
-                                  <Archive className="w-3.5 h-3.5" />
-                                </button>
+                                  tone="danger"
+                                />
                               </div>
                             </div>
                           )
@@ -2291,17 +2307,20 @@ export default function AcademicWorkspace() {
                           >
                             <Edit2 className="w-3.5 h-3.5 inline" />
                           </button>
-                          <button
+                          <LockedIconButton
+                            isEditMode={isEditMode}
                             onClick={() => {
-                              if (window.confirm(`Delete subject '${sub.name}'?`)) {
-                                deleteSubjectMutation.mutate(sub.id)
-                              }
+                              setDeleteModalState({
+                                isOpen: true,
+                                targetType: 'subject',
+                                id: sub.id,
+                                name: `Subject '${sub.name}'`,
+                              })
                             }}
-                            className="p-1 text-gray-400 hover:text-red-600"
+                            icon={Trash2}
                             title="Delete Subject"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 inline" />
-                          </button>
+                            tone="danger"
+                          />
                         </td>
                       </tr>
                     ))}
@@ -2557,17 +2576,21 @@ export default function AcademicWorkspace() {
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-extrabold text-gray-900 text-[11px]">{s.subject_name}</span>
-                          <button
+                          <LockedIconButton
+                            isEditMode={isEditMode}
                             onClick={() => {
-                              if (window.confirm('Delete this timetable session?')) {
-                                deleteSessionMutation.mutate(s.id)
-                              }
+                              setDeleteModalState({
+                                isOpen: true,
+                                targetType: 'session',
+                                id: s.id,
+                                name: `Timetable Session '${s.subject_name}'`,
+                              })
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 p-0.5 transition-opacity"
+                            icon={Trash2}
                             title="Delete Session"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                            tone="danger"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          />
                         </div>
                         <p className="text-[11px] font-semibold text-blue-600">{s.division_name}</p>
                         <p className="text-[10px] text-gray-500 font-mono">
@@ -4017,6 +4040,40 @@ export default function AcademicWorkspace() {
           </div>
         </div>
       </Modal>
+
+      {/* Rule 010 Delete & Archive Confirmation Protection Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalState.isOpen}
+        onClose={() => setDeleteModalState({ isOpen: false, targetType: null, id: null, name: '' })}
+        scope={editScope}
+        entityType={
+          deleteModalState.targetType === 'batch'
+            ? 'Academic Batch'
+            : deleteModalState.targetType === 'subject'
+            ? 'Subject'
+            : deleteModalState.targetType === 'session'
+            ? 'Timetable Session'
+            : 'Record'
+        }
+        entityName={deleteModalState.name}
+        entityId={deleteModalState.id ?? undefined}
+        onConfirm={async () => {
+          if (!deleteModalState.id) return
+          if (deleteModalState.targetType === 'batch') {
+            await archiveBatchMutation.mutateAsync(deleteModalState.id)
+          } else if (deleteModalState.targetType === 'subject') {
+            await deleteSubjectMutation.mutateAsync(deleteModalState.id)
+          } else if (deleteModalState.targetType === 'session') {
+            await deleteSessionMutation.mutateAsync(deleteModalState.id)
+          }
+          setDeleteModalState({ isOpen: false, targetType: null, id: null, name: '' })
+        }}
+        isLoading={
+          archiveBatchMutation.isPending ||
+          deleteSubjectMutation.isPending ||
+          deleteSessionMutation.isPending
+        }
+      />
     </div>
   )
 }

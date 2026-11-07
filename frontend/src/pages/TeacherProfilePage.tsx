@@ -60,7 +60,13 @@ import { useUniversalPrint } from '../components/printing'
 import { staffApi, teacherPayrollApi, timetableApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import {
+  EditModeBar,
+  DeleteConfirmationModal,
+  LockedButton,
+  LockedIconButton,
+  LockedLinkButton,
+} from '../components/common'
 import toast from 'react-hot-toast'
 import type { StaffProfileDetail, EmployeeActivityHistoryItem } from '../types'
 
@@ -108,11 +114,44 @@ export default function TeacherProfilePage() {
   const teacherId = Number(id)
   const { user: currentUser } = useAuthStore()
 
-  // Global View-First & Scoped Edit Mode
-  const editScope = `teacher:profile:${teacherId}`
-  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
-
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
+
+  // Global View-First & Scoped Edit Mode with Fine-Grained Tab Isolation
+  const getTabScope = (tab: TabKey): string => {
+    switch (tab) {
+      case 'contacts':
+        return `teacher:profile:${teacherId}:contacts`
+      case 'payroll':
+        return `teacher:profile:${teacherId}:payroll`
+      case 'employment':
+        return `teacher:profile:${teacherId}:employment`
+      case 'assignments':
+        return `teacher:profile:${teacherId}:assignments`
+      case 'qualifications':
+        return `teacher:profile:${teacherId}:qualifications`
+      case 'documents':
+        return `teacher:profile:${teacherId}:documents`
+      default:
+        return `teacher:profile:${teacherId}:personal`
+    }
+  }
+
+  const getTabRequiredPermission = (tab: TabKey): string | undefined => {
+    switch (tab) {
+      case 'payroll':
+        return 'workforce:payroll'
+      case 'employment':
+        return 'workforce:teachers'
+      case 'assignments':
+        return 'academic:teachers'
+      default:
+        return undefined
+    }
+  }
+
+  const currentScope = getTabScope(activeTab)
+  const isEditMode = useEditModeStore((s) => !!s.scopes[currentScope] || !!s.scopes[`teacher:profile:${teacherId}`])
+
   const [showLifecycleModal, setShowLifecycleModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(false)
@@ -120,6 +159,19 @@ export default function TeacherProfilePage() {
   const [selectedDocPreview, setSelectedDocPreview] = useState<{ formId: string; title: string }>({
     formId: 'appointment_letter',
     title: 'Teacher Appointment Letter',
+  })
+
+  // Delete Confirmation Protection Modal State
+  const [deleteModalState, setDeleteModalState] = useState<{
+    isOpen: boolean
+    targetType: 'address' | 'contact' | 'bank' | null
+    id: number | null
+    name: string
+  }>({
+    isOpen: false,
+    targetType: null,
+    id: null,
+    name: '',
   })
 
   // Security reveal state for sensitive numbers
@@ -385,7 +437,12 @@ export default function TeacherProfilePage() {
   return (
     <div className="space-y-5">
       {/* Global View-First & Explicit Edit Mode Governance Bar */}
-      <EditModeBar scope={editScope} title={`Faculty Dossier — ${profile.full_name}`} isDirty={showEditModal} />
+      <EditModeBar
+        scope={currentScope}
+        title={`Faculty Dossier — ${TABS.find((t) => t.key === activeTab)?.label || 'Dossier'} — ${profile.full_name || 'Teacher'}`}
+        requiredPermission={getTabRequiredPermission(activeTab)}
+        isDirty={showEditModal}
+      />
 
       {/* ─── Persistent Hero Card ────────────────────────────────────── */}
       <WorkforceHeroCard
@@ -412,6 +469,7 @@ export default function TeacherProfilePage() {
               : '15 Jun 2020',
           },
         ]}
+        isEditMode={isEditMode}
         onEdit={() => {
           if (!isEditMode) {
             toast.error('Locked in View Mode: Please enable Edit Mode above to modify employee records.')
@@ -949,14 +1007,14 @@ export default function TeacherProfilePage() {
                   </h3>
                   <p className="text-[11px] text-slate-500">Current, permanent, and alternate addresses</p>
                 </div>
-                <button
-                  type="button"
+                <LockedButton
+                  isEditMode={isEditMode}
                   onClick={() => setShowAddAddressModal(true)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
+                  icon={Plus}
+                  size="sm"
                 >
-                  <Plus className="w-3.5 h-3.5" />
                   Add Address
-                </button>
+                </LockedButton>
               </div>
 
               {addressesList.length === 0 ? (
@@ -987,28 +1045,28 @@ export default function TeacherProfilePage() {
 
                       <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
                         {!addr.is_primary ? (
-                          <button
-                            type="button"
+                          <LockedLinkButton
+                            isEditMode={isEditMode}
                             onClick={() => setPrimaryAddressMutation.mutate(addr.id)}
-                            className="text-[11px] font-bold text-indigo-600 hover:underline"
-                          >
-                            Set as Primary
-                          </button>
+                            label="Set as Primary"
+                          />
                         ) : (
                           <span className="text-[11px] text-slate-400 italic">Default Postal Address</span>
                         )}
-                        <button
-                          type="button"
+                        <LockedIconButton
+                          isEditMode={isEditMode}
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this address?')) {
-                              deleteAddressMutation.mutate(addr.id)
-                            }
+                            setDeleteModalState({
+                              isOpen: true,
+                              targetType: 'address',
+                              id: addr.id,
+                              name: `${addr.address_type.toUpperCase()} Address (${addr.city})`,
+                            })
                           }}
-                          className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                          icon={Trash2}
                           title="Delete address"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                          tone="danger"
+                        />
                       </div>
                     </div>
                   ))}
@@ -1025,14 +1083,14 @@ export default function TeacherProfilePage() {
                   </h3>
                   <p className="text-[11px] text-slate-500">Emergency reach, family nominees, and institutional references</p>
                 </div>
-                <button
-                  type="button"
+                <LockedButton
+                  isEditMode={isEditMode}
                   onClick={() => setShowAddContactModal(true)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
+                  icon={Plus}
+                  size="sm"
                 >
-                  <Plus className="w-3.5 h-3.5" />
                   Add Key Contact
-                </button>
+                </LockedButton>
               </div>
 
               {keyContactsList.length === 0 ? (
@@ -1077,18 +1135,20 @@ export default function TeacherProfilePage() {
                             </div>
                           </td>
                           <td className="px-3.5 py-2.5 text-right">
-                            <button
-                              type="button"
+                            <LockedIconButton
+                              isEditMode={isEditMode}
                               onClick={() => {
-                                if (window.confirm('Delete this key contact?')) {
-                                  deleteContactMutation.mutate(c.id)
-                                }
+                                setDeleteModalState({
+                                  isOpen: true,
+                                  targetType: 'contact',
+                                  id: c.id,
+                                  name: `${c.contact_name} (${c.relationship})`,
+                                })
                               }}
-                              className="text-slate-400 hover:text-red-600 p-1"
+                              icon={Trash2}
                               title="Delete contact"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                              tone="danger"
+                            />
                           </td>
                         </tr>
                       ))}
@@ -1264,14 +1324,14 @@ export default function TeacherProfilePage() {
                 </h3>
                 <p className="text-[11px] text-slate-500">Explicit Board, Standard, Batch Code, and Contractual Load</p>
               </div>
-              <button
-                type="button"
+              <LockedButton
+                isEditMode={isEditMode}
                 onClick={() => setShowAssignModal(true)}
-                className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors"
+                icon={Plus}
+                size="sm"
               >
-                <Plus className="w-3.5 h-3.5" />
                 Assign New Batch
-              </button>
+              </LockedButton>
             </div>
 
             {/* Workload Reconciliation Strip */}
@@ -1468,14 +1528,14 @@ export default function TeacherProfilePage() {
                   </h3>
                   <p className="text-[11px] text-slate-500">Authorized bank accounts for salary, stipend, and reimbursements</p>
                 </div>
-                <button
-                  type="button"
+                <LockedButton
+                  isEditMode={isEditMode}
                   onClick={() => setShowAddBankModal(true)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors"
+                  icon={Plus}
+                  size="sm"
                 >
-                  <Plus className="w-3.5 h-3.5" />
                   Add Bank Account
-                </button>
+                </LockedButton>
               </div>
 
               {bankAccountsList.length === 0 ? (
@@ -1533,28 +1593,28 @@ export default function TeacherProfilePage() {
 
                         <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
                           {!b.is_primary ? (
-                            <button
-                              type="button"
+                            <LockedLinkButton
+                              isEditMode={isEditMode}
                               onClick={() => setPrimaryBankMutation.mutate(b.id)}
-                              className="text-[11px] font-bold text-indigo-600 hover:underline"
-                            >
-                              Set as Primary
-                            </button>
+                              label="Set as Primary"
+                            />
                           ) : (
                             <span className="text-[11px] text-emerald-700 font-semibold">Active Payroll Target</span>
                           )}
-                          <button
-                            type="button"
+                          <LockedIconButton
+                            isEditMode={isEditMode}
                             onClick={() => {
-                              if (window.confirm('Delete this bank account record?')) {
-                                deleteBankMutation.mutate(b.id)
-                              }
+                              setDeleteModalState({
+                                isOpen: true,
+                                targetType: 'bank',
+                                id: b.id,
+                                name: `${b.bank_name} (${String(b.account_number).slice(-4)})`,
+                              })
                             }}
-                            className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                            icon={Trash2}
                             title="Delete bank account"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                            tone="danger"
+                          />
                         </div>
                       </div>
                     )
@@ -2063,6 +2123,40 @@ export default function TeacherProfilePage() {
       </div>
 
       <PrintModal />
+
+      {/* Rule 010 Delete Confirmation Protection Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalState.isOpen}
+        onClose={() => setDeleteModalState({ isOpen: false, targetType: null, id: null, name: '' })}
+        scope={currentScope}
+        entityType={
+          deleteModalState.targetType === 'address'
+            ? 'Staff Address'
+            : deleteModalState.targetType === 'contact'
+            ? 'Key Contact'
+            : deleteModalState.targetType === 'bank'
+            ? 'Bank Account'
+            : 'Record'
+        }
+        entityName={deleteModalState.name}
+        entityId={deleteModalState.id ?? undefined}
+        onConfirm={async () => {
+          if (!deleteModalState.id) return
+          if (deleteModalState.targetType === 'address') {
+            await deleteAddressMutation.mutateAsync(deleteModalState.id)
+          } else if (deleteModalState.targetType === 'contact') {
+            await deleteContactMutation.mutateAsync(deleteModalState.id)
+          } else if (deleteModalState.targetType === 'bank') {
+            await deleteBankMutation.mutateAsync(deleteModalState.id)
+          }
+          setDeleteModalState({ isOpen: false, targetType: null, id: null, name: '' })
+        }}
+        isLoading={
+          deleteAddressMutation.isPending ||
+          deleteContactMutation.isPending ||
+          deleteBankMutation.isPending
+        }
+      />
     </div>
   )
 }

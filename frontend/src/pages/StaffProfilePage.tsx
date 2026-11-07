@@ -192,6 +192,7 @@ export default function StaffProfilePage() {
               : '01 Aug 2019',
           },
         ]}
+        isEditMode={isEditMode}
         onEdit={() => {
           if (!isEditMode) {
             toast.error('Locked in View Mode: Please enable Edit Mode above to modify employee records.')

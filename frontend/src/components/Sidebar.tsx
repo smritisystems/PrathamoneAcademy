@@ -22,7 +22,7 @@ import {
   LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
-  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign
+  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -52,6 +52,18 @@ const academicSubItems = [
   { to: '/academic?tab=settings', label: 'Settings' },
 ]
 
+const crmSubItems = [
+  { to: '/leads', label: 'Overview' },
+  { to: '/leads?view=list', label: 'All Leads' },
+  { to: '/leads?view=pipeline', label: 'Lead Pipeline' },
+  { to: '/leads?view=followups', label: 'Follow-ups' },
+  { to: '/leads?tab=demo', label: 'Counselling & Demo' },
+  { to: '/leads?tab=sources', label: 'Lead Sources' },
+  { to: '/leads?tab=campaigns', label: 'Campaigns' },
+  { to: '/reports?category=leads', label: 'Reports' },
+  { to: '/settings?tab=lookups', label: 'Settings' },
+]
+
 const secondaryNavItems: NavItem[] = [
   { to: '/teachers', label: 'Teachers', icon: GraduationCap },
   { to: '/staff', label: 'Staff Directory', icon: Briefcase },
@@ -77,11 +89,13 @@ export default function Sidebar() {
     desktopState,
     mobileOpen,
     academicOpen,
+    crmOpen,
     toggleCollapse,
     setDesktopState,
     expandSidebar,
     closeMobile,
     toggleAcademicOpen,
+    toggleCrmOpen,
   } = useSidebarStore()
 
   const navigate = useNavigate()
@@ -129,6 +143,41 @@ export default function Sidebar() {
     location.pathname.startsWith('/batches') ||
     location.pathname.startsWith('/subjects') ||
     location.pathname.startsWith('/courses')
+
+  const isCrmActive =
+    location.pathname.startsWith('/leads') ||
+    location.pathname.startsWith('/crm')
+
+  const isCrmSubActive = (subTo: string) => {
+    if (subTo === '/leads') {
+      return (
+        (location.pathname === '/leads' || location.pathname === '/crm') &&
+        (!location.search || location.search === '' || location.search === '?view=pipeline')
+      )
+    }
+    if (subTo.includes('?view=')) {
+      const viewParam = subTo.split('?view=')[1]
+      return (
+        (location.pathname === '/leads' || location.pathname === '/crm') &&
+        location.search.includes(`view=${viewParam}`)
+      )
+    }
+    if (subTo.includes('?tab=')) {
+      const tabParam = subTo.split('?tab=')[1]
+      return (
+        (location.pathname === '/leads' || location.pathname === '/crm') &&
+        location.search.includes(`tab=${tabParam}`)
+      )
+    }
+    if (subTo.includes('?category=')) {
+      const catParam = subTo.split('?category=')[1]
+      return (
+        location.pathname.startsWith('/reports') &&
+        location.search.includes(`category=${catParam}`)
+      )
+    }
+    return location.pathname + location.search === subTo
+  }
 
   const isCollapsed = !isMobile && desktopState === 'collapsed'
   const isHidden = !isMobile && desktopState === 'hidden'
@@ -447,8 +496,8 @@ export default function Sidebar() {
             isCollapsed ? 'flex flex-col items-center' : ''
           }`}
         >
-          {/* Main Top Level Items */}
-          {mainNavItems.map((item) => (
+          {/* Dashboard Item */}
+          {mainNavItems.slice(0, 1).map((item) => (
             <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
               <NavLink
                 to={item.to}
@@ -480,7 +529,7 @@ export default function Sidebar() {
           ))}
 
           {/* Academic Structure Item */}
-          <div className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-1'}`}>
+          <div className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
             {isCollapsed ? (
               // Collapsed mode: icon with floating interactive flyout submenu
               <div className="relative group w-full flex justify-center">
@@ -501,6 +550,7 @@ export default function Sidebar() {
                 {/* Floating Flyout Menu on Hover */}
                 <div
                   role="menu"
+                  aria-label="Academic Workspace Menu"
                   className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-52 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                 >
                   <div className="px-3 py-1.5 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
@@ -574,6 +624,136 @@ export default function Sidebar() {
                           }`}
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                          <span className="truncate">{sub.label}</span>
+                        </NavLink>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Students and Admissions Items */}
+          {mainNavItems.slice(1).map((item) => (
+            <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to={item.to}
+                aria-label={item.label}
+                className={({ isActive }) =>
+                  `flex items-center ${
+                    isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                  } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                  }`
+                }
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                {!isCollapsed && <span className="truncate">{item.label}</span>}
+              </NavLink>
+
+              {/* Floating Tooltip in Collapsed Mode */}
+              {isCollapsed && (
+                <div
+                  role="tooltip"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                >
+                  {item.label}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Lead Management & CRM Nav Group */}
+          <div className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
+            {isCollapsed ? (
+              // Collapsed mode: icon with floating interactive flyout popover
+              <div className="relative group w-full flex justify-center">
+                <NavLink
+                  to="/leads"
+                  aria-label="Lead Management & CRM"
+                  className={({ isActive }) =>
+                    `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isCrmActive
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`
+                  }
+                >
+                  <Layers className="w-5 h-5" />
+                </NavLink>
+
+                {/* Floating Flyout Menu on Hover */}
+                <div
+                  role="menu"
+                  aria-label="Lead Management & CRM Menu"
+                  className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
+                >
+                  <div className="px-3 py-1.5 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Lead Management & CRM
+                  </div>
+                  <div className="mt-1 space-y-0.5 max-h-72 overflow-y-auto custom-scrollbar">
+                    {crmSubItems.map((sub) => {
+                      const isSubActive = isCrmSubActive(sub.to)
+                      return (
+                        <NavLink
+                          key={sub.to}
+                          to={sub.to}
+                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
+                            isSubActive
+                              ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`}
+                        >
+                          <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                          <span className="truncate">{sub.label}</span>
+                        </NavLink>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Expanded mode: Accordion button and nested collapsible sub-menu
+              <div>
+                <button
+                  type="button"
+                  onClick={toggleCrmOpen}
+                  aria-expanded={crmOpen}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    isCrmActive
+                      ? 'bg-blue-600 text-white shadow-md font-semibold'
+                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Layers className={`w-4 h-4 flex-shrink-0 ${isCrmActive ? 'text-white' : 'text-blue-400'}`} />
+                    <span className="truncate text-xs font-semibold">Lead Management & CRM</span>
+                  </div>
+                  {crmOpen ? (
+                    <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isCrmActive ? 'text-white' : 'text-slate-400'}`} />
+                  ) : (
+                    <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isCrmActive ? 'text-white' : 'text-slate-400'}`} />
+                  )}
+                </button>
+
+                {crmOpen && (
+                  <div className="pl-3 pr-1 pt-1.5 space-y-1">
+                    {crmSubItems.map((sub) => {
+                      const isSubActive = isCrmSubActive(sub.to)
+                      return (
+                        <NavLink
+                          key={sub.to}
+                          to={sub.to}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            isSubActive
+                              ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                              : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                          }`}
+                        >
+                          <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
                           <span className="truncate">{sub.label}</span>
                         </NavLink>
                       )

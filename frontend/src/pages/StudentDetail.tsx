@@ -36,7 +36,7 @@ import { useAuthStore, isUserAdmin } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { StatusBadge } from '../components/Badge'
 import type { StudentDocumentItem } from '../types'
-import { EditModeBar, DeleteConfirmationModal } from '../components/common'
+import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, LockedLinkButton } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
 
 const fmt = (n: number) =>
@@ -962,14 +962,14 @@ export default function StudentDetailPage() {
                   </p>
                 </div>
                 {canEdit && (
-                  <button
-                    type="button"
+                  <LockedButton
+                    isEditMode={isEditMode}
                     onClick={handleOpenAdjustFees}
-                    className="btn-primary inline-flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm whitespace-nowrap"
+                    icon={Edit3}
+                    size="sm"
                   >
-                    <Edit3 className="w-4 h-4" />
-                    <span>Adjust Student Fees</span>
-                  </button>
+                    Adjust Student Fees
+                  </LockedButton>
                 )}
               </div>
 
@@ -1076,12 +1076,14 @@ export default function StudentDetailPage() {
                   <h3 className="font-bold text-gray-900">Student Identity & Official Documents</h3>
                   <p className="text-xs text-gray-500">Official documents verified by administration</p>
                 </div>
-                <button
+                <LockedButton
+                  isEditMode={isEditMode}
                   onClick={() => setShowDocModal(true)}
-                  className="btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3"
+                  icon={Upload}
+                  size="xs"
                 >
-                  <Upload className="w-3.5 h-3.5" /> Upload Document
-                </button>
+                  Upload Document
+                </LockedButton>
               </div>
 
               {docSuccessMsg && (

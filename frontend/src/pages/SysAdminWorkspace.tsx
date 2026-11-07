@@ -27,7 +27,7 @@ import {
 import { sysadminApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, LockedButton } from '../components/common'
 import type { SecurityAuditLogItem, UniversalEditPayload } from '../types'
 import OrganizationBranding from '../components/OrganizationBranding'
 import { useBranding } from '../config/branding'
@@ -604,10 +604,10 @@ export default function SysAdminWorkspace() {
                     universalEditMutation.mutate(finalPayload)
                   }
                 }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-xs transition-colors"
+                className={!isEditMode ? 'inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-400 text-sm font-semibold rounded-xl cursor-not-allowed border border-dashed border-slate-300' : 'inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-xs transition-colors'}
               >
-                <Save className="w-4 h-4" />
-                <span>Execute Universal Edit</span>
+                {!isEditMode ? <Lock className="w-4 h-4 text-slate-400" /> : <Save className="w-4 h-4" />}
+                <span>{!isEditMode ? 'Execute Universal Edit (Locked)' : 'Execute Universal Edit'}</span>
               </button>
             </div>
           </div>

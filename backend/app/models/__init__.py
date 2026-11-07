@@ -56,6 +56,9 @@ from app.models.codex import (
     CodexConfig, CodexMappingProfile, CodexMappingVersion,
     CodexScopeAssignment, CodexAuditLog, CodexTemporaryToken
 )
+from app.models.crm import (
+    Lead, LeadFollowUp, LeadDemoClass
+)
 
 
 __all__ = [
@@ -124,6 +127,9 @@ __all__ = [
     "CodexScopeAssignment",
     "CodexAuditLog",
     "CodexTemporaryToken",
+    "Lead",
+    "LeadFollowUp",
+    "LeadDemoClass",
 ]
 
 

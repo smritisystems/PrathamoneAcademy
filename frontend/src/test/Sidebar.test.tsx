@@ -120,9 +120,14 @@ describe('Collapsible & Responsive Sidebar Component', () => {
     expect(tooltips.some((t) => t.textContent?.includes('Dashboard'))).toBe(true)
 
     // Flyout menu for Academic Workspace exists
-    const flyoutMenu = screen.getByRole('menu', { hidden: true })
+    const flyoutMenu = screen.getByRole('menu', { name: 'Academic Workspace Menu', hidden: true })
     expect(flyoutMenu).toBeDefined()
     expect(flyoutMenu.textContent).toContain('Academic Workspace')
+
+    // Flyout menu for Lead Management & CRM exists
+    const crmFlyoutMenu = screen.getByRole('menu', { name: 'Lead Management & CRM Menu', hidden: true })
+    expect(crmFlyoutMenu).toBeDefined()
+    expect(crmFlyoutMenu.textContent).toContain('Lead Management & CRM')
   })
 
   it('toggles collapse state using collapse/expand button', () => {

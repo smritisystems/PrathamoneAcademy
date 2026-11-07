@@ -222,3 +222,4 @@ Including `src/test/CanonicalSubjects.test.tsx` (7/7 tests passed):
 ## 8. Conclusion & Sign-Off
 
 The Canonical Subject Catalogue and Curriculum Applicability Mapping architecture has undergone end-to-end forensic validation. The critical `NULLS NOT DISTINCT` database fix guarantees data integrity across board-agnostic mappings. Legacy compatibility is 100% preserved with zero breaking changes to existing examination marks, timetables, or teacher assignments. All 10 backend tests and 259 frontend tests are passing.
+

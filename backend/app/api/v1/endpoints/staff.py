@@ -828,6 +828,15 @@ async def add_staff_bank_account(
         is_active=data.is_active,
     )
     db.add(new_acc)
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="CREATE",
+            resource_type="staff_bank_account",
+            resource_id=profile.user_id,
+            details=json.dumps({"target_user_id": user_id, "bank_name": new_acc.bank_name, "last4": str(new_acc.account_number)[-4:]}),
+        )
+    )
     await db.commit()
     await db.refresh(new_acc)
     return {"success": True, "message": "Bank account added successfully", "id": new_acc.id}
@@ -866,6 +875,15 @@ async def set_primary_bank_account(
     profile.bank_account_number = target_acc.account_number
     profile.bank_ifsc = target_acc.ifsc_code
 
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="UPDATE",
+            resource_type="staff_bank_account",
+            resource_id=profile.user_id,
+            details=json.dumps({"target_user_id": user_id, "account_id": account_id, "is_primary": True}),
+        )
+    )
     await db.commit()
     return {"success": True, "message": f"{target_acc.bank_name} account set as primary salary account"}
 
@@ -912,6 +930,15 @@ async def delete_staff_bank_account(
             profile.bank_ifsc = None
 
     await db.delete(target_acc)
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="DELETE",
+            resource_type="staff_bank_account",
+            resource_id=profile.user_id,
+            details=json.dumps({"target_user_id": user_id, "account_id": account_id, "bank_name": target_acc.bank_name}),
+        )
+    )
     await db.commit()
     return {"success": True, "message": "Bank account deleted successfully"}
 
@@ -999,6 +1026,15 @@ async def add_staff_key_contact(
         priority=data.priority,
     )
     db.add(new_contact)
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="CREATE",
+            resource_type="staff_key_contact",
+            resource_id=profile.user_id,
+            details=json.dumps({"target_user_id": user_id, "contact_name": new_contact.contact_name, "relationship": new_contact.relation}),
+        )
+    )
     await db.commit()
     await db.refresh(new_contact)
     return {"success": True, "message": "Key contact added successfully", "id": new_contact.id}
@@ -1046,6 +1082,15 @@ async def delete_staff_key_contact(
             profile.emergency_contact_relation = None
 
     await db.delete(target)
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="DELETE",
+            resource_type="staff_key_contact",
+            resource_id=profile.user_id,
+            details=json.dumps({"target_user_id": user_id, "contact_id": contact_id, "contact_name": target.contact_name}),
+        )
+    )
     await db.commit()
     return {"success": True, "message": "Key contact deleted successfully"}
 
@@ -1136,6 +1181,15 @@ async def add_staff_address(
         is_active=data.is_active,
     )
     db.add(new_addr)
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="CREATE",
+            resource_type="staff_address",
+            resource_id=profile.user_id,
+            details=json.dumps({"target_user_id": user_id, "address_type": new_addr.address_type, "city": new_addr.city}),
+        )
+    )
     await db.commit()
     await db.refresh(new_addr)
     return {"success": True, "message": "Address added successfully", "id": new_addr.id}
@@ -1175,6 +1229,15 @@ async def set_primary_address(
     profile.state = target.state
     profile.pincode = target.pincode
 
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="UPDATE",
+            resource_type="staff_address",
+            resource_id=profile.user_id,
+            details=json.dumps({"target_user_id": user_id, "address_id": address_id, "is_primary": True}),
+        )
+    )
     await db.commit()
     return {"success": True, "message": "Address set as primary successfully"}
 
@@ -1203,6 +1266,15 @@ async def delete_staff_address(
         raise HTTPException(status_code=404, detail="Address not found")
 
     await db.delete(target)
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="DELETE",
+            resource_type="staff_address",
+            resource_id=profile.user_id,
+            details=json.dumps({"target_user_id": user_id, "address_id": address_id, "address_type": target.address_type}),
+        )
+    )
     await db.commit()
     return {"success": True, "message": "Address deleted successfully"}
 

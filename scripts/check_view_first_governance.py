@@ -13,7 +13,7 @@
 #  * @created     2026-11-07
 #  * @updated     2026-11-07
 #  *
-#  * @description Automated verification and audit engine for Rule 010 View-First
+#  * @description Automated CI/CD verification engine for Rule 010 Global View-First Governance:
 #  */
 
 import os
@@ -28,6 +28,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PAGES_DIR = REPO_ROOT / "frontend" / "src" / "pages"
 LAYOUT_FILE = REPO_ROOT / "frontend" / "src" / "components" / "Layout.tsx"
 STORE_FILE = REPO_ROOT / "frontend" / "src" / "store" / "editModeStore.ts"
+LOCKED_ACTION_FILE = REPO_ROOT / "frontend" / "src" / "components" / "common" / "LockedAction.tsx"
+DELETE_MODAL_FILE = REPO_ROOT / "frontend" / "src" / "components" / "common" / "DeleteConfirmationModal.tsx"
 
 READ_ONLY_PAGES = {
     "Dashboard.tsx": "Executive reporting and analytics dashboard (Read-Only)",
@@ -39,7 +41,7 @@ READ_ONLY_PAGES = {
     "InstallApp.tsx": "PWA installation guidance view (Utility)",
 }
 
-EDIT_SCOPE_REGEX = re.compile(r'const\s+editScope\s*=\s*[\'"`]([^\'"`]+)[\'"`]')
+EDIT_SCOPE_REGEX = re.compile(r'const\s+editScope\s*=\s*[`\'"]([^`\'"\n]+)[`\'"]')
 DIRECT_SCOPE_REGEX = re.compile(r'<EditModeBar[^>]*\bscope=[\'"]([^\'"]+)[\'"]')
 
 
@@ -115,6 +117,7 @@ def check_pages():
         has_guard = (
             "isEditMode" in content or
             "scopes[editScope]" in content or
+            "scopes[currentScope]" in content or
             "useEditModeStore.getState().isEditMode" in content
         )
 
@@ -122,6 +125,8 @@ def check_pages():
         scope_match = EDIT_SCOPE_REGEX.search(content)
         if scope_match:
             scope_str = scope_match.group(1)
+        elif "currentScope" in content:
+            scope_str = "dynamic:tab_scoped"
         else:
             direct_match = DIRECT_SCOPE_REGEX.search(content)
             if direct_match:
@@ -149,7 +154,7 @@ def check_pages():
         audit_table.append({
             "page": page_name,
             "type": "Mutation-Capable Workspace",
-            "scope": scope_str or "None",
+            "scope": (scope_str[:32] if scope_str else "None"),
             "bar": "Rendered" if has_bar_render else "Missing",
             "guard": "Guarded" if has_guard else "Missing",
             "status": status
@@ -166,6 +171,76 @@ def check_pages():
     return failed == 0
 
 
+def check_locked_controls_and_confirm_policy():
+    print("\n[STEP 4] Auditing LockedAction Components & Zero-Unguarded-Confirm Policy...")
+    errors = []
+
+    # 1. Verify LockedAction component infrastructure
+    if not LOCKED_ACTION_FILE.exists():
+        errors.append(f"LockedAction component file missing at {LOCKED_ACTION_FILE}")
+    else:
+        locked_content = LOCKED_ACTION_FILE.read_text(encoding="utf-8")
+        for expected_export in ["LockedButton", "LockedIconButton", "LockedLinkButton"]:
+            if expected_export not in locked_content:
+                errors.append(f"LockedAction.tsx missing export: {expected_export}")
+
+    if not DELETE_MODAL_FILE.exists():
+        errors.append(f"DeleteConfirmationModal file missing at {DELETE_MODAL_FILE}")
+    else:
+        del_content = DELETE_MODAL_FILE.read_text(encoding="utf-8")
+        if "isEditMode" not in del_content:
+            errors.append("DeleteConfirmationModal does not enforce isEditMode check")
+
+    # 2. Audit all frontend pages for unguarded confirm() or window.confirm()
+    all_pages = sorted(list(PAGES_DIR.glob("*.tsx")))
+    confirm_violations = []
+
+    for page_path in all_pages:
+        lines = page_path.read_text(encoding="utf-8").splitlines()
+        for idx, line in enumerate(lines, 1):
+            if re.search(r'\bconfirm\(|window\.confirm\(', line):
+                # Search up to 30 lines backwards in the same function/block for isEditMode check
+                preceding_block = "\n".join(lines[max(0, idx - 30):idx])
+                if "isEditMode" not in preceding_block and "!isEditMode" not in preceding_block:
+                    confirm_violations.append(f"{page_path.name}:{idx} -> {line.strip()}")
+
+    if confirm_violations:
+        errors.append(
+            f"Found {len(confirm_violations)} unguarded confirm() usages lacking isEditMode verification:\n    "
+            + "\n    ".join(confirm_violations)
+        )
+
+    # 3. Verify usage of LockedButton / LockedIconButton across key mutation workflows
+    key_mutation_pages = [
+        "TeacherProfilePage.tsx",
+        "AcademicWorkspace.tsx",
+        "StudentDetail.tsx",
+        "StaffManagement.tsx",
+        "TeacherPayroll.tsx",
+        "Settings.tsx",
+        "Communication.tsx",
+        "CodeXStudio.tsx",
+    ]
+
+    for km_page in key_mutation_pages:
+        p_path = PAGES_DIR / km_page
+        if p_path.exists():
+            p_content = p_path.read_text(encoding="utf-8")
+            if not any(comp in p_content for comp in ["LockedButton", "LockedIconButton", "LockedLinkButton", "DeleteConfirmationModal"]):
+                errors.append(f"Key mutation page {km_page} does not integrate LockedAction components or DeleteConfirmationModal")
+
+    if errors:
+        for err in errors:
+            print(f"  [FAIL] {err}")
+        return False
+
+    print("  [PASS] LockedAction components verified (LockedButton, LockedIconButton, LockedLinkButton).")
+    print("  [PASS] DeleteConfirmationModal governance verified with active Edit Mode enforcement.")
+    print("  [PASS] 0 unguarded confirm() calls detected across all frontend workspace pages.")
+    print("  [PASS] Key mutation workspaces actively enforce locked mutation visual controls.")
+    return True
+
+
 def main():
     print("=" * 70)
     print("PrathamOne EduOS — Rule 010 Global View-First Governance Audit")
@@ -174,8 +249,9 @@ def main():
     store_ok = check_store()
     layout_ok = check_layout()
     pages_ok = check_pages()
+    controls_ok = check_locked_controls_and_confirm_policy()
 
-    if store_ok and layout_ok and pages_ok:
+    if store_ok and layout_ok and pages_ok and controls_ok:
         print("\n[SUCCESS] 100% Rule 010 View-First Governance Compliance Verified!")
         sys.exit(0)
     else:

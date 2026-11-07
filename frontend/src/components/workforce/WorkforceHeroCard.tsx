@@ -11,18 +11,20 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Enterprise reusable Hero Card banner for dedicated Teacher and Staff profiles with breadcrumbs, status badges, metrics chips, and action menus.
  */
 
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import {
   ChevronRight,
   Mail,
   Phone,
   Edit,
+  Lock,
   ChevronDown,
   Printer,
   Calendar,
@@ -54,6 +56,7 @@ export interface WorkforceHeroCardProps {
   phone?: string
   status: string
   stats: WorkforceHeroStat[]
+  isEditMode?: boolean
   onEdit?: () => void
   onAction?: (actionKey: string) => void
 }
@@ -70,6 +73,7 @@ export default function WorkforceHeroCard({
   phone,
   status,
   stats,
+  isEditMode,
   onEdit,
   onAction,
 }: WorkforceHeroCardProps) {
@@ -202,11 +206,26 @@ export default function WorkforceHeroCard({
               {onEdit && (
                 <button
                   type="button"
-                  onClick={onEdit}
-                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
+                  onClick={(e) => {
+                    if (isEditMode === false) {
+                      toast.error('Locked in View Mode: Please activate Edit Mode above to modify employee records.')
+                      return
+                    }
+                    onEdit()
+                  }}
+                  title={isEditMode === false ? 'Locked in View Mode: Activate Edit Mode above to modify' : 'Edit profile'}
+                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-colors ${
+                    isEditMode === false
+                      ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed hover:bg-slate-100'
+                      : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white'
+                  }`}
                 >
-                  <Edit className="w-3.5 h-3.5" />
-                  <span>Edit</span>
+                  {isEditMode === false ? (
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  ) : (
+                    <Edit className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isEditMode === false ? 'Edit (Locked)' : 'Edit'}</span>
                 </button>
               )}
 
@@ -231,12 +250,25 @@ export default function WorkforceHeroCard({
                         type="button"
                         onClick={() => {
                           setShowDropdown(false)
+                          if (isEditMode === false) {
+                            toast.error('Locked in View Mode: Please activate Edit Mode above before updating status.')
+                            return
+                          }
                           onAction?.('lifecycle')
                         }}
-                        className="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-2 font-medium"
+                        title={isEditMode === false ? 'Locked in View Mode: Activate Edit Mode to update status' : undefined}
+                        className={`w-full text-left px-3.5 py-2 flex items-center gap-2 font-medium ${
+                          isEditMode === false
+                            ? 'text-slate-400 cursor-not-allowed'
+                            : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700'
+                        }`}
                       >
-                        <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Update Employment Status</span>
+                        {isEditMode === false ? (
+                          <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        ) : (
+                          <UserCheck className="w-3.5 h-3.5 text-slate-400" />
+                        )}
+                        <span>Update Employment Status {isEditMode === false ? '(Locked)' : ''}</span>
                       </button>
 
                       {type === 'teacher' && (
@@ -244,12 +276,25 @@ export default function WorkforceHeroCard({
                           type="button"
                           onClick={() => {
                             setShowDropdown(false)
+                            if (isEditMode === false) {
+                              toast.error('Locked in View Mode: Please activate Edit Mode above before assigning batches.')
+                              return
+                            }
                             onAction?.('assign')
                           }}
-                          className="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center gap-2 font-medium"
+                          title={isEditMode === false ? 'Locked in View Mode: Activate Edit Mode to assign batch' : undefined}
+                          className={`w-full text-left px-3.5 py-2 flex items-center gap-2 font-medium ${
+                            isEditMode === false
+                              ? 'text-slate-400 cursor-not-allowed'
+                              : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700'
+                          }`}
                         >
-                          <Layers className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Assign Batch & Subject</span>
+                          {isEditMode === false ? (
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
+                          ) : (
+                            <Layers className="w-3.5 h-3.5 text-slate-400" />
+                          )}
+                          <span>Assign Batch & Subject {isEditMode === false ? '(Locked)' : ''}</span>
                         </button>
                       )}
 

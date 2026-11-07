@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Unit tests verifying Teacher Payroll tabs, KPI metrics, modals,
  */
@@ -23,6 +23,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import TeacherPayroll from '../pages/TeacherPayroll'
 import { teacherPayrollApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
 
 describe('Teacher Payroll & Payment Management Workspace', () => {
   let queryClient: QueryClient
@@ -241,7 +242,8 @@ describe('Teacher Payroll & Payment Management Workspace', () => {
     })
   })
 
-  it('opens calculate modal when clicking Calculate Payroll button', async () => {
+  it('opens calculate modal when clicking Calculate Payroll button with active Edit Mode', async () => {
+    useEditModeStore.setState({ scopes: { 'workforce:payroll': true } })
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter>

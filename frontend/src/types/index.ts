@@ -26,6 +26,7 @@ export interface User {
   last_name: string
   role: string
   institution_id?: number
+  is_active?: boolean
   permissions?: string[]
 }
 
@@ -3007,3 +3008,125 @@ export interface CodexConfigResponse {
     scopes_count: number
   }
 }
+
+// ─── Lead Management & CRM Types ─────────────────────────────────────────────
+
+export interface LeadItem {
+  id: number
+  lead_number: string
+  first_name: string
+  last_name: string
+  full_name: string
+  gender?: string | null
+  date_of_birth?: string | null
+  phone?: string | null
+  email?: string | null
+  school_name?: string | null
+  address?: string | null
+  city?: string | null
+  state?: string | null
+  pincode?: string | null
+  standard_id?: number | null
+  standard_name?: string | null
+  board_id?: number | null
+  board_name?: string | null
+  class_display?: string
+  interested_course?: string | null
+  academic_year_id?: number | null
+  academic_year_name?: string | null
+  guardian_name?: string | null
+  guardian_relation?: string | null
+  guardian_phone?: string | null
+  guardian_email?: string | null
+  guardian_occupation?: string | null
+  stage: string
+  priority: string
+  source: string
+  campaign_name?: string | null
+  assigned_to_id?: number | null
+  assigned_to_name?: string | null
+  enquiry_date?: string | null
+  next_follow_up_at?: string | null
+  notes?: string | null
+  converted_student_id?: number | null
+  converted_at?: string | null
+  converted_by_id?: number | null
+  lost_reason?: string | null
+  lost_notes?: string | null
+  is_active?: boolean
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export interface LeadFollowUpItem {
+  id: number
+  follow_up_type: string
+  stage_at_time?: string | null
+  status: string
+  scheduled_at?: string | null
+  completed_at?: string | null
+  outcome?: string | null
+  remarks?: string | null
+  next_follow_up_at?: string | null
+  performed_by_name?: string | null
+  created_at?: string | null
+}
+
+export interface LeadDemoClassItem {
+  id: number
+  standard_name?: string | null
+  subject_name?: string | null
+  teacher_name?: string | null
+  scheduled_at: string
+  status: string
+  feedback?: string | null
+  rating?: number | null
+  created_at?: string | null
+}
+
+export interface LeadDossierResponse extends LeadItem {
+  follow_ups: LeadFollowUpItem[]
+  demo_classes: LeadDemoClassItem[]
+  communication_history: Array<{
+    id: number
+    channel: string
+    subject?: string | null
+    content: string
+    status: string
+    sent_at?: string | null
+    sender_name?: string | null
+  }>
+  potential_duplicate_students: Array<{
+    id: number
+    admission_number: string
+    name: string
+    phone?: string | null
+    email?: string | null
+  }>
+}
+
+export interface LeadKanbanColumn {
+  key: string
+  title: string
+  count: number
+  items: LeadItem[]
+}
+
+export interface LeadKanbanResponse {
+  columns: Record<string, LeadKanbanColumn>
+}
+
+export interface LeadMetricsSummary {
+  total_leads: number
+  total_leads_trend: string
+  new_enquiries: number
+  follow_ups_today: number
+  overdue_follow_ups: number
+  converted: number
+  lost_leads: number
+  conversion_rate: number
+  conversion_rate_trend: string
+  sources: Array<{ source: string; count: number }>
+  counsellors: Array<{ name: string; leads_count: number }>
+}
+

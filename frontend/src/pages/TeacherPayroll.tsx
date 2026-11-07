@@ -27,7 +27,7 @@ import {
 import { teacherPayrollApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
 import toast from 'react-hot-toast'
 
 export default function TeacherPayroll() {
@@ -344,20 +344,24 @@ export default function TeacherPayroll() {
 
         {/* Global Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
-          <button
+          <LockedButton
+            isEditMode={isEditMode}
             onClick={() => setShowCalculateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium shadow-md transition-all text-sm"
+            icon={RefreshCw}
+            size="md"
+            className={isEditMode ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : ''}
           >
-            <RefreshCw className="w-4 h-4" />
             Calculate Payroll
-          </button>
-          <button
+          </LockedButton>
+          <LockedButton
+            isEditMode={isEditMode}
             onClick={() => setShowLogSessionModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium shadow-md transition-all text-sm"
+            icon={Plus}
+            size="md"
+            className={isEditMode ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : ''}
           >
-            <Plus className="w-4 h-4" />
             Log Teaching Session
-          </button>
+          </LockedButton>
         </div>
       </div>
 
@@ -636,40 +640,41 @@ export default function TeacherPayroll() {
 
                               {/* Submit for Approval */}
                               {p.status === 'calculated' && (
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => submitMutation.mutate(p.id)}
-                                  className="p-1 text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                                  icon={ArrowUpRight}
                                   title="Submit for Approval"
-                                >
-                                  <ArrowUpRight className="w-4 h-4" />
-                                </button>
+                                  tone="primary"
+                                />
                               )}
 
                               {/* Approve */}
                               {(p.status === 'submitted' || p.status === 'calculated') && (
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => approveMutation.mutate(p.id)}
-                                  className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                  icon={CheckCircle2}
                                   title="Approve Payroll"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                </button>
+                                  tone="primary"
+                                />
                               )}
 
                               {/* Finalize & Lock */}
                               {p.status === 'approved' && (
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => finalizeMutation.mutate(p.id)}
-                                  className="p-1 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                  icon={Lock}
                                   title="Finalize & Lock Payroll"
-                                >
-                                  <Lock className="w-4 h-4" />
-                                </button>
+                                  tone="primary"
+                                />
                               )}
 
                               {/* Adjust */}
                               {!isLocked && (
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => {
                                     setSelectedPayroll(p)
                                     setAdjIncentives(String(p.approved_incentives))
@@ -679,26 +684,25 @@ export default function TeacherPayroll() {
                                     setAdjNotes(p.notes || '')
                                     setShowAdjustModal(true)
                                   }}
-                                  className="p-1 text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                                  icon={Edit3}
                                   title="Adjust Bonuses & Deductions"
-                                >
-                                  <Edit3 className="w-4 h-4" />
-                                </button>
+                                  tone="warning"
+                                />
                               )}
 
                               {/* Record Payment Voucher */}
                               {Number(p.pending_amount) > 0 && (p.status === 'approved' || p.status === 'finalized' || p.status === 'partially_paid') && (
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => {
                                     setSelectedPayroll(p)
                                     setPayAmount(String(p.pending_amount))
                                     setShowPaymentModal(true)
                                   }}
-                                  className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                                  icon={CreditCard}
                                   title="Record Payment Voucher"
-                                >
-                                  <CreditCard className="w-4 h-4" />
-                                </button>
+                                  tone="success"
+                                />
                               )}
 
                               {/* Print Statement */}
@@ -743,13 +747,15 @@ export default function TeacherPayroll() {
               </button>
 
               {selectedSessionIds.length > 0 && (
-                <button
+                <LockedButton
+                  isEditMode={isEditMode}
                   onClick={() => bulkApproveMutation.mutate(selectedSessionIds)}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-medium shadow-sm transition-all"
+                  icon={CheckCircle2}
+                  size="sm"
+                  className={isEditMode ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : ''}
                 >
-                  <CheckCircle2 className="w-4 h-4" />
                   Approve Selected ({selectedSessionIds.length})
-                </button>
+                </LockedButton>
               )}
 
               <select
@@ -893,41 +899,41 @@ export default function TeacherPayroll() {
                             <div className="flex items-center justify-center gap-1.5">
                               {/* Quick Approve */}
                               {isPending && !s.is_locked && (
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => bulkApproveMutation.mutate([s.id])}
-                                  className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                                  icon={CheckCircle2}
                                   title="Approve Session"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                </button>
+                                  tone="success"
+                                />
                               )}
 
                               {/* Reject with Reason */}
                               {isPending && !s.is_locked && (
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => {
                                     setSelectedSession(s)
                                     setShowRejectModal(true)
                                   }}
-                                  className="p-1 text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                                  icon={XCircle}
                                   title="Reject Session"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </button>
+                                  tone="danger"
+                                />
                               )}
 
                               {/* Assign Substitute */}
                               {!s.is_locked && (
-                                <button
+                                <LockedIconButton
+                                  isEditMode={isEditMode}
                                   onClick={() => {
                                     setSelectedSession(s)
                                     setShowSubstituteModal(true)
                                   }}
-                                  className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                  icon={UserCheck}
                                   title="Assign Substitute Teacher"
-                                >
-                                  <UserCheck className="w-4 h-4" />
-                                </button>
+                                  tone="primary"
+                                />
                               )}
                             </div>
                           </td>

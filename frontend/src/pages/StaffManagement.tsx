@@ -30,7 +30,7 @@ import {
 import { staffApi, boardsApi, standardsApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
 import { Lock } from 'lucide-react'
 import StaffProfileModal from '../components/StaffProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
@@ -725,17 +725,19 @@ export default function StaffManagement() {
                       </td>
                       {isAdmin && (
                         <td className="px-6 py-4 text-right">
-                          <button
+                          <LockedIconButton
+                            isEditMode={isEditMode}
                             onClick={() => {
-                              if (confirm('Are you sure you want to unlink this teaching assignment?')) {
-                                deleteAssignmentMutation.mutate(item.id)
+                              if (!isEditMode) {
+                                toast.error('Locked in View Mode: Activate Edit Mode above to unlink assignments.')
+                                return
                               }
+                              deleteAssignmentMutation.mutate(item.id)
                             }}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50"
+                            icon={Trash2}
                             title="Unlink Assignment"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                            tone="danger"
+                          />
                         </td>
                       )}
                     </tr>
@@ -905,18 +907,25 @@ export default function StaffManagement() {
 
                   {isAdmin && lv.status === 'pending' && (
                     <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                      <button
+                      <LockedButton
+                        isEditMode={isEditMode}
                         onClick={() => leaveActionMutation.mutate({ leaveId: lv.id, action: 'approve' })}
-                        className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-2xs"
+                        icon={CheckCircle2}
+                        size="xs"
+                        className={isEditMode ? 'flex-1 bg-emerald-600 hover:bg-emerald-700 text-white' : 'flex-1'}
                       >
                         Approve
-                      </button>
-                      <button
+                      </LockedButton>
+                      <LockedButton
+                        isEditMode={isEditMode}
                         onClick={() => leaveActionMutation.mutate({ leaveId: lv.id, action: 'reject' })}
-                        className="flex-1 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold"
+                        icon={XCircle}
+                        size="xs"
+                        variant="outline"
+                        className={isEditMode ? 'flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200' : 'flex-1'}
                       >
                         Reject
-                      </button>
+                      </LockedButton>
                     </div>
                   )}
                 </div>

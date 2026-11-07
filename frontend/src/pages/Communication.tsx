@@ -31,7 +31,7 @@ import type {
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, LockedIconButton } from '../components/common'
 import { Lock } from 'lucide-react'
 import { useBranding } from '../config/branding'
 
@@ -381,6 +381,10 @@ export default function Communication() {
   }
 
   const handleDeleteTemplate = async (template: MessageTemplateItem) => {
+    if (!isEditMode) {
+      showNotification('error', 'Activate Edit Mode to delete or deactivate templates.')
+      return
+    }
     if (!confirm(`Are you sure you want to ${template.is_system ? 'deactivate' : 'delete'} template "${template.name}"?`)) {
       return
     }
@@ -1059,8 +1063,8 @@ export default function Communication() {
                             >
                               Use
                             </button>
-                            <button
-                              type="button"
+                            <LockedIconButton
+                              isEditMode={isEditMode}
                               onClick={() => {
                                 setEditingTemplate(tpl)
                                 setTemplateForm({
@@ -1073,17 +1077,17 @@ export default function Communication() {
                                 })
                                 setIsTemplateModalOpen(true)
                               }}
+                              icon={<Edit className="w-3.5 h-3.5" />}
+                              tooltip="Edit Template"
                               className="p-1 text-gray-400 hover:text-blue-600 rounded"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
+                            />
+                            <LockedIconButton
+                              isEditMode={isEditMode}
                               onClick={() => handleDeleteTemplate(tpl)}
+                              icon={<Trash2 className="w-3.5 h-3.5" />}
+                              tooltip="Delete Template"
                               className="p-1 text-gray-400 hover:text-rose-600 rounded"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            />
                           </div>
                         </div>
                       </div>

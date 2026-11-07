@@ -31,7 +31,7 @@ import type {
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, LockedButton } from '../components/common'
 import { useBranding } from '../config/branding'
 import OrganizationBranding from '../components/OrganizationBranding'
 import QuickDecoderModal from '../components/codex/QuickDecoderModal'
@@ -266,6 +266,13 @@ export default function CodeXStudio() {
 
   // Rollback Profile
   const handleRollback = async (targetVersion: number) => {
+    if (!isEditMode) {
+      setNotification({
+        type: 'error',
+        message: 'Activate Edit Mode to rollback CodeX profile versions.',
+      })
+      return
+    }
     if (!activeProfileId) return
     if (!confirm(`Are you sure you want to restore mapping profile to Version ${targetVersion}?`)) return
 
@@ -571,7 +578,8 @@ export default function CodeXStudio() {
                   <span className="text-xs font-semibold text-slate-700">Emergency Global Disable</span>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-600">Immediate Kill-Switch</span>
-                    <button
+                    <LockedButton
+                      isEditMode={isEditMode}
                       onClick={() => {
                         if (confirm('Emergency kill-switch will disable CodeX immediately for all users.')) {
                           codexApi.updateConfig({ is_master_enabled: false }).then(fetchData)
@@ -580,7 +588,7 @@ export default function CodeXStudio() {
                       className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-semibold transition-colors"
                     >
                       Emergency Kill
-                    </button>
+                    </LockedButton>
                   </div>
                   <p className="text-[11px] text-slate-500">
                     Forces instant reversion of all coded values back to plain-text across all users.

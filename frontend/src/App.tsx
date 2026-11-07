@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -60,6 +60,7 @@ const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
 const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), 'Communication')
 const ReleasesPage = lazyWithRetry(() => import('./pages/Releases'), 'Releases')
 const CodeXStudioPage = lazyWithRetry(() => import('./pages/CodeXStudio'), 'CodeXStudio')
+const LeadManagementPage = lazyWithRetry(() => import('./pages/LeadManagement'), 'LeadManagement')
 
 function PageLoader() {
   return (
@@ -158,6 +159,8 @@ export default function App() {
           <Route path="students" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
           <Route path="students/add" element={<Suspense fallback={<PageLoader />}><AddStudentPage /></Suspense>} />
           <Route path="students/:id" element={<Suspense fallback={<PageLoader />}><StudentDetailPage /></Suspense>} />
+          <Route path="leads" element={<Suspense fallback={<PageLoader />}><LeadManagementPage /></Suspense>} />
+          <Route path="crm" element={<Suspense fallback={<PageLoader />}><LeadManagementPage /></Suspense>} />
           <Route path="attendance" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
           <Route path="examinations" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />

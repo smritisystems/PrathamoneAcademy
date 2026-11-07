@@ -21,3 +21,14 @@ export type { EditModeBarProps } from './EditModeBar'
 
 export { default as DeleteConfirmationModal } from './DeleteConfirmationModal'
 export type { DeleteConfirmationModalProps } from './DeleteConfirmationModal'
+
+export {
+  LockedButton,
+  LockedIconButton,
+  LockedLinkButton,
+} from './LockedAction'
+export type {
+  LockedButtonProps,
+  LockedIconButtonProps,
+  LockedLinkButtonProps,
+} from './LockedAction'
