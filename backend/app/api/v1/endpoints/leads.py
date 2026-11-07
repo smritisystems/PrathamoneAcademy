@@ -1151,6 +1151,7 @@ async def log_lead_communication(
     }
 
 
+@router.post("/{lead_id}/convert-to-admission")
 @router.post("/{lead_id}/convert")
 async def convert_lead_to_admission(
     lead_id: int,
