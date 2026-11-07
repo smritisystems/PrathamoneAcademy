@@ -20,11 +20,21 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <!-- Pre-hydration Instant Brand Theme Resolver (Zero Flicker) -->
+    <!-- Pre-hydration Instant Brand Theme Resolver (Zero Flicker & Tenant-Isolated) -->
     <script>
       (function() {
         try {
-          var raw = localStorage.getItem('pratham_active_branding');
+          var authRaw = localStorage.getItem('prashant-auth');
+          var instId = 1;
+          if (authRaw) {
+            try {
+              var auth = JSON.parse(authRaw);
+              if (auth && auth.state && auth.state.selectedInstitutionId) {
+                instId = auth.state.selectedInstitutionId;
+              }
+            } catch(e) {}
+          }
+          var raw = localStorage.getItem('pratham_branding_inst_' + instId) || localStorage.getItem('pratham_active_branding');
           if (raw) {
             var b = JSON.parse(raw);
             if (b && b.colors && b.colors.primary) {

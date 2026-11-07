@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Centralized Communication Center workspace for multichannel messaging, template authoring, delivery tracking, and gateway diagnostics.
  */
@@ -459,7 +459,7 @@ export default function Communication() {
       <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-20 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center shadow-xs">
               <MessageSquare className="w-5 h-5" />
             </div>
             <div>
@@ -747,7 +747,7 @@ export default function Communication() {
                         type="button"
                         disabled={selectedRecipients.length === 0 || !messageBody.trim() || submitting}
                         onClick={() => setIsConfirmModalOpen(true)}
-                        className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                        className="px-5 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 active:bg-blue-800 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
                       >
                         {submitting ? (
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -880,7 +880,7 @@ export default function Communication() {
                             <div
                               className={`w-4 h-4 rounded border flex items-center justify-center ${
                                 isSelected
-                                  ? 'bg-blue-600 border-blue-600 text-white'
+                                  ? 'bg-primary-600 border-primary-600 text-white'
                                   : 'border-gray-300 bg-white'
                               }`}
                             >
@@ -1014,7 +1014,7 @@ export default function Communication() {
                         })
                         setIsTemplateModalOpen(true)
                       }}
-                      className="px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
+                      className="px-3.5 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Create New Template</span>
@@ -1320,7 +1320,7 @@ export default function Communication() {
                     type="button"
                     disabled={submitting || !testDestination}
                     onClick={handleRunDiagnosticTest}
-                    className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
+                    className="px-4 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
                   >
                     {submitting ? (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -1359,7 +1359,7 @@ export default function Communication() {
                       type="button"
                       disabled={savingRules}
                       onClick={handleSaveAutomationRules}
-                      className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                      className="px-4 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
                     >
                       {savingRules ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                       <span>Save Automation Rules</span>
@@ -1383,7 +1383,7 @@ export default function Communication() {
                             }
                             className="sr-only peer"
                           />
-                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
                         </label>
                       </div>
                       <p className="text-[11px] text-gray-500">
@@ -1429,7 +1429,7 @@ export default function Communication() {
                             }
                             className="sr-only peer"
                           />
-                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
                         </label>
                       </div>
                       <p className="text-[11px] text-gray-500">
@@ -1458,7 +1458,7 @@ export default function Communication() {
                             }
                             className="sr-only peer"
                           />
-                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
                         </label>
                       </div>
                       <p className="text-[11px] text-gray-500">
@@ -1820,7 +1820,7 @@ export default function Communication() {
                 type="button"
                 disabled={submitting}
                 onClick={handleExecuteSend}
-                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
               >
                 {submitting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span>Confirm & Dispatch</span>
@@ -1931,7 +1931,7 @@ export default function Communication() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-2xs"
+                  className="px-4 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-2xs"
                 >
                   {editingTemplate ? 'Update Template' : 'Save Template'}
                 </button>

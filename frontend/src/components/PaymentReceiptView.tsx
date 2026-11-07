@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -276,7 +276,7 @@ export default function PaymentReceiptView({
                 onClick={() => setPaperSize('A5')}
                 className={`px-3 py-1 rounded-md transition-colors ${
                   paperSize === 'A5'
-                    ? 'bg-blue-600 text-white font-bold shadow-2xs'
+                    ? 'bg-primary-600 text-white font-bold shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -287,7 +287,7 @@ export default function PaymentReceiptView({
                 onClick={() => setPaperSize('A4')}
                 className={`px-3 py-1 rounded-md transition-colors ${
                   paperSize === 'A4'
-                    ? 'bg-blue-600 text-white font-bold shadow-2xs'
+                    ? 'bg-primary-600 text-white font-bold shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -300,7 +300,7 @@ export default function PaymentReceiptView({
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
             >
               <Printer className="w-4 h-4" />
               <span>Print Receipt ({paperSize})</span>

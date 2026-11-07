@@ -346,7 +346,7 @@ export default function Sidebar() {
             {isCollapsed ? (
               <div className="flex flex-col items-center gap-3">
                 <div
-                  className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shadow"
+                  className="w-9 h-9 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white shadow"
                   title={`${user?.first_name} ${user?.last_name}`}
                 >
                   {user?.first_name?.[0]}{user?.last_name?.[0]}
@@ -362,7 +362,7 @@ export default function Sidebar() {
               </div>
             ) : (
               <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/60 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shadow flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white shadow flex-shrink-0">
                   {user?.first_name?.[0]}{user?.last_name?.[0]}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -600,7 +600,7 @@ export default function Sidebar() {
                           to={sub.to}
                           className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
                             isSubActive
-                              ? 'bg-blue-600 text-white shadow-sm'
+                              ? 'bg-primary-600 text-white shadow-sm'
                               : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                           }`}
                         >
@@ -621,7 +621,7 @@ export default function Sidebar() {
                   aria-expanded={academicOpen}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isAcademicActive
-                      ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                      ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`}
                 >
@@ -650,7 +650,7 @@ export default function Sidebar() {
                           to={sub.to}
                           className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             isSubActive
-                              ? 'bg-blue-600 text-white shadow-sm'
+                              ? 'bg-primary-600 text-white shadow-sm'
                               : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                           }`}
                         >
@@ -736,7 +736,7 @@ export default function Sidebar() {
                           to={sub.to}
                           className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                             isSubActive
-                              ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                              ? 'bg-primary-600 text-white shadow-sm font-semibold'
                               : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                           }`}
                         >
@@ -757,7 +757,7 @@ export default function Sidebar() {
                   aria-expanded={crmOpen}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isCrmActive
-                      ? 'bg-blue-600 text-white shadow-md font-semibold'
+                      ? 'bg-primary-600 text-white shadow-md font-semibold'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`}
                 >
@@ -782,7 +782,7 @@ export default function Sidebar() {
                           to={sub.to}
                           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                             isSubActive
-                              ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                              ? 'bg-primary-600 text-white font-semibold shadow-sm'
                               : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                           }`}
                         >
@@ -813,7 +813,7 @@ export default function Sidebar() {
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
                   } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     isItemActive
-                      ? 'bg-blue-600 text-white shadow-md'
+                      ? 'bg-primary-600 text-white shadow-md'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`}
                 >
@@ -884,7 +884,7 @@ export default function Sidebar() {
             </div>
           ) : (
             <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/60 border border-slate-700/50">
-              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shadow flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white shadow flex-shrink-0">
                 {user?.first_name?.[0] || 'A'}{user?.last_name?.[0] || 'U'}
               </div>
               <div className="flex-1 min-w-0">

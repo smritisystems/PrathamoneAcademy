@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -1261,7 +1261,7 @@ export default function AcademicWorkspace() {
       {/* ── 1. Page Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-primary-500/20">
             <School className="w-6 h-6" />
           </div>
           <div>
@@ -1279,7 +1279,7 @@ export default function AcademicWorkspace() {
           {isEditMode ? (
             <button
               onClick={handleOpenCreateBatch}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
               Create Batch
@@ -1319,7 +1319,7 @@ export default function AcademicWorkspace() {
               onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                  ? 'bg-blue-600 text-white shadow-sm shadow-primary-500/20'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
@@ -1428,7 +1428,7 @@ export default function AcademicWorkspace() {
           <div className="pt-5">
             <button
               onClick={handleOpenCreateBatch}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all"
             >
               <Plus className="w-4 h-4" />
               Create Batch
@@ -1604,7 +1604,7 @@ export default function AcademicWorkspace() {
                                   }}
                                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                     isClassSelected
-                                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                                      ? 'bg-blue-600 text-white shadow-sm shadow-primary-500/20'
                                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                                   }`}
                                 >
@@ -1675,7 +1675,7 @@ export default function AcademicWorkspace() {
                         onClick={() => setViewMode('grid')}
                         className={`p-1.5 rounded-lg transition-all ${
                           viewMode === 'grid'
-                            ? 'bg-blue-600 text-white shadow-sm'
+                            ? 'bg-primary-600 text-white shadow-sm'
                             : 'text-gray-500 hover:text-gray-900'
                         }`}
                         title="Grid View"
@@ -1686,7 +1686,7 @@ export default function AcademicWorkspace() {
                         onClick={() => setViewMode('list')}
                         className={`p-1.5 rounded-lg transition-all ${
                           viewMode === 'list'
-                            ? 'bg-blue-600 text-white shadow-sm'
+                            ? 'bg-primary-600 text-white shadow-sm'
                             : 'text-gray-500 hover:text-gray-900'
                         }`}
                         title="List View"
@@ -1732,7 +1732,7 @@ export default function AcademicWorkspace() {
                         <p className="text-sm font-semibold text-gray-600">No batches found for this class</p>
                         <button
                           onClick={handleOpenCreateBatch}
-                          className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all inline-flex items-center gap-1.5"
+                          className="mt-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all inline-flex items-center gap-1.5"
                         >
                           <Plus className="w-4 h-4" />
                           Create Batch
@@ -1973,7 +1973,7 @@ export default function AcademicWorkspace() {
                       </div>
                       <button
                         onClick={() => handleTabChange('timetable')}
-                        className="text-xs font-bold px-3 py-1.5 bg-blue-600 text-white rounded-xl shadow-sm"
+                        className="text-xs font-bold px-3 py-1.5 bg-primary-600 text-white rounded-xl shadow-sm"
                       >
                         Open Timetable Manager
                       </button>
@@ -2101,7 +2101,7 @@ export default function AcademicWorkspace() {
             </div>
             <button
               onClick={handleOpenAddBoard}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="w-4 h-4" /> Add Board
             </button>
@@ -2185,7 +2185,7 @@ export default function AcademicWorkspace() {
             </div>
             <button
               onClick={handleOpenAddStandard}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="w-4 h-4" /> Add Class
             </button>
@@ -2254,7 +2254,7 @@ export default function AcademicWorkspace() {
             </div>
             <button
               onClick={() => handleOpenAddSubject()}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="w-4 h-4" /> Add Subject
             </button>
@@ -2349,7 +2349,7 @@ export default function AcademicWorkspace() {
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                    viewMode === 'grid' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
                   }`}
                   title="Grid View"
                 >
@@ -2358,7 +2358,7 @@ export default function AcademicWorkspace() {
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'list' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                    viewMode === 'list' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
                   }`}
                   title="List View"
                 >
@@ -2367,7 +2367,7 @@ export default function AcademicWorkspace() {
               </div>
               <button
                 onClick={handleOpenCreateBatch}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
               >
                 <Plus className="w-4 h-4" /> Create Batch
               </button>
@@ -2549,7 +2549,7 @@ export default function AcademicWorkspace() {
                   setConflictWarning(null)
                   setShowAddSessionModal(true)
                 }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
               >
                 <Plus className="w-4 h-4" /> Add Session
               </button>
@@ -2698,7 +2698,7 @@ export default function AcademicWorkspace() {
                   })
                   setShowEnrollModal(true)
                 }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
               >
                 <UserPlus className="w-4 h-4" /> Enroll Student
               </button>
@@ -2981,7 +2981,7 @@ export default function AcademicWorkspace() {
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm"
+                  className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
                 >
                   Save Settings
                 </button>
@@ -3146,7 +3146,7 @@ export default function AcademicWorkspace() {
             <button
               type="submit"
               disabled={createBatchMutation.isPending}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
             >
               {createBatchMutation.isPending ? 'Creating...' : 'Create Batch'}
             </button>
@@ -3275,7 +3275,7 @@ export default function AcademicWorkspace() {
             <button
               type="submit"
               disabled={updateBatchMutation.isPending}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
             >
               {updateBatchMutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>
@@ -3352,7 +3352,7 @@ export default function AcademicWorkspace() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
             >
               {showEditBoardModal ? 'Save Board' : 'Create Board'}
             </button>
@@ -3430,7 +3430,7 @@ export default function AcademicWorkspace() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
             >
               {showEditStandardModal ? 'Save Class' : 'Create Class'}
             </button>
@@ -3564,7 +3564,7 @@ export default function AcademicWorkspace() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
             >
               {showEditSubjectModal ? 'Save Subject' : 'Add Subject'}
             </button>
@@ -3696,7 +3696,7 @@ export default function AcademicWorkspace() {
               <button
                 type="submit"
                 disabled={createSessionMutation.isPending}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
               >
                 {createSessionMutation.isPending ? 'Scheduling...' : 'Confirm Schedule'}
               </button>
@@ -3795,7 +3795,7 @@ export default function AcademicWorkspace() {
             <button
               type="submit"
               disabled={createEnrollmentMutation.isPending}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
             >
               {createEnrollmentMutation.isPending ? 'Enrolling...' : 'Enroll Student'}
             </button>

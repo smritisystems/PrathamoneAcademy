@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-08
  *
  * @description Production-grade spreadsheet-style report data grid with sorting, column resizing/reordering, visibility toggle, column filters, and multi-format exports.
  */
@@ -517,7 +517,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                 setShowExportMenu(!showExportMenu)
                 setShowColumnsMenu(false)
               }}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export</span>
@@ -547,7 +547,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                       onClick={() => setExportScope('filtered')}
                       className={`px-2 py-1.5 rounded-md text-xs font-bold transition-all ${
                         exportScope === 'filtered'
-                          ? 'bg-blue-600 text-white shadow-xs'
+                          ? 'bg-primary-600 text-white shadow-xs'
                           : 'bg-white text-slate-600 border border-slate-200'
                       }`}
                     >
@@ -558,7 +558,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                       onClick={() => setExportScope('page')}
                       className={`px-2 py-1.5 rounded-md text-xs font-bold transition-all ${
                         exportScope === 'page'
-                          ? 'bg-blue-600 text-white shadow-xs'
+                          ? 'bg-primary-600 text-white shadow-xs'
                           : 'bg-white text-slate-600 border border-slate-200'
                       }`}
                     >
@@ -873,7 +873,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
                                 <button
                                   type="button"
                                   onClick={() => setActiveFilterPopover(null)}
-                                  className="px-2 py-0.5 bg-blue-600 text-white rounded font-semibold"
+                                  className="px-2 py-0.5 bg-primary-600 text-white rounded font-semibold"
                                 >
                                   Apply
                                 </button>

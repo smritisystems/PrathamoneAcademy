@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Enterprise Study Materials & Academic Programs management console with live database persistence.
  */
@@ -335,7 +335,7 @@ export default function CoursesPage() {
             isEditMode={isEditMode}
             onClick={handleOpenAdd}
             icon={Plus}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
           >
             Upload Material
           </LockedButton>
@@ -599,7 +599,7 @@ export default function CoursesPage() {
                 onClick={() => setSelectedProgramCat(cat)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   selectedProgramCat === cat
-                    ? 'bg-blue-600 text-white shadow-2xs'
+                    ? 'bg-primary-600 text-white shadow-2xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -818,7 +818,7 @@ export default function CoursesPage() {
               type="button"
               disabled={saveMutation.isPending}
               onClick={() => saveMutation.mutate()}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-xs"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-lg transition-colors shadow-xs"
             >
               {saveMutation.isPending ? 'Saving...' : editingMaterial ? 'Save Changes' : 'Upload Resource'}
             </button>

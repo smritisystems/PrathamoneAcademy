@@ -174,6 +174,24 @@ export default function Settings() {
     }
   }
 
+  const originalProfileRef = useRef<InstituteProfile | null>(null)
+  useEffect(() => {
+    originalProfileRef.current = originalProfile
+  }, [originalProfile])
+
+  // Revert preview theme on unmount if user navigates away with unsaved preview changes
+  useEffect(() => {
+    return () => {
+      if (originalProfileRef.current) {
+        applyGlobalBrandTheme({
+          primary: originalProfileRef.current.primary_color || '#1E40AF',
+          secondary: originalProfileRef.current.secondary_color || '#3B82F6',
+          accent: originalProfileRef.current.accent_color || '#8B5CF6',
+        }, originalProfileRef.current.logo_url)
+      }
+    }
+  }, [])
+
   useEffect(() => {
     fetchAllData()
   }, [])

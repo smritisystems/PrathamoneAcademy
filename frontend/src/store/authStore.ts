@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Zustand state store managing user authentication token, logged-in profile, and active institute ID.
  */
@@ -48,6 +48,27 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('prashant-logout'))
+          try {
+            // Restore Institution 1 branding to DOM on logout to prevent cross-tenant branding leak
+            const inst1Cached = localStorage.getItem('pratham_branding_inst_1')
+            if (inst1Cached) {
+              const b = JSON.parse(inst1Cached)
+              if (b?.colors?.primary) {
+                const root = document.documentElement
+                const p = b.colors.primary
+                const s = b.colors.secondary || p
+                const a = b.colors.accent || s || p
+                root.style.setProperty('--brand-primary', p)
+                root.style.setProperty('--brand-secondary', s)
+                root.style.setProperty('--brand-accent', a)
+                root.style.setProperty('--color-primary', p)
+                root.style.setProperty('--color-secondary', s)
+                root.style.setProperty('--color-accent', a)
+                root.style.setProperty('--brand-gradient', `linear-gradient(135deg, ${p} 0%, ${s} 100%)`)
+                localStorage.setItem('pratham_active_branding', inst1Cached)
+              }
+            }
+          } catch {}
         }
         set({
           token: null,
@@ -56,7 +77,32 @@ export const useAuthStore = create<AuthState>()(
           selectedAcademicYearId: 1,
         })
       },
-      setSelectedInstitution: (id) => set({ selectedInstitutionId: id || 1 }),
+      setSelectedInstitution: (id) => {
+        const targetId = id || 1
+        if (typeof window !== 'undefined') {
+          try {
+            const cached = localStorage.getItem(`pratham_branding_inst_${targetId}`)
+            if (cached) {
+              const b = JSON.parse(cached)
+              if (b?.colors?.primary) {
+                const root = document.documentElement
+                const p = b.colors.primary
+                const s = b.colors.secondary || p
+                const a = b.colors.accent || s || p
+                root.style.setProperty('--brand-primary', p)
+                root.style.setProperty('--brand-secondary', s)
+                root.style.setProperty('--brand-accent', a)
+                root.style.setProperty('--color-primary', p)
+                root.style.setProperty('--color-secondary', s)
+                root.style.setProperty('--color-accent', a)
+                root.style.setProperty('--brand-gradient', `linear-gradient(135deg, ${p} 0%, ${s} 100%)`)
+                localStorage.setItem('pratham_active_branding', cached)
+              }
+            }
+          } catch {}
+        }
+        set({ selectedInstitutionId: targetId })
+      },
       setSelectedAcademicYear: (id) => set({ selectedAcademicYearId: id || 1 }),
     }),
     { name: 'prashant-auth' }

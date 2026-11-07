@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-08
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -140,7 +140,7 @@ async def get_public_institution_branding(
         "code": inst.code,
         "short_name": inst.short_name or "PA",
         "tagline": inst.tagline or "Learn • Practice • Achieve",
-        "logo_url": inst.logo_url or "/logo.svg",
+        "logo_url": inst.logo_url,
         "favicon_url": inst.favicon_url or "/favicon.svg",
         "primary_color": inst.primary_color or "#1E40AF",
         "secondary_color": inst.secondary_color or "#3B82F6",

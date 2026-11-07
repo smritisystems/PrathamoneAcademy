@@ -346,7 +346,7 @@ export default function LeadManagement() {
             isEditMode={isEditMode}
             onClick={() => setIsNewLeadModalOpen(true)}
             icon={Plus}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
           >
             New Lead
           </LockedButton>
@@ -482,7 +482,7 @@ export default function LeadManagement() {
             onClick={() => setViewMode('pipeline')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'pipeline'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -494,7 +494,7 @@ export default function LeadManagement() {
             onClick={() => setViewMode('list')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'list'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -506,7 +506,7 @@ export default function LeadManagement() {
             onClick={() => setViewMode('followups')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'followups'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -518,7 +518,7 @@ export default function LeadManagement() {
             onClick={() => setViewMode('calendar')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'calendar'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -530,7 +530,7 @@ export default function LeadManagement() {
             onClick={() => setViewMode('analytics')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === 'analytics'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -1603,7 +1603,7 @@ function NewLeadModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-xs"
+            className="px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-xl hover:bg-primary-700 shadow-xs"
           >
             {isSubmitting ? 'Registering...' : 'Register Lead'}
           </button>
@@ -1763,7 +1763,7 @@ function FollowUpModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-xs"
+            className="px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-xl hover:bg-primary-700 shadow-xs"
           >
             {isSubmitting ? 'Saving...' : 'Save Follow-up'}
           </button>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-08
  *
  * @description Official Digital Student ID Card modal with CR80 thermal/PVC dimensions and SVG QR code rendering.
  */
@@ -118,7 +118,7 @@ export default function StudentIDCardModal({
             <button
               onClick={handlePrint}
               disabled={loading || !cardData}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs flex items-center gap-1.5 transition disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-xs flex items-center gap-1.5 transition disabled:opacity-50"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print Card</span>
@@ -305,7 +305,7 @@ export default function StudentIDCardModal({
             type="button"
             onClick={handlePrint}
             disabled={loading || !cardData}
-            className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs flex items-center gap-1.5 transition disabled:opacity-50"
+            className="px-4 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-xs flex items-center gap-1.5 transition disabled:opacity-50"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print Student ID Card</span>

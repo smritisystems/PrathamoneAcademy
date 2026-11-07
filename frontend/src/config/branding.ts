@@ -287,8 +287,16 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     },
     assets: {
       ...BRANDING_CONFIG.assets,
-      logoUrl: (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg') ? activeInstitution.logo_url : BRANDING_CONFIG.assets.academyLogoUrl,
-      academyLogoUrl: (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg') ? activeInstitution.logo_url : BRANDING_CONFIG.assets.academyLogoUrl,
+      logoUrl: (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg')
+        ? activeInstitution.logo_url
+        : (!activeInstitution || activeInstitution.id === 1)
+          ? BRANDING_CONFIG.assets.academyLogoUrl
+          : '',
+      academyLogoUrl: (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg')
+        ? activeInstitution.logo_url
+        : (!activeInstitution || activeInstitution.id === 1)
+          ? BRANDING_CONFIG.assets.academyLogoUrl
+          : '',
       faviconUrl: activeInstitution?.favicon_url || BRANDING_CONFIG.assets.faviconUrl,
     },
     support: {
@@ -307,6 +315,7 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
 
 export const FALLBACK_BRANDING = resolveBranding(undefined)
 
+export const getTenantBrandingKey = (instId?: number | null): string => `pratham_branding_inst_${instId || 1}`
 export const BRANDING_STORAGE_KEY = 'pratham_active_branding'
 
 /**
@@ -439,7 +448,17 @@ export function applyGlobalBrandTheme(
 // Immediate synchronous execution on module load for instant bootstrap
 if (typeof window !== 'undefined') {
   try {
-    const cached = localStorage.getItem(BRANDING_STORAGE_KEY)
+    let instId = 1
+    const authRaw = localStorage.getItem('prashant-auth')
+    if (authRaw) {
+      try {
+        const auth = JSON.parse(authRaw)
+        if (auth?.state?.selectedInstitutionId) {
+          instId = auth.state.selectedInstitutionId
+        }
+      } catch {}
+    }
+    const cached = localStorage.getItem(getTenantBrandingKey(instId)) || localStorage.getItem(BRANDING_STORAGE_KEY)
     if (cached) {
       const parsed = JSON.parse(cached)
       if (parsed?.colors?.primary) {
@@ -493,6 +512,8 @@ export function useBranding(): ResolvedBranding {
     // Synchronize to localStorage for instantaneous load on reload
     if (typeof window !== 'undefined' && activeInstitution) {
       try {
+        const tenantKey = getTenantBrandingKey(activeInstitution.id || 1)
+        localStorage.setItem(tenantKey, JSON.stringify(res))
         localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(res))
       } catch {}
     }

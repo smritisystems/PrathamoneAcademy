@@ -17,7 +17,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { renderHook } from '@testing-library/react'
 import {
   hexToRgb,
   adjustBrightness,
@@ -26,7 +25,9 @@ import {
   resolveBranding,
   BRANDING_CONFIG,
   BRANDING_STORAGE_KEY,
+  getTenantBrandingKey,
 } from '../config/branding'
+import { useAuthStore } from '../store/authStore'
 import type { Institution } from '../types'
 
 describe('Global Branding Engine & Resolver', () => {
@@ -144,6 +145,25 @@ describe('Global Branding Engine & Resolver', () => {
       expect(resolved.assets.logoUrl).toBe('/media/logo/demo-logo.png')
     })
 
+    it('falls back to text monogram when second tenant has no logo (prevents logo bleed from tenant 1)', () => {
+      const tenantBNoLogo: Partial<Institution> = {
+        id: 2,
+        name: 'Prashant Academy (Training & Demo Environment)',
+        code: 'DEMO002',
+        short_name: 'PA',
+        primary_color: '#D97706',
+        secondary_color: '#F59E0B',
+        accent_color: '#B45309',
+        logo_url: null as any,
+      }
+
+      const resolved = resolveBranding(tenantBNoLogo)
+      expect(resolved.colors.primary).toBe('#D97706')
+      // Second tenant with no logo MUST NOT bleed Tenant 1 logo
+      expect(resolved.assets.logoUrl).toBe('')
+      expect(resolved.monogram).toBe('PA')
+    })
+
     it('falls back to system baseline defaults when tenant parameters are missing', () => {
       const resolved = resolveBranding(undefined)
       expect(resolved.academyName).toBe(BRANDING_CONFIG.defaultAcademyName)
@@ -152,5 +172,38 @@ describe('Global Branding Engine & Resolver', () => {
       expect(resolved.monogram).toBe(BRANDING_CONFIG.monogram)
     })
   })
-})
 
+  describe('Multi-Tenant Switching & Storage Isolation', () => {
+    it('generates distinct tenant-scoped localStorage keys', () => {
+      expect(getTenantBrandingKey(1)).toBe('pratham_branding_inst_1')
+      expect(getTenantBrandingKey(2)).toBe('pratham_branding_inst_2')
+      expect(getTenantBrandingKey(null)).toBe('pratham_branding_inst_1')
+    })
+
+    it('simulates tenant switching and ensures logout cleanly reverts to Institution 1 branding', () => {
+      // 1. Initial State: Prashant Academy (Inst 1)
+      const inst1Branding = {
+        colors: { primary: '#881337', secondary: '#F43F5E', accent: '#FB7185' },
+        assets: { logoUrl: '/media/logo/prashant-academy-logo.svg' }
+      }
+      localStorage.setItem('pratham_branding_inst_1', JSON.stringify(inst1Branding))
+      applyGlobalBrandTheme(inst1Branding.colors)
+      expect(document.documentElement.style.getPropertyValue('--brand-primary')).toBe('#881337')
+
+      // 2. Switch to Tenant 2 (Training & Demo - #D97706)
+      const inst2Branding = {
+        colors: { primary: '#D97706', secondary: '#F59E0B', accent: '#B45309' },
+        assets: { logoUrl: '' }
+      }
+      localStorage.setItem('pratham_branding_inst_2', JSON.stringify(inst2Branding))
+      useAuthStore.getState().setSelectedInstitution(2)
+      expect(document.documentElement.style.getPropertyValue('--brand-primary')).toBe('#D97706')
+      expect(useAuthStore.getState().selectedInstitutionId).toBe(2)
+
+      // 3. User logs out: verify DOM and active branding immediately reset to Inst 1
+      useAuthStore.getState().logout()
+      expect(useAuthStore.getState().selectedInstitutionId).toBe(1)
+      expect(document.documentElement.style.getPropertyValue('--brand-primary')).toBe('#881337')
+    })
+  })
+})
