@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-07 23:20:43  
-**Total Indexed Items:** 275  
+**Last Reindexed:** 2026-11-07 23:44:43  
+**Total Indexed Items:** 292  
 
 ---
 
@@ -14,7 +14,7 @@
 
 | Module # | Module Directory | Registered Documents | Description |
 |---|---|---|---|
-| `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **6** | Product Overview & Vision |
+| `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **8** | Product Overview & Vision |
 | `01` | [01_ARCHITECTURE](#01_architecture) | **2** | System Architecture & Workflows |
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **4** | Installation & Deployment |
 | `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **10** | Academic Structure & Courses |
@@ -31,17 +31,17 @@
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **10** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **4** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **3** | Database Schema & REST API Standards |
-| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **4** | UI/UX Design, Components & Footer |
+| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **6** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **1** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **5** | Releases, Versioning & Changelogs |
-| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **40** | Forensic Audits & Data Health |
+| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **41** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **2** | Troubleshooting, Runbooks & Recovery |
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **9** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **6** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **67** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **79** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -53,6 +53,8 @@
 |---|---|---|---|---|---|---|
 | **Coaching Institute Policy Framework** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md](00_PRODUCT_OVERVIEW/2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md) | - |
 | **Prashant Academy — Documentation Index** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md](00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md) | - |
+| **PrathamOne & PrathamOne EduOS Brand Architecture Specification** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md) | frontend.config, frontend.components, 14_PRINTING_DOCUMENTS |
+| **PrathamOne & PrathamOne EduOS Brand Asset Register & Master Specifications** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md) | frontend.config, frontend.components, 17_UI_UX_DESIGN |
 | **PrathamOne EduOS Official Brand Identity & Logo Assets Specification** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md) | 17_UI_UX_DESIGN, 14_PRINTING_DOCUMENTS |
 | **PrathamOne EduOS — Centralized Documentation Hub** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [README.md](README.md) | - |
 | **PrathamOne EduOS — Documentation Governance & Naming Rules** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) | - |
@@ -282,6 +284,8 @@
 | **Prashant Academy — Board, Class & Student Roster Update Report** | `IMPLEMENTATION-PLAN` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md](17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md) | - |
 | **PrathamOne Academy — Centralized Error Handling & Recovery Architecture** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md](17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md) | - |
 | **PrathamOne Academy — Collapsible Application Footer Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_COLLAPSIBLE-APPLICATION-FOOTER-REPORT_V1.md](17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_COLLAPSIBLE-APPLICATION-FOOTER-REPORT_V1.md) | - |
+| **PrathamOne EduOS Brand Implementation & Surface Verification Matrix** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_UI-UX-DESIGN_SPECIFICATION_PRATHAMONE-BRAND-IMPLEMENTATION-MATRIX_V1.md](17_UI_UX_DESIGN/2026-11-07_UI-UX-DESIGN_SPECIFICATION_PRATHAMONE-BRAND-IMPLEMENTATION-MATRIX_V1.md) | frontend.config, frontend.components, 14_PRINTING_DOCUMENTS |
+| **PrathamOne EduOS Visual Identity & Brand Design Guidelines** | `GUIDE` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_UI-UX-DESIGN_GUIDE_PRATHAMONE-EDUOS-BRAND-GUIDELINES_V1.md](17_UI_UX_DESIGN/2026-11-07_UI-UX-DESIGN_GUIDE_PRATHAMONE-EDUOS-BRAND-GUIDELINES_V1.md) | frontend.config, frontend.components, 14_PRINTING_DOCUMENTS |
 
 
 ### <a id="18_testing_qa"></a>18_TESTING_QA — Testing, Verification & Quality Assurance
@@ -345,6 +349,7 @@
 | **PrathamOne EduOS — Repository Documentation Audit & Baseline Inventory** | `AUDIT-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md](20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md) | - |
 | **PrathamOne EduOS — Single Source of Truth & Architecture Compliance Report** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md) | 01_ARCHITECTURE, 25_BUSINESS_REQUIREMENTS, 16_DATABASE_API |
 | **PrathamOne EduOS — System Performance, Latency & Reliability Benchmarks** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 18_TESTING_QA |
+| **PrathamOne Global Brand Identity Forensic Audit & Compliance Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS-COMPLIANCE_REPORT_PRATHAMONE-GLOBAL-BRANDING-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_PRATHAMONE-GLOBAL-BRANDING-AUDIT_V1.md) | frontend.config, frontend.components, 14_PRINTING_DOCUMENTS, 00_PRODUCT_OVERVIEW |
 | **Teacher and Staff Dashboard & Profile Forensic Audit — Workspaces, Navigation, and Action Verification** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 17_UI_UX_DESIGN |
 
 
@@ -474,11 +479,23 @@
 | `payroll_login_check.png` | `assets/screenshots` | 611.7 KB | [payroll_login_check.png](assets/screenshots/payroll_login_check.png) |
 | `prathamone-app-icon-192.png` | `assets/branding` | 26.2 KB | [prathamone-app-icon-192.png](assets/branding/prathamone-app-icon-192.png) |
 | `prathamone-app-icon-512.png` | `assets/branding` | 125.6 KB | [prathamone-app-icon-512.png](assets/branding/prathamone-app-icon-512.png) |
+| `prathamone-eduos-horizontal-dark.png` | `assets/branding` | 894.1 KB | [prathamone-eduos-horizontal-dark.png](assets/branding/prathamone-eduos-horizontal-dark.png) |
+| `prathamone-eduos-horizontal-transparent.png` | `assets/branding` | 1660.5 KB | [prathamone-eduos-horizontal-transparent.png](assets/branding/prathamone-eduos-horizontal-transparent.png) |
+| `prathamone-eduos-horizontal.png` | `assets/branding` | 1660.5 KB | [prathamone-eduos-horizontal.png](assets/branding/prathamone-eduos-horizontal.png) |
 | `prathamone-eduos-logo-original.jpg` | `assets/branding` | 34.8 KB | [prathamone-eduos-logo-original.jpg](assets/branding/prathamone-eduos-logo-original.jpg) |
 | `prathamone-eduos-logo-transparent.png` | `assets/branding` | 190.3 KB | [prathamone-eduos-logo-transparent.png](assets/branding/prathamone-eduos-logo-transparent.png) |
 | `prathamone-eduos-logo.png` | `assets/branding` | 162.7 KB | [prathamone-eduos-logo.png](assets/branding/prathamone-eduos-logo.png) |
 | `prathamone-eduos-mark-transparent.png` | `assets/branding` | 36.5 KB | [prathamone-eduos-mark-transparent.png](assets/branding/prathamone-eduos-mark-transparent.png) |
 | `prathamone-eduos-mark.png` | `assets/branding` | 31.2 KB | [prathamone-eduos-mark.png](assets/branding/prathamone-eduos-mark.png) |
+| `prathamone-eduos-primary-dark.png` | `assets/branding` | 1157.1 KB | [prathamone-eduos-primary-dark.png](assets/branding/prathamone-eduos-primary-dark.png) |
+| `prathamone-eduos-primary-transparent.png` | `assets/branding` | 1939.8 KB | [prathamone-eduos-primary-transparent.png](assets/branding/prathamone-eduos-primary-transparent.png) |
+| `prathamone-eduos-primary.png` | `assets/branding` | 1779.6 KB | [prathamone-eduos-primary.png](assets/branding/prathamone-eduos-primary.png) |
+| `prathamone-master-logo-dark.png` | `assets/branding` | 646.4 KB | [prathamone-master-logo-dark.png](assets/branding/prathamone-master-logo-dark.png) |
+| `prathamone-master-logo-transparent.png` | `assets/branding` | 1256.3 KB | [prathamone-master-logo-transparent.png](assets/branding/prathamone-master-logo-transparent.png) |
+| `prathamone-master-logo.png` | `assets/branding` | 1155.9 KB | [prathamone-master-logo.png](assets/branding/prathamone-master-logo.png) |
+| `prathamone-symbol-icon-dark.png` | `assets/branding` | 111.8 KB | [prathamone-symbol-icon-dark.png](assets/branding/prathamone-symbol-icon-dark.png) |
+| `prathamone-symbol-icon-transparent.png` | `assets/branding` | 279.2 KB | [prathamone-symbol-icon-transparent.png](assets/branding/prathamone-symbol-icon-transparent.png) |
+| `prathamone-symbol-icon.png` | `assets/branding` | 256.4 KB | [prathamone-symbol-icon.png](assets/branding/prathamone-symbol-icon.png) |
 | `tab1_monthly_payroll.png` | `assets/screenshots` | 252.0 KB | [tab1_monthly_payroll.png](assets/screenshots/tab1_monthly_payroll.png) |
 | `tab2_session_register.png` | `assets/screenshots` | 228.7 KB | [tab2_session_register.png](assets/screenshots/tab2_session_register.png) |
 | `tab3_profiles_and_rates.png` | `assets/screenshots` | 225.7 KB | [tab3_profiles_and_rates.png](assets/screenshots/tab3_profiles_and_rates.png) |

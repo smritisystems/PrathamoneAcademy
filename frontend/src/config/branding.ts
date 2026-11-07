@@ -135,18 +135,36 @@ export const BRANDING_CONFIG = {
     gold: '#f59e0b',          // Amber-500
     success: '#10b981',       // Emerald-500
     prathamNavy: '#1A1A50',   // PrathamOne Official Deep Navy
-    prathamOrange: '#EB8B3A', // PrathamOne Official Vibrant Orange
+    prathamOrange: '#EE8B36', // PrathamOne Official Vibrant Orange
   },
   assets: {
     logoUrl: '/logo.svg' as string,
     logoDarkUrl: '/logo.svg' as string,
     faviconUrl: '/favicon.svg' as string,
+    faviconIcoUrl: '/favicon.ico' as string,
     icon192Url: '/icons/icon-192x192.png' as string,
     icon512Url: '/icons/icon-512x512.png' as string,
-    prathamOneLogoUrl: '/media/logo/prathamone-eduos-logo.png' as string,
-    prathamOneLogoTransparentUrl: '/media/logo/prathamone-eduos-logo-transparent.png' as string,
-    prathamOneMarkUrl: '/media/logo/prathamone-eduos-mark.png' as string,
-    prathamOneMarkTransparentUrl: '/media/logo/prathamone-eduos-mark-transparent.png' as string,
+    // Parent Brand Master Logo
+    masterLogoUrl: '/media/logo/prathamone-master-logo.png' as string,
+    masterLogoTransparentUrl: '/media/logo/prathamone-master-logo-transparent.png' as string,
+    masterLogoDarkUrl: '/media/logo/prathamone-master-logo-dark.png' as string,
+    // Product Brand Stacked Primary Logo
+    primaryLogoUrl: '/media/logo/prathamone-eduos-primary.png' as string,
+    primaryLogoTransparentUrl: '/media/logo/prathamone-eduos-primary-transparent.png' as string,
+    primaryLogoDarkUrl: '/media/logo/prathamone-eduos-primary-dark.png' as string,
+    // Horizontal Lockup Logo
+    horizontalLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
+    horizontalLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    horizontalLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-dark.png' as string,
+    // Official Symbol Mark (Elephant 'P' Emblem)
+    symbolMarkUrl: '/media/logo/prathamone-symbol-icon.png' as string,
+    symbolMarkTransparentUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
+    symbolMarkDarkUrl: '/media/logo/prathamone-symbol-icon-dark.png' as string,
+    // Legacy / Convenience aliases
+    prathamOneLogoUrl: '/media/logo/prathamone-eduos-primary.png' as string,
+    prathamOneLogoTransparentUrl: '/media/logo/prathamone-eduos-primary-transparent.png' as string,
+    prathamOneMarkUrl: '/media/logo/prathamone-symbol-icon.png' as string,
+    prathamOneMarkTransparentUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
     prathamOneAppIcon512: '/media/logo/prathamone-app-icon-512.png' as string,
     prathamOneAppIcon192: '/media/logo/prathamone-app-icon-192.png' as string,
   },

@@ -377,6 +377,20 @@ export default function Sidebar() {
               </div>
             )}
           </div>
+          {/* PrathamOne EduOS Platform Footnote */}
+          {!isCollapsed && (
+            <div className="px-4 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
+              <div className="flex items-center gap-1.5 truncate">
+                <img
+                  src={branding.assets.symbolMarkTransparentUrl || branding.assets.prathamOneMarkTransparentUrl}
+                  alt="PrathamOne"
+                  className="w-3.5 h-3.5 object-contain opacity-80"
+                />
+                <span className="font-medium text-slate-300 truncate">{branding.suiteName}</span>
+              </div>
+              <span className="font-mono text-slate-400 text-[9.5px]">{branding.versionDisplay}</span>
+            </div>
+          )}
         </aside>
       </>
     )
@@ -872,6 +886,20 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+        {/* PrathamOne EduOS Platform Footnote */}
+        {!isCollapsed && (
+          <div className="px-4 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
+            <div className="flex items-center gap-1.5 truncate">
+              <img
+                src={branding.assets.symbolMarkTransparentUrl || branding.assets.prathamOneMarkTransparentUrl}
+                alt="PrathamOne"
+                className="w-3.5 h-3.5 object-contain opacity-80"
+              />
+              <span className="font-medium text-slate-300 truncate">{branding.suiteName}</span>
+            </div>
+            <span className="font-mono text-slate-400 text-[9.5px]">{branding.versionDisplay}</span>
+          </div>
+        )}
       </aside>
     </>
   )

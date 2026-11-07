@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Responsive organization branding and product ecosystem component displaying AITDL parent identity, product portfolio, and verified sales/support contact details.
  */
@@ -259,13 +259,21 @@ export default function OrganizationBranding({
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`p-1.5 rounded-lg ${
+                        className={`p-1 rounded-lg flex items-center justify-center ${
                           product.isCurrent
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-white border border-blue-200 shadow-xs'
                             : 'bg-white text-slate-700 border border-slate-200 shadow-2xs'
                         }`}
                       >
-                        <Icon className="w-4 h-4" aria-hidden="true" />
+                        {product.id === 'prathamone' ? (
+                          <img
+                            src={branding.assets.symbolMarkTransparentUrl || branding.assets.prathamOneMarkTransparentUrl}
+                            alt="PrathamOne"
+                            className="w-5 h-5 object-contain"
+                          />
+                        ) : (
+                          <Icon className="w-4 h-4" aria-hidden="true" />
+                        )}
                       </div>
                       <span className="font-bold text-sm text-slate-900">{product.name}</span>
                     </div>

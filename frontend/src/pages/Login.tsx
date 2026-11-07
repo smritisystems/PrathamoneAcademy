@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-03
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Premium user authentication page featuring abstract educational wave aesthetics, secure credential validation, and role redirection.
  */
@@ -163,10 +163,14 @@ export default function LoginPage() {
             <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-white/10 pointer-events-none" />
             <div className="absolute -left-6 -bottom-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
 
-            {/* Emblem Badge */}
-            <div className="relative inline-flex items-center justify-center bg-white/15 backdrop-blur-md w-16 h-16 rounded-2xl shadow-inner border border-white/25 mx-auto mb-3.5 group">
-              <GraduationCap className="w-8 h-8 text-white drop-shadow-sm transition-transform group-hover:scale-105 duration-300" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-primary-900" />
+            {/* Official PrathamOne EduOS Emblem Badge */}
+            <div className="relative inline-flex items-center justify-center bg-white p-2 w-16 h-16 rounded-2xl shadow-lg border border-white/40 mx-auto mb-3.5 group transition-transform hover:scale-105 duration-300">
+              <img
+                src={branding.assets.symbolMarkTransparentUrl || branding.assets.prathamOneMarkTransparentUrl}
+                alt="PrathamOne EduOS Official Emblem"
+                className="w-full h-full object-contain filter drop-shadow-xs"
+              />
+              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-primary-900 shadow-xs" title="System Operational" />
             </div>
 
             <h1 className="text-2xl sm:text-[26px] font-bold text-white tracking-tight drop-shadow-xs">
@@ -291,9 +295,14 @@ export default function LoginPage() {
             </div>
 
             {/* Security / Attribution Footer */}
-            <div className="mt-5 pt-4 border-t border-slate-100 text-center">
-              <p className="text-[11px] text-slate-400">
-                Authorized Personnel Only • DPDP Act 2023 Compliant
+            <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col items-center gap-1.5 text-center">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                <span>{branding.suiteName}</span>
+                <span className="text-slate-300">•</span>
+                <span className="font-semibold text-blue-700">{branding.edition}</span>
+              </div>
+              <p className="text-[10.5px] text-slate-400">
+                {branding.copyright} • DPDP Act 2023 Compliant
               </p>
             </div>
           </div>
