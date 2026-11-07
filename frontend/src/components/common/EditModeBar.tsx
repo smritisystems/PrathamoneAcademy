@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Master View-First & Explicit Edit Mode banner and toggle component enforcing global read-only default and explicit modification authorization.
  */
@@ -79,7 +79,9 @@ export default function EditModeBar({
     const isAdmin = ['sysadmin', 'superadmin', 'super_admin', 'admin', 'principal'].includes(role)
     if (requiredPermission) {
       if (isAdmin) return true
-      return (Array.isArray(user.permissions) && user.permissions.includes(requiredPermission)) || false
+      const reqList = requiredPermission.split(/[,|]/).map((s) => s.trim()).filter(Boolean)
+      const perms = Array.isArray(user.permissions) ? user.permissions : []
+      return reqList.some((rp) => perms.includes(rp)) || perms.includes('*:*') || perms.includes('*.*')
     }
     return isAdmin || ['staff', 'teacher', 'accountant'].includes(role)
   }

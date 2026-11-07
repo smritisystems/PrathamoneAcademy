@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-08
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -31,6 +31,8 @@ from app.core.deps import (
     get_current_active_user,
     require_role,
     enforce_institution_access,
+    has_permission,
+    is_sysadmin,
 )
 from app.models.user import User, AuditLog
 from app.models.crm import Lead, LeadFollowUp, LeadDemoClass
@@ -49,6 +51,46 @@ router = APIRouter()
 LEAD_READ_ROLES = ("superadmin", "super_admin", "sysadmin", "admin", "principal", "staff", "accountant", "teacher")
 LEAD_WRITE_ROLES = ("superadmin", "super_admin", "sysadmin", "admin", "principal", "staff")
 LEAD_DELETE_ROLES = ("superadmin", "super_admin", "sysadmin", "admin", "principal")
+
+
+def require_lead_access(action: str, default_roles: tuple = LEAD_WRITE_ROLES):
+    """
+    Granular RBAC dependency for Lead Management & CRM endpoints.
+    Authorizes user if:
+    1. User has universal administrative privileges (sysadmin / superadmin).
+    2. User possesses explicit granular permission: (resource='leads', action=action) or wildcard.
+    3. User belongs to standard authorized role defaults for this CRM operation.
+    """
+    async def access_checker(
+        current_user: User = Depends(get_current_active_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> User:
+        if is_sysadmin(current_user):
+            return current_user
+
+        # Explicit granular permission check
+        if await has_permission(db, current_user, "leads", action):
+            return current_user
+        if await has_permission(db, current_user, "leads", "*"):
+            return current_user
+
+        # Role fallback
+        user_role = (getattr(current_user, "role", "") or "").lower()
+        if user_role in default_roles:
+            return current_user
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Insufficient permissions: requires 'leads:{action}' authorization.",
+        )
+
+    return access_checker
+
+
+require_lead_read = require_lead_access("read", LEAD_READ_ROLES)
+require_lead_write = require_lead_access("update", LEAD_WRITE_ROLES)
+require_lead_create = require_lead_access("create", LEAD_WRITE_ROLES)
+require_lead_delete = require_lead_access("delete", LEAD_DELETE_ROLES)
 
 
 # ─── Pydantic Schemas ─────────────────────────────────────────────────────────
@@ -331,7 +373,7 @@ async def list_leads(
     limit: int = Query(50, ge=1, le=200),
     effective_inst_id: Optional[int] = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(*LEAD_READ_ROLES)),
+    current_user: User = Depends(require_lead_read),
 ):
     """
     Returns paginated list of enquiries/leads with search, stage filters, and counsellor scoping.
@@ -415,7 +457,7 @@ async def get_kanban_pipeline(
     assigned_to_id: Optional[int] = Query(None),
     effective_inst_id: Optional[int] = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(*LEAD_READ_ROLES)),
+    current_user: User = Depends(require_lead_read),
 ):
     """
     Returns pipeline leads organized by stage columns for Kanban representation.
@@ -480,7 +522,7 @@ async def get_kanban_pipeline(
 async def get_crm_metrics(
     effective_inst_id: Optional[int] = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(*LEAD_READ_ROLES)),
+    current_user: User = Depends(require_lead_read),
 ):
     """
     Returns real-time CRM KPIs matching the 7 cards in the dashboard.
@@ -718,7 +760,7 @@ async def get_lead_dossier(
     lead_id: int,
     effective_inst_id: Optional[int] = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(*LEAD_READ_ROLES)),
+    current_user: User = Depends(require_lead_read),
 ):
     """
     Returns full comprehensive Lead Dossier: overview, follow-up history, demo classes, and comms.
@@ -1167,7 +1209,7 @@ async def convert_lead_to_admission(
     data: ConvertToAdmissionRequest,
     effective_inst_id: Optional[int] = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(*LEAD_WRITE_ROLES)),
+    current_user: User = Depends(require_lead_write),
 ):
     """
     Converts lead to formal Student Admission:
@@ -1177,6 +1219,22 @@ async def convert_lead_to_admission(
     - Updates Lead: stage='converted', converted_student_id, converted_at
     - Writes immutable AuditLog
     """
+    # ─── RBAC: INDEPENDENT STUDENT ADMISSION AUTHORIZATION CHECK ────────────
+    # Converting a prospect enquiry into an official student admission
+    # strictly requires 'students:admission' (or 'admissions:create' / 'students:manage')
+    # privilege, or institutional administrator authority.
+    has_admission_perm = (
+        await has_permission(db, current_user, "students", "admission")
+        or await has_permission(db, current_user, "admissions", "create")
+        or await has_permission(db, current_user, "students", "manage")
+        or (current_user.role or "").lower() in ("sysadmin", "superadmin", "super_admin", "admin", "principal")
+    )
+    if not has_admission_perm:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admission conversion requires separate Student Admission authorization. You can continue managing this lead in CRM.",
+        )
+
     effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
     lead = (
         await db.execute(
@@ -1391,7 +1449,7 @@ async def delete_or_archive_lead(
     lead_id: int,
     effective_inst_id: Optional[int] = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(*LEAD_DELETE_ROLES)),
+    current_user: User = Depends(require_lead_delete),
 ):
     """
     Deactivates or archives lead record with strict role authorization and AuditLog.

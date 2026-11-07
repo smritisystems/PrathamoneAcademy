@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Centralized Zustand store enforcing Global View-First & Explicit Edit Mode governance across all modules, pages, forms, and tables.
  */
@@ -81,8 +81,10 @@ export const useEditModeStore = create<EditModeState>()((set, get) => ({
 
     if (requiredPermission) {
       const perms = Array.isArray(user.permissions) ? user.permissions : []
+      const reqList = requiredPermission.split(/[,|]/).map((s) => s.trim()).filter(Boolean)
+      const hasPerm = reqList.length === 0 || reqList.some((rp) => perms.includes(rp))
       const permitted =
-        perms.includes(requiredPermission) ||
+        hasPerm ||
         isSuperAdmin ||
         perms.includes('*:*') ||
         perms.includes('*.*')

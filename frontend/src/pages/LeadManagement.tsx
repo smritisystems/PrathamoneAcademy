@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Complete Lead Management & CRM workspace featuring KPI metrics, Kanban pipeline,
  */
@@ -34,7 +34,7 @@ import type {
   LeadItem, LeadDossierResponse, LeadMetricsSummary,
   LeadKanbanResponse, Standard, Board, User, AcademicYear
 } from '../types'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal } from '../components/common'
 import Modal from '../components/Modal'
@@ -46,6 +46,16 @@ export default function LeadManagement() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
+
+  // RBAC Permission Gates: CRM is strictly decoupled from student admission authorization
+  const canReadLeads = hasPermission(user, 'leads:read') || hasPermission(user, 'leads:manage_pipeline')
+  const canCreateLeads = hasPermission(user, 'leads:create')
+  const canUpdateLeads = hasPermission(user, 'leads:update')
+  const canDeleteLeads = hasPermission(user, 'leads:delete')
+  const canConvertAdmission =
+    hasPermission(user, 'students:admission') ||
+    hasPermission(user, 'admissions:create') ||
+    hasPermission(user, 'students:manage')
 
   const editScope = 'crm:leads'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
@@ -260,13 +270,36 @@ export default function LeadManagement() {
     }
   }
 
+  // ─── RBAC Access Gate: Unauthorized User Check ────────────────────────────
+  if (user && !canReadLeads) {
+    return (
+      <div className="min-h-[60vh] bg-slate-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-slate-200 text-center">
+          <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100">
+            <Lock className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Access Denied</h2>
+          <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+            You do not have permission to access the Lead Management & CRM module. Please contact your system administrator.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-xl transition-all"
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-16">
       {/* ─── RULE 010 VIEW-FIRST GOVERNANCE BAR ───────────────────────────── */}
       <EditModeBar
         scope={editScope}
         title="Lead Management & CRM"
-        requiredPermission="students:admission"
+        requiredPermission="leads:update,leads:create"
       />
 
       {/* ─── WORKSPACE HEADER ─────────────────────────────────────────────── */}
@@ -1178,7 +1211,7 @@ export default function LeadManagement() {
                         </Link>
                       )}
                     </div>
-                  ) : (
+                  ) : canConvertAdmission ? (
                     <LockedButton
                       isEditMode={isEditMode}
                       onClick={() => setIsConvertModalOpen(true)}
@@ -1187,6 +1220,25 @@ export default function LeadManagement() {
                     >
                       Convert to Admission
                     </LockedButton>
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        disabled
+                        aria-disabled="true"
+                        title="Admission conversion requires separate Student Admission authorization."
+                        className="w-full py-2.5 bg-slate-100 border border-slate-300/80 text-slate-400 font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 cursor-not-allowed select-none"
+                      >
+                        <Lock className="w-4 h-4 text-slate-400" />
+                        <span>Convert to Admission (Locked)</span>
+                      </button>
+                      <div className="p-2.5 bg-amber-50/80 border border-amber-200/80 rounded-xl flex items-start gap-2 text-left">
+                        <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-[11px] text-amber-800 leading-snug">
+                          Admission conversion requires separate Student Admission authorization. You can continue managing this lead in CRM.
+                        </p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </>
@@ -1247,6 +1299,7 @@ export default function LeadManagement() {
           lead={leadDossier}
           standards={standards}
           academicYears={academicYears}
+          canConvertAdmission={canConvertAdmission}
           onSuccess={(res) => {
             setIsConvertModalOpen(false)
             queryClient.invalidateQueries({ queryKey: ['crm'] })
@@ -1817,6 +1870,7 @@ function ConvertToAdmissionModal({
   standards,
   academicYears,
   onSuccess,
+  canConvertAdmission = true,
 }: {
   isOpen: boolean
   onClose: () => void
@@ -1824,6 +1878,7 @@ function ConvertToAdmissionModal({
   standards: Standard[]
   academicYears: AcademicYear[]
   onSuccess: (res: any) => void
+  canConvertAdmission?: boolean
 }) {
   const [selectedExistingId, setSelectedExistingId] = useState<number | null>(null)
   const [admissionDate, setAdmissionDate] = useState(new Date().toISOString().split('T')[0])
@@ -1835,6 +1890,10 @@ function ConvertToAdmissionModal({
   const duplicates = lead.potential_duplicate_students || []
 
   const handleConvert = async () => {
+    if (!canConvertAdmission) {
+      toast.error('Admission conversion requires separate Student Admission authorization. You can continue managing this lead in CRM.')
+      return
+    }
     try {
       setIsSubmitting(true)
       const res = await leadsApi.convertToAdmission(lead.id, {
