@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Users, UserPlus, Phone, Mail, MessageSquare, Calendar, Clock,
@@ -50,8 +50,19 @@ export default function LeadManagement() {
   const editScope = 'crm:leads'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialView = searchParams.get('view') as 'pipeline' | 'list' | 'followups' | 'calendar' | 'analytics' | null
   // View Mode: pipeline (Kanban), list, followups, calendar, analytics
-  const [viewMode, setViewMode] = useState<'pipeline' | 'list' | 'followups' | 'calendar' | 'analytics'>('pipeline')
+  const [viewMode, setViewMode] = useState<'pipeline' | 'list' | 'followups' | 'calendar' | 'analytics'>(
+    initialView && ['pipeline', 'list', 'followups', 'calendar', 'analytics'].includes(initialView) ? initialView : 'pipeline'
+  )
+
+  useEffect(() => {
+    const v = searchParams.get('view')
+    if (v && ['pipeline', 'list', 'followups', 'calendar', 'analytics'].includes(v)) {
+      setViewMode(v as any)
+    }
+  }, [searchParams])
   const [tableFilter, setTableFilter] = useState<'recent' | 'my' | 'overdue' | 'converted' | 'lost'>('recent')
 
   // Filters
@@ -141,7 +152,7 @@ export default function LeadManagement() {
   })
 
   // 5. Selected Lead Dossier
-  const activeLeadId = selectedLeadId || leadsListData?.items?.[0]?.id || 1
+  const activeLeadId = selectedLeadId || leadsListData?.items?.[0]?.id || null
   const { data: leadDossier, refetch: refetchDossier } = useQuery({
     queryKey: ['crm', 'dossier', activeLeadId],
     queryFn: async () => {

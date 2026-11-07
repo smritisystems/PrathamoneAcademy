@@ -11,12 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
- * @description Production service worker with strategic caching, network-only API security, and offline fallback.
+ * @description Production service worker with strategic caching, network-only API security, robust offline fallback, and guaranteed Response resolution.
  */
 
-const CACHE_VERSION = 'prathamone-cache-v1.1.0';
+const CACHE_VERSION = 'prathamone-cache-v1.1.2';
 const STATIC_CACHE_NAME = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `dynamic-${CACHE_VERSION}`;
 
@@ -107,7 +107,24 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) return cachedResponse;
           const shellResponse = await caches.match('/index.html');
           if (shellResponse) return shellResponse;
-          return caches.match('/offline.html');
+          const offlineResponse = await caches.match('/offline.html');
+          if (offlineResponse) return offlineResponse;
+
+          // Ultimate guaranteed HTML fallback
+          try {
+            const networkIndex = await fetch('/index.html');
+            if (networkIndex && networkIndex.status === 200) return networkIndex;
+          } catch (e) {
+            // Network completely down
+          }
+
+          return new Response(
+            '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PrathamOne EduOS Offline</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:1rem;box-sizing:border-box;text-align:center}.card{background:#1e293b;border:1px solid #334155;border-radius:1rem;padding:2rem;max-width:400px;width:100%;box-shadow:0 10px 25px rgba(0,0,0,0.5)}h1{font-size:1.25rem;margin:0 0 0.5rem;color:#f97316}p{font-size:0.875rem;color:#94a3b8;margin:0 0 1.5rem}button{background:#ea580c;color:white;border:none;padding:0.75rem 1.5rem;font-weight:600;font-size:0.875rem;border-radius:0.5rem;cursor:pointer;transition:background 0.2s}button:hover{background:#c2410c}</style></head><body><div class="card"><h1>PrathamOne EduOS</h1><p>You appear to be offline or the connection was interrupted. Please check your network and reload.</p><button onclick="window.location.reload()">Reload Application</button></div></body></html>',
+            {
+              status: 200,
+              headers: { 'Content-Type': 'text/html; charset=utf-8' }
+            }
+          );
         })
     );
     return;
@@ -126,23 +143,27 @@ self.addEventListener('fetch', (event) => {
   if (isStaticAsset) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
-        const fetchPromise = fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return networkResponse;
-        }).catch(() => null);
+        if (cachedResponse) return cachedResponse;
 
-        return cachedResponse || fetchPromise;
+        return fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const responseClone = networkResponse.clone();
+              caches.open(DYNAMIC_CACHE_NAME).then((cache) => {
+                cache.put(request, responseClone);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            return new Response(null, { status: 404, statusText: 'Asset Unavailable' });
+          });
       })
     );
     return;
   }
 
-  // Default: Network with cache fallback
+  // Default: Network with cache fallback and guaranteed Response object
   event.respondWith(
     fetch(request)
       .then((networkResponse) => {
@@ -154,7 +175,10 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       })
-      .catch(() => caches.match(request))
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        return new Response(null, { status: 504, statusText: 'Gateway Timeout' });
+      })
   );
 });
-
