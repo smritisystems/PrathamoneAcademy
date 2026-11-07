@@ -94,3 +94,4 @@ All assets have been tested across screen densities and device formats:
 - **Laptop & Tablet (1366 × 768, iPad Pro):** Adaptive sidebar footnote remains legible without horizontal scrollbar overflow.
 - **Mobile Smartphone (iPhone 15, Pixel 8):** Collapsible drawer footnote displays cleanly without displacing navigational touch targets.
 - **Physical Print (A4 & A5 Dimensions):** Clean vectors and high-DPI rasterization at 300 DPI output with zero clipping.
+

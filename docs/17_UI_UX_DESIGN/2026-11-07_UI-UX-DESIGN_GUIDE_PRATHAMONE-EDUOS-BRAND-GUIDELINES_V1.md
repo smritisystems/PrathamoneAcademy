@@ -144,3 +144,4 @@ When co-branding PrathamOne EduOS with tenant institutes (such as Prashant Acade
 - **DO NOT** apply harsh drop shadows, outer glows, or bevel/emboss filters.
 - **DO NOT** rotate the emblem or place it upside-down.
 - **DO NOT** place the standard navy logo directly on dark backgrounds where it loses contrast.
+

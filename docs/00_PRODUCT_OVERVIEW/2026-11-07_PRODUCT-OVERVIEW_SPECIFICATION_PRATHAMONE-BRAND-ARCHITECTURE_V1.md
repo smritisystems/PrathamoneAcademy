@@ -106,3 +106,4 @@ The architecture anticipates multi-edition growth without redesigning core brand
 - **PrathamOne EduOS — College & University Edition:** Extends credit management, semester grading, faculty tenure, and departmental research workflows.
 
 In all future editions, the core PrathamOne elephant mark and EduOS naming convention remain invariant.
+
