@@ -283,3 +283,4 @@ async def test_unauthorized_user_cannot_access_crm_or_perform_operations(client,
         headers=headers,
     )
     assert resp_post.status_code == 403
+

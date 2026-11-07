@@ -150,3 +150,4 @@ Alembic migration `029_crm_rbac_permissions` was created and applied to PostgreS
 
 ## 5. AUDIT CONCLUSION & GOVERNANCE COMPLIANCE
 The separation between CRM lead management and student admission authorization has been successfully implemented and verified. Sales counsellors and enquiry coordinators can now seamlessly operate within their designated workspace under Rule 010 View-First governance without triggering permission errors or requiring ungranted student admission privileges.
+

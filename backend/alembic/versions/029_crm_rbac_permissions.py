@@ -130,3 +130,4 @@ def downgrade() -> None:
             """),
             {"rname": role_name, "res": resource, "act": action},
         )
+
