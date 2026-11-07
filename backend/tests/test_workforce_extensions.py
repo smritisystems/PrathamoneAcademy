@@ -298,8 +298,8 @@ async def test_employee_dossier_form_generation(
     """Verifies that employee_dossier template aggregates dual addresses, contacts, and banking info."""
     user = User(
         institution_id=test_institution.id,
-        username="prof_dossier_test",
-        email="dossier_test@prashantacademy.com",
+        username="prof_dossier_ext",
+        email="dossier_ext@prashantacademy.com",
         hashed_password="hashed_pwd_123",
         first_name="Vikram",
         last_name="Sethi",
@@ -312,7 +312,7 @@ async def test_employee_dossier_form_generation(
     profile = StaffProfile(
         user_id=user.id,
         institution_id=test_institution.id,
-        employee_id="TCH-DOS-01",
+        employee_id="TCH-DOS-EXT-01",
         staff_type="teacher",
         department="Physics",
         current_address="Flat 101, Lake View, Powai",

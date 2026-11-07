@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description Pytest test suite for dedicated Teacher & Staff workforce dashboards, unassigned teacher logic, employment lifecycle transitions, and unified employee activity history.
 #  */
@@ -43,13 +43,13 @@ async def test_teacher_dashboard_and_assignment_status(
     # 1. Create a Teacher User & Staff Profile
     teacher = User(
         institution_id=test_institution.id,
-        username="prof_sharma",
-        email="sharma@prashantacademy.com",
+        username="prof_ramesh_wf",
+        email="ramesh_wf@prashantacademy.com",
         hashed_password="hashed_pwd_123",
         first_name="Ramesh",
         last_name="Sharma",
         role="teacher",
-        staff_code="TCH-2026-008",
+        staff_code="TCH-WF-008",
         is_active=True,
     )
     db.add(teacher)
@@ -58,7 +58,7 @@ async def test_teacher_dashboard_and_assignment_status(
     profile = StaffProfile(
         user_id=teacher.id,
         institution_id=test_institution.id,
-        employee_id="TCH-2026-008",
+        employee_id="TCH-WF-008",
         staff_type="teacher",
         department="Mathematics",
         status="active",

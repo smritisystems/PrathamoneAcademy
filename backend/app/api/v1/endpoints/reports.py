@@ -587,7 +587,7 @@ async def export_academic_report(
             extrasaction="ignore",
         )
         writer.writeheader()
-        writer.writerows(export_rows)
+        writer.writerows(data)
         filename = "batch_capacity_report.csv"
     elif report_type == "distribution":
         data = await academic_distribution_report(db=db, current_user=current_user)
@@ -601,7 +601,7 @@ async def export_academic_report(
             extrasaction="ignore",
         )
         writer.writeheader()
-        writer.writerows(export_rows)
+        writer.writerows(data)
         filename = "academic_distribution_report.csv"
     else:
         data = await faculty_load_report(db=db, current_user=current_user)
@@ -614,7 +614,7 @@ async def export_academic_report(
             extrasaction="ignore",
         )
         writer.writeheader()
-        writer.writerows(export_rows)
+        writer.writerows(data)
         filename = "faculty_load_report.csv"
 
     output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
@@ -1076,6 +1076,7 @@ async def student_attendance_summary_report(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     defaulters_only: bool = Query(False),
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -1158,6 +1159,7 @@ async def student_attendance_summary_report(
 async def academic_curriculum_matrix_report(
     board_id: Optional[int] = None,
     standard_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -1222,6 +1224,7 @@ async def academic_curriculum_matrix_report(
 async def timetable_utilization_report(
     division_id: Optional[int] = None,
     day_of_week: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -1268,6 +1271,7 @@ async def exam_consolidated_merit_report(
     exam_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
     standard_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -1457,6 +1461,7 @@ async def daily_payment_collection_report(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     payment_mode: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):

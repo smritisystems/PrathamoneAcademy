@@ -32,14 +32,18 @@ class TestReportingCentre:
     """Test suite covering the Central Reporting & Analytics Centre endpoints."""
 
     @pytest.mark.asyncio
-    async def test_student_master_directory_endpoint(self, client, auth_headers, db, test_institution):
+    async def test_student_master_directory_endpoint(self, client, auth_headers, db, test_institution, admin_user):
         """Validates GET /reports/students/master-directory endpoint response structure and filtering."""
+        admin_user.institution_id = test_institution.id
+        db.add(admin_user)
+        await db.commit()
+
         # Create test student
         student = Student(
             first_name="Rohan",
             last_name="Sharma",
             gender="male",
-            admission_number="ADM-TEST-001",
+            admission_number="ADM-REP-001",
             admission_date=date(2026, 1, 1),
             date_of_birth=date(2008, 5, 10),
             is_active=True,
@@ -53,7 +57,7 @@ class TestReportingCentre:
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
-        matching = [s for s in data if s.get("admission_number") == "ADM-TEST-001"]
+        matching = [s for s in data if s.get("admission_number") == "ADM-REP-001"]
         assert len(matching) >= 1
         record = matching[0]
         assert record["student_name"] == "Rohan Sharma"
@@ -64,7 +68,7 @@ class TestReportingCentre:
         filtered_res = await client.get("/api/v1/reports/students/master-directory?gender=male&search=Rohan", headers=auth_headers)
         assert filtered_res.status_code == 200
         filtered_data = filtered_res.json()
-        assert any(s.get("admission_number") == "ADM-TEST-001" for s in filtered_data)
+        assert any(s.get("admission_number") == "ADM-REP-001" for s in filtered_data)
 
     @pytest.mark.asyncio
     async def test_attendance_summary_endpoint(self, client, auth_headers):

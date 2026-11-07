@@ -118,6 +118,7 @@ async def get_authoritative_student_counts_by_board(
     board_id: Optional[int] = None,
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
+    is_demo: Optional[bool] = None,
 ) -> Dict[str, int]:
     """
     Compute authoritative active enrolled student counts grouped by Board name.
@@ -161,6 +162,7 @@ async def get_authoritative_student_counts_by_batch(
     board_id: Optional[int] = None,
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
+    is_demo: Optional[bool] = None,
 ) -> Dict[Tuple[str, str, str], int]:
     """
     Compute authoritative active enrolled student counts grouped by (batch_name, standard_name, board_name).
@@ -204,6 +206,7 @@ async def get_student_reconciliation_diagnostic(
     db: AsyncSession,
     institution_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
+    is_demo: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
     """
     Produces complete student reconciliation comparing active enrollments against fee invoice records.
