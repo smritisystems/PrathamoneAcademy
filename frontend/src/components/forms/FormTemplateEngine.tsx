@@ -55,7 +55,7 @@ export default function FormTemplateEngine({
 
   return (
     <div
-      className={`print-form-sheet bg-white text-slate-900 p-8 sm:p-10 md:p-12 border border-slate-200 shadow-sm mx-auto max-w-[850px] min-h-[1120px] flex flex-col justify-between print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-full ${
+      className={`print-form-sheet bg-white text-slate-900 p-8 sm:p-10 md:p-12 border border-slate-200 shadow-sm mx-auto max-w-[850px] min-h-[1120px] flex flex-col justify-between print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-full print:block print:min-h-0 print:pb-[16mm] ${
         showPageBreak ? 'page-break-after print:break-after-page' : ''
       }`}
       style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif' }}

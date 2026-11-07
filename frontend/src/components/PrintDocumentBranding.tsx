@@ -198,7 +198,7 @@ export function PrintDocumentSignatory({
   documentRef,
   classification,
   showPrintFooter = true,
-  fixedBottom = false,
+  fixedBottom = true,
   pageNumber = 1,
   totalPages = 1,
 }: PrintDocumentSignatoryProps) {
@@ -278,14 +278,16 @@ export function PrintDocumentSignatory({
       </div>
 
       {/* Global Understated Print & Share Branding */}
-      <PrintBrandingFooter
-        className="pt-1 mt-1"
-        documentId={documentRef}
-        classification={classification}
-        pageNumber={pageNumber}
-        totalPages={totalPages}
-        fixedBottom={fixedBottom}
-      />
+      {showPrintFooter && (
+        <PrintBrandingFooter
+          className="pt-1 mt-1"
+          documentId={documentRef}
+          classification={classification}
+          pageNumber={pageNumber}
+          totalPages={totalPages}
+          fixedBottom={fixedBottom}
+        />
+      )}
     </div>
   )
 }
@@ -306,7 +308,7 @@ export interface PrintBrandingFooterProps extends Partial<PrintFooterProps> {
 export function PrintBrandingFooter({
   className = '',
   align = 'center',
-  fixedBottom = false,
+  fixedBottom = true,
   showDivider = false,
   customText,
   documentId,
@@ -344,24 +346,34 @@ export function PrintBrandingFooter({
   }[align]
 
   return (
-    <div
-      data-testid="print-share-branding-footer"
-      className={`print-branding-footer select-none ${
-        showDivider ? 'pt-2 mt-3 border-t border-slate-200/80 print:border-slate-300' : 'pt-2 mt-2'
-      } ${
-        fixedBottom ? 'print:fixed print:bottom-0 print:left-0 print:right-0 print:pb-1.5' : ''
-      } ${alignmentClass} ${className}`}
-    >
-      <p
-        className="font-light tracking-wide text-[8pt] text-slate-400 print:text-slate-500 print:font-normal leading-normal"
-        style={{
-          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          letterSpacing: '0.025em',
-        }}
+    <>
+      {fixedBottom && (
+        <div
+          data-testid="pratham-print-footer-spacer"
+          className="pratham-print-footer-spacer hidden print:block w-full select-none pointer-events-none"
+          style={{ height: '16mm' }}
+          aria-hidden="true"
+        />
+      )}
+      <div
+        data-testid="print-share-branding-footer"
+        className={`print-branding-footer select-none flex ${
+          showDivider ? 'pt-2 mt-3 border-t border-slate-200/80 print:border-slate-300' : 'pt-2 mt-2'
+        } ${
+          fixedBottom ? 'print:fixed print:bottom-0 print:left-0 print:right-0 print:pb-1.5' : ''
+        } ${alignmentClass} ${className}`}
       >
-        {customText || PRINT_SHARE_BRANDING.text}
-      </p>
-    </div>
+        <p
+          className="font-light tracking-wide text-[8pt] text-slate-400 print:text-slate-500 print:font-normal leading-normal"
+          style={{
+            fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+            letterSpacing: '0.025em',
+          }}
+        >
+          {customText || PRINT_SHARE_BRANDING.text}
+        </p>
+      </div>
+    </>
   )
 }
 

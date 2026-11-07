@@ -142,19 +142,33 @@ export function printReceiptElement(
             #print-root {
               box-shadow: none !important;
               border: none !important;
-              padding: 0 !important;
+              padding: 0 0 16mm 0 !important;
+              overflow: visible !important;
+              box-sizing: border-box !important;
             }
           }
 
           /* Global Print & Share Branding & Canonical Footer */
-          .pratham-global-print-footer {
+          .pratham-print-footer-spacer {
             display: block !important;
-            visibility: visible !important;
+            height: 16mm !important;
             width: 100% !important;
-            box-sizing: border-box !important;
-            margin-top: 8px !important;
-            padding-top: 6px !important;
+          }
+          .pratham-global-print-footer {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 9999 !important;
+            margin: 0 !important;
+            padding-top: 4px !important;
+            padding-bottom: 2mm !important;
             border-top: 1px solid #cbd5e1 !important;
+            background: #ffffff !important;
+            box-sizing: border-box !important;
+            visibility: visible !important;
+            display: block !important;
           }
           [data-testid="print-footer-row-1"] {
             display: flex !important;

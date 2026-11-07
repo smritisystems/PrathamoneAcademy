@@ -342,7 +342,7 @@ export default function PaymentReceiptView({
       {/* Printable Receipt Container */}
       <div
         id={containerId}
-        className={`bg-white border border-slate-300 rounded-[20px] p-4 sm:p-5 shadow-sm print:shadow-none print:border-none print:p-0 mx-auto relative overflow-hidden transition-all ${
+        className={`bg-white border border-slate-300 rounded-[20px] p-4 sm:p-5 shadow-sm print:shadow-none print:border-none print:p-0 mx-auto relative overflow-hidden print:overflow-visible transition-all ${
           paperSize === 'A5' ? 'w-full max-w-[144mm]' : 'w-full max-w-3xl'
         }`}
         style={{
@@ -863,11 +863,13 @@ export default function PaymentReceiptView({
               width: 100% !important;
               max-width: 136mm !important;
               margin: 0 auto !important;
-              padding: 0 !important;
+              padding: 0 0 16mm 0 !important;
               border: none !important;
               box-shadow: none !important;
               visibility: visible !important;
               display: block !important;
+              overflow: visible !important;
+              box-sizing: border-box !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
@@ -886,12 +888,29 @@ export default function PaymentReceiptView({
               display: grid !important;
               visibility: visible !important;
             }
-            #${containerId} .print-branding-footer,
-            #${containerId} .pratham-global-print-footer {
+            #${containerId} .pratham-print-footer-spacer {
               display: block !important;
-              visibility: visible !important;
-              margin-top: 6px !important;
+              height: 16mm !important;
+              width: 100% !important;
+            }
+            #${containerId} .pratham-global-print-footer {
+              position: fixed !important;
+              bottom: 0 !important;
+              left: 0 !important;
+              right: 0 !important;
+              width: 100% !important;
+              z-index: 9999 !important;
+              background: #ffffff !important;
+              margin: 0 !important;
               padding-top: 4px !important;
+              padding-bottom: 2mm !important;
+              border-top: 1px solid #cbd5e1 !important;
+              box-sizing: border-box !important;
+              visibility: visible !important;
+              display: block !important;
+            }
+            #${containerId} .print-branding-footer {
+              visibility: visible !important;
             }
             #${containerId} .print-branding-footer p {
               font-size: 8pt !important;
@@ -929,6 +948,9 @@ export default function PaymentReceiptView({
           className="pt-2 pb-0.5 print:pb-0"
           documentId={receipt?.receipt_number || 'RCP-001'}
           classification="Official Fee Voucher"
+          fixedBottom={true}
+          pageNumber={1}
+          totalPages={1}
         />
       </div>
     </div>

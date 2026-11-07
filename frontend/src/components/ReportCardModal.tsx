@@ -373,9 +373,31 @@ export default function ReportCardModal({
             top: 0;
             width: 100%;
             margin: 0;
-            padding: 20mm;
+            padding: 12mm 15mm 20mm 15mm !important;
+            box-sizing: border-box !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          #printable-report-card .pratham-print-footer-spacer {
+            display: block !important;
+            height: 16mm !important;
+            width: 100% !important;
+          }
+          #printable-report-card .pratham-global-print-footer {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 9999 !important;
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding-top: 4px !important;
+            padding-bottom: 2mm !important;
+            border-top: 1px solid #cbd5e1 !important;
+            box-sizing: border-box !important;
+            visibility: visible !important;
           }
         }
       `}</style>

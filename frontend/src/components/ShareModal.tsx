@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-07
  *
  * @description Universal Sharing Action modal supporting WhatsApp, Email, SMS, expiring secure links, PDF download, and printing.
  */
@@ -622,7 +622,7 @@ export default function ShareModal({
 
         {/* Global Print & Share Branding Footer */}
         <div className="px-6 py-2 border-t border-slate-100 bg-slate-50/80">
-          <PrintBrandingFooter className="pt-0 mt-0" />
+          <PrintBrandingFooter className="pt-0 mt-0" fixedBottom={false} />
         </div>
       </div>
     </div>

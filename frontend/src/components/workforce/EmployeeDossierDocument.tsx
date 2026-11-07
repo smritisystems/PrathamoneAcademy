@@ -135,7 +135,7 @@ export default function EmployeeDossierDocument({
   return (
     <div
       id={id}
-      className="bg-white text-slate-900 p-8 max-w-4xl mx-auto space-y-6 text-xs font-sans border border-slate-200 shadow-sm print:border-none print:shadow-none print:p-0"
+      className="bg-white text-slate-900 p-8 max-w-4xl mx-auto space-y-6 text-xs font-sans border border-slate-200 shadow-sm print:border-none print:shadow-none print:p-0 print:pb-[16mm] print:min-h-0"
       style={{ minHeight: '1050px' }}
     >
       {/* ─── 1. INSTITUTIONAL HEADER ───────────────────────────────────── */}
