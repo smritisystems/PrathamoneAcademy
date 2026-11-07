@@ -25,7 +25,7 @@ import {
   Shield, Link2, Database, Save, RotateCcw, Search, Eye, Upload,
   Check, AlertCircle, Info, Plus, Edit, Trash2, CheckCircle2, ChevronRight,
   X, ExternalLink, RefreshCw, Lock, Bell, HelpCircle, FileText, MapPin,
-  GitFork, ShieldCheck, Download, KeyRound
+  GitFork, ShieldCheck, Download, KeyRound, Sparkles
 } from 'lucide-react'
 import { settingsApi } from '../api/endpoints'
 import type {
@@ -294,7 +294,8 @@ export default function Settings() {
         }, res.data.profile.logo_url)
         try {
           const cached = JSON.parse(localStorage.getItem(BRANDING_STORAGE_KEY) || '{}')
-          localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify({
+          const bgData = allSettings.branding || {}
+          const updated = {
             ...cached,
             colors: {
               ...(cached.colors || {}),
@@ -308,8 +309,20 @@ export default function Settings() {
               ...(cached.assets || {}),
               academyLogoUrl: res.data.profile.logo_url || cached.assets?.academyLogoUrl,
               logoUrl: res.data.profile.logo_url || cached.assets?.logoUrl,
+            },
+            background: {
+              mode: bgData.login_bg_mode || 'waves',
+              imageUrl: bgData.login_bg_image_url || '',
+              fit: bgData.login_bg_fit || 'cover',
+              overlayOpacity: parseInt(bgData.login_bg_overlay_opacity || '60', 10),
+              blur: parseInt(bgData.login_bg_blur || '4', 10),
+              pattern: bgData.login_bg_pattern || 'geometric',
+              videoUrl: bgData.login_bg_video_url || '',
+              videoType: bgData.login_bg_video_type || 'mp4',
             }
-          }))
+          }
+          localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(updated))
+          localStorage.setItem(`pratham_branding_inst_${res.data.profile.id || 1}`, JSON.stringify(updated))
         } catch {}
         await queryClient.invalidateQueries({ queryKey: ['institutions'] })
         await queryClient.invalidateQueries({ queryKey: ['public_branding'] })
@@ -1556,6 +1569,212 @@ export default function Settings() {
                             )
                           })}
                         </div>
+                      </div>
+
+                      {/* Login Page Canvas & Background Configuration Engine */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-5">
+                        <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-primary-600" />
+                            <div>
+                              <h3 className="text-sm font-bold text-gray-900">Login Page Canvas & Background Engine</h3>
+                              <p className="text-[11px] text-gray-500">
+                                Choose custom campus imagery, scaling fit, SVG patterns, or video for the authentication portal
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-200">
+                            Active: {(allSettings.branding?.login_bg_mode || 'waves').toUpperCase()}
+                          </span>
+                        </div>
+
+                        {/* Mode Selector 4-Card Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {[
+                            { id: 'waves', title: 'Dynamic Waves', desc: 'Brand Aurora Glow', icon: '🎨' },
+                            { id: 'image', title: 'Custom Image', desc: 'Campus & Classes', icon: '🖼️' },
+                            { id: 'svg_pattern', title: 'SVG Pattern', desc: 'Blueprint & Lattice', icon: '📐' },
+                            { id: 'video', title: 'Ambient Video', desc: 'MP4 / YouTube', icon: '🎬' },
+                          ].map((m) => {
+                            const isSelected = (allSettings.branding?.login_bg_mode || 'waves') === m.id
+                            return (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => handleSettingChange('branding', 'login_bg_mode', m.id)}
+                                className={`p-3 rounded-xl border text-left transition-all ${
+                                  isSelected
+                                    ? 'border-primary-600 ring-2 ring-primary-500 bg-primary-50/20 shadow-xs'
+                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
+                                }`}
+                              >
+                                <div className="text-xl mb-1">{m.icon}</div>
+                                <div className="text-xs font-bold text-gray-900">{m.title}</div>
+                                <div className="text-[10px] text-gray-500">{m.desc}</div>
+                              </button>
+                            )
+                          })}
+                        </div>
+
+                        {/* MODE: CUSTOM IMAGE CONFIGURATION */}
+                        {(allSettings.branding?.login_bg_mode === 'image') && (
+                          <div className="space-y-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-700 mb-1">
+                                Background Image URL
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="https://... or /media/backgrounds/campus.jpg"
+                                  value={allSettings.branding?.login_bg_image_url || ''}
+                                  onChange={(e) => handleSettingChange('branding', 'login_bg_image_url', e.target.value)}
+                                  className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
+                                />
+                              </div>
+                              {/* Quick Image Presets */}
+                              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                                <span className="text-[10px] font-semibold text-slate-500">Demo Presets:</span>
+                                {[
+                                  { label: 'Campus Exterior', url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1920&q=80' },
+                                  { label: 'Study Hall', url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1920&q=80' },
+                                  { label: 'Classroom', url: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1920&q=80' },
+                                ].map((pre) => (
+                                  <button
+                                    key={pre.label}
+                                    type="button"
+                                    onClick={() => handleSettingChange('branding', 'login_bg_image_url', pre.url)}
+                                    className="px-2 py-0.5 text-[10px] font-medium bg-white hover:bg-slate-200 border border-slate-300 rounded text-slate-700 transition"
+                                  >
+                                    {pre.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Display Fit Mode */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">
+                                  Image Scaling & Fit
+                                </label>
+                                <select
+                                  value={allSettings.branding?.login_bg_fit || 'cover'}
+                                  onChange={(e) => handleSettingChange('branding', 'login_bg_fit', e.target.value)}
+                                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                                >
+                                  <option value="cover">Crop to Fit (Cover - Recommended)</option>
+                                  <option value="contain">Fit Entire Image (Contain)</option>
+                                  <option value="stretch">Stretch to Screen (Fill)</option>
+                                  <option value="tile">Tiled Repeating Pattern</option>
+                                </select>
+                              </div>
+
+                              {/* Dark Contrast Overlay Tint */}
+                              <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                  <span>Contrast Tint</span>
+                                  <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_overlay_opacity || '60'}%</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="20"
+                                  max="90"
+                                  step="5"
+                                  value={allSettings.branding?.login_bg_overlay_opacity || '60'}
+                                  onChange={(e) => handleSettingChange('branding', 'login_bg_overlay_opacity', e.target.value)}
+                                  className="w-full accent-primary-600"
+                                />
+                                <div className="text-[10px] text-slate-400 mt-0.5">Prevents white text & card clashing</div>
+                              </div>
+
+                              {/* Backdrop Glassmorphism Blur */}
+                              <div>
+                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                  <span>Backdrop Blur</span>
+                                  <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_blur || '4'}px</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="16"
+                                  step="2"
+                                  value={allSettings.branding?.login_bg_blur || '4'}
+                                  onChange={(e) => handleSettingChange('branding', 'login_bg_blur', e.target.value)}
+                                  className="w-full accent-primary-600"
+                                />
+                                <div className="text-[10px] text-slate-400 mt-0.5">Smooth glassmorphic depth</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* MODE: SVG PATTERN CONFIGURATION */}
+                        {(allSettings.branding?.login_bg_mode === 'svg_pattern') && (
+                          <div className="space-y-3 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
+                            <label className="block text-xs font-bold text-slate-700">
+                              Educational / Architectural Pattern Style
+                            </label>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {[
+                                { id: 'geometric', label: 'Isometric Grid' },
+                                { id: 'dots', label: 'Technology Matrix' },
+                                { id: 'blueprint', label: 'Architectural Blueprint' },
+                                { id: 'lattice', label: 'Monogram Watermark' },
+                              ].map((pat) => (
+                                <button
+                                  key={pat.id}
+                                  type="button"
+                                  onClick={() => handleSettingChange('branding', 'login_bg_pattern', pat.id)}
+                                  className={`p-2.5 text-xs font-semibold rounded-lg border text-center transition ${
+                                    (allSettings.branding?.login_bg_pattern || 'geometric') === pat.id
+                                      ? 'border-primary-600 bg-primary-50 text-primary-700 font-bold'
+                                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  {pat.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* MODE: VIDEO BACKGROUND CONFIGURATION */}
+                        {(allSettings.branding?.login_bg_mode === 'video') && (
+                          <div className="space-y-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">Video Source Type</label>
+                                <select
+                                  value={allSettings.branding?.login_bg_video_type || 'mp4'}
+                                  onChange={(e) => handleSettingChange('branding', 'login_bg_video_type', e.target.value)}
+                                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                                >
+                                  <option value="mp4">Direct HTML5 Video (MP4 / WebM)</option>
+                                  <option value="youtube">YouTube Video Embed</option>
+                                </select>
+                              </div>
+                              <div className="sm:col-span-2">
+                                <label className="block text-xs font-bold text-slate-700 mb-1">
+                                  {allSettings.branding?.login_bg_video_type === 'youtube' ? 'YouTube URL or Video ID' : 'Direct MP4 Video URL'}
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder={allSettings.branding?.login_bg_video_type === 'youtube' ? 'e.g. dQw4w9WgXcQ or https://youtube.com/watch?v=...' : 'https://example.com/ambient-loop.mp4'}
+                                  value={allSettings.branding?.login_bg_video_url || ''}
+                                  onChange={(e) => handleSettingChange('branding', 'login_bg_video_url', e.target.value)}
+                                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                                />
+                              </div>
+                            </div>
+                            <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
+                              <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                              <span>
+                                Video backgrounds are automatically muted and looped. Mobile devices conserve data with an automatic fallback poster.
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Custom Palette Controls */}

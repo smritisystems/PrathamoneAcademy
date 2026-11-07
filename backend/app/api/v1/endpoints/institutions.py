@@ -23,6 +23,7 @@ from typing import Optional
 from app.core.database import get_db
 from app.core.deps import get_current_active_user
 from app.models.institution import Institution
+from app.models.settings import InstitutionSetting
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -134,6 +135,22 @@ async def get_public_institution_branding(
         inst = res_any.scalar_one_or_none()
     if not inst:
         raise HTTPException(status_code=404, detail="Institution not found")
+
+    # Fetch branding category settings (background, styles, presets)
+    settings_res = await db.execute(
+        select(InstitutionSetting).where(
+            InstitutionSetting.institution_id == inst.id,
+            InstitutionSetting.category == "branding",
+        )
+    )
+    b_settings = {s.key: s.value for s in settings_res.scalars().all()}
+
+    def _safe_int(val, default):
+        try:
+            return int(val) if val is not None else default
+        except (ValueError, TypeError):
+            return default
+
     return {
         "id": inst.id,
         "name": inst.name,
@@ -152,6 +169,16 @@ async def get_public_institution_branding(
         "city": inst.city,
         "state": inst.state,
         "pincode": inst.pincode,
+        "background": {
+            "mode": b_settings.get("login_bg_mode", "waves"),
+            "image_url": b_settings.get("login_bg_image_url", ""),
+            "fit": b_settings.get("login_bg_fit", "cover"),
+            "overlay_opacity": _safe_int(b_settings.get("login_bg_overlay_opacity"), 60),
+            "blur": _safe_int(b_settings.get("login_bg_blur"), 4),
+            "pattern": b_settings.get("login_bg_pattern", "geometric"),
+            "video_url": b_settings.get("login_bg_video_url", ""),
+            "video_type": b_settings.get("login_bg_video_type", "mp4"),
+        },
     }
 
 

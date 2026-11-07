@@ -189,6 +189,17 @@ export const BRANDING_CONFIG = {
   },
 }
 
+export interface LoginBackgroundConfig {
+  mode: 'waves' | 'image' | 'svg_pattern' | 'video'
+  imageUrl?: string
+  fit: 'cover' | 'contain' | 'stretch' | 'tile'
+  overlayOpacity: number // 0 to 100
+  blur: number // 0 to 20 px
+  pattern?: 'geometric' | 'dots' | 'blueprint' | 'lattice'
+  videoUrl?: string
+  videoType?: 'mp4' | 'youtube'
+}
+
 export interface ResolvedBranding {
   appName: string
   productName: string
@@ -221,6 +232,7 @@ export interface ResolvedBranding {
   institutionPhone: string
   institutionEmail: string
   institutionWebsite: string
+  background: LoginBackgroundConfig
 }
 
 /**
@@ -310,6 +322,20 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     institutionPhone: activeInstitution?.phone || BRANDING_CONFIG.support.phone,
     institutionEmail: activeInstitution?.email || BRANDING_CONFIG.support.academyEmail,
     institutionWebsite: activeInstitution?.website || BRANDING_CONFIG.support.academyWebsite,
+    background: {
+      mode: (activeInstitution as any)?.background?.mode || 'waves',
+      imageUrl: (activeInstitution as any)?.background?.image_url || '',
+      fit: (activeInstitution as any)?.background?.fit || 'cover',
+      overlayOpacity: typeof (activeInstitution as any)?.background?.overlay_opacity === 'number'
+        ? (activeInstitution as any).background.overlay_opacity
+        : 60,
+      blur: typeof (activeInstitution as any)?.background?.blur === 'number'
+        ? (activeInstitution as any).background.blur
+        : 4,
+      pattern: (activeInstitution as any)?.background?.pattern || 'geometric',
+      videoUrl: (activeInstitution as any)?.background?.video_url || '',
+      videoType: (activeInstitution as any)?.background?.video_type || 'mp4',
+    },
   }
 }
 
