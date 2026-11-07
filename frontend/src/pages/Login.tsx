@@ -163,14 +163,14 @@ export default function LoginPage() {
             <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-white/10 pointer-events-none" />
             <div className="absolute -left-6 -bottom-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
 
-            {/* Official PrathamOne EduOS Emblem Badge */}
+            {/* Coaching Institute Official Crest / Logo */}
             <div className="relative inline-flex items-center justify-center bg-white p-1.5 w-16 h-16 rounded-2xl shadow-lg border border-white/40 mx-auto mb-3.5 group transition-transform hover:scale-105 duration-300">
               <img
-                src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
-                alt="PrathamOne EduOS Official Emblem"
+                src={branding.assets.academyLogoUrl || branding.assets.logoUrl}
+                alt={`${branding.academyName} Official Logo`}
                 className="w-full h-full object-contain filter drop-shadow-xs"
               />
-              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-primary-900 shadow-xs" title="System Operational" />
+              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-primary-900 shadow-xs" title="Institute Portal Online" />
             </div>
 
             <h1 className="text-2xl sm:text-[26px] font-bold text-white tracking-tight drop-shadow-xs">

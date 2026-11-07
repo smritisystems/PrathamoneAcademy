@@ -139,8 +139,11 @@ export const BRANDING_CONFIG = {
     prathamGold: '#F89D2B',   // PrathamOne Official Gold / Amber Accent
   },
   assets: {
-    logoUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
-    logoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    // Tenant Coaching Academy Logo (Default Prashant Academy Crest)
+    academyLogoUrl: '/media/logo/prashant-academy-logo.svg' as string,
+    academyLogoPngUrl: '/media/logo/prashant-academy-logo.png' as string,
+    logoUrl: '/media/logo/prashant-academy-logo.svg' as string,
+    logoDarkUrl: '/media/logo/prashant-academy-logo.svg' as string,
     faviconUrl: '/favicon.svg' as string,
     faviconPngUrl: '/favicon.png' as string,
     faviconIcoUrl: '/favicon.ico' as string,
@@ -284,7 +287,8 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     },
     assets: {
       ...BRANDING_CONFIG.assets,
-      logoUrl: activeInstitution?.logo_url || BRANDING_CONFIG.assets.logoUrl,
+      logoUrl: (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg') ? activeInstitution.logo_url : BRANDING_CONFIG.assets.academyLogoUrl,
+      academyLogoUrl: (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg') ? activeInstitution.logo_url : BRANDING_CONFIG.assets.academyLogoUrl,
       faviconUrl: activeInstitution?.favicon_url || BRANDING_CONFIG.assets.faviconUrl,
     },
     support: {

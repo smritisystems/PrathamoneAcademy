@@ -5,8 +5,8 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-08T00:46:32.102322",
-  "total_documents": 297,
+  "generated_at": "2026-11-08T01:01:57.437832",
+  "total_documents": 299,
   "modules_catalog": [
     {
       "id": "00_PRODUCT_OVERVIEW",
@@ -8324,6 +8324,52 @@
       "related_modules": []
     },
     {
+      "id": "assets_branding_prashant-academy-logo_png",
+      "filename": "prashant-academy-logo.png",
+      "relative_path": "assets/branding/prashant-academy-logo.png",
+      "extension": ".png",
+      "size_bytes": 15024,
+      "sha256": "b2c1dd446330f4f098db4ceb93ad451a05da1259bd26f7611d597abf68a1fead",
+      "module": "assets",
+      "title": "prashant-academy-logo.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-08",
+      "updated_date": "2026-11-08",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_branding_prashant-academy-logo_svg",
+      "filename": "prashant-academy-logo.svg",
+      "relative_path": "assets/branding/prashant-academy-logo.svg",
+      "extension": ".svg",
+      "size_bytes": 3791,
+      "sha256": "a0eb0952b171c4883cc69cb078a824e1ac78c345a46bfd9371c61f90bf775f5f",
+      "module": "assets",
+      "title": "prashant-academy-logo.svg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-08",
+      "updated_date": "2026-11-08",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
       "id": "assets_branding_prathamone-app-icon-192_png",
       "filename": "prathamone-app-icon-192.png",
       "relative_path": "assets/branding/prathamone-app-icon-192.png",
@@ -10907,7 +10953,9 @@
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "24_AI_AGENT_KNOWLEDGE/2026-11-03_AI_AGENT_KNOWLEDGE_POLICY-FRAMEWORK_AI-AGENT-GOVERNANCE_V1.md",
       "26_ARCHIVED/legacy_root/ROADMAP.md",
-      "26_ARCHIVED/legacy_root/index.md"
+      "26_ARCHIVED/legacy_root/index.md",
+      "assets/branding/prashant-academy-logo.png",
+      "assets/branding/prashant-academy-logo.svg"
     ],
     "acceptance": [
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md",
@@ -13012,6 +13060,8 @@
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md",
       "17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_SPEC_PRATHAMONE-EDUOS-SOFTWARE-BRAND-ASSET-SYSTEM_V1.md",
+      "assets/branding/prashant-academy-logo.png",
+      "assets/branding/prashant-academy-logo.svg",
       "assets/branding/prathamone-eduos-logo-original.jpg",
       "assets/branding/prathamone-eduos-logo-transparent.png",
       "assets/branding/prathamone-eduos-logo.png",
@@ -13599,6 +13649,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md"
     ],
     "png": [
+      "assets/branding/prashant-academy-logo.png",
       "assets/branding/prathamone-app-icon-192.png",
       "assets/branding/prathamone-app-icon-512.png",
       "assets/branding/prathamone-eduos-horizontal-dark.png",
@@ -13736,7 +13787,9 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_PRATHAMONE-GLOBAL-BRANDING-AUDIT_V1.md",
       "24_AI_AGENT_KNOWLEDGE/2026-11-03_AI_AGENT_KNOWLEDGE_POLICY-FRAMEWORK_AI-AGENT-GOVERNANCE_V1.md",
       "26_ARCHIVED/legacy_root/ROADMAP.md",
-      "26_ARCHIVED/legacy_root/index.md"
+      "26_ARCHIVED/legacy_root/index.md",
+      "assets/branding/prashant-academy-logo.png",
+      "assets/branding/prashant-academy-logo.svg"
     ],
     "prathamone": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md",
@@ -15126,6 +15179,9 @@
     ],
     "surfaces": [
       "17_UI_UX_DESIGN/2026-11-07_UI-UX-DESIGN_SPECIFICATION_PRATHAMONE-BRAND-IMPLEMENTATION-MATRIX_V1.md"
+    ],
+    "svg": [
+      "assets/branding/prashant-academy-logo.svg"
     ],
     "symbol": [
       "assets/branding/prathamone-symbol-icon-dark.png",

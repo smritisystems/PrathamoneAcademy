@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-08 00:46:32  
-**Total Indexed Items:** 297  
+**Last Reindexed:** 2026-11-08 01:01:57  
+**Total Indexed Items:** 299  
 
 ---
 
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **6** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **81** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **83** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -480,6 +480,8 @@
 | `guide_step3_payments_edit_active.png` | `assets/screenshots` | 236.0 KB | [guide_step3_payments_edit_active.png](assets/screenshots/guide_step3_payments_edit_active.png) |
 | `guide_step4_fee_structure_editor.png` | `assets/screenshots` | 223.2 KB | [guide_step4_fee_structure_editor.png](assets/screenshots/guide_step4_fee_structure_editor.png) |
 | `payroll_login_check.png` | `assets/screenshots` | 611.7 KB | [payroll_login_check.png](assets/screenshots/payroll_login_check.png) |
+| `prashant-academy-logo.png` | `assets/branding` | 14.7 KB | [prashant-academy-logo.png](assets/branding/prashant-academy-logo.png) |
+| `prashant-academy-logo.svg` | `assets/branding` | 3.7 KB | [prashant-academy-logo.svg](assets/branding/prashant-academy-logo.svg) |
 | `prathamone-app-icon-192.png` | `assets/branding` | 59.4 KB | [prathamone-app-icon-192.png](assets/branding/prathamone-app-icon-192.png) |
 | `prathamone-app-icon-512.png` | `assets/branding` | 309.3 KB | [prathamone-app-icon-512.png](assets/branding/prathamone-app-icon-512.png) |
 | `prathamone-eduos-horizontal-dark.png` | `assets/branding` | 894.1 KB | [prathamone-eduos-horizontal-dark.png](assets/branding/prathamone-eduos-horizontal-dark.png) |
