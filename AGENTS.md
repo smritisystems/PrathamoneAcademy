@@ -26,7 +26,7 @@ All code, documents, and interactions must strictly respect product branding:
 
 ## 2. MANDATORY SINGLE SOURCE OF TRUTH (SSOT) & ANTI-DUPLICATION POLICY
 
-Before writing any new code, you MUST comply with the 9 Non-Negotiable SSOT Rules:
+Before writing any new code, you MUST comply with the 10 Non-Negotiable SSOT Rules:
 
 1. **RULE 001 — Single Source of Truth:** Every business entity has ONE authoritative source. Never maintain duplicate master copies.
 2. **RULE 002 — Mandatory Reuse Before Creation:** Before creating any table, column, model, API, service, component, hook, or utility, you MUST search the codebase (`python tools/docs_manager.py search --entity <Name>` or inspect `backend/app/models/`, `services/`, `components/`). Extend or reuse existing functionality.
@@ -37,6 +37,7 @@ Before writing any new code, you MUST comply with the 9 Non-Negotiable SSOT Rule
 7. **RULE 007 — One API Responsibility:** Extend existing REST routers under `/api/v1/` instead of duplicating CRUD endpoints.
 8. **RULE 008 — Shared Frontend Components:** Search and reuse `frontend/src/components/common/` before creating new forms, tables, modals, or selectors.
 9. **RULE 009 — Centralized Configuration:** Institute settings in `institute_settings`, system configs in `system_settings`, product version in `config.py`.
+10. **RULE 010 — Global View-First & Explicit Edit Mode Governance:** View Mode is the default across all application workspaces, pages, forms, and profiles. No user may create, update, or delete records without explicitly activating scoped Edit Mode. Deletions strictly require active Edit Mode, role authorization, modal confirmation, and historical financial ledger immutability enforcement. Navigation and logout automatically reset state to View Mode.
 
 Full specification: [docs/25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md](file:///f:/PrashantAcademy/docs/25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md).
 

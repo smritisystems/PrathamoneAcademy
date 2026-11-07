@@ -22,6 +22,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import Settings, { SETTINGS_CATEGORIES } from '../pages/Settings'
 import { settingsApi } from '../api/endpoints'
+import { useEditModeStore } from '../store/editModeStore'
 
 vi.mock('../store/authStore', () => ({
   useAuthStore: () => ({
@@ -29,6 +30,8 @@ vi.mock('../store/authStore', () => ({
     selectedInstitutionId: 1,
   }),
   isUserSysAdmin: () => true,
+  isUserAdmin: () => true,
+  hasPermission: () => true,
 }))
 
 const mockProfile = {
@@ -263,7 +266,15 @@ describe('Institute Settings & Configuration Workspace', () => {
       expect(screen.getByDisplayValue('PrathamOne Academy')).toBeDefined()
     })
 
-    const saveButton = screen.getByText('Save Changes')
+    // Enable Edit Mode explicitly
+    const enableBtn = screen.getByText('Enable Edit Mode')
+    fireEvent.click(enableBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText('Save & Exit')).toBeDefined()
+    })
+
+    const saveButton = screen.getByText('Save & Exit')
     fireEvent.click(saveButton)
 
     await waitFor(() => {

@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-07 13:19:09  
-**Total Indexed Items:** 247  
+**Last Reindexed:** 2026-11-07 13:49:43  
+**Total Indexed Items:** 248  
 
 ---
 
@@ -26,7 +26,7 @@
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **23** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **0** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **7** | Reports, Analytics & Data Grids |
-| `12` | [12_RBAC_SECURITY](#12_rbac_security) | **8** | RBAC, Security & Permissions |
+| `12` | [12_RBAC_SECURITY](#12_rbac_security) | **9** | RBAC, Security & Permissions |
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **10** | Sysadmin Center & System Settings |
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **8** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **4** | Integrations, Messaging & Importers |
@@ -206,6 +206,7 @@
 |---|---|---|---|---|---|---|
 | **CodeX Security & Cross-Module Enforcement Forensic Audit** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md](12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_AUDIT-REPORT_CODEX-SECURITY-AND-CROSS-MODULE-ENFORCEMENT_V1.md) | 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 11_REPORTS_EXPORTS, 17_UI_UX_DESIGN |
 | **Data Privacy and Security Governance** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md](12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md) | - |
+| **Global View-First & Explicit Edit Mode Governance Architecture & Implementation Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md](12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 09_FEES_PAYMENTS, 13_SYSADMIN_SETTINGS |
 | **Role and Permission Matrix** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md](12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md) | - |
 | **User Management Changelog** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-CHANGELOG_V1.md](12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-CHANGELOG_V1.md) | - |
 | **User Management Dashboard & Dedicated User Profile Workspace** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md](12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md) | - |

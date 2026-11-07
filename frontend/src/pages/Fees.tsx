@@ -38,6 +38,8 @@ import {
   standardsApi, divisionsApi, settingsApi
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import Modal from '../components/Modal'
 import PaymentReceiptView from '../components/PaymentReceiptView'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
@@ -1392,6 +1394,9 @@ export default function Fees() {
 
   return (
     <div className="space-y-5 pb-12">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope="finance:fees" title="Fee Schedules & Accounting Centre" />
+
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP HEADER & BREADCRUMBS                                               */}
       {/* ────────────────────────────────────────────────────────────────────────── */}

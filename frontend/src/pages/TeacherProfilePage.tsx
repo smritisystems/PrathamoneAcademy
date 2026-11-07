@@ -59,6 +59,9 @@ import DocumentPreviewModal from '../components/workforce/DocumentPreviewModal'
 import { useUniversalPrint } from '../components/printing'
 import { staffApi, teacherPayrollApi, timetableApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
+import toast from 'react-hot-toast'
 import type { StaffProfileDetail, EmployeeActivityHistoryItem } from '../types'
 
 type TabKey =
@@ -104,6 +107,10 @@ export default function TeacherProfilePage() {
   const queryClient = useQueryClient()
   const teacherId = Number(id)
   const { user: currentUser } = useAuthStore()
+
+  // Global View-First & Scoped Edit Mode
+  const editScope = `teacher:profile:${teacherId}`
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview')
   const [showLifecycleModal, setShowLifecycleModal] = useState(false)
@@ -377,6 +384,9 @@ export default function TeacherProfilePage() {
 
   return (
     <div className="space-y-5">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title={`Faculty Dossier — ${profile.full_name}`} isDirty={showEditModal} />
+
       {/* ─── Persistent Hero Card ────────────────────────────────────── */}
       <WorkforceHeroCard
         type="teacher"
@@ -402,8 +412,18 @@ export default function TeacherProfilePage() {
               : '15 Jun 2020',
           },
         ]}
-        onEdit={() => setShowEditModal(true)}
+        onEdit={() => {
+          if (!isEditMode) {
+            toast.error('Locked in View Mode: Please enable Edit Mode above to modify employee records.')
+            return
+          }
+          setShowEditModal(true)
+        }}
         onAction={(key) => {
+          if ((key === 'lifecycle' || key === 'assign') && !isEditMode) {
+            toast.error('Locked in View Mode: Please enable Edit Mode above before performing workforce operations.')
+            return
+          }
           if (key === 'lifecycle') setShowLifecycleModal(true)
           if (key === 'assign') setShowAssignModal(true)
           if (key === 'print') setShowPrintConfigModal(true)
@@ -821,13 +841,24 @@ export default function TeacherProfilePage() {
               <h3 className="text-sm font-bold text-slate-800">
                 Personal Demographics & Legal Identity
               </h3>
-              <button
-                type="button"
-                onClick={() => setShowEditModal(true)}
-                className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-              >
-                Edit Personal Info
-              </button>
+              {isEditMode ? (
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(true)}
+                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+                >
+                  Edit Personal Info
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to modify personal info.')}
+                  className="px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-400 rounded-lg border border-slate-200 cursor-not-allowed"
+                  title="Locked in View Mode: Enable Edit Mode above to edit"
+                >
+                  Edit Personal Info (Locked)
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-xs">
               <div>

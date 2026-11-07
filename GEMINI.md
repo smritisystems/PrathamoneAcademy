@@ -15,6 +15,7 @@ When acting as an AI assistant, pair programmer, or autonomous agent on this rep
 2. **Version:** `1.0.0`
 3. **Architecture:** Single Source of Truth (SSOT). Do not create duplicate entities or parallel services.
 4. **Attribution:** Preserve Jawahar R Mallah / AITDL corporate headers across all modified files.
+5. **View-First Governance:** View Mode is the default everywhere. Explicit Edit Mode activation is required for any creation, update, or deletion. Navigation and logout automatically reset state.
 
 ---
 

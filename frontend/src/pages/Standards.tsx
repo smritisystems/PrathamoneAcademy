@@ -11,15 +11,18 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-07
  *
  * @description Standards page redirected to Academic Workspace classes management tab.
  */
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Lock } from 'lucide-react';
 import { getStandards, createStandard, getDivisions, createDivision } from '../api/endpoints';
 import { useAuthStore } from '../store/authStore';
+import { useEditModeStore } from '../store/editModeStore';
+import { EditModeBar } from '../components/common';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 
@@ -70,17 +73,34 @@ export default function Standards() {
   });
 
   const selectedStd = standards.find((s: any) => s.id === selectedStdId);
+  const editScope = 'academic:standards';
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope]);
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Class Standards & Batch Structure" isDirty={showStdModal || showDivModal} />
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Standards / Levels & Batches</h1>
           <p className="text-sm text-gray-500">Configure academic levels and assigned coaching batches</p>
         </div>
-        <button onClick={() => setShowStdModal(true)} className="btn-primary">
-          + Add Standard
-        </button>
+        {isEditMode ? (
+          <button onClick={() => setShowStdModal(true)} className="btn-primary">
+            + Add Standard
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to add standards.')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+            title="Locked in View Mode: Enable Edit Mode above to create new standard"
+          >
+            <Lock className="w-4 h-4 text-slate-400" />
+            <span>Add Standard (Locked)</span>
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -136,9 +156,21 @@ export default function Standards() {
                 <h2 className="text-base font-semibold text-gray-900">
                   {selectedStd?.name} — Batches
                 </h2>
-                <button onClick={() => setShowDivModal(true)} className="btn-primary text-sm py-1.5">
-                  + Add Batch
-                </button>
+                {isEditMode ? (
+                  <button onClick={() => setShowDivModal(true)} className="btn-primary text-sm py-1.5">
+                    + Add Batch
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to add batches.')}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                    title="Locked in View Mode: Enable Edit Mode above to add batches"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Add Batch (Locked)</span>
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

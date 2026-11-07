@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -32,6 +32,8 @@ import type {
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import { useBranding } from '../config/branding'
 import OrganizationBranding from '../components/OrganizationBranding'
 
@@ -68,6 +70,10 @@ export default function Settings() {
   const branding = useBranding()
   const queryClient = useQueryClient()
   const isSysAdmin = isUserSysAdmin(user)
+
+  // Global View-First & Scoped Edit Mode Governance
+  const editScope = 'sysadmin:settings'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   // Navigation & Category Search
   const [activeCategory, setActiveCategory] = useState<string>('profile')
@@ -615,29 +621,19 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Action Buttons: Discard & Save Changes */}
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={handleDiscard}
-                disabled={saving || loading}
-                className="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 transition-colors shadow-2xs"
-              >
-                Discard
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || loading}
-                className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
-              >
-                {saving ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Save className="w-3.5 h-3.5" />
-                )}
-                <span>Save Changes</span>
-              </button>
+            {/* View-First & Explicit Edit Mode Governance Bar */}
+            <div className="flex items-center">
+              <EditModeBar
+                scope={editScope}
+                title={`Institute Settings — ${currentCategoryMeta.title}`}
+                compact={true}
+                onSave={async () => {
+                  await handleSave()
+                  useEditModeStore.getState().disableEditMode(editScope)
+                }}
+                onCancel={handleDiscard}
+                saveLoading={saving}
+              />
             </div>
           </div>
 
@@ -674,6 +670,17 @@ export default function Settings() {
               </div>
             ) : (
               <>
+                {!isEditMode && (
+                  <div className="mb-5 p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs text-slate-600 shadow-2xs">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span>
+                        Configuration settings are protected in <strong>View Mode (Read-Only)</strong>. Click <strong>"Enable Edit Mode"</strong> above to make modifications.
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div className={!isEditMode ? 'pointer-events-none opacity-80 select-none' : ''}>
                 {/* ─────────────────────────────────────────────────────────── */}
                 {/* SECTION 1: INSTITUTE PROFILE & BRANDING                     */}
                 {/* ─────────────────────────────────────────────────────────── */}
@@ -2469,6 +2476,7 @@ export default function Settings() {
                     </div>
                   </div>
                 )}
+                </div>
               </>
             )}
           </div>

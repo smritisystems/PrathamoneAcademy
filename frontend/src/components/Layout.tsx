@@ -11,12 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
 
-import { Outlet, Link } from 'react-router-dom'
+import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download } from 'lucide-react'
@@ -25,6 +25,7 @@ import Footer from './Footer'
 import { RouteErrorBoundary } from './RouteErrorBoundary'
 import { useAuthStore } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
+import { useEditModeStore } from '../store/editModeStore'
 import { institutionsApi, academicYearsApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
 import { useBranding } from '../config/branding'
@@ -56,6 +57,12 @@ export default function Layout() {
   } = useSidebarStore()
 
   const { isInstalled } = usePWA()
+  const location = useLocation()
+
+  // STRICT GOVERNANCE: Reset all workspace edit modes to View Mode on route navigation
+  useEffect(() => {
+    useEditModeStore.getState().resetAll()
+  }, [location.pathname])
 
   const token = useAuthStore((s) => s.token)
   const { data: institutions = [] } = useQuery({

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -36,6 +36,8 @@ import { useAuthStore, isUserAdmin } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { StatusBadge } from '../components/Badge'
 import type { StudentDocumentItem } from '../types'
+import { EditModeBar, DeleteConfirmationModal } from '../components/common'
+import { useEditModeStore } from '../store/editModeStore'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
@@ -84,6 +86,11 @@ export default function StudentDetailPage() {
     queryClient.invalidateQueries({ queryKey: ['students'] })
     refetchLifecycle()
   }
+
+  // Global View-First & Scoped Edit Mode
+  const editScope = `students:detail:${studentId}`
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
+  const [docToDelete, setDocToDelete] = useState<{ id: number; title: string } | null>(null)
 
   // Full Profile Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false)
@@ -516,6 +523,13 @@ export default function StudentDetailPage() {
 
   return (
     <div className="space-y-5">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar
+        scope={editScope}
+        title={`Student Dossier — ${overview.full_name}`}
+        isDirty={showEditModal}
+      />
+
       {/* Back + Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -572,18 +586,28 @@ export default function StudentDetailPage() {
               {overview.is_active ? (
                 <button
                   type="button"
+                  disabled={!isEditMode}
                   onClick={() => setShowExitModal(true)}
-                  className="px-3.5 py-2 rounded-lg border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
-                  title="Withdraw / Exit student from institute"
+                  className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${
+                    isEditMode
+                      ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
+                      : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed opacity-60'
+                  }`}
+                  title={isEditMode ? "Withdraw / Exit student from institute" : "Locked in View Mode: Enable Edit Mode to withdraw student"}
                 >
                   <UserMinus className="w-4 h-4" /> Exit / Withdraw
                 </button>
               ) : (
                 <button
                   type="button"
+                  disabled={!isEditMode}
                   onClick={() => setShowReactivateModal(true)}
-                  className="px-3.5 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
-                  title="Reactivate student into active batch"
+                  className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${
+                    isEditMode
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                      : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed opacity-60'
+                  }`}
+                  title={isEditMode ? "Reactivate student into active batch" : "Locked in View Mode: Enable Edit Mode to reactivate student"}
                 >
                   <UserCheck className="w-4 h-4" /> Reactivate Student
                 </button>
@@ -592,11 +616,21 @@ export default function StudentDetailPage() {
           )}
           {canEdit && (
             <button
-              onClick={openEditModal}
-              className="px-3.5 py-2 rounded-lg border border-primary-600 bg-white text-primary-700 hover:bg-primary-50 text-sm font-semibold flex items-center gap-1.5 shadow-sm transition"
-              title="Edit student profile, guardians, and batch assignment"
+              onClick={() => {
+                if (!isEditMode) {
+                  toast.error('Locked in View Mode: Please enable Edit Mode above before editing student records.')
+                  return
+                }
+                openEditModal()
+              }}
+              className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${
+                isEditMode
+                  ? 'border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                  : 'border-slate-200 bg-slate-50 text-slate-400'
+              }`}
+              title={isEditMode ? "Edit student profile, guardians, and batch assignment" : "Locked in View Mode: Enable Edit Mode above to modify records"}
             >
-              <Edit3 className="w-4 h-4" /> Edit Profile
+              <Edit3 className="w-4 h-4" /> {isEditMode ? 'Edit Profile' : 'Edit Locked'}
             </button>
           )}
           <Link
@@ -1080,12 +1114,16 @@ export default function StudentDetailPage() {
                         </span>
                         <button
                           onClick={() => {
-                            if (window.confirm(`Are you sure you want to delete ${doc.title}?`)) {
-                              deleteDocMutation.mutate(doc.id)
+                            if (!isEditMode) {
+                              toast.error('Locked in View Mode: Please enable Edit Mode above before deleting documents.')
+                              return
                             }
+                            setDocToDelete({ id: doc.id, title: doc.title })
                           }}
-                          className="p-1 rounded text-red-500 hover:bg-red-50"
-                          title="Delete Document"
+                          className={`p-1 rounded transition-colors ${
+                            isEditMode ? 'text-red-500 hover:bg-red-50' : 'text-slate-300 cursor-not-allowed'
+                          }`}
+                          title={isEditMode ? "Delete Document" : "Locked in View Mode: Enable Edit Mode to delete"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -2308,6 +2346,26 @@ export default function StudentDetailPage() {
           </div>
         </div>
       )}
+      {/* Standardized Delete Protection Modal */}
+      <DeleteConfirmationModal
+        isOpen={!!docToDelete}
+        onClose={() => setDocToDelete(null)}
+        scope={editScope}
+        entityType="Student Document"
+        entityName={docToDelete?.title || ''}
+        entityId={docToDelete?.id}
+        isLoading={deleteDocMutation.isPending}
+        onConfirm={() => {
+          if (docToDelete) {
+            deleteDocMutation.mutate(docToDelete.id, {
+              onSuccess: () => setDocToDelete(null),
+              onError: (err: any) => {
+                toast.error(err?.response?.data?.detail || 'Failed to delete document')
+              },
+            })
+          }
+        }}
+      />
     </div>
   )
 }

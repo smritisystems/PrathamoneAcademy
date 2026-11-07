@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-03
- * @updated     2026-11-06
+ * @updated     2026-11-07
  *
  * @description Student directory page with multi-field search, status filtering, lifecycle exit/reactivation, and fast profile navigation.
  */
@@ -21,14 +21,17 @@ import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Search, Plus, Eye, CreditCard, GraduationCap, Printer,
-  UserMinus, UserCheck,
+  UserMinus, UserCheck, Lock,
 } from 'lucide-react'
 import { studentsApi, standardsApi, divisionsApi, settingsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import Pagination from '../components/Pagination'
 import StudentExitModal from '../components/StudentExitModal'
 import StudentReactivateModal from '../components/StudentReactivateModal'
 import type { Student } from '../types'
+import toast from 'react-hot-toast'
 
 export default function StudentsPage() {
   const queryClient = useQueryClient()
@@ -58,6 +61,8 @@ export default function StudentsPage() {
   const [reactivateTargetStudent, setReactivateTargetStudent] = useState<Student | null>(null)
 
   const canManageLifecycle = isUserAdmin(user) || user?.role === 'staff'
+  const editScope = 'students:master'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   const { data: standards = [] } = useQuery({
     queryKey: ['standards', selectedInstitutionId],
@@ -111,14 +116,29 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-5">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Student Directory & Admissions Workspace" />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Students</h1>
           <p className="text-sm text-gray-500">{total} students found</p>
         </div>
-        <Link to="/students/add" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Student
-        </Link>
+        {isEditMode ? (
+          <Link to="/students/add" className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Add Student
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to register new admissions.')}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+            title="Locked in View Mode: Enable Edit Mode above to register new student"
+          >
+            <Lock className="w-4 h-4 text-slate-400" />
+            <span>Add Student (Locked)</span>
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -357,18 +377,34 @@ export default function StudentsPage() {
                           {s.is_active ? (
                             <button
                               type="button"
-                              onClick={() => setExitTargetStudent(s)}
-                              className="p-1.5 rounded hover:bg-red-50 text-red-600 transition"
-                              title="Exit / Withdraw Student"
+                              onClick={() => {
+                                if (!isEditMode) {
+                                  toast.error('Locked in View Mode: Please enable Edit Mode above before withdrawing students.')
+                                  return
+                                }
+                                setExitTargetStudent(s)
+                              }}
+                              className={`p-1.5 rounded transition ${
+                                isEditMode ? 'hover:bg-red-50 text-red-600' : 'text-slate-300 cursor-not-allowed'
+                              }`}
+                              title={isEditMode ? "Exit / Withdraw Student" : "Locked in View Mode: Enable Edit Mode to withdraw"}
                             >
                               <UserMinus className="w-4 h-4" />
                             </button>
                           ) : (
                             <button
                               type="button"
-                              onClick={() => setReactivateTargetStudent(s)}
-                              className="p-1.5 rounded hover:bg-emerald-50 text-emerald-600 transition"
-                              title="Reactivate Student"
+                              onClick={() => {
+                                if (!isEditMode) {
+                                  toast.error('Locked in View Mode: Please enable Edit Mode above before reactivating students.')
+                                  return
+                                }
+                                setReactivateTargetStudent(s)
+                              }}
+                              className={`p-1.5 rounded transition ${
+                                isEditMode ? 'hover:bg-emerald-50 text-emerald-600' : 'text-slate-300 cursor-not-allowed'
+                              }`}
+                              title={isEditMode ? "Reactivate Student" : "Locked in View Mode: Enable Edit Mode to reactivate"}
                             >
                               <UserCheck className="w-4 h-4" />
                             </button>

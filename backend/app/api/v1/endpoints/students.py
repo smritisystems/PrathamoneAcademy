@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-07
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -1157,6 +1157,16 @@ async def delete_student_document(
     )
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="delete_student_document",
+        resource_type="student_document",
+        resource_id=document_id,
+        old_data=f"title={doc.title}, document_type={doc.document_type}, student_id={student_id}",
+        new_data=None,
+    )
+    db.add(audit)
 
     await db.delete(doc)
     await db.commit()

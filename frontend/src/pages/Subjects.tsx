@@ -11,16 +11,18 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-04
+ * @updated     2026-11-07
  *
  * @description Subjects directory page managing academic curriculum subjects by board and class.
  */
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { FileText, Plus, BookOpen, Check, X } from 'lucide-react'
+import { FileText, Plus, BookOpen, Check, X, Lock } from 'lucide-react'
 import { standardsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import Modal from '../components/Modal'
 import toast from 'react-hot-toast'
 
@@ -82,9 +84,14 @@ export default function SubjectsPage() {
   })
 
   const selectedStdObj = standards.find((s) => String(s.id) === currentStandardId)
+  const editScope = 'academic:subjects'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   return (
     <div className="space-y-6">
+      {/* Global View-First & Explicit Edit Mode Governance Bar */}
+      <EditModeBar scope={editScope} title="Academic Subjects Master" isDirty={showSubjectModal} />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -93,15 +100,27 @@ export default function SubjectsPage() {
             Define subjects, maximum marks, passing standards, and optional courses
           </p>
         </div>
-        <button
-          onClick={() => {
-            setSubjectForm((f) => ({ ...f, standard_id: currentStandardId }))
-            setShowSubjectModal(true)
-          }}
-          className="btn-primary flex items-center gap-1.5"
-        >
-          <Plus className="w-4 h-4" /> Add Subject
-        </button>
+        {isEditMode ? (
+          <button
+            onClick={() => {
+              setSubjectForm((f) => ({ ...f, standard_id: currentStandardId }))
+              setShowSubjectModal(true)
+            }}
+            className="btn-primary flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" /> Add Subject
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to create new subjects.')}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+            title="Locked in View Mode: Enable Edit Mode above to add new subjects"
+          >
+            <Lock className="w-4 h-4 text-slate-400" />
+            <span>Add Subject (Locked)</span>
+          </button>
+        )}
       </div>
 
       {/* Standard Selector Tabs */}
