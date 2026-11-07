@@ -36,8 +36,8 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { encodeCodexNumber } from '../utils/codexFormatter'
 import QuickDecoderModal from '../components/codex/QuickDecoderModal'
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
+const fmt = (n: number | null | undefined) =>
+  n == null ? '—' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
 
 const METHOD_LABELS: Record<string, string> = {
   cash: 'Cash',
@@ -130,14 +130,14 @@ export default function DashboardPage() {
   const isCodexActive = Boolean((stats as any)?._codex?.is_enabled ?? codexStatus?.is_enabled)
   const codexMode = (stats as any)?._codex?.visibility_mode || codexStatus?.visibility_mode || 'actual_only'
 
-  const rawFees = stats?.total_fees ?? 0
-  const codeFees = (stats as any)?.total_fees_coded || (isCodexActive ? encodeCodexNumber(rawFees) : undefined)
+  const rawFees = stats?.total_fees
+  const codeFees = (stats as any)?.total_fees_coded || (isCodexActive && rawFees != null ? encodeCodexNumber(rawFees) : undefined)
 
-  const rawCollected = stats?.total_collected ?? 0
-  const codeCollected = (stats as any)?.total_collected_coded || (isCodexActive ? encodeCodexNumber(rawCollected) : undefined)
+  const rawCollected = stats?.total_collected
+  const codeCollected = (stats as any)?.total_collected_coded || (isCodexActive && rawCollected != null ? encodeCodexNumber(rawCollected) : undefined)
 
-  const rawOutstanding = stats?.total_outstanding ?? 0
-  const codeOutstanding = (stats as any)?.total_outstanding_coded || (isCodexActive ? encodeCodexNumber(rawOutstanding) : undefined)
+  const rawOutstanding = stats?.total_outstanding
+  const codeOutstanding = (stats as any)?.total_outstanding_coded || (isCodexActive && rawOutstanding != null ? encodeCodexNumber(rawOutstanding) : undefined)
 
   return (
     <div className="space-y-6">

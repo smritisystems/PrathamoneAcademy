@@ -662,10 +662,17 @@ async def test_decode_value(
     """
     institution_id = current_user.institution_id or 1
     config = await CodeXService.get_config(db, institution_id)
-    lockout_key = f"{institution_id}:{current_user.id}"
+    max_attempts = config.max_decoding_attempts or 5
+    lockout_secs = config.decoder_expiry_seconds or 300
 
-    # 1. Enforce brute-force lockout prevention
-    is_locked, remaining_secs = CodeXService.get_lockout_status(lockout_key)
+    # 1. Enforce persistent multi-worker brute-force lockout prevention
+    is_locked, remaining_secs, remaining_attempts = await CodeXService.get_lockout_status_persistent(
+        db=db,
+        institution_id=institution_id,
+        user_id=current_user.id,
+        max_attempts=max_attempts,
+        lockout_seconds=lockout_secs,
+    )
     if is_locked:
         await CodeXService.log_audit(
             db=db,
@@ -707,7 +714,7 @@ async def test_decode_value(
             detail="Access denied: You are not authorized to decode CodeX protected values."
         )
 
-    # 3. Server-side PIN Verification with Brute-Force Rate Limiting
+    # 3. Server-side PIN Verification with Multi-Worker Persistent Rate Limiting
     if config.feature_pin_protected_decoding and config.security_pin_hash:
         if not payload.pin:
             raise HTTPException(
@@ -715,33 +722,32 @@ async def test_decode_value(
                 detail="PIN required: CodeX decoding is protected by security PIN."
             )
         if not CodeXService.verify_pin(payload.pin, config.security_pin_hash):
-            max_attempts = config.max_decoding_attempts or 5
-            lockout_secs = config.decoder_expiry_seconds or 300
-            remaining, is_now_locked, lock_dur = CodeXService.record_failed_attempt(
-                lockout_key, max_attempts=max_attempts, lockout_seconds=lockout_secs
-            )
             await CodeXService.log_audit(
                 db=db,
                 institution_id=institution_id,
                 action="decode_pin_failure",
                 entity_type="code",
-                details={"code": payload.code, "attempts_remaining": remaining, "is_locked": is_now_locked},
+                details={"code": payload.code},
                 user=current_user,
                 status="failure",
                 ip_address=request.client.host if request.client else None,
             )
-            if is_now_locked:
+            is_locked_now, lock_dur, rem = await CodeXService.get_lockout_status_persistent(
+                db=db,
+                institution_id=institution_id,
+                user_id=current_user.id,
+                max_attempts=max_attempts,
+                lockout_seconds=lockout_secs,
+            )
+            if is_locked_now:
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     detail=f"Invalid PIN. Maximum attempts ({max_attempts}) exceeded. Decoder locked for {lock_dur} seconds."
                 )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid CodeX security PIN. {remaining} attempt(s) remaining before temporary lockout."
+                detail=f"Invalid CodeX security PIN. {rem} attempt(s) remaining before temporary lockout."
             )
-        else:
-            # Valid PIN verified -> Reset failed attempt counter
-            CodeXService.reset_failed_attempts(lockout_key)
 
     # Fetch mapping profile or historical version
     if payload.profile_id:

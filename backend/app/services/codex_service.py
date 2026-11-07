@@ -22,7 +22,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, desc, and_, or_
+from sqlalchemy import select, update, delete, desc, and_, or_, func
 
 from app.core.config import settings
 from app.models.codex import (
@@ -247,9 +247,88 @@ class CodeXService:
         return remaining, False, 0
 
     @classmethod
+    @classmethod
     def reset_failed_attempts(cls, key: str) -> None:
         """Resets failed attempt tracking upon successful authentication."""
         cls._decode_attempts.pop(key, None)
+
+    @classmethod
+    async def get_lockout_status_persistent(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        user_id: int,
+        max_attempts: int,
+        lockout_seconds: int,
+    ) -> Tuple[bool, int, int]:
+        """
+        Determines PIN decoder lockout status with database-level multi-worker persistence.
+        Queries the persistent codex_audit_logs ledger so lockout state survives backend restarts
+        and is synchronized across multiple Uvicorn worker processes.
+        Returns: (is_locked, remaining_lockout_seconds, remaining_attempts)
+        """
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(seconds=lockout_seconds)
+
+        # 1. Fetch timestamp of most recent decode_success or decode_reset
+        last_success_stmt = (
+            select(func.max(CodexAuditLog.created_at))
+            .where(
+                CodexAuditLog.institution_id == institution_id,
+                CodexAuditLog.user_id == user_id,
+                CodexAuditLog.action.in_(["decode_success", "decode_reset"]),
+            )
+        )
+        last_success_time = (await db.execute(last_success_stmt)).scalar()
+
+        # 2. Count failures within lockout_seconds and after last_success_time
+        failure_stmt = (
+            select(
+                func.count(CodexAuditLog.id),
+                func.max(CodexAuditLog.created_at)
+            )
+            .where(
+                CodexAuditLog.institution_id == institution_id,
+                CodexAuditLog.user_id == user_id,
+                CodexAuditLog.action == "decode_pin_failure",
+                CodexAuditLog.created_at >= cutoff,
+            )
+        )
+        if last_success_time:
+            failure_stmt = failure_stmt.where(CodexAuditLog.created_at > last_success_time)
+
+        res = (await db.execute(failure_stmt)).one()
+        failed_count, last_failure_time = res[0] or 0, res[1]
+
+        if failed_count >= max_attempts and last_failure_time:
+            elapsed = int((now - last_failure_time).total_seconds())
+            remaining = lockout_seconds - elapsed
+            if remaining > 0:
+                return True, remaining, 0
+
+        remaining_attempts = max(0, max_attempts - failed_count)
+        return False, 0, remaining_attempts
+
+    @classmethod
+    async def reset_failed_attempts_persistent(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        user: Optional[User],
+    ) -> None:
+        """
+        Persistently resets failed PIN attempt tracking across all workers by writing a decode_reset event.
+        """
+        if user:
+            await cls.log_audit(
+                db=db,
+                institution_id=institution_id,
+                action="decode_reset",
+                entity_type="code",
+                details={"reason": "Explicit attempt counter reset."},
+                user=user,
+                status="success",
+            )
 
     @classmethod
     async def apply_financial_masking(
@@ -263,32 +342,42 @@ class CodeXService:
     ) -> Dict[str, Any]:
         """
         Applies CodeX presentation or access control masking on a financial dictionary payload.
-        - 'coded_only': Masks actual raw numeric values (sets to 0.0) and injects coded string.
-        - 'both': Retains raw numeric value and injects coded string.
-        - 'actual_only' / disabled: Retains raw numeric values unchanged.
+        - 'coded_only': Masks actual raw numeric values (sets to None/null) and injects coded string.
+          Sets is_masked=True and populates _masked_fields so clients distinguish masked figures from genuine 0.0 amounts.
+        - 'both': Retains raw numeric value (and genuine zeros) AND injects coded string. Sets is_masked=False.
+        - 'actual_only' / disabled: Retains raw numeric values unchanged. Sets is_masked=False.
         """
         scope_res = await cls.resolve_scope(db, institution_id, user, module=module)
         is_active = scope_res.get("is_enabled", False)
         mode = scope_res.get("visibility_mode", "actual_only")
 
         if not is_active or mode == "disabled":
+            data["is_masked"] = False
+            data["_masked_fields"] = []
             data["_codex"] = {
                 "is_enabled": False,
                 "visibility_mode": "disabled",
                 "can_decode": False,
+                "is_masked": False,
             }
             return data
 
         if mode == "actual_only":
+            data["is_masked"] = False
+            data["_masked_fields"] = []
             data["_codex"] = {
                 "is_enabled": True,
                 "visibility_mode": "actual_only",
                 "can_decode": scope_res.get("can_decode", False),
+                "is_masked": False,
             }
             return data
 
         profile = await cls.get_default_profile(db, institution_id)
         digit_map = json.loads(profile.digit_map)
+
+        is_coded_only = (mode == "coded_only")
+        masked_list: List[str] = []
 
         for field in numeric_fields:
             if field in data and data[field] is not None:
@@ -302,14 +391,20 @@ class CodeXService:
                     negative_symbol=profile.negative_symbol or "-",
                 )
                 data[f"{field}_coded"] = coded_str
-                if mode == "coded_only":
-                    # Sanitize raw amount so unauthorized raw numbers are NEVER sent over the wire
-                    data[field] = 0.0
+                if is_coded_only:
+                    # Sanitize raw amount to None (null) so unauthorized actual values are NEVER sent over the wire
+                    # and genuine zero (0.0) transactions remain distinguishable from masked values.
+                    data[field] = None
+                    masked_list.append(field)
 
+        data["is_masked"] = is_coded_only
+        data["_masked_fields"] = masked_list
         data["_codex"] = {
             "is_enabled": True,
             "visibility_mode": mode,
             "can_decode": scope_res.get("can_decode", False),
+            "is_masked": is_coded_only,
+            "masked_fields": masked_list,
             "profile_code": profile.profile_code,
             "version": profile.version,
         }
@@ -333,12 +428,18 @@ class CodeXService:
         mode = scope_res.get("visibility_mode", "actual_only")
 
         if not is_active or mode in ("actual_only", "disabled"):
+            for rec in records:
+                rec["is_masked"] = False
+                rec["_masked_fields"] = []
             return records
 
         profile = await cls.get_default_profile(db, institution_id)
         digit_map = json.loads(profile.digit_map)
+        is_coded_only = (mode == "coded_only")
 
         for rec in records:
+            rec["is_masked"] = is_coded_only
+            m_fields: List[str] = []
             for field in numeric_fields:
                 if field in rec and rec[field] is not None:
                     val = rec[field]
@@ -351,8 +452,10 @@ class CodeXService:
                         negative_symbol=profile.negative_symbol or "-",
                     )
                     rec[f"{field}_coded"] = coded_str
-                    if mode == "coded_only":
-                        rec[field] = 0.0
+                    if is_coded_only:
+                        rec[field] = None
+                        m_fields.append(field)
+            rec["_masked_fields"] = m_fields
         return records
 
     @staticmethod
@@ -572,15 +675,21 @@ class CodeXService:
                 "reason": "CodeX is DISABLED for this business (System Default: OFF).",
             }
 
-        # If user is not authenticated, fallback to default restrictive actual_only
+        # If user is not authenticated or system call, apply the business configuration default
         if not user:
+            default_mode = "actual_only"
+            if config.feature_hide_actual_amount:
+                default_mode = "coded_only"
+            elif config.feature_show_both:
+                default_mode = "both"
+
             return {
-                "is_enabled": False,
-                "visibility_mode": "actual_only",
+                "is_enabled": True,
+                "visibility_mode": default_mode,
                 "can_decode": False,
                 "can_generate_qr": False,
-                "allowed_modules": [],
-                "reason": "Unauthenticated access.",
+                "allowed_modules": ["all"],
+                "reason": f"Default business visibility for unauthenticated/system call ({default_mode}).",
             }
 
         # Step 2: Fetch all scope assignments for this institution
