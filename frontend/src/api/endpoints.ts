@@ -1046,6 +1046,29 @@ export const staffApi = {
 
   deleteKeyContact: (userId: number | string, contactId: number) =>
     apiClient.delete<{ success: boolean; message: string }>(`/staff/${userId}/key-contacts/${contactId}`),
+
+  getAddresses: (userId: number | string) =>
+    apiClient.get<Array<{
+      id: number
+      staff_profile_id: number
+      address_type: string
+      address_line: string
+      city: string
+      state: string
+      pincode: string
+      country: string
+      is_primary: boolean
+      is_active: boolean
+    }>>(`/staff/${userId}/addresses`),
+
+  addAddress: (userId: number | string, data: any) =>
+    apiClient.post<{ success: boolean; message: string; id: number }>(`/staff/${userId}/addresses`, data),
+
+  setPrimaryAddress: (userId: number | string, addressId: number) =>
+    apiClient.put<{ success: boolean; message: string }>(`/staff/${userId}/addresses/${addressId}/set-primary`),
+
+  deleteAddress: (userId: number | string, addressId: number) =>
+    apiClient.delete<{ success: boolean; message: string }>(`/staff/${userId}/addresses/${addressId}`),
 }
 
 // ─── SysAdmin Superuser Governance ───────────────────────────────────────────

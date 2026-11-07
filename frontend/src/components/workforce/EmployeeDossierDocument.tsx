@@ -28,6 +28,19 @@ import {
   Building,
 } from 'lucide-react'
 
+export interface EmployeeDossierSectionsConfig {
+  personal?: boolean
+  addresses?: boolean
+  contacts?: boolean
+  employment?: boolean
+  qualifications?: boolean
+  assignments?: boolean
+  attendance?: boolean
+  payroll?: boolean
+  documents?: boolean
+  excludeSensitiveBanking?: boolean
+}
+
 export interface EmployeeDossierDocumentProps {
   id?: string
   profile: any
@@ -35,6 +48,7 @@ export interface EmployeeDossierDocumentProps {
   institutionAddress?: string
   institutionPhone?: string
   institutionEmail?: string
+  sections?: EmployeeDossierSectionsConfig
 }
 
 export default function EmployeeDossierDocument({
@@ -44,6 +58,18 @@ export default function EmployeeDossierDocument({
   institutionAddress = 'Central Knowledge Campus, High Street Powai, Mumbai - 400076',
   institutionPhone = '+91 98200 12345 / 022-25701122',
   institutionEmail = 'admin@prashantacademy.edu.in',
+  sections = {
+    personal: true,
+    addresses: true,
+    contacts: true,
+    employment: true,
+    qualifications: true,
+    assignments: true,
+    attendance: true,
+    payroll: true,
+    documents: true,
+    excludeSensitiveBanking: false,
+  },
 }: EmployeeDossierDocumentProps) {
   if (!profile) return null
 
@@ -77,6 +103,29 @@ export default function EmployeeDossierDocument({
           relationship: profile.emergency_contact_relation || 'Family / Spouse',
           phone_primary: profile.emergency_contact_phone || '+91 98200 11223',
           is_primary_emergency: true,
+        },
+      ]
+
+  const addresses = profile.addresses && profile.addresses.length > 0
+    ? profile.addresses
+    : [
+        {
+          id: 1,
+          address_type: 'current',
+          address_line: profile.current_address || 'A-402, Green View Heights, Powai',
+          city: profile.city || 'Mumbai',
+          state: profile.state || 'Maharashtra',
+          pincode: profile.pincode || '400076',
+          is_primary: true,
+        },
+        {
+          id: 2,
+          address_type: 'permanent',
+          address_line: profile.permanent_address || profile.current_address || 'Permanent Native Residence',
+          city: profile.city || 'Mumbai',
+          state: profile.state || 'Maharashtra',
+          pincode: profile.pincode || '400076',
+          is_primary: false,
         },
       ]
 
@@ -155,138 +204,157 @@ export default function EmployeeDossierDocument({
       </div>
 
       {/* ─── 3. DEMOGRAPHICS & DUAL ADDRESSES (SSOT) ────────────────────── */}
-      <div className="space-y-2">
-        <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
-          <MapPin className="w-3.5 h-3.5 text-indigo-600" />
-          1. Residential & Permanent Native Addresses
-        </h3>
+      {sections.addresses !== false && (
+        <div className="space-y-2">
+          <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
+            <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+            1. Residential, Permanent & Alternate Addresses
+          </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
-            <div className="font-bold text-slate-700 text-[10px] uppercase tracking-wider text-emerald-700">
-              Current / Residential Address
-            </div>
-            <p className="font-medium text-slate-800 text-[11px]">
-              {profile.current_address || 'A-402, Green View Heights, Powai'}
-            </p>
-            <p className="text-[10px] text-slate-500">
-              City: {profile.city || 'Mumbai'}, State: {profile.state || 'Maharashtra'}, PIN: {profile.pincode || '400076'}
-            </p>
-          </div>
-
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
-            <div className="font-bold text-slate-700 text-[10px] uppercase tracking-wider text-indigo-700">
-              Permanent / Hometown Address
-            </div>
-            <p className="font-medium text-slate-800 text-[11px]">
-              {profile.permanent_address || profile.current_address || 'Permanent Native Residence'}
-            </p>
-            <p className="text-[10px] text-slate-500">
-              City: {profile.city || 'Mumbai'}, State: {profile.state || 'Maharashtra'}, PIN: {profile.pincode || '400076'}
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {addresses.map((addr: any, idx: number) => (
+              <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[10px] uppercase tracking-wider text-indigo-700">
+                    {addr.address_type === 'current'
+                      ? 'Current / Residential Address'
+                      : addr.address_type === 'permanent'
+                      ? 'Permanent / Hometown Address'
+                      : `${addr.address_type} Address`}
+                  </span>
+                  {addr.is_primary && (
+                    <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded text-[9px] font-bold">
+                      Primary Address
+                    </span>
+                  )}
+                </div>
+                <p className="font-medium text-slate-800 text-[11px] line-clamp-2">
+                  {addr.address_line}
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  {addr.city}, {addr.state} - {addr.pincode}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* ─── 4. KEY EMERGENCY CONTACTS ──────────────────────────────────── */}
-      <div className="space-y-2">
-        <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
-          <Phone className="w-3.5 h-3.5 text-indigo-600" />
-          2. Key Emergency Contacts & Family References
-        </h3>
+      {/* ─── 4. KEY EMERGENCY CONTACTS & NOMINEES ──────────────────────────── */}
+      {sections.contacts !== false && (
+        <div className="space-y-2">
+          <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
+            <Phone className="w-3.5 h-3.5 text-indigo-600" />
+            2. Key Emergency Contacts & Family Nominees
+          </h3>
 
-        <table className="w-full text-left border border-slate-200 rounded-lg overflow-hidden text-[11px]">
-          <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 text-[10px] uppercase">
-            <tr>
-              <th className="py-1.5 px-3">Contact Person</th>
-              <th className="py-1.5 px-3">Relationship</th>
-              <th className="py-1.5 px-3">Primary Phone</th>
-              <th className="py-1.5 px-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {keyContacts.map((c: any, idx: number) => (
-              <tr key={idx} className="hover:bg-slate-50">
-                <td className="py-1.5 px-3 font-semibold text-slate-800">{c.contact_name}</td>
-                <td className="py-1.5 px-3 text-slate-600 capitalize">{c.relationship || 'Family'}</td>
-                <td className="py-1.5 px-3 font-mono text-slate-800">{c.phone_primary}</td>
-                <td className="py-1.5 px-3">
-                  {c.is_primary_emergency ? (
-                    <span className="px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[9px] font-bold">
-                      Primary Emergency
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 text-[10px]">Alternate</span>
-                  )}
-                </td>
+          <table className="w-full text-left border border-slate-200 rounded-lg overflow-hidden text-[11px]">
+            <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 text-[10px] uppercase">
+              <tr>
+                <th className="py-1.5 px-3">Contact Person</th>
+                <th className="py-1.5 px-3">Relationship</th>
+                <th className="py-1.5 px-3">Primary Phone</th>
+                <th className="py-1.5 px-3">Priority / Category</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {keyContacts.map((c: any, idx: number) => (
+                <tr key={idx} className="hover:bg-slate-50">
+                  <td className="py-1.5 px-3 font-semibold text-slate-800">{c.contact_name}</td>
+                  <td className="py-1.5 px-3 text-slate-600 capitalize">{c.relationship || 'Family'}</td>
+                  <td className="py-1.5 px-3 font-mono text-slate-800">{c.phone_primary}</td>
+                  <td className="py-1.5 px-3">
+                    <div className="flex items-center gap-1">
+                      {c.is_primary_emergency && (
+                        <span className="px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[9px] font-bold">
+                          Primary Emergency
+                        </span>
+                      )}
+                      {c.is_nominee && (
+                        <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[9px] font-bold">
+                          Nominee
+                        </span>
+                      )}
+                      {!c.is_primary_emergency && !c.is_nominee && (
+                        <span className="text-slate-400 text-[10px]">Reference</span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* ─── 5. BANK ACCOUNTS & REMUNERATION ─────────────────────────────── */}
-      <div className="space-y-2">
-        <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
-          <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
-          3. Bank Accounts & Remuneration Details
-        </h3>
+      {sections.payroll !== false && (
+        <div className="space-y-2">
+          <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
+            <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
+            3. Bank Accounts & Remuneration Details
+          </h3>
 
-        <table className="w-full text-left border border-slate-200 rounded-lg overflow-hidden text-[11px]">
-          <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 text-[10px] uppercase">
-            <tr>
-              <th className="py-1.5 px-3">Bank Name</th>
-              <th className="py-1.5 px-3">Account Number</th>
-              <th className="py-1.5 px-3">IFSC Code</th>
-              <th className="py-1.5 px-3">Account Type</th>
-              <th className="py-1.5 px-3">Primary Salary</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {bankAccounts.map((b: any, idx: number) => (
-              <tr key={idx} className="hover:bg-slate-50">
-                <td className="py-1.5 px-3 font-semibold text-slate-800">{b.bank_name}</td>
-                <td className="py-1.5 px-3 font-mono text-slate-700">{b.account_number}</td>
-                <td className="py-1.5 px-3 font-mono uppercase text-slate-700">{b.ifsc_code}</td>
-                <td className="py-1.5 px-3 capitalize text-slate-600">{b.account_type || 'Salary'}</td>
-                <td className="py-1.5 px-3">
-                  {b.is_primary ? (
-                    <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-bold">
-                      Primary
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 text-[10px]">Secondary</span>
-                  )}
-                </td>
+          <table className="w-full text-left border border-slate-200 rounded-lg overflow-hidden text-[11px]">
+            <thead className="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 text-[10px] uppercase">
+              <tr>
+                <th className="py-1.5 px-3">Bank Name</th>
+                <th className="py-1.5 px-3">Account Number</th>
+                <th className="py-1.5 px-3">IFSC Code</th>
+                <th className="py-1.5 px-3">Account Type</th>
+                <th className="py-1.5 px-3">Primary Salary</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {bankAccounts.map((b: any, idx: number) => (
+                <tr key={idx} className="hover:bg-slate-50">
+                  <td className="py-1.5 px-3 font-semibold text-slate-800">{b.bank_name}</td>
+                  <td className="py-1.5 px-3 font-mono text-slate-700">
+                    {sections.excludeSensitiveBanking
+                      ? '••••••••' + String(b.account_number).slice(-4)
+                      : b.account_number}
+                  </td>
+                  <td className="py-1.5 px-3 font-mono uppercase text-slate-700">{b.ifsc_code}</td>
+                  <td className="py-1.5 px-3 capitalize text-slate-600">{b.account_type || 'Salary'}</td>
+                  <td className="py-1.5 px-3">
+                    {b.is_primary ? (
+                      <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-bold">
+                        Primary
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 text-[10px]">Secondary</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-        <div className="grid grid-cols-3 gap-3 pt-1 text-[10px]">
-          <div className="p-2 bg-slate-50 border border-slate-200 rounded">
-            <span className="text-slate-400 font-semibold uppercase">Basic Monthly Remuneration</span>
-            <div className="font-bold text-slate-900 text-xs mt-0.5">
-              ₹{profile.basic_salary?.toLocaleString() || '45,000.00'}
+          <div className="grid grid-cols-3 gap-3 pt-1 text-[10px]">
+            <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+              <span className="text-slate-400 font-semibold uppercase">Basic Monthly Remuneration</span>
+              <div className="font-bold text-slate-900 text-xs mt-0.5">
+                ₹{profile.basic_salary?.toLocaleString() || '45,000.00'}
+              </div>
             </div>
-          </div>
-          <div className="p-2 bg-slate-50 border border-slate-200 rounded">
-            <span className="text-slate-400 font-semibold uppercase">PAN Verification</span>
-            <div className="font-bold text-slate-900 font-mono text-xs mt-0.5">
-              {profile.pan_number || 'ABCDE1234F'}
+            <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+              <span className="text-slate-400 font-semibold uppercase">PAN Verification</span>
+              <div className="font-bold text-slate-900 font-mono text-xs mt-0.5">
+                {profile.pan_number || 'ABCDE1234F'}
+              </div>
             </div>
-          </div>
-          <div className="p-2 bg-slate-50 border border-slate-200 rounded">
-            <span className="text-slate-400 font-semibold uppercase">Aadhaar (Masked)</span>
-            <div className="font-bold text-slate-900 font-mono text-xs mt-0.5">
-              {profile.aadhar_number ? `•••• •••• ${profile.aadhar_number.slice(-4)}` : '•••• •••• 9012'}
+            <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+              <span className="text-slate-400 font-semibold uppercase">Aadhaar (Masked)</span>
+              <div className="font-bold text-slate-900 font-mono text-xs mt-0.5">
+                {profile.aadhar_number ? `•••• •••• ${profile.aadhar_number.slice(-4)}` : '•••• •••• 9012'}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ─── 6. ACADEMIC ALLOCATIONS (IF TEACHER) ────────────────────────── */}
-      {assignments.length > 0 && (
+      {sections.assignments !== false && assignments.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200 pb-1">
             <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
@@ -298,7 +366,7 @@ export default function EmployeeDossierDocument({
               <tr>
                 <th className="py-1.5 px-3">Board</th>
                 <th className="py-1.5 px-3">Standard / Grade</th>
-                <th className="py-1.5 px-3">Batch / Division</th>
+                <th className="py-1.5 px-3">Batch & Code</th>
                 <th className="py-1.5 px-3">Subject</th>
                 <th className="py-1.5 px-3 text-right">Weekly Load</th>
               </tr>
@@ -308,7 +376,9 @@ export default function EmployeeDossierDocument({
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="py-1.5 px-3 font-semibold text-indigo-700">{a.board}</td>
                   <td className="py-1.5 px-3 text-slate-800">{a.standard}</td>
-                  <td className="py-1.5 px-3 font-medium text-slate-700">{a.batch}</td>
+                  <td className="py-1.5 px-3 font-medium text-slate-700">
+                    {a.batch} {a.batch_code ? <span className="font-mono text-slate-500">[{a.batch_code}]</span> : null}
+                  </td>
                   <td className="py-1.5 px-3 font-semibold text-slate-900">{a.subject}</td>
                   <td className="py-1.5 px-3 text-right font-mono font-bold text-slate-800">{a.weekly_hours} hrs/wk</td>
                 </tr>

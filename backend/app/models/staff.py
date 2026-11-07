@@ -121,6 +121,9 @@ class StaffProfile(Base):
     key_contacts: Mapped[List["StaffKeyContact"]] = relationship(
         "StaffKeyContact", back_populates="staff_profile", cascade="all, delete-orphan", order_by="desc(StaffKeyContact.is_primary_emergency)"
     )
+    addresses: Mapped[List["StaffAddress"]] = relationship(
+        "StaffAddress", back_populates="staff_profile", cascade="all, delete-orphan", order_by="desc(StaffAddress.is_primary)"
+    )
 
 
 class StaffEmploymentHistory(Base):
@@ -352,6 +355,7 @@ class StaffBankAccount(Base):
     )
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -370,12 +374,15 @@ class StaffKeyContact(Base):
         ForeignKey("staff_profiles.id", ondelete="CASCADE"), nullable=False, index=True
     )
     contact_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    relation: Mapped[str] = mapped_column("relationship", String(50), nullable=False)  # spouse, parent, sibling, child, relative, reference, other
+    relation: Mapped[str] = mapped_column("relationship", String(50), nullable=False)  # spouse, parent, sibling, child, relative, reference, nominee, other
     phone_primary: Mapped[str] = mapped_column(String(20), nullable=False)
     phone_secondary: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(String(150), nullable=True)
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_primary_emergency: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_nominee: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    priority: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -384,5 +391,32 @@ class StaffKeyContact(Base):
     )
 
     staff_profile: Mapped["StaffProfile"] = relationship("StaffProfile", back_populates="key_contacts")
+
+
+class StaffAddress(Base):
+    __tablename__ = "staff_addresses"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    staff_profile_id: Mapped[int] = mapped_column(
+        ForeignKey("staff_profiles.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    address_type: Mapped[str] = mapped_column(
+        String(30), default="current"  # current, permanent, alternate, communication, native
+    )
+    address_line: Mapped[str] = mapped_column(Text, nullable=False)
+    city: Mapped[str] = mapped_column(String(100), default="Mumbai")
+    state: Mapped[str] = mapped_column(String(100), default="Maharashtra")
+    pincode: Mapped[str] = mapped_column(String(20), default="400001")
+    country: Mapped[str] = mapped_column(String(50), default="India")
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    staff_profile: Mapped["StaffProfile"] = relationship("StaffProfile", back_populates="addresses")
 
 

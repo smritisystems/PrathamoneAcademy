@@ -46,6 +46,8 @@ from app.models.staff import (
     StaffGeneratedDocument,
     StaffBankAccount,
     StaffKeyContact,
+    StaffAddress,
+    StaffEmploymentHistory,
 )
 from app.models.academic_year import AcademicYear
 from app.models.board import Board
@@ -154,6 +156,7 @@ class StaffBankAccountCreateRequest(BaseModel):
     account_type: str = "salary"  # salary, savings, reimbursement, current
     is_primary: bool = False
     is_verified: bool = False
+    is_active: bool = True
 
 
 class StaffKeyContactCreateRequest(BaseModel):
@@ -164,6 +167,20 @@ class StaffKeyContactCreateRequest(BaseModel):
     email: Optional[str] = None
     address: Optional[str] = None
     is_primary_emergency: bool = False
+    is_nominee: bool = False
+    is_active: bool = True
+    priority: int = 1
+
+
+class StaffAddressCreateRequest(BaseModel):
+    address_type: str = "current"  # current, permanent, alternate, communication, native
+    address_line: str
+    city: Optional[str] = "Mumbai"
+    state: Optional[str] = "Maharashtra"
+    pincode: Optional[str] = "400001"
+    country: Optional[str] = "India"
+    is_primary: bool = False
+    is_active: bool = True
 
 
 class TeacherAssignmentCreateRequest(BaseModel):
@@ -501,9 +518,9 @@ async def get_staff_profile(
     if not is_self:
         check_institution_access(profile.institution_id, current_user)
 
-    # Assignments
+    # Assignments with Board and Batch Code disambiguation
     assignments_res = await db.execute(
-        select(TeacherAssignment, Standard.name, Division.name, Subject.name, Board.name)
+        select(TeacherAssignment, Standard.name, Division.name, Division.code, Subject.name, Board.name)
         .join(Standard, TeacherAssignment.standard_id == Standard.id)
         .join(Division, TeacherAssignment.division_id == Division.id)
         .join(Subject, TeacherAssignment.subject_id == Subject.id)
@@ -511,12 +528,17 @@ async def get_staff_profile(
         .where(TeacherAssignment.teacher_user_id == user_id, TeacherAssignment.is_active == True)
     )
     assignments = []
-    for a, std_name, div_name, sub_name, brd_name in assignments_res.all():
+    for a, std_name, div_name, div_code, sub_name, brd_name in assignments_res.all():
         assignments.append({
             "id": a.id,
+            "board_id": a.board_id,
             "board": brd_name,
+            "standard_id": a.standard_id,
             "standard": std_name,
+            "division_id": a.division_id,
             "batch": div_name,
+            "batch_code": div_code,
+            "subject_id": a.subject_id,
             "subject": sub_name,
             "weekly_hours": a.weekly_hours,
             "is_class_teacher": a.is_class_teacher,
@@ -543,6 +565,22 @@ async def get_staff_profile(
             .order_by(desc(StaffKeyContact.is_primary_emergency), desc(StaffKeyContact.id))
         )
     ).scalars().all()
+
+    # Addresses
+    addresses_res = await db.execute(
+        select(StaffAddress)
+        .where(StaffAddress.staff_profile_id == profile.id)
+        .order_by(desc(StaffAddress.is_primary), desc(StaffAddress.id))
+    )
+    addresses = addresses_res.scalars().all()
+
+    # Employment History
+    hist_res = await db.execute(
+        select(StaffEmploymentHistory)
+        .where(StaffEmploymentHistory.staff_profile_id == profile.id)
+        .order_by(desc(StaffEmploymentHistory.effective_date), desc(StaffEmploymentHistory.id))
+    )
+    emp_histories = hist_res.scalars().all()
 
     # Reporting Manager
     reporting_mgr = None
@@ -580,6 +618,12 @@ async def get_staff_profile(
         "experience_years": profile.experience_years,
         "employment_type": profile.employment_type,
         "joining_date": profile.joining_date.isoformat() if profile.joining_date else None,
+        "contract_start_date": profile.contract_start_date.isoformat() if profile.contract_start_date else None,
+        "contract_end_date": profile.contract_end_date.isoformat() if profile.contract_end_date else None,
+        "status_effective_date": profile.status_effective_date.isoformat() if profile.status_effective_date else None,
+        "exit_date": profile.exit_date.isoformat() if profile.exit_date else None,
+        "exit_reason": profile.exit_reason,
+        "rehire_eligible": profile.rehire_eligible,
         "status": profile.status,
         "is_active": user.is_active,
         "notes": profile.notes,
@@ -593,6 +637,20 @@ async def get_staff_profile(
         "bank_account_number": profile.bank_account_number if can_view_sensitive else None,
         "bank_ifsc": profile.bank_ifsc if can_view_sensitive else None,
         "assignments": assignments,
+        "addresses": [
+            {
+                "id": addr.id,
+                "address_type": addr.address_type,
+                "address_line": addr.address_line,
+                "city": addr.city,
+                "state": addr.state,
+                "pincode": addr.pincode,
+                "country": addr.country,
+                "is_primary": addr.is_primary,
+                "is_active": addr.is_active,
+            }
+            for addr in addresses
+        ],
         "bank_accounts": [
             {
                 "id": b.id,
@@ -604,6 +662,7 @@ async def get_staff_profile(
                 "account_type": b.account_type,
                 "is_primary": b.is_primary,
                 "is_verified": b.is_verified,
+                "is_active": getattr(b, "is_active", True),
             }
             for b in bank_accs
         ],
@@ -617,8 +676,23 @@ async def get_staff_profile(
                 "email": c.email,
                 "address": c.address,
                 "is_primary_emergency": c.is_primary_emergency,
+                "is_nominee": getattr(c, "is_nominee", False),
+                "is_active": getattr(c, "is_active", True),
+                "priority": getattr(c, "priority", 1),
             }
             for c in contacts
+        ],
+        "employment_histories": [
+            {
+                "id": h.id,
+                "event_type": h.event_type,
+                "old_status": h.old_status,
+                "new_status": h.new_status,
+                "effective_date": h.effective_date.isoformat() if h.effective_date else None,
+                "reason": h.reason,
+                "notes": h.notes,
+            }
+            for h in emp_histories
         ],
         "leave_balance": {
             "casual_total": bal.casual_leave_total if bal else 12.0,
@@ -708,6 +782,7 @@ async def list_staff_bank_accounts(
             "account_type": a.account_type,
             "is_primary": a.is_primary,
             "is_verified": a.is_verified,
+            "is_active": getattr(a, "is_active", True),
             "created_at": a.created_at.isoformat() if a.created_at else None,
         }
         for a in accounts
@@ -750,6 +825,7 @@ async def add_staff_bank_account(
         account_type=data.account_type,
         is_primary=data.is_primary,
         is_verified=data.is_verified,
+        is_active=data.is_active,
     )
     db.add(new_acc)
     await db.commit()
@@ -918,6 +994,9 @@ async def add_staff_key_contact(
         email=data.email,
         address=data.address,
         is_primary_emergency=data.is_primary_emergency,
+        is_nominee=data.is_nominee,
+        is_active=data.is_active,
+        priority=data.priority,
     )
     db.add(new_contact)
     await db.commit()
@@ -969,6 +1048,163 @@ async def delete_staff_key_contact(
     await db.delete(target)
     await db.commit()
     return {"success": True, "message": "Key contact deleted successfully"}
+
+
+# ─── Addresses Endpoints ──────────────────────────────────────────────────────
+
+@router.get("/{user_id}/addresses")
+async def list_staff_addresses(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    is_self = current_user.id == user_id
+    if not is_self and current_user.role not in STAFF_ADMIN_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized to view addresses")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    addresses = (
+        await db.execute(
+            select(StaffAddress)
+            .where(StaffAddress.staff_profile_id == profile.id)
+            .order_by(desc(StaffAddress.is_primary), desc(StaffAddress.id))
+        )
+    ).scalars().all()
+
+    return [
+        {
+            "id": a.id,
+            "staff_profile_id": a.staff_profile_id,
+            "address_type": a.address_type,
+            "address_line": a.address_line,
+            "city": a.city,
+            "state": a.state,
+            "pincode": a.pincode,
+            "country": a.country,
+            "is_primary": a.is_primary,
+            "is_active": a.is_active,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+        }
+        for a in addresses
+    ]
+
+
+@router.post("/{user_id}/addresses")
+async def add_staff_address(
+    user_id: int,
+    data: StaffAddressCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    if data.is_primary:
+        existing = (
+            await db.execute(
+                select(StaffAddress).where(StaffAddress.staff_profile_id == profile.id)
+            )
+        ).scalars().all()
+        for a in existing:
+            a.is_primary = False
+
+        if data.address_type == "current" or not profile.current_address:
+            profile.current_address = data.address_line
+            profile.city = data.city or profile.city
+            profile.state = data.state or profile.state
+            profile.pincode = data.pincode or profile.pincode
+        elif data.address_type == "permanent":
+            profile.permanent_address = data.address_line
+
+    new_addr = StaffAddress(
+        staff_profile_id=profile.id,
+        address_type=data.address_type,
+        address_line=data.address_line,
+        city=data.city or "Mumbai",
+        state=data.state or "Maharashtra",
+        pincode=data.pincode or "400001",
+        country=data.country or "India",
+        is_primary=data.is_primary,
+        is_active=data.is_active,
+    )
+    db.add(new_addr)
+    await db.commit()
+    await db.refresh(new_addr)
+    return {"success": True, "message": "Address added successfully", "id": new_addr.id}
+
+
+@router.put("/{user_id}/addresses/{address_id}/set-primary")
+async def set_primary_address(
+    user_id: int,
+    address_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    target = (
+        await db.execute(
+            select(StaffAddress).where(
+                StaffAddress.id == address_id, StaffAddress.staff_profile_id == profile.id
+            )
+        )
+    ).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Address not found")
+
+    existing = (
+        await db.execute(select(StaffAddress).where(StaffAddress.staff_profile_id == profile.id))
+    ).scalars().all()
+    for a in existing:
+        a.is_primary = (a.id == address_id)
+
+    profile.current_address = target.address_line
+    profile.city = target.city
+    profile.state = target.state
+    profile.pincode = target.pincode
+
+    await db.commit()
+    return {"success": True, "message": "Address set as primary successfully"}
+
+
+@router.delete("/{user_id}/addresses/{address_id}")
+async def delete_staff_address(
+    user_id: int,
+    address_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
+):
+    profile = (await db.execute(select(StaffProfile).where(StaffProfile.user_id == user_id))).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Staff profile not found")
+
+    check_institution_access(profile.institution_id, current_user)
+
+    target = (
+        await db.execute(
+            select(StaffAddress).where(
+                StaffAddress.id == address_id, StaffAddress.staff_profile_id == profile.id
+            )
+        )
+    ).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="Address not found")
+
+    await db.delete(target)
+    await db.commit()
+    return {"success": True, "message": "Address deleted successfully"}
 
 
 # ─── 2. Teacher Academic Assignments Endpoints ────────────────────────────────

@@ -1805,15 +1805,72 @@ export interface StaffProfileDetail extends StaffMember {
   reporting_manager_id?: number | null
   reporting_manager_name?: string | null
   responsibilities?: string | null
+  contract_start_date?: string | null
+  contract_end_date?: string | null
+  status_effective_date?: string | null
+  exit_date?: string | null
+  exit_reason?: string | null
+  rehire_eligible?: boolean
   assignments: Array<{
     id: number
+    board_id?: number
     board: string
+    standard_id?: number
     standard: string
+    division_id?: number
     batch: string
+    batch_code?: string
+    subject_id?: number
     subject: string
     weekly_hours: number
     is_class_teacher: boolean
     notes?: string
+  }>
+  addresses?: Array<{
+    id: number
+    staff_profile_id: number
+    address_type: string
+    address_line: string
+    city: string
+    state: string
+    pincode: string
+    country: string
+    is_primary: boolean
+    is_active: boolean
+  }>
+  bank_accounts?: Array<{
+    id: number
+    account_holder_name: string
+    bank_name: string
+    account_number: string
+    ifsc_code: string
+    branch_name?: string
+    account_type: string
+    is_primary: boolean
+    is_verified: boolean
+    is_active: boolean
+  }>
+  key_contacts?: Array<{
+    id: number
+    contact_name: string
+    relationship: string
+    phone_primary: string
+    phone_secondary?: string
+    email?: string
+    address?: string
+    is_primary_emergency: boolean
+    is_nominee?: boolean
+    is_active?: boolean
+    priority?: number
+  }>
+  employment_histories?: Array<{
+    id: number
+    event_type: string
+    old_status?: string | null
+    new_status: string
+    effective_date: string
+    reason?: string | null
+    notes?: string | null
   }>
   leave_balance?: {
     casual_total: number
