@@ -32,7 +32,7 @@ import type {
   ImportHistoryDetail, ExportFilterParams,
   UserManagementStats, UserListItem, UserListResponse, UserProfileWorkspaceData,
   UserCreatePayload, UserUpdatePayload,
-  AcademicSubject, AcademicTimetableEntry, EnrollmentRecord, EnrollmentStats,
+  AcademicSubject, CanonicalSubject, SubjectMappingItem, SubjectDuplicateCheckResult, AcademicTimetableEntry, EnrollmentRecord, EnrollmentStats,
   UnassignedStudent, BatchCapacityReportRow, AcademicDistributionReportRow, FacultyLoadReportRow,
   StaffMember, StaffProfileDetail, TeacherAssignmentItem, StaffAttendanceItem,
   StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
@@ -181,6 +181,49 @@ export const subjectsApi = {
     apiClient.put<AcademicSubject>(`/subjects/${id}`, data),
   delete: (id: number | string) =>
     apiClient.delete<{ message: string; id: number }>(`/subjects/${id}`),
+
+  // Canonical Subject Master
+  listCanonical: (params?: { category?: string; search?: string; include_inactive?: boolean }) =>
+    apiClient.get<CanonicalSubject[]>('/subjects/canonical', { params }),
+  getCanonical: (id: number | string) =>
+    apiClient.get<CanonicalSubject>(`/subjects/canonical/${id}`),
+  createCanonical: (
+    data: { name: string; code: string; category?: string; description?: string; aliases?: string },
+    params?: { force?: boolean }
+  ) => apiClient.post<{ id: number; name: string; code: string; category: string; message: string }>('/subjects/canonical', data, { params }),
+  updateCanonical: (id: number | string, data: Partial<CanonicalSubject>) =>
+    apiClient.put<{ id: number; message: string }>(`/subjects/canonical/${id}`, data),
+  deleteCanonical: (id: number | string) =>
+    apiClient.delete<{ id: number; message: string }>(`/subjects/canonical/${id}`),
+
+  // Applicability Mappings
+  listMappings: (params?: {
+    canonical_subject_id?: number | string
+    standard_id?: number | string
+    board_id?: number | string
+    academic_year_id?: number | string
+    search?: string
+  }) => apiClient.get<SubjectMappingItem[]>('/subjects/mappings', { params }),
+  createMapping: (data: {
+    canonical_subject_id: number
+    standard_id: number
+    board_id?: number | null
+    academic_year_id?: number | null
+    curriculum_code?: string
+    display_name?: string
+    max_marks?: number
+    pass_marks?: number
+    is_optional?: boolean
+    display_order?: number
+  }) => apiClient.post<{ id: number; message: string; canonical_name: string; standard_name: string }>('/subjects/mappings', data),
+  updateMapping: (id: number | string, data: Partial<SubjectMappingItem>) =>
+    apiClient.put<{ id: number; message: string }>(`/subjects/mappings/${id}`, data),
+  deleteMapping: (id: number | string) =>
+    apiClient.delete<{ id: number; message: string }>(`/subjects/mappings/${id}`),
+
+  // Live duplicate detection
+  checkDuplicate: (name: string) =>
+    apiClient.get<SubjectDuplicateCheckResult>('/subjects/duplicate-check', { params: { name } }),
 }
 
 // ─── Timetable ────────────────────────────────────────────────────────────────

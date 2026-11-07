@@ -175,3 +175,4 @@ tests/test_global_view_edit_governance.py::TestGlobalViewEditGovernance::test_us
 
 > **RULE 010 — Global View-First & Explicit Edit Mode Governance:**  
 > View Mode is the default across all application workspaces, pages, forms, and profiles. No user may create, update, or delete records without explicitly activating scoped Edit Mode. Deletions strictly require active Edit Mode, role authorization, modal confirmation, and historical financial ledger immutability enforcement. Navigation and logout automatically reset state to View Mode.
+

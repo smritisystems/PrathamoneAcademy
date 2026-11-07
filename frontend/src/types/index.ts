@@ -1339,6 +1339,68 @@ export interface AcademicSubject {
   is_active: boolean
 }
 
+export interface CanonicalSubject {
+  id: number
+  name: string
+  code: string
+  category: string
+  description?: string | null
+  aliases?: string | null
+  is_active: boolean
+  mappings_count?: number
+  standards_count?: number
+  boards_count?: number
+  standards_summary?: string[]
+  boards_summary?: string[]
+  created_at?: string
+  mappings?: SubjectMappingItem[]
+}
+
+export interface SubjectMappingItem {
+  id: number
+  canonical_subject_id: number
+  canonical_name: string
+  canonical_code: string
+  category?: string
+  standard_id: number
+  standard_name: string
+  standard_level?: number
+  board_id?: number | null
+  board_name?: string | null
+  board_code?: string | null
+  academic_year_id?: number | null
+  academic_year_name?: string | null
+  curriculum_code?: string | null
+  display_name: string
+  max_marks: number
+  pass_marks: number
+  is_optional: boolean
+  display_order: number
+  is_active: boolean
+  legacy_subject_id?: number | null
+}
+
+export interface SubjectDuplicateCheckResult {
+  has_exact_match: boolean
+  exact_match?: {
+    id: number
+    name: string
+    code: string
+    category: string
+    description?: string | null
+    aliases?: string | null
+  } | null
+  similar_matches: Array<{
+    id: number
+    name: string
+    code: string
+    category: string
+    description?: string | null
+    aliases?: string | null
+  }>
+  message: string
+}
+
 export interface AcademicTimetableEntry {
   id: number
   division_id: number

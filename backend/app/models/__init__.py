@@ -24,7 +24,7 @@ from app.models.standard import Standard
 from app.models.division import Division
 from app.models.student import Student, Guardian, StudentLifecycleLog
 from app.models.enrollment import StudentEnrollment
-from app.models.subject import Subject
+from app.models.subject import Subject, CanonicalSubject, SubjectMapping
 from app.models.fee import (
     FeeCategory, FeeStructure, StudentFeeAssignment,
     FeeInvoice, FeeInvoiceItem, FeeInstallment, Discount, Scholarship
@@ -73,6 +73,8 @@ __all__ = [
     "StudentLifecycleLog",
     "StudentEnrollment",
     "Subject",
+    "CanonicalSubject",
+    "SubjectMapping",
     "FeeCategory",
     "FeeStructure",
     "StudentFeeAssignment",
