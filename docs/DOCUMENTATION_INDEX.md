@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-07 21:58:29  
-**Total Indexed Items:** 266  
+**Last Reindexed:** 2026-11-07 22:11:37  
+**Total Indexed Items:** 274  
 
 ---
 
@@ -14,7 +14,7 @@
 
 | Module # | Module Directory | Registered Documents | Description |
 |---|---|---|---|
-| `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **5** | Product Overview & Vision |
+| `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **6** | Product Overview & Vision |
 | `01` | [01_ARCHITECTURE](#01_architecture) | **2** | System Architecture & Workflows |
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **4** | Installation & Deployment |
 | `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **10** | Academic Structure & Courses |
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **6** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **60** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **67** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -53,6 +53,7 @@
 |---|---|---|---|---|---|---|
 | **Coaching Institute Policy Framework** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md](00_PRODUCT_OVERVIEW/2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md) | - |
 | **Prashant Academy — Documentation Index** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md](00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md) | - |
+| **PrathamOne EduOS Official Brand Identity & Logo Assets Specification** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md) | 17_UI_UX_DESIGN, 14_PRINTING_DOCUMENTS |
 | **PrathamOne EduOS — Centralized Documentation Hub** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [README.md](README.md) | - |
 | **PrathamOne EduOS — Documentation Governance & Naming Rules** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) | - |
 | **Strategic Product Roadmap — Prashant Academy** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md](00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md) | - |
@@ -470,6 +471,13 @@
 | `guide_step3_payments_edit_active.png` | `assets/screenshots` | 236.0 KB | [guide_step3_payments_edit_active.png](assets/screenshots/guide_step3_payments_edit_active.png) |
 | `guide_step4_fee_structure_editor.png` | `assets/screenshots` | 223.2 KB | [guide_step4_fee_structure_editor.png](assets/screenshots/guide_step4_fee_structure_editor.png) |
 | `payroll_login_check.png` | `assets/screenshots` | 611.7 KB | [payroll_login_check.png](assets/screenshots/payroll_login_check.png) |
+| `prathamone-app-icon-192.png` | `assets/branding` | 26.2 KB | [prathamone-app-icon-192.png](assets/branding/prathamone-app-icon-192.png) |
+| `prathamone-app-icon-512.png` | `assets/branding` | 125.6 KB | [prathamone-app-icon-512.png](assets/branding/prathamone-app-icon-512.png) |
+| `prathamone-eduos-logo-original.jpg` | `assets/branding` | 34.8 KB | [prathamone-eduos-logo-original.jpg](assets/branding/prathamone-eduos-logo-original.jpg) |
+| `prathamone-eduos-logo-transparent.png` | `assets/branding` | 190.3 KB | [prathamone-eduos-logo-transparent.png](assets/branding/prathamone-eduos-logo-transparent.png) |
+| `prathamone-eduos-logo.png` | `assets/branding` | 162.7 KB | [prathamone-eduos-logo.png](assets/branding/prathamone-eduos-logo.png) |
+| `prathamone-eduos-mark-transparent.png` | `assets/branding` | 36.5 KB | [prathamone-eduos-mark-transparent.png](assets/branding/prathamone-eduos-mark-transparent.png) |
+| `prathamone-eduos-mark.png` | `assets/branding` | 31.2 KB | [prathamone-eduos-mark.png](assets/branding/prathamone-eduos-mark.png) |
 | `tab1_monthly_payroll.png` | `assets/screenshots` | 252.0 KB | [tab1_monthly_payroll.png](assets/screenshots/tab1_monthly_payroll.png) |
 | `tab2_session_register.png` | `assets/screenshots` | 228.7 KB | [tab2_session_register.png](assets/screenshots/tab2_session_register.png) |
 | `tab3_profiles_and_rates.png` | `assets/screenshots` | 225.7 KB | [tab3_profiles_and_rates.png](assets/screenshots/tab3_profiles_and_rates.png) |

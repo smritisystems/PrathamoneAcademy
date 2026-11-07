@@ -134,6 +134,8 @@ export const BRANDING_CONFIG = {
     accent: '#0284c7',        // Cyan-600
     gold: '#f59e0b',          // Amber-500
     success: '#10b981',       // Emerald-500
+    prathamNavy: '#1A1A50',   // PrathamOne Official Deep Navy
+    prathamOrange: '#EB8B3A', // PrathamOne Official Vibrant Orange
   },
   assets: {
     logoUrl: '/logo.svg' as string,
@@ -141,6 +143,12 @@ export const BRANDING_CONFIG = {
     faviconUrl: '/favicon.svg' as string,
     icon192Url: '/icons/icon-192x192.png' as string,
     icon512Url: '/icons/icon-512x512.png' as string,
+    prathamOneLogoUrl: '/media/logo/prathamone-eduos-logo.png' as string,
+    prathamOneLogoTransparentUrl: '/media/logo/prathamone-eduos-logo-transparent.png' as string,
+    prathamOneMarkUrl: '/media/logo/prathamone-eduos-mark.png' as string,
+    prathamOneMarkTransparentUrl: '/media/logo/prathamone-eduos-mark-transparent.png' as string,
+    prathamOneAppIcon512: '/media/logo/prathamone-app-icon-512.png' as string,
+    prathamOneAppIcon192: '/media/logo/prathamone-app-icon-192.png' as string,
   },
   support: {
     email: 'support@prathamone.com' as string,
