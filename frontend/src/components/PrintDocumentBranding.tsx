@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Canonical document branding header, statutory compliance notices, and authorized signatory layout for printable documents.
  */
@@ -66,6 +66,7 @@ export function PrintDocumentHeader({
 
   const displayMonogram = monogram || globalBranding.monogram || 'PA'
   const displaySubtitle = subtitle || globalBranding.tagline
+  const logoUrl = institution?.logo_url || globalBranding.assets.academyLogoUrl
 
   const badgeBg = {
     blue: 'bg-blue-50 text-blue-900 border-blue-200',
@@ -85,14 +86,24 @@ export function PrintDocumentHeader({
       {/* ── Institutional Crest & Academy Identification ── */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          {/* Official Emblem Monogram */}
-          <div
-            className={`rounded-xl bg-gradient-to-tr from-blue-900 via-indigo-900 to-slate-900 text-white font-black flex items-center justify-center shadow-sm shrink-0 border border-slate-800 ${
-              compact ? 'w-11 h-11 text-lg' : 'w-14 h-14 text-2xl'
-            }`}
-          >
-            {displayMonogram}
-          </div>
+          {/* Official Emblem Monogram or Academy Logo */}
+          {logoUrl && logoUrl !== '/logo.svg' ? (
+            <img
+              src={logoUrl}
+              alt={academyName}
+              className={`rounded-xl object-contain shadow-xs shrink-0 border border-slate-200 bg-white p-0.5 ${
+                compact ? 'w-11 h-11' : 'w-14 h-14'
+              }`}
+            />
+          ) : (
+            <div
+              className={`rounded-xl bg-gradient-to-tr from-blue-900 via-indigo-900 to-slate-900 text-white font-black font-serif flex items-center justify-center shadow-sm shrink-0 border border-slate-800 ${
+                compact ? 'w-11 h-11 text-lg' : 'w-14 h-14 text-2xl'
+              }`}
+            >
+              {displayMonogram}
+            </div>
+          )}
 
           <div>
             <h1

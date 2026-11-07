@@ -42,6 +42,10 @@ export default function LoginPage() {
   useDocumentTitle('Sign In')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false)
+
+  const academyLogo = branding.assets.academyLogoUrl || branding.assets.logoUrl
+  const hasValidLogo = !!academyLogo && academyLogo !== '/logo.svg' && !logoLoadFailed
 
   useEffect(() => {
     if (token && user) {
@@ -163,13 +167,26 @@ export default function LoginPage() {
             <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-white/10 pointer-events-none" />
             <div className="absolute -left-6 -bottom-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
 
-            {/* Coaching Institute Official Crest / Logo */}
+            {/* Coaching Institute Official Crest / Monogram Badge */}
             <div className="relative inline-flex items-center justify-center bg-white p-1.5 w-16 h-16 rounded-2xl shadow-lg border border-white/40 mx-auto mb-3.5 group transition-transform hover:scale-105 duration-300">
-              <img
-                src={branding.assets.academyLogoUrl || branding.assets.logoUrl}
-                alt={`${branding.academyName} Official Logo`}
-                className="w-full h-full object-contain filter drop-shadow-xs"
-              />
+              {hasValidLogo ? (
+                <img
+                  src={academyLogo}
+                  alt={`${branding.academyName} Official Logo`}
+                  onError={() => setLogoLoadFailed(true)}
+                  className="w-full h-full object-contain filter drop-shadow-xs"
+                />
+              ) : (
+                <div
+                  className="w-full h-full rounded-xl flex items-center justify-center text-white font-serif font-black text-xl sm:text-2xl shadow-inner select-none tracking-wider border border-white/20"
+                  style={{
+                    background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
+                  }}
+                  title={branding.academyName}
+                >
+                  {branding.monogram}
+                </div>
+              )}
               <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-primary-900 shadow-xs" title="Institute Portal Online" />
             </div>
 

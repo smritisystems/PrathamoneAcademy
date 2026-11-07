@@ -133,6 +133,9 @@ export default function Sidebar() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [mobileOpen, closeMobile])
 
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false)
+  const hasValidLogo = !!branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' && !logoLoadFailed
+
   const handleLogout = () => {
     logout()
     navigate('/login')
@@ -228,10 +231,11 @@ export default function Sidebar() {
                 }}
                 className="w-9 h-9 rounded-xl p-0.5 shadow-md flex-shrink-0 flex items-center justify-center overflow-hidden"
               >
-                {branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? (
+                {hasValidLogo ? (
                   <img
                     src={branding.assets.logoUrl}
                     alt={branding.academyName}
+                    onError={() => setLogoLoadFailed(true)}
                     className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
@@ -449,10 +453,11 @@ export default function Sidebar() {
               }}
               className="w-10 h-10 rounded-xl p-0.5 shadow-lg flex-shrink-0 flex items-center justify-center overflow-hidden"
             >
-              {branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? (
+              {hasValidLogo ? (
                 <img
                   src={branding.assets.logoUrl}
                   alt={branding.academyName}
+                  onError={() => setLogoLoadFailed(true)}
                   className="w-full h-full object-cover rounded-[10px]"
                 />
               ) : (
