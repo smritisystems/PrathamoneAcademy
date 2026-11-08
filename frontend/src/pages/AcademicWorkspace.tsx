@@ -18,7 +18,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import {
   GraduationCap, Plus, Users, Calendar, Clock, MapPin,
   BookOpen, ChevronDown, ChevronRight, Layers, FileText,
@@ -34,6 +34,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
+import { useEnvironmentStore } from '../store/environmentStore'
 import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton } from '../components/common'
 import Modal from '../components/Modal'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
@@ -46,13 +47,30 @@ import type {
 
 export default function AcademicWorkspace() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const activeTabParam = searchParams.get('tab') || 'overview'
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { isTrainingMode } = useEnvironmentStore()
   const qc = useQueryClient()
   const { selectedInstitutionId, selectedAcademicYearId } = useAuthStore()
 
   // ── Global View-First & Scoped Edit Mode Governance ──
   const editScope = 'academic:workspace'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
+
+  // Determine active tab from pathname or search params
+  const getTabFromLocation = (): string => {
+    const path = location.pathname.toLowerCase()
+    if (path.endsWith('/boards') || path === '/boards') return 'boards'
+    if (path.endsWith('/classes') || path.endsWith('/standards') || path === '/standards') return 'classes'
+    if (path.endsWith('/subjects') || path === '/subjects') return 'subjects'
+    if (path.endsWith('/batches') || path === '/batches') return 'batches'
+    if (path.endsWith('/timetable') || path === '/timetable') return 'timetable'
+    if (path.endsWith('/enrollment')) return 'enrollment'
+    if (path.endsWith('/reports')) return 'reports'
+    if (path.endsWith('/settings')) return 'settings'
+    if (path.endsWith('/overview')) return 'overview'
+    return searchParams.get('tab') || 'overview'
+  }
 
   // Delete & Archive Confirmation Protection Modal State
   const [deleteModalState, setDeleteModalState] = useState<{
@@ -68,19 +86,23 @@ export default function AcademicWorkspace() {
   })
 
   // ── Top Navigation Tabs ──
-  const [activeTab, setActiveTab] = useState<string>(activeTabParam)
+  const [activeTab, setActiveTab] = useState<string>(getTabFromLocation)
 
-  // Sync state with URL params
+  // Sync state with URL pathname & searchParams
   useEffect(() => {
-    const tabFromUrl = searchParams.get('tab')
-    if (tabFromUrl && tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl)
+    const derived = getTabFromLocation()
+    if (derived && derived !== activeTab) {
+      setActiveTab(derived)
     }
-  }, [searchParams])
+  }, [location.pathname, searchParams])
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId)
-    setSearchParams({ tab: tabId })
+    if (tabId === 'overview') {
+      navigate('/academic')
+    } else {
+      navigate(`/academic/${tabId}`)
+    }
   }
 
   // ── Global Filters ──
@@ -1254,48 +1276,145 @@ export default function AcademicWorkspace() {
     weekly_sessions: 100,
   }
 
+  // Tab metadata for contextual title, subtitle, icon and actions
+  const tabMetadata: Record<string, { title: string; subtitle: string; icon: React.ComponentType<{ className?: string }>; actionLabel?: string; onAction?: () => void }> = {
+    overview: {
+      title: 'Academic Structure & Batch Management',
+      subtitle: 'Manage boards, classes, subjects, batches, schedules and student enrollment',
+      icon: School,
+      actionLabel: 'Create Batch',
+      onAction: handleOpenCreateBatch,
+    },
+    boards: {
+      title: 'Boards & Curriculum Authorities',
+      subtitle: 'Manage affiliated boards, accreditation codes, and board-level academic standards',
+      icon: Layers,
+      actionLabel: 'Add Board',
+      onAction: () => {
+        setBoardForm({ name: '', code: '', description: '' })
+        setSelectedBoardForEdit(null)
+        setShowAddBoardModal(true)
+      },
+    },
+    classes: {
+      title: 'Classes & Standards Register',
+      subtitle: 'Academic grade levels, syllabus sequences, and standard configurations',
+      icon: BookOpen,
+      actionLabel: 'Add Class / Standard',
+      onAction: () => {
+        setStandardForm({ name: '', level: 10, description: '' })
+        setSelectedStandardForEdit(null)
+        setShowAddStandardModal(true)
+      },
+    },
+    subjects: {
+      title: 'Curriculum & Subjects Directory',
+      subtitle: 'Manage academic subjects, subject codes, max marks, passing criteria, and core syllabus rules',
+      icon: FileText,
+      actionLabel: 'Add Subject',
+      onAction: () => {
+        setSubjectForm({
+          name: '',
+          code: '',
+          standard_id: standards[0]?.id ? String(standards[0].id) : '',
+          max_marks: 100,
+          passing_marks: 35,
+          is_core: true,
+        })
+        setSelectedSubjectForEdit(null)
+        setShowAddSubjectModal(true)
+      },
+    },
+    batches: {
+      title: 'Batches & Division Operations',
+      subtitle: 'Manage batch sections, classroom allocations, weekly timings, and student capacity limits',
+      icon: CalendarDays,
+      actionLabel: 'Create Batch',
+      onAction: handleOpenCreateBatch,
+    },
+    timetable: {
+      title: 'Weekly Timetable & Schedule',
+      subtitle: 'Schedule weekly lectures, assign classrooms, and enforce conflict-free faculty allocations',
+      icon: Calendar,
+      actionLabel: 'Schedule Session',
+      onAction: () => setShowAddSessionModal(true),
+    },
+    enrollment: {
+      title: 'Student Batch Enrollment & Transfers',
+      subtitle: 'Enroll students into divisions, manage roll numbers, and execute inter-batch division transfers',
+      icon: UserCheck,
+      actionLabel: 'Enroll Student',
+      onAction: () => setShowEnrollModal(true),
+    },
+    reports: {
+      title: 'Academic Reports & Analytics',
+      subtitle: 'Audited batch capacities, student distribution across boards, and faculty workload matrices',
+      icon: BarChart2,
+      actionLabel: 'Export Report (CSV)',
+      onAction: handleExportAcademicReport,
+    },
+    settings: {
+      title: 'Academic Settings & Conflict Policy',
+      subtitle: 'Institute batch capacity limits, strict conflict checking rules, and automatic roll number formatters',
+      icon: SettingsIcon,
+    },
+  }
+
+  const currentMeta = tabMetadata[activeTab] || tabMetadata['overview']
+  const CurrentIcon = currentMeta.icon
+
   return (
     <div className="space-y-5 pb-12 animate-fadeIn">
       {/* ── Global View-First & Scoped Edit Mode Bar ── */}
-      <EditModeBar scope={editScope} title="Academic Structure & Batch Management" isDirty={showCreateBatchModal || showEditBatchModal} />
+      <EditModeBar scope={editScope} title={currentMeta.title} isDirty={showCreateBatchModal || showEditBatchModal} />
       {/* ── 1. Page Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-primary-500/20">
-            <School className="w-6 h-6" />
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-primary-600 to-primary-700 flex items-center justify-center text-white shadow-md shadow-primary-500/20">
+            <CurrentIcon className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              Academic Structure & Batch Management
-            </h1>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                {currentMeta.title}
+              </h1>
+              {isTrainingMode && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
+                  TRAINING MODE
+                </span>
+              )}
+            </div>
             <p className="text-xs md:text-sm text-gray-500 font-medium">
-              Manage boards, classes, subjects, batches, schedules and student enrollment
+              {currentMeta.subtitle}
             </p>
           </div>
         </div>
 
         {/* Action Button */}
-        <div className="flex items-center gap-2">
-          {isEditMode ? (
-            <button
-              onClick={handleOpenCreateBatch}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4" />
-              Create Batch
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to create new batches.')}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-              title="Locked in View Mode: Enable Edit Mode above to create new batches"
-            >
-              <Lock className="w-4 h-4 text-slate-400" />
-              <span>Create Batch (Locked)</span>
-            </button>
-          )}
-        </div>
+        {currentMeta.actionLabel && currentMeta.onAction && (
+          <div className="flex items-center gap-2">
+            {isEditMode ? (
+              <button
+                onClick={currentMeta.onAction}
+                className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Plus className="w-4 h-4" />
+                {currentMeta.actionLabel}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast.error(`Locked in View Mode: Please enable Edit Mode above to perform ${(currentMeta.actionLabel || 'action').toLowerCase()}.`)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                title={`Locked in View Mode: Enable Edit Mode above to perform ${(currentMeta.actionLabel || 'action').toLowerCase()}`}
+              >
+                <Lock className="w-4 h-4 text-slate-400" />
+                <span>{currentMeta.actionLabel} (Locked)</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── 2. Top Navigation Tabs Bar ── */}

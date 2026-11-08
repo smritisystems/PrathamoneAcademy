@@ -42,14 +42,14 @@ const mainNavItems: NavItem[] = [
 
 const academicSubItems = [
   { to: '/academic', label: 'Academic Structure' },
-  { to: '/academic?tab=boards', label: 'Boards' },
-  { to: '/academic?tab=classes', label: 'Classes / Standards' },
-  { to: '/academic?tab=subjects', label: 'Subjects' },
-  { to: '/academic?tab=batches', label: 'Batches' },
-  { to: '/academic?tab=timetable', label: 'Timetable' },
-  { to: '/academic?tab=enrollment', label: 'Enrollment' },
-  { to: '/academic?tab=reports', label: 'Reports' },
-  { to: '/academic?tab=settings', label: 'Settings' },
+  { to: '/academic/boards', label: 'Boards' },
+  { to: '/academic/classes', label: 'Classes / Standards' },
+  { to: '/academic/subjects', label: 'Subjects' },
+  { to: '/academic/batches', label: 'Batches' },
+  { to: '/academic/timetable', label: 'Timetable' },
+  { to: '/academic/enrollment', label: 'Enrollment' },
+  { to: '/academic/reports', label: 'Reports' },
+  { to: '/academic/settings', label: 'Settings' },
 ]
 
 const crmSubItems = [
@@ -146,7 +146,11 @@ export default function Sidebar() {
     location.pathname.startsWith('/standards') ||
     location.pathname.startsWith('/batches') ||
     location.pathname.startsWith('/subjects') ||
-    location.pathname.startsWith('/courses')
+    location.pathname.startsWith('/courses') ||
+    location.pathname.startsWith('/boards') ||
+    location.pathname.startsWith('/timetable') ||
+    location.pathname.startsWith('/boards') ||
+    location.pathname.startsWith('/timetable')
 
   const isCrmActive =
     location.pathname.startsWith('/leads') ||
@@ -591,8 +595,14 @@ export default function Sidebar() {
                     {academicSubItems.map((sub) => {
                       const isSubActive =
                         sub.to === '/academic'
-                          ? location.pathname === '/academic' && !location.search
-                          : location.pathname === '/academic' && location.search.includes(sub.to.split('=')[1])
+                          ? (location.pathname === '/academic' || location.pathname === '/academic/overview') && !location.search
+                          : location.pathname === sub.to ||
+                            (location.pathname === '/academic' && location.search.includes(sub.to.replace('/academic/', ''))) ||
+                            (sub.to === '/academic/classes' && location.pathname === '/standards') ||
+                            (sub.to === '/academic/batches' && location.pathname === '/batches') ||
+                            (sub.to === '/academic/boards' && location.pathname === '/boards') ||
+                            (sub.to === '/academic/subjects' && location.pathname === '/subjects') ||
+                            (sub.to === '/academic/timetable' && location.pathname === '/timetable')
 
                       return (
                         <NavLink
@@ -641,8 +651,14 @@ export default function Sidebar() {
                     {academicSubItems.map((sub) => {
                       const isSubActive =
                         sub.to === '/academic'
-                          ? location.pathname === '/academic' && !location.search
-                          : location.pathname === '/academic' && location.search.includes(sub.to.split('=')[1])
+                          ? (location.pathname === '/academic' || location.pathname === '/academic/overview') && !location.search
+                          : location.pathname === sub.to ||
+                            (location.pathname === '/academic' && location.search.includes(sub.to.replace('/academic/', ''))) ||
+                            (sub.to === '/academic/classes' && location.pathname === '/standards') ||
+                            (sub.to === '/academic/batches' && location.pathname === '/batches') ||
+                            (sub.to === '/academic/boards' && location.pathname === '/boards') ||
+                            (sub.to === '/academic/subjects' && location.pathname === '/subjects') ||
+                            (sub.to === '/academic/timetable' && location.pathname === '/timetable')
 
                       return (
                         <NavLink

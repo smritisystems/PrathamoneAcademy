@@ -161,7 +161,20 @@ export default function App() {
               </ErrorBoundary>
             }
           />
+          {/* Academic Structure Dedicated Workspaces */}
           <Route path="academic" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/overview" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/boards" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/classes" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/standards" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/subjects" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/batches" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/timetable" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/enrollment" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/reports" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="academic/settings" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="boards" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          <Route path="timetable" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
           <Route path="courses" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
           <Route path="standards" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
           <Route path="subjects" element={<Suspense fallback={<PageLoader />}><SubjectsPage /></Suspense>} />
