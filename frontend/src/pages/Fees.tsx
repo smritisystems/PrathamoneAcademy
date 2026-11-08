@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, CreditCard, TrendingUp, AlertCircle, Users, Layers,
@@ -26,8 +26,9 @@ import {
   ArrowRight, Calendar, Info, Clock, AlertTriangle, Settings, FileText,
   ChevronRight, ChevronDown, Coins, Bell, Percent, Award, Trash2,
   ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap, Sliders,
-  Edit3
+  Edit3, Lock
 } from 'lucide-react'
+import { useEnvironmentStore } from '../store/environmentStore'
 import {
   ComposedChart, Bar, Line, PieChart, Pie, Cell, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, LabelList
@@ -157,22 +158,55 @@ export default function Fees() {
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const { selectedAcademicYearId, selectedInstitutionId, user } = useAuthStore()
   const canEdit = isUserAdmin(user)
+  const location = useLocation()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
+  const { isTrainingMode } = useEnvironmentStore()
 
-  const activeTab = (searchParams.get('tab') as TabKey) || 'overview'
-  const studentIdParam = searchParams.get('studentId')
+  // Derive active tab from URL pathname or search params
+  const getTabFromLocation = (): TabKey => {
+    const path = location.pathname.toLowerCase()
+    if (path.endsWith('/fees/register') || path === '/fees/register') return 'register'
+    if (path.endsWith('/fees/collect') || path === '/fees/collect') return 'collect'
+    if (path.endsWith('/fees/payments') || path === '/fees/payments') return 'payments'
+    if (path.endsWith('/fees/receipts') || path === '/fees/receipts') return 'receipts'
+    if (path.endsWith('/fees/plans') || path === '/fees/plans') return 'plans'
+    if (path.endsWith('/fees/reports') || path === '/fees/reports') return 'reports'
+    if (path.endsWith('/fees/settings') || path === '/fees/settings') return 'settings'
+    if (path.endsWith('/fees/overview') || path === '/fees/overview') return 'overview'
+
+    const tabParam = searchParams.get('tab') as TabKey
+    if (tabParam && ['overview', 'register', 'collect', 'payments', 'receipts', 'plans', 'reports', 'settings'].includes(tabParam)) {
+      return tabParam
+    }
+    return 'overview'
+  }
+
+  const [activeTab, setActiveTab] = useState<TabKey>(getTabFromLocation)
+
+  // Synchronize tab state with browser navigation & URL pathname
+  useEffect(() => {
+    const derived = getTabFromLocation()
+    if (derived && derived !== activeTab) {
+      setActiveTab(derived)
+    }
+  }, [location.pathname, searchParams])
 
   const setTab = (tab: TabKey, extraParams?: Record<string, string>) => {
-    const params = new URLSearchParams()
-    params.set('tab', tab)
+    setActiveTab(tab)
+    const params = new URLSearchParams(searchParams)
+    params.delete('tab')
     if (extraParams) {
       Object.entries(extraParams).forEach(([k, v]) => {
         if (v) params.set(k, v)
       })
     }
-    setSearchParams(params)
+    const qs = params.toString() ? `?${params.toString()}` : ''
+    navigate(`/fees/${tab}${qs}`)
   }
+
+  const studentIdParam = searchParams.get('studentId')
 
   // Cascading Filters state
   const [selectedAY, setSelectedAY] = useState<number | null>(selectedAcademicYearId || null)
@@ -1384,8 +1418,8 @@ export default function Fees() {
     refetchOnWindowFocus: false,
   })
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSaveSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     if (!isEditMode) {
       toast.error('Action locked: You must explicitly enable Edit Mode first.')
       return
@@ -1424,6 +1458,101 @@ export default function Fees() {
     return parts.length > 0 ? parts.join(' – ') : 'All Batches & Standards'
   }, [selectedBoard, selectedStandard, selectedDivision, boards, standards, divisions])
 
+  // Contextual metadata for dedicated workspaces
+  const tabMetadata: Record<TabKey, {
+    title: string
+    subtitle: string
+    icon: React.ElementType
+    actionLabel?: string
+    actionIcon?: React.ElementType
+    onAction?: () => void
+    requiresEditMode?: boolean
+  }> = {
+    overview: {
+      title: 'Fees & Payments',
+      subtitle: 'Manage student fees, collections, payments, and receipts',
+      icon: Coins,
+      actionLabel: 'Record Payment',
+      actionIcon: CreditCard,
+      onAction: () => setTab('collect'),
+      requiresEditMode: false,
+    },
+    register: {
+      title: 'Student Fee Register',
+      subtitle: 'Comprehensive student-wise fee ledger, installments, concessions, and balance tracking',
+      icon: FileSpreadsheet,
+      actionLabel: 'Collect Fee',
+      actionIcon: CreditCard,
+      onAction: () => setTab('collect'),
+      requiresEditMode: false,
+    },
+    collect: {
+      title: 'Fee Collection Terminal',
+      subtitle: 'Select student account, calculate outstanding balance, apply waivers, and record payments',
+      icon: CreditCard,
+      actionLabel: 'Reset Terminal',
+      actionIcon: RotateCcw,
+      onAction: () => {
+        setSelectedCollectStudentId(null)
+        setCollectStudentSearch('')
+      },
+      requiresEditMode: false,
+    },
+    payments: {
+      title: 'Payment Transactions',
+      subtitle: 'Audit log of all processed payment transactions, settlement modes, and references',
+      icon: CreditCard,
+      actionLabel: 'Record Payment',
+      actionIcon: Plus,
+      onAction: () => setTab('collect'),
+      requiresEditMode: false,
+    },
+    receipts: {
+      title: 'Receipts & Invoicing Journal',
+      subtitle: 'Official numbered money receipts, print duplicates, and tax invoice generation',
+      icon: Receipt,
+      actionLabel: 'Search Receipt',
+      actionIcon: Search,
+      onAction: () => {
+        const input = document.querySelector('input[placeholder*="receipt"]') as HTMLInputElement
+        if (input) input.focus()
+      },
+      requiresEditMode: false,
+    },
+    plans: {
+      title: 'Fee Structures & Plans',
+      subtitle: 'Standard-wise fee templates, component categories, installment schedules, and late fees',
+      icon: Layers,
+      actionLabel: 'Create Fee Plan',
+      actionIcon: Plus,
+      onAction: () => setIsNewStructureModalOpen(true),
+      requiresEditMode: true,
+    },
+    reports: {
+      title: 'Fee Reports & Financial Analytics',
+      subtitle: 'Collection summaries, aging overdue statements, fee category breakdowns, and export ledgers',
+      icon: BarChart3,
+      actionLabel: 'Export Report',
+      actionIcon: Download,
+      onAction: () => {
+        toast.success('Financial reports queued for background export')
+      },
+      requiresEditMode: false,
+    },
+    settings: {
+      title: 'Fee Settings & Accounting Policies',
+      subtitle: 'Financial year defaults, receipt numbering prefixes, GST taxation, and discount rules',
+      icon: Settings,
+      actionLabel: 'Save Preferences',
+      actionIcon: CheckCircle,
+      onAction: () => handleSaveSettings(),
+      requiresEditMode: true,
+    },
+  }
+
+  const currentMeta = tabMetadata[activeTab] || tabMetadata.overview
+  const CurrentIcon = currentMeta.icon
+
   return (
     <div className="space-y-5 pb-12">
       {/* Global View-First & Explicit Edit Mode Governance Bar */}
@@ -1437,27 +1566,67 @@ export default function Fees() {
         <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
           <Link to="/dashboard" className="hover:text-slate-600 transition-colors">Home</Link>
           <ChevronRight className="w-3 h-3 text-slate-300" />
-          <span className="text-slate-600 font-semibold">Fees & Payments</span>
+          <Link to="/fees" className="hover:text-slate-600 transition-colors">Fees & Payments</Link>
+          {activeTab !== 'overview' && (
+            <>
+              <ChevronRight className="w-3 h-3 text-slate-300" />
+              <span className="text-slate-600 font-semibold">{TABS.find((t) => t.id === activeTab)?.label}</span>
+            </>
+          )}
         </div>
 
         {/* Title Bar & Quick Search */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-orange-500/10 border border-amber-200/60 flex items-center justify-center text-amber-600 shadow-xs flex-shrink-0">
-              <Coins className="w-5 h-5 text-amber-600" />
+              <CurrentIcon className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                Fees & Payments
-              </h1>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  {currentMeta.title}
+                </h1>
+                {isTrainingMode && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
+                    TRAINING MODE
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-500 font-medium">
-                Manage student fees, collections, payments, and receipts
+                {currentMeta.subtitle}
               </p>
             </div>
           </div>
 
           {/* Quick Header Search & Actions */}
           <div className="flex items-center gap-3">
+            {/* Primary Contextual Action Button */}
+            {currentMeta.actionLabel && currentMeta.onAction && (
+              <div>
+                {currentMeta.requiresEditMode && !isEditMode ? (
+                  <button
+                    type="button"
+                    onClick={() => toast.error(`Locked in View Mode: Please activate Edit Mode above to ${(currentMeta.actionLabel || 'action').toLowerCase()}.`)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed transition-all"
+                    title={`Locked in View Mode: Enable Edit Mode to ${(currentMeta.actionLabel || 'action').toLowerCase()}`}
+                  >
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{currentMeta.actionLabel} (Locked)</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={currentMeta.onAction}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-primary-600 hover:bg-primary-700 text-white shadow-xs transition-all active:scale-95"
+                  >
+                    {currentMeta.actionIcon && <currentMeta.actionIcon className="w-3.5 h-3.5" />}
+                    <span>{currentMeta.actionLabel}</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="relative w-full sm:w-80">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input

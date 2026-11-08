@@ -64,6 +64,17 @@ const crmSubItems = [
   { to: '/leads/settings', label: 'Settings' },
 ]
 
+const feesSubItems = [
+  { to: '/fees/overview', label: 'Overview' },
+  { to: '/fees/register', label: 'Fee Register' },
+  { to: '/fees/collect', label: 'Collect Fees' },
+  { to: '/fees/payments', label: 'Payments' },
+  { to: '/fees/receipts', label: 'Receipts' },
+  { to: '/fees/plans', label: 'Fee Plans' },
+  { to: '/fees/reports', label: 'Reports' },
+  { to: '/fees/settings', label: 'Settings' },
+]
+
 const secondaryNavItems: NavItem[] = [
   { to: '/teachers', label: 'Teachers', icon: GraduationCap },
   { to: '/staff', label: 'Staff Directory', icon: Briefcase },
@@ -91,12 +102,14 @@ export default function Sidebar() {
     mobileOpen,
     academicOpen,
     crmOpen,
+    feesOpen,
     toggleCollapse,
     setDesktopState,
     expandSidebar,
     closeMobile,
     toggleAcademicOpen,
     toggleCrmOpen,
+    toggleFeesOpen,
   } = useSidebarStore()
 
   const navigate = useNavigate()
@@ -151,6 +164,27 @@ export default function Sidebar() {
     location.pathname.startsWith('/timetable') ||
     location.pathname.startsWith('/boards') ||
     location.pathname.startsWith('/timetable')
+
+  const isFeesActive =
+    location.pathname.startsWith('/fees') ||
+    location.pathname.startsWith('/receipts') ||
+    location.pathname.startsWith('/payments')
+
+  const isFeesSubActive = (subTo: string) => {
+    if (subTo === '/fees/overview') {
+      return (
+        (location.pathname === '/fees' || location.pathname === '/fees/overview') &&
+        (!location.search || location.search === '' || location.search.includes('tab=overview'))
+      )
+    }
+    const tabName = subTo.replace('/fees/', '')
+    return (
+      location.pathname === subTo ||
+      (location.pathname === '/fees' && location.search.includes(`tab=${tabName}`)) ||
+      (subTo === '/fees/payments' && location.pathname.startsWith('/payments')) ||
+      (subTo === '/fees/receipts' && location.pathname.startsWith('/receipts'))
+    )
+  }
 
   const isCrmActive =
     location.pathname.startsWith('/leads') ||
@@ -815,6 +849,125 @@ export default function Sidebar() {
 
           {/* Secondary Nav Items */}
           {secondaryNavItems.map((item) => {
+            if (item.to === '/fees') {
+              return (
+                <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
+                  {isCollapsed ? (
+                    // Collapsed mode: icon with floating interactive flyout popover
+                    <div className="relative group w-full flex justify-center">
+                      <NavLink
+                        to="/fees"
+                        aria-label="Fees & Payments"
+                        style={isFeesActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        className={({ isActive }) =>
+                          `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                            isFeesActive
+                              ? 'text-white shadow-md'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`
+                        }
+                      >
+                        <CreditCard className="w-5 h-5" />
+                      </NavLink>
+
+                      {/* Tooltip */}
+                      <div
+                        role="tooltip"
+                        className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                      >
+                        Fees & Payments
+                      </div>
+
+                      {/* Floating Flyout Menu on Hover */}
+                      <div
+                        role="menu"
+                        aria-label="Fees & Payments Menu"
+                        className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
+                      >
+                        <div className="px-3 py-1.5 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Fees & Payments
+                        </div>
+                        <div className="mt-1 space-y-0.5 max-h-72 overflow-y-auto custom-scrollbar">
+                          {feesSubItems.map((sub) => {
+                            const isSubActive = isFeesSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Expanded mode: Clickable parent link + chevron accordion toggle
+                    <div>
+                      <div
+                        className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
+                          isFeesActive
+                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        }`}
+                      >
+                        <NavLink
+                          to="/fees"
+                          aria-label="Fees & Payments"
+                          className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
+                        >
+                          <CreditCard className={`w-4 h-4 flex-shrink-0 ${isFeesActive ? 'text-white' : 'text-amber-400'}`} />
+                          <span className="truncate text-xs font-semibold">Fees & Payments</span>
+                        </NavLink>
+                        <button
+                          type="button"
+                          onClick={toggleFeesOpen}
+                          aria-expanded={feesOpen}
+                          aria-label="Toggle Fees & Payments Submenu"
+                          className="px-2.5 py-2 hover:bg-white/10 rounded-r-xl transition-colors focus:outline-none"
+                        >
+                          {feesOpen ? (
+                            <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isFeesActive ? 'text-white' : 'text-slate-400'}`} />
+                          ) : (
+                            <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isFeesActive ? 'text-white' : 'text-slate-400'}`} />
+                          )}
+                        </button>
+                      </div>
+
+                      {feesOpen && (
+                        <div className="pl-3 pr-1 pt-1.5 space-y-1">
+                          {feesSubItems.map((sub) => {
+                            const isSubActive = isFeesSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             const isItemActive =
               item.to.includes('?')
                 ? location.pathname === '/academic' && location.search.includes('settings')

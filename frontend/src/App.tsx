@@ -207,10 +207,19 @@ export default function App() {
             <Route path="crm/settings" element={<Suspense fallback={<PageLoader />}><CrmSettingsPage /></Suspense>} />
           <Route path="attendance" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
           <Route path="examinations" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          {/* Fees & Payments Dedicated Workspaces */}
           <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/overview" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/register" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/collect" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/collect/:studentId" element={<Suspense fallback={<PageLoader />}><FeeCollectionPage /></Suspense>} />
+          <Route path="fees/payments" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/receipts" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/plans" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/reports" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/settings" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/import" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
           <Route path="import/fee-register" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
-          <Route path="fees/collect/:studentId" element={<Suspense fallback={<PageLoader />}><FeeCollectionPage /></Suspense>} />
           <Route path="payments" element={<Suspense fallback={<PageLoader />}><PaymentsPage /></Suspense>} />
           <Route path="receipts/:receiptNumber" element={<Suspense fallback={<PageLoader />}><ReceiptPage /></Suspense>} />
           <Route path="receipts/payment/:paymentId" element={<Suspense fallback={<PageLoader />}><ReceiptPage /></Suspense>} />
