@@ -206,7 +206,15 @@ export default function App() {
             <Route path="leads/settings" element={<Suspense fallback={<PageLoader />}><CrmSettingsPage /></Suspense>} />
             <Route path="crm/settings" element={<Suspense fallback={<PageLoader />}><CrmSettingsPage /></Suspense>} />
           <Route path="attendance" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          {/* Examination Centre Dedicated Workspaces */}
           <Route path="examinations" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          <Route path="examinations/overview" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          <Route path="examinations/schedules" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          <Route path="examinations/marks-entry" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          <Route path="examinations/analytics" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          <Route path="examinations/report-cards" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          <Route path="examinations/papers" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          <Route path="examinations/settings" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           {/* Fees & Payments Dedicated Workspaces */}
           <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/overview" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />

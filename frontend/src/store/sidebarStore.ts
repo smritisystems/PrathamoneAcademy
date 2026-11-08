@@ -27,6 +27,7 @@ interface SidebarStore {
   academicOpen: boolean
   crmOpen: boolean
   feesOpen: boolean
+  examinationsOpen: boolean
   setDesktopState: (state: DesktopSidebarState) => void
   toggleCollapse: () => void
   toggleHidden: () => void
@@ -40,6 +41,8 @@ interface SidebarStore {
   toggleCrmOpen: () => void
   setFeesOpen: (open: boolean | ((prev: boolean) => boolean)) => void
   toggleFeesOpen: () => void
+  setExaminationsOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  toggleExaminationsOpen: () => void
 }
 
 const getInitialDesktopState = (): DesktopSidebarState => {
@@ -70,6 +73,7 @@ export const useSidebarStore = create<SidebarStore>()(
       academicOpen: true,
       crmOpen: true,
       feesOpen: true,
+      examinationsOpen: true,
 
       setDesktopState: (desktopState) => set({ desktopState }),
 
@@ -114,6 +118,14 @@ export const useSidebarStore = create<SidebarStore>()(
 
       toggleFeesOpen: () =>
         set((state) => ({ feesOpen: !state.feesOpen })),
+
+      setExaminationsOpen: (updater) =>
+        set((state) => ({
+          examinationsOpen: typeof updater === 'function' ? updater(state.examinationsOpen) : updater,
+        })),
+
+      toggleExaminationsOpen: () =>
+        set((state) => ({ examinationsOpen: !state.examinationsOpen })),
     }),
     {
       name: 'prashant_sidebar_state',
@@ -122,6 +134,7 @@ export const useSidebarStore = create<SidebarStore>()(
         academicOpen: state.academicOpen,
         crmOpen: state.crmOpen,
         feesOpen: state.feesOpen,
+        examinationsOpen: state.examinationsOpen,
       }),
     }
   )

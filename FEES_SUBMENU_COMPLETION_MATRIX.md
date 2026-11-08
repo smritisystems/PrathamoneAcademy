@@ -32,3 +32,4 @@
 - **View-First Governance (Rule 010):** All modification buttons enforce disabled locked states when in View Mode, showing explanatory tooltips.
 - **Training Mode Isolation:** Header displays prominent `TRAINING MODE` badge when active.
 - **Visual Evidence:** High-resolution screenshots captured for all 8 workspaces (`screenshot_41` to `screenshot_48`).
+

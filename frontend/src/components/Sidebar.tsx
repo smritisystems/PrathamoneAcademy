@@ -75,6 +75,16 @@ const feesSubItems = [
   { to: '/fees/settings', label: 'Settings' },
 ]
 
+const examSubItems = [
+  { to: '/examinations/overview', label: 'Overview' },
+  { to: '/examinations/schedules', label: 'Exam Schedules' },
+  { to: '/examinations/marks-entry', label: 'Marks Entry' },
+  { to: '/examinations/analytics', label: 'Performance Analytics' },
+  { to: '/examinations/report-cards', label: 'Report Cards' },
+  { to: '/examinations/papers', label: 'Question Papers' },
+  { to: '/examinations/settings', label: 'Settings & Grading' },
+]
+
 const secondaryNavItems: NavItem[] = [
   { to: '/teachers', label: 'Teachers', icon: GraduationCap },
   { to: '/staff', label: 'Staff Directory', icon: Briefcase },
@@ -103,6 +113,7 @@ export default function Sidebar() {
     academicOpen,
     crmOpen,
     feesOpen,
+    examinationsOpen,
     toggleCollapse,
     setDesktopState,
     expandSidebar,
@@ -110,6 +121,7 @@ export default function Sidebar() {
     toggleAcademicOpen,
     toggleCrmOpen,
     toggleFeesOpen,
+    toggleExaminationsOpen,
   } = useSidebarStore()
 
   const navigate = useNavigate()
@@ -164,6 +176,22 @@ export default function Sidebar() {
     location.pathname.startsWith('/timetable') ||
     location.pathname.startsWith('/boards') ||
     location.pathname.startsWith('/timetable')
+
+  const isExaminationsActive = location.pathname.startsWith('/examinations')
+
+  const isExamSubActive = (subTo: string) => {
+    if (subTo === '/examinations/overview') {
+      return (
+        (location.pathname === '/examinations' || location.pathname === '/examinations/overview') &&
+        (!location.search || location.search === '' || location.search.includes('tab=overview'))
+      )
+    }
+    const tabName = subTo.replace('/examinations/', '')
+    return (
+      location.pathname === subTo ||
+      (location.pathname === '/examinations' && location.search.includes(`tab=${tabName}`))
+    )
+  }
 
   const isFeesActive =
     location.pathname.startsWith('/fees') ||
@@ -849,6 +877,125 @@ export default function Sidebar() {
 
           {/* Secondary Nav Items */}
           {secondaryNavItems.map((item) => {
+            if (item.to === '/examinations') {
+              return (
+                <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
+                  {isCollapsed ? (
+                    // Collapsed mode: icon with floating interactive flyout popover
+                    <div className="relative group w-full flex justify-center">
+                      <NavLink
+                        to="/examinations"
+                        aria-label="Tests & Results"
+                        style={isExaminationsActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        className={({ isActive }) =>
+                          `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                            isExaminationsActive
+                              ? 'text-white shadow-md'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`
+                        }
+                      >
+                        <Award className="w-5 h-5" />
+                      </NavLink>
+
+                      {/* Tooltip */}
+                      <div
+                        role="tooltip"
+                        className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                      >
+                        Tests & Results
+                      </div>
+
+                      {/* Floating Flyout Menu on Hover */}
+                      <div
+                        role="menu"
+                        aria-label="Tests & Results Menu"
+                        className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
+                      >
+                        <div className="px-3 py-1.5 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Tests & Results
+                        </div>
+                        <div className="mt-1 space-y-0.5 max-h-72 overflow-y-auto custom-scrollbar">
+                          {examSubItems.map((sub) => {
+                            const isSubActive = isExamSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Expanded mode: Clickable parent link + chevron accordion toggle
+                    <div>
+                      <div
+                        className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
+                          isExaminationsActive
+                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        }`}
+                      >
+                        <NavLink
+                          to="/examinations"
+                          aria-label="Tests & Results"
+                          className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
+                        >
+                          <Award className={`w-4 h-4 flex-shrink-0 ${isExaminationsActive ? 'text-white' : 'text-purple-400'}`} />
+                          <span className="truncate text-xs font-semibold">Tests & Results</span>
+                        </NavLink>
+                        <button
+                          type="button"
+                          onClick={toggleExaminationsOpen}
+                          aria-expanded={examinationsOpen}
+                          aria-label="Toggle Tests & Results Submenu"
+                          className="px-2.5 py-2 hover:bg-white/10 rounded-r-xl transition-colors focus:outline-none"
+                        >
+                          {examinationsOpen ? (
+                            <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isExaminationsActive ? 'text-white' : 'text-slate-400'}`} />
+                          ) : (
+                            <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isExaminationsActive ? 'text-white' : 'text-slate-400'}`} />
+                          )}
+                        </button>
+                      </div>
+
+                      {examinationsOpen && (
+                        <div className="pl-3 pr-1 pt-1.5 space-y-1">
+                          {examSubItems.map((sub) => {
+                            const isSubActive = isExamSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             if (item.to === '/fees') {
               return (
                 <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>

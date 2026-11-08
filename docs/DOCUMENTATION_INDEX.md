@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-08 16:19:14  
-**Total Indexed Items:** 309  
+**Last Reindexed:** 2026-11-08 21:50:00  
+**Total Indexed Items:** 310  
 
 ---
 
@@ -22,7 +22,7 @@
 | `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **5** | Teacher & Faculty Directory |
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
 | `07` | [07_ATTENDANCE](#07_attendance) | **5** | Attendance Register & Tracking |
-| `08` | [08_EXAMINATION](#08_examination) | **6** | Examinations, Tests & Grading |
+| `08` | [08_EXAMINATION](#08_examination) | **7** | Examinations, Tests & Grading |
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **24** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **0** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **7** | Reports, Analytics & Data Grids |
@@ -156,6 +156,7 @@
 
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
+| **Examination Centre Submenu Completion Matrix & Dedicated Workspaces** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_EXAMINATION_COMPLETION-MATRIX_EXAM-SUBMENU-WORKSPACES_V1.md](08_EXAMINATION/2026-11-08_EXAMINATION_COMPLETION-MATRIX_EXAM-SUBMENU-WORKSPACES_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 14_PRINTING_DOCUMENTS |
 | **Examinations Module Changelog** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-CHANGELOG_V1.md](08_EXAMINATION/2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-CHANGELOG_V1.md) | - |
 | **Examinations Module Developer Manual** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-DEVELOPER-MANUAL_V1.md](08_EXAMINATION/2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-DEVELOPER-MANUAL_V1.md) | - |
 | **Examinations Module Specification** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-SPECIFICATION_V1.md](08_EXAMINATION/2026-11-03_EXAMINATION_SPECIFICATION_EXAMINATIONS-SPECIFICATION_V1.md) | - |
