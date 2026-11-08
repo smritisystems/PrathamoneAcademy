@@ -205,7 +205,16 @@ export default function App() {
             <Route path="crm/reports" element={<Suspense fallback={<PageLoader />}><CrmReportsPage /></Suspense>} />
             <Route path="leads/settings" element={<Suspense fallback={<PageLoader />}><CrmSettingsPage /></Suspense>} />
             <Route path="crm/settings" element={<Suspense fallback={<PageLoader />}><CrmSettingsPage /></Suspense>} />
+          {/* Attendance Centre Dedicated Workspaces */}
           <Route path="attendance" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          <Route path="attendance/overview" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          <Route path="attendance/daily" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          <Route path="attendance/qr-terminal" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          <Route path="attendance/register" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          <Route path="attendance/absenteeism" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          <Route path="attendance/leaves" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          <Route path="attendance/reports" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
+          <Route path="attendance/settings" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
           {/* Examination Centre Dedicated Workspaces */}
           <Route path="examinations" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           <Route path="examinations/overview" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />

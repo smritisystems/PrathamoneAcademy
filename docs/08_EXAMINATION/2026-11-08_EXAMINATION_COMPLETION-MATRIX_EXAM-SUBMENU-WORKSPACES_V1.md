@@ -86,3 +86,4 @@ Full-resolution (1080p) visual snapshots captured via Playwright:
 - `screenshot_53_examinations_report_cards.png`
 - `screenshot_54_examinations_papers.png`
 - `screenshot_55_examinations_settings.png`
+
