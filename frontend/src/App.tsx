@@ -61,6 +61,15 @@ const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), '
 const ReleasesPage = lazyWithRetry(() => import('./pages/Releases'), 'Releases')
 const CodeXStudioPage = lazyWithRetry(() => import('./pages/CodeXStudio'), 'CodeXStudio')
 const LeadManagementPage = lazyWithRetry(() => import('./pages/LeadManagement'), 'LeadManagement')
+const CrmOverviewPage = lazyWithRetry(() => import('./pages/crm/CrmOverviewPage'), 'CrmOverviewPage')
+const LeadRegisterPage = lazyWithRetry(() => import('./pages/crm/LeadRegisterPage'), 'LeadRegisterPage')
+const LeadPipelinePage = lazyWithRetry(() => import('./pages/crm/LeadPipelinePage'), 'LeadPipelinePage')
+const FollowUpCentrePage = lazyWithRetry(() => import('./pages/crm/FollowUpCentrePage'), 'FollowUpCentrePage')
+const CounsellingDemoPage = lazyWithRetry(() => import('./pages/crm/CounsellingDemoPage'), 'CounsellingDemoPage')
+const LeadSourcesPage = lazyWithRetry(() => import('./pages/crm/LeadSourcesPage'), 'LeadSourcesPage')
+const CampaignsPage = lazyWithRetry(() => import('./pages/crm/CampaignsPage'), 'CampaignsPage')
+const CrmReportsPage = lazyWithRetry(() => import('./pages/crm/CrmReportsPage'), 'CrmReportsPage')
+const CrmSettingsPage = lazyWithRetry(() => import('./pages/crm/CrmSettingsPage'), 'CrmSettingsPage')
 const TrainingManagementPage = lazyWithRetry(() => import('./pages/TrainingManagement'), 'TrainingManagement')
 
 function PageLoader() {
@@ -160,8 +169,29 @@ export default function App() {
           <Route path="students" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
           <Route path="students/add" element={<Suspense fallback={<PageLoader />}><AddStudentPage /></Suspense>} />
           <Route path="students/:id" element={<Suspense fallback={<PageLoader />}><StudentDetailPage /></Suspense>} />
-          <Route path="leads" element={<Suspense fallback={<PageLoader />}><LeadManagementPage /></Suspense>} />
-          <Route path="crm" element={<Suspense fallback={<PageLoader />}><LeadManagementPage /></Suspense>} />
+            {/* Lead Management & CRM Dedicated Workspaces */}
+            <Route path="leads" element={<Suspense fallback={<PageLoader />}><LeadManagementPage /></Suspense>} />
+            <Route path="crm" element={<Suspense fallback={<PageLoader />}><LeadManagementPage /></Suspense>} />
+            <Route path="leads/overview" element={<Suspense fallback={<PageLoader />}><CrmOverviewPage /></Suspense>} />
+            <Route path="crm/overview" element={<Suspense fallback={<PageLoader />}><CrmOverviewPage /></Suspense>} />
+            <Route path="leads/all" element={<Suspense fallback={<PageLoader />}><LeadRegisterPage /></Suspense>} />
+            <Route path="crm/leads" element={<Suspense fallback={<PageLoader />}><LeadRegisterPage /></Suspense>} />
+            <Route path="leads/pipeline" element={<Suspense fallback={<PageLoader />}><LeadPipelinePage /></Suspense>} />
+            <Route path="crm/pipeline" element={<Suspense fallback={<PageLoader />}><LeadPipelinePage /></Suspense>} />
+            <Route path="leads/follow-ups" element={<Suspense fallback={<PageLoader />}><FollowUpCentrePage /></Suspense>} />
+            <Route path="leads/followups" element={<Suspense fallback={<PageLoader />}><FollowUpCentrePage /></Suspense>} />
+            <Route path="crm/follow-ups" element={<Suspense fallback={<PageLoader />}><FollowUpCentrePage /></Suspense>} />
+            <Route path="leads/counselling" element={<Suspense fallback={<PageLoader />}><CounsellingDemoPage /></Suspense>} />
+            <Route path="leads/demo" element={<Suspense fallback={<PageLoader />}><CounsellingDemoPage /></Suspense>} />
+            <Route path="crm/counselling" element={<Suspense fallback={<PageLoader />}><CounsellingDemoPage /></Suspense>} />
+            <Route path="leads/sources" element={<Suspense fallback={<PageLoader />}><LeadSourcesPage /></Suspense>} />
+            <Route path="crm/sources" element={<Suspense fallback={<PageLoader />}><LeadSourcesPage /></Suspense>} />
+            <Route path="leads/campaigns" element={<Suspense fallback={<PageLoader />}><CampaignsPage /></Suspense>} />
+            <Route path="crm/campaigns" element={<Suspense fallback={<PageLoader />}><CampaignsPage /></Suspense>} />
+            <Route path="leads/reports" element={<Suspense fallback={<PageLoader />}><CrmReportsPage /></Suspense>} />
+            <Route path="crm/reports" element={<Suspense fallback={<PageLoader />}><CrmReportsPage /></Suspense>} />
+            <Route path="leads/settings" element={<Suspense fallback={<PageLoader />}><CrmSettingsPage /></Suspense>} />
+            <Route path="crm/settings" element={<Suspense fallback={<PageLoader />}><CrmSettingsPage /></Suspense>} />
           <Route path="attendance" element={<Suspense fallback={<PageLoader />}><AttendancePage /></Suspense>} />
           <Route path="examinations" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />

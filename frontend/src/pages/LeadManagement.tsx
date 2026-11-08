@@ -25,7 +25,8 @@ import {
   Search, Plus, ExternalLink, ArrowRight, RotateCcw, Lock, Flame,
   Zap, Snowflake, Check, Eye, Trash2, Edit, GraduationCap, Building2,
   BookOpen, Layers, MoreVertical, Send, RefreshCw, BarChart2,
-  ArrowUpRight, PhoneCall, ShieldAlert, FileText, CheckSquare, X
+  ArrowUpRight, PhoneCall, ShieldAlert, FileText, CheckSquare, X,
+  Share2, Megaphone, FileSpreadsheet, Settings as SettingsIcon
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -369,6 +370,39 @@ export default function LeadManagement() {
             <BarChart2 className="w-3.5 h-3.5 text-slate-500" />
             <span>Reports</span>
           </button>
+        </div>
+      </div>
+
+      {/* ─── 9 SUBMENU DEDICATED WORKSPACE TABS ─────────────────────────────── */}
+      <div className="overflow-x-auto pb-1 -mx-1 px-1 custom-scrollbar">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl w-max border border-slate-200/60 shadow-2xs">
+          {[
+            { key: 'overview', label: 'Overview', to: '/leads', icon: BarChart2, active: true },
+            { key: 'all', label: 'All Leads', to: '/leads/all', icon: Users, active: false },
+            { key: 'pipeline', label: 'Lead Pipeline', to: '/leads/pipeline', icon: Layers, active: false },
+            { key: 'followups', label: 'Follow-ups', to: '/leads/follow-ups', icon: Clock, active: false },
+            { key: 'counselling', label: 'Counselling & Demo', to: '/leads/counselling', icon: Calendar, active: false },
+            { key: 'sources', label: 'Lead Sources', to: '/leads/sources', icon: Share2, active: false },
+            { key: 'campaigns', label: 'Campaigns', to: '/leads/campaigns', icon: Megaphone, active: false },
+            { key: 'reports', label: 'Reports', to: '/leads/reports', icon: FileSpreadsheet, active: false },
+            { key: 'settings', label: 'Settings', to: '/leads/settings', icon: SettingsIcon, active: false },
+          ].map((item) => {
+            const Icon = item.icon
+            return (
+              <Link 
+                key={item.key}
+                to={item.to}
+                className={`fdex items-center gap-2 px-3 py-1.5 rounded-1xl text-xs font-bold transition-all whitespace-nowrap ${
+                  item.active
+                    ? 'bg-white text-primary-700 shadow-xs border border-slate-200/80'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${item.active ? 'text-primary-600' : 'text-slate-500'}`} />
+                <span>{item.label}</span>
+              </Link>
+            )
+          })}
         </div>
       </div>
 

@@ -24,7 +24,8 @@ import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func, desc, update
+from sqlalchemy import select, and_, or_, func, desc, update, case
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import (
@@ -45,6 +46,7 @@ from app.models.subject import Subject
 from app.models.academic_year import AcademicYear
 from app.models.communication import CommunicationLog
 from app.models.institution import Institution
+from app.models.settings import InstitutionSetting
 
 router = APIRouter()
 
@@ -228,6 +230,22 @@ class ConvertToAdmissionRequest(BaseModel):
     guardian_occupation: Optional[str] = None
     remarks: Optional[str] = "Converted from Lead"
     send_welcome_sms: bool = False
+
+
+class DemoClassUpdateRequest(BaseModel):
+    status: Optional[str] = None  # scheduled, attended, absent, cancelled
+    rating: Optional[int] = None  # 1 to 5
+    feedback: Optional[str] = None
+    scheduled_at: Optional[datetime] = None
+
+
+class CrmSettingsUpdateRequest(BaseModel):
+    pipeline_stages: Optional[List[Dict[str, Any]]] = None
+    sla_follow_up_hours: Optional[int] = None
+    loss_reasons: Optional[List[str]] = None
+    source_channels: Optional[List[str]] = None
+    auto_assign_counsellor: Optional[bool] = None
+    notify_on_new_enquiry: Optional[bool] = None
 
 
 # ─── Helper Functions ─────────────────────────────────────────────────────────
@@ -753,6 +771,724 @@ async def create_lead(
     await db.refresh(new_lead)
 
     return serialize_lead(new_lead)
+
+
+@router.get("/follow-ups")
+async def list_all_follow_ups(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    follow_up_type: Optional[str] = Query(None),
+    counsellor_id: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_lead_read),
+):
+    """
+    Returns list of follow-up activities joined with Lead and User (performed_by) with filtering and KPIs.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    now = datetime.now(timezone.utc)
+    today_start = datetime.combine(date.today(), datetime.min.time(), tzinfo=timezone.utc)
+    today_end = datetime.combine(date.today(), datetime.max.time(), tzinfo=timezone.utc)
+
+    query = (
+        select(LeadFollowUp)
+        .join(Lead, LeadFollowUp.lead_id == Lead.id)
+        .options(selectinload(LeadFollowUp.lead), selectinload(LeadFollowUp.performed_by))
+        .where(
+            and_(
+                LeadFollowUp.institution_id == effective_inst_id,
+                Lead.institution_id == effective_inst_id,
+                Lead.is_active == True,
+            )
+        )
+    )
+
+    if follow_up_type:
+        query = query.where(LeadFollowUp.follow_up_type == follow_up_type)
+    if counsellor_id:
+        query = query.where(
+            or_(
+                LeadFollowUp.performed_by_id == counsellor_id,
+                Lead.assigned_to_id == counsellor_id,
+            )
+        )
+    if search:
+        s = f"%{search.strip()}%"
+        query = query.where(
+            or_(
+                Lead.first_name.ilike(s),
+                Lead.last_name.ilike(s),
+                Lead.lead_number.ilike(s),
+                Lead.phone.ilike(s),
+                LeadFollowUp.remarks.ilike(s),
+            )
+        )
+
+    if status_filter == "overdue":
+        query = query.where(
+            and_(
+                LeadFollowUp.status == "scheduled",
+                LeadFollowUp.scheduled_at < now,
+            )
+        )
+    elif status_filter == "today":
+        query = query.where(
+            and_(
+                LeadFollowUp.scheduled_at >= today_start,
+                LeadFollowUp.scheduled_at <= today_end,
+            )
+        )
+    elif status_filter == "upcoming":
+        query = query.where(
+            and_(
+                LeadFollowUp.status == "scheduled",
+                LeadFollowUp.scheduled_at > today_end,
+            )
+        )
+    elif status_filter in ("completed", "scheduled", "cancelled", "missed"):
+        query = query.where(LeadFollowUp.status == status_filter)
+
+    count_subq = query.with_only_columns(func.count(LeadFollowUp.id)).order_by(None)
+    total = (await db.execute(count_subq)).scalar() or 0
+
+    base_cond = and_(
+        LeadFollowUp.institution_id == effective_inst_id,
+        Lead.institution_id == effective_inst_id,
+        Lead.is_active == True,
+    )
+    overdue_count = (
+        await db.execute(
+            select(func.count(LeadFollowUp.id))
+            .join(Lead, LeadFollowUp.lead_id == Lead.id)
+            .where(and_(base_cond, LeadFollowUp.status == "scheduled", LeadFollowUp.scheduled_at < now))
+        )
+    ).scalar() or 0
+
+    today_count = (
+        await db.execute(
+            select(func.count(LeadFollowUp.id))
+            .join(Lead, LeadFollowUp.lead_id == Lead.id)
+            .where(and_(base_cond, LeadFollowUp.scheduled_at >= today_start, LeadFollowUp.scheduled_at <= today_end))
+        )
+    ).scalar() or 0
+
+    upcoming_count = (
+        await db.execute(
+            select(func.count(LeadFollowUp.id))
+            .join(Lead, LeadFollowUp.lead_id == Lead.id)
+            .where(and_(base_cond, LeadFollowUp.status == "scheduled", LeadFollowUp.scheduled_at > today_end))
+        )
+    ).scalar() or 0
+
+    completed_count = (
+        await db.execute(
+            select(func.count(LeadFollowUp.id))
+            .join(Lead, LeadFollowUp.lead_id == Lead.id)
+            .where(and_(base_cond, LeadFollowUp.status == "completed"))
+        )
+    ).scalar() or 0
+
+    results = (
+        await db.execute(
+            query.order_by(
+                desc(LeadFollowUp.scheduled_at.is_(None)),
+                desc(LeadFollowUp.scheduled_at),
+                desc(LeadFollowUp.created_at),
+            ).offset(offset).limit(limit)
+        )
+    ).scalars().all()
+
+    items = []
+    for f in results:
+        lead = f.lead
+        perf = f.performed_by
+        is_overdue = bool(f.status == "scheduled" and f.scheduled_at and f.scheduled_at < now)
+        items.append({
+            "id": f.id,
+            "lead_id": f.lead_id,
+            "lead_number": lead.lead_number if lead else "N/A",
+            "lead_name": f"{lead.first_name} {lead.last_name}" if lead else "Unknown Prospect",
+            "lead_phone": lead.phone if lead else None,
+            "lead_stage": lead.stage if lead else "new_enquiry",
+            "lead_priority": lead.priority if lead else "warm",
+            "follow_up_type": f.follow_up_type,
+            "stage_at_time": f.stage_at_time,
+            "status": f.status,
+            "scheduled_at": f.scheduled_at.isoformat() if f.scheduled_at else None,
+            "completed_at": f.completed_at.isoformat() if f.completed_at else None,
+            "outcome": f.outcome,
+            "remarks": f.remarks,
+            "next_follow_up_at": f.next_follow_up_at.isoformat() if f.next_follow_up_at else None,
+            "performed_by_id": f.performed_by_id,
+            "counsellor_name": f"{perf.first_name} {perf.last_name}" if perf else "Unassigned",
+            "is_overdue": is_overdue,
+            "created_at": f.created_at.isoformat() if f.created_at else None,
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "summary": {
+            "overdue_count": overdue_count,
+            "today_count": today_count,
+            "upcoming_count": upcoming_count,
+            "completed_count": completed_count,
+        },
+    }
+
+
+@router.get("/demo-classes")
+async def list_all_demo_classes(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    teacher_id: Optional[int] = Query(None),
+    standard_id: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_lead_read),
+):
+    """
+    Returns list of scheduled demo lectures joined with Lead, Standard, Subject, and Teacher.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+
+    query = (
+        select(LeadDemoClass)
+        .join(Lead, LeadDemoClass.lead_id == Lead.id)
+        .options(
+            selectinload(LeadDemoClass.lead),
+            selectinload(LeadDemoClass.standard),
+            selectinload(LeadDemoClass.subject),
+            selectinload(LeadDemoClass.teacher),
+        )
+        .where(
+            and_(
+                LeadDemoClass.institution_id == effective_inst_id,
+                Lead.institution_id == effective_inst_id,
+                Lead.is_active == True,
+            )
+        )
+    )
+
+    if status_filter:
+        query = query.where(LeadDemoClass.status == status_filter)
+    if teacher_id:
+        query = query.where(LeadDemoClass.teacher_id == teacher_id)
+    if standard_id:
+        query = query.where(LeadDemoClass.standard_id == standard_id)
+    if search:
+        s = f"%{search.strip()}%"
+        query = query.where(
+            or_(
+                Lead.first_name.ilike(s),
+                Lead.last_name.ilike(s),
+                Lead.lead_number.ilike(s),
+                Lead.phone.ilike(s),
+                LeadDemoClass.feedback.ilike(s),
+            )
+        )
+
+    count_subq = query.with_only_columns(func.count(LeadDemoClass.id)).order_by(None)
+    total = (await db.execute(count_subq)).scalar() or 0
+
+    base_cond = and_(
+        LeadDemoClass.institution_id == effective_inst_id,
+        Lead.institution_id == effective_inst_id,
+        Lead.is_active == True,
+    )
+    scheduled_count = (await db.execute(select(func.count(LeadDemoClass.id)).join(Lead, LeadDemoClass.lead_id == Lead.id).where(and_(base_cond, LeadDemoClass.status == "scheduled")))).scalar() or 0
+    attended_count = (await db.execute(select(func.count(LeadDemoClass.id)).join(Lead, LeadDemoClass.lead_id == Lead.id).where(and_(base_cond, LeadDemoClass.status == "attended")))).scalar() or 0
+    absent_count = (await db.execute(select(func.count(LeadDemoClass.id)).join(Lead, LeadDemoClass.lead_id == Lead.id).where(and_(base_cond, LeadDemoClass.status == "absent")))).scalar() or 0
+    avg_rating_val = (await db.execute(select(func.avg(LeadDemoClass.rating)).join(Lead, LeadDemoClass.lead_id == Lead.id).where(and_(base_cond, LeadDemoClass.rating.isnot(None))))).scalar()
+    avg_rating = round(float(avg_rating_val), 1) if avg_rating_val is not None else 0.0
+
+    results = (
+        await db.execute(
+            query.order_by(desc(LeadDemoClass.scheduled_at)).offset(offset).limit(limit)
+        )
+    ).scalars().all()
+
+    items = []
+    for d in results:
+        lead = d.lead
+        items.append({
+            "id": d.id,
+            "lead_id": d.lead_id,
+            "lead_number": lead.lead_number if lead else "N/A",
+            "lead_name": f"{lead.first_name} {lead.last_name}" if lead else "Unknown Prospect",
+            "lead_phone": lead.phone if lead else None,
+            "lead_stage": lead.stage if lead else "counselling_demo",
+            "standard_id": d.standard_id,
+            "standard_name": d.standard.name if d.standard else None,
+            "subject_id": d.subject_id,
+            "subject_name": d.subject.name if d.subject else None,
+            "teacher_id": d.teacher_id,
+            "teacher_name": f"{d.teacher.first_name} {d.teacher.last_name}" if d.teacher else "Unassigned",
+            "scheduled_at": d.scheduled_at.isoformat() if d.scheduled_at else None,
+            "status": d.status,
+            "rating": d.rating,
+            "feedback": d.feedback,
+            "created_at": d.created_at.isoformat() if d.created_at else None,
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "summary": {
+            "total_count": total,
+            "scheduled_count": scheduled_count,
+            "attended_count": attended_count,
+            "absent_count": absent_count,
+            "avg_rating": avg_rating,
+        },
+    }
+
+
+@router.put("/demo-classes/{demo_id}")
+async def update_demo_class(
+    demo_id: int,
+    data: DemoClassUpdateRequest,
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*LEAD_WRITE_ROLES)),
+):
+    """
+    Updates demo class attendance, rating, and feedback.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    demo = (
+        await db.execute(
+            select(LeadDemoClass)
+            .where(
+                and_(
+                    LeadDemoClass.id == demo_id,
+                    LeadDemoClass.institution_id == effective_inst_id,
+                )
+            )
+        )
+    ).scalar_one_or_none()
+
+    if not demo:
+        raise HTTPException(status_code=404, detail="Demo class record not found.")
+
+    if data.status is not None:
+        demo.status = data.status
+    if data.rating is not None:
+        demo.rating = data.rating
+    if data.feedback is not None:
+        demo.feedback = data.feedback
+    if data.scheduled_at is not None:
+        demo.scheduled_at = data.scheduled_at
+
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="update",
+            resource_type="lead_demo_class",
+            resource_id=demo.id,
+            details=json.dumps({"status": demo.status, "rating": demo.rating, "feedback": demo.feedback}),
+        )
+    )
+    await db.commit()
+    await db.refresh(demo)
+
+    return {
+        "success": True,
+        "message": "Demo class updated successfully",
+        "demo": {
+            "id": demo.id,
+            "lead_id": demo.lead_id,
+            "status": demo.status,
+            "rating": demo.rating,
+            "feedback": demo.feedback,
+            "scheduled_at": demo.scheduled_at.isoformat() if demo.scheduled_at else None,
+        },
+    }
+
+
+@router.get("/sources/summary")
+async def get_lead_sources_summary(
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_lead_read),
+):
+    """
+    Aggregates acquisition channel performance from canonical leads table.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    base = [Lead.institution_id == effective_inst_id, Lead.is_active == True]
+
+    total_all = (await db.execute(select(func.count(Lead.id)).where(and_(*base)))).scalar() or 0
+
+    rows = (
+        await db.execute(
+            select(
+                Lead.source,
+                func.count(Lead.id).label("total_leads"),
+                func.sum(case((Lead.stage == "converted", 1), else_=0)).label("converted_leads"),
+                func.sum(case((Lead.stage.in_(["lost", "junk"]), 1), else_=0)).label("lost_leads"),
+            )
+            .where(and_(*base))
+            .group_by(Lead.source)
+            .order_by(desc("total_leads"))
+        )
+    ).all()
+
+    items = []
+    for r in rows:
+        src = r.source or "Unspecified"
+        tot = r.total_leads or 0
+        conv = int(r.converted_leads or 0)
+        lost = int(r.lost_leads or 0)
+        active = tot - conv - lost
+        conv_rate = round((conv / tot * 100), 1) if tot > 0 else 0.0
+        share = round((tot / total_all * 100), 1) if total_all > 0 else 0.0
+        items.append({
+            "source": src,
+            "total_leads": tot,
+            "converted_leads": conv,
+            "lost_leads": lost,
+            "active_leads": active,
+            "conversion_rate": conv_rate,
+            "share_percentage": share,
+        })
+
+    return {
+        "total_leads": total_all,
+        "items": items,
+    }
+
+
+@router.get("/campaigns/summary")
+async def get_campaigns_summary(
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_lead_read),
+):
+    """
+    Aggregates marketing campaign performance from canonical leads table.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    base = [Lead.institution_id == effective_inst_id, Lead.is_active == True]
+
+    rows = (
+        await db.execute(
+            select(
+                func.coalesce(Lead.campaign_name, "General Organic").label("campaign"),
+                func.count(Lead.id).label("total_leads"),
+                func.sum(case((Lead.stage == "converted", 1), else_=0)).label("converted_leads"),
+                func.max(Lead.enquiry_date).label("latest_enquiry"),
+            )
+            .where(and_(*base))
+            .group_by(Lead.campaign_name)
+            .order_by(desc("total_leads"))
+        )
+    ).all()
+
+    campaign_items = []
+    for r in rows:
+        tot = r.total_leads or 0
+        conv = int(r.converted_leads or 0)
+        conv_rate = round((conv / tot * 100), 1) if tot > 0 else 0.0
+        campaign_items.append({
+            "campaign_name": r.campaign,
+            "total_leads": tot,
+            "converted_leads": conv,
+            "conversion_rate": conv_rate,
+            "latest_enquiry": r.latest_enquiry.isoformat() if r.latest_enquiry else None,
+        })
+
+    return {
+        "items": campaign_items,
+        "total_campaigns": len(campaign_items),
+    }
+
+
+@router.get("/reports/analytics")
+async def get_crm_reports_analytics(
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_lead_read),
+):
+    """
+    Calculates deep CRM analytics: monthly trajectory, lost reasons Pareto, counsellor performance matrix, and funnel velocity.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    base = [Lead.institution_id == effective_inst_id, Lead.is_active == True]
+
+    # 1. Monthly trajectories for past 6 months
+    today = date.today()
+    monthly_data = []
+    for i in range(5, -1, -1):
+        m_date = today.replace(day=1) - timedelta(days=i * 30)
+        m_start = date(m_date.year, m_date.month, 1)
+        if m_date.month == 12:
+            m_end = date(m_date.year + 1, 1, 1) - timedelta(days=1)
+        else:
+            m_end = date(m_date.year, m_date.month + 1, 1) - timedelta(days=1)
+
+        m_name = m_start.strftime("%b %Y")
+        new_cnt = (
+            await db.execute(
+                select(func.count(Lead.id)).where(
+                    and_(*base, Lead.enquiry_date >= m_start, Lead.enquiry_date <= m_end)
+                )
+            )
+        ).scalar() or 0
+
+        conv_cnt = (
+            await db.execute(
+                select(func.count(Lead.id)).where(
+                    and_(
+                        *base,
+                        Lead.converted_at >= datetime.combine(m_start, datetime.min.time(), tzinfo=timezone.utc),
+                        Lead.converted_at <= datetime.combine(m_end, datetime.max.time(), tzinfo=timezone.utc),
+                    )
+                )
+            )
+        ).scalar() or 0
+
+        rate = round((conv_cnt / new_cnt * 100), 1) if new_cnt > 0 else 0.0
+        monthly_data.append({
+            "month": m_name,
+            "new_leads": new_cnt,
+            "conversions": conv_cnt,
+            "conversion_rate": rate,
+        })
+
+    # 2. Lost Reasons Pareto Distribution
+    lost_rows = (
+        await db.execute(
+            select(
+                func.coalesce(Lead.lost_reason, "Unspecified").label("reason"),
+                func.count(Lead.id).label("count"),
+            )
+            .where(and_(*base, Lead.stage.in_(["lost", "junk"])))
+            .group_by(Lead.lost_reason)
+            .order_by(desc("count"))
+        )
+    ).all()
+
+    total_lost = sum(r.count for r in lost_rows) or 1
+    lost_reasons = []
+    cumulative = 0
+    for r in lost_rows:
+        cnt = r.count
+        pct = round((cnt / total_lost * 100), 1)
+        cumulative += pct
+        lost_reasons.append({
+            "reason": r.reason,
+            "count": cnt,
+            "percentage": pct,
+            "cumulative_percentage": min(round(cumulative, 1), 100.0),
+        })
+
+    # 3. Counsellor Performance Matrix
+    counsellor_rows = (
+        await db.execute(
+            select(
+                User.id,
+                User.first_name,
+                User.last_name,
+                func.count(Lead.id).label("assigned_leads"),
+                func.sum(case((Lead.stage == "converted", 1), else_=0)).label("converted_leads"),
+            )
+            .select_from(User)
+            .outerjoin(Lead, and_(Lead.assigned_to_id == User.id, Lead.institution_id == effective_inst_id, Lead.is_active == True))
+            .where(
+                or_(
+                    User.role.in_(["counsellor", "staff", "admin"]),
+                    User.id.in_(select(Lead.assigned_to_id).where(Lead.institution_id == effective_inst_id)),
+                )
+            )
+            .group_by(User.id, User.first_name, User.last_name)
+            .order_by(desc("assigned_leads"))
+        )
+    ).all()
+
+    counsellors_matrix = []
+    for c in counsellor_rows:
+        ass = c.assigned_leads or 0
+        conv = int(c.converted_leads or 0)
+        f_cnt = (
+            await db.execute(
+                select(func.count(LeadFollowUp.id)).where(
+                    and_(
+                        LeadFollowUp.performed_by_id == c.id,
+                        LeadFollowUp.institution_id == effective_inst_id,
+                    )
+                )
+            )
+        ).scalar() or 0
+        rate = round((conv / ass * 100), 1) if ass > 0 else 0.0
+        counsellors_matrix.append({
+            "id": c.id,
+            "name": f"{c.first_name} {c.last_name}",
+            "assigned_leads": ass,
+            "follow_ups_logged": f_cnt,
+            "conversions": conv,
+            "conversion_rate": rate,
+        })
+
+    # 4. Pipeline Funnel Counts
+    stage_keys = ["new_enquiry", "contacted", "counselling_demo", "interested", "admission_pending", "converted"]
+    funnel = []
+    for s_key in stage_keys:
+        cnt = (await db.execute(select(func.count(Lead.id)).where(and_(*base, Lead.stage == s_key)))).scalar() or 0
+        funnel.append({
+            "stage": s_key,
+            "count": cnt,
+            "label": s_key.replace('_', ' ').title(),
+        })
+
+    return {
+        "monthly_trajectories": monthly_data,
+        "lost_reasons": lost_reasons,
+        "counsellors_matrix": counsellors_matrix,
+        "stage_funnel": funnel,
+    }
+
+
+@router.get("/settings/config")
+async def get_crm_settings_config(
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_lead_read),
+):
+    """
+    Returns institute-specific CRM configuration stored under category 'crm' in institution_settings.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    row = (
+        await db.execute(
+            select(InstitutionSetting).where(
+                and_(
+                    InstitutionSetting.institution_id == effective_inst_id,
+                    InstitutionSetting.category == "crm",
+                    InstitutionSetting.key == "crm_workflow_config",
+                )
+            )
+        )
+    ).scalar_one_or_none()
+
+    defaults = {
+        "pipeline_stages": [
+            {"key": "new_enquiry", "label": "New Enquiry", "color": "blue"},
+            {"key": "contacted", "label": "Contacted", "color": "amber"},
+            {"key": "counselling_demo", "label": "Counselling & Demo", "color": "purple"},
+            {"key": "interested", "label": "Interested / Trial", "color": "emerald"},
+            {"key": "admission_pending", "label": "Admission Pending", "color": "orange"},
+            {"key": "converted", "label": "Converted", "color": "teal"},
+        ],
+        "sla_follow_up_hours": 24,
+        "loss_reasons": [
+            "Fees too high / Budget constraint",
+            "Distance / Transport inconvenient",
+            "Joined competitor coaching",
+            "Timing mismatch / Batch conflict",
+            "Parent undecided / Postponed plan",
+            "Looking for 1-on-1 home tuition",
+            "Duplicate or fake enquiry",
+        ],
+        "source_channels": [
+            "Website",
+            "Walk-in",
+            "Referral",
+            "WhatsApp",
+            "Phone Enquiry",
+            "Social Media",
+            "Newspaper Ad",
+            "School Campaign",
+        ],
+        "auto_assign_counsellor": True,
+        "notify_on_new_enquiry": True,
+    }
+
+    if row and row.value:
+        try:
+            cfg = json.loads(row.value)
+            return {**defaults, **cfg}
+        except Exception:
+            pass
+
+    return defaults
+
+
+@router.put("/settings/config")
+async def update_crm_settings_config(
+    data: CrmSettingsUpdateRequest,
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*LEAD_WRITE_ROLES)),
+):
+    """
+    Updates institute CRM configuration with audit trail in institution_settings.
+    """
+    effective_inst_id = await resolve_effective_institution(db, effective_inst_id, current_user)
+    row = (
+        await db.execute(
+            select(InstitutionSetting).where(
+                and_(
+                    InstitutionSetting.institution_id == effective_inst_id,
+                    InstitutionSetting.category == "crm",
+                    InstitutionSetting.key == "crm_workflow_config",
+                )
+            )
+        )
+    ).scalar_one_or_none()
+
+    curr_val = {}
+    if row and row.value:
+        try:
+            curr_val = json.loads(row.value)
+        except Exception:
+            pass
+
+    updates = data.model_dump(exclude_unset=True)
+    curr_val.update(updates)
+    val_str = json.dumps(curr_val)
+
+    if not row:
+        row = InstitutionSetting(
+            institution_id=effective_inst_id,
+            category="crm",
+            key="crm_workflow_config",
+            value=val_str,
+            data_type="json",
+            scope="institute",
+            description="CRM Pipeline stages, SLAs, and lead sources configuration",
+            updated_by_id=current_user.id,
+        )
+        db.add(row)
+    else:
+        row.value = val_str
+        row.updated_by_id = current_user.id
+
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            action="update",
+            resource_type="institution_setting",
+            resource_id=row.id or 0,
+            details=json.dumps({"category": "crm", "key": "crm_workflow_config"}),
+        )
+    )
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": "CRM configuration updated successfully",
+        "config": curr_val,
+    }
 
 
 @router.get("/{lead_id}")

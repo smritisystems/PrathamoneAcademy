@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -3161,7 +3161,142 @@ export interface LeadMetricsSummary {
   lost_leads: number
   conversion_rate: number
   conversion_rate_trend: string
+  pipeline_counts?: Record<string, number>
   sources: Array<{ source: string; count: number }>
   counsellors: Array<{ name: string; leads_count: number }>
+}
+
+export interface FollowUpQueueItem {
+  id: number
+  lead_id: number
+  lead_number: string
+  lead_name: string
+  lead_phone?: string | null
+  lead_stage: string
+  lead_priority: string
+  follow_up_type: string
+  stage_at_time?: string | null
+  status: string
+  scheduled_at?: string | null
+  completed_at?: string | null
+  outcome?: string | null
+  remarks?: string | null
+  next_follow_up_at?: string | null
+  performed_by_id?: number | null
+  counsellor_name?: string | null
+  is_overdue: boolean
+  created_at?: string | null
+}
+
+export interface FollowUpQueueResponse {
+  items: FollowUpQueueItem[]
+  total: number
+  limit: number
+  offset: number
+  summary: {
+    overdue_count: number
+    today_count: number
+    upcoming_count: number
+    completed_count: number
+  }
+}
+
+export interface DemoClassQueueItem {
+  id: number
+  lead_id: number
+  lead_number: string
+  lead_name: string
+  lead_phone?: string | null
+  lead_stage: string
+  standard_id?: number | null
+  standard_name?: string | null
+  subject_id?: number | null
+  subject_name?: string | null
+  teacher_id?: number | null
+  teacher_name?: string | null
+  scheduled_at: string
+  status: string
+  rating?: number | null
+  feedback?: string | null
+  created_at?: string | null
+}
+
+export interface DemoClassQueueResponse {
+  items: DemoClassQueueItem[]
+  total: number
+  limit: number
+  offset: number
+  summary: {
+    total_count: number
+    scheduled_count: number
+    attended_count: number
+    absent_count: number
+    avg_rating: number
+  }
+}
+
+export interface LeadSourceSummaryItem {
+  source: string
+  total_leads: number
+  converted_leads: number
+  lost_leads: number
+  active_leads: number
+  conversion_rate: number
+  share_percentage: number
+}
+
+export interface LeadSourcesResponse {
+  total_leads: number
+  items: LeadSourceSummaryItem[]
+}
+
+export interface CampaignSummaryItem {
+  campaign_name: string
+  total_leads: number
+  converted_leads: number
+  conversion_rate: number
+  latest_enquiry?: string | null
+}
+
+export interface CampaignsResponse {
+  items: CampaignSummaryItem[]
+  total_campaigns: number
+}
+
+export interface CrmReportsAnalytics {
+  monthly_trajectories: Array<{
+    month: string
+    new_leads: number
+    conversions: number
+    conversion_rate: number
+  }>
+  lost_reasons: Array<{
+    reason: string
+    count: number
+    percentage: number
+    cumulative_percentage: number
+  }>
+  counsellors_matrix: Array<{
+    id: number
+    name: string
+    assigned_leads: number
+    follow_ups_logged: number
+    conversions: number
+    conversion_rate: number
+  }>
+  stage_funnel: Array<{
+    stage: string
+    count: number
+    label: string
+  }>
+}
+
+export interface CrmConfigSettings {
+  pipeline_stages: Array<{ key: string; label: string; color: string }>
+  sla_follow_up_hours: number
+  loss_reasons: string[]
+  source_channels: string[]
+  auto_assign_counsellor: boolean
+  notify_on_new_enquiry: boolean
 }
 

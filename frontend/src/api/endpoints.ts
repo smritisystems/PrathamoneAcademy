@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-08
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -50,6 +50,9 @@ import type {
   TeacherDashboardData, StaffDashboardData, StaffLifecyclePayload, EmployeeActivityHistoryItem,
   CodexConfig, CodexMappingProfile, CodexMappingVersion, CodexScopeAssignment, CodexAuditLogItem, CodexConfigResponse,
   LeadItem, LeadFollowUpItem, LeadDemoClassItem, LeadDossierResponse, LeadKanbanResponse, LeadMetricsSummary,
+  FollowUpQueueItem, FollowUpQueueResponse, DemoClassQueueItem, DemoClassQueueResponse,
+  LeadSourceSummaryItem, LeadSourcesResponse, CampaignSummaryItem, CampaignsResponse,
+  CrmReportsAnalytics, CrmConfigSettings,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -1543,6 +1546,45 @@ export const leadsApi = {
 
   scheduleDemo: (id: number | string, data: { standard_id?: number; subject_id?: number; teacher_id?: number; scheduled_at: string; feedback?: string }) =>
     apiClient.post<{ success: boolean; message: string }>(`/leads/${id}/demo-classes`, data),
+
+  scheduleDemoClass: (id: number | string, data: { standard_id?: number; subject_id?: number; teacher_id?: number; scheduled_at: string; feedback?: string }) =>
+    apiClient.post<{ success: boolean; message: string }>(`/leads/${id}/demo-classes`, data),
+
+  getFollowUps: (params?: {
+    status?: string
+    follow_up_type?: string
+    counsellor_id?: number
+    search?: string
+    limit?: number
+    offset?: number
+  }) => apiClient.get<FollowUpQueueResponse>('/leads/follow-ups', { params }),
+
+  getDemoClasses: (params?: {
+    status?: string
+    teacher_id?: number
+    standard_id?: number
+    search?: string
+    limit?: number
+    offset?: number
+  }) => apiClient.get<DemoClassQueueResponse>('/leads/demo-classes', { params }),
+
+  updateDemoClass: (demoId: number | string, data: { status?: string; rating?: number; feedback?: string; scheduled_at?: string }) =>
+    apiClient.put<{ success: boolean; message: string; demo: any }>(`/leads/demo-classes/${demoId}`, data),
+
+  getSourcesSummary: () =>
+    apiClient.get<LeadSourcesResponse>('/leads/sources/summary'),
+
+  getCampaignsSummary: () =>
+    apiClient.get<CampaignsResponse>('/leads/campaigns/summary'),
+
+  getReportsAnalytics: () =>
+    apiClient.get<CrmReportsAnalytics>('/leads/reports/analytics'),
+
+  getCrmConfig: () =>
+    apiClient.get<CrmConfigSettings>('/leads/settings/config'),
+
+  updateCrmConfig: (data: Partial<CrmConfigSettings>) =>
+    apiClient.put<{ success: boolean; message: string; config: CrmConfigSettings }>('/leads/settings/config', data),
 
   convertToAdmission: (id: number | string, data: any) =>
     apiClient.post<{ success: boolean; message: string; student_id: number; admission_number: string; student_name: string }>(`/leads/${id}/convert`, data),

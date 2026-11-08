@@ -54,14 +54,14 @@ const academicSubItems = [
 
 const crmSubItems = [
   { to: '/leads', label: 'Overview' },
-  { to: '/leads?view=list', label: 'All Leads' },
-  { to: '/leads?view=pipeline', label: 'Lead Pipeline' },
-  { to: '/leads?view=followups', label: 'Follow-ups' },
-  { to: '/leads?tab=demo', label: 'Counselling & Demo' },
-  { to: '/leads?tab=sources', label: 'Lead Sources' },
-  { to: '/leads?tab=campaigns', label: 'Campaigns' },
-  { to: '/reports?category=leads', label: 'Reports' },
-  { to: '/settings?tab=lookups', label: 'Settings' },
+  { to: '/leads/all', label: 'All Leads' },
+  { to: '/leads/pipeline', label: 'Lead Pipeline' },
+  { to: '/leads/follow-ups', label: 'Follow-ups' },
+  { to: '/leads/counselling', label: 'Counselling & Demo' },
+  { to: '/leads/sources', label: 'Lead Sources' },
+  { to: '/leads/campaigns', label: 'Campaigns' },
+  { to: '/leads/reports', label: 'Reports' },
+  { to: '/leads/settings', label: 'Settings' },
 ]
 
 const secondaryNavItems: NavItem[] = [
