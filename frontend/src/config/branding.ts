@@ -322,20 +322,32 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     institutionPhone: activeInstitution?.phone || BRANDING_CONFIG.support.phone,
     institutionEmail: activeInstitution?.email || BRANDING_CONFIG.support.academyEmail,
     institutionWebsite: activeInstitution?.website || BRANDING_CONFIG.support.academyWebsite,
-    background: {
-      mode: (activeInstitution as any)?.background?.mode || 'waves',
-      imageUrl: (activeInstitution as any)?.background?.image_url || '',
-      fit: (activeInstitution as any)?.background?.fit || 'cover',
-      overlayOpacity: typeof (activeInstitution as any)?.background?.overlay_opacity === 'number'
-        ? (activeInstitution as any).background.overlay_opacity
-        : 60,
-      blur: typeof (activeInstitution as any)?.background?.blur === 'number'
-        ? (activeInstitution as any).background.blur
-        : 4,
-      pattern: (activeInstitution as any)?.background?.pattern || 'geometric',
-      videoUrl: (activeInstitution as any)?.background?.video_url || '',
-      videoType: (activeInstitution as any)?.background?.video_type || 'mp4',
-    },
+    background: (() => {
+      let cachedBg: any = null
+      if (!activeInstitution && typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('pratham_active_branding')
+          if (raw) {
+            const parsed = JSON.parse(raw)
+            if (parsed?.background) cachedBg = parsed.background
+          }
+        } catch {}
+      }
+      return {
+        mode: (activeInstitution as any)?.background?.mode || cachedBg?.mode || 'waves',
+        imageUrl: (activeInstitution as any)?.background?.image_url || cachedBg?.imageUrl || '',
+        fit: (activeInstitution as any)?.background?.fit || cachedBg?.fit || 'cover',
+        overlayOpacity: typeof (activeInstitution as any)?.background?.overlay_opacity === 'number'
+          ? (activeInstitution as any).background.overlay_opacity
+          : (typeof cachedBg?.overlayOpacity === 'number' ? cachedBg.overlayOpacity : 60),
+        blur: typeof (activeInstitution as any)?.background?.blur === 'number'
+          ? (activeInstitution as any).background.blur
+          : (typeof cachedBg?.blur === 'number' ? cachedBg.blur : 4),
+        pattern: (activeInstitution as any)?.background?.pattern || cachedBg?.pattern || 'geometric',
+        videoUrl: (activeInstitution as any)?.background?.video_url || cachedBg?.videoUrl || '',
+        videoType: (activeInstitution as any)?.background?.video_type || cachedBg?.videoType || 'mp4',
+      }
+    })(),
   }
 }
 
