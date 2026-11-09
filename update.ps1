@@ -75,7 +75,8 @@ if ($isHealthy) {
         docker compose exec -T backend python scripts/normalize_academic_and_institution.py
         docker compose exec -T backend python scripts/init_staff_module.py
         docker compose exec -T backend python scripts/bootstrap_sysadmin.py
-        Write-Host "[OK] Academic years, staff module, and SysAdmin superuser synchronized successfully." -ForegroundColor Green
+        docker compose exec -T backend python scripts/sync_release_baseline.py
+        Write-Host "[OK] Academic years, staff module, SysAdmin superuser, and Release v1.52.1 synchronized successfully." -ForegroundColor Green
     } catch {
         Write-Host "[WARN] Schema normalization encountered an error: $_" -ForegroundColor Yellow
     }
