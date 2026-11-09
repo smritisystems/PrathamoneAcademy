@@ -690,7 +690,7 @@ export default function PaymentReceiptView({
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <Wallet className="w-5 h-5 text-primary-600 shrink-0" />
-              <span className="font-black text-primary-700 text-2xl sm:text-3xl tracking-tight leading-none">
+              <span className="font-bold text-primary-700 text-2xl sm:text-3xl tracking-normal leading-tight tabular-nums currency-inr">
                 {fmt(receipt.amount)}
               </span>
             </div>
@@ -756,17 +756,17 @@ export default function PaymentReceiptView({
               </div>
 
               {/* Total Paid to Date (Green Highlight) */}
-              <div className="bg-emerald-50 text-emerald-950 font-black px-2.5 py-1 rounded-lg flex justify-between items-center text-[11px] my-1 border border-emerald-200/60">
+              <div className="bg-emerald-50 text-emerald-950 font-bold px-2.5 py-1 rounded-lg flex justify-between items-center text-[11px] my-1 border border-emerald-200/60">
                 <span>Total Paid to Date</span>
-                <span className="font-black text-emerald-700">
+                <span className="font-bold text-emerald-700 tabular-nums">
                   {fmt(feeSummary.total_paid_to_date)}
                 </span>
               </div>
 
               {/* Outstanding Balance (Red/Rose Highlight) */}
-              <div className="bg-rose-50 text-rose-950 font-black px-2.5 py-1 rounded-lg flex justify-between items-center text-[11px] border border-rose-200/60">
+              <div className="bg-rose-50 text-rose-950 font-bold px-2.5 py-1 rounded-lg flex justify-between items-center text-[11px] border border-rose-200/60">
                 <span>Outstanding Balance</span>
-                <span className="font-black text-rose-700">
+                <span className="font-bold text-rose-700 tabular-nums">
                   {feeSummary.outstanding_balance <= 0
                     ? '₹0 (Paid in Full)'
                     : fmt(feeSummary.outstanding_balance)}
@@ -887,7 +887,7 @@ export default function PaymentReceiptView({
                           p.payment_method?.replace(/_/g, ' ') ||
                           'Bank Transfer'}
                       </td>
-                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 text-right font-black text-slate-900 whitespace-nowrap`}>
+                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 text-right font-bold text-slate-900 whitespace-nowrap tabular-nums`}>
                         {fmt(p.amount)}
                       </td>
                     </tr>
@@ -900,7 +900,7 @@ export default function PaymentReceiptView({
                     <td colSpan={4} className="py-1 px-2.5 text-right font-bold text-slate-600">
                       Previous Payments Total:
                     </td>
-                    <td className="py-1 px-2.5 text-right font-black text-blue-950">
+                    <td className="py-1 px-2.5 text-right font-bold text-blue-950 tabular-nums">
                       {fmt(feeSummary.previous_payments_total)}
                     </td>
                   </tr>

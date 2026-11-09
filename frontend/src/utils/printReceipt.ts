@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
@@ -109,6 +109,9 @@ export function printReceiptElement(
       <head>
         <meta charset="UTF-8" />
         <title>${title}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         ${parentStyles}
         <style>
           ${pageSizeCss}
@@ -200,6 +203,17 @@ export function printReceiptElement(
             font-weight: 300 !important;
             letter-spacing: 0.025em !important;
             margin: 0 !important;
+          }
+
+          /* Currency and Indian Rupee Glyph Protection */
+          .tabular-nums { font-variant-numeric: tabular-nums !important; }
+          .tracking-tight { letter-spacing: -0.01em !important; }
+          .tracking-normal { letter-spacing: 0 !important; }
+          .currency-inr, [data-currency="inr"], .receipt-amount {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            font-variant-numeric: tabular-nums !important;
+            white-space: nowrap !important;
+            letter-spacing: 0.01em !important;
           }
 
           /* Comprehensive Layout & Utility Rules for Reliable Standalone Print */
