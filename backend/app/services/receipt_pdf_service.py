@@ -79,6 +79,17 @@ def number_to_words_inr(num: float | int) -> str:
     return f"Rupees {words} Only"
 
 
+def clean_display_name(name: str) -> str:
+    """
+    Cleans trailing hyphens, dashes, dots, and trailing whitespace from student or parent names.
+    (e.g., 'Johan -' -> 'Johan').
+    """
+    if not name:
+        return ""
+    cleaned = re.sub(r"[\s\-_]+$", "", name.strip())
+    return cleaned or name.strip()
+
+
 def sanitize_receipt_filename(student_name: str, receipt_number: str) -> str:
     """
     Generates a sanitized filename adhering strictly to:
@@ -97,20 +108,26 @@ def sanitize_receipt_filename(student_name: str, receipt_number: str) -> str:
 class ReceiptPdfService:
     """
     Authoritative PDF generation engine for fee receipts.
-    Builds vector A5 portrait vouchers with dynamic institution headers,
-    student metadata, financial allocation tables, ledger summaries,
-    verification QR codes, and canonical governance footers.
+    Builds premium vector A5 portrait vouchers with dynamic institution headers,
+    authoritative 'PA' Text Monogram Crest, complete student and transaction metadata matrix,
+    financial allocation tables, mathematical ledger reconciliation summary,
+    verification QR codes, official digital audit seal, and canonical governance footers.
     """
 
-    # Color Palette
-    C_NAVY = (0.07, 0.16, 0.34)
-    C_SLATE = (0.35, 0.42, 0.50)
-    C_DARK = (0.10, 0.13, 0.18)
-    C_LIGHT = (0.96, 0.97, 0.99)
-    C_BORDER = (0.80, 0.84, 0.88)
-    C_GREEN = (0.06, 0.52, 0.26)
-    C_RED = (0.78, 0.15, 0.15)
-    C_AMBER = (0.75, 0.45, 0.05)
+    # Executive Color Palette
+    C_ROYAL = (0.04, 0.12, 0.28)      # Deep Royal Navy (#0A1F47)
+    C_NAVY = (0.07, 0.16, 0.34)       # Rich Navy (#122E61)
+    C_GOLD = (0.83, 0.62, 0.16)       # Warm Metallic Gold (#D49E29)
+    C_GOLD_LIGHT = (0.98, 0.96, 0.90) # Faint Gold Tint
+    C_SLATE = (0.35, 0.42, 0.50)      # Secondary Field Labels (#596B80)
+    C_DARK = (0.10, 0.13, 0.18)       # Primary Charcoal Text (#1A212E)
+    C_LIGHT = (0.96, 0.97, 0.99)      # Executive Tint Background (#F5F7FC)
+    C_BORDER = (0.80, 0.84, 0.88)     # Boundary Lines
+    C_GREEN = (0.04, 0.52, 0.24)      # Rich Emerald Green
+    C_GREEN_BG = (0.92, 0.98, 0.94)   # Soft Green Tint
+    C_RED = (0.76, 0.12, 0.12)        # Crimson Red
+    C_RED_BG = (0.99, 0.94, 0.94)     # Soft Red Tint
+    C_AMBER = (0.75, 0.45, 0.05)      # Amber
 
     METHOD_NAMES = {
         "cash": "Cash",
@@ -128,7 +145,7 @@ class ReceiptPdfService:
         institution_data: Optional[Dict[str, Any]] = None,
     ) -> bytes:
         """
-        Generates binary PDF bytes for a single fee receipt.
+        Generates binary PDF bytes for a single fee receipt in premium executive voucher format.
         """
         doc = fitz.open()
         # Standard A5 portrait dimensions: 420.0 x 595.0 pt
@@ -137,26 +154,41 @@ class ReceiptPdfService:
         inst = institution_data or {}
         inst_name = (inst.get("name") or "PRASHANT ACADEMY").upper()
         inst_tagline = inst.get("tagline") or "Premier Coaching Institute for Academic & Competitive Excellence"
-        inst_address = inst.get("address") or "Plot 42, Sector 17, Vashi"
-        inst_city = inst.get("city") or "Navi Mumbai"
+        inst_address = inst.get("address") or "Shop No16, 14, 12, Aquarius Taurus Building, Jankalyan Nagar, Malad West"
+        inst_city = inst.get("city") or "Mumbai"
         inst_state = inst.get("state") or "Maharashtra"
-        inst_pincode = inst.get("pincode") or "400703"
-        inst_phone = inst.get("phone") or "+91 98336 45512"
-        inst_email = inst.get("email") or "admin@prashantacademy.in"
+        inst_pincode = inst.get("pincode") or "400095"
+        inst_phone = inst.get("phone") or "+91-7021789907"
+        inst_email = inst.get("email") or "tejam.prashnat@gmail.com"
         inst_tax_id = inst.get("tax_id") or "AABCP1234K"
 
-        # 1. Outer Perimeter Border
-        page.draw_rect(fitz.Rect(16, 16, 404, 579), color=cls.C_BORDER, width=0.8)
+        # 1. Luxury Double Security Border (Royal Navy Outer + Metallic Gold Inner)
+        page.draw_rect(fitz.Rect(12, 12, 408, 583), color=cls.C_ROYAL, width=1.0)
+        page.draw_rect(fitz.Rect(15, 15, 405, 580), color=cls.C_GOLD, width=0.5)
+        # Corner security rosettes
+        for cx, cy in [(15, 15), (405, 15), (15, 580), (405, 580)]:
+            page.draw_circle(fitz.Point(cx, cy), 1.5, color=cls.C_GOLD, fill=cls.C_GOLD)
 
         # 2. Institutional Header Block (y = 16 to 74)
         page.draw_rect(fitz.Rect(16, 16, 404, 74), color=cls.C_LIGHT, fill=cls.C_LIGHT)
         page.draw_line(fitz.Point(16, 74), fitz.Point(404, 74), color=cls.C_BORDER, width=0.8)
 
-        page.insert_text(fitz.Point(24, 32), inst_name, fontname="hebo", fontsize=11.5, color=cls.C_NAVY)
-        page.insert_text(fitz.Point(24, 43), inst_tagline, fontname="helv", fontsize=7.2, color=cls.C_SLATE)
+        # Vector Text Logo "PA" Monogram Crest (46x46 pt at x=22, y=21 to x=68, y=67)
+        page.draw_rect(fitz.Rect(22, 21, 68, 67), color=cls.C_GOLD, fill=cls.C_ROYAL, width=1.0)
+        page.draw_rect(fitz.Rect(24, 23, 66, 65), color=cls.C_GOLD, width=0.5)
+        # Bold "PA" Monogram centered horizontally
+        pa_len = fitz.get_text_length("PA", fontname="hebo", fontsize=18)
+        page.insert_text(fitz.Point((22 + 68 - pa_len) / 2.0, 48), "PA", fontname="hebo", fontsize=18, color=(1, 1, 1))
+        # Gold Subtitle inside Crest Badge
+        estd_len = fitz.get_text_length("ESTD 2024", fontname="hebo", fontsize=4.6)
+        page.insert_text(fitz.Point((22 + 68 - estd_len) / 2.0, 58), "ESTD 2024", fontname="hebo", fontsize=4.6, color=cls.C_GOLD)
+
+        # Institute Name and Information (starting at x=74)
+        page.insert_text(fitz.Point(74, 32), inst_name, fontname="hebo", fontsize=11.5, color=cls.C_ROYAL)
+        page.insert_text(fitz.Point(74, 43), inst_tagline, fontname="hebo", fontsize=7.2, color=cls.C_GOLD)
 
         addr_str = f"{inst_address}, {inst_city}, {inst_state} - {inst_pincode}".strip(", -")
-        page.insert_text(fitz.Point(24, 53), addr_str, fontname="helv", fontsize=6.8, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(74, 53), addr_str[:105], fontname="helv", fontsize=6.6, color=cls.C_SLATE)
 
         contact_parts = []
         if inst_phone:
@@ -166,10 +198,11 @@ class ReceiptPdfService:
         if inst_tax_id:
             contact_parts.append(f"GSTIN / Tax ID: {inst_tax_id}")
         contact_str = " | ".join(contact_parts)
-        page.insert_text(fitz.Point(24, 63), contact_str, fontname="helv", fontsize=6.8, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(74, 63), contact_str[:105], fontname="helv", fontsize=6.6, color=cls.C_SLATE)
 
-        # 3. Document Title Ribbon (y = 74 to 92)
-        page.draw_rect(fitz.Rect(16, 74, 404, 92), color=cls.C_NAVY, fill=cls.C_NAVY)
+        # 3. Document Title Ribbon & Status Badge (y = 74 to 92)
+        page.draw_rect(fitz.Rect(16, 74, 404, 92), color=cls.C_ROYAL, fill=cls.C_ROYAL)
+        page.draw_line(fitz.Point(16, 92), fitz.Point(404, 92), color=cls.C_GOLD, width=1.0)
         page.insert_text(fitz.Point(24, 86), "OFFICIAL FEE PAYMENT RECEIPT", fontname="hebo", fontsize=8.5, color=(1, 1, 1))
 
         # Status badge
@@ -187,57 +220,89 @@ class ReceiptPdfService:
             badge_text = "STATUS: VALID / POSTED"
             badge_color = (0.45, 0.95, 0.55)
 
-        page.insert_textbox(fitz.Rect(250, 74, 396, 92), badge_text, fontname="hebo", fontsize=7.5, color=badge_color, align=fitz.TEXT_ALIGN_RIGHT)
+        b_len = fitz.get_text_length(badge_text, fontname="hebo", fontsize=7.5)
+        page.insert_text(fitz.Point(396 - b_len, 86), badge_text, fontname="hebo", fontsize=7.5, color=badge_color)
 
-        # 4. Student & Receipt Metadata Block (y = 96 to 162)
-        page.draw_rect(fitz.Rect(20, 96, 400, 162), color=cls.C_BORDER, fill=(0.99, 0.99, 1.0), width=0.5)
-        page.draw_line(fitz.Point(210, 96), fitz.Point(210, 162), color=cls.C_BORDER, width=0.5)
+        # 4. Student & Receipt Metadata Block (y = 96 to 166)
+        page.draw_rect(fitz.Rect(20, 96, 400, 166), color=cls.C_BORDER, fill=(0.99, 0.99, 1.0), width=0.5)
+        page.draw_line(fitz.Point(210, 96), fitz.Point(210, 166), color=cls.C_BORDER, width=0.5)
 
         # Left Column: Student Details
-        page.insert_text(fitz.Point(26, 107), "STUDENT IDENTIFICATION", fontname="hebo", fontsize=6.8, color=cls.C_NAVY)
-        page.insert_text(fitz.Point(26, 119), "Student Name:", fontname="helv", fontsize=7.2, color=cls.C_SLATE)
-        page.insert_text(fitz.Point(86, 119), str(receipt_data.get("student_name") or "—"), fontname="hebo", fontsize=7.8, color=cls.C_DARK)
+        page.insert_text(fitz.Point(26, 107), "STUDENT IDENTIFICATION", fontname="hebo", fontsize=6.8, color=cls.C_ROYAL)
+        
+        # Student Name (Cleaned)
+        page.insert_text(fitz.Point(26, 118), "Student Name:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        cleaned_st_name = clean_display_name(str(receipt_data.get("student_name") or "—"))
+        page.insert_text(fitz.Point(86, 118), cleaned_st_name[:32], fontname="hebo", fontsize=7.8, color=cls.C_DARK)
 
-        page.insert_text(fitz.Point(26, 130), "Admission No:", fontname="helv", fontsize=7.2, color=cls.C_SLATE)
-        page.insert_text(fitz.Point(86, 130), str(receipt_data.get("admission_number") or "—"), fontname="hebo", fontsize=7.2, color=cls.C_DARK)
+        # Admission No & Roll No
+        page.insert_text(fitz.Point(26, 129), "Admission No:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        adm_no = str(receipt_data.get("admission_number") or "—")
+        roll_no = str(receipt_data.get("roll_number") or "").strip()
+        adm_str = f"{adm_no}  (Roll No: {roll_no})" if roll_no and roll_no != "—" else adm_no
+        page.insert_text(fitz.Point(86, 129), adm_str[:36], fontname="hebo", fontsize=7.0, color=cls.C_DARK)
 
-        page.insert_text(fitz.Point(26, 141), "Class / Standard:", fontname="helv", fontsize=7.2, color=cls.C_SLATE)
-        std_div = f"{receipt_data.get('standard') or '—'} · {receipt_data.get('division') or receipt_data.get('batch') or '—'}"
-        page.insert_text(fitz.Point(86, 141), std_div, fontname="helv", fontsize=7.2, color=cls.C_DARK)
+        # Class / Standard & Batch
+        page.insert_text(fitz.Point(26, 140), "Class / Batch:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        std_name = str(receipt_data.get("standard") or "—")
+        batch_name = str(receipt_data.get("division") or receipt_data.get("batch") or "—")
+        std_div = f"{std_name} · {batch_name}"
+        page.insert_text(fitz.Point(86, 140), std_div[:34], fontname="helv", fontsize=7.0, color=cls.C_DARK)
 
-        page.insert_text(fitz.Point(26, 152), "Academic Year:", fontname="helv", fontsize=7.2, color=cls.C_SLATE)
-        page.insert_text(fitz.Point(86, 152), str(receipt_data.get("academic_year") or "2026 – 2027"), fontname="helv", fontsize=7.2, color=cls.C_DARK)
+        # Board & Academic Year
+        page.insert_text(fitz.Point(26, 151), "Board & Year:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        board_val = str(receipt_data.get("board") or "ICSE")
+        ay_val = str(receipt_data.get("academic_year") or "2026 – 2027")
+        page.insert_text(fitz.Point(86, 151), f"{board_val} · AY {ay_val}"[:34], fontname="helv", fontsize=7.0, color=cls.C_DARK)
+
+        # Parent / Guardian & Phone
+        page.insert_text(fitz.Point(26, 162), "Guardian / Ph:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        guard_val = clean_display_name(str(receipt_data.get("guardian_name") or ""))
+        phone_val = str(receipt_data.get("guardian_phone") or receipt_data.get("student_phone") or "").strip()
+        guard_str = f"{guard_val} · {phone_val}" if guard_val and phone_val and guard_val != "—" else (guard_val or phone_val or "—")
+        page.insert_text(fitz.Point(86, 162), guard_str[:34], fontname="helv", fontsize=6.8, color=cls.C_DARK)
 
         # Right Column: Receipt Details
-        page.insert_text(fitz.Point(216, 107), "TRANSACTION METADATA", fontname="hebo", fontsize=6.8, color=cls.C_NAVY)
-        page.insert_text(fitz.Point(216, 119), "Receipt Number:", fontname="helv", fontsize=7.2, color=cls.C_SLATE)
-        page.insert_text(fitz.Point(282, 119), str(receipt_data.get("receipt_number") or "—"), fontname="hebo", fontsize=7.8, color=cls.C_NAVY)
+        page.insert_text(fitz.Point(216, 107), "TRANSACTION METADATA", fontname="hebo", fontsize=6.8, color=cls.C_ROYAL)
+        
+        # Receipt Number
+        page.insert_text(fitz.Point(216, 118), "Receipt Number:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(282, 118), str(receipt_data.get("receipt_number") or "—"), fontname="hebo", fontsize=7.8, color=cls.C_ROYAL)
 
-        page.insert_text(fitz.Point(216, 130), "Payment Date:", fontname="helv", fontsize=7.2, color=cls.C_SLATE)
-        page.insert_text(fitz.Point(282, 130), str(receipt_data.get("payment_date") or "—"), fontname="helv", fontsize=7.2, color=cls.C_DARK)
+        # Invoice Reference
+        page.insert_text(fitz.Point(216, 129), "Invoice Ref:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(282, 129), str(receipt_data.get("invoice_number") or "—")[:24], fontname="hebo", fontsize=7.0, color=cls.C_DARK)
 
-        page.insert_text(fitz.Point(216, 141), "Payment Mode:", fontname="helv", fontsize=7.2, color=cls.C_SLATE)
+        # Payment Date
+        page.insert_text(fitz.Point(216, 140), "Payment Date:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(282, 140), str(receipt_data.get("payment_date") or "—"), fontname="helv", fontsize=7.2, color=cls.C_DARK)
+
+        # Payment Mode
+        page.insert_text(fitz.Point(216, 151), "Payment Mode:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
         raw_method = str(receipt_data.get("payment_method") or "cash").lower()
         method_label = cls.METHOD_NAMES.get(raw_method, raw_method.upper())
-        page.insert_text(fitz.Point(282, 141), method_label, fontname="hebo", fontsize=7.2, color=cls.C_DARK)
+        page.insert_text(fitz.Point(282, 151), method_label[:24], fontname="hebo", fontsize=7.0, color=cls.C_DARK)
 
-        page.insert_text(fitz.Point(216, 152), "Transaction Ref:", fontname="helv", fontsize=7.2, color=cls.C_SLATE)
+        # Transaction Ref
+        page.insert_text(fitz.Point(216, 162), "Transaction Ref:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
         ref_text = str(
             receipt_data.get("transaction_reference")
             or receipt_data.get("cheque_number")
             or receipt_data.get("invoice_number")
             or "Cash Voucher"
         )
-        page.insert_text(fitz.Point(282, 152), ref_text[:28], fontname="cour", fontsize=7.0, color=cls.C_DARK)
+        page.insert_text(fitz.Point(282, 162), ref_text[:28], fontname="cour", fontsize=6.8, color=cls.C_DARK)
 
-        # 5. Fee Allocations Table (y = 168 to ~240)
-        curr_y = 168
+        # 5. Fee Allocations Table (y = 172 to ~242)
+        curr_y = 172
         table_hdr_h = 16
         page.draw_rect(fitz.Rect(20, curr_y, 400, curr_y + table_hdr_h), color=cls.C_BORDER, fill=cls.C_LIGHT, width=0.5)
-        page.insert_text(fitz.Point(26, curr_y + 11), "#", fontname="hebo", fontsize=7.0, color=cls.C_NAVY)
-        page.insert_text(fitz.Point(44, curr_y + 11), "Fee Particulars / Allocation", fontname="hebo", fontsize=7.0, color=cls.C_NAVY)
-        page.insert_text(fitz.Point(216, curr_y + 11), "Installment / Reference", fontname="hebo", fontsize=7.0, color=cls.C_NAVY)
-        page.insert_textbox(fitz.Rect(310, curr_y, 394, curr_y + table_hdr_h), "Amount (INR)", fontname="hebo", fontsize=7.0, color=cls.C_NAVY, align=fitz.TEXT_ALIGN_RIGHT)
+        page.insert_text(fitz.Point(26, curr_y + 11), "#", fontname="hebo", fontsize=7.0, color=cls.C_ROYAL)
+        page.insert_text(fitz.Point(44, curr_y + 11), "Fee Particulars / Allocation", fontname="hebo", fontsize=7.0, color=cls.C_ROYAL)
+        page.insert_text(fitz.Point(216, curr_y + 11), "Installment / Reference", fontname="hebo", fontsize=7.0, color=cls.C_ROYAL)
+        amt_hdr = "Amount (INR)"
+        a_len = fitz.get_text_length(amt_hdr, fontname="hebo", fontsize=7.0)
+        page.insert_text(fitz.Point(394 - a_len, curr_y + 11), amt_hdr, fontname="hebo", fontsize=7.0, color=cls.C_ROYAL)
         curr_y += table_hdr_h
 
         allocations = receipt_data.get("allocations") or []
@@ -256,7 +321,9 @@ class ReceiptPdfService:
                 page.insert_text(fitz.Point(216, curr_y + 11), str(inst_ref)[:24], fontname="helv", fontsize=7.0, color=cls.C_SLATE)
 
                 alloc_amt = float(alloc.get("amount") or 0.0)
-                page.insert_textbox(fitz.Rect(310, curr_y, 394, curr_y + row_h), f"Rs. {alloc_amt:,.2f}", fontname="hebo", fontsize=7.0, color=cls.C_DARK, align=fitz.TEXT_ALIGN_RIGHT)
+                amt_str = f"Rs. {alloc_amt:,.2f}"
+                amt_len = fitz.get_text_length(amt_str, fontname="hebo", fontsize=7.0)
+                page.insert_text(fitz.Point(394 - amt_len, curr_y + 11), amt_str, fontname="hebo", fontsize=7.0, color=cls.C_DARK)
                 curr_y += row_h
         else:
             row_h = 16
@@ -264,26 +331,33 @@ class ReceiptPdfService:
             page.insert_text(fitz.Point(26, curr_y + 11), "1", fontname="helv", fontsize=7.0, color=cls.C_DARK)
             page.insert_text(fitz.Point(44, curr_y + 11), "Tuition & Academic Coaching Fee", fontname="helv", fontsize=7.0, color=cls.C_DARK)
             page.insert_text(fitz.Point(216, curr_y + 11), "Official Installment Allocation", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
-            page.insert_textbox(fitz.Rect(310, curr_y, 394, curr_y + row_h), f"Rs. {amount:,.2f}", fontname="hebo", fontsize=7.2, color=cls.C_DARK, align=fitz.TEXT_ALIGN_RIGHT)
+            amt_str = f"Rs. {amount:,.2f}"
+            amt_len = fitz.get_text_length(amt_str, fontname="hebo", fontsize=7.2)
+            page.insert_text(fitz.Point(394 - amt_len, curr_y + 11), amt_str, fontname="hebo", fontsize=7.2, color=cls.C_DARK)
             curr_y += row_h
 
-        # Total Row
+        # Total Highlight Row
         tot_h = 17
         page.draw_rect(fitz.Rect(20, curr_y, 400, curr_y + tot_h), color=cls.C_BORDER, fill=cls.C_LIGHT, width=0.5)
-        page.insert_text(fitz.Point(26, curr_y + 12), "CURRENT PAYMENT RECEIVED:", fontname="hebo", fontsize=7.5, color=cls.C_NAVY)
-        page.insert_textbox(fitz.Rect(300, curr_y, 394, curr_y + tot_h), f"Rs. {amount:,.2f}", fontname="hebo", fontsize=8.5, color=cls.C_NAVY, align=fitz.TEXT_ALIGN_RIGHT)
+        page.draw_line(fitz.Point(20, curr_y + tot_h), fitz.Point(400, curr_y + tot_h), color=cls.C_GOLD, width=0.8)
+        page.insert_text(fitz.Point(26, curr_y + 12), "CURRENT PAYMENT RECEIVED (INCL. TAXES):", fontname="hebo", fontsize=7.5, color=cls.C_ROYAL)
+        tot_str = f"Rs. {amount:,.2f}"
+        tot_len = fitz.get_text_length(tot_str, fontname="hebo", fontsize=8.8)
+        page.insert_text(fitz.Point(394 - tot_len, curr_y + 12), tot_str, fontname="hebo", fontsize=8.8, color=cls.C_ROYAL)
         curr_y += tot_h
 
-        # Amount in Words Line
-        curr_y += 4
-        page.insert_text(fitz.Point(22, curr_y + 8), "Amount in Words:", fontname="hebo", fontsize=6.8, color=cls.C_SLATE)
+        # Amount in Words Box
+        curr_y += 5
+        page.draw_rect(fitz.Rect(20, curr_y, 400, curr_y + 14), color=cls.C_BORDER, fill=(0.985, 0.99, 1.0), width=0.4)
+        page.draw_line(fitz.Point(20, curr_y), fitz.Point(20, curr_y + 14), color=cls.C_GOLD, width=2.0)
+        page.insert_text(fitz.Point(26, curr_y + 10), "Amount in Words:", fontname="hebo", fontsize=6.8, color=cls.C_SLATE)
         in_words = number_to_words_inr(amount)
-        page.insert_text(fitz.Point(92, curr_y + 8), in_words, fontname="heit", fontsize=7.0, color=cls.C_DARK)
-        curr_y += 14
+        page.insert_text(fitz.Point(96, curr_y + 10), in_words[:72], fontname="heit", fontsize=7.0, color=cls.C_DARK)
+        curr_y += 18
 
-        # 6. Ledger Reconciliation Summary Box (4 metric boxes)
-        page.draw_rect(fitz.Rect(20, curr_y, 400, curr_y + 44), color=cls.C_BORDER, fill=(0.98, 0.99, 1.0), width=0.5)
-        page.insert_text(fitz.Point(26, curr_y + 10), "FEE OBLIGATION & LEDGER RECONCILIATION SUMMARY", fontname="hebo", fontsize=6.5, color=cls.C_NAVY)
+        # 6. Ledger Reconciliation Summary Box (4 distinct metric cards with guaranteed mathematical centering)
+        page.draw_rect(fitz.Rect(20, curr_y, 400, curr_y + 44), color=cls.C_BORDER, fill=(0.985, 0.99, 1.0), width=0.5)
+        page.insert_text(fitz.Point(26, curr_y + 10), "FEE OBLIGATION & LEDGER RECONCILIATION SUMMARY", fontname="hebo", fontsize=6.5, color=cls.C_ROYAL)
 
         fee_sum = receipt_data.get("fee_summary") or {}
         tot_fee = float(fee_sum.get("total_fee_amount") or receipt_data.get("total_fees") or amount)
@@ -292,26 +366,32 @@ class ReceiptPdfService:
         out_bal = float(fee_sum.get("outstanding_balance") or receipt_data.get("outstanding_after") or max(0.0, tot_fee - (prev_paid + curr_paid)))
 
         col_w = (400 - 20) / 4.0
-        by = curr_y + 15
+        by = curr_y + 14
+        card_h = 26
         metrics = [
-            ("Total Fee Obligation", f"Rs. {tot_fee:,.2f}", cls.C_DARK),
-            ("Previously Paid", f"Rs. {prev_paid:,.2f}", cls.C_DARK),
-            ("Paid This Receipt", f"Rs. {curr_paid:,.2f}", cls.C_GREEN),
-            ("Remaining Balance", f"Rs. {out_bal:,.2f}", cls.C_RED if out_bal > 0 else cls.C_GREEN),
+            ("TOTAL OBLIGATION", f"Rs. {tot_fee:,.2f}", (0.95, 0.97, 1.0), (0.78, 0.84, 0.92), cls.C_ROYAL),
+            ("PREVIOUSLY PAID", f"Rs. {prev_paid:,.2f}", (0.96, 0.97, 0.98), (0.80, 0.84, 0.88), cls.C_DARK),
+            ("PAID THIS RECEIPT", f"Rs. {curr_paid:,.2f}", cls.C_GREEN_BG, (0.55, 0.82, 0.65), cls.C_GREEN),
+            ("REMAINING BALANCE", f"Rs. {out_bal:,.2f}", cls.C_RED_BG if out_bal > 0 else cls.C_GREEN_BG, (0.92, 0.65, 0.65) if out_bal > 0 else (0.55, 0.82, 0.65), cls.C_RED if out_bal > 0 else cls.C_GREEN),
         ]
-        for i, (label, val, col) in enumerate(metrics):
+        for i, (label, val, bg_col, bdr_col, text_col) in enumerate(metrics):
             bx = 20 + i * col_w
-            page.draw_rect(fitz.Rect(bx + 2, by, bx + col_w - 2, by + 24), color=cls.C_BORDER, fill=(1, 1, 1), width=0.4)
-            page.insert_textbox(fitz.Rect(bx + 3, by + 2, bx + col_w - 3, by + 11), label, fontname="helv", fontsize=6.0, color=cls.C_SLATE, align=fitz.TEXT_ALIGN_CENTER)
-            page.insert_textbox(fitz.Rect(bx + 3, by + 11, bx + col_w - 3, by + 22), val, fontname="hebo", fontsize=7.2, color=col, align=fitz.TEXT_ALIGN_CENTER)
+            # Draw card background
+            page.draw_rect(fitz.Rect(bx + 2, by, bx + col_w - 2, by + card_h), color=bdr_col, fill=bg_col, width=0.5)
+            # Mathematically centered label (never clipped)
+            lbl_len = fitz.get_text_length(label, fontname="hebo", fontsize=5.6)
+            page.insert_text(fitz.Point(bx + 2 + (col_w - 4 - lbl_len) / 2.0, by + 10), label, fontname="hebo", fontsize=5.6, color=cls.C_SLATE)
+            # Mathematically centered amount (never clipped)
+            val_len = fitz.get_text_length(val, fontname="hebo", fontsize=7.6)
+            page.insert_text(fitz.Point(bx + 2 + (col_w - 4 - val_len) / 2.0, by + 21), val, fontname="hebo", fontsize=7.6, color=text_col)
 
-        curr_y += 50
+        curr_y += 48
 
         # 7. Historical Payments mini-register (if present)
         hist_payments = receipt_data.get("historical_payments") or []
         if hist_payments:
             page.draw_rect(fitz.Rect(20, curr_y, 400, curr_y + 13), color=cls.C_BORDER, fill=cls.C_LIGHT, width=0.4)
-            page.insert_text(fitz.Point(26, curr_y + 9), "PRIOR RECORDED PAYMENTS FOR THIS FEE OBLIGATION", fontname="hebo", fontsize=6.2, color=cls.C_NAVY)
+            page.insert_text(fitz.Point(26, curr_y + 9), "PRIOR RECORDED PAYMENTS FOR THIS FEE OBLIGATION", fontname="hebo", fontsize=6.2, color=cls.C_ROYAL)
             curr_y += 13
 
             for hp in hist_payments[:3]:
@@ -319,12 +399,14 @@ class ReceiptPdfService:
                 page.insert_text(fitz.Point(26, curr_y + 9), f"Receipt: {hp.get('receipt_number')}", fontname="cour", fontsize=6.2, color=cls.C_DARK)
                 page.insert_text(fitz.Point(140, curr_y + 9), f"Date: {hp.get('date')} ({hp.get('payment_method')})", fontname="helv", fontsize=6.2, color=cls.C_SLATE)
                 hp_amt = float(hp.get("amount") or 0.0)
-                page.insert_textbox(fitz.Rect(310, curr_y, 394, curr_y + 12), f"Rs. {hp_amt:,.2f}", fontname="hebo", fontsize=6.2, color=cls.C_SLATE, align=fitz.TEXT_ALIGN_RIGHT)
+                hp_str = f"Rs. {hp_amt:,.2f}"
+                hp_len = fitz.get_text_length(hp_str, fontname="hebo", fontsize=6.2)
+                page.insert_text(fitz.Point(394 - hp_len, curr_y + 9), hp_str, fontname="hebo", fontsize=6.2, color=cls.C_SLATE)
                 curr_y += 12
             curr_y += 6
 
-        # 8. Bottom Section: Authentic QR Code & Signatures (fixed y position)
-        bot_y = max(curr_y + 6, 440)
+        # 8. Bottom Section: Authentic QR Code, Digital Seal & Signatures
+        bot_y = max(curr_y + 6, 442)
 
         # Genuine QR Code
         qr = qrcode.QRCode(box_size=3, border=1)
@@ -338,36 +420,68 @@ class ReceiptPdfService:
         img = qr.make_image(fill_color="black", back_color="white")
         img_bytes = io.BytesIO()
         img.save(img_bytes, format="PNG")
-        page.insert_image(fitz.Rect(24, bot_y, 84, bot_y + 60), stream=img_bytes.getvalue())
+        page.insert_image(fitz.Rect(22, bot_y, 76, bot_y + 54), stream=img_bytes.getvalue())
 
-        page.insert_text(fitz.Point(24, bot_y + 68), "Official Verification QR", fontname="hebo", fontsize=6.2, color=cls.C_NAVY)
-        page.insert_text(fitz.Point(24, bot_y + 75), "Scan to verify authenticity", fontname="helv", fontsize=5.8, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(22, bot_y + 62), "Official Verification QR", fontname="hebo", fontsize=6.0, color=cls.C_ROYAL)
+        page.insert_text(fitz.Point(22, bot_y + 69), "Scan to verify authenticity", fontname="helv", fontsize=5.4, color=cls.C_SLATE)
 
-        # Institutional Terms & Staff Info
-        page.insert_text(fitz.Point(100, bot_y + 8), "Terms & Conditions:", fontname="hebo", fontsize=6.5, color=cls.C_NAVY)
-        page.insert_text(fitz.Point(100, bot_y + 17), "1. Fees once paid are non-refundable and non-transferable.", fontname="helv", fontsize=6.0, color=cls.C_SLATE)
-        page.insert_text(fitz.Point(100, bot_y + 26), "2. This receipt is an official immutable ledger snapshot.", fontname="helv", fontsize=6.0, color=cls.C_SLATE)
-        page.insert_text(fitz.Point(100, bot_y + 35), "3. Retain this voucher for academic and income tax records.", fontname="helv", fontsize=6.0, color=cls.C_SLATE)
+        # Terms & Conditions (Center column)
+        page.insert_text(fitz.Point(86, bot_y + 8), "Terms & Conditions:", fontname="hebo", fontsize=6.5, color=cls.C_ROYAL)
+        page.insert_text(fitz.Point(86, bot_y + 17), "1. Fees once paid are non-refundable.", fontname="helv", fontsize=5.8, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(86, bot_y + 26), "2. Official immutable ledger record (IT Act).", fontname="helv", fontsize=5.8, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(86, bot_y + 35), "3. Retain for academic & Sec 80C tax records.", fontname="helv", fontsize=5.8, color=cls.C_SLATE)
 
         collector = str(receipt_data.get("collected_by") or "Accounts Desk")
-        page.insert_text(fitz.Point(100, bot_y + 48), f"Received By: {collector}", fontname="hebo", fontsize=6.8, color=cls.C_DARK)
+        page.insert_text(fitz.Point(86, bot_y + 48), f"Received By: {collector}", fontname="hebo", fontsize=6.6, color=cls.C_DARK)
+
+        # Digital Authenticity Seal Stamp (Center-Right at scx=266, scy=bot_y+28)
+        scx, scy = 266, bot_y + 28
+        page.draw_circle(fitz.Point(scx, scy), 25, color=cls.C_ROYAL, width=0.9)
+        page.draw_circle(fitz.Point(scx, scy), 22, color=cls.C_GOLD, width=0.5)
+        # Seal Text
+        st1 = "★ PRASHANT ACADEMY ★"
+        st1_l = fitz.get_text_length(st1, fontname="hebo", fontsize=3.8)
+        page.insert_text(fitz.Point(scx - st1_l / 2.0, scy - 13), st1, fontname="hebo", fontsize=3.8, color=cls.C_ROYAL)
+
+        st2 = "FEES PAID & VERIFIED"
+        st2_l = fitz.get_text_length(st2, fontname="hebo", fontsize=4.4)
+        page.insert_text(fitz.Point(scx - st2_l / 2.0, scy - 3), st2, fontname="hebo", fontsize=4.4, color=cls.C_GOLD)
+
+        st3 = "OFFICIAL AUDIT SEAL"
+        st3_l = fitz.get_text_length(st3, fontname="hebo", fontsize=4.0)
+        page.insert_text(fitz.Point(scx - st3_l / 2.0, scy + 7), st3, fontname="hebo", fontsize=4.0, color=cls.C_ROYAL)
+
+        st4 = "★ POSTED ★"
+        st4_l = fitz.get_text_length(st4, fontname="hebo", fontsize=3.8)
+        page.insert_text(fitz.Point(scx - st4_l / 2.0, scy + 16), st4, fontname="hebo", fontsize=3.8, color=cls.C_GOLD)
 
         # Signatory Box (Right side)
-        sig_x1, sig_x2 = 270, 396
-        page.insert_textbox(fitz.Rect(sig_x1, bot_y + 8, sig_x2, bot_y + 20), f"For {inst_name}", fontname="hebo", fontsize=6.8, color=cls.C_NAVY, align=fitz.TEXT_ALIGN_CENTER)
-        page.draw_line(fitz.Point(sig_x1, bot_y + 55), fitz.Point(sig_x2, bot_y + 55), color=cls.C_BORDER, width=0.8)
-        page.insert_textbox(fitz.Rect(sig_x1, bot_y + 58, sig_x2, bot_y + 68), "Authorized Signatory", fontname="hebo", fontsize=7.2, color=cls.C_NAVY, align=fitz.TEXT_ALIGN_CENTER)
-        page.insert_textbox(fitz.Rect(sig_x1, bot_y + 68, sig_x2, bot_y + 76), "Computer-generated official voucher", fontname="helv", fontsize=5.8, color=cls.C_SLATE, align=fitz.TEXT_ALIGN_CENTER)
+        sig_x1, sig_x2 = 306, 400
+        for_str = f"For {inst_name}"
+        f_len = fitz.get_text_length(for_str, fontname="hebo", fontsize=6.8)
+        page.insert_text(fitz.Point(sig_x1 + (sig_x2 - sig_x1 - f_len) / 2.0, bot_y + 8), for_str, fontname="hebo", fontsize=6.8, color=cls.C_ROYAL)
+        
+        page.draw_line(fitz.Point(sig_x1 + 6, bot_y + 46), fitz.Point(sig_x2 - 6, bot_y + 46), color=cls.C_BORDER, width=0.8)
+        
+        sig_title = "Authorized Signatory"
+        st_len = fitz.get_text_length(sig_title, fontname="hebo", fontsize=7.0)
+        page.insert_text(fitz.Point(sig_x1 + (sig_x2 - sig_x1 - st_len) / 2.0, bot_y + 56), sig_title, fontname="hebo", fontsize=7.0, color=cls.C_ROYAL)
 
-        # 9. Document Governance Footer (y = 560 to 574)
-        page.draw_line(fitz.Point(16, 560), fitz.Point(404, 560), color=cls.C_BORDER, width=0.5)
+        sig_sub = "Computer-generated official voucher"
+        ss_len = fitz.get_text_length(sig_sub, fontname="helv", fontsize=5.4)
+        page.insert_text(fitz.Point(sig_x1 + (sig_x2 - sig_x1 - ss_len) / 2.0, bot_y + 65), sig_sub, fontname="helv", fontsize=5.4, color=cls.C_SLATE)
+
+        # 9. Document Governance Footer (y = 562 to 576)
+        page.draw_line(fitz.Point(16, 562), fitz.Point(404, 562), color=cls.C_ROYAL, width=0.6)
+        page.draw_line(fitz.Point(16, 564), fitz.Point(404, 564), color=cls.C_GOLD, width=0.4)
 
         doc_id = f"DOC-REC-{receipt_data.get('receipt_number')}"
         footer_left = f"Confidential · Document ID: {doc_id} · Page 1 of 1"
-        page.insert_text(fitz.Point(24, 571), footer_left, fontname="helv", fontsize=6.2, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(20, 574), footer_left, fontname="helv", fontsize=6.2, color=cls.C_SLATE)
 
         footer_right = "Generated by PrathamOne EduOS · © PrathamOne EduOS"
-        page.insert_textbox(fitz.Rect(200, 563, 396, 575), footer_right, fontname="helv", fontsize=6.2, color=cls.C_SLATE, align=fitz.TEXT_ALIGN_RIGHT)
+        fr_len = fitz.get_text_length(footer_right, fontname="helv", fontsize=6.2)
+        page.insert_text(fitz.Point(400 - fr_len, 574), footer_right, fontname="helv", fontsize=6.2, color=cls.C_SLATE)
 
         # 10. Watermark Layer (rendered across center if voided/superseded/duplicate)
         if is_voided:
@@ -389,13 +503,14 @@ class ReceiptPdfService:
                 morph=(fitz.Point(80, 380), fitz.Matrix(32)),
             )
         elif reprint_count > 0:
-            page.insert_textbox(
-                fitz.Rect(250, 96, 396, 108),
-                f"DUPLICATE COPY (Reprint #{reprint_count})",
+            dup_txt = f"DUPLICATE COPY (Reprint #{reprint_count})"
+            d_len = fitz.get_text_length(dup_txt, fontname="hebo", fontsize=6.5)
+            page.insert_text(
+                fitz.Point(396 - d_len, 107),
+                dup_txt,
                 fontname="hebo",
                 fontsize=6.5,
                 color=cls.C_SLATE,
-                align=fitz.TEXT_ALIGN_RIGHT,
             )
 
         return doc.tobytes()

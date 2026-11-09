@@ -24,6 +24,7 @@ from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from datetime import date, datetime, timezone
 import json
+import re
 
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access, has_permission, require_permission, get_user_permissions
@@ -1543,12 +1544,19 @@ async def build_receipt_response(
     outstanding_balance = max(Decimal("0.00"), total_fee_amount - total_paid_to_date)
 
     student = payment.student
-    student_name = receipt_data.get("student_name") or (f"{student.first_name} {student.last_name}" if student else "")
+    raw_student_name = receipt_data.get("student_name") or (f"{student.first_name} {student.last_name}" if student else "")
+    student_name = re.sub(r"[\s\-_]+$", "", (raw_student_name or "").strip()) or raw_student_name
     admission_number = receipt_data.get("admission_number") or (student.admission_number if student else "")
 
     standard_name = receipt_data.get("standard")
     division_name = receipt_data.get("batch") or receipt_data.get("division")
-    if not standard_name or not division_name:
+    roll_number = receipt_data.get("roll_number")
+    board_name = receipt_data.get("board")
+    guardian_name = receipt_data.get("guardian_name")
+    guardian_phone = receipt_data.get("guardian_phone")
+    student_phone = receipt_data.get("student_phone")
+
+    if not standard_name or not division_name or not roll_number:
         enr_stmt = (
             select(StudentEnrollment)
             .options(
@@ -1568,6 +1576,25 @@ async def build_receipt_response(
                 standard_name = enr.standard.name
             if not division_name and enr.division:
                 division_name = enr.division.name
+            if not roll_number and enr.roll_number:
+                roll_number = enr.roll_number
+
+    if student:
+        if not student_phone and student.phone:
+            student_phone = student.phone
+        if not guardian_name or not guardian_phone:
+            from app.models.student import Guardian
+            guard_stmt = (
+                select(Guardian)
+                .where(Guardian.student_id == student.id)
+                .order_by(Guardian.is_primary.desc())
+            )
+            guard = (await db.execute(guard_stmt)).scalars().first()
+            if guard:
+                if not guardian_name:
+                    guardian_name = f"{guard.first_name or ''} {guard.last_name or ''}".strip()
+                if not guardian_phone:
+                    guardian_phone = guard.phone or guard.email
 
     collected_by = receipt_data.get("collected_by")
     if not collected_by and payment.collected_by_id:
@@ -1621,6 +1648,11 @@ async def build_receipt_response(
         "student_id": payment.student_id,
         "student_name": student_name,
         "admission_number": admission_number,
+        "roll_number": roll_number or "—",
+        "guardian_name": guardian_name or "—",
+        "guardian_phone": guardian_phone or student_phone or "—",
+        "student_phone": student_phone or "—",
+        "board": board_name or "ICSE",
         "standard": standard_name or "—",
         "division": division_name or "—",
         "batch": division_name or "—",
