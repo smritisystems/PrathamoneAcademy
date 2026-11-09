@@ -27,8 +27,9 @@ import {
   ChevronRight, ChevronDown, Coins, Bell, Percent, Award, Trash2,
   ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap, Sliders,
   Edit3, Lock, QrCode, Send, Smartphone, Share2, CheckCheck, BadgePercent,
-  Copy, ArrowUpRight, Check, Sparkles
+  Copy, ArrowUpRight, Check, Sparkles, CheckSquare, Square
 } from 'lucide-react'
+import { shareOrDownloadReceiptPdf, triggerBlobDownload, sanitizeReceiptFilename, ShareNotification } from '../utils/receiptShare'
 import { useEnvironmentStore } from '../store/environmentStore'
 import {
   ComposedChart, Bar, Line, PieChart, Pie, Cell, XAxis, YAxis,
@@ -1023,6 +1024,10 @@ function FeesContent() {
   // ─────────────────────────────────────────────────────────────────────────────
   const [receiptSearchText, setReceiptSearchText] = useState('')
   const [activeReceiptModalNumber, setActiveReceiptModalNumber] = useState<string | null>(null)
+  const [selectedReceiptNumbers, setSelectedReceiptNumbers] = useState<Set<string>>(new Set())
+  const [bulkExportingZip, setBulkExportingZip] = useState<boolean>(false)
+  const [bulkDownloadingIndividual, setBulkDownloadingIndividual] = useState<boolean>(false)
+  const [receiptNotification, setReceiptNotification] = useState<ShareNotification | null>(null)
 
   const { data: receiptsList = [], isLoading: loadingReceipts } = useQuery({
     queryKey: ['receipts-list', appliedFilters, receiptSearchText],
@@ -1038,6 +1043,124 @@ function FeesContent() {
         .then((r) => r.data),
     enabled: activeTab === 'receipts' || activeTab === 'collection',
   })
+
+  // Selected receipts calculation & bulk actions
+  const selectedReceipts = useMemo(
+    () => receiptsList.filter((r) => selectedReceiptNumbers.has(r.receipt_number)),
+    [receiptsList, selectedReceiptNumbers]
+  )
+  const selectedTotalAmount = useMemo(
+    () => selectedReceipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0),
+    [selectedReceipts]
+  )
+  const allVisibleSelected =
+    receiptsList.length > 0 && receiptsList.every((r) => selectedReceiptNumbers.has(r.receipt_number))
+  const someVisibleSelected =
+    receiptsList.some((r) => selectedReceiptNumbers.has(r.receipt_number)) && !allVisibleSelected
+
+  const toggleSelectReceipt = (receiptNumber: string) => {
+    setSelectedReceiptNumbers((prev) => {
+      const next = new Set(prev)
+      if (next.has(receiptNumber)) next.delete(receiptNumber)
+      else next.add(receiptNumber)
+      return next
+    })
+  }
+
+  const toggleSelectAllVisible = () => {
+    if (allVisibleSelected) {
+      setSelectedReceiptNumbers(new Set())
+    } else {
+      setSelectedReceiptNumbers(new Set(receiptsList.map((r) => r.receipt_number)))
+    }
+  }
+
+  const clearReceiptSelection = () => {
+    setSelectedReceiptNumbers(new Set())
+  }
+
+  const handleDownloadSingleReceiptPdf = async (receiptNumber: string, studentName?: string) => {
+    try {
+      const res = await paymentsApi.downloadReceiptPdf(receiptNumber)
+      const filename = sanitizeReceiptFilename(studentName, receiptNumber)
+      triggerBlobDownload(new Blob([res.data], { type: 'application/pdf' }), filename)
+      setReceiptNotification({
+        type: 'success',
+        title: 'Receipt PDF Downloaded',
+        message: `Successfully downloaded ${filename}`,
+      })
+    } catch (err: any) {
+      setReceiptNotification({
+        type: 'error',
+        title: 'Download Failed',
+        message: err?.response?.data?.detail || err?.message || 'Failed to download receipt PDF.',
+      })
+    }
+  }
+
+  const handleDirectShareSingleReceipt = async (receiptNumber: string, studentName?: string) => {
+    await shareOrDownloadReceiptPdf(receiptNumber, studentName, (notif) => {
+      setReceiptNotification(notif)
+    })
+  }
+
+  const handleBulkDownloadIndividualPdfs = async () => {
+    if (selectedReceipts.length === 0) return
+    setBulkDownloadingIndividual(true)
+    let successCount = 0
+    let failCount = 0
+
+    for (const r of selectedReceipts) {
+      try {
+        const res = await paymentsApi.downloadReceiptPdf(r.receipt_number)
+        const filename = sanitizeReceiptFilename(r.student_name, r.receipt_number)
+        triggerBlobDownload(new Blob([res.data], { type: 'application/pdf' }), filename)
+        successCount++
+        await new Promise((resolve) => setTimeout(resolve, 250))
+      } catch {
+        failCount++
+      }
+    }
+
+    setBulkDownloadingIndividual(false)
+    if (failCount === 0) {
+      setReceiptNotification({
+        type: 'success',
+        title: 'Bulk Download Completed',
+        message: `Downloaded ${successCount} individual receipt PDFs successfully.`,
+      })
+    } else {
+      setReceiptNotification({
+        type: 'warning',
+        title: 'Bulk Download Completed with Issues',
+        message: `Downloaded ${successCount} receipt PDFs. Failed to download ${failCount} receipts.`,
+      })
+    }
+  }
+
+  const handleBulkDownloadZip = async () => {
+    if (selectedReceiptNumbers.size === 0) return
+    setBulkExportingZip(true)
+    try {
+      const res = await paymentsApi.exportBulkReceiptsZip(Array.from(selectedReceiptNumbers))
+      const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 15)
+      const filename = `Receipts_Batch_${timestamp}.zip`
+      triggerBlobDownload(new Blob([res.data], { type: 'application/zip' }), filename)
+      setReceiptNotification({
+        type: 'success',
+        title: 'Bulk ZIP Export Completed',
+        message: `Successfully downloaded ${filename} containing ${selectedReceiptNumbers.size} receipts.`,
+      })
+    } catch (err: any) {
+      setReceiptNotification({
+        type: 'error',
+        title: 'Bulk Export Failed',
+        message: err?.response?.data?.detail || err?.message || 'Failed to export bulk receipts ZIP.',
+      })
+    } finally {
+      setBulkExportingZip(false)
+    }
+  }
 
   // Full detailed receipt query for modal
   const { data: detailedReceipt, isLoading: loadingDetailedReceipt } = useQuery({
@@ -3298,17 +3421,64 @@ function FeesContent() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'receipts' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex items-center justify-between gap-3">
-            <input
-              type="text"
-              value={receiptSearchText}
-              onChange={(e) => setReceiptSearchText(e.target.value)}
-              placeholder="Search by receipt # or student..."
-              className="w-full sm:w-72 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800"
-            />
-            <span className="text-xs font-semibold text-slate-500">{receiptsList.length} Receipts Issued</span>
+          {/* Real-time Notification Banner */}
+          {receiptNotification && (
+            <div
+              className={`p-3.5 rounded-2xl border text-xs flex items-center justify-between gap-3 shadow-xs transition-all ${
+                receiptNotification.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : receiptNotification.type === 'warning'
+                  ? 'bg-amber-50 border-amber-200 text-amber-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-bold">{receiptNotification.title}:</span>
+                <span>{receiptNotification.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReceiptNotification(null)}
+                className="text-slate-400 hover:text-slate-700 font-bold px-2 py-0.5 rounded-lg hover:bg-white/60 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Search, Filter Summary & Quick Stats */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+              <input
+                type="text"
+                value={receiptSearchText}
+                onChange={(e) => setReceiptSearchText(e.target.value)}
+                placeholder="Search by receipt # or student..."
+                className="w-full sm:w-72 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800"
+              />
+              {receiptSearchText && (
+                <button
+                  type="button"
+                  onClick={() => setReceiptSearchText('')}
+                  className="text-xs text-slate-400 hover:text-slate-600 font-bold px-1.5"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-slate-500">
+                {receiptsList.length} Receipts Issued
+              </span>
+              {selectedReceiptNumbers.size > 0 && (
+                <span className="px-2.5 py-1 rounded-full bg-primary-100 text-primary-800 text-xs font-bold">
+                  {selectedReceiptNumbers.size} Selected
+                </span>
+              )}
+            </div>
           </div>
 
+          {/* Table Container */}
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
             {loadingReceipts ? (
               <div className="p-12 text-center text-xs text-slate-500">
@@ -3324,57 +3494,179 @@ function FeesContent() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
                     <tr>
+                      <th className="py-2.5 px-3 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={allVisibleSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = someVisibleSelected
+                          }}
+                          onChange={toggleSelectAllVisible}
+                          className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300 cursor-pointer"
+                          title="Select all visible receipts"
+                        />
+                      </th>
                       <th className="py-2.5 px-3">Receipt No</th>
                       <th className="py-2.5 px-3">Date</th>
                       <th className="py-2.5 px-3">Student Name</th>
                       <th className="py-2.5 px-3">Admission No</th>
                       <th className="py-2.5 px-3 text-right">Amount</th>
                       <th className="py-2.5 px-3 text-center">Method</th>
-                      <th className="py-2.5 px-3 text-center">Action</th>
+                      <th className="py-2.5 px-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {receiptsList.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50/70">
-                        <td className="py-2.5 px-3 font-mono font-bold text-primary-700">{r.receipt_number}</td>
-                        <td className="py-2.5 px-3 text-slate-500">{r.payment_date}</td>
-                        <td className="py-2.5 px-3 font-bold text-slate-900">{r.student_name}</td>
-                        <td className="py-2.5 px-3 font-mono text-slate-500">{r.admission_number}</td>
-                        <td className="py-2.5 px-3 text-right font-extrabold text-slate-900">{fmt(r.amount)}</td>
-                        <td className="py-2.5 px-3 text-center">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
-                            {METHOD_LABELS[r.payment_method] || r.payment_method}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setActiveReceiptModalNumber(r.receipt_number)}
-                              className="px-2.5 py-1 bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white rounded-lg text-xs font-bold transition-all"
-                            >
-                              View & Print
-                            </button>
-                            {canEdit && (
+                    {receiptsList.map((r) => {
+                      const isRowSelected = selectedReceiptNumbers.has(r.receipt_number)
+                      return (
+                        <tr
+                          key={r.id}
+                          className={`hover:bg-slate-50/70 transition-colors ${
+                            isRowSelected ? 'bg-primary-50/40' : ''
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isRowSelected}
+                              onChange={() => toggleSelectReceipt(r.receipt_number)}
+                              className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-slate-300 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-primary-700">
+                            <div className="flex items-center gap-1.5">
+                              <span>{r.receipt_number}</span>
+                              {r.status === 'superseded' && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-700">
+                                  SUPERSEDED
+                                </span>
+                              )}
+                              {r.status === 'voided' && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-100 text-rose-700">
+                                  VOID
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-500">{r.payment_date}</td>
+                          <td className="py-2.5 px-3 font-bold text-slate-900">{r.student_name}</td>
+                          <td className="py-2.5 px-3 font-mono text-slate-500">{r.admission_number}</td>
+                          <td className="py-2.5 px-3 text-right font-extrabold text-slate-900">{fmt(r.amount)}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                              {METHOD_LABELS[r.payment_method] || r.payment_method}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
                               <button
                                 type="button"
-                                onClick={() => handleOpenEditReceipt(r)}
-                                className="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1"
-                                title="Edit receipt details"
+                                onClick={() => setActiveReceiptModalNumber(r.receipt_number)}
+                                className="px-2.5 py-1 bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white rounded-lg text-xs font-bold transition-all"
+                                title="View & Print Official Receipt"
                               >
-                                <Edit3 className="w-3 h-3" />
-                                <span>Edit</span>
+                                View & Print
                               </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadSingleReceiptPdf(r.receipt_number, r.student_name)}
+                                className="p-1 text-slate-600 hover:text-primary-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                title={`Download PDF (${sanitizeReceiptFilename(r.student_name, r.receipt_number)})`}
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDirectShareSingleReceipt(r.receipt_number, r.student_name)}
+                                className="p-1 text-slate-600 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                title="Share PDF Attachment Directly (No Links)"
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                              </button>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditReceipt(r)}
+                                  className="px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1"
+                                  title="Edit receipt details"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                  <span>Edit</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
+
+          {/* Floating Bulk Actions Toolbar */}
+          {selectedReceiptNumbers.size > 0 && (
+            <div className="sticky bottom-4 z-30 bg-slate-900 text-white rounded-2xl p-4 shadow-xl border border-slate-700 flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 bg-primary-600 rounded-xl text-xs font-extrabold text-white">
+                  {selectedReceiptNumbers.size} Receipts Selected
+                </span>
+                <span className="text-xs font-semibold text-slate-300">
+                  Total: <span className="font-mono font-bold text-white">{fmt(selectedTotalAmount)}</span>
+                </span>
+              </div>
+
+              <div className="flex items-center flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleBulkDownloadIndividualPdfs}
+                  disabled={bulkDownloadingIndividual}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                  title="Download separate PDF files for each selected receipt"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>
+                    {bulkDownloadingIndividual ? 'Downloading...' : 'Download Individual PDFs'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleBulkDownloadZip}
+                  disabled={bulkExportingZip}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+                  title="Download all selected receipt PDFs in a single ZIP archive"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{bulkExportingZip ? 'Packaging ZIP...' : 'Download as ZIP'}</span>
+                </button>
+
+                {selectedReceiptNumbers.size === 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const rec = selectedReceipts[0]
+                      if (rec) handleDirectShareSingleReceipt(rec.receipt_number, rec.student_name)
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors"
+                    title="Directly share this receipt PDF attachment"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Direct Share</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={clearReceiptSelection}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition-colors"
+                >
+                  Clear Selection
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

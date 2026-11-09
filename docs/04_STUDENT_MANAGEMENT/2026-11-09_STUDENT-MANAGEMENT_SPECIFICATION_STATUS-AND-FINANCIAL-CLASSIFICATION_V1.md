@@ -142,3 +142,4 @@ stateDiagram-v2
 ## 4. CONCLUSION
 
 By clearly establishing these 6 canonical student states and separating academic status from financial liabilities, PrathamOne EduOS guarantees that receivables are never dropped, forgotten, or artificially inflated across student lifecycle events.
+

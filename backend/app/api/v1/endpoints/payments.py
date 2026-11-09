@@ -16,7 +16,7 @@
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, desc, and_
 from sqlalchemy.orm import selectinload
@@ -36,9 +36,11 @@ from app.models.division import Division
 from app.models.board import Board
 from app.models.user import User, AuditLog
 from app.models.academic_year import AcademicYear
+from app.models.institution import Institution
 from app.models.settings import InstitutionSetting
 from app.services.sequence import generate_next_receipt_number
 from app.services.codex_service import CodeXService
+from app.services.receipt_pdf_service import ReceiptPdfService, sanitize_receipt_filename
 from app.services.payment_gateway import (
     get_payment_gateway_config,
     update_payment_gateway_config,
@@ -1716,6 +1718,175 @@ async def get_receipt(
             check_institution_access(std.institution_id, current_user)
 
     return await build_receipt_response(db, receipt, current_user=current_user)
+
+
+async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) -> Dict[str, Any]:
+    inst_id = institution_id or 1
+    inst = await db.get(Institution, inst_id)
+    if not inst and inst_id != 1:
+        inst = await db.get(Institution, 1)
+    if inst:
+        return {
+            "id": inst.id,
+            "name": inst.name,
+            "code": inst.code,
+            "address": inst.address,
+            "city": inst.city,
+            "state": inst.state,
+            "pincode": inst.pincode,
+            "phone": inst.phone,
+            "email": inst.email,
+            "website": inst.website,
+            "tagline": inst.tagline,
+            "tax_id": inst.tax_id,
+            "logo_url": inst.logo_url,
+        }
+    return {
+        "name": "Prashant Academy",
+        "tagline": "Premier Coaching Institute for Academic & Competitive Excellence",
+        "address": "Plot 42, Sector 17, Vashi",
+        "city": "Navi Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400703",
+        "phone": "+91 98336 45512",
+        "email": "admin@prashantacademy.in",
+        "tax_id": "AABCP1234K",
+    }
+
+
+class BulkReceiptPdfRequest(BaseModel):
+    receipt_numbers: List[str]
+
+
+@router.get("/receipts/{receipt_number}/pdf")
+async def get_receipt_pdf(
+    receipt_number: str,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Generates and returns an authoritative A5 portrait PDF document for a fee receipt.
+    Enforces strict filename convention: StudentName_ReceiptNo.pdf.
+    """
+    result = await db.execute(
+        select(PaymentReceipt)
+        .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+        .where(PaymentReceipt.receipt_number == receipt_number)
+    )
+    receipt = result.scalar_one_or_none()
+
+    if not receipt and receipt_number.isdigit():
+        result = await db.execute(
+            select(PaymentReceipt)
+            .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+            .where(
+                PaymentReceipt.payment_id == int(receipt_number),
+                PaymentReceipt.status == "valid",
+            )
+        )
+        receipt = result.scalar_one_or_none()
+        if not receipt:
+            result = await db.execute(
+                select(PaymentReceipt)
+                .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+                .where(PaymentReceipt.payment_id == int(receipt_number))
+            )
+            receipt = result.scalar_one_or_none()
+
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+
+    student_inst_id = 1
+    if receipt.payment and receipt.payment.student:
+        student_inst_id = receipt.payment.student.institution_id or 1
+        check_institution_access(student_inst_id, current_user)
+    elif receipt.student_id:
+        std = await db.get(Student, receipt.student_id)
+        if std:
+            student_inst_id = std.institution_id or 1
+            check_institution_access(student_inst_id, current_user)
+
+    receipt_payload = await build_receipt_response(db, receipt, current_user=current_user)
+    institution_dict = await get_institution_dict(db, student_inst_id)
+
+    pdf_bytes = ReceiptPdfService.generate_receipt_pdf(receipt_payload, institution_dict)
+    filename = sanitize_receipt_filename(receipt_payload.get("student_name") or "Student", receipt.receipt_number)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Receipt-Number": receipt.receipt_number,
+        },
+    )
+
+
+@router.post("/receipts/bulk-pdf-zip")
+async def export_bulk_receipts_zip(
+    payload: BulkReceiptPdfRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Generates individual PDFs for all selected receipts and returns a ZIP archive
+    containing StudentName_ReceiptNo.pdf files.
+    """
+    if not payload.receipt_numbers:
+        raise HTTPException(status_code=400, detail="No receipt numbers provided for bulk export.")
+
+    receipt_items = []
+    failed_receipts = []
+
+    for r_num in payload.receipt_numbers:
+        res = await db.execute(
+            select(PaymentReceipt)
+            .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+            .where(PaymentReceipt.receipt_number == r_num)
+        )
+        receipt = res.scalar_one_or_none()
+        if not receipt:
+            failed_receipts.append(r_num)
+            continue
+
+        student_inst_id = 1
+        if receipt.payment and receipt.payment.student:
+            student_inst_id = receipt.payment.student.institution_id or 1
+            try:
+                check_institution_access(student_inst_id, current_user)
+            except HTTPException:
+                failed_receipts.append(r_num)
+                continue
+        elif receipt.student_id:
+            std = await db.get(Student, receipt.student_id)
+            if std:
+                student_inst_id = std.institution_id or 1
+                try:
+                    check_institution_access(student_inst_id, current_user)
+                except HTTPException:
+                    failed_receipts.append(r_num)
+                    continue
+
+        r_payload = await build_receipt_response(db, receipt, current_user=current_user)
+        inst_dict = await get_institution_dict(db, student_inst_id)
+        receipt_items.append((r_payload, inst_dict))
+
+    if not receipt_items:
+        raise HTTPException(status_code=404, detail="No valid receipts found or accessible for bulk export.")
+
+    zip_bytes = ReceiptPdfService.generate_bulk_receipts_zip(receipt_items)
+    batch_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    zip_filename = f"Receipts_Batch_{batch_timestamp}.zip"
+
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{zip_filename}"',
+            "X-Processed-Count": str(len(receipt_items)),
+            "X-Failed-Count": str(len(failed_receipts)),
+        },
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ONLINE PAYMENT GATEWAY & UPI ENDPOINTS (Razorpay / UPI)

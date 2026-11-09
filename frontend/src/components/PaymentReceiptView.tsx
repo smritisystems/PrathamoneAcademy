@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -36,6 +36,7 @@ import {
   X,
   FileCheck2,
   Share2,
+  Download,
 } from 'lucide-react'
 import ShareModal from './ShareModal'
 import { DetailedPaymentReceipt, Receipt } from '../types'
@@ -43,7 +44,8 @@ import { printReceiptElement } from '../utils/printReceipt'
 import { numberToWordsINR } from '../pages/Fees'
 import { useBranding } from '../config/branding'
 import { PrintBrandingFooter } from './PrintDocumentBranding'
-import { settingsApi } from '../api/endpoints'
+import { settingsApi, paymentsApi } from '../api/endpoints'
+import { shareOrDownloadReceiptPdf, triggerBlobDownload, sanitizeReceiptFilename, ShareNotification } from '../utils/receiptShare'
 
 const fallbackQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
@@ -200,6 +202,44 @@ export default function PaymentReceiptView({
 
   const [paperSize, setPaperSize] = useState<'A5' | 'A4'>(initialPaperSize)
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false)
+  const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false)
+  const [sharingPdf, setSharingPdf] = useState<boolean>(false)
+  const [shareFeedback, setShareFeedback] = useState<ShareNotification | null>(null)
+
+  const handleDownloadPdf = async () => {
+    if (!receipt?.receipt_number) return
+    try {
+      setDownloadingPdf(true)
+      const res = await paymentsApi.downloadReceiptPdf(receipt.receipt_number)
+      const filename = sanitizeReceiptFilename(receipt.student_name, receipt.receipt_number)
+      triggerBlobDownload(new Blob([res.data], { type: 'application/pdf' }), filename)
+      setShareFeedback({
+        type: 'success',
+        title: 'PDF Downloaded',
+        message: `Downloaded official receipt file: ${filename}`,
+      })
+    } catch (err: any) {
+      setShareFeedback({
+        type: 'error',
+        title: 'Download Failed',
+        message: err?.response?.data?.detail || err?.message || 'Could not download receipt PDF.',
+      })
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
+
+  const handleDirectSharePdf = async () => {
+    if (!receipt?.receipt_number) return
+    setSharingPdf(true)
+    try {
+      await shareOrDownloadReceiptPdf(receipt.receipt_number, receipt.student_name, (notification) => {
+        setShareFeedback(notification)
+      })
+    } finally {
+      setSharingPdf(false)
+    }
+  }
 
   const isReversed = receipt.status === 'reversed' || receipt.is_reversed
   const isSuperseded = receipt.status === 'superseded' || Boolean(receipt.superseded_at)
@@ -307,11 +347,23 @@ export default function PaymentReceiptView({
             </button>
             <button
               type="button"
-              onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+              title="Download high-fidelity PDF voucher"
+            >
+              <Download className="w-4 h-4" />
+              <span>{downloadingPdf ? 'Downloading...' : 'Download PDF'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDirectSharePdf}
+              disabled={sharingPdf}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+              title="Share PDF file directly as attachment"
             >
               <Share2 className="w-4 h-4" />
-              <span>Share Receipt</span>
+              <span>{sharingPdf ? 'Preparing...' : 'Share PDF'}</span>
             </button>
             {onClose && (
               <button
@@ -323,6 +375,28 @@ export default function PaymentReceiptView({
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {shareFeedback && (
+        <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 print:hidden ${
+          shareFeedback.type === 'success'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            : shareFeedback.type === 'warning'
+            ? 'bg-amber-50 border-amber-200 text-amber-800'
+            : 'bg-rose-50 border-rose-200 text-rose-800'
+        }`}>
+          <div>
+            <span className="font-bold">{shareFeedback.title}: </span>
+            <span>{shareFeedback.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShareFeedback(null)}
+            className="text-slate-400 hover:text-slate-700 font-bold px-1.5"
+          >
+            ✕
+          </button>
         </div>
       )}
 

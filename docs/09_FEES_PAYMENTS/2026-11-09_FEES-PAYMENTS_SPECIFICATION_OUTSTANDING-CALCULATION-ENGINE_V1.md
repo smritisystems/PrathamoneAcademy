@@ -129,3 +129,4 @@ inv_query = (
 | **Invariant 4** | $\text{Written-off Amount} \notin \text{Recoverable Outstanding}$ | Verified 100% |
 | **Invariant 5** | Student exit / withdrawal retains outstanding dues | Verified 100% |
 | **Invariant 6** | Class/Batch transfer retains invoices intact | Verified 100% |
+

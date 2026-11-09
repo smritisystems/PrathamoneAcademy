@@ -151,3 +151,4 @@ Both the Fee Register and the Former Student Recovery Register integrate with `E
 - Exports student status, exit date, and debt balance columns.
 - Preserves audit traceability for institutional auditors and tax authorities.
 - Fully compatible with CodeX privacy masking when active.
+

@@ -541,6 +541,10 @@ export const paymentsApi = {
   }) => apiClient.get<PaymentReceiptListItem[]>('/payments/receipts-list', { params }),
   reprintReceipt: (receiptNumber: string, reason?: string) =>
     apiClient.post<{ receipt_number: string; reprint_count: number; message: string; is_duplicate: boolean }>(`/payments/receipts/${receiptNumber}/reprint`, { reason }),
+  downloadReceiptPdf: (receiptNumber: string) =>
+    apiClient.get(`/payments/receipts/${receiptNumber}/pdf`, { responseType: 'blob' }),
+  exportBulkReceiptsZip: (receiptNumbers: string[]) =>
+    apiClient.post('/payments/receipts/bulk-pdf-zip', { receipt_numbers: receiptNumbers }, { responseType: 'blob' }),
   requestRefund: (paymentId: number | string, data: {
     amount: number
     reason: string

@@ -123,3 +123,4 @@ To verify the core directive that *student discontinuation must never erase debt
 ## 5. AUDITOR CERTIFICATION
 
 The financial records and receivables architecture of PrathamOne EduOS are certified 100% sound, balanced, and compliant with statutory accounting principles. Receivables do not disappear upon student departure, and all dashboard metrics reconcile with zero tolerance for variance.
+
