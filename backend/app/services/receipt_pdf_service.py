@@ -284,8 +284,8 @@ class ReceiptPdfService:
             contact_parts.append(f"Phone: {inst_phone}")
         if inst_email:
             contact_parts.append(f"Email: {inst_email}")
-        contact_str = "    ".join(contact_parts)
-        page.insert_text(fitz.Point(header_text_x, contact_y), contact_str[:100], fontname="helv", fontsize=5.8, color=cls.C_TEXT_GRAY)
+        contact_str = "    •    ".join(contact_parts)
+        page.insert_text(fitz.Point(header_text_x, contact_y), contact_str[:105], fontname="helv", fontsize=5.8, color=cls.C_TEXT_GRAY)
 
         # 2. Official Fee Receipt Ribbon (y = 68 to 90)
         page.draw_rect(fitz.Rect(18, 68, 402, 90), color=None, fill=cls.C_LIGHT_BLUE, radius=0.08)
@@ -353,9 +353,16 @@ class ReceiptPdfService:
         adm_num = str(receipt_data.get("admission_number") or "—")
         page.insert_text(fitz.Point(58, 166), f"Admission No. {adm_num}", fontname="helv", fontsize=6.8, color=cls.C_TEXT_GRAY)
 
-        std_val = str(receipt_data.get("standard") or "—")
+        std_raw = str(receipt_data.get("standard") or "—")
+        clean_std = re.sub(r"^(?:Class|Standard|Std\.?)\s*", "", std_raw, flags=re.IGNORECASE).strip() or std_raw
+        board_val = str(receipt_data.get("board") or "").strip()
+        if board_val and board_val.lower() not in ("—", "none", "") and board_val.lower() not in clean_std.lower():
+            display_class = f"{clean_std} ({board_val})"
+        else:
+            display_class = clean_std
+
         batch_val = str(receipt_data.get("division") or receipt_data.get("batch") or "—")
-        page.insert_text(fitz.Point(58, 177), f"Class: {std_val}    Batch: {batch_val}"[:42], fontname="hebo", fontsize=6.8, color=cls.C_TEXT_DARK)
+        page.insert_text(fitz.Point(58, 177), f"Class: {display_class}    Batch: {batch_val}"[:44], fontname="hebo", fontsize=6.8, color=cls.C_TEXT_DARK)
 
         # Right Column: Amount Received
         page.insert_text(fitz.Point(252, 142), "AMOUNT RECEIVED", fontname="hebo", fontsize=5.5, color=cls.C_TEXT_GRAY)

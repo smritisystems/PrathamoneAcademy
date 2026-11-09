@@ -296,7 +296,12 @@ export default function PaymentReceiptView({
 
   const studentNameText = receipt.student_name || 'Puneeta Kulkarni'
   const admissionNumberText = receipt.admission_number || 'PA-2024-000029'
-  const standardText = receipt.standard || 'VIII'
+  const rawStandard = receipt.standard || 'VIII'
+  const cleanStandard = rawStandard.replace(/^(?:Class|Standard|Std\.?)\s+/i, '').trim() || rawStandard
+  const boardSuffix = receipt.board && !['—', 'none', ''].includes(receipt.board.toLowerCase()) && !cleanStandard.toLowerCase().includes(receipt.board.toLowerCase())
+    ? ` (${receipt.board})`
+    : ''
+  const standardText = `${cleanStandard}${boardSuffix}`
   const batchText = receipt.batch || receipt.division || 'A (Morning)'
   const paymentMethodText =
     METHOD_LABELS[receipt.payment_method] ||
