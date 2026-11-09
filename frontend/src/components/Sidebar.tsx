@@ -116,6 +116,17 @@ const studentsSubItems = [
   { to: '/students/settings', label: 'Settings & Policies' },
 ]
 
+const staffSubItems = [
+  { to: '/staff/overview', label: 'Overview' },
+  { to: '/staff/directory', label: 'Staff Register' },
+  { to: '/staff/onboarding', label: 'New Onboarding' },
+  { to: '/staff/duties', label: 'Roles & Duties' },
+  { to: '/staff/attendance', label: 'Staff Presence' },
+  { to: '/staff/leaves', label: 'Leave Requests' },
+  { to: '/staff/documents', label: 'HR Documents Studio' },
+  { to: '/staff/settings', label: 'HR Policies' },
+]
+
 const secondaryNavItems: NavItem[] = [
   { to: '/teachers', label: 'Teachers', icon: GraduationCap },
   { to: '/staff', label: 'Staff Directory', icon: Briefcase },
@@ -159,6 +170,8 @@ export default function Sidebar() {
     toggleAttendanceOpen,
     toggleTeachersOpen,
     toggleStudentsOpen,
+    staffOpen,
+    toggleStaffOpen,
   } = useSidebarStore()
 
   const navigate = useNavigate()
@@ -226,6 +239,14 @@ export default function Sidebar() {
       return location.pathname === '/students/admission' || location.pathname === '/students/add'
     }
     return location.pathname === to || (location.pathname === '/students' && location.search.includes(to.replace('/students/', '')))
+  }
+
+const isStaffActive = location.pathname.startsWith('/staff')
+  const isStaffSubActive = (to: string) => {
+    if (to === '/staff/overview' || to === '/staff') {
+      return (location.pathname === '/staff' || location.pathname === '/staff/overview') && !location.search
+    }
+    return location.pathname === to || (location.pathname === '/staff' && location.search.includes(to.replace('/staff/', '')))
   }
 
   const isTeachersActive = location.pathname.startsWith('/teachers') || location.pathname === '/teacher-management'
@@ -1123,6 +1144,125 @@ export default function Sidebar() {
                         <div className="pl-3 pr-1 pt-1.5 space-y-1">
                           {teachersSubItems.map((sub) => {
                             const isSubActive = isTeachersSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+if (item.to === '/staff') {
+              return (
+                <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
+                  {isCollapsed ? (
+                    // Collapsed mode: icon with floating interactive flyout popover
+                    <div className="relative group w-full flex justify-center">
+                      <NavLink
+                        to="/staff"
+                        aria-label="Staff Directory"
+                        style={isStaffActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        className={({ isActive }) =>
+                          `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                            isStaffActive
+                              ? 'text-white shadow-md'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`
+                        }
+                      >
+                        <item.icon className="w-5 h-5" />
+                      </NavLink>
+
+                      {/* Tooltip */}
+                      <div
+                        role="tooltip"
+                        className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                      >
+                        Staff Directory
+                      </div>
+
+                      {/* Floating Flyout Menu on Hover */}
+                      <div
+                        role="menu"
+                        aria-label="Staff & HR Menu"
+                        className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
+                      >
+                        <div className="px-3 py-1.5 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Staff & HR Directory
+                        </div>
+                        <div className="mt-1 space-y-0.5 max-h-72 overflow-y-auto custom-scrollbar">
+                          {staffSubItems.map((sub) => {
+                            const isSubActive = isStaffSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Expanded mode: Clickable parent link + chevron accordion toggle
+                    <div>
+                      <div
+                        className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
+                          isStaffActive
+                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        }`}
+                      >
+                        <NavLink
+                          to="/staff"
+                          aria-label="Staff Directory"
+                          className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
+                        >
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isStaffActive ? 'text-white' : 'text-amber-400'}`} />
+                          <span className="truncate text-xs font-semibold">Staff Directory</span>
+                        </NavLink>
+                        <button
+                          type="button"
+                          onClick={toggleStaffOpen}
+                          aria-expanded={staffOpen}
+                          aria-label="Toggle Staff Submenu"
+                          className="px-2.5 py-2 hover:bg-white/10 rounded-r-xl transition-colors focus:outline-none"
+                        >
+                          {staffOpen ? (
+                            <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isStaffActive ? 'text-white' : 'text-slate-400'}`} />
+                          ) : (
+                            <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isStaffActive ? 'text-white' : 'text-slate-400'}`} />
+                          )}
+                        </button>
+                      </div>
+
+                      {staffOpen && (
+                        <div className="pl-3 pr-1 pt-1.5 space-y-1">
+                          {staffSubItems.map((sub) => {
+                            const isSubActive = isStaffSubActive(sub.to)
                             return (
                               <NavLink
                                 key={sub.to}

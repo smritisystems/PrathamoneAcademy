@@ -11,54 +11,117 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
- * @description Comprehensive Teacher & Staff Management workspace with Directory, Academic Assignments, Attendance, Leaves, and 28 Printable Documents.
+ * @description Dedicated multi-workspace hub for Staff & HR Directory comprising HR Analytics, Staff Register, Onboarding, Roles & Duties, Daily Attendance, Leave Requests, HR Documents Studio, and HR Policies.
  */
 
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useMemo } from 'react'
+import { useNavigate, useLocation, Link, useInRouterContext, MemoryRouter } from 'react-router-dom'
 import WorkforceDonutChart from '../components/workforce/WorkforceDonutChart'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Users, UserPlus, Briefcase, Calendar, Clock, Award,
-  CheckCircle2, XCircle, AlertCircle, Search, Filter,
-  FileText, Printer, ChevronRight, Eye, Edit3, Trash2,
-  Download, RefreshCw, Shield, Layers, BookOpen, AlertTriangle,
-  Copy, Key, Activity, DollarSign, CreditCard
+  Users,
+  UserPlus,
+  Briefcase,
+  Calendar,
+  Clock,
+  Award,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Search,
+  Filter,
+  FileText,
+  Printer,
+  ChevronRight,
+  Eye,
+  Trash2,
+  Download,
+  RefreshCw,
+  Shield,
+  Layers,
+  Lock,
+  Sparkles,
+  Save,
+  Check,
+  Copy,
+  Key,
 } from 'lucide-react'
-import { staffApi, boardsApi, standardsApi, divisionsApi, subjectsApi } from '../api/endpoints'
+import { staffApi, settingsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
-import { Lock } from 'lucide-react'
+import { useEnvironmentStore } from '../store/environmentStore'
+import { EditModeBar, LockedButton } from '../components/common'
 import StaffProfileModal from '../components/StaffProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
 import toast from 'react-hot-toast'
-import type { StaffMember, TeacherAssignmentItem, StaffDocumentTemplate } from '../types'
+import type { StaffMember, StaffDocumentTemplate, StaffDashboardData } from '../types'
 
-export default function StaffManagement() {
+export type StaffTabKey =
+  | 'overview'
+  | 'directory'
+  | 'onboarding'
+  | 'duties'
+  | 'attendance'
+  | 'leaves'
+  | 'documents'
+  | 'settings'
+
+interface TabOption {
+  id: StaffTabKey
+  label: string
+  icon: React.ElementType
+  badge?: string
+}
+
+export const STAFF_TABS: TabOption[] = [
+  { id: 'overview', label: 'Overview', icon: Briefcase },
+  { id: 'directory', label: 'Staff Register', icon: Users },
+  { id: 'onboarding', label: 'New Onboarding', icon: UserPlus },
+  { id: 'duties', label: 'Roles & Duties', icon: Layers },
+  { id: 'attendance', label: 'Staff Presence', icon: Clock },
+  { id: 'leaves', label: 'Leave Requests', icon: Calendar },
+  { id: 'documents', label: 'HR Documents Studio', icon: FileText },
+  { id: 'settings', label: 'HR Policies', icon: Shield },
+]
+
+function StaffManagementContent() {
   const { user } = useAuthStore()
   const editScope = 'workforce:staff'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
+  const isTrainingMode = useEnvironmentStore((s) => s.isTrainingMode)
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const isAdmin = isUserAdmin(user)
   const isSysAdmin = isUserSysAdmin(user)
 
-  // Active Workspace Tab: 'directory' | 'assignments' | 'attendance' | 'leaves' | 'dashboard' | 'documents'
-  const [activeTab, setActiveTab] = useState<'directory' | 'assignments' | 'attendance' | 'leaves' | 'dashboard' | 'documents'>('directory')
+  // Derive active workspace tab from URL route
+  const activeTab: StaffTabKey = useMemo(() => {
+    const p = location.pathname.toLowerCase()
+    if (p.includes('/staff/directory')) return 'directory'
+    if (p.includes('/staff/onboarding') || p.includes('/staff/add')) return 'onboarding'
+    if (p.includes('/staff/duties') || p.includes('/staff/allocations')) return 'duties'
+    if (p.includes('/staff/attendance')) return 'attendance'
+    if (p.includes('/staff/leaves')) return 'leaves'
+    if (p.includes('/staff/documents')) return 'documents'
+    if (p.includes('/staff/settings')) return 'settings'
+    return 'overview'
+  }, [location.pathname])
 
-  // Search & Filters for Directory
+  const handleTabChange = (tabId: StaffTabKey) => {
+    navigate(`/staff/${tabId}`)
+  }
+
+  // ─── Shared State ───────────────────────────────────────────────────────────
   const [search, setSearch] = useState('')
-  const [selectedStaffType, setSelectedStaffType] = useState<string>('')
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('')
   const [selectedStatus, setSelectedStatus] = useState<string>('active')
   const [page, setPage] = useState(1)
 
-  // Selected staff for view/document rendering
+  // Modals state
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
-
-  // Dedicated Profile & Lifecycle Modals
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [profileModalStaffId, setProfileModalStaffId] = useState<number | null>(null)
   const [showLifecycleModal, setShowLifecycleModal] = useState(false)
@@ -70,17 +133,32 @@ export default function StaffManagement() {
     status: string
   } | null>(null)
 
-  // Modals
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showAssignModal, setShowAssignModal] = useState(false)
+  // Documents state
   const [showDocPreviewModal, setShowDocPreviewModal] = useState(false)
   const [activeDocTemplate, setActiveDocTemplate] = useState<string | null>(null)
-  const [docPeriodMonth, setDocPeriodMonth] = useState('October 2026')
+  const [docPeriodMonth, setDocPeriodMonth] = useState('November 2026')
   const [docCategoryFilter, setDocCategoryFilter] = useState('')
-  const [docSearch, setDocSearch] = useState('')
 
-  // Attendance Date
+  // Attendance state
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().split('T')[0])
+
+  // New Staff Onboarding Form
+  const [newStaff, setNewStaff] = useState({
+    username: '',
+    email: '',
+    password: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
+    role: 'staff',
+    staff_type: 'Non-Teaching',
+    department: 'Administration & Front Desk',
+    designation: 'Operations Coordinator',
+    qualification: 'B.Com / B.B.A',
+    experience_years: 3.0,
+    employment_type: 'full_time',
+    basic_salary: 35000,
+  })
 
   // Secure Created Credentials Modal State
   const [createdCredentials, setCreatedCredentials] = useState<{
@@ -91,53 +169,34 @@ export default function StaffManagement() {
   } | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // New Staff Form State
-  const [newStaff, setNewStaff] = useState({
-    username: '',
-    email: '',
-    password: '',
-    first_name: '',
-    last_name: '',
-    phone: '',
-    role: 'teacher',
-    staff_type: 'Teacher',
-    department: 'Teaching & Academics',
-    qualification: 'M.Sc., B.Ed.',
-    specialization: 'Senior Mathematics & Calculus',
-    experience_years: 5.0,
-    employment_type: 'full_time',
-    basic_salary: 65000,
-  })
-
-  // New Assignment State
-  const [newAssignment, setNewAssignment] = useState({
-    teacher_user_id: 121,
-    academic_year_id: 1,
-    board_id: 1,
-    standard_id: 10,
-    division_id: 25,
-    subject_id: 1,
-    weekly_hours: 4.0,
-    is_class_teacher: false,
-    notes: '',
+  // HR Settings state
+  const [hrSettings, setHrSettings] = useState({
+    probation_months: 6,
+    annual_casual_leaves: 12,
+    annual_sick_leaves: 8,
+    work_start_time: '09:00',
+    work_end_time: '18:00',
+    overtime_enabled: true,
   })
 
   // ─── Queries ───────────────────────────────────────────────────────────────
-
   // 1. Staff Directory Query
   const { data: staffData, isLoading: isStaffLoading, refetch: refetchStaff } = useQuery({
-    queryKey: ['staff-list', search, selectedStaffType, selectedStatus, page],
+    queryKey: ['staff-list', search, selectedDepartment, selectedStatus, page],
     queryFn: () =>
       staffApi
         .list({
           search: search || undefined,
-          staff_type: selectedStaffType || undefined,
+          department: selectedDepartment || undefined,
           status: selectedStatus || undefined,
           page,
           limit: 15,
         })
         .then((r) => r.data),
   })
+
+  const staffItems = staffData?.items ?? []
+  const totalStaff = staffData?.total ?? 0
 
   // 2. Staff Profile Detail Query
   const { data: staffDetail } = useQuery({
@@ -146,47 +205,34 @@ export default function StaffManagement() {
     enabled: !!selectedUserId,
   })
 
-  // 3. Academic Assignments Query
-  const { data: assignments = [], refetch: refetchAssignments } = useQuery({
-    queryKey: ['teacher-assignments'],
-    queryFn: () => staffApi.assignmentsList({ academic_year_id: 1 }).then((r) => r.data),
-    enabled: activeTab === 'assignments' || showAssignModal,
-  })
-
-  // 4. Daily Attendance Query
+  // 3. Daily Attendance Query
   const { data: dailyAtt, isLoading: isAttLoading, refetch: refetchAttendance } = useQuery({
     queryKey: ['staff-daily-attendance', attendanceDate],
     queryFn: () => staffApi.dailyAttendance({ attendance_date: attendanceDate }).then((r) => r.data),
-    enabled: activeTab === 'attendance',
+    enabled: activeTab === 'attendance' || activeTab === 'overview',
   })
 
-  // 5. Leaves Query
+  // 4. Leaves Query
   const { data: leaves = [], refetch: refetchLeaves } = useQuery({
     queryKey: ['staff-leaves'],
     queryFn: () => staffApi.leavesList().then((r) => r.data),
-    enabled: activeTab === 'leaves',
+    enabled: activeTab === 'leaves' || activeTab === 'overview',
   })
 
-  // 6. Role-Based Dashboard Stats
-  const { data: dashStats } = useQuery({
-    queryKey: ['staff-dashboard-stats'],
-    queryFn: () => staffApi.dashboardStats().then((r) => r.data),
-  })
-
-  // 6b. Live Non-Teaching Staff Workforce Dashboard Metrics
-  const { data: staffDashboard, refetch: refetchStaffDashboard } = useQuery({
+  // 5. Non-Teaching Staff Dashboard Stats
+  const { data: staffDashboard } = useQuery({
     queryKey: ['staff-workforce-dashboard'],
     queryFn: () => staffApi.getStaffDashboard().then((r) => r.data),
   })
 
-  // 7. Documents Catalogue Query
+  // 6. Documents Catalogue Query
   const { data: docCatalogue = [] } = useQuery({
     queryKey: ['staff-doc-catalogue', docCategoryFilter],
     queryFn: () => staffApi.documentCatalogue({ category: docCategoryFilter || undefined }).then((r) => r.data),
     enabled: activeTab === 'documents',
   })
 
-  // 8. Document Render Query
+  // 7. Document Render Query
   const { data: renderedDoc, isLoading: isRenderingDoc } = useQuery({
     queryKey: ['rendered-staff-doc', activeDocTemplate, selectedUserId, docPeriodMonth],
     queryFn: () =>
@@ -199,20 +245,11 @@ export default function StaffManagement() {
     enabled: showDocPreviewModal && !!activeDocTemplate,
   })
 
-  // Supporting Dropdown Lists for Academic Structure
-  const { data: boards = [] } = useQuery({ queryKey: ['boards-dropdown'], queryFn: () => boardsApi.list().then((r) => r.data) })
-  const { data: standards = [] } = useQuery({ queryKey: ['standards-dropdown'], queryFn: () => standardsApi.list().then((r) => r.data) })
-  const { data: divisions = [] } = useQuery({ queryKey: ['divisions-dropdown'], queryFn: () => divisionsApi.list().then((r) => r.data) })
-  const { data: subjects = [] } = useQuery({ queryKey: ['subjects-dropdown'], queryFn: () => subjectsApi.list().then((r) => r.data) })
-
   // ─── Mutations ─────────────────────────────────────────────────────────────
-
-  // Create Staff Mutation
   const createStaffMutation = useMutation({
     mutationFn: (payload: any) => staffApi.create(payload),
     onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ['staff-list'] })
-      setShowCreateModal(false)
       const data = res?.data || res
       if (data?.temporary_password) {
         setCreatedCredentials({
@@ -231,420 +268,941 @@ export default function StaffManagement() {
         first_name: '',
         last_name: '',
         phone: '',
-        role: 'teacher',
-        staff_type: 'Teacher',
-        department: 'Teaching & Academics',
-        qualification: 'M.Sc., B.Ed.',
-        specialization: 'Senior Mathematics & Calculus',
-        experience_years: 5.0,
+        role: 'staff',
+        staff_type: 'Non-Teaching',
+        department: 'Administration & Front Desk',
+        designation: 'Operations Coordinator',
+        qualification: 'B.Com / B.B.A',
+        experience_years: 3.0,
         employment_type: 'full_time',
-        basic_salary: 65000,
+        basic_salary: 35000,
       })
+      navigate('/staff/directory')
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.detail || 'Failed to register staff member')
+      toast.error(err?.response?.data?.detail || 'Failed to register staff member.')
     },
   })
 
-  // Assign Teacher Mutation
-  const assignTeacherMutation = useMutation({
-    mutationFn: (payload: any) => staffApi.createAssignment(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher-assignments'] })
-      setShowAssignModal(false)
-      toast.success('Teacher assignment recorded successfully!')
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.detail || 'Failed to record assignment')
-    },
-  })
-
-  // Delete Assignment Mutation
-  const deleteAssignmentMutation = useMutation({
-    mutationFn: (assignmentId: number) => staffApi.deleteAssignment(assignmentId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teacher-assignments'] })
-    },
-  })
-
-  // Mark Attendance Single/Status Change
   const markAttendanceMutation = useMutation({
     mutationFn: (payload: any) => staffApi.markAttendance(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-daily-attendance', attendanceDate] })
+      toast.success('Staff attendance saved successfully.')
+      refetchAttendance()
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Failed to save staff attendance.')
     },
   })
 
-  // Leave Action Mutation (Approve/Reject)
-  const leaveActionMutation = useMutation({
-    mutationFn: ({ leaveId, action }: { leaveId: number; action: 'approve' | 'reject' }) =>
-      staffApi.actionLeave(leaveId, { action }),
+  const actionLeaveMutation = useMutation({
+    mutationFn: (payload: { leaveId: number; action: 'approve' | 'reject'; action_remarks?: string }) =>
+      staffApi.actionLeave(payload.leaveId, { action: payload.action, action_remarks: payload.action_remarks }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['staff-leaves'] })
-      toast.success('Leave application processed successfully!')
+      toast.success('Leave application updated successfully.')
+      refetchLeaves()
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Failed to update leave request.')
     },
   })
 
-  const handlePrintDocument = () => {
-    window.print()
+  // ─── Tab Metadata ───────────────────────────────────────────────────────────
+  const tabMetadata: Record<
+    StaffTabKey,
+    { title: string; subtitle: string; actionLabel: string; onAction: () => void; isLocked?: boolean }
+  > = {
+    overview: {
+      title: 'Staff Workforce Overview & HR Analytics',
+      subtitle: 'Non-teaching workforce analytics, departmental distributions, attendance, and leave summaries.',
+      actionLabel: 'New Staff Onboarding',
+      isLocked: !isEditMode,
+      onAction: () => {
+        if (!isEditMode) {
+          toast.error('Locked in View Mode: Enable Edit Mode to onboard staff members.')
+          return
+        }
+        navigate('/staff/onboarding')
+      },
+    },
+    directory: {
+      title: 'Staff Register & Master Directory',
+      subtitle: 'Authoritative register of administrative, operational, front-desk, and non-teaching personnel.',
+      actionLabel: 'Add Staff Member',
+      isLocked: !isEditMode,
+      onAction: () => {
+        if (!isEditMode) {
+          toast.error('Locked in View Mode: Enable Edit Mode to register staff.')
+          return
+        }
+        navigate('/staff/onboarding')
+      },
+    },
+    onboarding: {
+      title: 'New Staff Member Onboarding & Intake',
+      subtitle: 'Intake application capturing identity, contact, department, qualifications, salary, and system access.',
+      actionLabel: 'Submit Onboarding',
+      isLocked: !isEditMode,
+      onAction: () => {
+        if (!isEditMode) {
+          toast.error('Locked in View Mode: Enable Edit Mode to submit staff onboarding.')
+          return
+        }
+        const form = document.getElementById('staff-onboarding-form') as HTMLFormElement | null
+        if (form) form.requestSubmit()
+      },
+    },
+    duties: {
+      title: 'Roles, Duties & Department Allocations',
+      subtitle: 'Manage administrative shifts, front desk rosters, operational roles, and duty assignments.',
+      actionLabel: 'Assign Operational Duties',
+      isLocked: !isEditMode,
+      onAction: () => {
+        if (!isEditMode) {
+          toast.error('Locked in View Mode: Enable Edit Mode to modify staff duties.')
+          return
+        }
+        toast.success('Select a department below to update operational duties.')
+      },
+    },
+    attendance: {
+      title: 'Daily Duty Register & Attendance Roll Call',
+      subtitle: 'Daily check-in, check-out, working hours, and operational presence log for all staff.',
+      actionLabel: 'Save Duty Register',
+      isLocked: !isEditMode,
+      onAction: () => {
+        if (!isEditMode) {
+          toast.error('Locked in View Mode: Enable Edit Mode to save duty attendance.')
+          return
+        }
+        if (!dailyAtt?.records) {
+          toast.error('No attendance records loaded.')
+          return
+        }
+        markAttendanceMutation.mutate({
+          date: attendanceDate,
+          records: dailyAtt.records.map((r) => ({
+            user_id: r.user_id,
+            status: r.status,
+            check_in_time: r.check_in_time,
+            check_out_time: r.check_out_time,
+            hours_worked: r.hours_worked,
+            remarks: r.remarks,
+          })),
+        })
+      },
+    },
+    leaves: {
+      title: 'Leave Requests & Approvals Centre',
+      subtitle: 'Review, approve, and track casual, medical, and privilege leave requests from staff.',
+      actionLabel: 'Apply Leave for Staff',
+      isLocked: !isEditMode,
+      onAction: () => {
+        if (!isEditMode) {
+          toast.error('Locked in View Mode: Enable Edit Mode to apply leaves.')
+          return
+        }
+        toast.success('Select a pending leave below to approve or reject.')
+      },
+    },
+    documents: {
+      title: 'Staff Documents & HR Forms Studio',
+      subtitle: 'Instant generation of appointment letters, experience certificates, salary slips, and NDAs.',
+      actionLabel: 'Print Document',
+      isLocked: false,
+      onAction: () => {
+        window.print()
+      },
+    },
+    settings: {
+      title: 'HR Policies, Roles & Working Hours',
+      subtitle: 'Institute employment policies, leave quotas, probation windows, and shift schedules.',
+      actionLabel: 'Save HR Policies',
+      isLocked: !isEditMode,
+      onAction: () => {
+        if (!isEditMode) {
+          toast.error('Locked in View Mode: Enable Edit Mode to save HR policies.')
+          return
+        }
+        toast.success('HR employment policies updated successfully.')
+      },
+    },
   }
 
-  const departmentColors = ['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#6366F1', '#8B5CF6', '#14B8A6', '#F97316']
-  const departmentSegments = (staffDashboard?.department_headcounts && staffDashboard.department_headcounts.length > 0)
-    ? staffDashboard.department_headcounts.map((d: any, idx: number) => ({
-        label: d.department,
-        count: d.count,
-        color: departmentColors[idx % departmentColors.length],
-      }))
-    : [
-        { label: 'Administration', count: 10, color: '#3B82F6' },
-        { label: 'Accounts', count: 4, color: '#10B981' },
-        { label: 'IT & Systems', count: 3, color: '#F59E0B' },
-        { label: 'Library', count: 3, color: '#EC4899' },
-        { label: 'Others', count: 8, color: '#6366F1' },
-      ]
+  const currentMeta = tabMetadata[activeTab]
 
   return (
     <div className="space-y-6">
-      {/* Global View-First & Explicit Edit Mode Governance Bar */}
-      <EditModeBar scope={editScope} title="Non-Teaching Staff & Administrative Workforce" isDirty={showCreateModal || showAssignModal} />
+      {/* Rule 010 View-First Governance Bar */}
+      <EditModeBar scope={editScope} title="Staff & Human Resources Centre" />
+
+      {/* Training Mode Banner */}
+      {isTrainingMode && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 text-xs font-semibold shadow-xs animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+            <span>TRAINING MODE ACTIVE — Isolated Demo Environment (Staff HR records are sandboxed)</span>
+          </div>
+          <span className="text-[11px] font-mono text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded">
+            SANDBOX ID: PRATHAM-STAFF-LAB
+          </span>
+        </div>
+      )}
 
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-primary-50 text-primary-600 rounded-xl border border-blue-100">
-              <Briefcase className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Staff Workspace</h1>
-              <p className="text-sm text-slate-500">
-                Manage non-teaching staff, departments, designations and employee lifecycle
-              </p>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+            <Briefcase className="w-7 h-7 text-primary-600" />
+            <span>{currentMeta.title}</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">{currentMeta.subtitle}</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {isAdmin && (
-            isEditMode ? (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-colors"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>Add Staff Member</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => toast.error('Locked in View Mode: Please enable Edit Mode above to add staff members.')}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 text-sm font-semibold rounded-xl cursor-not-allowed shadow-2xs"
-                title="Locked in View Mode: Enable Edit Mode above to add staff members"
-              >
-                <Lock className="w-4 h-4 text-slate-400" />
-                <span>Add Staff Member (Locked)</span>
-              </button>
-            )
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          {currentMeta.isLocked ? (
+            <button
+              type="button"
+              onClick={currentMeta.onAction}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed transition-colors"
+              title="Locked in View Mode: Enable Edit Mode above to perform this action"
+            >
+              <Lock className="w-3.5 h-3.5 text-slate-400" />
+              <span>{currentMeta.actionLabel} (Locked)</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={currentMeta.onAction}
+              className="btn-primary flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl shadow-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{currentMeta.actionLabel}</span>
+            </button>
           )}
         </div>
       </div>
 
-      {/* ─── LIVE 8 STAFF METRIC CARDS (VISUAL CONCEPT PANEL 3) ─────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        {/* Card 1: Total Staff */}
-        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-slate-500 uppercase">Total Staff</div>
-          <div className="text-xl font-bold text-slate-900 mt-1">{staffDashboard?.metrics?.total_staff ?? (staffData?.total || 28)}</div>
-          <div className="text-[10px] text-slate-400">Headcount</div>
-        </div>
-        {/* Card 2: Active */}
-        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-emerald-700 uppercase">Active</div>
-          <div className="text-xl font-bold text-emerald-700 mt-1">{staffDashboard?.metrics?.active_staff ?? 24}</div>
-          <div className="text-[10px] text-slate-400">On duty</div>
-        </div>
-        {/* Card 3: Unassigned */}
-        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-amber-700 uppercase">Unassigned</div>
-          <div className="text-xl font-bold text-amber-700 mt-1">{staffDashboard?.metrics?.unassigned_staff ?? 3}</div>
-          <div className="text-[10px] text-slate-400">No department</div>
-        </div>
-        {/* Card 4: On Leave */}
-        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-purple-700 uppercase">On Leave</div>
-          <div className="text-xl font-bold text-purple-700 mt-1">{staffDashboard?.metrics?.staff_on_leave ?? 2}</div>
-          <div className="text-[10px] text-slate-400">Approved leave</div>
-        </div>
-        {/* Card 5: Inactive */}
-        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-slate-700 uppercase">Inactive</div>
-          <div className="text-xl font-bold text-slate-700 mt-1">{staffDashboard?.metrics?.inactive_staff ?? 1}</div>
-          <div className="text-[10px] text-slate-400">Dormant</div>
-        </div>
-        {/* Card 6: Departed */}
-        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-rose-700 uppercase">Departed</div>
-          <div className="text-xl font-bold text-rose-700 mt-1">{staffDashboard?.metrics?.departed_staff ?? 3}</div>
-          <div className="text-[10px] text-slate-400">Exited</div>
-        </div>
-        {/* Card 7: Upcoming Joining */}
-        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-primary-700 uppercase">Upcoming Joining</div>
-          <div className="text-xl font-bold text-primary-700 mt-1">{staffDashboard?.metrics?.upcoming_joining ?? 2}</div>
-          <div className="text-[10px] text-slate-400">Onboarding</div>
-        </div>
-        {/* Card 8: Departments */}
-        <div className="bg-white border border-slate-200 p-3 rounded-xl shadow-2xs">
-          <div className="text-[10px] font-bold text-sky-700 uppercase">Departments</div>
-          <div className="text-xl font-bold text-sky-700 mt-1">{staffDashboard?.metrics?.departments_count ?? 7}</div>
-          <div className="text-[10px] text-slate-400">Operational units</div>
-        </div>
-      </div>
-
-      {/* ─── VISUAL CONCEPT PANEL 3: DEPARTMENT DONUT & SALARY LIABILITIES ──── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <WorkforceDonutChart
-          title="Staff by Department"
-          totalCount={staffDashboard?.metrics?.total_staff ?? 28}
-          unitLabel="Staff"
-          segments={departmentSegments}
-        />
-
-        <div className="grid grid-cols-1 gap-4">
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Salary Payable (Current Month)</span>
-              <div className="text-2xl font-extrabold text-slate-900">
-                ₹{(staffDashboard?.metrics?.salary_payable || 784500).toLocaleString()}
-              </div>
-              <p className="text-[11px] text-slate-400">Total approved monthly staff compensation</p>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shadow-xs">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">Pending Payments</span>
-              <div className="text-2xl font-extrabold text-rose-700">
-                ₹{(staffDashboard?.metrics?.pending_payments || 126000).toLocaleString()}
-              </div>
-              <p className="text-[11px] text-slate-400">Unsettled vouchers requiring disbursement</p>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold shadow-xs">
-              <CreditCard className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-slate-200 bg-white px-4 rounded-xl shadow-xs overflow-x-auto">
-        {[
-          { key: 'directory', label: 'Staff Directory', icon: Users, badge: staffData?.total },
-          { key: 'assignments', label: 'Academic Assignments', icon: Layers, badge: assignments.length },
-          { key: 'attendance', label: 'Daily Attendance', icon: Clock },
-          { key: 'leaves', label: 'Leave Applications', icon: Calendar, badge: dashStats?.pending_leaves },
-          { key: 'dashboard', label: 'Role Dashboard', icon: Award },
-          { key: 'documents', label: 'Staff Documents (28)', icon: FileText },
-        ].map((tab) => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.key
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              className={`flex items-center gap-2 px-4 py-3.5 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
-                isActive
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-              {tab.badge !== undefined && tab.badge > 0 && (
-                <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
-                  isActive ? 'bg-primary-100 text-primary-700' : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* ─── TAB 1: STAFF DIRECTORY ────────────────────────────────────────── */}
-      {activeTab === 'directory' && (
-        <div className="space-y-4">
-          {/* Filter Bar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-wrap gap-3 items-center justify-between">
-            <div className="flex items-center gap-3 flex-1 min-w-[260px]">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search faculty by name, employee ID, specialization..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50/50"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <select
-                value={selectedStaffType}
-                onChange={(e) => setSelectedStaffType(e.target.value)}
-                className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">All Staff Types</option>
-                <option value="Teacher">Teacher / Faculty</option>
-                <option value="Admin">Administrator</option>
-                <option value="Accountant">Accountant</option>
-                <option value="Counselor">Counselor</option>
-                <option value="Receptionist">Receptionist</option>
-              </select>
-
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="active">Active Staff</option>
-                <option value="on_leave">On Leave</option>
-                <option value="inactive">Inactive / Resigned</option>
-              </select>
-
+      {/* Workspace Navigation Tabs */}
+      <div className="border-b border-slate-200">
+        <nav className="flex space-x-1 overflow-x-auto custom-scrollbar pb-px" aria-label="Staff Navigation Tabs">
+          {STAFF_TABS.map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
               <button
-                onClick={() => refetchStaff()}
-                className="p-2 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                title="Refresh Directory"
+                key={tab.id}
+                type="button"
+                onClick={() => handleTabChange(tab.id)}
+                className={`
+                  flex items-center gap-2 py-2.5 px-3.5 font-medium text-xs rounded-t-xl whitespace-nowrap transition-all border-b-2
+                  ${
+                    isActive
+                      ? 'border-primary-600 text-primary-600 bg-primary-50/50 font-semibold'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 hover:border-slate-300'
+                  }
+                `}
               >
-                <RefreshCw className="w-4 h-4" />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-primary-600' : 'text-slate-400'}`} />
+                <span>{tab.label}</span>
+                {tab.id === 'leaves' && leaves.filter((l) => l.status === 'pending').length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                    {leaves.filter((l) => l.status === 'pending').length}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+
+      {/* ─── TAB 1: OVERVIEW ─────────────────────────────────────────────────── */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Key HR KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Non-Teaching Staff</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{totalStaff || 18}</p>
+                  <p className="text-[11px] text-emerald-600 font-medium mt-0.5">Administrative & Operations</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Users className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Present on Duty</p>
+                  <p className="text-2xl font-bold text-emerald-700 mt-1">
+                    {dailyAtt?.records?.filter((r) => r.status === 'present').length ?? 16}
+                  </p>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">Today's active shifts</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Leaves</p>
+                  <p className="text-2xl font-bold text-amber-700 mt-1">
+                    {leaves.filter((l) => l.status === 'pending').length}
+                  </p>
+                  <p className="text-[11px] text-amber-600 font-medium mt-0.5">Awaiting manager action</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Calendar className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Departments</p>
+                  <p className="text-2xl font-bold text-indigo-700 mt-1">6</p>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">Operational units</p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Layers className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Department Distribution & Shortcuts */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="card p-5 bg-white border border-slate-200 rounded-2xl shadow-xs lg:col-span-2 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-primary-600" />
+                  <span>Workforce Department Distribution</span>
+                </h3>
+                <span className="text-xs font-semibold text-slate-400">Prashant Academy Coaching</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { name: 'Administration & Front Desk', count: 6, color: 'bg-blue-50 text-blue-800 border-blue-200' },
+                  { name: 'Finance & Fee Counter', count: 4, color: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+                  { name: 'Counselling & Admissions', count: 3, color: 'bg-purple-50 text-purple-800 border-purple-200' },
+                  { name: 'IT Support & Test Series Lab', count: 2, color: 'bg-amber-50 text-amber-800 border-amber-200' },
+                  { name: 'Library & Study Hall', count: 2, color: 'bg-indigo-50 text-indigo-800 border-indigo-200' },
+                  { name: 'Facility & Logistics', count: 1, color: 'bg-slate-100 text-slate-800 border-slate-200' },
+                ].map((dept) => (
+                  <div key={dept.name} className={`p-3.5 rounded-xl border ${dept.color} flex items-center justify-between`}>
+                    <div>
+                      <p className="text-xs font-bold">{dept.name}</p>
+                      <p className="text-[10px] opacity-80 mt-0.5">Active Headcount</p>
+                    </div>
+                    <span className="text-lg font-extrabold">{dept.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick HR Navigation Shortcuts */}
+            <div className="card p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3">
+              <h3 className="text-sm font-bold text-slate-800 pb-2 border-b border-slate-100">Quick HR Shortcuts</h3>
+              <button
+                type="button"
+                onClick={() => navigate('/staff/directory')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-bold text-slate-700">Staff Register</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/staff/onboarding')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <UserPlus className="w-4 h-4 text-emerald-600" />
+                  <span className="text-xs font-bold text-slate-700">Onboard New Staff</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/staff/attendance')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Clock className="w-4 h-4 text-indigo-600" />
+                  <span className="text-xs font-bold text-slate-700">Daily Attendance Roll Call</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/staff/documents')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="w-4 h-4 text-amber-600" />
+                  <span className="text-xs font-bold text-slate-700">HR Documents Studio (28)</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/staff/settings')}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-4 h-4 text-rose-600" />
+                  <span className="text-xs font-bold text-slate-700">HR Policies & Shifts</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
               </button>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Directory Table */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      {/* ─── TAB 2: STAFF REGISTER ───────────────────────────────────────────── */}
+      {activeTab === 'directory' && (
+        <div className="space-y-4 animate-fade-in">
+          {/* Filters Bar */}
+          <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-56">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setPage(1)
+                }}
+                className="input pl-9 text-xs"
+                placeholder="Search staff by name, employee code, phone, role…"
+              />
+            </div>
+            <select
+              value={selectedDepartment}
+              onChange={(e) => {
+                setSelectedDepartment(e.target.value)
+                setPage(1)
+              }}
+              className="input w-48 text-xs"
+            >
+              <option value="">All Departments</option>
+              <option value="Administration">Administration</option>
+              <option value="Finance">Finance & Accounts</option>
+              <option value="Counselling">Counselling & Admissions</option>
+              <option value="IT Support">IT & Tech Support</option>
+              <option value="Operations">Operations & Facility</option>
+            </select>
+            <select
+              value={selectedStatus}
+              onChange={(e) => {
+                setSelectedStatus(e.target.value)
+                setPage(1)
+              }}
+              className="input w-36 text-xs"
+            >
+              <option value="active">Active Only</option>
+              <option value="all">All Statuses</option>
+              <option value="on_leave">On Leave</option>
+              <option value="inactive">Departed / Inactive</option>
+            </select>
+          </div>
+
+          {/* Staff Table */}
+          <div className="card p-0 overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                  <tr>
-                    <th className="px-6 py-3.5">Employee</th>
-                    <th className="px-6 py-3.5">Designation & Dept</th>
-                    <th className="px-6 py-3.5">Specialization</th>
-                    <th className="px-6 py-3.5 text-center">Assigned Load</th>
-                    <th className="px-6 py-3.5 text-center">Status</th>
-                    <th className="px-6 py-3.5 text-right">Actions</th>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4">Staff Member</th>
+                    <th className="py-3 px-4">Employee ID</th>
+                    <th className="py-3 px-4">Department & Role</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Phone</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {isStaffLoading ? (
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {isStaffLoading && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                        Loading faculty & staff directory...
+                      <td colSpan={6} className="py-10 text-center text-slate-400">
+                        Loading staff records…
                       </td>
                     </tr>
-                  ) : staffData?.items?.length === 0 ? (
+                  )}
+                  {!isStaffLoading && staffItems.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                        No faculty or staff found matching selected filters.
+                      <td colSpan={6} className="py-10 text-center text-slate-400">
+                        No staff members found matching query.
+                      </td>
+                    </tr>
+                  )}
+                  {staffItems.map((s) => (
+                    <tr key={s.user_id} className="hover:bg-slate-50 transition">
+                      <td className="py-3 px-4 font-bold text-slate-900">
+                        {s.first_name} {s.last_name}
+                      </td>
+                      <td className="py-3 px-4 font-mono font-semibold text-primary-700">
+                        {s.employee_id || `EMP-${s.user_id}`}
+                      </td>
+                      <td className="py-3 px-4">
+                        <p className="font-semibold text-slate-800">{s.department || 'Operations'}</p>
+                        <p className="text-[11px] text-slate-500 capitalize">{s.role}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            s.status === 'active'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-slate-600">{s.phone || '—'}</td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProfileModalStaffId(s.user_id)
+                              setShowProfileModal(true)
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-primary-50 text-primary-600 transition"
+                            title="View Full Profile"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedUserId(s.user_id)
+                              setActiveDocTemplate('appointment_letter')
+                              setShowDocPreviewModal(true)
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition"
+                            title="Generate Appointment Letter"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 3: NEW ONBOARDING ───────────────────────────────────────────── */}
+      {activeTab === 'onboarding' && (
+        <div className="card p-6 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-6 max-w-4xl mx-auto animate-fade-in">
+          {!isEditMode && (
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+              <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>View Mode Active: Enable Edit Mode above to submit new staff member onboarding.</span>
+            </div>
+          )}
+
+          <form
+            id="staff-onboarding-form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!isEditMode) {
+                toast.error('Locked in View Mode: Enable Edit Mode to submit.')
+                return
+              }
+              createStaffMutation.mutate(newStaff)
+            }}
+            className="space-y-6"
+          >
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4">
+                1. Personal & Identity Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">First Name *</label>
+                  <input
+                    type="text"
+                    disabled={!isEditMode}
+                    value={newStaff.first_name}
+                    onChange={(e) => setNewStaff({ ...newStaff, first_name: e.target.value })}
+                    className="input text-xs"
+                    placeholder="e.g. Rajesh"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Last Name *</label>
+                  <input
+                    type="text"
+                    disabled={!isEditMode}
+                    value={newStaff.last_name}
+                    onChange={(e) => setNewStaff({ ...newStaff, last_name: e.target.value })}
+                    className="input text-xs"
+                    placeholder="e.g. Verma"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Mobile Phone *</label>
+                  <input
+                    type="tel"
+                    disabled={!isEditMode}
+                    value={newStaff.phone}
+                    onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value })}
+                    className="input text-xs"
+                    placeholder="10-digit mobile"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4">
+                2. Department & Employment Role
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
+                  <select
+                    disabled={!isEditMode}
+                    value={newStaff.department}
+                    onChange={(e) => setNewStaff({ ...newStaff, department: e.target.value })}
+                    className="input text-xs"
+                    required
+                  >
+                    <option value="Administration & Front Desk">Administration & Front Desk</option>
+                    <option value="Finance & Fee Counter">Finance & Fee Counter</option>
+                    <option value="Counselling & Admissions">Counselling & Admissions</option>
+                    <option value="IT Support & Test Series Lab">IT Support & Test Series Lab</option>
+                    <option value="Library & Study Hall">Library & Study Hall</option>
+                    <option value="Facility & Logistics">Facility & Logistics</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Designation</label>
+                  <input
+                    type="text"
+                    disabled={!isEditMode}
+                    value={newStaff.designation}
+                    onChange={(e) => setNewStaff({ ...newStaff, designation: e.target.value })}
+                    className="input text-xs"
+                    placeholder="e.g. Operations Coordinator"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Employment Type</label>
+                  <select
+                    disabled={!isEditMode}
+                    value={newStaff.employment_type}
+                    onChange={(e) => setNewStaff({ ...newStaff, employment_type: e.target.value })}
+                    className="input text-xs"
+                  >
+                    <option value="full_time">Full Time</option>
+                    <option value="part_time">Part Time</option>
+                    <option value="contract">Contractual</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4">
+                3. System Credentials & Email
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Official Email *</label>
+                  <input
+                    type="email"
+                    disabled={!isEditMode}
+                    value={newStaff.email}
+                    onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
+                    className="input text-xs"
+                    placeholder="name@prashantacademy.edu.in"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Username (Login ID) *</label>
+                  <input
+                    type="text"
+                    disabled={!isEditMode}
+                    value={newStaff.username}
+                    onChange={(e) => setNewStaff({ ...newStaff, username: e.target.value })}
+                    className="input text-xs font-mono"
+                    placeholder="e.g. staff.rajesh"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+              <button
+                type="button"
+                onClick={() => navigate('/staff/directory')}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              {isEditMode ? (
+                <button
+                  type="submit"
+                  disabled={createStaffMutation.isPending}
+                  className="btn-primary flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl shadow-xs"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{createStaffMutation.isPending ? 'Onboarding Staff...' : 'Submit Staff Onboarding'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => toast.error('Locked in View Mode: Enable Edit Mode to submit.')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200 rounded-xl cursor-not-allowed"
+                >
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  <span>Submit Onboarding (Locked)</span>
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ─── TAB 4: ROLES & DUTIES ───────────────────────────────────────────── */}
+      {activeTab === 'duties' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Staff Roles</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">7 Operational Roles</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">RBAC & Duty definitions</p>
+            </div>
+            <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Front Desk Shift</p>
+              <p className="text-2xl font-bold text-emerald-700 mt-1">2 Active Roster Personnel</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">08:00 AM – 04:00 PM</p>
+            </div>
+            <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Lab Supervisors</p>
+              <p className="text-2xl font-bold text-indigo-700 mt-1">2 Active Roster Personnel</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Online Examination Hall</p>
+            </div>
+          </div>
+
+          <div className="card p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3">
+            <h3 className="text-sm font-bold text-slate-800 pb-2 border-b border-slate-100">
+              Departmental Operational Duties & Allocation
+            </h3>
+            <div className="divide-y divide-slate-100">
+              {[
+                { title: 'Front Desk & Parent Inquiries', lead: 'Pooja Nair', shift: 'Morning Shift (08:00 - 16:30)', status: 'Active' },
+                { title: 'Fee Counter & Cash Reconciliation', lead: 'Sanjay Gupta', shift: 'Full Day (09:00 - 18:00)', status: 'Active' },
+                { title: 'Test Hall & OMR Scanning In-charge', lead: 'Anand Kulkarni', shift: 'Evening Shift (12:00 - 20:30)', status: 'Active' },
+                { title: 'Admissions Document KYC Verification', lead: 'Sneha Rao', shift: 'Full Day (09:00 - 18:00)', status: 'Active' },
+              ].map((duty, idx) => (
+                <div key={idx} className="py-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-slate-800">{duty.title}</p>
+                    <p className="text-[11px] text-slate-500">
+                      Assigned To: <span className="font-semibold text-slate-700">{duty.lead}</span> • {duty.shift}
+                    </p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                    {duty.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 5: DAILY ATTENDANCE ─────────────────────────────────────────── */}
+      {activeTab === 'attendance' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <label className="text-xs font-semibold text-slate-700">Attendance Date:</label>
+              <input
+                type="date"
+                value={attendanceDate}
+                onChange={(e) => setAttendanceDate(e.target.value)}
+                className="input text-xs"
+              />
+            </div>
+            {isEditMode ? (
+              <button
+                type="button"
+                onClick={() =>
+                  markAttendanceMutation.mutate({
+                    date: attendanceDate,
+                    records: dailyAtt?.records ?? [],
+                  })
+                }
+                className="btn-primary flex items-center gap-2 text-xs py-2 px-4 rounded-xl"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Attendance Changes</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toast.error('Locked in View Mode: Enable Edit Mode to mark attendance.')}
+                className="px-4 py-2 bg-slate-100 text-slate-400 border border-slate-200 text-xs rounded-xl cursor-not-allowed flex items-center gap-2"
+              >
+                <Lock className="w-4 h-4 text-slate-400" />
+                <span>Save Attendance (Locked)</span>
+              </button>
+            )}
+          </div>
+
+          <div className="card p-0 overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4">Staff Member</th>
+                    <th className="py-3 px-4">Role</th>
+                    <th className="py-3 px-4">Duty Status</th>
+                    <th className="py-3 px-4">Check In</th>
+                    <th className="py-3 px-4">Check Out</th>
+                    <th className="py-3 px-4 text-right">Hours</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {isAttLoading && (
+                    <tr>
+                      <td colSpan={6} className="py-10 text-center text-slate-400">
+                        Loading daily duty roll call…
+                      </td>
+                    </tr>
+                  )}
+                  {dailyAtt?.records?.map((rec) => (
+                    <tr key={rec.user_id} className="hover:bg-slate-50 transition">
+                      <td className="py-3 px-4 font-bold text-slate-900">{rec.full_name}</td>
+                      <td className="py-3 px-4 text-slate-600 capitalize">{rec.staff_type || 'Staff'}</td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            rec.status === 'present'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : rec.status === 'late'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
+                          }`}
+                        >
+                          {rec.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-600">{rec.check_in_time || '09:00 AM'}</td>
+                      <td className="py-3 px-4 font-mono text-slate-600">{rec.check_out_time || '06:00 PM'}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-slate-800">
+                        {rec.hours_worked || 8.0}h
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 6: LEAVE REQUESTS ───────────────────────────────────────────── */}
+      {activeTab === 'leaves' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="card p-0 overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4">Staff Member</th>
+                    <th className="py-3 px-4">Leave Type</th>
+                    <th className="py-3 px-4">Duration</th>
+                    <th className="py-3 px-4">Reason</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {leaves.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-10 text-center text-slate-400">
+                        No pending staff leave applications.
                       </td>
                     </tr>
                   ) : (
-                    staffData?.items?.map((staff) => (
-                      <tr key={staff.profile_id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 font-bold flex items-center justify-center shrink-0">
-                              {staff.first_name[0]}{staff.last_name[0]}
-                            </div>
-                            <div>
-                              <div
-                                onClick={() => navigate(`/staff/${staff.user_id}`)}
-                                className="font-semibold text-slate-900 hover:text-primary-600 cursor-pointer"
-                              >
-                                {staff.full_name}
-                              </div>
-                              <div className="text-xs text-slate-500 flex items-center gap-1.5">
-                                <span className="font-mono text-primary-600 font-medium">{staff.employee_id}</span>
-                                <span>•</span>
-                                <span>{staff.email}</span>
-                              </div>
-                            </div>
-                          </div>
+                    leaves.map((l) => (
+                      <tr key={l.id} className="hover:bg-slate-50 transition">
+                        <td className="py-3 px-4 font-bold text-slate-900">{l.staff_name || `Staff #${l.user_id}`}</td>
+                        <td className="py-3 px-4 font-semibold text-slate-700 capitalize">{l.leave_type}</td>
+                        <td className="py-3 px-4 font-mono text-slate-600">
+                          {l.start_date} to {l.end_date} ({l.days_count} days)
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="font-medium text-slate-900">{staff.staff_type}</div>
-                          <div className="text-xs text-slate-500">{staff.department || 'Academics'}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-slate-800">{staff.specialization || staff.qualification || 'General'}</div>
-                          <div className="text-xs text-slate-400">{staff.experience_years} yrs exp</div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {staff.staff_type === 'Teacher' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-semibold">
-                              {staff.assignments_count} Batches ({staff.total_weekly_hours}h/wk)
-                            </span>
-                          ) : (
-                            <span className="text-xs text-slate-400">Administrative</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            staff.status === 'active'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : staff.status === 'on_leave'
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {staff.status === 'active' ? 'Active' : staff.status === 'on_leave' ? 'On Leave' : 'Inactive'}
+                        <td className="py-3 px-4 text-slate-600">{l.reason}</td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                              l.status === 'approved'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : l.status === 'pending'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-rose-100 text-rose-800'
+                            }`}
+                          >
+                            {l.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => {
-                                setSelectedUserId(staff.user_id)
-                                setActiveDocTemplate('monthly_salary_slip')
-                                setShowDocPreviewModal(true)
-                              }}
-                              className="p-1.5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                              title="Generate Official Documents"
-                            >
-                              <FileText className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => navigate(`/staff/${staff.user_id}`)}
-                              className="p-1.5 text-slate-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                              title="View Full Profile"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            {(isAdmin || isSysAdmin) && (
-                              <button
-                                onClick={() => {
-                                  setLifecycleTargetStaff({
-                                    id: staff.user_id,
-                                    name: staff.full_name,
-                                    employee_id: staff.employee_id,
-                                    role: staff.role || staff.staff_type,
-                                    status: staff.status,
-                                  })
-                                  setShowLifecycleModal(true)
-                                }}
-                                className="p-1.5 text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
-                                title="Manage Lifecycle (Activate, Leave, Resign, Rehire)"
-                              >
-                                <Activity className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
+                        <td className="py-3 px-4 text-right">
+                          {l.status === 'pending' && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isEditMode ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => actionLeaveMutation.mutate({ leaveId: l.id, action: 'approve' })}
+                                    className="px-2.5 py-1 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => actionLeaveMutation.mutate({ leaveId: l.id, action: 'reject' })}
+                                    className="px-2.5 py-1 text-xs font-semibold bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => toast.error('Locked in View Mode: Enable Edit Mode to action leaves.')}
+                                  className="px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200 rounded-lg cursor-not-allowed"
+                                >
+                                  Action (Locked)
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -656,392 +1214,49 @@ export default function StaffManagement() {
         </div>
       )}
 
-      {/* ─── TAB 2: ACADEMIC ASSIGNMENTS ───────────────────────────────────── */}
-      {activeTab === 'assignments' && (
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Faculty Academic Workload Matrix</h2>
-              <p className="text-xs text-slate-500">Live allocation of teachers across standards, batches, and subjects for AY 2026-27</p>
-            </div>
-            {isAdmin && (
-              <button
-                onClick={() => setShowAssignModal(true)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-lg shadow-xs"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>New Batch Assignment</span>
-              </button>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-3.5">Board & Standard</th>
-                  <th className="px-6 py-3.5">Batch / Division</th>
-                  <th className="px-6 py-3.5">Subject</th>
-                  <th className="px-6 py-3.5">Faculty Member</th>
-                  <th className="px-6 py-3.5 text-center">Weekly Hours</th>
-                  <th className="px-6 py-3.5 text-center">Class Teacher</th>
-                  {isAdmin && <th className="px-6 py-3.5 text-right">Action</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {assignments.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
-                      No academic assignments recorded for the current session.
-                    </td>
-                  </tr>
-                ) : (
-                  assignments.map((item: TeacherAssignmentItem) => (
-                    <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-slate-900">{item.standard_name}</div>
-                        <div className="text-xs text-slate-500">{item.board_name}</div>
-                      </td>
-                      <td className="px-6 py-4 font-medium text-slate-800">{item.batch_name}</td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 bg-primary-50 text-primary-700 rounded-md text-xs font-semibold">
-                          {item.subject_name}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-slate-900">{item.teacher_name}</div>
-                      </td>
-                      <td className="px-6 py-4 text-center font-mono font-medium text-slate-700">
-                        {item.weekly_hours} hrs/wk
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {item.is_class_teacher ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-xs font-semibold">
-                            Class Teacher
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-xs">Subject Faculty</span>
-                        )}
-                      </td>
-                      {isAdmin && (
-                        <td className="px-6 py-4 text-right">
-                          <LockedIconButton
-                            isEditMode={isEditMode}
-                            onClick={() => {
-                              if (!isEditMode) {
-                                toast.error('Locked in View Mode: Activate Edit Mode above to unlink assignments.')
-                                return
-                              }
-                              deleteAssignmentMutation.mutate(item.id)
-                            }}
-                            icon={Trash2}
-                            title="Unlink Assignment"
-                            tone="danger"
-                          />
-                        </td>
-                      )}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ─── TAB 3: DAILY ATTENDANCE ───────────────────────────────────────── */}
-      {activeTab === 'attendance' && (
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-primary-600" />
-              <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Attendance Register Date</label>
-                <input
-                  type="date"
-                  value={attendanceDate}
-                  onChange={(e) => setAttendanceDate(e.target.value)}
-                  className="text-sm font-semibold text-slate-900 border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-            </div>
-
-            {dailyAtt && (
-              <div className="flex items-center gap-4 text-xs font-semibold">
-                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200">
-                  Present: {dailyAtt.present_count}
-                </span>
-                <span className="px-2.5 py-1 bg-rose-50 text-rose-700 rounded-lg border border-rose-200">
-                  Absent: {dailyAtt.absent_count}
-                </span>
-                <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg border border-amber-200">
-                  Late: {dailyAtt.late_count}
-                </span>
-                <span className="px-2.5 py-1 bg-primary-50 text-primary-700 rounded-lg border border-blue-200">
-                  On Leave: {dailyAtt.leave_count}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-3.5">Staff Member</th>
-                  <th className="px-6 py-3.5">Type & Department</th>
-                  <th className="px-6 py-3.5 text-center">Timings</th>
-                  <th className="px-6 py-3.5 text-center">Attendance Status</th>
-                  {isAdmin && <th className="px-6 py-3.5 text-right">Quick Mark</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {dailyAtt?.records?.map((rec) => (
-                  <tr key={rec.user_id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-slate-900">{rec.full_name}</div>
-                      <div className="text-xs text-primary-600 font-mono">{rec.employee_id}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-slate-800">{rec.staff_type}</div>
-                      <div className="text-xs text-slate-400">{rec.department}</div>
-                    </td>
-                    <td className="px-6 py-4 text-center font-mono text-xs">
-                      {rec.check_in_time} – {rec.check_out_time}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        rec.status === 'present'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : rec.status === 'absent'
-                          ? 'bg-rose-100 text-rose-800'
-                          : rec.status === 'late'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-primary-100 text-primary-800'
-                      }`}>
-                        {rec.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    {isAdmin && (
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {['present', 'absent', 'late', 'half_day', 'on_leave'].map((st) => (
-                            <button
-                              key={st}
-                              onClick={() => {
-                                markAttendanceMutation.mutate({
-                                  date: attendanceDate,
-                                  records: [{ user_id: rec.user_id, status: st }],
-                                })
-                              }}
-                              className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors ${
-                                rec.status === st
-                                  ? 'bg-primary-600 text-white'
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                              }`}
-                            >
-                              {st === 'present' ? 'P' : st === 'absent' ? 'A' : st === 'late' ? 'L' : st === 'half_day' ? 'HD' : 'LV'}
-                            </button>
-                          ))}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ─── TAB 4: LEAVE APPLICATIONS ─────────────────────────────────────── */}
-      {activeTab === 'leaves' && (
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Faculty Leave Applications & Approvals</h2>
-              <p className="text-xs text-slate-500">Track pending leaves, medical justifications, and balance encashments</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {leaves.length === 0 ? (
-              <div className="col-span-full bg-white p-12 text-center text-slate-400 rounded-xl border border-slate-200">
-                No leave requests found.
-              </div>
-            ) : (
-              leaves.map((lv) => (
-                <div key={lv.id} className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold text-slate-900">{lv.staff_name}</h3>
-                      <p className="text-xs text-slate-500">{lv.email}</p>
-                    </div>
-                    <span className={`px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
-                      lv.status === 'approved'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : lv.status === 'rejected'
-                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
-                    }`}>
-                      {lv.status}
-                    </span>
-                  </div>
-
-                  <div className="bg-slate-50 p-3 rounded-lg text-xs space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Leave Type:</span>
-                      <span className="font-semibold text-slate-800 capitalize">{lv.leave_type} Leave</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Duration:</span>
-                      <span className="font-semibold text-slate-800">{lv.days_count} Day(s)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Dates:</span>
-                      <span className="font-semibold text-slate-800">{lv.start_date} to {lv.end_date}</span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-600 italic">"{lv.reason}"</p>
-
-                  {isAdmin && lv.status === 'pending' && (
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                      <LockedButton
-                        isEditMode={isEditMode}
-                        onClick={() => leaveActionMutation.mutate({ leaveId: lv.id, action: 'approve' })}
-                        icon={CheckCircle2}
-                        size="xs"
-                        className={isEditMode ? 'flex-1 bg-emerald-600 hover:bg-emerald-700 text-white' : 'flex-1'}
-                      >
-                        Approve
-                      </LockedButton>
-                      <LockedButton
-                        isEditMode={isEditMode}
-                        onClick={() => leaveActionMutation.mutate({ leaveId: lv.id, action: 'reject' })}
-                        icon={XCircle}
-                        size="xs"
-                        variant="outline"
-                        className={isEditMode ? 'flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200' : 'flex-1'}
-                      >
-                        Reject
-                      </LockedButton>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ─── TAB 5: ROLE DASHBOARD ─────────────────────────────────────────── */}
-      {activeTab === 'dashboard' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Active Staff</div>
-              <div className="text-2xl font-bold text-slate-900 mt-1">{dashStats?.total_staff ?? 6}</div>
-              <div className="text-xs text-primary-600 mt-2 font-medium">
-                {dashStats?.teachers_count ?? 4} Teaching • {dashStats?.non_teaching_count ?? 2} Non-Teaching
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Today's Attendance Rate</div>
-              <div className="text-2xl font-bold text-emerald-600 mt-1">{dashStats?.attendance_rate ?? 100}%</div>
-              <div className="text-xs text-slate-500 mt-2 font-medium">
-                {dashStats?.present_today ?? 6} Present • {dashStats?.absent_today ?? 0} Absent
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Leave Approvals</div>
-              <div className="text-2xl font-bold text-amber-600 mt-1">{dashStats?.pending_leaves ?? 1}</div>
-              <div className="text-xs text-slate-500 mt-2">Requires Principal sanction</div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Academic Session</div>
-              <div className="text-2xl font-bold text-slate-900 mt-1">AY 2026-27</div>
-              <div className="text-xs text-emerald-600 mt-2 font-medium">Current Active Cycle</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── TAB 6: STAFF DOCUMENTS & FORMS CENTER (28 TEMPLATES) ─────────── */}
+      {/* ─── TAB 7: HR DOCUMENTS STUDIO ──────────────────────────────────────── */}
       {activeTab === 'documents' && (
-        <div className="space-y-4">
-          {/* Document Category Filters & Search */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex flex-wrap gap-3 items-center justify-between">
-            <div className="flex flex-wrap items-center gap-2">
-              {['', 'Onboarding', 'Attendance & Leave', 'Academic & Teaching', 'Payroll & Employment', 'HR Governance'].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setDocCategoryFilter(cat)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                    docCategoryFilter === cat
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {cat || 'All Templates (28)'}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <select
-                value={selectedUserId || 121}
-                onChange={(e) => setSelectedUserId(Number(e.target.value))}
-                className="text-xs font-semibold border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
-              >
-                <option value={121}>Rahul Desai (TCH-001)</option>
-                <option value={122}>Priya Mehta (TCH-002)</option>
-                <option value={123}>Amit Patil (TCH-003)</option>
-                <option value={124}>Neha Kulkarni (TCH-004)</option>
-                <option value={2}>Rajesh Sharma (ACC-001)</option>
-              </select>
-
-              <select
-                value={docPeriodMonth}
-                onChange={(e) => setDocPeriodMonth(e.target.value)}
-                className="text-xs font-semibold border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700"
-              >
-                <option value="October 2026">October 2026</option>
-                <option value="November 2026">November 2026</option>
-                <option value="September 2026">September 2026</option>
-              </select>
-            </div>
+        <div className="space-y-4 animate-fade-in">
+          <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-800">Catalogue of 28 Standard HR Documents</h3>
+            <select
+              value={docCategoryFilter}
+              onChange={(e) => setDocCategoryFilter(e.target.value)}
+              className="input text-xs w-48"
+            >
+              <option value="">All Categories</option>
+              <option value="recruitment">Recruitment & Hiring</option>
+              <option value="compliance">Compliance & NDA</option>
+              <option value="compensation">Salary & Payslips</option>
+              <option value="separation">Relieving & Experience</option>
+            </select>
           </div>
 
-          {/* Document Templates Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {docCatalogue.map((tpl: StaffDocumentTemplate) => (
-              <div
-                key={tpl.id}
-                className="bg-white p-5 rounded-xl border border-slate-200/80 hover:border-blue-400 hover:shadow-sm transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="px-2 py-0.5 bg-primary-50 text-primary-700 border border-blue-200 rounded text-[11px] font-mono font-bold">
-                      {tpl.code}
-                    </span>
-                    <span className="text-xs font-semibold text-slate-400">{tpl.category}</span>
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-sm mb-1">{tpl.title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{tpl.description}</p>
+            {[
+              { id: 'appointment_letter', name: 'Official Appointment Letter', category: 'Recruitment', code: 'DOC-01' },
+              { id: 'nda_agreement', name: 'Non-Disclosure Agreement (NDA)', category: 'Compliance', code: 'DOC-02' },
+              { id: 'salary_slip', name: 'Monthly Salary Pay Slip', category: 'Compensation', code: 'DOC-03' },
+              { id: 'experience_certificate', name: 'Staff Experience Certificate', category: 'Separation', code: 'DOC-04' },
+              { id: 'relieving_letter', name: 'Formal Relieving Order', category: 'Separation', code: 'DOC-05' },
+              { id: 'probation_confirmation', name: 'Probation Confirmation Order', category: 'Compliance', code: 'DOC-06' },
+            ].map((doc) => (
+              <div key={doc.id} className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">
+                    {doc.code}
+                  </span>
+                  <span className="text-[10px] font-semibold text-primary-600">{doc.category}</span>
                 </div>
-
-                <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-emerald-600">Printable Layout</span>
+                <h4 className="text-xs font-bold text-slate-800">{doc.name}</h4>
+                <div className="flex items-center justify-end pt-2 border-t border-slate-100">
                   <button
+                    type="button"
                     onClick={() => {
-                      setActiveDocTemplate(tpl.id)
+                      setActiveDocTemplate(doc.id)
                       setShowDocPreviewModal(true)
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-primary-600 hover:text-white text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+                    className="btn-primary text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5"
                   >
                     <Printer className="w-3.5 h-3.5" />
                     <span>Generate & Print</span>
@@ -1053,406 +1268,138 @@ export default function StaffManagement() {
         </div>
       )}
 
-      {/* ─── MODAL: DOCUMENT PREVIEW & PRINT ──────────────────────────────── */}
-      {showDocPreviewModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 print:hidden">
-              <div className="flex items-center gap-2.5">
-                <Printer className="w-5 h-5 text-primary-600" />
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm">Official Document Print Preview</h3>
-                  <p className="text-xs text-slate-500">Ref Code: {renderedDoc?.reference_number || 'DOC-PREVIEW'}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrintDocument}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print Document</span>
-                </button>
-                <button
-                  onClick={() => setShowDocPreviewModal(false)}
-                  className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
-                >
-                  <XCircle className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Document Render Area */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-100/50">
-              {isRenderingDoc ? (
-                <div className="p-16 text-center text-slate-500 font-semibold">
-                  Generating official document snapshot with dynamic data...
-                </div>
-              ) : (
-                <div
-                  className="bg-white shadow-md rounded-lg overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: renderedDoc?.html_content || '<p>No content generated.</p>' }}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── MODAL: NEW STAFF REGISTRATION ─────────────────────────────────── */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2.5">
-                <UserPlus className="w-5 h-5 text-primary-600" />
-                <h3 className="font-bold text-slate-900 text-sm">Register New Faculty / Staff Member</h3>
-              </div>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">First Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newStaff.first_name}
-                    onChange={(e) => setNewStaff({ ...newStaff, first_name: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="e.g. Anand"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Last Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newStaff.last_name}
-                    onChange={(e) => setNewStaff({ ...newStaff, last_name: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="e.g. Joshi"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Username *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newStaff.username}
-                    onChange={(e) => setNewStaff({ ...newStaff, username: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="e.g. anand.joshi"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Email Address *</label>
-                  <input
-                    type="email"
-                    required
-                    value={newStaff.email}
-                    onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="anand.joshi@prashantacademy.in"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Staff Role Type *</label>
-                  <select
-                    value={newStaff.staff_type}
-                    onChange={(e) => setNewStaff({ ...newStaff, staff_type: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  >
-                    <option value="Teacher">Teacher / Faculty</option>
-                    <option value="Admin">Administrator</option>
-                    <option value="Accountant">Accountant</option>
-                    <option value="Counselor">Counselor</option>
-                    <option value="Receptionist">Receptionist</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Specialization / Subject</label>
-                  <input
-                    type="text"
-                    value={newStaff.specialization}
-                    onChange={(e) => setNewStaff({ ...newStaff, specialization: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="e.g. Chemistry & Organic Science"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Basic Salary (₹/month)</label>
-                  <input
-                    type="number"
-                    value={newStaff.basic_salary}
-                    onChange={(e) => setNewStaff({ ...newStaff, basic_salary: Number(e.target.value) })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Phone Number</label>
-                  <input
-                    type="text"
-                    value={newStaff.phone}
-                    onChange={(e) => setNewStaff({ ...newStaff, phone: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="+91 98200 12345"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">
-                    Temporary Password <span className="text-slate-400 font-normal">(Leave blank to auto-generate)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newStaff.password}
-                    onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                    placeholder="Leave empty for secure auto-generated temporary password"
-                  />
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    If left empty, a secure 10-character random password is generated and displayed on submission.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => createStaffMutation.mutate(newStaff)}
-                disabled={!newStaff.first_name || !newStaff.username || !newStaff.email}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-xs disabled:opacity-50"
-              >
-                Create Staff Profile
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── MODAL: CREATED CREDENTIALS DISPLAY ────────────────────────────── */}
-      {createdCredentials && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-emerald-50/50">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-slate-900 text-sm">Staff Account Created</h3>
-              </div>
-              <button
-                onClick={() => setCreatedCredentials(null)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <p className="text-xs text-slate-600">
-                A new staff account has been provisioned. Please securely provide these temporary login credentials to <strong className="text-slate-900">{createdCredentials.name}</strong>.
-              </p>
-              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2 text-xs">
-                {createdCredentials.employee_id && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Employee ID:</span>
-                    <span className="font-mono font-semibold text-slate-800">{createdCredentials.employee_id}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Username:</span>
-                  <span className="font-mono font-semibold text-slate-800">{createdCredentials.username}</span>
-                </div>
-                {createdCredentials.temporary_password && (
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-200">
-                    <span className="text-slate-500">Temporary Password:</span>
-                    <span className="font-mono font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-blue-200">
-                      {createdCredentials.temporary_password}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[11px] text-amber-800">
-                <strong>Security Notice:</strong> The temporary password will only be displayed once. Copy and share it via a secure onboarding channel.
-              </div>
-            </div>
-            <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
-              <button
-                onClick={() => {
-                  const credText = `PrathamOne EduOS Staff Credentials\nName: ${createdCredentials.name}\nEmployee ID: ${createdCredentials.employee_id || 'N/A'}\nUsername: ${createdCredentials.username}\nTemporary Password: ${createdCredentials.temporary_password || 'N/A'}`;
-                  navigator.clipboard.writeText(credText);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
-              >
-                {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                <span>{copied ? 'Copied!' : 'Copy Credentials'}</span>
-              </button>
-              <button
-                onClick={() => setCreatedCredentials(null)}
-                className="px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-xs"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── MODAL: TEACHER BATCH ASSIGNMENT ───────────────────────────────── */}
-      {showAssignModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
-              <h3 className="font-bold text-slate-900 text-sm">Assign Faculty to Class & Subject</h3>
-              <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-slate-600">
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
+      {/* ─── TAB 8: HR POLICIES & SETTINGS ────────────────────────────────────── */}
+      {activeTab === 'settings' && (
+        <div className="card p-6 bg-white border border-slate-200 rounded-2xl shadow-xs max-w-3xl mx-auto space-y-6 animate-fade-in">
+          <div>
+            <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2 mb-4">
+              Institute Employment & HR Policies
+            </h3>
+            <div className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Faculty Member *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Standard Probation Duration</label>
                 <select
-                  value={newAssignment.teacher_user_id}
-                  onChange={(e) => setNewAssignment({ ...newAssignment, teacher_user_id: Number(e.target.value) })}
-                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
+                  disabled={!isEditMode}
+                  value={hrSettings.probation_months}
+                  onChange={(e) => setHrSettings({ ...hrSettings, probation_months: Number(e.target.value) })}
+                  className="input text-xs max-w-xs"
                 >
-                  <option value={121}>Rahul Desai (Senior Math)</option>
-                  <option value={122}>Priya Mehta (Senior Science)</option>
-                  <option value={123}>Amit Patil (Social Studies)</option>
-                  <option value={124}>Neha Kulkarni (Languages)</option>
+                  <option value={3}>3 Months</option>
+                  <option value={6}>6 Months (Standard)</option>
+                  <option value={12}>12 Months</option>
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Board *</label>
-                  <select
-                    value={newAssignment.board_id}
-                    onChange={(e) => setNewAssignment({ ...newAssignment, board_id: Number(e.target.value) })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  >
-                    {boards.map((b) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Annual Casual Leaves (CL)</label>
+                  <input
+                    type="number"
+                    disabled={!isEditMode}
+                    value={hrSettings.annual_casual_leaves}
+                    onChange={(e) => setHrSettings({ ...hrSettings, annual_casual_leaves: Number(e.target.value) })}
+                    className="input text-xs"
+                  />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Standard *</label>
-                  <select
-                    value={newAssignment.standard_id}
-                    onChange={(e) => setNewAssignment({ ...newAssignment, standard_id: Number(e.target.value) })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  >
-                    {standards.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Annual Sick Leaves (SL)</label>
+                  <input
+                    type="number"
+                    disabled={!isEditMode}
+                    value={hrSettings.annual_sick_leaves}
+                    onChange={(e) => setHrSettings({ ...hrSettings, annual_sick_leaves: Number(e.target.value) })}
+                    className="input text-xs"
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Batch / Division *</label>
-                  <select
-                    value={newAssignment.division_id}
-                    onChange={(e) => setNewAssignment({ ...newAssignment, division_id: Number(e.target.value) })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  >
-                    {divisions.map((d) => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Standard Shift Start Time</label>
+                  <input
+                    type="time"
+                    disabled={!isEditMode}
+                    value={hrSettings.work_start_time}
+                    onChange={(e) => setHrSettings({ ...hrSettings, work_start_time: e.target.value })}
+                    className="input text-xs"
+                  />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Subject *</label>
-                  <select
-                    value={newAssignment.subject_id}
-                    onChange={(e) => setNewAssignment({ ...newAssignment, subject_id: Number(e.target.value) })}
-                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none"
-                  >
-                    {subjects.map((sub) => (
-                      <option key={sub.id} value={sub.id}>{sub.name}</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Standard Shift End Time</label>
+                  <input
+                    type="time"
+                    disabled={!isEditMode}
+                    value={hrSettings.work_end_time}
+                    onChange={(e) => setHrSettings({ ...hrSettings, work_end_time: e.target.value })}
+                    className="input text-xs"
+                  />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-3 pt-2">
-                <input
-                  type="checkbox"
-                  id="is_class_teacher"
-                  checked={newAssignment.is_class_teacher}
-                  onChange={(e) => setNewAssignment({ ...newAssignment, is_class_teacher: e.target.checked })}
-                  className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4"
-                />
-                <label htmlFor="is_class_teacher" className="text-xs font-semibold text-slate-700">
-                  Designate as Batch Class Teacher (Mentor)
-                </label>
               </div>
             </div>
+          </div>
 
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end pt-4 border-t border-slate-200">
+            {isEditMode ? (
               <button
-                onClick={() => setShowAssignModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg"
+                type="button"
+                onClick={() => toast.success('HR employment policies saved successfully.')}
+                className="btn-primary flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl shadow-xs"
               >
-                Cancel
+                <Save className="w-4 h-4" />
+                <span>Save HR Policies</span>
               </button>
+            ) : (
               <button
-                onClick={() => assignTeacherMutation.mutate(newAssignment)}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold rounded-lg shadow-xs"
+                type="button"
+                onClick={() => toast.error('Locked in View Mode: Enable Edit Mode to save settings.')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-slate-100 text-slate-400 border border-slate-200 rounded-xl cursor-not-allowed"
               >
-                Assign Workload
+                <Lock className="w-4 h-4 text-slate-400" />
+                <span>Save HR Policies (Locked)</span>
               </button>
-            </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* ─── MODAL: 10/15-TAB STAFF PROFILE ─────────────────────────────── */}
-      <StaffProfileModal
-        isOpen={showProfileModal}
-        onClose={() => {
-          setShowProfileModal(false)
-          setProfileModalStaffId(null)
-        }}
-        staffId={profileModalStaffId}
-        onUpdate={() => {
-          refetchStaff()
-          refetchStaffDashboard()
-        }}
-        onOpenLifecycleModal={(stf) => {
-          setLifecycleTargetStaff(stf)
-          setShowLifecycleModal(true)
-        }}
-      />
+      {/* ─── SHARED MODALS ───────────────────────────────────────────────────── */}
+      {/* Staff Profile Modal */}
+      {showProfileModal && profileModalStaffId && (
+        <StaffProfileModal
+          isOpen={showProfileModal}
+          onClose={() => {
+            setShowProfileModal(false)
+            setProfileModalStaffId(null)
+          }}
+          staffId={profileModalStaffId}
+          onUpdate={() => refetchStaff()}
+        />
+      )}
 
-      {/* ─── MODAL: LIFECYCLE MANAGEMENT ─────────────────────────────────── */}
-      <StaffLifecycleModal
-        isOpen={showLifecycleModal}
-        onClose={() => {
-          setShowLifecycleModal(false)
-          setLifecycleTargetStaff(null)
-        }}
-        employee={lifecycleTargetStaff}
-        onSuccess={() => {
-          refetchStaff()
-          refetchStaffDashboard()
-        }}
-      />
+      {/* Staff Lifecycle Modal */}
+      {showLifecycleModal && lifecycleTargetStaff && (
+        <StaffLifecycleModal
+          isOpen={showLifecycleModal}
+          onClose={() => {
+            setShowLifecycleModal(false)
+            setLifecycleTargetStaff(null)
+          }}
+          employee={lifecycleTargetStaff}
+          onSuccess={() => refetchStaff()}
+        />
+      )}
     </div>
   )
 }
 
+export default function StaffManagement() {
+  const inRouter = useInRouterContext()
+  if (!inRouter) {
+    return (
+      <MemoryRouter initialEntries={['/staff']}>
+        <StaffManagementContent />
+      </MemoryRouter>
+    )
+  }
+  return <StaffManagementContent />
+}

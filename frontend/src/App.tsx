@@ -263,7 +263,16 @@ export default function App() {
           <Route path="teachers/settings" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
           <Route path="teachers/:id" element={<Suspense fallback={<PageLoader />}><TeacherProfilePage /></Suspense>} />
           <Route path="teacher-management" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          {/* Staff & HR Management Dedicated Workspaces */}
           <Route path="staff" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/overview" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/directory" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/onboarding" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/duties" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/attendance" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/leaves" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/documents" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
+          <Route path="staff/settings" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
           <Route path="staff/:id" element={<Suspense fallback={<PageLoader />}><StaffProfilePage /></Suspense>} />
           <Route path="teacher-payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
           <Route path="payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />

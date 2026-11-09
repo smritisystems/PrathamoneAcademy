@@ -92,3 +92,4 @@ The following high-resolution 1080p visual evidence screenshots were captured an
 6. `screenshot_77_students_history.png` — Disciplinary & Activity History Workspace
 7. `screenshot_78_students_reactivation.png` — Reactivation & Archive Workspace
 8. `screenshot_79_students_settings.png` — Admission Policies & Settings Workspace
+
