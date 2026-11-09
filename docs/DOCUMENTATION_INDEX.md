@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-10 01:34:25  
-**Total Indexed Items:** 367  
+**Last Reindexed:** 2026-11-10 01:59:48  
+**Total Indexed Items:** 374  
 
 ---
 
@@ -27,7 +27,7 @@
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **0** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **7** | Reports, Analytics & Data Grids |
 | `12` | [12_RBAC_SECURITY](#12_rbac_security) | **13** | RBAC, Security & Permissions |
-| `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **12** | Sysadmin Center & System Settings |
+| `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **13** | Sysadmin Center & System Settings |
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **12** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **5** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **7** | Database Schema & REST API Standards |
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **98** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **104** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -276,6 +276,7 @@
 | **PrathamOne CodeX — Architecture Audit & Implementation Plan** | `REPORT` | `1.0` | 2026-11-06 | `Draft` | [2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md](13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md) | 13_SYSADMIN_SETTINGS, 06_TEACHER_PAYROLL, 09_FEES_PAYMENTS, 12_RBAC_SECURITY |
 | **PrathamOne CodeX — Implementation Report & Verification Summary** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md](13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md) | 13_SYSADMIN_SETTINGS, 06_TEACHER_PAYROLL, 09_FEES_PAYMENTS, 12_RBAC_SECURITY |
 | **System Administrator (SysAdmin) Superuser & Teacher/Staff Management Implementation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md](13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md) | - |
+| **User-Defined Menu & Intelligent Adaptive Navigation Engine Implementation Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md](13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md) | 00_PRODUCT_OVERVIEW, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
 
 
 ### <a id="14_printing_documents"></a>14_PRINTING_DOCUMENTS — Document Generation & Print Engine
@@ -538,6 +539,12 @@
 | `guide_step2_unlock_modal.png` | `assets/screenshots` | 239.8 KB | [guide_step2_unlock_modal.png](assets/screenshots/guide_step2_unlock_modal.png) |
 | `guide_step3_payments_edit_active.png` | `assets/screenshots` | 236.0 KB | [guide_step3_payments_edit_active.png](assets/screenshots/guide_step3_payments_edit_active.png) |
 | `guide_step4_fee_structure_editor.png` | `assets/screenshots` | 223.2 KB | [guide_step4_fee_structure_editor.png](assets/screenshots/guide_step4_fee_structure_editor.png) |
+| `nav_admin_governance_panel.png` | `assets/screenshots` | 486.4 KB | [nav_admin_governance_panel.png](assets/screenshots/nav_admin_governance_panel.png) |
+| `nav_customizer_studio.png` | `assets/screenshots` | 417.3 KB | [nav_customizer_studio.png](assets/screenshots/nav_customizer_studio.png) |
+| `nav_global_search_palette.png` | `assets/screenshots` | 477.1 KB | [nav_global_search_palette.png](assets/screenshots/nav_global_search_palette.png) |
+| `nav_mode_1_standard.png` | `assets/screenshots` | 418.7 KB | [nav_mode_1_standard.png](assets/screenshots/nav_mode_1_standard.png) |
+| `nav_mode_2_hybrid.png` | `assets/screenshots` | 419.0 KB | [nav_mode_2_hybrid.png](assets/screenshots/nav_mode_2_hybrid.png) |
+| `nav_mode_3_my_menu_only.png` | `assets/screenshots` | 419.6 KB | [nav_mode_3_my_menu_only.png](assets/screenshots/nav_mode_3_my_menu_only.png) |
 | `payroll_login_check.png` | `assets/screenshots` | 611.7 KB | [payroll_login_check.png](assets/screenshots/payroll_login_check.png) |
 | `prashant-academy-logo.png` | `assets/branding` | 14.7 KB | [prashant-academy-logo.png](assets/branding/prashant-academy-logo.png) |
 | `prashant-academy-logo.svg` | `assets/branding` | 3.7 KB | [prashant-academy-logo.svg](assets/branding/prashant-academy-logo.svg) |

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -25,8 +25,9 @@ import {
   Shield, Link2, Database, Save, RotateCcw, Search, Eye, Upload,
   Check, AlertCircle, Info, Plus, Edit, Trash2, CheckCircle2, ChevronRight,
   X, ExternalLink, RefreshCw, Lock, Bell, HelpCircle, FileText, MapPin,
-  GitFork, ShieldCheck, Download, KeyRound, Sparkles
+  GitFork, ShieldCheck, Download, KeyRound, Sparkles, Compass
 } from 'lucide-react'
+import NavigationSettingsPanel from '../components/settings/NavigationSettingsPanel'
 import { settingsApi } from '../api/endpoints'
 import type {
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState
@@ -57,6 +58,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   { id: 'examination', title: 'Examination Settings', subtitle: 'Exam types, grading, results & report card', icon: Award, group: 'academic' },
   { id: 'communication', title: 'Communication Settings', subtitle: 'WhatsApp, Email, SMS & message templates', icon: MessageSquare, group: 'operations' },
   { id: 'documents', title: 'Documents & Print Settings', subtitle: 'Receipts, reports, certificates & paper settings', icon: Printer, group: 'operations' },
+  { id: 'navigation', title: 'Navigation & Menu Governance', subtitle: 'Personalization rules, modes & role menus', icon: Compass, group: 'system' },
   { id: 'lookups', title: 'General Lookups', subtitle: 'Dropdown values, categories & reference lists', icon: Sliders, group: 'system' },
   { id: 'system', title: 'System Parameters', subtitle: 'Numbering, defaults, policies & feature flags', icon: SlidersHorizontal, group: 'system' },
   { id: 'permissions', title: 'Users & Permissions', subtitle: 'Roles, access rights & security', icon: Shield, group: 'system' },
@@ -2899,6 +2901,13 @@ export default function Settings() {
                     </div>
                   </div>
                 )}
+                {/* ─────────────────────────────────────────────────────────── */}
+                {/* SECTION: NAVIGATION & MENU GOVERNANCE                          */}
+                {/* ─────────────────────────────────────────────────────────── */}
+                {activeCategory === 'navigation' && (
+                  <NavigationSettingsPanel />
+                )}
+
                 {/* ─────────────────────────────────────────────────────────── */}
                 {/* SECTION: CODEX CONFIGURATION STUDIO                           */}
                 {/* ─────────────────────────────────────────────────────────── */}

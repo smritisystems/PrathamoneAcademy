@@ -5,8 +5,8 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-10T01:34:25.608943",
-  "total_documents": 367,
+  "generated_at": "2026-11-10T01:59:48.403043",
+  "total_documents": 374,
   "modules_catalog": [
     {
       "id": "00_PRODUCT_OVERVIEW",
@@ -6426,6 +6426,55 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "13_SYSADMIN_SETTINGS_2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1_md",
+      "filename": "2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
+      "relative_path": "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
+      "extension": ".md",
+      "size_bytes": 10057,
+      "sha256": "4d51d9653cf0435cf8d181ba6456867c1771ff509879b6700e8ca0b9c57cd6b4",
+      "module": "13_SYSADMIN_SETTINGS",
+      "title": "User-Defined Menu & Intelligent Adaptive Navigation Engine Implementation Report",
+      "category": "IMPLEMENTATION-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "navigation",
+        "my-menu",
+        "adaptive-menu",
+        "role-defaults",
+        "global-search",
+        "settings"
+      ],
+      "entities": [
+        "UserNavigationPreference",
+        "UserNavigationActivity",
+        "InstitutionSetting",
+        "SettingAuditLog",
+        "User"
+      ],
+      "api_routes": [
+        "/api/v1/navigation/config",
+        "/api/v1/navigation/preferences",
+        "/api/v1/navigation/track-activity",
+        "/api/v1/navigation/suggestions",
+        "/api/v1/navigation/admin/policy"
+      ],
+      "related_modules": [
+        "00_PRODUCT_OVERVIEW",
+        "12_RBAC_SECURITY",
+        "13_SYSADMIN_SETTINGS",
+        "17_UI_UX_DESIGN"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "14_PRINTING_DOCUMENTS_2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1_md",
       "filename": "2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md",
       "relative_path": "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md",
@@ -12660,6 +12709,144 @@
       "related_modules": []
     },
     {
+      "id": "assets_screenshots_nav_admin_governance_panel_png",
+      "filename": "nav_admin_governance_panel.png",
+      "relative_path": "assets/screenshots/nav_admin_governance_panel.png",
+      "extension": ".png",
+      "size_bytes": 498093,
+      "sha256": "950ef80cd875a592009c85ad95130054e34fd43f8bd2f91d0b96a5a83b981661",
+      "module": "assets",
+      "title": "nav_admin_governance_panel.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_nav_customizer_studio_png",
+      "filename": "nav_customizer_studio.png",
+      "relative_path": "assets/screenshots/nav_customizer_studio.png",
+      "extension": ".png",
+      "size_bytes": 427316,
+      "sha256": "c5696b5a545c8fb15fa47a87a218e2833eb5c27eb245ba0dcd3b66e2f1645006",
+      "module": "assets",
+      "title": "nav_customizer_studio.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_nav_global_search_palette_png",
+      "filename": "nav_global_search_palette.png",
+      "relative_path": "assets/screenshots/nav_global_search_palette.png",
+      "extension": ".png",
+      "size_bytes": 488517,
+      "sha256": "059fdb836945874d43ac4601b969a8ee51f738c110cf455dc8cba724d571a2cd",
+      "module": "assets",
+      "title": "nav_global_search_palette.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_nav_mode_1_standard_png",
+      "filename": "nav_mode_1_standard.png",
+      "relative_path": "assets/screenshots/nav_mode_1_standard.png",
+      "extension": ".png",
+      "size_bytes": 428764,
+      "sha256": "8cd300757b61358b80256fae1dc7d375cba04e565df964e6dbf87b73812a5c10",
+      "module": "assets",
+      "title": "nav_mode_1_standard.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_nav_mode_2_hybrid_png",
+      "filename": "nav_mode_2_hybrid.png",
+      "relative_path": "assets/screenshots/nav_mode_2_hybrid.png",
+      "extension": ".png",
+      "size_bytes": 429081,
+      "sha256": "6b7423fa9dab84937c8c7abfea82c9c145c0bef7b19befb6f6712c0dd7aacc18",
+      "module": "assets",
+      "title": "nav_mode_2_hybrid.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_nav_mode_3_my_menu_only_png",
+      "filename": "nav_mode_3_my_menu_only.png",
+      "relative_path": "assets/screenshots/nav_mode_3_my_menu_only.png",
+      "extension": ".png",
+      "size_bytes": 429686,
+      "sha256": "44f42e5e46270ce9c1df2bce733b7b020b63c875ca9e7f6ade94de895652966d",
+      "module": "assets",
+      "title": "nav_mode_3_my_menu_only.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
       "id": "assets_screenshots_payroll_login_check_png",
       "filename": "payroll_login_check.png",
       "relative_path": "assets/screenshots/payroll_login_check.png",
@@ -13514,6 +13701,9 @@
     "10_student_exit_modal": [
       "assets/screenshots/10_student_exit_modal.png"
     ],
+    "10_sysadmin": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
+    ],
     "11_attendance_workspace": [
       "assets/screenshots/11_attendance_workspace.png"
     ],
@@ -13692,6 +13882,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-08_SYSADMIN-SETTINGS_MATRIX_GLOBAL-BRANDING-IMPLEMENTATION-MATRIX_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_RECEIPT-PRINTING-AND-PWA-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
@@ -13944,6 +14135,9 @@
     "actual_values_fees_ledger": [
       "assets/screenshots/actual_values_fees_ledger.png"
     ],
+    "adaptive": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
+    ],
     "address": [
       "05_TEACHER_MANAGEMENT/2026-11-07_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_EMPLOYEE-DOSSIER-ENHANCEMENT_V1.md"
     ],
@@ -14072,6 +14266,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_PRODUCT-REBRANDING-AND-VERSION-BASELINE-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_RECEIPT-PRINTING-AND-PWA-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
@@ -15232,8 +15427,14 @@
       "07_ATTENDANCE/2026-11-08_ATTENDANCE_COMPLETION-MATRIX_ATTENDANCE-SUBMENU-WORKSPACES_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_COMPLETION-MATRIX_WORKSPACES_V1.md"
     ],
+    "defaults": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
+    ],
     "defect": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
+    ],
+    "defined": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
     ],
     "delete_protection": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EXISTING-FUNCTIONALITY-AND-REUSE-ANALYSIS_V1.md"
@@ -15548,6 +15749,7 @@
       "01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_OUTSTANDING-CALCULATION-ENGINE_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-PDF-GOVERNANCE-ENGINE_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-FOOTER-ABSOLUTE-BOTTOM-ALIGNMENT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
@@ -16160,6 +16362,7 @@
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_GLOBAL-BRANDING-TENANT-ISOLATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-08_SYSADMIN-SETTINGS_MATRIX_GLOBAL-BRANDING-IMPLEMENTATION-MATRIX_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-SHARE-BRANDING-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-PDF-GOVERNANCE-ENGINE_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-FOOTER-ABSOLUTE-BOTTOM-ALIGNMENT_V1.md",
@@ -16390,6 +16593,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-08_SYSADMIN-SETTINGS_MATRIX_GLOBAL-BRANDING-IMPLEMENTATION-MATRIX_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_RECEIPT-PRINTING-AND-PWA-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
@@ -16511,6 +16715,7 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-08_ACADEMIC-MANAGEMENT_COMPLETION-MATRIX_ACADEMIC-SUBMENU-WORKSPACES_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md"
     ],
@@ -16546,6 +16751,9 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md",
       "16_DATABASE_API/2026-11-09_DATABASE-API_MIGRATION-PLAN_FINANCIAL-TRANSACTION-INTEGRITY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_FORENSIC-AUDIT_GLOBAL-TRAINING-ENVIRONMENT-AND-CRM-DATA-INTEGRITY_V1.md"
+    ],
+    "intelligent": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
     ],
     "interactive": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
@@ -16998,6 +17206,7 @@
       "15_INTEGRATIONS/2026-11-09_COMMUNICATION-CENTER_COMPLETION-MATRIX_WORKSPACES_V1.md"
     ],
     "menu": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md"
     ],
     "mermaid": [
@@ -17081,8 +17290,30 @@
     "naming": [
       "DOCUMENTATION_RULES.md"
     ],
+    "nav_admin_governance_panel": [
+      "assets/screenshots/nav_admin_governance_panel.png"
+    ],
+    "nav_customizer_studio": [
+      "assets/screenshots/nav_customizer_studio.png"
+    ],
+    "nav_global_search_palette": [
+      "assets/screenshots/nav_global_search_palette.png"
+    ],
+    "nav_mode_1_standard": [
+      "assets/screenshots/nav_mode_1_standard.png"
+    ],
+    "nav_mode_2_hybrid": [
+      "assets/screenshots/nav_mode_2_hybrid.png"
+    ],
+    "nav_mode_3_my_menu_only": [
+      "assets/screenshots/nav_mode_3_my_menu_only.png"
+    ],
     "navigation": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md"
+    ],
+    "navigation_v1": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
     ],
     "not": [
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md"
@@ -17588,6 +17819,12 @@
       "assets/screenshots/guide_step2_unlock_modal.png",
       "assets/screenshots/guide_step3_payments_edit_active.png",
       "assets/screenshots/guide_step4_fee_structure_editor.png",
+      "assets/screenshots/nav_admin_governance_panel.png",
+      "assets/screenshots/nav_customizer_studio.png",
+      "assets/screenshots/nav_global_search_palette.png",
+      "assets/screenshots/nav_mode_1_standard.png",
+      "assets/screenshots/nav_mode_2_hybrid.png",
+      "assets/screenshots/nav_mode_3_my_menu_only.png",
       "assets/screenshots/payroll_login_check.png",
       "assets/screenshots/tab1_monthly_payroll.png",
       "assets/screenshots/tab2_session_register.png",
@@ -18196,6 +18433,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RBAC-REMEDIATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_PRINTABLE-FORMS-AND-KYC-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_RECEIPT-PRINTING-AND-PWA-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_AUDIT-REPORT_FEES-AND-PAYMENTS-WORKFLOW-AUDIT-AND-BLUEPRINT_V1.md",
@@ -18472,7 +18710,8 @@
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md"
     ],
     "report_user": [
-      "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md"
+      "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
     ],
     "report_v1": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_CUSTOMER-DEPLOYMENT-SYNCHRONIZATION-REPORT_V1.md",
@@ -18638,6 +18877,7 @@
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md",
       "12_RBAC_SECURITY/2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "26_ARCHIVED/legacy_root/ROLE_PERMISSION_MATRIX.md"
     ],
     "role_permission_matrix": [
@@ -18723,6 +18963,9 @@
       "assets/branding/prathamone-eduos-seal-transparent.png",
       "assets/branding/prathamone-eduos-seal.png"
     ],
+    "search": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
+    ],
     "security": [
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md",
@@ -18793,6 +19036,9 @@
     "session": [
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md"
     ],
+    "settingauditlog": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
+    ],
     "settings": [
       "03_ACADEMIC_MANAGEMENT/2026-11-08_ACADEMIC-MANAGEMENT_COMPLETION-MATRIX_ACADEMIC-SUBMENU-WORKSPACES_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-04_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-AND-STAFF-MANAGEMENT-REPORT_V1.md",
@@ -18805,6 +19051,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-COMPREHENSIVE-VERIFIED-AUDIT-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RBAC-REMEDIATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md"
     ],
     "settings_audit": [
@@ -18812,7 +19059,8 @@
     ],
     "settings_implementation": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_PRATHAMONE-CODEX-NUMERIC-CODING-AND-FEATURE-ACTIVATION-ENGINE_V1.md",
-      "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md"
+      "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
     ],
     "settings_matrix_global": [
       "13_SYSADMIN_SETTINGS/2026-11-08_SYSADMIN-SETTINGS_MATRIX_GLOBAL-BRANDING-IMPLEMENTATION-MATRIX_V1.md"
@@ -19799,6 +20047,7 @@
       "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md",
       "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_RULE-010-COMPLETE-SOFTWARE-WIDE-COVERAGE_V1.md",
       "12_RBAC_SECURITY/2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md",
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-09_PRINT-FORMS_COMPLETION-MATRIX_WORKSPACES_V1.md",
@@ -19818,6 +20067,12 @@
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
+    ],
+    "usernavigationactivity": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
+    ],
+    "usernavigationpreference": [
+      "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md"
     ],
     "userpermission": [
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md"

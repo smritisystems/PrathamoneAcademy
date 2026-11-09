@@ -48,6 +48,7 @@ import type {
   PendingChangesResponse, ReleaseAuditLogItem,
   PaymentWorkflowConfig, RefundRecord, PaymentAuditLog,
   PaymentGatewayConfig, OnlineOrderResponse, OnlinePaymentVerifyPayload, OnlinePaymentVerifyResult,
+  NavigationConfigResponse, NavigationSuggestion, RecentVisitItem, NavigationPolicy, NavigationPreference,
   TeacherDashboardData, StaffDashboardData, StaffLifecyclePayload, EmployeeActivityHistoryItem,
   CodexConfig, CodexMappingProfile, CodexMappingVersion, CodexScopeAssignment, CodexAuditLogItem, CodexConfigResponse,
   LeadItem, LeadFollowUpItem, LeadDemoClassItem, LeadDossierResponse, LeadKanbanResponse, LeadMetricsSummary,
@@ -1672,3 +1673,72 @@ export const trainingApi = {
   updateConfig: (data: { is_enabled?: boolean; reset_policy?: string; inactivity_timeout_minutes?: number; daily_reset_time?: string }) =>
     apiClient.put<{ status: string; is_enabled: boolean; reset_policy: string; inactivity_timeout_minutes: number; daily_reset_time: string }>('/training/config', data),
 }
+
+export const navigationApi = {
+  getConfig: (institutionId?: number) =>
+    apiClient.get<NavigationConfigResponse>('/navigation/config', {
+      params: institutionId ? { institution_id: institutionId } : {},
+    }),
+
+  updatePreferences: (
+    payload: {
+      navigation_mode?: string
+      pinned_items?: string[]
+      hidden_items?: string[]
+      custom_groups?: Array<{ id?: string; name: string; items: string[] }>
+      item_order?: string[]
+    },
+    institutionId?: number
+  ) =>
+    apiClient.put<NavigationConfigResponse>('/navigation/preferences', payload, {
+      params: institutionId ? { institution_id: institutionId } : {},
+    }),
+
+  resetPreferences: (institutionId?: number) =>
+    apiClient.post<NavigationConfigResponse>('/navigation/reset-preferences', null, {
+      params: institutionId ? { institution_id: institutionId } : {},
+    }),
+
+  trackActivity: (
+    payload: { module_key: string; route_path: string; label?: string },
+    institutionId?: number
+  ) =>
+    apiClient.post<{ status: string; recorded: boolean }>('/navigation/track-activity', payload, {
+      params: institutionId ? { institution_id: institutionId } : {},
+    }),
+
+  getSuggestions: (institutionId?: number) =>
+    apiClient.get<{ suggestions: NavigationSuggestion[] }>('/navigation/suggestions', {
+      params: institutionId ? { institution_id: institutionId } : {},
+    }),
+
+  dismissSuggestion: (suggestionId: string, institutionId?: number) =>
+    apiClient.post<{ status: string; message: string }>(
+      '/navigation/dismiss-suggestion',
+      { suggestion_id: suggestionId },
+      { params: institutionId ? { institution_id: institutionId } : {} }
+    ),
+
+  getRecent: (limit = 8, institutionId?: number) =>
+    apiClient.get<{ recent_visits: RecentVisitItem[] }>('/navigation/recent', {
+      params: { limit, ...(institutionId ? { institution_id: institutionId } : {}) },
+    }),
+
+  getAdminPolicy: (institutionId?: number) =>
+    apiClient.get<{ policy: NavigationPolicy }>('/navigation/admin/policy', {
+      params: institutionId ? { institution_id: institutionId } : {},
+    }),
+
+  updateAdminPolicy: (payload: Partial<NavigationPolicy> & { reason?: string }, institutionId?: number) =>
+    apiClient.put<{ status: string; message: string; policy: NavigationPolicy }>(
+      '/navigation/admin/policy',
+      payload,
+      { params: institutionId ? { institution_id: institutionId } : {} }
+    ),
+
+  resetAllUsers: (institutionId?: number) =>
+    apiClient.post<{ status: string; message: string }>('/navigation/admin/reset-all-users', null, {
+      params: institutionId ? { institution_id: institutionId } : {},
+    }),
+}
+

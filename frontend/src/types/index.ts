@@ -3659,3 +3659,81 @@ export interface CrmConfigSettings {
   notify_on_new_enquiry: boolean
 }
 
+// ─── User-Defined Navigation & Intelligent Adaptive Menu Engine ──────────────
+
+export type NavigationMode = 'standard' | 'hybrid' | 'my_menu_only'
+
+export interface CustomNavGroup {
+  id: string
+  name: string
+  items: string[]
+}
+
+export interface NavigationPreference {
+  navigation_mode: NavigationMode
+  pinned_items: string[]
+  hidden_items: string[]
+  custom_groups: CustomNavGroup[]
+  item_order: string[]
+  dismissed_suggestions: string[]
+  is_customized: boolean
+  updated_at?: string | null
+}
+
+export interface NavigationPolicy {
+  enable_user_customization: boolean
+  default_navigation_mode: NavigationMode
+  allow_my_menu_only: boolean
+  allow_reordering: boolean
+  allow_hiding: boolean
+  enable_usage_recommendations: boolean
+  usage_analysis_period_days: number
+  role_default_menus: Record<string, string[]>
+}
+
+export interface NavigationSubItem {
+  id: string
+  label: string
+  to: string
+  permission?: string | null
+}
+
+export interface NavigationModule {
+  id: string
+  label: string
+  category: 'core' | 'academic' | 'students' | 'workforce' | 'finance' | 'learning' | 'operations' | 'admin' | 'tools'
+  default_path: string
+  icon: string
+  required_permission?: string | null
+  sysadmin_only: boolean
+  sub_items: NavigationSubItem[]
+}
+
+export interface NavigationConfigResponse {
+  institution_policy: NavigationPolicy
+  effective_mode: NavigationMode
+  user_preferences: NavigationPreference
+  role_defaults: string[]
+  authorized_modules: NavigationModule[]
+}
+
+export interface NavigationSuggestion {
+  id: string
+  type: 'pin_frequent' | 'add_recent' | 'hide_rare' | 'discover_new' | 'report_shortcut'
+  badge: string
+  module_key: string
+  title: string
+  description: string
+  action_type: 'pin' | 'unpin' | 'navigate'
+  action_label: string
+  route_path: string
+}
+
+export interface RecentVisitItem {
+  module_key: string
+  route_path: string
+  label: string
+  last_accessed?: string | null
+}
+
+

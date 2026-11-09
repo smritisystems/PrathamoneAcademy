@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -61,6 +61,9 @@ from app.models.crm import (
 )
 from app.models.training import (
     TrainingEnvironmentConfig, TrainingSession, TrainingResetLog
+)
+from app.models.navigation import (
+    UserNavigationPreference, UserNavigationActivity
 )
 
 
@@ -133,6 +136,8 @@ __all__ = [
     "TrainingEnvironmentConfig",
     "TrainingSession",
     "TrainingResetLog",
+    "UserNavigationPreference",
+    "UserNavigationActivity",
 ]
 
 

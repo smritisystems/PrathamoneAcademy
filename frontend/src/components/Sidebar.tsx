@@ -11,21 +11,24 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
-  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical
+  Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical,
+  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
+import { useNavigationStore } from '../store/navigationStore'
+import { CANONICAL_MODULE_REGISTRY, getAuthorizedModules } from '../config/modules'
 import { useBranding } from '../config/branding'
 
 interface NavItem {
@@ -422,6 +425,134 @@ const isStaffActive = location.pathname.startsWith('/staff')
   const isCollapsed = !isMobile && desktopState === 'collapsed'
   const isHidden = !isMobile && desktopState === 'hidden'
 
+  const {
+    navigationMode,
+    setNavigationMode,
+    pinnedItems,
+    hiddenItems,
+    customGroups,
+    openCustomizer,
+    openSearch,
+    activeHybridTab,
+    setActiveHybridTab,
+  } = useNavigationStore()
+
+  const authorizedModules = useMemo(() => getAuthorizedModules(user), [user])
+  const moduleMap = useMemo(() => new Map(authorizedModules.map((m) => [m.id, m])), [authorizedModules])
+
+  const renderPinnedItem = (itemId: string, inGroup = false) => {
+    let to = ''
+    let label = itemId
+    let badge = ''
+    let IconComp: any = LayoutDashboard
+
+    const rootMod = moduleMap.get(itemId)
+    if (rootMod) {
+      to = rootMod.defaultPath
+      label = rootMod.label
+      IconComp = rootMod.icon
+    } else {
+      for (const m of authorizedModules) {
+        const sub = m.subItems.find((s) => s.id === itemId)
+        if (sub) {
+          to = sub.to
+          label = sub.label
+          badge = m.label
+          IconComp = m.icon
+          break
+        }
+      }
+    }
+
+    if (!to) return null
+
+    const isActive = location.pathname === to || (to !== '/dashboard' && location.pathname.startsWith(to))
+
+    return (
+      <div key={itemId} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+        <NavLink
+          to={to}
+          aria-label={label}
+          style={isActive ? { backgroundColor: branding.colors.primary } : undefined}
+          className={`flex items-center ${
+            isCollapsed ? 'w-11 h-11 justify-center' : inGroup ? 'gap-2.5 px-3 py-1.5 pl-6' : 'gap-3 px-3 py-2'
+          } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+            isActive
+              ? 'text-white shadow-md'
+              : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+          }`}
+        >
+          <IconComp className="w-4 h-4 flex-shrink-0" />
+          {!isCollapsed && (
+            <div className="flex items-center justify-between flex-1 min-w-0">
+              <span className="truncate">{label}</span>
+              {badge && (
+                <span className="text-[9px] px-1.5 py-0.2 bg-slate-800 text-slate-400 rounded font-medium truncate ml-1">
+                  {badge}
+                </span>
+              )}
+            </div>
+          )}
+        </NavLink>
+
+        {isCollapsed && (
+          <div
+            role="tooltip"
+            className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+          >
+            {label} {badge ? `(${badge})` : ''}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderMyMenuSection = () => {
+    const groupedItemIds = new Set(customGroups.flatMap((g) => g.items))
+    const ungroupedPinned = pinnedItems.filter((id) => !groupedItemIds.has(id))
+
+    return (
+      <div className="space-y-1 w-full">
+        {/* Render Custom Groups */}
+        {customGroups.map((grp) => {
+          if (grp.items.length === 0) return null
+          return (
+            <div key={grp.id} className="space-y-0.5 pt-1">
+              {!isCollapsed && (
+                <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Folder className="w-3 h-3 text-primary-400" />
+                  <span className="truncate">{grp.name}</span>
+                </div>
+              )}
+              {grp.items.map((itId) => renderPinnedItem(itId, true))}
+            </div>
+          )
+        })}
+
+        {/* Render Ungrouped Pinned Items */}
+        {ungroupedPinned.map((itId) => renderPinnedItem(itId, false))}
+
+        {pinnedItems.length === 0 && (
+          <div className="px-4 py-8 text-center text-slate-400">
+            <Sliders className="w-8 h-8 mx-auto mb-2 text-slate-500" />
+            <p className="text-xs font-bold text-slate-300">My Menu is Empty</p>
+            <p className="text-[11px] text-slate-400 mt-1">Pin your frequently used modules for faster access</p>
+            {!isCollapsed && (
+              <button
+                type="button"
+                onClick={() => openCustomizer()}
+                className="mt-3 px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold shadow-xs inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Shortcuts</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Student Portal Sidebar
   if (user?.role === 'student') {
     return (
@@ -761,6 +892,120 @@ const isStaffActive = location.pathname.startsWith('/staff')
             isCollapsed ? 'flex flex-col items-center' : ''
           }`}
         >
+          {/* Quick Search & Menu Customization Control Bar */}
+          {!isCollapsed ? (
+            <div className="pb-2 space-y-1.5 border-b border-slate-800/80 mb-2">
+              <button
+                type="button"
+                onClick={openSearch}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-medium transition-colors border border-slate-700/60 shadow-2xs"
+                title="Search modules & shortcuts (Ctrl+K)"
+              >
+                <div className="flex items-center gap-2">
+                  <Search className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Search modules...</span>
+                </div>
+                <kbd className="text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.2 rounded border border-slate-700 font-mono">
+                  Ctrl+K
+                </kbd>
+              </button>
+
+              <div className="flex items-center justify-between px-1 text-[11px]">
+                <div className="flex items-center gap-1.5 text-slate-400">
+                  <Compass className="w-3.5 h-3.5 text-primary-400" />
+                  <span className="capitalize font-bold text-slate-300">
+                    {navigationMode === 'my_menu_only'
+                      ? 'My Menu Only'
+                      : navigationMode === 'hybrid'
+                      ? 'Hybrid Mode'
+                      : 'Standard Menu'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openCustomizer()}
+                  className="text-primary-400 hover:text-primary-300 font-bold hover:underline flex items-center gap-1"
+                  title="Customize My Menu"
+                >
+                  <Sliders className="w-3 h-3" />
+                  <span>Customize</span>
+                </button>
+              </div>
+
+              {/* Hybrid Mode Tab Switcher */}
+              {navigationMode === 'hybrid' && (
+                <div className="flex items-center p-0.5 rounded-xl bg-slate-900 border border-slate-800 text-xs mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveHybridTab('my_menu')}
+                    className={`flex-1 py-1 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      activeHybridTab === 'my_menu'
+                        ? 'bg-primary-600 text-white shadow-xs'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Star className="w-3 h-3 fill-current text-amber-400" />
+                    <span>My Menu</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveHybridTab('all')}
+                    className={`flex-1 py-1 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      activeHybridTab === 'all'
+                        ? 'bg-primary-600 text-white shadow-xs'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Layers className="w-3 h-3" />
+                    <span>All Modules</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="pb-2 flex flex-col items-center gap-1 border-b border-slate-800/80 mb-2 w-full">
+              <button
+                type="button"
+                onClick={openSearch}
+                className="w-11 h-11 flex items-center justify-center rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                title="Search modules (Ctrl+K)"
+              >
+                <Search className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => openCustomizer()}
+                className="w-11 h-11 flex items-center justify-center rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                title="Customize My Menu"
+              >
+                <Sliders className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {navigationMode === 'my_menu_only' ? (
+            <div className="space-y-3 w-full">
+              {renderMyMenuSection()}
+              {!isCollapsed && (
+                <div className="pt-4 px-1">
+                  <button
+                    type="button"
+                    onClick={() => setNavigationMode('standard')}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition-colors shadow-2xs"
+                    title="Restore Standard Menu"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-primary-400" />
+                    <span>Restore Standard Menu</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : navigationMode === 'hybrid' && activeHybridTab === 'my_menu' ? (
+            <div className="space-y-3 w-full">
+              {renderMyMenuSection()}
+            </div>
+          ) : (
+            <>
           {/* Dashboard Item */}
           {mainNavItems.slice(0, 1).map((item) => (
             <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
@@ -2117,6 +2362,8 @@ if (item.to === '/staff') {
               </div>
             )
           })}
+          </>
+          )}
           {/* SysAdmin Superuser Link (only for sysadmin / superadmin) */}
           {isUserSysAdmin(user) && (
             <div className={`relative group mt-2 pt-2 border-t border-slate-800 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>

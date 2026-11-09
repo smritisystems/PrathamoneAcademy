@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -19,12 +19,16 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download } from 'lucide-react'
+import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download, Search, Sliders } from 'lucide-react'
 import Sidebar from './Sidebar'
 import Footer from './Footer'
 import { RouteErrorBoundary } from './RouteErrorBoundary'
 import { useAuthStore } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
+import { useNavigationStore } from '../store/navigationStore'
+import { useNavigationTracker } from '../hooks/useNavigationTracker'
+import GlobalNavigationSearch from './navigation/GlobalNavigationSearch'
+import MenuCustomizerModal from './navigation/MenuCustomizerModal'
 import { useEditModeStore } from '../store/editModeStore'
 import { institutionsApi, academicYearsApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
@@ -48,6 +52,7 @@ export default function Layout() {
   const { dataEnvironment, isTrainingMode } = useEnvironmentStore()
   const [switchTarget, setSwitchTarget] = useState<DataEnvironment | null>(null)
   useDocumentTitle()
+  useNavigationTracker()
 
   const {
     selectedInstitutionId,
@@ -255,6 +260,20 @@ export default function Layout() {
             )}
           </button>
 
+          {/* Global Search Command Button */}
+          <button
+            type="button"
+            onClick={() => useNavigationStore.getState().openSearch()}
+            title="Search modules, workspaces, reports (Ctrl+K)"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors shadow-2xs font-medium"
+          >
+            <Search className="w-3.5 h-3.5 text-slate-400" />
+            <span>Search</span>
+            <kbd className="hidden lg:inline-flex text-[10px] px-1.5 py-0.2 bg-white text-slate-500 border rounded font-mono">
+              Ctrl+K
+            </kbd>
+          </button>
+
           <div className="flex-1" />
 
           {!isInstalled && (
@@ -294,6 +313,10 @@ export default function Layout() {
           targetEnvironment={switchTarget}
         />
       )}
+
+      {/* Global Navigation Engine Overlays */}
+      <GlobalNavigationSearch />
+      <MenuCustomizerModal />
     </div>
   )
 }
