@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -433,7 +433,11 @@ export interface BatchBreakdown {
 
 export interface MonthlyTrend {
   month: string
+  month_key?: string
   collected: number
+  invoiced?: number
+  transaction_count?: number
+  is_current_month?: boolean
   cumulative?: number
 }
 
@@ -447,10 +451,13 @@ export interface RecentPayment {
   board?: string
   standard?: string
   batch: string
+  fee_category?: string
   amount: number
   payment_date: string
   payment_method: string
   status: string
+  transaction_reference?: string
+  created_at?: string
 }
 
 export interface PaymentMethodDistribution {
@@ -677,14 +684,101 @@ export interface PaymentTransactionItem {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
+export interface StatusWiseCategory {
+  invoiced: number
+  collected: number
+  outstanding: number
+  invoice_count: number
+  student_count: number
+}
+
+export interface StatusWiseOutstanding {
+  active: StatusWiseCategory
+  inactive: StatusWiseCategory
+  left: StatusWiseCategory
+  transferred: StatusWiseCategory
+  cancelled: StatusWiseCategory
+  total_historical: StatusWiseCategory
+}
+
+export interface SecondaryIndicators {
+  today_collection: number
+  overdue_active_fees: number
+  due_this_month: number
+  pending_verification: { count: number; amount: number }
+  pending_refunds: { count: number; amount: number }
+  successful_refunds: { count: number; amount: number }
+}
+
+export interface AgingBucketData {
+  amount: number
+  count: number
+}
+
+export interface AgingProfile {
+  not_due: AgingBucketData
+  days_1_30: AgingBucketData
+  days_31_60: AgingBucketData
+  days_61_90: AgingBucketData
+  days_90_plus: AgingBucketData
+  total: AgingBucketData
+}
+
+export interface AgingAnalysis {
+  active: AgingProfile
+  total_historical: AgingProfile
+}
+
+export interface DailyOperationsSummary {
+  today_admissions: number
+  new_leads: number
+  follow_ups_due_today: number
+  demos_scheduled: number
+  upcoming_fee_due_invoices: number
+  pending_payment_verifications: number
+}
+
+export interface OutstandingDrilldownRecord {
+  invoice_id: number
+  invoice_number: string
+  student_id: number
+  student_name: string
+  admission_number: string
+  phone: string
+  class_name: string
+  batch_name: string
+  student_status: string
+  aging_bucket: string
+  due_date: string | null
+  days_overdue: number
+  is_overdue: boolean
+  total_obligation: number
+  paid_amount: number
+  outstanding_amount: number
+}
+
+export interface OutstandingDrilldownResponse {
+  status_scope: string
+  aging_bucket: string
+  total_count: number
+  total_outstanding: number
+  records: OutstandingDrilldownRecord[]
+}
+
 export interface DashboardStats {
   total_students: number
   total_fees: number
   total_collected: number
   total_outstanding: number
   collection_rate: number
+  status_wise_outstanding?: StatusWiseOutstanding
+  secondary_indicators?: SecondaryIndicators
+  aging_analysis?: AgingAnalysis
+  daily_operations?: DailyOperationsSummary
   monthly_trends: MonthlyTrend[]
   recent_payments: RecentPayment[]
+  status_filter?: string
+  configured_visibility?: string
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────

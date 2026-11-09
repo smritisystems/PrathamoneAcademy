@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -21,7 +21,7 @@ import type {
   PaymentPermissions,
   Institution, AcademicYear, Board, Standard, Division,
   Student, FeeCategory, FeeStructure, FeeInvoice,
-  FeeInstallment, Payment, Receipt, DashboardStats,
+  FeeInstallment, Payment, Receipt, DashboardStats, OutstandingDrilldownResponse,
   FeeCollectionRow, OutstandingRow, PaginatedResponse, User,
   FeeRegisterPreviewResponse, FeeRegisterImportExecutionResponse, FeeRegisterImportLog,
   StudentPortalDashboard, StudentAdminProfile, TimetableSlot, StudyMaterialItem, StudyMaterialStats,
@@ -86,6 +86,19 @@ export const dashboardApi = {
     status?: string
     include_all_statuses?: boolean
   }) => apiClient.get<DashboardStats>('/dashboard/stats', { params }),
+  getOutstandingDrilldown: (params?: {
+    academic_year_id?: number | string
+    institution_id?: number | string
+    board_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+    status?: string
+    aging_bucket?: string
+    is_overdue?: boolean
+    search?: string
+    limit?: number
+    offset?: number
+  }) => apiClient.get<OutstandingDrilldownResponse>('/dashboard/outstanding-drilldown', { params }),
   getReconciliation: (params?: {
     academic_year_id?: number | string
     institution_id?: number | string

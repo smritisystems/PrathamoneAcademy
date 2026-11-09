@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -1534,6 +1534,54 @@ async def build_receipt_response(
                 "amount": float(p_amt),
                 "transaction_reference": p_hist.transaction_reference,
             })
+
+    # Fallback to all completed previous payments for this student if invoice allocations were missing or empty
+    if not historical_payments and payment.student_id:
+        hist_student_stmt = (
+            select(Payment, PaymentReceipt)
+            .outerjoin(PaymentReceipt, (PaymentReceipt.payment_id == Payment.id) & (PaymentReceipt.status == "valid"))
+            .where(
+                Payment.student_id == payment.student_id,
+                Payment.status.in_(["posted", "completed"]),
+                Payment.id != payment.id,
+                or_(
+                    Payment.payment_date < payment.payment_date,
+                    and_(
+                        Payment.payment_date == payment.payment_date,
+                        Payment.id < payment.id,
+                    ),
+                ),
+            )
+            .distinct()
+            .order_by(Payment.payment_date.asc(), Payment.id.asc())
+        )
+        if payment.academic_year_id:
+            hist_student_stmt = hist_student_stmt.where(Payment.academic_year_id == payment.academic_year_id)
+
+        hist_student_rows = (await db.execute(hist_student_stmt)).all()
+        seen_student_payment_ids = set()
+        for p_hist, pr_hist in hist_student_rows:
+            if p_hist.id in seen_student_payment_ids:
+                continue
+            seen_student_payment_ids.add(p_hist.id)
+
+            hist_receipt_no = pr_hist.receipt_number if pr_hist else f"RCP-2026-{p_hist.id:04d}"
+            p_amt = Decimal(str(p_hist.amount))
+            previous_payments_total += p_amt
+            historical_payments.append({
+                "payment_id": p_hist.id,
+                "receipt_number": hist_receipt_no,
+                "date": str(p_hist.payment_date),
+                "payment_method": p_hist.payment_method,
+                "amount": float(p_amt),
+                "transaction_reference": p_hist.transaction_reference,
+            })
+
+    # Reconcile from receipt_data if provided
+    if previous_payments_total == Decimal("0.00") and receipt_data.get("previous_paid"):
+        previous_payments_total = Decimal(str(receipt_data.get("previous_paid")))
+    elif previous_payments_total == Decimal("0.00") and receipt_data.get("fee_summary", {}).get("previous_payments_total"):
+        previous_payments_total = Decimal(str(receipt_data["fee_summary"]["previous_payments_total"]))
 
     current_payment_amount = Decimal(str(payment.amount))
     if payment.status in ("posted", "completed"):
