@@ -171,3 +171,4 @@ Visual evidence artifacts have been captured via headless Playwright automation 
    - `tsc && vite build`: Compiled cleanly with 0 TypeScript errors.
 3. **Corporate Header Attribution:**
    - `python scripts/manage_headers.py check`: 473/473 files passed (100% compliant).
+
