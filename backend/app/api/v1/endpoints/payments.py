@@ -1758,9 +1758,9 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
     if not inst and inst_id != 1:
         inst = await db.get(Institution, 1)
 
-    # Query centralized InstitutionSetting for documents & print configuration
-    print_logo = True
-    print_tagline = True
+    # Centralized SSOT lookup for Documents & Print settings (Default: False)
+    print_logo = False
+    print_tagline = False
     try:
         stmt = select(InstitutionSetting).where(
             InstitutionSetting.institution_id == inst_id,
@@ -1771,9 +1771,9 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
         for row in res.scalars().all():
             val = str(row.value).lower().strip()
             if row.key == "print_receipt_logo":
-                print_logo = val not in ("false", "0", "no", "hide")
+                print_logo = val in ("true", "1", "yes")
             elif row.key == "print_receipt_tagline":
-                print_tagline = val not in ("false", "0", "no", "hide")
+                print_tagline = val in ("true", "1", "yes")
     except Exception:
         pass
 

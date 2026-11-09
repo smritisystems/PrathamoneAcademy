@@ -140,8 +140,8 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "signatory_name": "Accounts Officer",
         "disclaimer_text": "This is a computer-generated receipt and does not require a physical signature.",
         "dpdp_notice_enabled": True,
-        "print_receipt_logo": True,
-        "print_receipt_tagline": True,
+        "print_receipt_logo": False,
+        "print_receipt_tagline": False,
     },
     "system": {
         "locale": "en-IN",

@@ -2513,12 +2513,12 @@ export default function Settings() {
                             Print Monogram Logo ("PA") on Receipt
                           </label>
                           <select
-                            value={String(allSettings.documents?.print_receipt_logo ?? 'true')}
+                            value={String(allSettings.documents?.print_receipt_logo ?? 'false')}
                             onChange={(e) => handleSettingChange('documents', 'print_receipt_logo', e.target.value === 'true')}
                             className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
                           >
-                            <option value="true">Show "PA" Monogram Crest (Recommended)</option>
-                            <option value="false">Do Not Print Logo (Text Only)</option>
+                            <option value="false">Do Not Print Logo (Text Only) (Default)</option>
+                            <option value="true">Show "PA" Monogram Crest</option>
                           </select>
                           <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the institutional monogram crest on fee vouchers.</p>
                         </div>
@@ -2527,12 +2527,12 @@ export default function Settings() {
                             Print Motto / Tagline on Receipt
                           </label>
                           <select
-                            value={String(allSettings.documents?.print_receipt_tagline ?? 'true')}
+                            value={String(allSettings.documents?.print_receipt_tagline ?? 'false')}
                             onChange={(e) => handleSettingChange('documents', 'print_receipt_tagline', e.target.value === 'true')}
                             className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
                           >
-                            <option value="true">Show Tagline ("Learn · Practice · Achieve") (Recommended)</option>
-                            <option value="false">Do Not Print Tagline</option>
+                            <option value="false">Do Not Print Tagline (Default)</option>
+                            <option value="true">Show Tagline ("Learn · Practice · Achieve")</option>
                           </select>
                           <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the academy tagline under the institution title.</p>
                         </div>
