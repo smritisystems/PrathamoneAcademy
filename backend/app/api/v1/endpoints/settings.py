@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-09
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -140,6 +140,8 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "signatory_name": "Accounts Officer",
         "disclaimer_text": "This is a computer-generated receipt and does not require a physical signature.",
         "dpdp_notice_enabled": True,
+        "print_receipt_logo": True,
+        "print_receipt_tagline": True,
     },
     "system": {
         "locale": "en-IN",

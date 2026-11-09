@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -2507,6 +2507,34 @@ export default function Settings() {
                             onChange={(e) => handleSettingChange('documents', 'signatory_designation', e.target.value)}
                             className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
                           />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Print Monogram Logo ("PA") on Receipt
+                          </label>
+                          <select
+                            value={String(allSettings.documents?.print_receipt_logo ?? 'true')}
+                            onChange={(e) => handleSettingChange('documents', 'print_receipt_logo', e.target.value === 'true')}
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                          >
+                            <option value="true">Show "PA" Monogram Crest (Recommended)</option>
+                            <option value="false">Do Not Print Logo (Text Only)</option>
+                          </select>
+                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the institutional monogram crest on fee vouchers.</p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Print Motto / Tagline on Receipt
+                          </label>
+                          <select
+                            value={String(allSettings.documents?.print_receipt_tagline ?? 'true')}
+                            onChange={(e) => handleSettingChange('documents', 'print_receipt_tagline', e.target.value === 'true')}
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                          >
+                            <option value="true">Show Tagline ("Learn · Practice · Achieve") (Recommended)</option>
+                            <option value="false">Do Not Print Tagline</option>
+                          </select>
+                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the academy tagline under the institution title.</p>
                         </div>
                         <div className="sm:col-span-2">
                           <label className="block text-xs font-medium text-gray-700 mb-1">

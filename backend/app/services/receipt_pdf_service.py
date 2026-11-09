@@ -169,26 +169,54 @@ class ReceiptPdfService:
         for cx, cy in [(15, 15), (405, 15), (15, 580), (405, 580)]:
             page.draw_circle(fitz.Point(cx, cy), 1.5, color=cls.C_GOLD, fill=cls.C_GOLD)
 
+        # Check settings for Logo and Tagline visibility
+        raw_logo_flag = inst.get("print_receipt_logo")
+        if raw_logo_flag is None:
+            show_logo = True
+        elif isinstance(raw_logo_flag, bool):
+            show_logo = raw_logo_flag
+        else:
+            show_logo = str(raw_logo_flag).lower().strip() not in ("false", "0", "no", "hide")
+
+        raw_tagline_flag = inst.get("print_receipt_tagline")
+        if raw_tagline_flag is None:
+            show_tagline = True
+        elif isinstance(raw_tagline_flag, bool):
+            show_tagline = raw_tagline_flag
+        else:
+            show_tagline = str(raw_tagline_flag).lower().strip() not in ("false", "0", "no", "hide")
+
         # 2. Institutional Header Block (y = 16 to 74)
         page.draw_rect(fitz.Rect(16, 16, 404, 74), color=cls.C_LIGHT, fill=cls.C_LIGHT)
         page.draw_line(fitz.Point(16, 74), fitz.Point(404, 74), color=cls.C_BORDER, width=0.8)
 
-        # Vector Text Logo "PA" Monogram Crest (46x46 pt at x=22, y=21 to x=68, y=67)
-        page.draw_rect(fitz.Rect(22, 21, 68, 67), color=cls.C_GOLD, fill=cls.C_ROYAL, width=1.0)
-        page.draw_rect(fitz.Rect(24, 23, 66, 65), color=cls.C_GOLD, width=0.5)
-        # Bold "PA" Monogram centered horizontally
-        pa_len = fitz.get_text_length("PA", fontname="hebo", fontsize=18)
-        page.insert_text(fitz.Point((22 + 68 - pa_len) / 2.0, 48), "PA", fontname="hebo", fontsize=18, color=(1, 1, 1))
-        # Gold Subtitle inside Crest Badge
-        estd_len = fitz.get_text_length("ESTD 2024", fontname="hebo", fontsize=4.6)
-        page.insert_text(fitz.Point((22 + 68 - estd_len) / 2.0, 58), "ESTD 2024", fontname="hebo", fontsize=4.6, color=cls.C_GOLD)
+        text_x = 74 if show_logo else 24
 
-        # Institute Name and Information (starting at x=74)
-        page.insert_text(fitz.Point(74, 32), inst_name, fontname="hebo", fontsize=11.5, color=cls.C_ROYAL)
-        page.insert_text(fitz.Point(74, 43), inst_tagline, fontname="hebo", fontsize=7.2, color=cls.C_GOLD)
+        if show_logo:
+            # Vector Text Logo "PA" Monogram Crest (46x46 pt at x=22, y=21 to x=68, y=67)
+            page.draw_rect(fitz.Rect(22, 21, 68, 67), color=cls.C_GOLD, fill=cls.C_ROYAL, width=1.0)
+            page.draw_rect(fitz.Rect(24, 23, 66, 65), color=cls.C_GOLD, width=0.5)
+            # Bold "PA" Monogram centered horizontally
+            pa_len = fitz.get_text_length("PA", fontname="hebo", fontsize=18)
+            page.insert_text(fitz.Point((22 + 68 - pa_len) / 2.0, 48), "PA", fontname="hebo", fontsize=18, color=(1, 1, 1))
+            # Gold Subtitle inside Crest Badge
+            estd_len = fitz.get_text_length("ESTD 2024", fontname="hebo", fontsize=4.6)
+            page.insert_text(fitz.Point((22 + 68 - estd_len) / 2.0, 58), "ESTD 2024", fontname="hebo", fontsize=4.6, color=cls.C_GOLD)
+
+        # Institute Name and Information
+        name_y = 31 if show_tagline else 34
+        page.insert_text(fitz.Point(text_x, name_y), inst_name, fontname="hebo", fontsize=11.5, color=cls.C_ROYAL)
+
+        if show_tagline and inst_tagline:
+            page.insert_text(fitz.Point(text_x, 43), inst_tagline, fontname="hebo", fontsize=7.2, color=cls.C_GOLD)
+            addr_y = 53
+            contact_y = 63
+        else:
+            addr_y = 48
+            contact_y = 60
 
         addr_str = f"{inst_address}, {inst_city}, {inst_state} - {inst_pincode}".strip(", -")
-        page.insert_text(fitz.Point(74, 53), addr_str[:105], fontname="helv", fontsize=6.6, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(text_x, addr_y), addr_str[:115 if not show_logo else 105], fontname="helv", fontsize=6.6, color=cls.C_SLATE)
 
         contact_parts = []
         if inst_phone:
@@ -198,7 +226,7 @@ class ReceiptPdfService:
         if inst_tax_id:
             contact_parts.append(f"GSTIN / Tax ID: {inst_tax_id}")
         contact_str = " | ".join(contact_parts)
-        page.insert_text(fitz.Point(74, 63), contact_str[:105], fontname="helv", fontsize=6.6, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(text_x, contact_y), contact_str[:115 if not show_logo else 105], fontname="helv", fontsize=6.6, color=cls.C_SLATE)
 
         # 3. Document Title Ribbon & Status Badge (y = 74 to 92)
         page.draw_rect(fitz.Rect(16, 74, 404, 92), color=cls.C_ROYAL, fill=cls.C_ROYAL)

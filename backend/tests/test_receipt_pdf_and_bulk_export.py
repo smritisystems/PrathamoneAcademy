@@ -143,6 +143,38 @@ class TestReceiptPdfServiceGeneration:
         assert "STATUS: SUPERSEDED" in text
         assert "SUPERSEDED" in text
 
+    def test_generate_receipt_pdf_logo_and_tagline_toggles(self):
+        receipt_data = {
+            "receipt_number": "RCP-2026-OPT-01",
+            "student_name": "Meera Joshi",
+            "admission_number": "ADM-0201",
+            "amount": 10000.0,
+            "payment_date": "2026-11-09",
+            "payment_method": "cash",
+        }
+        inst_all = {
+            "name": "Prashant Academy",
+            "tagline": "Special Coaching Tagline",
+            "print_receipt_logo": True,
+            "print_receipt_tagline": True,
+        }
+        pdf_all = ReceiptPdfService.generate_receipt_pdf(receipt_data, inst_all)
+        text_all = fitz.open(stream=pdf_all, filetype="pdf")[0].get_text()
+        assert "PA" in text_all
+        assert "Special Coaching Tagline" in text_all
+
+        # Logo and tagline disabled
+        inst_none = {
+            "name": "Prashant Academy",
+            "tagline": "Special Coaching Tagline",
+            "print_receipt_logo": False,
+            "print_receipt_tagline": False,
+        }
+        pdf_none = ReceiptPdfService.generate_receipt_pdf(receipt_data, inst_none)
+        text_none = fitz.open(stream=pdf_none, filetype="pdf")[0].get_text()
+        assert "Special Coaching Tagline" not in text_none
+        assert "ESTD 2024" not in text_none
+
     def test_generate_bulk_receipts_zip(self):
         items = [
             (

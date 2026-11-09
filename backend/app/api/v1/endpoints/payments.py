@@ -1757,6 +1757,26 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
     inst = await db.get(Institution, inst_id)
     if not inst and inst_id != 1:
         inst = await db.get(Institution, 1)
+
+    # Query centralized InstitutionSetting for documents & print configuration
+    print_logo = True
+    print_tagline = True
+    try:
+        stmt = select(InstitutionSetting).where(
+            InstitutionSetting.institution_id == inst_id,
+            InstitutionSetting.category == "documents",
+            InstitutionSetting.key.in_(["print_receipt_logo", "print_receipt_tagline"]),
+        )
+        res = await db.execute(stmt)
+        for row in res.scalars().all():
+            val = str(row.value).lower().strip()
+            if row.key == "print_receipt_logo":
+                print_logo = val not in ("false", "0", "no", "hide")
+            elif row.key == "print_receipt_tagline":
+                print_tagline = val not in ("false", "0", "no", "hide")
+    except Exception:
+        pass
+
     if inst:
         return {
             "id": inst.id,
@@ -1772,27 +1792,35 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
             "tagline": inst.tagline,
             "tax_id": inst.tax_id,
             "logo_url": inst.logo_url,
+            "print_receipt_logo": print_logo,
+            "print_receipt_tagline": print_tagline,
         }
     return {
         "name": "Prashant Academy",
         "tagline": "Premier Coaching Institute for Academic & Competitive Excellence",
-        "address": "Plot 42, Sector 17, Vashi",
-        "city": "Navi Mumbai",
+        "address": "Shop No16, 14, 12, Aquarius Taurus Building, Jankalyan Nagar, Malad West",
+        "city": "Mumbai",
         "state": "Maharashtra",
-        "pincode": "400703",
-        "phone": "+91 98336 45512",
-        "email": "admin@prashantacademy.in",
+        "pincode": "400095",
+        "phone": "+91-7021789907",
+        "email": "tejam.prashnat@gmail.com",
         "tax_id": "AABCP1234K",
+        "print_receipt_logo": print_logo,
+        "print_receipt_tagline": print_tagline,
     }
 
 
 class BulkReceiptPdfRequest(BaseModel):
     receipt_numbers: List[str]
+    print_logo: Optional[bool] = None
+    print_tagline: Optional[bool] = None
 
 
 @router.get("/receipts/{receipt_number}/pdf")
 async def get_receipt_pdf(
     receipt_number: str,
+    print_logo: Optional[bool] = Query(None, description="Override print logo setting"),
+    print_tagline: Optional[bool] = Query(None, description="Override print tagline setting"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -1840,6 +1868,10 @@ async def get_receipt_pdf(
 
     receipt_payload = await build_receipt_response(db, receipt, current_user=current_user)
     institution_dict = await get_institution_dict(db, student_inst_id)
+    if print_logo is not None:
+        institution_dict["print_receipt_logo"] = print_logo
+    if print_tagline is not None:
+        institution_dict["print_receipt_tagline"] = print_tagline
 
     pdf_bytes = ReceiptPdfService.generate_receipt_pdf(receipt_payload, institution_dict)
     filename = sanitize_receipt_filename(receipt_payload.get("student_name") or "Student", receipt.receipt_number)
@@ -1901,6 +1933,10 @@ async def export_bulk_receipts_zip(
 
         r_payload = await build_receipt_response(db, receipt, current_user=current_user)
         inst_dict = await get_institution_dict(db, student_inst_id)
+        if payload.print_logo is not None:
+            inst_dict["print_receipt_logo"] = payload.print_logo
+        if payload.print_tagline is not None:
+            inst_dict["print_receipt_tagline"] = payload.print_tagline
         receipt_items.append((r_payload, inst_dict))
 
     if not receipt_items:
