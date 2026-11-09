@@ -92,3 +92,4 @@ Visual evidence captured in 1080p full-resolution viewports:
 - **Production Build:** Vite production build bundled cleanly in 17.96s (0 errors).
 - **Deployment:** Live Nginx container `prashant_academy_frontend` reloaded successfully.
 - **Attribution Headers:** 432/432 files 100% compliant (`python scripts/manage_headers.py check`).
+

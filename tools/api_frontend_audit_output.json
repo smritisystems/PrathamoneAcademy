@@ -1,0 +1,3602 @@
+{
+  "total_backend_routes": 329,
+  "backend_routes": [
+    {
+      "module_file": "academic_years.py",
+      "module_tag": "academic_years",
+      "method": "GET",
+      "path": "/api/v1/academic_years",
+      "sub_path": "/",
+      "handler_function": "list_academic_years"
+    },
+    {
+      "module_file": "academic_years.py",
+      "module_tag": "academic_years",
+      "method": "POST",
+      "path": "/api/v1/academic_years",
+      "sub_path": "/",
+      "handler_function": "create_academic_year"
+    },
+    {
+      "module_file": "academic_years.py",
+      "module_tag": "academic_years",
+      "method": "GET",
+      "path": "/api/v1/academic_years/{year_id}",
+      "sub_path": "/{year_id}",
+      "handler_function": "get_academic_year"
+    },
+    {
+      "module_file": "academic_years.py",
+      "module_tag": "academic_years",
+      "method": "PUT",
+      "path": "/api/v1/academic_years/{year_id}",
+      "sub_path": "/{year_id}",
+      "handler_function": "update_academic_year"
+    },
+    {
+      "module_file": "attendance.py",
+      "module_tag": "attendance",
+      "method": "POST",
+      "path": "/api/v1/attendance/bulk",
+      "sub_path": "/bulk",
+      "handler_function": "mark_attendance_bulk"
+    },
+    {
+      "module_file": "attendance.py",
+      "module_tag": "attendance",
+      "method": "POST",
+      "path": "/api/v1/attendance/scan-checkin",
+      "sub_path": "/scan-checkin",
+      "handler_function": "scan_attendance_checkin"
+    },
+    {
+      "module_file": "attendance.py",
+      "module_tag": "attendance",
+      "method": "GET",
+      "path": "/api/v1/attendance",
+      "sub_path": "/",
+      "handler_function": "get_attendance"
+    },
+    {
+      "module_file": "auth.py",
+      "module_tag": "auth",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "sub_path": "/login",
+      "handler_function": "login"
+    },
+    {
+      "module_file": "auth.py",
+      "module_tag": "auth",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "sub_path": "/logout",
+      "handler_function": "logout"
+    },
+    {
+      "module_file": "boards.py",
+      "module_tag": "boards",
+      "method": "GET",
+      "path": "/api/v1/boards",
+      "sub_path": "/",
+      "handler_function": "list_boards"
+    },
+    {
+      "module_file": "boards.py",
+      "module_tag": "boards",
+      "method": "POST",
+      "path": "/api/v1/boards",
+      "sub_path": "/",
+      "handler_function": "create_board"
+    },
+    {
+      "module_file": "boards.py",
+      "module_tag": "boards",
+      "method": "GET",
+      "path": "/api/v1/boards/{board_id}",
+      "sub_path": "/{board_id}",
+      "handler_function": "get_board"
+    },
+    {
+      "module_file": "boards.py",
+      "module_tag": "boards",
+      "method": "PUT",
+      "path": "/api/v1/boards/{board_id}",
+      "sub_path": "/{board_id}",
+      "handler_function": "update_board"
+    },
+    {
+      "module_file": "boards.py",
+      "module_tag": "boards",
+      "method": "PUT",
+      "path": "/api/v1/boards/{board_id}/toggle-status",
+      "sub_path": "/{board_id}/toggle-status",
+      "handler_function": "toggle_board_status"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "GET",
+      "path": "/api/v1/codex/config",
+      "sub_path": "/config",
+      "handler_function": "get_codex_config"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "PUT",
+      "path": "/api/v1/codex/config",
+      "sub_path": "/config",
+      "handler_function": "update_codex_config"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "GET",
+      "path": "/api/v1/codex/profiles",
+      "sub_path": "/profiles",
+      "handler_function": "list_mapping_profiles"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "POST",
+      "path": "/api/v1/codex/profiles",
+      "sub_path": "/profiles",
+      "handler_function": "create_mapping_profile"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "PUT",
+      "path": "/api/v1/codex/profiles/{profile_id}",
+      "sub_path": "/profiles/{profile_id}",
+      "handler_function": "update_mapping_profile"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "GET",
+      "path": "/api/v1/codex/profiles/{profile_id}/versions",
+      "sub_path": "/profiles/{profile_id}/versions",
+      "handler_function": "get_profile_version_history"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "POST",
+      "path": "/api/v1/codex/profiles/{profile_id}/rollback/{target_version}",
+      "sub_path": "/profiles/{profile_id}/rollback/{target_version}",
+      "handler_function": "rollback_profile"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "GET",
+      "path": "/api/v1/codex/scopes",
+      "sub_path": "/scopes",
+      "handler_function": "list_scope_assignments"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "POST",
+      "path": "/api/v1/codex/scopes",
+      "sub_path": "/scopes",
+      "handler_function": "upsert_scope_assignment"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "DELETE",
+      "path": "/api/v1/codex/scopes/{scope_id}",
+      "sub_path": "/scopes/{scope_id}",
+      "handler_function": "delete_scope_assignment"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "POST",
+      "path": "/api/v1/codex/encode",
+      "sub_path": "/encode",
+      "handler_function": "test_encode_value"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "POST",
+      "path": "/api/v1/codex/decode",
+      "sub_path": "/decode",
+      "handler_function": "test_decode_value"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "POST",
+      "path": "/api/v1/codex/generate-qr",
+      "sub_path": "/generate-qr",
+      "handler_function": "generate_qr_payload"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "GET",
+      "path": "/api/v1/codex/audit-logs",
+      "sub_path": "/audit-logs",
+      "handler_function": "get_codex_audit_logs"
+    },
+    {
+      "module_file": "codex.py",
+      "module_tag": "codex",
+      "method": "GET",
+      "path": "/api/v1/codex/user-status",
+      "sub_path": "/user-status",
+      "handler_function": "get_user_codex_status"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "GET",
+      "path": "/api/v1/communication/templates",
+      "sub_path": "/templates",
+      "handler_function": "list_message_templates"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/templates",
+      "sub_path": "/templates",
+      "handler_function": "create_message_template"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "PUT",
+      "path": "/api/v1/communication/templates/{template_id}",
+      "sub_path": "/templates/{template_id}",
+      "handler_function": "update_message_template"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "DELETE",
+      "path": "/api/v1/communication/templates/{template_id}",
+      "sub_path": "/templates/{template_id}",
+      "handler_function": "delete_message_template"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/share-document",
+      "sub_path": "/share-document",
+      "handler_function": "create_document_share_link"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "GET",
+      "path": "/api/v1/communication/shared-doc/{token}",
+      "sub_path": "/shared-doc/{token}",
+      "handler_function": "resolve_shared_document"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/send",
+      "sub_path": "/send",
+      "handler_function": "send_communication_messages"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "GET",
+      "path": "/api/v1/communication/recipients/search",
+      "sub_path": "/recipients/search",
+      "handler_function": "search_communication_recipients"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "GET",
+      "path": "/api/v1/communication/logs",
+      "sub_path": "/logs",
+      "handler_function": "list_communication_logs"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/logs/{log_id}/retry",
+      "sub_path": "/logs/{log_id}/retry",
+      "handler_function": "retry_failed_communication"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "GET",
+      "path": "/api/v1/communication/diagnostics",
+      "sub_path": "/diagnostics",
+      "handler_function": "get_channel_diagnostics"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/diagnostics/test",
+      "sub_path": "/diagnostics/test",
+      "handler_function": "run_diagnostics_test"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "GET",
+      "path": "/api/v1/communication/automation/rules",
+      "sub_path": "/automation/rules",
+      "handler_function": "get_rules_endpoint"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/automation/rules",
+      "sub_path": "/automation/rules",
+      "handler_function": "update_rules_endpoint"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/automation/fee-reminders/preview",
+      "sub_path": "/automation/fee-reminders/preview",
+      "handler_function": "preview_fee_reminders_endpoint"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/automation/fee-reminders/dispatch",
+      "sub_path": "/automation/fee-reminders/dispatch",
+      "handler_function": "dispatch_fee_reminders_endpoint"
+    },
+    {
+      "module_file": "communication.py",
+      "module_tag": "communication",
+      "method": "POST",
+      "path": "/api/v1/communication/automation/attendance-alerts",
+      "sub_path": "/automation/attendance-alerts",
+      "handler_function": "dispatch_attendance_alerts_endpoint"
+    },
+    {
+      "module_file": "dashboard.py",
+      "module_tag": "dashboard",
+      "method": "GET",
+      "path": "/api/v1/dashboard/stats",
+      "sub_path": "/stats",
+      "handler_function": "get_dashboard_stats"
+    },
+    {
+      "module_file": "dashboard.py",
+      "module_tag": "dashboard",
+      "method": "GET",
+      "path": "/api/v1/dashboard/reconciliation",
+      "sub_path": "/reconciliation",
+      "handler_function": "get_dashboard_reconciliation"
+    },
+    {
+      "module_file": "divisions.py",
+      "module_tag": "divisions",
+      "method": "GET",
+      "path": "/api/v1/divisions",
+      "sub_path": "/",
+      "handler_function": "list_divisions"
+    },
+    {
+      "module_file": "divisions.py",
+      "module_tag": "divisions",
+      "method": "POST",
+      "path": "/api/v1/divisions",
+      "sub_path": "/",
+      "handler_function": "create_division"
+    },
+    {
+      "module_file": "divisions.py",
+      "module_tag": "divisions",
+      "method": "GET",
+      "path": "/api/v1/divisions/{division_id}",
+      "sub_path": "/{division_id}",
+      "handler_function": "get_division"
+    },
+    {
+      "module_file": "divisions.py",
+      "module_tag": "divisions",
+      "method": "PUT",
+      "path": "/api/v1/divisions/{division_id}",
+      "sub_path": "/{division_id}",
+      "handler_function": "update_division"
+    },
+    {
+      "module_file": "divisions.py",
+      "module_tag": "divisions",
+      "method": "PUT",
+      "path": "/api/v1/divisions/{division_id}/archive",
+      "sub_path": "/{division_id}/archive",
+      "handler_function": "archive_division"
+    },
+    {
+      "module_file": "divisions.py",
+      "module_tag": "divisions",
+      "method": "GET",
+      "path": "/api/v1/divisions/{division_id}/roster",
+      "sub_path": "/{division_id}/roster",
+      "handler_function": "get_division_roster"
+    },
+    {
+      "module_file": "divisions.py",
+      "module_tag": "divisions",
+      "method": "POST",
+      "path": "/api/v1/divisions/check-conflict",
+      "sub_path": "/check-conflict",
+      "handler_function": "check_conflict"
+    },
+    {
+      "module_file": "enrollments.py",
+      "module_tag": "enrollments",
+      "method": "GET",
+      "path": "/api/v1/enrollments/stats",
+      "sub_path": "/stats",
+      "handler_function": "get_enrollment_stats"
+    },
+    {
+      "module_file": "enrollments.py",
+      "module_tag": "enrollments",
+      "method": "GET",
+      "path": "/api/v1/enrollments",
+      "sub_path": "/",
+      "handler_function": "list_enrollments"
+    },
+    {
+      "module_file": "enrollments.py",
+      "module_tag": "enrollments",
+      "method": "GET",
+      "path": "/api/v1/enrollments/unassigned",
+      "sub_path": "/unassigned",
+      "handler_function": "list_unassigned_students"
+    },
+    {
+      "module_file": "enrollments.py",
+      "module_tag": "enrollments",
+      "method": "POST",
+      "path": "/api/v1/enrollments",
+      "sub_path": "/",
+      "handler_function": "create_enrollment"
+    },
+    {
+      "module_file": "enrollments.py",
+      "module_tag": "enrollments",
+      "method": "POST",
+      "path": "/api/v1/enrollments/transfer",
+      "sub_path": "/transfer",
+      "handler_function": "transfer_batch"
+    },
+    {
+      "module_file": "enrollments.py",
+      "module_tag": "enrollments",
+      "method": "PUT",
+      "path": "/api/v1/enrollments/{enrollment_id}",
+      "sub_path": "/{enrollment_id}",
+      "handler_function": "update_enrollment"
+    },
+    {
+      "module_file": "enrollments.py",
+      "module_tag": "enrollments",
+      "method": "DELETE",
+      "path": "/api/v1/enrollments/{enrollment_id}",
+      "sub_path": "/{enrollment_id}",
+      "handler_function": "delete_enrollment"
+    },
+    {
+      "module_file": "examinations.py",
+      "module_tag": "examinations",
+      "method": "GET",
+      "path": "/api/v1/examinations",
+      "sub_path": "/",
+      "handler_function": "list_examinations"
+    },
+    {
+      "module_file": "examinations.py",
+      "module_tag": "examinations",
+      "method": "POST",
+      "path": "/api/v1/examinations",
+      "sub_path": "/",
+      "handler_function": "create_examination"
+    },
+    {
+      "module_file": "examinations.py",
+      "module_tag": "examinations",
+      "method": "GET",
+      "path": "/api/v1/examinations/{exam_id}/marks",
+      "sub_path": "/{exam_id}/marks",
+      "handler_function": "get_examination_marks"
+    },
+    {
+      "module_file": "examinations.py",
+      "module_tag": "examinations",
+      "method": "POST",
+      "path": "/api/v1/examinations/{exam_id}/marks",
+      "sub_path": "/{exam_id}/marks",
+      "handler_function": "save_examination_marks"
+    },
+    {
+      "module_file": "examinations.py",
+      "module_tag": "examinations",
+      "method": "GET",
+      "path": "/api/v1/examinations/{exam_id}/analytics",
+      "sub_path": "/{exam_id}/analytics",
+      "handler_function": "get_examination_analytics"
+    },
+    {
+      "module_file": "examinations.py",
+      "module_tag": "examinations",
+      "method": "GET",
+      "path": "/api/v1/examinations/{exam_id}/report-card/{student_id}",
+      "sub_path": "/{exam_id}/report-card/{student_id}",
+      "handler_function": "get_examination_student_report_card"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/categories",
+      "sub_path": "/categories",
+      "handler_function": "list_fee_categories"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "POST",
+      "path": "/api/v1/fees/categories",
+      "sub_path": "/categories",
+      "handler_function": "create_fee_category"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/structures",
+      "sub_path": "/structures",
+      "handler_function": "list_fee_structures"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "POST",
+      "path": "/api/v1/fees/structures",
+      "sub_path": "/structures",
+      "handler_function": "create_fee_structure"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "PUT",
+      "path": "/api/v1/fees/structures/{structure_id}",
+      "sub_path": "/structures/{structure_id}",
+      "handler_function": "update_fee_structure"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/discounts",
+      "sub_path": "/discounts",
+      "handler_function": "list_discounts"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "POST",
+      "path": "/api/v1/fees/discounts",
+      "sub_path": "/discounts",
+      "handler_function": "create_discount"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/scholarships",
+      "sub_path": "/scholarships",
+      "handler_function": "list_scholarships"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "POST",
+      "path": "/api/v1/fees/scholarships",
+      "sub_path": "/scholarships",
+      "handler_function": "create_scholarship"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/assignments",
+      "sub_path": "/assignments",
+      "handler_function": "list_fee_assignments"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "POST",
+      "path": "/api/v1/fees/assignments",
+      "sub_path": "/assignments",
+      "handler_function": "create_fee_assignment"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/students/{student_id}/fee-details",
+      "sub_path": "/students/{student_id}/fee-details",
+      "handler_function": "get_student_fee_details"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "POST",
+      "path": "/api/v1/fees/students/{student_id}/adjust-fees",
+      "sub_path": "/students/{student_id}/adjust-fees",
+      "handler_function": "adjust_student_fees"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/invoices",
+      "sub_path": "/invoices",
+      "handler_function": "list_invoices"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "POST",
+      "path": "/api/v1/fees/invoices",
+      "sub_path": "/invoices",
+      "handler_function": "create_fee_invoice"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/invoices/{invoice_id}",
+      "sub_path": "/invoices/{invoice_id}",
+      "handler_function": "get_invoice"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/installments",
+      "sub_path": "/installments",
+      "handler_function": "list_installments"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/overview",
+      "sub_path": "/overview",
+      "handler_function": "get_fees_overview"
+    },
+    {
+      "module_file": "fees.py",
+      "module_tag": "fees",
+      "method": "GET",
+      "path": "/api/v1/fees/register",
+      "sub_path": "/register",
+      "handler_function": "get_fee_register"
+    },
+    {
+      "module_file": "forms.py",
+      "module_tag": "forms",
+      "method": "GET",
+      "path": "/api/v1/forms/catalogue",
+      "sub_path": "/catalogue",
+      "handler_function": "get_catalogue"
+    },
+    {
+      "module_file": "forms.py",
+      "module_tag": "forms",
+      "method": "GET",
+      "path": "/api/v1/forms/render/{form_id}",
+      "sub_path": "/render/{form_id}",
+      "handler_function": "render_single_form"
+    },
+    {
+      "module_file": "forms.py",
+      "module_tag": "forms",
+      "method": "POST",
+      "path": "/api/v1/forms/bulk-render",
+      "sub_path": "/bulk-render",
+      "handler_function": "bulk_render_forms"
+    },
+    {
+      "module_file": "forms.py",
+      "module_tag": "forms",
+      "method": "GET",
+      "path": "/api/v1/forms/audit-logs",
+      "sub_path": "/audit-logs",
+      "handler_function": "get_form_audit_logs"
+    },
+    {
+      "module_file": "import_export.py",
+      "module_tag": "import_export",
+      "method": "GET",
+      "path": "/api/v1/import_export/entities",
+      "sub_path": "/entities",
+      "handler_function": "list_supported_entities"
+    },
+    {
+      "module_file": "import_export.py",
+      "module_tag": "import_export",
+      "method": "GET",
+      "path": "/api/v1/import_export/template",
+      "sub_path": "/template",
+      "handler_function": "download_import_template"
+    },
+    {
+      "module_file": "import_export.py",
+      "module_tag": "import_export",
+      "method": "POST",
+      "path": "/api/v1/import_export/preview-file",
+      "sub_path": "/preview-file",
+      "handler_function": "preview_file_import"
+    },
+    {
+      "module_file": "import_export.py",
+      "module_tag": "import_export",
+      "method": "POST",
+      "path": "/api/v1/import_export/preview-grid",
+      "sub_path": "/preview-grid",
+      "handler_function": "preview_grid_import"
+    },
+    {
+      "module_file": "import_export.py",
+      "module_tag": "import_export",
+      "method": "POST",
+      "path": "/api/v1/import_export/execute",
+      "sub_path": "/execute",
+      "handler_function": "execute_import"
+    },
+    {
+      "module_file": "import_export.py",
+      "module_tag": "import_export",
+      "method": "GET",
+      "path": "/api/v1/import_export/export",
+      "sub_path": "/export",
+      "handler_function": "export_data"
+    },
+    {
+      "module_file": "import_export.py",
+      "module_tag": "import_export",
+      "method": "GET",
+      "path": "/api/v1/import_export/history",
+      "sub_path": "/history",
+      "handler_function": "get_import_history"
+    },
+    {
+      "module_file": "import_export.py",
+      "module_tag": "import_export",
+      "method": "GET",
+      "path": "/api/v1/import_export/history/{import_id}",
+      "sub_path": "/history/{import_id}",
+      "handler_function": "get_import_history_details"
+    },
+    {
+      "module_file": "import_register.py",
+      "module_tag": "import_register",
+      "method": "GET",
+      "path": "/api/v1/import_register/preview",
+      "sub_path": "/preview",
+      "handler_function": "preview_default_register"
+    },
+    {
+      "module_file": "import_register.py",
+      "module_tag": "import_register",
+      "method": "POST",
+      "path": "/api/v1/import_register/preview-upload",
+      "sub_path": "/preview-upload",
+      "handler_function": "preview_uploaded_register"
+    },
+    {
+      "module_file": "import_register.py",
+      "module_tag": "import_register",
+      "method": "POST",
+      "path": "/api/v1/import_register/execute",
+      "sub_path": "/execute",
+      "handler_function": "execute_register_import"
+    },
+    {
+      "module_file": "import_register.py",
+      "module_tag": "import_register",
+      "method": "GET",
+      "path": "/api/v1/import_register/status",
+      "sub_path": "/status",
+      "handler_function": "get_import_status"
+    },
+    {
+      "module_file": "institutions.py",
+      "module_tag": "institutions",
+      "method": "GET",
+      "path": "/api/v1/institutions",
+      "sub_path": "/",
+      "handler_function": "list_institutions"
+    },
+    {
+      "module_file": "institutions.py",
+      "module_tag": "institutions",
+      "method": "POST",
+      "path": "/api/v1/institutions",
+      "sub_path": "/",
+      "handler_function": "create_institution"
+    },
+    {
+      "module_file": "institutions.py",
+      "module_tag": "institutions",
+      "method": "GET",
+      "path": "/api/v1/institutions/public/branding",
+      "sub_path": "/public/branding",
+      "handler_function": "get_public_institution_branding"
+    },
+    {
+      "module_file": "institutions.py",
+      "module_tag": "institutions",
+      "method": "GET",
+      "path": "/api/v1/institutions/{institution_id}",
+      "sub_path": "/{institution_id}",
+      "handler_function": "get_institution"
+    },
+    {
+      "module_file": "institutions.py",
+      "module_tag": "institutions",
+      "method": "PUT",
+      "path": "/api/v1/institutions/{institution_id}",
+      "sub_path": "/{institution_id}",
+      "handler_function": "update_institution"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads",
+      "sub_path": "/",
+      "handler_function": "list_leads"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/kanban",
+      "sub_path": "/kanban",
+      "handler_function": "get_kanban_pipeline"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/metrics/summary",
+      "sub_path": "/metrics/summary",
+      "handler_function": "get_crm_metrics"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "POST",
+      "path": "/api/v1/leads",
+      "sub_path": "/",
+      "handler_function": "create_lead"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/follow-ups",
+      "sub_path": "/follow-ups",
+      "handler_function": "list_all_follow_ups"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/demo-classes",
+      "sub_path": "/demo-classes",
+      "handler_function": "list_all_demo_classes"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "PUT",
+      "path": "/api/v1/leads/demo-classes/{demo_id}",
+      "sub_path": "/demo-classes/{demo_id}",
+      "handler_function": "update_demo_class"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/sources/summary",
+      "sub_path": "/sources/summary",
+      "handler_function": "get_lead_sources_summary"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/campaigns/summary",
+      "sub_path": "/campaigns/summary",
+      "handler_function": "get_campaigns_summary"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/reports/analytics",
+      "sub_path": "/reports/analytics",
+      "handler_function": "get_crm_reports_analytics"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/settings/config",
+      "sub_path": "/settings/config",
+      "handler_function": "get_crm_settings_config"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "PUT",
+      "path": "/api/v1/leads/settings/config",
+      "sub_path": "/settings/config",
+      "handler_function": "update_crm_settings_config"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "GET",
+      "path": "/api/v1/leads/{lead_id}",
+      "sub_path": "/{lead_id}",
+      "handler_function": "get_lead_dossier"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "PUT",
+      "path": "/api/v1/leads/{lead_id}",
+      "sub_path": "/{lead_id}",
+      "handler_function": "update_lead"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "PATCH",
+      "path": "/api/v1/leads/{lead_id}/stage",
+      "sub_path": "/{lead_id}/stage",
+      "handler_function": "update_lead_stage"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "POST",
+      "path": "/api/v1/leads/{lead_id}/follow-ups",
+      "sub_path": "/{lead_id}/follow-ups",
+      "handler_function": "add_lead_follow_up"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "POST",
+      "path": "/api/v1/leads/{lead_id}/demo-classes",
+      "sub_path": "/{lead_id}/demo-classes",
+      "handler_function": "schedule_demo_class"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "POST",
+      "path": "/api/v1/leads/{lead_id}/communications",
+      "sub_path": "/{lead_id}/communications",
+      "handler_function": "log_lead_communication"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "POST",
+      "path": "/api/v1/leads/{lead_id}/convert-to-admission",
+      "sub_path": "/{lead_id}/convert-to-admission",
+      "handler_function": "convert_lead_to_admission"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "POST",
+      "path": "/api/v1/leads/{lead_id}/convert",
+      "sub_path": "/{lead_id}/convert",
+      "handler_function": "convert_lead_to_admission"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "DELETE",
+      "path": "/api/v1/leads/{lead_id}",
+      "sub_path": "/{lead_id}",
+      "handler_function": "delete_or_archive_lead"
+    },
+    {
+      "module_file": "leads.py",
+      "module_tag": "leads",
+      "method": "POST",
+      "path": "/api/v1/leads/seed-demo",
+      "sub_path": "/seed-demo",
+      "handler_function": "seed_demo_crm_data"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments/my-permissions",
+      "sub_path": "/my-permissions",
+      "handler_function": "get_my_payment_permissions"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments",
+      "sub_path": "/",
+      "handler_function": "create_payment"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/{payment_id}/submit",
+      "sub_path": "/{payment_id}/submit",
+      "handler_function": "submit_draft_payment"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/{payment_id}/approve",
+      "sub_path": "/{payment_id}/approve",
+      "handler_function": "approve_payment"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/{payment_id}/post",
+      "sub_path": "/{payment_id}/post",
+      "handler_function": "post_payment"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "PUT",
+      "path": "/api/v1/payments/{payment_id}",
+      "sub_path": "/{payment_id}",
+      "handler_function": "update_payment"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/receipts/{receipt_number}/reprint",
+      "sub_path": "/receipts/{receipt_number}/reprint",
+      "handler_function": "reprint_receipt"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/{payment_id}/refunds",
+      "sub_path": "/{payment_id}/refunds",
+      "handler_function": "create_payment_refund"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/refunds/{refund_id}/approve",
+      "sub_path": "/refunds/{refund_id}/approve",
+      "handler_function": "approve_refund"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/refunds/{refund_id}/process",
+      "sub_path": "/refunds/{refund_id}/process",
+      "handler_function": "process_refund"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments/refunds/",
+      "sub_path": "/refunds/",
+      "handler_function": "list_refunds"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments/{payment_id}/audit-trail",
+      "sub_path": "/{payment_id}/audit-trail",
+      "handler_function": "get_payment_audit_trail"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments/workflow/config",
+      "sub_path": "/workflow/config",
+      "handler_function": "get_workflow_config"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "PUT",
+      "path": "/api/v1/payments/workflow/config",
+      "sub_path": "/workflow/config",
+      "handler_function": "update_workflow_config"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments",
+      "sub_path": "/",
+      "handler_function": "list_payments"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments/receipts-list",
+      "sub_path": "/receipts-list",
+      "handler_function": "list_receipts"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments/{payment_id}",
+      "sub_path": "/{payment_id}",
+      "handler_function": "get_payment"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/{payment_id}/reverse",
+      "sub_path": "/{payment_id}/reverse",
+      "handler_function": "reverse_payment"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments/receipts/{receipt_number}",
+      "sub_path": "/receipts/{receipt_number}",
+      "handler_function": "get_receipt"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "GET",
+      "path": "/api/v1/payments/online/config",
+      "sub_path": "/online/config",
+      "handler_function": "get_online_gateway_config_endpoint"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "PUT",
+      "path": "/api/v1/payments/online/config",
+      "sub_path": "/online/config",
+      "handler_function": "update_online_gateway_config_endpoint"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/online/create-order",
+      "sub_path": "/online/create-order",
+      "handler_function": "create_online_order_endpoint"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/online/verify",
+      "sub_path": "/online/verify",
+      "handler_function": "verify_online_payment_endpoint"
+    },
+    {
+      "module_file": "payments.py",
+      "module_tag": "payments",
+      "method": "POST",
+      "path": "/api/v1/payments/online/webhook",
+      "sub_path": "/online/webhook",
+      "handler_function": "online_payment_webhook_endpoint"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "GET",
+      "path": "/api/v1/releases/current",
+      "sub_path": "/current",
+      "handler_function": "get_current_release"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "GET",
+      "path": "/api/v1/releases/pending-changes",
+      "sub_path": "/pending-changes",
+      "handler_function": "get_pending_changes"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "GET",
+      "path": "/api/v1/releases",
+      "sub_path": "/",
+      "handler_function": "list_releases"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "POST",
+      "path": "/api/v1/releases/generate-draft",
+      "sub_path": "/generate-draft",
+      "handler_function": "generate_release_draft"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "GET",
+      "path": "/api/v1/releases/{release_id}",
+      "sub_path": "/{release_id}",
+      "handler_function": "get_release_details"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "PUT",
+      "path": "/api/v1/releases/{release_id}",
+      "sub_path": "/{release_id}",
+      "handler_function": "update_release_notes"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "POST",
+      "path": "/api/v1/releases/{release_id}/validate",
+      "sub_path": "/{release_id}/validate",
+      "handler_function": "validate_release"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "POST",
+      "path": "/api/v1/releases/{release_id}/promote-rc",
+      "sub_path": "/{release_id}/promote-rc",
+      "handler_function": "promote_to_release_candidate"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "POST",
+      "path": "/api/v1/releases/{release_id}/approve",
+      "sub_path": "/{release_id}/approve",
+      "handler_function": "approve_release"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "POST",
+      "path": "/api/v1/releases/{release_id}/publish",
+      "sub_path": "/{release_id}/publish",
+      "handler_function": "publish_release"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "POST",
+      "path": "/api/v1/releases/{release_id}/rollback",
+      "sub_path": "/{release_id}/rollback",
+      "handler_function": "rollback_release"
+    },
+    {
+      "module_file": "releases.py",
+      "module_tag": "releases",
+      "method": "GET",
+      "path": "/api/v1/releases/{release_id}/audit",
+      "sub_path": "/{release_id}/audit",
+      "handler_function": "get_release_audit_history"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/fee-collection",
+      "sub_path": "/fee-collection",
+      "handler_function": "fee_collection_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/fee-collection/export",
+      "sub_path": "/fee-collection/export",
+      "handler_function": "export_fee_collection"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/outstanding",
+      "sub_path": "/outstanding",
+      "handler_function": "outstanding_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/payments-summary",
+      "sub_path": "/payments-summary",
+      "handler_function": "payments_summary"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/academic/batch-capacity",
+      "sub_path": "/academic/batch-capacity",
+      "handler_function": "batch_capacity_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/academic/distribution",
+      "sub_path": "/academic/distribution",
+      "handler_function": "academic_distribution_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/academic/faculty-load",
+      "sub_path": "/academic/faculty-load",
+      "handler_function": "faculty_load_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/academic/export",
+      "sub_path": "/academic/export",
+      "handler_function": "export_academic_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/withdrawals",
+      "sub_path": "/withdrawals",
+      "handler_function": "student_withdrawals_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/withdrawal-analytics",
+      "sub_path": "/withdrawal-analytics",
+      "handler_function": "withdrawal_analytics_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/withdrawals/export",
+      "sub_path": "/withdrawals/export",
+      "handler_function": "export_student_withdrawals_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/students/master-directory",
+      "sub_path": "/students/master-directory",
+      "handler_function": "student_master_directory_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/attendance/summary",
+      "sub_path": "/attendance/summary",
+      "handler_function": "student_attendance_summary_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/academic/curriculum-matrix",
+      "sub_path": "/academic/curriculum-matrix",
+      "handler_function": "academic_curriculum_matrix_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/academic/timetable-utilization",
+      "sub_path": "/academic/timetable-utilization",
+      "handler_function": "timetable_utilization_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/examinations/consolidated-merit",
+      "sub_path": "/examinations/consolidated-merit",
+      "handler_function": "exam_consolidated_merit_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/fees/defaulters",
+      "sub_path": "/fees/defaulters",
+      "handler_function": "fee_defaulters_aging_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/fees/daily-collection",
+      "sub_path": "/fees/daily-collection",
+      "handler_function": "daily_payment_collection_report"
+    },
+    {
+      "module_file": "reports.py",
+      "module_tag": "reports",
+      "method": "GET",
+      "path": "/api/v1/reports/system/audit-summary",
+      "sub_path": "/system/audit-summary",
+      "handler_function": "system_audit_summary_report"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "GET",
+      "path": "/api/v1/settings/profile",
+      "sub_path": "/profile",
+      "handler_function": "get_institute_profile"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "PUT",
+      "path": "/api/v1/settings/profile",
+      "sub_path": "/profile",
+      "handler_function": "update_institute_profile"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "GET",
+      "path": "/api/v1/settings/all",
+      "sub_path": "/all",
+      "handler_function": "get_all_settings"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "PUT",
+      "path": "/api/v1/settings/batch",
+      "sub_path": "/batch",
+      "handler_function": "update_settings_batch"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "GET",
+      "path": "/api/v1/settings/lookups",
+      "sub_path": "/lookups",
+      "handler_function": "list_lookups"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "POST",
+      "path": "/api/v1/settings/lookups",
+      "sub_path": "/lookups",
+      "handler_function": "create_lookup_item"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "PUT",
+      "path": "/api/v1/settings/lookups/{lookup_id}",
+      "sub_path": "/lookups/{lookup_id}",
+      "handler_function": "update_lookup_item"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "DELETE",
+      "path": "/api/v1/settings/lookups/{lookup_id}",
+      "sub_path": "/lookups/{lookup_id}",
+      "handler_function": "delete_lookup_item"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "GET",
+      "path": "/api/v1/settings/audit-logs",
+      "sub_path": "/audit-logs",
+      "handler_function": "list_setting_audit_logs"
+    },
+    {
+      "module_file": "settings.py",
+      "module_tag": "settings",
+      "method": "POST",
+      "path": "/api/v1/settings/reset-defaults",
+      "sub_path": "/reset-defaults",
+      "handler_function": "reset_section_defaults"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff",
+      "sub_path": "/",
+      "handler_function": "list_staff_members"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff",
+      "sub_path": "/",
+      "handler_function": "create_staff_member"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/{user_id}",
+      "sub_path": "/{user_id}",
+      "handler_function": "get_staff_profile"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "PUT",
+      "path": "/api/v1/staff/{user_id}",
+      "sub_path": "/{user_id}",
+      "handler_function": "update_staff_profile"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/{user_id}/bank-accounts",
+      "sub_path": "/{user_id}/bank-accounts",
+      "handler_function": "list_staff_bank_accounts"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff/{user_id}/bank-accounts",
+      "sub_path": "/{user_id}/bank-accounts",
+      "handler_function": "add_staff_bank_account"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "PUT",
+      "path": "/api/v1/staff/{user_id}/bank-accounts/{account_id}/set-primary",
+      "sub_path": "/{user_id}/bank-accounts/{account_id}/set-primary",
+      "handler_function": "set_primary_bank_account"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "DELETE",
+      "path": "/api/v1/staff/{user_id}/bank-accounts/{account_id}",
+      "sub_path": "/{user_id}/bank-accounts/{account_id}",
+      "handler_function": "delete_staff_bank_account"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/{user_id}/key-contacts",
+      "sub_path": "/{user_id}/key-contacts",
+      "handler_function": "list_staff_key_contacts"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff/{user_id}/key-contacts",
+      "sub_path": "/{user_id}/key-contacts",
+      "handler_function": "add_staff_key_contact"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "DELETE",
+      "path": "/api/v1/staff/{user_id}/key-contacts/{contact_id}",
+      "sub_path": "/{user_id}/key-contacts/{contact_id}",
+      "handler_function": "delete_staff_key_contact"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/{user_id}/addresses",
+      "sub_path": "/{user_id}/addresses",
+      "handler_function": "list_staff_addresses"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff/{user_id}/addresses",
+      "sub_path": "/{user_id}/addresses",
+      "handler_function": "add_staff_address"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "PUT",
+      "path": "/api/v1/staff/{user_id}/addresses/{address_id}/set-primary",
+      "sub_path": "/{user_id}/addresses/{address_id}/set-primary",
+      "handler_function": "set_primary_address"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "DELETE",
+      "path": "/api/v1/staff/{user_id}/addresses/{address_id}",
+      "sub_path": "/{user_id}/addresses/{address_id}",
+      "handler_function": "delete_staff_address"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/assignments/list",
+      "sub_path": "/assignments/list",
+      "handler_function": "list_teacher_assignments"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff/assignments/create",
+      "sub_path": "/assignments/create",
+      "handler_function": "create_teacher_assignment"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "DELETE",
+      "path": "/api/v1/staff/assignments/{assignment_id}",
+      "sub_path": "/assignments/{assignment_id}",
+      "handler_function": "delete_teacher_assignment"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/attendance/daily",
+      "sub_path": "/attendance/daily",
+      "handler_function": "get_daily_staff_attendance"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff/attendance/mark",
+      "sub_path": "/attendance/mark",
+      "handler_function": "mark_staff_attendance"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/leaves/list",
+      "sub_path": "/leaves/list",
+      "handler_function": "list_staff_leaves"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff/leaves/apply",
+      "sub_path": "/leaves/apply",
+      "handler_function": "apply_staff_leave"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff/leaves/{leave_id}/action",
+      "sub_path": "/leaves/{leave_id}/action",
+      "handler_function": "action_staff_leave"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/dashboard/stats",
+      "sub_path": "/dashboard/stats",
+      "handler_function": "get_staff_dashboard_stats"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/documents-forms/catalogue",
+      "sub_path": "/documents-forms/catalogue",
+      "handler_function": "get_staff_documents_catalogue"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/documents-forms/render/{form_id}",
+      "sub_path": "/documents-forms/render/{form_id}",
+      "handler_function": "render_staff_document"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/teachers/dashboard",
+      "sub_path": "/teachers/dashboard",
+      "handler_function": "get_teacher_dashboard_endpoint"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/non-teaching/dashboard",
+      "sub_path": "/non-teaching/dashboard",
+      "handler_function": "get_non_teaching_dashboard_endpoint"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "POST",
+      "path": "/api/v1/staff/{user_id}/lifecycle",
+      "sub_path": "/{user_id}/lifecycle",
+      "handler_function": "update_staff_lifecycle_endpoint"
+    },
+    {
+      "module_file": "staff.py",
+      "module_tag": "staff",
+      "method": "GET",
+      "path": "/api/v1/staff/{user_id}/activity-history",
+      "sub_path": "/{user_id}/activity-history",
+      "handler_function": "get_staff_activity_history_endpoint"
+    },
+    {
+      "module_file": "standards.py",
+      "module_tag": "standards",
+      "method": "GET",
+      "path": "/api/v1/standards/academic-settings",
+      "sub_path": "/academic-settings",
+      "handler_function": "get_academic_settings"
+    },
+    {
+      "module_file": "standards.py",
+      "module_tag": "standards",
+      "method": "PUT",
+      "path": "/api/v1/standards/academic-settings",
+      "sub_path": "/academic-settings",
+      "handler_function": "update_academic_settings"
+    },
+    {
+      "module_file": "standards.py",
+      "module_tag": "standards",
+      "method": "GET",
+      "path": "/api/v1/standards/academic-overview",
+      "sub_path": "/academic-overview",
+      "handler_function": "get_academic_overview"
+    },
+    {
+      "module_file": "standards.py",
+      "module_tag": "standards",
+      "method": "GET",
+      "path": "/api/v1/standards",
+      "sub_path": "/",
+      "handler_function": "list_standards"
+    },
+    {
+      "module_file": "standards.py",
+      "module_tag": "standards",
+      "method": "POST",
+      "path": "/api/v1/standards",
+      "sub_path": "/",
+      "handler_function": "create_standard"
+    },
+    {
+      "module_file": "standards.py",
+      "module_tag": "standards",
+      "method": "GET",
+      "path": "/api/v1/standards/{standard_id}",
+      "sub_path": "/{standard_id}",
+      "handler_function": "get_standard"
+    },
+    {
+      "module_file": "standards.py",
+      "module_tag": "standards",
+      "method": "PUT",
+      "path": "/api/v1/standards/{standard_id}",
+      "sub_path": "/{standard_id}",
+      "handler_function": "update_standard"
+    },
+    {
+      "module_file": "standards.py",
+      "module_tag": "standards",
+      "method": "DELETE",
+      "path": "/api/v1/standards/{standard_id}",
+      "sub_path": "/{standard_id}",
+      "handler_function": "delete_standard"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "GET",
+      "path": "/api/v1/students",
+      "sub_path": "/",
+      "handler_function": "list_students"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "POST",
+      "path": "/api/v1/students",
+      "sub_path": "/",
+      "handler_function": "create_student"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "GET",
+      "path": "/api/v1/students/batch/id-cards",
+      "sub_path": "/batch/id-cards",
+      "handler_function": "get_batch_student_id_cards"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "GET",
+      "path": "/api/v1/students/{student_id}",
+      "sub_path": "/{student_id}",
+      "handler_function": "get_student"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "GET",
+      "path": "/api/v1/students/{student_id}/id-card",
+      "sub_path": "/{student_id}/id-card",
+      "handler_function": "get_student_id_card"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "PUT",
+      "path": "/api/v1/students/{student_id}",
+      "sub_path": "/{student_id}",
+      "handler_function": "update_student_profile"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "PUT",
+      "path": "/api/v1/students/{student_id}/profile",
+      "sub_path": "/{student_id}/profile",
+      "handler_function": "update_student_profile"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "POST",
+      "path": "/api/v1/students/{student_id}/enroll",
+      "sub_path": "/{student_id}/enroll",
+      "handler_function": "enroll_student"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "GET",
+      "path": "/api/v1/students/{student_id}/profile",
+      "sub_path": "/{student_id}/profile",
+      "handler_function": "get_student_admin_profile"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "POST",
+      "path": "/api/v1/students/{student_id}/documents",
+      "sub_path": "/{student_id}/documents",
+      "handler_function": "add_student_document"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "DELETE",
+      "path": "/api/v1/students/{student_id}/documents/{document_id}",
+      "sub_path": "/{student_id}/documents/{document_id}",
+      "handler_function": "delete_student_document"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "POST",
+      "path": "/api/v1/students/{student_id}/exit",
+      "sub_path": "/{student_id}/exit",
+      "handler_function": "exit_student"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "POST",
+      "path": "/api/v1/students/{student_id}/reactivate",
+      "sub_path": "/{student_id}/reactivate",
+      "handler_function": "reactivate_student"
+    },
+    {
+      "module_file": "students.py",
+      "module_tag": "students",
+      "method": "GET",
+      "path": "/api/v1/students/{student_id}/lifecycle-history",
+      "sub_path": "/{student_id}/lifecycle-history",
+      "handler_function": "get_student_lifecycle_history"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "GET",
+      "path": "/api/v1/student_portal/dashboard",
+      "sub_path": "/dashboard",
+      "handler_function": "get_student_dashboard"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "GET",
+      "path": "/api/v1/student_portal/classes",
+      "sub_path": "/classes",
+      "handler_function": "get_student_classes"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "GET",
+      "path": "/api/v1/student_portal/timetable",
+      "sub_path": "/timetable",
+      "handler_function": "get_student_timetable"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "GET",
+      "path": "/api/v1/student_portal/attendance",
+      "sub_path": "/attendance",
+      "handler_function": "get_student_attendance"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "GET",
+      "path": "/api/v1/student_portal/tests",
+      "sub_path": "/tests",
+      "handler_function": "get_student_tests"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "GET",
+      "path": "/api/v1/student_portal/fees",
+      "sub_path": "/fees",
+      "handler_function": "get_student_fees"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "GET",
+      "path": "/api/v1/student_portal/study-materials",
+      "sub_path": "/study-materials",
+      "handler_function": "get_student_study_materials"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "GET",
+      "path": "/api/v1/student_portal/profile",
+      "sub_path": "/profile",
+      "handler_function": "get_student_profile"
+    },
+    {
+      "module_file": "student_portal.py",
+      "module_tag": "student_portal",
+      "method": "PUT",
+      "path": "/api/v1/student_portal/profile",
+      "sub_path": "/profile",
+      "handler_function": "update_student_portal_profile"
+    },
+    {
+      "module_file": "study_materials.py",
+      "module_tag": "study_materials",
+      "method": "GET",
+      "path": "/api/v1/study_materials/stats",
+      "sub_path": "/stats",
+      "handler_function": "get_study_materials_stats"
+    },
+    {
+      "module_file": "study_materials.py",
+      "module_tag": "study_materials",
+      "method": "PUT",
+      "path": "/api/v1/study_materials/{material_id}",
+      "sub_path": "/{material_id}",
+      "handler_function": "update_study_material"
+    },
+    {
+      "module_file": "study_materials.py",
+      "module_tag": "study_materials",
+      "method": "DELETE",
+      "path": "/api/v1/study_materials/{material_id}",
+      "sub_path": "/{material_id}",
+      "handler_function": "delete_study_material"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "GET",
+      "path": "/api/v1/subjects/duplicate-check",
+      "sub_path": "/duplicate-check",
+      "handler_function": "check_duplicate_subject"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "GET",
+      "path": "/api/v1/subjects/canonical",
+      "sub_path": "/canonical",
+      "handler_function": "list_canonical_subjects"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "POST",
+      "path": "/api/v1/subjects/canonical",
+      "sub_path": "/canonical",
+      "handler_function": "create_canonical_subject"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "GET",
+      "path": "/api/v1/subjects/canonical/{canonical_id}",
+      "sub_path": "/canonical/{canonical_id}",
+      "handler_function": "get_canonical_subject"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "PUT",
+      "path": "/api/v1/subjects/canonical/{canonical_id}",
+      "sub_path": "/canonical/{canonical_id}",
+      "handler_function": "update_canonical_subject"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "DELETE",
+      "path": "/api/v1/subjects/canonical/{canonical_id}",
+      "sub_path": "/canonical/{canonical_id}",
+      "handler_function": "delete_canonical_subject"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "GET",
+      "path": "/api/v1/subjects/mappings",
+      "sub_path": "/mappings",
+      "handler_function": "list_subject_mappings"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "POST",
+      "path": "/api/v1/subjects/mappings",
+      "sub_path": "/mappings",
+      "handler_function": "create_subject_mapping"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "PUT",
+      "path": "/api/v1/subjects/mappings/{mapping_id}",
+      "sub_path": "/mappings/{mapping_id}",
+      "handler_function": "update_subject_mapping"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "DELETE",
+      "path": "/api/v1/subjects/mappings/{mapping_id}",
+      "sub_path": "/mappings/{mapping_id}",
+      "handler_function": "delete_subject_mapping"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "GET",
+      "path": "/api/v1/subjects",
+      "sub_path": "/",
+      "handler_function": "list_subjects"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "POST",
+      "path": "/api/v1/subjects",
+      "sub_path": "/",
+      "handler_function": "create_subject"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "GET",
+      "path": "/api/v1/subjects/{subject_id}",
+      "sub_path": "/{subject_id}",
+      "handler_function": "get_subject"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "PUT",
+      "path": "/api/v1/subjects/{subject_id}",
+      "sub_path": "/{subject_id}",
+      "handler_function": "update_subject"
+    },
+    {
+      "module_file": "subjects.py",
+      "module_tag": "subjects",
+      "method": "DELETE",
+      "path": "/api/v1/subjects/{subject_id}",
+      "sub_path": "/{subject_id}",
+      "handler_function": "delete_subject"
+    },
+    {
+      "module_file": "sysadmin.py",
+      "module_tag": "sysadmin",
+      "method": "GET",
+      "path": "/api/v1/sysadmin/overview",
+      "sub_path": "/overview",
+      "handler_function": "get_sysadmin_overview"
+    },
+    {
+      "module_file": "sysadmin.py",
+      "module_tag": "sysadmin",
+      "method": "GET",
+      "path": "/api/v1/sysadmin/security-audit-logs",
+      "sub_path": "/security-audit-logs",
+      "handler_function": "list_security_audit_logs"
+    },
+    {
+      "module_file": "sysadmin.py",
+      "module_tag": "sysadmin",
+      "method": "POST",
+      "path": "/api/v1/sysadmin/universal-edit",
+      "sub_path": "/universal-edit",
+      "handler_function": "execute_universal_edit"
+    },
+    {
+      "module_file": "sysadmin.py",
+      "module_tag": "sysadmin",
+      "method": "GET",
+      "path": "/api/v1/sysadmin/system-settings",
+      "sub_path": "/system-settings",
+      "handler_function": "get_system_settings"
+    },
+    {
+      "module_file": "sysadmin.py",
+      "module_tag": "sysadmin",
+      "method": "PUT",
+      "path": "/api/v1/sysadmin/system-settings",
+      "sub_path": "/system-settings",
+      "handler_function": "update_system_settings"
+    },
+    {
+      "module_file": "sysadmin.py",
+      "module_tag": "sysadmin",
+      "method": "GET",
+      "path": "/api/v1/sysadmin/permissions/edit-posted-status",
+      "sub_path": "/permissions/edit-posted-status",
+      "handler_function": "get_edit_posted_status"
+    },
+    {
+      "module_file": "sysadmin.py",
+      "module_tag": "sysadmin",
+      "method": "POST",
+      "path": "/api/v1/sysadmin/permissions/toggle-edit-posted",
+      "sub_path": "/permissions/toggle-edit-posted",
+      "handler_function": "toggle_edit_posted_permission"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/teachers",
+      "sub_path": "/teachers",
+      "handler_function": "list_available_teachers"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/profiles",
+      "sub_path": "/profiles",
+      "handler_function": "list_teacher_payment_profiles"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/profiles/{teacher_user_id}",
+      "sub_path": "/profiles/{teacher_user_id}",
+      "handler_function": "get_teacher_profile_details"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "PUT",
+      "path": "/api/v1/teacher_payroll/profiles/{teacher_user_id}",
+      "sub_path": "/profiles/{teacher_user_id}",
+      "handler_function": "update_teacher_profile"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/profiles/{profile_id}/milestones",
+      "sub_path": "/profiles/{profile_id}/milestones",
+      "handler_function": "create_contract_milestone"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "PUT",
+      "path": "/api/v1/teacher_payroll/milestones/{milestone_id}",
+      "sub_path": "/milestones/{milestone_id}",
+      "handler_function": "update_contract_milestone"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/sessions",
+      "sub_path": "/sessions",
+      "handler_function": "list_teaching_sessions"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/sessions",
+      "sub_path": "/sessions",
+      "handler_function": "create_teaching_session"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "PUT",
+      "path": "/api/v1/teacher_payroll/sessions/{session_id}",
+      "sub_path": "/sessions/{session_id}",
+      "handler_function": "update_teaching_session"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/sessions/bulk-approve",
+      "sub_path": "/sessions/bulk-approve",
+      "handler_function": "bulk_approve_sessions"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/sessions/{session_id}/reject",
+      "sub_path": "/sessions/{session_id}/reject",
+      "handler_function": "reject_session"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/sessions/{session_id}/substitute",
+      "sub_path": "/sessions/{session_id}/substitute",
+      "handler_function": "assign_substitute"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/monthly",
+      "sub_path": "/monthly",
+      "handler_function": "list_monthly_payrolls"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/monthly/calculate",
+      "sub_path": "/monthly/calculate",
+      "handler_function": "calculate_teacher_payroll"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/monthly/bulk-calculate",
+      "sub_path": "/monthly/bulk-calculate",
+      "handler_function": "bulk_calculate_monthly_payroll"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/monthly/{payroll_id}",
+      "sub_path": "/monthly/{payroll_id}",
+      "handler_function": "get_payroll_details"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/monthly/{payroll_id}/submit",
+      "sub_path": "/monthly/{payroll_id}/submit",
+      "handler_function": "submit_payroll"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/monthly/{payroll_id}/approve",
+      "sub_path": "/monthly/{payroll_id}/approve",
+      "handler_function": "approve_payroll"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/monthly/{payroll_id}/finalize",
+      "sub_path": "/monthly/{payroll_id}/finalize",
+      "handler_function": "finalize_payroll"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/monthly/{payroll_id}/adjust",
+      "sub_path": "/monthly/{payroll_id}/adjust",
+      "handler_function": "adjust_payroll"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/vouchers",
+      "sub_path": "/vouchers",
+      "handler_function": "list_payment_vouchers"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/monthly/{payroll_id}/vouchers",
+      "sub_path": "/monthly/{payroll_id}/vouchers",
+      "handler_function": "record_payment_voucher"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "POST",
+      "path": "/api/v1/teacher_payroll/vouchers/{voucher_id}/reverse",
+      "sub_path": "/vouchers/{voucher_id}/reverse",
+      "handler_function": "reverse_payment_voucher"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/reports/{report_type}",
+      "sub_path": "/reports/{report_type}",
+      "handler_function": "get_specialized_report"
+    },
+    {
+      "module_file": "teacher_payroll.py",
+      "module_tag": "teacher_payroll",
+      "method": "GET",
+      "path": "/api/v1/teacher_payroll/reports/{report_type}/export",
+      "sub_path": "/reports/{report_type}/export",
+      "handler_function": "export_specialized_report"
+    },
+    {
+      "module_file": "timetable.py",
+      "module_tag": "timetable",
+      "method": "GET",
+      "path": "/api/v1/timetable",
+      "sub_path": "/",
+      "handler_function": "list_timetable_entries"
+    },
+    {
+      "module_file": "timetable.py",
+      "module_tag": "timetable",
+      "method": "GET",
+      "path": "/api/v1/timetable/rooms",
+      "sub_path": "/rooms",
+      "handler_function": "list_distinct_rooms"
+    },
+    {
+      "module_file": "timetable.py",
+      "module_tag": "timetable",
+      "method": "POST",
+      "path": "/api/v1/timetable/check-conflict",
+      "sub_path": "/check-conflict",
+      "handler_function": "check_conflict"
+    },
+    {
+      "module_file": "timetable.py",
+      "module_tag": "timetable",
+      "method": "POST",
+      "path": "/api/v1/timetable",
+      "sub_path": "/",
+      "handler_function": "create_timetable_entry"
+    },
+    {
+      "module_file": "timetable.py",
+      "module_tag": "timetable",
+      "method": "PUT",
+      "path": "/api/v1/timetable/{entry_id}",
+      "sub_path": "/{entry_id}",
+      "handler_function": "update_timetable_entry"
+    },
+    {
+      "module_file": "timetable.py",
+      "module_tag": "timetable",
+      "method": "DELETE",
+      "path": "/api/v1/timetable/{entry_id}",
+      "sub_path": "/{entry_id}",
+      "handler_function": "delete_timetable_entry"
+    },
+    {
+      "module_file": "training.py",
+      "module_tag": "training",
+      "method": "GET",
+      "path": "/api/v1/training/status",
+      "sub_path": "/status",
+      "handler_function": "get_status"
+    },
+    {
+      "module_file": "training.py",
+      "module_tag": "training",
+      "method": "POST",
+      "path": "/api/v1/training/session/ping",
+      "sub_path": "/session/ping",
+      "handler_function": "ping_session"
+    },
+    {
+      "module_file": "training.py",
+      "module_tag": "training",
+      "method": "POST",
+      "path": "/api/v1/training/session/exit",
+      "sub_path": "/session/exit",
+      "handler_function": "exit_session"
+    },
+    {
+      "module_file": "training.py",
+      "module_tag": "training",
+      "method": "POST",
+      "path": "/api/v1/training/reset",
+      "sub_path": "/reset",
+      "handler_function": "reset_environment"
+    },
+    {
+      "module_file": "training.py",
+      "module_tag": "training",
+      "method": "POST",
+      "path": "/api/v1/training/seed",
+      "sub_path": "/seed",
+      "handler_function": "seed_dataset"
+    },
+    {
+      "module_file": "training.py",
+      "module_tag": "training",
+      "method": "GET",
+      "path": "/api/v1/training/reset-logs",
+      "sub_path": "/reset-logs",
+      "handler_function": "get_reset_logs"
+    },
+    {
+      "module_file": "training.py",
+      "module_tag": "training",
+      "method": "PUT",
+      "path": "/api/v1/training/config",
+      "sub_path": "/config",
+      "handler_function": "update_config"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "sub_path": "/me",
+      "handler_function": "get_current_user_info"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "GET",
+      "path": "/api/v1/users/stats",
+      "sub_path": "/stats",
+      "handler_function": "get_user_management_stats"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "GET",
+      "path": "/api/v1/users",
+      "sub_path": "/",
+      "handler_function": "list_users"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "GET",
+      "path": "/api/v1/users/{user_id}",
+      "sub_path": "/{user_id}",
+      "handler_function": "get_user_profile_workspace"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "POST",
+      "path": "/api/v1/users",
+      "sub_path": "/",
+      "handler_function": "create_user"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "PUT",
+      "path": "/api/v1/users/{user_id}",
+      "sub_path": "/{user_id}",
+      "handler_function": "update_user"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "POST",
+      "path": "/api/v1/users/{user_id}/reset-password",
+      "sub_path": "/{user_id}/reset-password",
+      "handler_function": "reset_user_password"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "POST",
+      "path": "/api/v1/users/{user_id}/toggle-status",
+      "sub_path": "/{user_id}/toggle-status",
+      "handler_function": "toggle_user_status"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "POST",
+      "path": "/api/v1/users/{user_id}/resend-invitation",
+      "sub_path": "/{user_id}/resend-invitation",
+      "handler_function": "resend_user_invitation"
+    },
+    {
+      "module_file": "users.py",
+      "module_tag": "users",
+      "method": "DELETE",
+      "path": "/api/v1/users/{user_id}",
+      "sub_path": "/{user_id}",
+      "handler_function": "delete_user"
+    }
+  ],
+  "total_frontend_endpoints": 18,
+  "frontend_endpoints": [
+    {
+      "client_object": "institutionsApi",
+      "method_name": "list",
+      "http_verb": "GET",
+      "url_path": "/institutions/",
+      "return_type": "Institution[]",
+      "params": ""
+    },
+    {
+      "client_object": "institutionsApi",
+      "method_name": "getPublicBranding",
+      "http_verb": "GET",
+      "url_path": "/institutions/public/branding",
+      "return_type": "Institution",
+      "params": ""
+    },
+    {
+      "client_object": "academicYearsApi",
+      "method_name": "list",
+      "http_verb": "GET",
+      "url_path": "/academic-years/",
+      "return_type": "AcademicYear[]",
+      "params": "institution_id?: number | string"
+    },
+    {
+      "client_object": "boardsApi",
+      "method_name": "list",
+      "http_verb": "GET",
+      "url_path": "/boards/",
+      "return_type": "Board[]",
+      "params": "institution_id?: number | string"
+    },
+    {
+      "client_object": "enrollmentsApi",
+      "method_name": "getStats",
+      "http_verb": "GET",
+      "url_path": "/enrollments/stats",
+      "return_type": "EnrollmentStats",
+      "params": "academic_year_id?: number | string"
+    },
+    {
+      "client_object": "feeCategoriesApi",
+      "method_name": "list",
+      "http_verb": "GET",
+      "url_path": "/fees/categories",
+      "return_type": "FeeCategory[]",
+      "params": "institution_id?: number | string"
+    },
+    {
+      "client_object": "usersApi",
+      "method_name": "me",
+      "http_verb": "GET",
+      "url_path": "/users/me",
+      "return_type": "User",
+      "params": ""
+    },
+    {
+      "client_object": "usersApi",
+      "method_name": "getStats",
+      "http_verb": "GET",
+      "url_path": "/users/stats",
+      "return_type": "UserManagementStats",
+      "params": ""
+    },
+    {
+      "client_object": "feeRegisterImportApi",
+      "method_name": "getPreview",
+      "http_verb": "GET",
+      "url_path": "/import/fee-register/preview",
+      "return_type": "FeeRegisterPreviewResponse",
+      "params": "filePath?: string"
+    },
+    {
+      "client_object": "studentPortalApi",
+      "method_name": "getDashboard",
+      "http_verb": "GET",
+      "url_path": "/student-portal/dashboard",
+      "return_type": "StudentPortalDashboard",
+      "params": "student_id?: number | string"
+    },
+    {
+      "client_object": "importExportApi",
+      "method_name": "getEntities",
+      "http_verb": "GET",
+      "url_path": "/import-export/entities",
+      "return_type": "SupportedEntity[]",
+      "params": ""
+    },
+    {
+      "client_object": "sysadminApi",
+      "method_name": "getOverview",
+      "http_verb": "GET",
+      "url_path": "/sysadmin/overview",
+      "return_type": "SysAdminOverview",
+      "params": ""
+    },
+    {
+      "client_object": "settingsApi",
+      "method_name": "getProfile",
+      "http_verb": "GET",
+      "url_path": "/settings/profile",
+      "return_type": "InstituteProfile",
+      "params": ""
+    },
+    {
+      "client_object": "releasesApi",
+      "method_name": "getCurrent",
+      "http_verb": "GET",
+      "url_path": "/releases/current",
+      "return_type": "SystemReleaseCurrent",
+      "params": ""
+    },
+    {
+      "client_object": "teacherPayrollApi",
+      "method_name": "getTeachers",
+      "http_verb": "GET",
+      "url_path": "/teacher-payroll/teachers",
+      "return_type": "any[]",
+      "params": ""
+    },
+    {
+      "client_object": "teacherPayrollApi",
+      "method_name": "getProfiles",
+      "http_verb": "GET",
+      "url_path": "/teacher-payroll/profiles",
+      "return_type": "any[]",
+      "params": ""
+    },
+    {
+      "client_object": "codexApi",
+      "method_name": "getConfig",
+      "http_verb": "GET",
+      "url_path": "/codex/config",
+      "return_type": "CodexConfigResponse",
+      "params": ""
+    },
+    {
+      "client_object": "trainingApi",
+      "method_name": "getStatus",
+      "http_verb": "GET",
+      "url_path": "/training/status",
+      "return_type": "TrainingStatusResponse",
+      "params": ""
+    }
+  ],
+  "total_frontend_pages": 37,
+  "frontend_pages": [
+    {
+      "page_file": "AcademicWorkspace.tsx",
+      "line_count": 4198,
+      "api_calls": [
+        "academicReportsApi.exportReport",
+        "academicReportsApi.getBatchCapacity",
+        "academicReportsApi.getDistribution",
+        "academicReportsApi.getFacultyLoad",
+        "boardsApi.create",
+        "boardsApi.list",
+        "boardsApi.toggleStatus",
+        "boardsApi.update",
+        "divisionsApi.archive",
+        "divisionsApi.create",
+        "divisionsApi.list",
+        "divisionsApi.update",
+        "enrollmentsApi.create",
+        "enrollmentsApi.getStats",
+        "enrollmentsApi.getUnassigned",
+        "enrollmentsApi.transfer",
+        "settingsApi.getAll",
+        "settingsApi.updateBatch",
+        "standardsApi.create",
+        "standardsApi.getOverview",
+        "standardsApi.getSettings",
+        "standardsApi.list",
+        "standardsApi.update",
+        "standardsApi.updateSettings",
+        "subjectsApi.create",
+        "subjectsApi.delete",
+        "subjectsApi.update",
+        "timetableApi.checkConflict",
+        "timetableApi.create",
+        "timetableApi.delete",
+        "timetableApi.getRooms",
+        "usersApi.list"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Search batch, teacher, room, student...",
+        "e.g. CHEM10",
+        "Curriculum summary",
+        "Search students...",
+        "e.g. CBSE",
+        "e.g. 10-A-41",
+        "e.g. ICSE-X-A",
+        "e.g. Class XI"
+      ]
+    },
+    {
+      "page_file": "AddStudent.tsx",
+      "line_count": 499,
+      "api_calls": [],
+      "input_names": [],
+      "placeholders_sample": [
+        "Flat/House No, Building",
+        "Street, Area, Landmark",
+        "Primary guardian",
+        "6-digit pincode",
+        "Previous institution",
+        "e.g., Business, Service",
+        "City",
+        "e.g., Marathi"
+      ]
+    },
+    {
+      "page_file": "Attendance.tsx",
+      "line_count": 1645,
+      "api_calls": [
+        "attendanceApi.markBulk",
+        "attendanceApi.scanCheckin",
+        "divisionsApi.list",
+        "standardsApi.list",
+        "studentsApi.list"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Optional remarks",
+        "Scan QR or type ADM..."
+      ]
+    },
+    {
+      "page_file": "Batches.tsx",
+      "line_count": 285,
+      "api_calls": [
+        "divisionsApi.create",
+        "divisionsApi.list",
+        "standardsApi.list"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. Classroom 102, Hall B",
+        "e.g. A, B, Morning Batch, JEE-Batch-1"
+      ]
+    },
+    {
+      "page_file": "CodeXStudio.tsx",
+      "line_count": 1352,
+      "api_calls": [
+        "codexApi.decode",
+        "codexApi.deleteScope",
+        "codexApi.encode",
+        "codexApi.generateQr",
+        "codexApi.getAuditLogs",
+        "codexApi.getConfig",
+        "codexApi.getProfileVersions",
+        "codexApi.getProfiles",
+        "codexApi.getScopes",
+        "codexApi.rollbackProfile",
+        "codexApi.saveScope",
+        "codexApi.updateConfig",
+        "codexApi.updateProfile"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. teacher or Administration or 122",
+        "e.g. 1250 or 1250.75",
+        "e.g. -AITDL",
+        "e.g. CX-",
+        "Required 4-digit PIN",
+        "e.g. CX-AZPQ",
+        "e.g. 4826",
+        "Justification for version update (e.g. Annual rotation of alphabet keys)"
+      ]
+    },
+    {
+      "page_file": "Communication.tsx",
+      "line_count": 2924,
+      "api_calls": [
+        "communicationApi.createTemplate",
+        "communicationApi.deleteTemplate",
+        "communicationApi.dispatchFeeReminders",
+        "communicationApi.getAutomationRules",
+        "communicationApi.getDiagnostics",
+        "communicationApi.getLogs",
+        "communicationApi.getTemplates",
+        "communicationApi.previewFeeReminders",
+        "communicationApi.retryLog",
+        "communicationApi.searchRecipients",
+        "communicationApi.sendMessage",
+        "communicationApi.testChannel",
+        "communicationApi.updateAutomationRules",
+        "communicationApi.updateTemplate"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. Monthly Fee Due Reminder",
+        "12011...",
+        "Search template name or code...",
+        "+91 98765 43210 or admin@example.com",
+        "Search student or parent...",
+        "11022...",
+        "Name (Optional)",
+        "e.g. MONTHLY_FEE_DUE"
+      ]
+    },
+    {
+      "page_file": "Courses.tsx",
+      "line_count": 1803,
+      "api_calls": [
+        "divisionsApi.list",
+        "standardsApi.list",
+        "studyMaterialsApi.create",
+        "studyMaterialsApi.delete",
+        "studyMaterialsApi.getStats",
+        "studyMaterialsApi.list",
+        "studyMaterialsApi.update",
+        "subjectsApi.list"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Enter summary, topics covered, target exam relevance, and homework problem set references...",
+        "Search materials by title or topic...",
+        "e.g. /materials/physics_ch3_handout.pdf or https://drive.google.com/...",
+        "Brief summary of topics covered in this material...",
+        "e.g. Thermodynamics & Heat Transfer Complete Handout",
+        "e.g. Chapter 4 - Chemical Kinetics Handout",
+        "e.g. /materials/chem_ch4.pdf or cloud link"
+      ]
+    },
+    {
+      "page_file": "Dashboard.tsx",
+      "line_count": 483,
+      "api_calls": [
+        "codexApi.getUserStatus"
+      ],
+      "input_names": [],
+      "placeholders_sample": []
+    },
+    {
+      "page_file": "Examinations.tsx",
+      "line_count": 1505,
+      "api_calls": [
+        "academicYearsApi.list",
+        "examinationsApi.create",
+        "examinationsApi.getAnalytics",
+        "examinationsApi.getMarks",
+        "examinationsApi.saveMarks",
+        "standardsApi.list"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. Mid-Term Assessment, JEE Mock Test 1, Unit Test 2"
+      ]
+    },
+    {
+      "page_file": "FeeCollection.tsx",
+      "line_count": 643,
+      "api_calls": [],
+      "input_names": [],
+      "placeholders_sample": [
+        "UPI ID / Cheque No. / UTR",
+        "Enter amount",
+        "Optional notes",
+        "\u20b90"
+      ]
+    },
+    {
+      "page_file": "Fees.tsx",
+      "line_count": 5145,
+      "api_calls": [
+        "academicYearsApi.list",
+        "boardsApi.list",
+        "feeCategoriesApi.create",
+        "feeCategoriesApi.list",
+        "feeStructuresApi.create",
+        "feeStructuresApi.update",
+        "paymentsApi.create",
+        "paymentsApi.get",
+        "paymentsApi.getReceipt",
+        "paymentsApi.reverse",
+        "paymentsApi.toggleEditPosted",
+        "paymentsApi.update",
+        "settingsApi.getAll",
+        "settingsApi.updateBatch",
+        "studentsApi.get"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. Class X Board Examination & Tuition Package",
+        "Reference or voucher #...",
+        "e.g. Laboratory, Test Series, Library...",
+        "e.g. Standard 10 Full Year Coaching",
+        "e.g. 48000",
+        "e.g. HDFC Bank, SBI...",
+        "Enter amount...",
+        "Additional remarks or notes..."
+      ]
+    },
+    {
+      "page_file": "FormsDocuments.tsx",
+      "line_count": 1109,
+      "api_calls": [
+        "divisionsApi.list",
+        "formsApi.bulkRender",
+        "formsApi.getAuditLogs",
+        "formsApi.getCatalogue",
+        "formsApi.renderForm",
+        "standardsApi.list",
+        "studentsApi.list",
+        "usersApi.list"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Search form, user, scope..."
+      ]
+    },
+    {
+      "page_file": "ImportExport.tsx",
+      "line_count": 1691,
+      "api_calls": [
+        "academicYearsApi.list",
+        "boardsApi.list",
+        "divisionsApi.list",
+        "importExportApi.downloadTemplate",
+        "importExportApi.execute",
+        "importExportApi.exportData",
+        "importExportApi.getEntities",
+        "importExportApi.getHistory",
+        "importExportApi.getHistoryDetail",
+        "importExportApi.previewFile",
+        "importExportApi.previewGrid",
+        "standardsApi.list"
+      ],
+      "input_names": [
+        "exportFormat",
+        "mode"
+      ],
+      "placeholders_sample": [
+        "\u2014",
+        "From",
+        "To"
+      ]
+    },
+    {
+      "page_file": "ImportFeeRegister.tsx",
+      "line_count": 804,
+      "api_calls": [
+        "feeRegisterImportApi.execute",
+        "feeRegisterImportApi.getPreview",
+        "feeRegisterImportApi.getStatus",
+        "feeRegisterImportApi.previewUpload"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Search student name..."
+      ]
+    },
+    {
+      "page_file": "InstallApp.tsx",
+      "line_count": 428,
+      "api_calls": [],
+      "input_names": [],
+      "placeholders_sample": []
+    },
+    {
+      "page_file": "LeadManagement.tsx",
+      "line_count": 2124,
+      "api_calls": [
+        "academicYearsApi.list",
+        "boardsApi.list",
+        "leadsApi.addFollowUp",
+        "leadsApi.convertToAdmission",
+        "leadsApi.createLead",
+        "leadsApi.deleteLead",
+        "leadsApi.getKanban",
+        "leadsApi.getLeadDossier",
+        "leadsApi.getLeads",
+        "leadsApi.getMetrics",
+        "leadsApi.scheduleDemo",
+        "leadsApi.updateStage",
+        "standardsApi.list",
+        "usersApi.list"
+      ],
+      "input_names": [
+        "dup_choice"
+      ],
+      "placeholders_sample": [
+        "e.g. JEE Foundation",
+        "e.g. +91 98765 43210",
+        "Parent full name",
+        "Leave blank for PA-2026-XXXXXX",
+        "Special requirements, batch timings, discount requests...",
+        "Parent phone",
+        "e.g. Sharma",
+        "e.g. Aarav"
+      ]
+    },
+    {
+      "page_file": "Login.tsx",
+      "line_count": 499,
+      "api_calls": [
+        "authApi.login"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. admin",
+        "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+      ]
+    },
+    {
+      "page_file": "NotFound.tsx",
+      "line_count": 43,
+      "api_calls": [],
+      "input_names": [],
+      "placeholders_sample": []
+    },
+    {
+      "page_file": "Payments.tsx",
+      "line_count": 1365,
+      "api_calls": [
+        "paymentsApi.approve",
+        "paymentsApi.getAuditTrail",
+        "paymentsApi.getMyPermissions",
+        "paymentsApi.list",
+        "paymentsApi.postPayment",
+        "paymentsApi.requestRefund",
+        "paymentsApi.reverse",
+        "paymentsApi.submit",
+        "paymentsApi.toggleEditPosted",
+        "paymentsApi.update"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. Student withdrawn from batch, excess payment received, discount adjustment...",
+        "e.g. HDFC Bank, SBI...",
+        "e.g. UPI-123456789 or Chq #456",
+        "e.g. Corrected parent cash payment typo, updated UTR number after reconciliation...",
+        "Optional voucher remarks...",
+        "Specify reason for temporarily unlocking posted payment corrections (e.g. Bank reconciliation discrepancy remediation)...",
+        "e.g. Refund UTR #987654321",
+        "e.g. Cheque bounced, duplicate entry, incorrect amount recorded..."
+      ]
+    },
+    {
+      "page_file": "Receipt.tsx",
+      "line_count": 76,
+      "api_calls": [],
+      "input_names": [],
+      "placeholders_sample": []
+    },
+    {
+      "page_file": "Releases.tsx",
+      "line_count": 1170,
+      "api_calls": [
+        "releasesApi.approve",
+        "releasesApi.generateDraft",
+        "releasesApi.get",
+        "releasesApi.getAudit",
+        "releasesApi.getCurrent",
+        "releasesApi.getPendingChanges",
+        "releasesApi.list",
+        "releasesApi.promoteRc",
+        "releasesApi.publish",
+        "releasesApi.rollback",
+        "releasesApi.update",
+        "releasesApi.validate"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Detail the failure reason or emergency rollback requirement...",
+        "e.g. 1.0.0",
+        "e.g. 6.99.2 or 7.0.0"
+      ]
+    },
+    {
+      "page_file": "Reports.tsx",
+      "line_count": 1637,
+      "api_calls": [
+        "academicReportsApi.getBatchCapacity",
+        "academicReportsApi.getDistribution",
+        "academicReportsApi.getFacultyLoad",
+        "communicationApi.getLogs",
+        "divisionsApi.list",
+        "examinationsApi.getAnalytics",
+        "examinationsApi.list",
+        "feesApi.getOverview",
+        "importExportApi.getHistory",
+        "reportsApi.attendanceSummary",
+        "reportsApi.curriculumMatrix",
+        "reportsApi.dailyCollection",
+        "reportsApi.examMeritRegister",
+        "reportsApi.feeCollection",
+        "reportsApi.feeDefaulters",
+        "reportsApi.outstanding",
+        "reportsApi.paymentsSummary",
+        "reportsApi.studentMasterDirectory",
+        "reportsApi.systemAuditSummary",
+        "reportsApi.timetableUtilization",
+        "reportsApi.withdrawalAnalytics",
+        "reportsApi.withdrawals",
+        "standardsApi.list",
+        "teacherPayrollApi.getReport"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Search all 24 reports..."
+      ]
+    },
+    {
+      "page_file": "Settings.tsx",
+      "line_count": 3048,
+      "api_calls": [
+        "settingsApi.createLookup",
+        "settingsApi.deleteLookup",
+        "settingsApi.getAll",
+        "settingsApi.getAuditLogs",
+        "settingsApi.getLookups",
+        "settingsApi.getProfile",
+        "settingsApi.resetDefaults",
+        "settingsApi.updateBatch",
+        "settingsApi.updateLookup",
+        "settingsApi.updateProfile"
+      ],
+      "input_names": [
+        "workflow_mode"
+      ],
+      "placeholders_sample": [
+        "https://... or /media/backgrounds/campus.jpg",
+        "Learn \u2022 Practice \u2022 Achieve",
+        "e.g. UPI Direct Payment",
+        "e.g. UPI_DIRECT",
+        "Search settings, e.g., ",
+        "Search settings...",
+        "Optional explanatory note",
+        "Search code or label..."
+      ]
+    },
+    {
+      "page_file": "StaffManagement.tsx",
+      "line_count": 1405,
+      "api_calls": [
+        "staffApi.actionLeave",
+        "staffApi.create",
+        "staffApi.dailyAttendance",
+        "staffApi.documentCatalogue",
+        "staffApi.get",
+        "staffApi.getStaffDashboard",
+        "staffApi.leavesList",
+        "staffApi.markAttendance"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. Rajesh",
+        "e.g. Verma",
+        "name@prashantacademy.edu.in",
+        "e.g. Operations Coordinator",
+        "10-digit mobile",
+        "e.g. staff.rajesh",
+        "Search staff by name, employee code, phone, role\u2026"
+      ]
+    },
+    {
+      "page_file": "StaffProfilePage.tsx",
+      "line_count": 724,
+      "api_calls": [
+        "staffApi.get",
+        "staffApi.getActivityHistory",
+        "staffApi.leavesList"
+      ],
+      "input_names": [],
+      "placeholders_sample": []
+    },
+    {
+      "page_file": "Standards.tsx",
+      "line_count": 298,
+      "api_calls": [],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g., STD1",
+        "e.g., A, B, C",
+        "e.g., Room 101",
+        "e.g., Standard 1, Standard 10",
+        "1"
+      ]
+    },
+    {
+      "page_file": "StudentDashboard.tsx",
+      "line_count": 998,
+      "api_calls": [
+        "studentPortalApi.getAttendance",
+        "studentPortalApi.getClasses",
+        "studentPortalApi.getDashboard",
+        "studentPortalApi.getFees",
+        "studentPortalApi.getProfile",
+        "studentPortalApi.getStudyMaterials",
+        "studentPortalApi.getTests",
+        "studentPortalApi.getTimetable",
+        "studentPortalApi.updateProfile",
+        "studentsApi.list"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. O+, B+, A+",
+        "e.g. 400601",
+        "student@example.com",
+        "e.g. Thane / Mumbai",
+        "Street, Building, Landmark",
+        "Enter contact number"
+      ]
+    },
+    {
+      "page_file": "StudentDetail.tsx",
+      "line_count": 2411,
+      "api_calls": [
+        "divisionsApi.list",
+        "feesApi.adjustStudentFees",
+        "feesApi.getStudentFeeDetails",
+        "standardsApi.list",
+        "studentsApi.addDocument",
+        "studentsApi.deleteDocument",
+        "studentsApi.getProfile",
+        "studentsApi.lifecycleHistory",
+        "studentsApi.update"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. 10th Standard Marksheet",
+        "Email address",
+        "student@example.com",
+        "e.g. Architect, Teacher",
+        "Last Name",
+        "e.g. 9876543210",
+        "First Name",
+        "e.g. General, OBC, SC, ST"
+      ]
+    },
+    {
+      "page_file": "Students.tsx",
+      "line_count": 1681,
+      "api_calls": [
+        "divisionsApi.list",
+        "enrollmentsApi.create",
+        "enrollmentsApi.getStats",
+        "enrollmentsApi.transfer",
+        "settingsApi.getAll",
+        "settingsApi.updateBatch",
+        "standardsApi.list",
+        "studentsApi.create"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Search audit timeline by student or action...",
+        "Parent / Guardian Name",
+        "Filter cards by student name or roll...",
+        "Father / Mother / Guardian",
+        "Student phone",
+        "e.g. Sharma",
+        "e.g. Aarav",
+        "Search by name, admission no., phone, city\u2026"
+      ]
+    },
+    {
+      "page_file": "Subjects.tsx",
+      "line_count": 1208,
+      "api_calls": [
+        "boardsApi.list",
+        "standardsApi.list",
+        "subjectsApi.checkDuplicate",
+        "subjectsApi.createCanonical",
+        "subjectsApi.createMapping",
+        "subjectsApi.deleteCanonical",
+        "subjectsApi.deleteMapping"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Search master subjects by name, code, or alias...",
+        "e.g. MATH-10, ENG-9",
+        "e.g. MATH001, ENG001",
+        "e.g. Standard algebra, calculus, and geometry curriculum",
+        "e.g. Mathematics, Sanskrit, Economics, Psychology",
+        "Filter curriculum mappings...",
+        "e.g. Math, Maths, Pure Mathematics",
+        "e.g. English Language & Literature"
+      ]
+    },
+    {
+      "page_file": "SysAdminWorkspace.tsx",
+      "line_count": 738,
+      "api_calls": [
+        "sysadminApi.executeUniversalEdit",
+        "sysadminApi.getOverview",
+        "sysadminApi.getSystemSettings",
+        "sysadminApi.updateSystemSettings"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Search security audits by action, details, actor...",
+        "e.g. phone, address, status",
+        "e.g. 114",
+        "State the audit reason for this direct superuser record change...",
+        "New value to commit"
+      ]
+    },
+    {
+      "page_file": "TeacherManagement.tsx",
+      "line_count": 2170,
+      "api_calls": [
+        "academicYearsApi.list",
+        "boardsApi.list",
+        "divisionsApi.list",
+        "staffApi.assignmentsList",
+        "staffApi.create",
+        "staffApi.createAssignment",
+        "staffApi.dailyAttendance",
+        "staffApi.deleteAssignment",
+        "staffApi.getTeacherDashboard",
+        "staffApi.leavesList",
+        "staffApi.markAttendance",
+        "standardsApi.list",
+        "subjectsApi.list",
+        "teacherPayrollApi.bulkCalculatePayroll",
+        "teacherPayrollApi.getMonthlyPayrolls",
+        "teacherPayrollApi.getSessions"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "sharma@prashantacademy.com",
+        "+91 98200 12345",
+        "Leave empty for secure auto-generated temporary password",
+        "e.g. Mathematics & Calculus",
+        "e.g. M.Sc., B.Ed.",
+        "Search faculty by name, ID, subject...",
+        "e.g. ramesh.sharma",
+        "e.g. Sharma"
+      ]
+    },
+    {
+      "page_file": "TeacherPayroll.tsx",
+      "line_count": 2237,
+      "api_calls": [
+        "divisionsApi.list",
+        "subjectsApi.list",
+        "teacherPayrollApi.adjustPayroll",
+        "teacherPayrollApi.approvePayroll",
+        "teacherPayrollApi.assignSubstitute",
+        "teacherPayrollApi.bulkApproveSessions",
+        "teacherPayrollApi.bulkCalculatePayroll",
+        "teacherPayrollApi.calculatePayroll",
+        "teacherPayrollApi.createSession",
+        "teacherPayrollApi.exportReportUrl",
+        "teacherPayrollApi.finalizePayroll",
+        "teacherPayrollApi.getMonthlyPayrolls",
+        "teacherPayrollApi.getPayrollDetails",
+        "teacherPayrollApi.getProfileDetails",
+        "teacherPayrollApi.getProfiles",
+        "teacherPayrollApi.getReport",
+        "teacherPayrollApi.getSessions",
+        "teacherPayrollApi.getTeachers",
+        "teacherPayrollApi.getVouchers",
+        "teacherPayrollApi.recordVoucher",
+        "teacherPayrollApi.rejectSession",
+        "teacherPayrollApi.submitPayroll",
+        "teacherPayrollApi.updateProfile"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "Explain why this session cannot be approved for compensation...",
+        "e.g. UTR-982348",
+        "Search faculty name, designation...",
+        "e.g. Diwali festive bonus + leave deduction",
+        "e.g. Annual academic appraisal increment",
+        "e.g. 28",
+        "e.g. Primary teacher on emergency medical leave",
+        "e.g. Chapter 4: Chemical Bonding Theory"
+      ]
+    },
+    {
+      "page_file": "TeacherProfilePage.tsx",
+      "line_count": 2162,
+      "api_calls": [
+        "staffApi.addAddress",
+        "staffApi.addBankAccount",
+        "staffApi.addKeyContact",
+        "staffApi.deleteAddress",
+        "staffApi.deleteBankAccount",
+        "staffApi.deleteKeyContact",
+        "staffApi.get",
+        "staffApi.getActivityHistory",
+        "staffApi.leavesList",
+        "staffApi.setPrimaryAddress",
+        "staffApi.setPrimaryBankAccount",
+        "teacherPayrollApi.getMonthlyPayrolls",
+        "teacherPayrollApi.getProfileDetails",
+        "teacherPayrollApi.getSessions",
+        "timetableApi.list"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. HDFC Bank",
+        "+91 98200 12345",
+        "HDFC0000123",
+        "50100012345678",
+        "Building, street, landmark...",
+        "Contact person",
+        "contact@example.com"
+      ]
+    },
+    {
+      "page_file": "TrainingManagement.tsx",
+      "line_count": 522,
+      "api_calls": [
+        "trainingApi.getResetLogs",
+        "trainingApi.getStatus",
+        "trainingApi.resetEnvironment",
+        "trainingApi.updateConfig"
+      ],
+      "input_names": [],
+      "placeholders_sample": []
+    },
+    {
+      "page_file": "UserProfile.tsx",
+      "line_count": 1800,
+      "api_calls": [
+        "divisionsApi.list",
+        "standardsApi.list",
+        "usersApi.getProfile",
+        "usersApi.resendInvitation",
+        "usersApi.resetPassword",
+        "usersApi.toggleStatus",
+        "usersApi.update"
+      ],
+      "input_names": [
+        "reset_type"
+      ],
+      "placeholders_sample": [
+        "Minimum 6 characters",
+        "e.g. Senior Faculty - Physics, Academic Coordinator",
+        "e.g. TCH-005, ADM-002"
+      ]
+    },
+    {
+      "page_file": "Users.tsx",
+      "line_count": 1283,
+      "api_calls": [
+        "divisionsApi.list",
+        "standardsApi.list",
+        "usersApi.create",
+        "usersApi.delete",
+        "usersApi.getStats",
+        "usersApi.list",
+        "usersApi.resendInvitation",
+        "usersApi.resetPassword",
+        "usersApi.toggleStatus",
+        "usersApi.update"
+      ],
+      "input_names": [],
+      "placeholders_sample": [
+        "e.g. Senior Faculty",
+        "e.g. TCH-010",
+        "Search by name, username, email, staff code, or student admission no...",
+        "Minimum 8 characters",
+        "10-digit mobile"
+      ]
+    }
+  ]
+}

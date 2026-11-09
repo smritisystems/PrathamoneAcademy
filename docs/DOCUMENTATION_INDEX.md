@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-09 13:10:19  
-**Total Indexed Items:** 318  
+**Last Reindexed:** 2026-11-09 13:28:01  
+**Total Indexed Items:** 327  
 
 ---
 
@@ -15,9 +15,9 @@
 | Module # | Module Directory | Registered Documents | Description |
 |---|---|---|---|
 | `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **8** | Product Overview & Vision |
-| `01` | [01_ARCHITECTURE](#01_architecture) | **3** | System Architecture & Workflows |
-| `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **4** | Installation & Deployment |
-| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **12** | Academic Structure & Courses |
+| `01` | [01_ARCHITECTURE](#01_architecture) | **6** | System Architecture & Workflows |
+| `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **5** | Installation & Deployment |
+| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **13** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **18** | Student Directory & Admissions |
 | `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **7** | Teacher & Faculty Directory |
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
@@ -30,7 +30,7 @@
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **12** | Sysadmin Center & System Settings |
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **11** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **5** | Integrations, Messaging & Importers |
-| `16` | [16_DATABASE_API](#16_database_api) | **3** | Database Schema & REST API Standards |
+| `16` | [16_DATABASE_API](#16_database_api) | **5** | Database Schema & REST API Standards |
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **9** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **1** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **5** | Releases, Versioning & Changelogs |
@@ -39,7 +39,7 @@
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **9** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
-| `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **6** | Business Rules & SSOT Policy |
+| `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
 | `assets` | [assets/screenshots](#asset-galleries) | **83** | Verification UI captures, diagrams, attachments |
 
@@ -67,6 +67,9 @@
 |---|---|---|---|---|---|---|
 | **Detailed Workflow Specifications** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ARCHITECTURE_SPECIFICATION_WORKFLOW-SPECIFICATIONS_V1.md](01_ARCHITECTURE/2026-11-03_ARCHITECTURE_SPECIFICATION_WORKFLOW-SPECIFICATIONS_V1.md) | - |
 | **Global Branding & Appearance Architecture Specification** | `SPECIFICATION` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md) | 01_ARCHITECTURE, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
+| **Global Data Inventory — Complete Software & Schema Census** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
+| **Global Duplicate Table Audit — Forensic Structural Consolidation Review** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 16_DATABASE_API |
+| **Global Field Deduplication Audit — Canonical Attributes & Snapshot Governance** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-FIELD-DEDUPLICATION-AUDIT_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-FIELD-DEDUPLICATION-AUDIT_V1.md) | 01_ARCHITECTURE, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
 | **System Architecture Document** | `ARCHITECTURE-DESIGN` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md) | - |
 
 
@@ -74,6 +77,7 @@
 
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
+| **Data Migration and Integrity Report — Baseline Verification & Zero-Loss Migration Protocols** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_DEPLOYMENT_REPORT_DATA-MIGRATION-AND-INTEGRITY_V1.md](02_INSTALLATION_DEPLOYMENT/2026-11-09_DEPLOYMENT_REPORT_DATA-MIGRATION-AND-INTEGRITY_V1.md) | 02_INSTALLATION_DEPLOYMENT, 01_ARCHITECTURE, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
 | **Installation and Local Development Guide** | `DEVELOPER-MANUAL` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md](02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md) | - |
 | **PrathamOne Academy — Customer Deployment Synchronization Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_CUSTOMER-DEPLOYMENT-SYNCHRONIZATION-REPORT_V1.md](02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_CUSTOMER-DEPLOYMENT-SYNCHRONIZATION-REPORT_V1.md) | - |
 | **PrathamOne Academy — GitHub Integration & One-Command Deployment Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_GITHUB-PUSH-AND-DOCKER-INSTALLER-REPORT_V1.md](02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_GITHUB-PUSH-AND-DOCKER-INSTALLER-REPORT_V1.md) | - |
@@ -95,6 +99,7 @@
 | **Standards, Classes & Boards Changelog** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-CHANGELOG_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-CHANGELOG_V1.md) | - |
 | **Standards, Classes & Boards Module Specification** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-SPECIFICATION_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-SPECIFICATION_V1.md) | - |
 | **Study Materials & Digital Content Dedicated Workspaces Completion Matrix** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_COURSES-MATERIALS_COMPLETION-MATRIX_WORKSPACES_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-09_COURSES-MATERIALS_COMPLETION-MATRIX_WORKSPACES_V1.md) | 03_ACADEMIC_MANAGEMENT, 08_EXAMINATION, 13_SYSADMIN_SETTINGS |
+| **Subject Master Canonicalization Report — Cross-Standard Reuse & Relational Bridge Architecture** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ACADEMIC-MANAGEMENT_REPORT_SUBJECT-MASTER-CANONICALIZATION_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-09_ACADEMIC-MANAGEMENT_REPORT_SUBJECT-MASTER-CANONICALIZATION_V1.md) | 03_ACADEMIC_MANAGEMENT, 08_EXAMINATION, 01_ARCHITECTURE, 16_DATABASE_API |
 | **Subject Master Duplication Audit, Canonical Catalogue Architecture & Standard Mappings Implementation Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_SUBJECT-MASTER-ARCHITECTURE-AND-MAPPINGS_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_SUBJECT-MASTER-ARCHITECTURE-AND-MAPPINGS_V1.md) | 03_ACADEMIC_MANAGEMENT, 08_EXAMINATION, 12_RBAC_SECURITY |
 
 
@@ -287,7 +292,9 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **API Standards & Conventions** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_DATABASE_API_SPECIFICATION_REST-API-STANDARDS_V1.md](16_DATABASE_API/2026-11-03_DATABASE_API_SPECIFICATION_REST-API-STANDARDS_V1.md) | - |
+| **API and Service Consolidation Report — Endpoint Governance & Business Logic SSOT** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_DATABASE-API_REPORT_API-AND-SERVICE-CONSOLIDATION_V1.md](16_DATABASE_API/2026-11-09_DATABASE-API_REPORT_API-AND-SERVICE-CONSOLIDATION_V1.md) | 16_DATABASE_API, 01_ARCHITECTURE, 12_RBAC_SECURITY, 25_BUSINESS_REQUIREMENTS |
 | **Database Design & Schema Specification** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_DATABASE_API_SPECIFICATION_DATABASE-DESIGN-AND-SCHEMA_V1.md](16_DATABASE_API/2026-11-03_DATABASE_API_SPECIFICATION_DATABASE-DESIGN-AND-SCHEMA_V1.md) | - |
+| **Frontend–Backend–Database Mapping Matrix — End-to-End Field Traceability Audit** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_DATABASE-API_REPORT_FRONTEND-BACKEND-DATABASE-MAPPING-MATRIX_V1.md](16_DATABASE_API/2026-11-09_DATABASE-API_REPORT_FRONTEND-BACKEND-DATABASE-MAPPING-MATRIX_V1.md) | 16_DATABASE_API, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS |
 | **PrathamOne Academy — Database & Data Model Optimization Audit** | `AUDIT-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md](16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md) | - |
 
 
@@ -414,6 +421,8 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **Coaching Business Rules** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_COACHING-BUSINESS-RULES_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_COACHING-BUSINESS-RULES_V1.md) | - |
+| **Global Data Governance Final Report — Comprehensive Audit Synthesis & Stage 2 Remediation Blueprint** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md) | 25_BUSINESS_REQUIREMENTS, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 16_DATABASE_API |
+| **Global Policy: Data Deduplication, Canonical Master Reuse & Frontend-Backend Mapping Governance** | `POLICY` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md) | 25_BUSINESS_REQUIREMENTS, 01_ARCHITECTURE, 16_DATABASE_API |
 | **Global Single Source of Truth (SSOT) & Anti-Duplication Governance Framework** | `POLICY` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md) | 01_ARCHITECTURE, 12_RBAC_SECURITY, 16_DATABASE_API, 24_AI_AGENT_KNOWLEDGE |
 | **Governance Policy Decision Register** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md) | - |
 | **Master Business Rules Inventory** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_CORE-BUSINESS-RULES_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_CORE-BUSINESS-RULES_V1.md) | - |

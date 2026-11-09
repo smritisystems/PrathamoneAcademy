@@ -1,0 +1,157 @@
+---
+title: "Global Field Deduplication Audit — Canonical Attributes & Snapshot Governance"
+module: "01_ARCHITECTURE"
+category: "AUDIT-REPORT"
+document_type: "REPORT"
+product: "PrathamOne EduOS"
+edition: "Coaching Institute Edition"
+version: "1.0.0"
+doc_version: "1.0"
+created_date: "2026-11-09"
+updated_date: "2026-11-09"
+author: "Jawahar R Mallah"
+organization: "AITDL — AI Technology & Development Lab"
+status: "Approved"
+tags: ["audit", "database", "fields", "deduplication", "snapshots", "ssot"]
+entities: ["DatabaseColumns", "Snapshots", "Students", "Payments", "Guardians"]
+api_routes: ["/api/v1/students", "/api/v1/payments", "/api/v1/leads", "/api/v1/attendance"]
+related_modules: ["01_ARCHITECTURE", "04_STUDENT_MANAGEMENT", "09_FEES_PAYMENTS", "16_DATABASE_API", "25_BUSINESS_REQUIREMENTS"]
+---
+
+# PRATHAMONE EDUOS — GLOBAL FIELD DEDUPLICATION AUDIT
+
+**Product:** PrathamOne EduOS (Coaching Institute Edition)  
+**Version:** 1.0.0  
+**Architect:** Jawahar R Mallah  
+**Organization:** AITDL — AI Technology & Development Lab  
+**Audit Date:** 2026-11-09  
+**Scope:** Column-level inspection across all 74 database tables.  
+
+---
+
+## 1. EXECUTIVE SUMMARY & FIELD REPETITION FREQUENCY
+
+This forensic audit analyzes column-level repetition, data normalization, transaction snapshots, and attribute ownership across the 74 tables of **PrathamOne EduOS**.
+
+In strict adherence to **RULE 001 (SSOT)** and **RULE 004 (Strict Entity Classification)**, we differentiate between:
+1. **Unjustified Data Duplication:** Repeated storage of master attributes that creates divergence risks (e.g., student phone copied into transactional tables).
+2. **Intentional Transaction Snapshots:** Immutable frozen values required by law, accounting standards, or academic integrity (e.g., historical fee receipt amounts or student name on a printed certificate).
+
+### 1.1 Top Repeated Business Fields Across the Database
+
+| Field Name | Occurrence Count | Participating Tables Sample | Forensic Classification | Remediation / Governance Rule |
+| :--- | -: | :--- | :--- | :--- |
+| `status` | **24 tables** | `attendances`, `fee_invoices`, `payments`, `leads`, `students`, `users` | **Domain State Enum** | Retain column; validate domain-specific enum typing. |
+| `name` | **15 tables** | `academic_years`, `boards`, `canonical_subjects`, `institutions`, `divisions` | **Entity Label** | Authoritative in respective master table. |
+| `description` | **14 tables** | `boards`, `canonical_subjects`, `discounts`, `examinations` | **Entity Metadata** | Normalized per entity. |
+| `student_id` | **12 tables** | `attendances`, `exam_marks`, `fee_invoices`, `guardians`, `payments` | **Foreign Key** | Correct referential link to `students.id`. |
+| `is_demo` | **12 tables** | `attendances`, `communication_logs`, `exam_marks`, `fee_invoices` | **Tenant Isolation** | System isolation flag for training mode. |
+| `data_environment` | **12 tables** | `attendances`, `communication_logs`, `exam_marks`, `payments` | **Tenant Isolation** | Distinguishes `live`, `demo`, and `sandbox`. |
+| `demo_dataset_id` | **12 tables** | `attendances`, `communication_logs`, `exam_marks`, `payments` | **Tenant Isolation** | Links to specific training dataset seed. |
+| `notes` | **12 tables** | `fee_invoices`, `leads`, `payments`, `refunds`, `staff_leaves` | **Operational Free-text** | Context-specific notes. |
+| `standard_id` | **11 tables** | `announcements`, `divisions`, `examinations`, `fee_structures` | **Foreign Key** | Canonical link to `standards.id`. |
+| `user_id` | **11 tables** | `audit_logs`, `permissions`, `staff_attendances`, `staff_profiles` | **Foreign Key** | Canonical link to `users.id`. |
+| `approved_by_id` | **9 tables** | `payments`, `refunds`, `staff_leaves`, `teacher_payrolls` | **Workflow Actor FK** | Canonical link to `users.id`. |
+| `amount` | **8 tables** | `fee_invoice_items`, `fee_structures`, `payment_receipts`, `payments` | **Financial Quantity** | Normalized currency / ledger field. |
+| `remarks` | **7 tables** | `attendances`, `exam_marks`, `lead_follow_ups`, `staff_attendances` | **Operational Free-text** | Action-specific commentary. |
+| `code` | **7 tables** | `boards`, `canonical_subjects`, `divisions`, `institutions` | **Unique Identifier** | Unique business code within scope. |
+| `created_by_id` | **7 tables** | `codex_mapping_profiles`, `shared_document_tokens`, `system_releases` | **Audit Actor FK** | Canonical link to `users.id`. |
+| `phone` | **5 tables** | `guardians`, `institutions`, `leads`, `students`, `staff_key_contacts` | **Contact Master** | Suspected duplication. Requires canonical normalization. |
+| `email` | **6 tables** | `guardians`, `institutions`, `leads`, `users`, `staff_key_contacts` | **Contact Master** | Suspected duplication. Canonical login: `users.email`. |
+| `city` | **5 tables** | `institutions`, `leads`, `staff_addresses`, `staff_profiles` | **Address Component** | Normalize child addresses. |
+
+---
+
+## 2. INTENTIONAL TRANSACTION SNAPSHOTS VS UNJUSTIFIED DUPLICATION
+
+### 2.1 Mandatory Financial Ledger Snapshots (Legally Protected)
+
+> [!CAUTION]
+> **Financial Ledger Immutability Directive:**
+> Never replace a historical transaction snapshot with a dynamic foreign key join to master data.
+> If a student changes their name from "John Doe" to "John Smith" in 2027, Tax Invoice #INV-2026-001 issued in 2026 MUST continue to display "John Doe". Altering historical tax invoices is a violation of financial accounting standards and statutory regulations.
+
+The following table identifies intentional, legally required snapshot columns in **PrathamOne EduOS**:
+
+| Table | Snapshot Column | Source Master Entity | Justification for Snapshot Preservation | Permissible to Normalize? |
+| :--- | :--- | :--- | :--- | :--- |
+| `payment_receipts` | `student_name` | `students.name` | Legal receipt audit trail. Receipt must reflect name at moment of transaction. | **STRICTLY PROHIBITED** |
+| `payment_receipts` | `standard_name` | `standards.name` | Academic class at transaction time (student may subsequently promote). | **STRICTLY PROHIBITED** |
+| `payment_receipts` | `receipt_number` | `sequence` generator | Statutory sequential invoice numbering. | **STRICTLY PROHIBITED** |
+| `payment_receipts` | `amount_paid` | `payments.amount` | Immutable payment ledger allocation. | **STRICTLY PROHIBITED** |
+| `fee_invoice_items` | `item_name` | `fee_categories.name` | Fee description at billing generation time. | **STRICTLY PROHIBITED** |
+| `fee_invoice_items` | `unit_amount` | `fee_structures.amount` | Base rate at time of fee structure assignment. | **STRICTLY PROHIBITED** |
+| `exam_marks` | `max_marks` | `examinations.max_marks` | Test ceiling marks at time exam was conducted. | **STRICTLY PROHIBITED** |
+| `exam_marks` | `passing_marks` | `examinations.passing_marks`| Minimum threshold at time exam was conducted. | **STRICTLY PROHIBITED** |
+| `staff_generated_documents`| `document_data` | JSON snapshot | State of employee details at time document was signed. | **STRICTLY PROHIBITED** |
+
+---
+
+### 2.2 Unjustified Duplications & Normalization Targets
+
+The audit identified three areas where data is copied without an immutable snapshot justification:
+
+#### Area 1: Contact Information (`phone` & `email`)
+- **Current State:**
+  - `students`: Contains `phone`, `email`.
+  - `guardians`: Contains `phone`, `email`.
+  - `leads`: Contains `phone`, `email`.
+  - `users`: Contains `phone`, `email`.
+  - `staff_key_contacts`: Contains `phone`, `email`.
+- **Divergence Risk:** A student updating their phone number in `students` leaves old numbers in `leads` and `guardians`.
+- **Canonical Rule:**
+  - User Authentication Identity: `users.email` and `users.phone` is the SSOT for user login.
+  - Student Contact: `students.phone` is primary student mobile.
+  - Guardian Contact: `guardians.phone` is parent mobile for SMS alerts.
+  - Lead Conversion: When a lead converts to admission (`ConvertToAdmissionRequest`), the API must write directly to `students` and `guardians` and mark `leads.status = "converted"`, linking `leads.student_id = student.id`.
+
+#### Area 2: Address Data Normalization
+- **Current State:**
+  - `staff_profiles` contains legacy `address`, while `staff_addresses` (child relationship table) contains `street`, `city`, `state`, `pincode`.
+- **Canonical Action:** In Stage 2, deprecate flat `address` text column on `staff_profiles` in favor of normalized `staff_addresses`.
+
+#### Area 3: Curriculum Subject Name Duplication
+- **Current State:** `subjects.name` copies `canonical_subjects.name`.
+- **Canonical Action:** In the frontend and backend responses, `subjects` should display `canonical_subjects.name` dynamically via SQL join or relationship property, rather than storing redundant name strings.
+
+---
+
+## 3. STATUS FIELD SEMANTIC DIFFERENTIATION
+
+Although 24 tables have a `status` column, they represent **completely distinct business state machines** and MUST NOT be merged:
+
+| Domain Table | Valid Status Values | State Machine Semantic |
+| :--- | :--- | :--- |
+| `students` | `active`, `inactive`, `graduated`, `exited`, `suspended` | Student academic enrollment lifecycle. |
+| `users` | `active`, `suspended`, `pending_verification`, `disabled` | Authentication & login access state. |
+| `fee_invoices` | `draft`, `issued`, `partially_paid`, `paid`, `overdue`, `cancelled` | Accounts receivable ledger state. |
+| `payments` | `success`, `pending`, `failed`, `reversed`, `refunded` | Financial payment execution state. |
+| `attendances` | `present`, `absent`, `late`, `excused`, `half_day` | Daily student attendance register. |
+| `staff_attendances`| `present`, `absent`, `late`, `on_leave`, `half_day` | Staff biometric / manual attendance register. |
+| `staff_leaves` | `pending`, `approved`, `rejected`, `cancelled` | Employee leave workflow request. |
+| `leads` | `new`, `contacted`, `demo_scheduled`, `demo_attended`, `converted`, `lost`| CRM sales conversion pipeline. |
+| `examinations` | `scheduled`, `in_progress`, `completed`, `marks_entered`, `published` | Academic examination execution phase. |
+
+---
+
+## 4. CANONICAL ATTRIBUTE OWNERSHIP MATRIX
+
+| Business Entity Attribute | Authoritative Canonical Table.Column | Access via FK Join | Direct Write Restriction |
+| :--- | :--- | :--- | :--- |
+| User Login Email | `users.email` | `users.id` | Auth service only |
+| Student Full Name | `students.name` | `students.id` | Student registration modal |
+| Student Admission No | `students.admission_number` | `students.id` | Unique sequence generator |
+| Subject Canonical Name | `canonical_subjects.name` | `canonical_subjects.id` | Academic master |
+| Academic Year Label | `academic_years.name` | `academic_years.id` | Academic setup |
+| Standard / Class Name | `standards.name` | `standards.id` | Academic setup |
+| Division / Section Name | `divisions.name` | `divisions.id` | Academic setup |
+| Fee Category Name | `fee_categories.name` | `fee_categories.id` | Fee setup |
+| Employee Base Salary | `teacher_payment_profiles.base_salary` | `teacher_payment_profiles.user_id` | HR Payroll service |
+
+---
+
+## 5. AUDIT RECOMMENDATIONS FOR STAGE 2
+
+1. **Protect Immutable Snapshots:** Ensure no refactoring attempts to remove `payment_receipts.student_name` or `exam_marks.max_marks`.
+2. **Clean Up Flat Address on Staff Profile:** Migrate legacy `staff_profiles.address` to `staff_addresses`.
+3. **Standardize CRM Conversion:** Ensure `leads` conversion propagates cleanly to `students` and `guardians` without orphaned records.

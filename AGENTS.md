@@ -38,8 +38,11 @@ Before writing any new code, you MUST comply with the 10 Non-Negotiable SSOT Rul
 8. **RULE 008 — Shared Frontend Components:** Search and reuse `frontend/src/components/common/` before creating new forms, tables, modals, or selectors.
 9. **RULE 009 — Centralized Configuration:** Institute settings in `institute_settings`, system configs in `system_settings`, product version in `config.py`.
 10. **RULE 010 — Global View-First & Explicit Edit Mode Governance:** View Mode is the default across all application workspaces, pages, forms, and profiles. No user may create, update, or delete records without explicitly activating scoped Edit Mode. Deletions strictly require active Edit Mode, role authorization, modal confirmation, and historical financial ledger immutability enforcement. Navigation and logout automatically reset state to View Mode.
+11. **RULE 011 — Mandatory Data Deduplication & Canonical Master Reuse:** All shared entities (subjects, fee categories, academic years, standards) must be registered once in their canonical master table and reused across grades, boards, and curricula via mapping relationships. No shared entity record may be duplicated merely because it appears in multiple standards. Historical ledger snapshots (receipts, issued invoices, exam marks) must be preserved as immutable records and never replaced with dynamic joins.
 
-Full specification: [docs/25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md](file:///f:/PrashantAcademy/docs/25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md).
+Full specifications:
+- [docs/25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md](file:///f:/PrashantAcademy/docs/25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md)
+- [docs/25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md](file:///f:/PrashantAcademy/docs/25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md)
 
 ---
 
