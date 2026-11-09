@@ -489,8 +489,13 @@ export default function PaymentReceiptView({
           </div>
         )}
 
+        {/* Top Sovereign Navy & Gold Accent Strip */}
+        <div className="w-full h-1 bg-[#0b2b5c] rounded-t-xl overflow-hidden relative z-10">
+          <div className="w-full h-0.5 bg-[#d4af37] absolute bottom-0" />
+        </div>
+
         {/* 1. Official Academy Header */}
-        <header className="receipt-header flex items-center justify-between gap-3 pb-3 relative z-10">
+        <header className="receipt-header flex items-center justify-between gap-3 pt-2.5 pb-2 relative z-10">
           <div className="flex items-center gap-3 min-w-0">
             {/* PA Royal Blue Monogram Emblem or Custom Uploaded Logo */}
             {branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? (
@@ -505,8 +510,9 @@ export default function PaymentReceiptView({
                 }}
               />
             ) : null}
+            {/* Executive Dual-Ring Collegiate Crest */}
             <div
-              className={`w-12 h-12 bg-[#0256b9] rounded-2xl text-white font-black text-2xl flex items-center justify-center shadow-xs shrink-0 select-none ${
+              className={`w-12 h-12 bg-[#0a2540] rounded-2xl text-white font-black text-xl flex items-center justify-center shadow-xs shrink-0 select-none border-2 border-[#d4af37] ${
                 branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? 'hidden' : 'flex'
               }`}
             >
@@ -518,8 +524,8 @@ export default function PaymentReceiptView({
               <h1 className="text-xl font-black text-[#0b2b5c] tracking-tight leading-tight uppercase truncate">
                 {academyName}
               </h1>
-              <p className="text-xs text-slate-500 font-semibold tracking-tight leading-tight truncate">
-                {academyTagline}
+              <p className="text-[10px] text-sky-800 font-bold uppercase tracking-wider leading-tight truncate">
+                {academyTagline || 'Centre for Academic Excellence • Estd. 2018'}
               </p>
 
               {/* Institution Contact Strip */}
@@ -544,6 +550,13 @@ export default function PaymentReceiptView({
                 ) : null}
               </div>
             </div>
+          </div>
+
+          {/* Top-Right: Official Institutional Verification Seal */}
+          <div className="hidden sm:flex flex-col items-center justify-center w-12 h-12 rounded-full border border-slate-300 border-dashed text-center shrink-0 p-1 select-none opacity-85 bg-slate-50/50">
+            <span className="text-[6px] font-black text-slate-500 tracking-wider">OFFICIAL</span>
+            <span className="text-[10px] font-black text-blue-950 font-serif leading-none my-0.5">PA</span>
+            <span className="text-[6px] font-bold text-slate-400 tracking-wider">VERIFIED</span>
           </div>
         </header>
 
