@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -256,8 +256,8 @@ export default function PaymentReceiptView({
 
   const historicalPayments: any[] = receipt.historical_payments || []
 
-  // To guarantee strict one-page A5 portrait fitting without clipping, show up to 6 historical payments
-  const maxHistoricalToDisplay = paperSize === 'A5' ? 6 : 12
+  // Dynamically accommodate all historical payments (up to 10 on A5 with compact padding, up to 25 on A4)
+  const maxHistoricalToDisplay = paperSize === 'A5' ? 10 : 25
   const visibleHistorical = historicalPayments.slice(0, maxHistoricalToDisplay)
   const hiddenCount = historicalPayments.length - visibleHistorical.length
 
@@ -843,10 +843,10 @@ export default function PaymentReceiptView({
                 ) : (
                   visibleHistorical.map((p: any, idx: number) => (
                     <tr key={p.payment_id || idx} className="hover:bg-slate-50/50">
-                      <td className="py-1 px-2 text-center font-medium text-slate-500">
+                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2 text-center font-medium text-slate-500`}>
                         {idx + 1}
                       </td>
-                      <td className="py-1 px-2.5 font-medium whitespace-nowrap">
+                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 font-medium whitespace-nowrap`}>
                         {p.date
                           ? new Date(p.date).toLocaleDateString('en-IN', {
                               day: '2-digit',
@@ -855,15 +855,15 @@ export default function PaymentReceiptView({
                             })
                           : '—'}
                       </td>
-                      <td className="py-1 px-2.5 font-mono font-bold text-primary-700 whitespace-nowrap">
+                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 font-mono font-bold text-primary-700 whitespace-nowrap`}>
                         {p.receipt_number}
                       </td>
-                      <td className="py-1 px-2.5 capitalize whitespace-nowrap">
+                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 capitalize whitespace-nowrap`}>
                         {METHOD_LABELS[p.payment_method] ||
                           p.payment_method?.replace(/_/g, ' ') ||
                           'Bank Transfer'}
                       </td>
-                      <td className="py-1 px-2.5 text-right font-black text-slate-900 whitespace-nowrap">
+                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 text-right font-black text-slate-900 whitespace-nowrap`}>
                         {fmt(p.amount)}
                       </td>
                     </tr>

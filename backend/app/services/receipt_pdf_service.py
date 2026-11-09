@@ -457,10 +457,20 @@ class ReceiptPdfService:
         page.insert_text(fitz.Point(402 - cnt_l, 342), cnt_str, fontname="helv", fontsize=6.5, color=cls.C_TEXT_GRAY)
 
         # Dynamic table row height based on number of historical payments
-        row_count = max(1, min(len(historical_payments), 5)) if historical_payments else 1
-        row_h = 13.5 if row_count > 3 else 15.0
-        tbl_header_h = 16.0
-        tbl_total_row_h = 16.0
+        total_hist = len(historical_payments) if historical_payments else 0
+        row_count = max(1, min(total_hist, 10)) if total_hist > 0 else 1
+        if row_count > 6:
+            row_h = 11.2
+            font_size_row = 6.3
+        elif row_count > 3:
+            row_h = 12.8
+            font_size_row = 6.6
+        else:
+            row_h = 15.0
+            font_size_row = 6.8
+
+        tbl_header_h = 15.0
+        tbl_total_row_h = 15.0
         tbl_h = tbl_header_h + (row_count * row_h) + tbl_total_row_h
         tbl_top = 348.0
         tbl_bottom = tbl_top + tbl_h
@@ -469,27 +479,27 @@ class ReceiptPdfService:
 
         # Header Row
         page.draw_rect(fitz.Rect(18, tbl_top, 402, tbl_top + tbl_header_h), color=cls.C_BORDER, fill=cls.C_LIGHT_BLUE, width=0.5)
-        page.insert_text(fitz.Point(26, tbl_top + 11), "#", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
-        page.insert_text(fitz.Point(44, tbl_top + 11), "DATE", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
-        page.insert_text(fitz.Point(120, tbl_top + 11), "RECEIPT NO.", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
-        page.insert_text(fitz.Point(210, tbl_top + 11), "PAYMENT METHOD", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
+        page.insert_text(fitz.Point(26, tbl_top + 10.5), "#", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
+        page.insert_text(fitz.Point(44, tbl_top + 10.5), "DATE", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
+        page.insert_text(fitz.Point(120, tbl_top + 10.5), "RECEIPT NO.", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
+        page.insert_text(fitz.Point(210, tbl_top + 10.5), "PAYMENT METHOD", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
         a_l = fitz.get_text_length("AMOUNT", fontname="hebo", fontsize=6.5)
-        page.insert_text(fitz.Point(392 - a_l, tbl_top + 11), "AMOUNT", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
+        page.insert_text(fitz.Point(392 - a_l, tbl_top + 10.5), "AMOUNT", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
 
         # Data Rows
         if historical_payments:
-            for idx, hp in enumerate(historical_payments[:5], start=1):
+            for idx, hp in enumerate(historical_payments[:10], start=1):
                 ry = tbl_top + tbl_header_h + (idx - 1) * row_h
                 page.draw_line(fitz.Point(18, ry), fitz.Point(402, ry), color=(0.93, 0.95, 0.97), width=0.5)
-                page.insert_text(fitz.Point(26, ry + row_h - 4), str(idx), fontname="helv", fontsize=6.8, color=cls.C_TEXT_DARK)
+                page.insert_text(fitz.Point(26, ry + row_h - 3.5), str(idx), fontname="helv", fontsize=font_size_row, color=cls.C_TEXT_DARK)
                 hp_date = format_display_date(hp.get("date"))
-                page.insert_text(fitz.Point(44, ry + row_h - 4), hp_date, fontname="helv", fontsize=6.8, color=cls.C_TEXT_DARK)
+                page.insert_text(fitz.Point(44, ry + row_h - 3.5), hp_date, fontname="helv", fontsize=font_size_row, color=cls.C_TEXT_DARK)
                 hp_rec = str(hp.get("receipt_number") or f"RCP-HIST-{idx}")
-                page.insert_text(fitz.Point(120, ry + row_h - 4), hp_rec, fontname="hebo", fontsize=6.8, color=cls.C_ROYAL_BLUE)
+                page.insert_text(fitz.Point(120, ry + row_h - 3.5), hp_rec, fontname="hebo", fontsize=font_size_row, color=cls.C_ROYAL_BLUE)
                 hp_met = cls.METHOD_NAMES.get(str(hp.get("payment_method") or "cash").lower(), str(hp.get("payment_method") or "Cash").capitalize())
-                page.insert_text(fitz.Point(210, ry + row_h - 4), hp_met, fontname="helv", fontsize=6.8, color=cls.C_TEXT_DARK)
+                page.insert_text(fitz.Point(210, ry + row_h - 3.5), hp_met, fontname="helv", fontsize=font_size_row, color=cls.C_TEXT_DARK)
                 hp_amt = float(hp.get("amount") or 0.0)
-                insert_amount_with_rupee(page, fitz.Point(392, ry + row_h - 4), hp_amt, fontsize=6.8, color=cls.C_TEXT_DARK, right_align=True)
+                insert_amount_with_rupee(page, fitz.Point(392, ry + row_h - 3.5), hp_amt, fontsize=font_size_row, color=cls.C_TEXT_DARK, right_align=True)
         else:
             ry = tbl_top + tbl_header_h
             page.draw_line(fitz.Point(18, ry), fitz.Point(402, ry), color=(0.93, 0.95, 0.97), width=0.5)
