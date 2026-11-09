@@ -157,3 +157,4 @@ While the existing payment engine is functional and mathematically consistent, t
    - Add `cancelled_at`, `cancelled_by_id`, and `cancellation_reason` to `payment_receipts`.
    - Activate the existing `refunds` table with automatic invoice ledger synchronization upon disbursement.
 3. **Implement Full Audit Documentation Pack:** Deliver all 11 required governance documents before executing database migrations.
+

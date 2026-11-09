@@ -144,3 +144,4 @@ Refunds manage the return of collected funds to students or sponsors. Every refu
    Attempting to refund even ₹0.01 above the remaining collection balance is rejected.
 4. **Rule of Reversal Finality:** A payment with status `reversed` cannot be reversed again, edited, or refunded.
 5. **Rule of Receipt Number Permanence:** Once issued, a receipt number (`REC-YYYYMMDD-XXXXXX`) is permanently associated with its version snapshot. Cancelled or superseded receipt numbers are never recycled or reassigned.
+

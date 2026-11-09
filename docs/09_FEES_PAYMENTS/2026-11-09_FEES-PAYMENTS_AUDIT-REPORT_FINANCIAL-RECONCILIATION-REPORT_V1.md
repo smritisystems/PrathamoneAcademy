@@ -102,3 +102,4 @@ The financial transaction subledger of PrathamOne EduOS satisfies all principles
 2. Every reversal accurately restores accounts receivable obligations.
 3. Every receipt document is indexed by a globally unique sequential number.
 4. Mathematical discrepancy across all tables is **₹0.00**.
+

@@ -78,6 +78,16 @@ class Payment(Base):
     collected_by_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
+    reversal_of_payment_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("payments.id"), nullable=True, index=True
+    )
+    replacement_payment_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("payments.id"), nullable=True, index=True
+    )
+    idempotency_key: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True, index=True
+    )
+
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
     demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -174,6 +184,10 @@ class PaymentReceipt(Base):
     superseded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     superseded_by_receipt_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     reprint_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    cancellation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     data_environment: Mapped[str] = mapped_column(String(20), default="PRODUCTION", nullable=False, index=True)
     demo_dataset_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -236,3 +250,30 @@ class Refund(Base):
     processed_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[processed_by_id])
     requested_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[requested_by_id])
     approved_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[approved_by_id])
+
+
+class FinancialPeriod(Base):
+    __tablename__ = "financial_periods"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    institution_id: Mapped[int] = mapped_column(
+        ForeignKey("institutions.id"), nullable=False, index=True
+    )
+    academic_year_id: Mapped[int] = mapped_column(
+        ForeignKey("academic_years.id"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    period_type: Mapped[str] = mapped_column(String(20), default="monthly", server_default="monthly")
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    is_closed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False, index=True)
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    institution: Mapped["Institution"] = relationship("Institution")
+    academic_year: Mapped["AcademicYear"] = relationship("AcademicYear")
+    closed_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[closed_by_id])
+

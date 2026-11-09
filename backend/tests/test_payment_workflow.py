@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-09
 #  *
 #  * @description Test suite verifying payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refunds.
 #  */
@@ -369,3 +369,136 @@ async def test_refund_workflow_and_balance_integrity(
     proc_res = await client.post(f"/api/v1/payments/refunds/{ref_id}/process", headers=auth_headers)
     assert proc_res.status_code == 200
     assert proc_res.json()["status"] == "completed"
+
+    # 6. Verify invoice balance was decremented by refund amount (from ₹5,000 to ₹3,000)
+    inv_res = await db.execute(select(FeeInvoice).where(FeeInvoice.id == invoice.id))
+    inv = inv_res.scalar_one()
+    assert inv.paid_amount == Decimal("3000.00")
+    assert inv.outstanding_amount == Decimal("21000.00")
+    assert inv.status == "partial"
+
+
+@pytest.mark.asyncio
+async def test_client_idempotency_key_prevents_duplicate_payment(
+    client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
+):
+    """
+    Requirement: Submitting identical idempotency_key must return existing transaction
+    without duplicating payment rows, receipts, or modifying balances twice.
+    """
+    invoice = test_fee_invoice["invoice"]
+    idem_key = "IDEM-TEST-1001"
+    payload = {
+        "student_id": test_student.id,
+        "academic_year_id": test_academic_year.id,
+        "amount": 4000.0,
+        "payment_date": str(date.today()),
+        "payment_method": "upi",
+        "action": "post",
+        "idempotency_key": idem_key,
+        "allocations": [{"invoice_id": invoice.id, "amount": 4000.0}],
+    }
+
+    # 1. First submission
+    res1 = await client.post("/api/v1/payments/", json=payload, headers=auth_headers)
+    assert res1.status_code == 201
+    p_id_1 = res1.json()["payment_id"]
+    receipt_1 = res1.json()["receipt_number"]
+
+    # 2. Second identical submission with same idempotency key
+    res2 = await client.post("/api/v1/payments/", json=payload, headers=auth_headers)
+    assert res2.status_code == 201
+    assert "idempotent" in res2.json()["message"].lower()
+    assert res2.json()["payment_id"] == p_id_1
+    assert res2.json()["receipt_number"] == receipt_1
+
+
+@pytest.mark.asyncio
+async def test_receipt_cancellation_immutable_lifecycle(
+    client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
+):
+    """
+    Requirement: Cancelling an issued receipt updates status to 'cancelled', records
+    operator and reason, and permanently retains the row without number reuse.
+    """
+    invoice = test_fee_invoice["invoice"]
+    res = await client.post(
+        "/api/v1/payments/",
+        json={
+            "student_id": test_student.id,
+            "academic_year_id": test_academic_year.id,
+            "amount": 2500.0,
+            "payment_date": str(date.today()),
+            "payment_method": "cash",
+            "action": "post",
+            "allocations": [{"invoice_id": invoice.id, "amount": 2500.0}],
+        },
+        headers=auth_headers,
+    )
+    assert res.status_code == 201
+    rec_num = res.json()["receipt_number"]
+
+    # Cancel receipt
+    cancel_res = await client.post(
+        f"/api/v1/payments/receipts/{rec_num}/cancel",
+        json={"reason": "Instrument damaged during printing"},
+        headers=auth_headers,
+    )
+    assert cancel_res.status_code == 200
+    assert cancel_res.json()["status"] == "cancelled"
+
+    # Verify receipt record in DB
+    rec_db = (await db.execute(select(PaymentReceipt).where(PaymentReceipt.receipt_number == rec_num))).scalar_one()
+    assert rec_db.status == "cancelled"
+    assert rec_db.cancellation_reason == "Instrument damaged during printing"
+    assert rec_db.cancelled_at is not None
+
+
+@pytest.mark.asyncio
+async def test_financial_period_locking_blocks_mutation(
+    client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
+):
+    """
+    Requirement: Modifications on dates falling within closed accounting periods
+    must be strictly blocked.
+    """
+    from app.models.payment import FinancialPeriod
+    from datetime import timedelta
+
+    today = date.today()
+    period = FinancialPeriod(
+        institution_id=1,
+        academic_year_id=test_academic_year.id,
+        name="Locked Test Month",
+        period_type="monthly",
+        start_date=today - timedelta(days=5),
+        end_date=today + timedelta(days=5),
+        is_closed=True,
+    )
+    db.add(period)
+    await db.commit()
+    await db.refresh(period)
+
+    try:
+        invoice = test_fee_invoice["invoice"]
+        # Attempt to post a payment during this closed period
+        blocked_res = await client.post(
+            "/api/v1/payments/",
+            json={
+                "student_id": test_student.id,
+                "academic_year_id": test_academic_year.id,
+                "amount": 1000.0,
+                "payment_date": str(today),
+                "payment_method": "cash",
+                "action": "post",
+                "allocations": [{"invoice_id": invoice.id, "amount": 1000.0}],
+            },
+            headers=auth_headers,
+        )
+        assert blocked_res.status_code == 400
+        assert "closed" in blocked_res.json()["detail"].lower()
+    finally:
+        # Cleanup test period
+        await db.delete(period)
+        await db.commit()
+

@@ -97,3 +97,4 @@ The backend API tier of **PrathamOne EduOS** exposes 43 dedicated REST endpoints
    - *Fix:* Delegate refund processing to a dedicated service function in `payment_workflow_service.py` that atomically updates both the refund voucher and the invoice receivable ledger.
 2. **Missing Idempotency Header Check:** `/payments/` should inspect `X-Idempotency-Key` or body `idempotency_key` and enforce single-execution semantics.
 3. **Period Locking Middleware:** Add pre-route interceptor checking whether `payment_date` falls into a locked fiscal period.
+

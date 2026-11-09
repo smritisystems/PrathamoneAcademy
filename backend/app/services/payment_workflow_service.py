@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-06
+#  * @updated     2026-11-09
 #  *
 #  * @description Service managing payment lifecycle states, ERP approval rules, audited modifications, receipt versioning, and refunds.
 #  */
@@ -123,6 +123,90 @@ def check_requires_erp_approval(
     return False
 
 
+async def check_financial_period_open(
+    db: AsyncSession,
+    institution_id: int,
+    tx_date: date,
+) -> None:
+    """Verifies that transaction date is not within a locked financial accounting period."""
+    from app.models.payment import FinancialPeriod
+    stmt = select(FinancialPeriod).where(
+        and_(
+            FinancialPeriod.institution_id == institution_id,
+            FinancialPeriod.is_closed == True,
+            FinancialPeriod.start_date <= tx_date,
+            FinancialPeriod.end_date >= tx_date,
+        )
+    )
+    closed = (await db.execute(stmt)).scalar_one_or_none()
+    if closed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Financial period '{closed.name}' is closed. Modifications on {tx_date} are locked."
+        )
+
+
+async def execute_refund_disbursement(
+    db: AsyncSession,
+    refund: Refund,
+    current_user_id: int,
+) -> None:
+    """
+    Executes authoritative financial disbursement of an approved refund:
+    1. Sets refund status to 'completed', stamped with processed_by_id.
+    2. Synchronizes student FeeInvoice:
+       - Decrements invoice.paid_amount by refund amount (minimum 0.00).
+       - Increments invoice.outstanding_amount by refund amount (up to net_amount).
+       - Recalculates invoice.status ('unpaid' or 'partial').
+    3. Records immutable audit entry.
+    """
+    if refund.status not in ("requested", "approved"):
+        raise HTTPException(status_code=400, detail=f"Cannot disburse refund in '{refund.status}' state")
+
+    now = datetime.now(timezone.utc)
+    refund.status = "completed"
+    refund.processed_by_id = current_user_id
+    refund.updated_at = now
+
+    # Synchronize FeeInvoice ledger
+    invoice = None
+    if refund.invoice_id:
+        inv_res = await db.execute(select(FeeInvoice).where(FeeInvoice.id == refund.invoice_id))
+        invoice = inv_res.scalar_one_or_none()
+    elif refund.payment_id:
+        alloc_res = await db.execute(
+            select(PaymentAllocation).where(PaymentAllocation.payment_id == refund.payment_id)
+        )
+        alloc = alloc_res.scalars().first()
+        if alloc:
+            inv_res = await db.execute(select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id))
+            invoice = inv_res.scalar_one_or_none()
+
+    if invoice:
+        invoice.paid_amount = max(Decimal("0.00"), invoice.paid_amount - refund.amount)
+        invoice.outstanding_amount = min(invoice.net_amount, invoice.net_amount - invoice.paid_amount)
+        if invoice.paid_amount <= Decimal("0.01"):
+            invoice.status = "unpaid"
+        else:
+            invoice.status = "partial"
+
+    await log_payment_audit(
+        db,
+        user_id=current_user_id,
+        action="refund_disbursed_and_reconciled",
+        payment_id=refund.payment_id or 0,
+        old_data={"refund_status": "approved"},
+        new_data={
+            "refund_id": refund.id,
+            "refund_amount": float(refund.amount),
+            "invoice_id": invoice.id if invoice else None,
+            "invoice_new_paid": float(invoice.paid_amount) if invoice else None,
+            "invoice_new_outstanding": float(invoice.outstanding_amount) if invoice else None,
+        },
+        reason=f"Refund #{refund.id} disbursed; invoice receivable ledger synchronized",
+    )
+
+
 async def log_payment_audit(
     db: AsyncSession,
     user_id: Optional[int],
@@ -163,6 +247,8 @@ async def execute_payment_posting(
     """
     if payment.status in ("posted", "completed"):
         raise HTTPException(status_code=400, detail="Payment is already posted")
+
+    await check_financial_period_open(db, effective_institution_id, payment.payment_date)
 
     # Load payment allocations
     alloc_res = await db.execute(
@@ -265,6 +351,7 @@ async def execute_payment_edit(
     current_user: User,
     effective_institution_id: int = 1,
 ) -> Dict[str, Any]:
+    await check_financial_period_open(db, effective_institution_id, payment.payment_date)
     """
     Executes audited edit on a draft, submitted, or posted payment.
     - Draft: edits freely without audit requirement.

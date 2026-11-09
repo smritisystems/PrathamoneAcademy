@@ -103,3 +103,4 @@ python tools/forensic_financial_audit.py
 ## 4. ARCHITECTURAL SIGN-OFF
 
 The PrathamOne EduOS Financial Transaction Integrity Pack is fully audited, verified, and certified ready for production deployment under the authority of AITDL — AI Technology & Development Lab.
+

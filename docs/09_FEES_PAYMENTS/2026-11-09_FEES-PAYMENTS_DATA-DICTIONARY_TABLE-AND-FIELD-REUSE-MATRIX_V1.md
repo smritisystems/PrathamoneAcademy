@@ -163,3 +163,4 @@ Authoritative refund tracking table for full and partial returns.
 | `advance_payments` | **ABSENT** | Inflows must reside in canonical `payments` table | `payments` with unallocated balance |
 | In-place amount overwrite | **PROHIBITED** | Violates immutable ledger rules; obscures historical balances | Reversal voucher + replacement payment voucher |
 | Receipt row deletion | **PROHIBITED** | Violates audit trails & compliance standards | Mark receipt as `superseded`, `voided`, or `cancelled` |
+

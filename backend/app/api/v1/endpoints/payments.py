@@ -27,7 +27,7 @@ import json
 
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access, has_permission, require_permission, get_user_permissions
-from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
+from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund, FinancialPeriod
 from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
 from app.models.enrollment import StudentEnrollment
@@ -51,12 +51,22 @@ from app.services.payment_workflow_service import (
     execute_payment_posting,
     execute_payment_edit,
     log_payment_audit,
+    execute_refund_disbursement,
+    check_financial_period_open,
 )
 from pydantic import BaseModel, Field
 
 router = APIRouter()
 
 APPROVER_ROLES = {"superadmin", "sysadmin", "super_admin", "admin", "principal"}
+
+
+class FinancialPeriodCreate(BaseModel):
+    name: str
+    academic_year_id: int
+    start_date: date
+    end_date: date
+    period_type: Optional[str] = "monthly"
 
 
 class AllocationInput(BaseModel):
@@ -78,6 +88,7 @@ class PaymentCreate(BaseModel):
     notes: Optional[str] = None
     allocations: List[AllocationInput]
     action: Optional[str] = "post"  # "draft" | "submit" | "post"
+    idempotency_key: Optional[str] = None
 
 
 class PaymentUpdate(BaseModel):
@@ -200,13 +211,35 @@ async def create_payment(
     - 'submit': Submits payment for review / approval.
     - 'post': Posts directly in Simple Mode; evaluates approval gates in Standard ERP Mode.
     """
-    # Validate allocation total equals payment amount
+    # 0. Check client idempotency key
+    if data.idempotency_key:
+        stmt = select(Payment).where(
+            and_(
+                Payment.student_id == data.student_id,
+                Payment.idempotency_key == data.idempotency_key,
+            )
+        )
+        existing_pay = (await db.execute(stmt)).scalar_one_or_none()
+        if existing_pay:
+            rec = (await db.execute(select(PaymentReceipt).where(PaymentReceipt.payment_id == existing_pay.id))).scalars().first()
+            return {
+                "message": "Payment already processed (idempotent submission)",
+                "payment_id": existing_pay.id,
+                "status": existing_pay.status,
+                "amount": float(existing_pay.amount),
+                "receipt_number": rec.receipt_number if rec else None,
+            }
+
+    # 1. Validate allocation total equals payment amount
     total_allocated = sum(a.amount for a in data.allocations)
     if abs(total_allocated - data.amount) > Decimal("0.01"):
         raise HTTPException(
             status_code=400,
             detail=f"Total allocation ({total_allocated}) must equal payment amount ({data.amount})",
         )
+
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+    await check_financial_period_open(db, effective_inst_id, data.payment_date)
 
     # Verify student exists and belongs to authorized institution
     target_student = await db.get(Student, data.student_id)
@@ -660,6 +693,48 @@ async def reprint_receipt(
     }
 
 
+@router.post("/receipts/{receipt_number}/cancel")
+async def cancel_receipt(
+    receipt_number: str,
+    data: ReversalRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "sysadmin")),
+):
+    """Explicitly marks an issued receipt voucher as cancelled without deleting the historical record."""
+    result = await db.execute(
+        select(PaymentReceipt).where(PaymentReceipt.receipt_number == receipt_number)
+    )
+    receipt = result.scalar_one_or_none()
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    if receipt.status == "cancelled":
+        raise HTTPException(status_code=400, detail="Receipt is already cancelled")
+
+    now = datetime.now(timezone.utc)
+    receipt.status = "cancelled"
+    receipt.cancelled_at = now
+    receipt.cancelled_by_id = current_user.id
+    receipt.cancellation_reason = data.reason
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="receipt_cancelled",
+        payment_id=receipt.payment_id,
+        old_data={"status": receipt.status, "receipt_number": receipt_number},
+        new_data={"status": "cancelled", "reason": data.reason},
+        reason=data.reason,
+        severity="warning",
+    )
+    await db.commit()
+
+    return {
+        "message": f"Receipt {receipt_number} cancelled successfully",
+        "receipt_number": receipt_number,
+        "status": "cancelled",
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. REFUND WORKFLOW ENDPOINTS
 # ─────────────────────────────────────────────────────────────────────────────
@@ -738,15 +813,19 @@ async def create_payment_refund(
     db.add(refund)
     await db.flush()
 
-    await log_payment_audit(
-        db,
-        user_id=current_user.id,
-        action=f"refund_{initial_status}",
-        payment_id=payment.id,
-        old_data=None,
-        new_data={"refund_id": refund.id, "amount": float(data.amount), "status": initial_status},
-        reason=f"Refund of ₹{data.amount} for payment {payment.id}: {data.reason}",
-    )
+    if initial_status == "completed":
+        refund.status = "approved"
+        await execute_refund_disbursement(db, refund, current_user.id)
+    else:
+        await log_payment_audit(
+            db,
+            user_id=current_user.id,
+            action=f"refund_{initial_status}",
+            payment_id=payment.id,
+            old_data=None,
+            new_data={"refund_id": refund.id, "amount": float(data.amount), "status": initial_status},
+            reason=f"Refund of ₹{data.amount} for payment {payment.id}: {data.reason}",
+        )
 
     await db.commit()
 
@@ -820,19 +899,7 @@ async def process_refund(
     if refund.status not in ("requested", "approved"):
         raise HTTPException(status_code=400, detail=f"Cannot process refund in '{refund.status}' state")
 
-    refund.status = "completed"
-    refund.processed_by_id = current_user.id
-
-    await log_payment_audit(
-        db,
-        user_id=current_user.id,
-        action="refund_processed",
-        payment_id=refund.payment_id or 0,
-        old_data={"status": refund.status},
-        new_data={"status": "completed", "refund_id": refund.id},
-        reason=f"Refund #{refund.id} marked as disbursed",
-    )
-
+    await execute_refund_disbursement(db, refund, current_user.id)
     await db.commit()
     return {"message": "Refund disbursed and completed successfully", "refund_id": refund.id, "status": "completed"}
 
@@ -1757,4 +1824,99 @@ async def online_payment_webhook_endpoint(
         "order_id": order_id,
         "amount": amount_in_paise / 100 if amount_in_paise else 0,
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. FINANCIAL ACCOUNTING PERIODS (Period Locking Governance)
+# ─────────────────────────────────────────────────────────────────────────────
+@router.get("/periods/")
+async def list_financial_periods(
+    institution_id: Optional[int] = None,
+    academic_year_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Lists accounting financial periods with closure status."""
+    effective_inst_id = institution_id or getattr(current_user, "institution_id", None) or 1
+    stmt = select(FinancialPeriod).where(FinancialPeriod.institution_id == effective_inst_id).order_by(FinancialPeriod.start_date.desc())
+    if academic_year_id:
+        stmt = stmt.where(FinancialPeriod.academic_year_id == academic_year_id)
+    periods = (await db.execute(stmt)).scalars().all()
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "period_type": p.period_type,
+            "start_date": str(p.start_date),
+            "end_date": str(p.end_date),
+            "is_closed": p.is_closed,
+            "closed_at": p.closed_at.isoformat() if p.closed_at else None,
+        }
+        for p in periods
+    ]
+
+
+@router.post("/periods/", status_code=201)
+async def create_financial_period(
+    data: FinancialPeriodCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "sysadmin")),
+):
+    """Creates a new financial accounting period."""
+    effective_inst_id = getattr(current_user, "institution_id", None) or 1
+    period = FinancialPeriod(
+        institution_id=effective_inst_id,
+        academic_year_id=data.academic_year_id,
+        name=data.name,
+        period_type=data.period_type or "monthly",
+        start_date=data.start_date,
+        end_date=data.end_date,
+        is_closed=False,
+    )
+    db.add(period)
+    await db.commit()
+    await db.refresh(period)
+    return {"message": "Financial period created", "period_id": period.id, "name": period.name}
+
+
+@router.post("/periods/{period_id}/close")
+async def close_financial_period(
+    period_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "sysadmin")),
+):
+    """Locks a financial accounting period to prevent backdated modifications."""
+    period = (await db.execute(select(FinancialPeriod).where(FinancialPeriod.id == period_id))).scalar_one_or_none()
+    if not period:
+        raise HTTPException(status_code=404, detail="Financial period not found")
+    if period.is_closed:
+        raise HTTPException(status_code=400, detail="Financial period is already closed")
+
+    now = datetime.now(timezone.utc)
+    period.is_closed = True
+    period.closed_at = now
+    period.closed_by_id = current_user.id
+    await db.commit()
+    return {"message": f"Financial period '{period.name}' successfully closed and locked", "period_id": period.id}
+
+
+@router.post("/periods/{period_id}/reopen")
+async def reopen_financial_period(
+    period_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "sysadmin")),
+):
+    """Reopens a locked financial accounting period (Superadmin only)."""
+    period = (await db.execute(select(FinancialPeriod).where(FinancialPeriod.id == period_id))).scalar_one_or_none()
+    if not period:
+        raise HTTPException(status_code=404, detail="Financial period not found")
+    if not period.is_closed:
+        raise HTTPException(status_code=400, detail="Financial period is already open")
+
+    period.is_closed = False
+    period.closed_at = None
+    period.closed_by_id = None
+    await db.commit()
+    return {"message": f"Financial period '{period.name}' reopened", "period_id": period.id}
+
 

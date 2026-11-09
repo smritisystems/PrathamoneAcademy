@@ -177,6 +177,24 @@
           "type": "character varying",
           "nullable": "YES",
           "default": null
+        },
+        {
+          "name": "reversal_of_payment_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "replacement_payment_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "idempotency_key",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
         }
       ]
     },
@@ -283,6 +301,24 @@
         {
           "name": "demo_dataset_id",
           "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "cancelled_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "cancellation_reason",
+          "type": "text",
           "nullable": "YES",
           "default": null
         }
@@ -817,7 +853,7 @@
     },
     "audit_logs": {
       "exists": true,
-      "count": 325,
+      "count": 326,
       "columns": [
         {
           "name": "id",
@@ -900,9 +936,76 @@
       ]
     },
     "financial_periods": {
-      "exists": false,
+      "exists": true,
       "count": 0,
-      "columns": []
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('financial_periods_id_seq'::regclass)"
+        },
+        {
+          "name": "institution_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "academic_year_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "period_type",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": "'monthly'::character varying"
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "is_closed",
+          "type": "boolean",
+          "nullable": "NO",
+          "default": "false"
+        },
+        {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "closed_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "NO",
+          "default": "now()"
+        }
+      ]
     },
     "receipt_sequences": {
       "exists": false,
@@ -1131,6 +1234,24 @@
       "table": "payments",
       "column": "student_id",
       "foreign_table": "students",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "reversal_of_payment_id",
+      "foreign_table": "payments",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "replacement_payment_id",
+      "foreign_table": "payments",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payment_receipts",
+      "column": "cancelled_by_id",
+      "foreign_table": "users",
       "foreign_column": "id"
     }
   ],

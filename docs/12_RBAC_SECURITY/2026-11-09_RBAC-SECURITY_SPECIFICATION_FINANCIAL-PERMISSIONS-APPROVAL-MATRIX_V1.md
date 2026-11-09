@@ -97,3 +97,4 @@ Every transition generates an immutable record in `audit_logs` containing:
 - `details`: Mandatory user-supplied reason string.
 - `severity`: `info`, `warning`, `critical`.
 - `is_system_audit`: Boolean distinguishing automated system jobs from user actions.
+

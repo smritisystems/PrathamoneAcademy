@@ -218,3 +218,4 @@ flowchart TD
     ExecCancellation --> AuditExit["Log comprehensive Admission Exit Audit Trail"]
     AuditExit --> CompleteExit(["Admission Cancelled Safely; Financial History 100% Intact"])
 ```
+
