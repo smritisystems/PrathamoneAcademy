@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -296,6 +296,93 @@
   #receipt-print-area button,
   #receipt-print-area .print\\:hidden,
   #receipt-print-area .no-print {
+    display: none !important;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────────── */
+  /* STUDENT ID CARD PRINTING RULES (#student-id-card-printable)                */
+  /* Hide application shell, modal overlay, and modal chrome                    */
+  /* ────────────────────────────────────────────────────────────────────────── */
+  body:has(#student-id-card-printable) > *:not(.fixed):not(#root),
+  body:has(#student-id-card-printable) #root > aside,
+  body:has(#student-id-card-printable) #root > header,
+  body:has(#student-id-card-printable) #root > nav,
+  body:has(#student-id-card-printable) #root > footer,
+  body:has(#student-id-card-printable) #root main > *:not(.fixed),
+  body:has(#student-id-card-printable) .modal-backdrop,
+  body.printing-id-card > *:not(.fixed):not(#root),
+  body.printing-id-card #root > aside,
+  body.printing-id-card #root > header,
+  body.printing-id-card #root > nav,
+  body.printing-id-card #root > footer,
+  body.printing-id-card #root main > *:not(.fixed) {
+    display: none !important;
+  }
+
+  /* Neutralize dark modal backdrop overlay when printing ID card */
+  body.printing-id-card #root,
+  body:has(#student-id-card-printable) .fixed.inset-0,
+  body.printing-id-card .fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  body:has(#student-id-card-printable) [role="dialog"],
+  body:has(#student-id-card-printable) .bg-white.rounded-2xl,
+  body.printing-id-card .bg-white.rounded-2xl {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  /* Hide modal header with buttons, info banner, and footer buttons when printing */
+  body:has(#student-id-card-printable) .fixed.inset-0 > div > div:first-child:has(button),
+  body:has(#student-id-card-printable) .fixed.inset-0 > div > div:last-child:has(button),
+  body.printing-id-card .fixed.inset-0 > div > div:first-child:has(button),
+  body.printing-id-card .fixed.inset-0 > div > div:last-child:has(button) {
+    display: none !important;
+  }
+
+  #student-id-card-printable {
+    display: flex !important;
+    visibility: visible !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #student-id-card-printable * {
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #student-id-card-printable button,
+  #student-id-card-printable .print\\:hidden,
+  #student-id-card-printable .no-print {
     display: none !important;
   }
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Dedicated multi-workspace hub for Students & Admissions Centre comprising Overview, Master Register, KYC Admissions, Batch Allocations, ID Cards, Activity History, Reactivation, and Admission Policies.
  */
@@ -1280,8 +1280,8 @@ function StudentsContent() {
       {/* ─── TAB 5: STUDENT ID CARDS & BADGES ────────────────────────────────── */}
       {activeTab === 'id-cards' && (
         <div className="space-y-6 animate-fade-in">
-          {/* Filter Bar */}
-          <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-3">
+          {/* Filter Bar (Hidden on Print) */}
+          <div className="card p-4 bg-white border border-slate-200 rounded-2xl shadow-xs flex flex-wrap items-center justify-between gap-3 no-print print:hidden">
             <div className="flex flex-wrap items-center gap-3 flex-1">
               <select
                 value={standardId ?? ''}
@@ -1372,7 +1372,7 @@ function StudentsContent() {
                     <button
                       type="button"
                       onClick={() => setSelectedCardStudentId(stu.id)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-primary-600 hover:bg-primary-50 transition border border-primary-200"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-primary-600 hover:bg-primary-50 transition border border-primary-200 no-print print:hidden"
                     >
                       Preview Card
                     </button>

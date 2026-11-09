@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Official Digital Student ID Card modal with CR80 thermal/PVC dimensions and SVG QR code rendering.
  */
@@ -19,10 +19,11 @@
 import React, { useState, useEffect } from 'react'
 import {
   X, Printer, CreditCard, Phone, MapPin, Calendar, Award,
-  Shield, CheckCircle, RefreshCw, Download, ExternalLink, QrCode
+  Shield, CheckCircle, RefreshCw, Download, ExternalLink, QrCode, FileText
 } from 'lucide-react'
 import { studentsApi } from '../api/endpoints'
 import type { StudentIdCardData } from '../types'
+import { printIDCardElement } from '../utils/printIDCard'
 import toast from 'react-hot-toast'
 
 interface StudentIDCardModalProps {
@@ -39,6 +40,7 @@ export default function StudentIDCardModal({
   const [loading, setLoading] = useState<boolean>(true)
   const [cardData, setCardData] = useState<StudentIdCardData | null>(null)
   const [side, setSide] = useState<'both' | 'front' | 'back'>('both')
+  const [printLayout, setPrintLayout] = useState<'cr80' | 'sheet'>('cr80')
 
   useEffect(() => {
     if (isOpen && studentId) {
@@ -60,7 +62,13 @@ export default function StudentIDCardModal({
   }
 
   const handlePrint = () => {
-    window.print()
+    printIDCardElement({
+      elementId: 'student-id-card-printable',
+      documentTitle: `${cardData?.full_name || 'Student'} - ID Card - PrathamOne EduOS`,
+      layout: printLayout,
+      side,
+      studentName: cardData?.full_name,
+    })
   }
 
   if (!isOpen) return null
@@ -68,8 +76,8 @@ export default function StudentIDCardModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-2xl w-full p-6 space-y-5 my-8">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+        {/* Header (Screen-Only; Isolated from Print) */}
+        <div className="flex flex-wrap items-center justify-between border-b border-gray-100 pb-3 gap-3 no-print print:hidden">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary-100 text-primary-700 flex items-center justify-center">
               <CreditCard className="w-4 h-4" />
@@ -84,8 +92,9 @@ export default function StudentIDCardModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex bg-gray-100 p-0.5 rounded-lg text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Side Selector */}
+            <div className="flex bg-gray-100 p-0.5 rounded-lg text-xs" title="Select card sides to display and print">
               <button
                 type="button"
                 onClick={() => setSide('both')}
@@ -115,10 +124,35 @@ export default function StudentIDCardModal({
               </button>
             </div>
 
+            {/* Print Layout Format Selector */}
+            <div className="flex bg-gray-100 p-0.5 rounded-lg text-xs" title="Physical printer medium format">
+              <button
+                type="button"
+                onClick={() => setPrintLayout('cr80')}
+                className={`px-2 py-1 rounded-md font-semibold transition ${
+                  printLayout === 'cr80' ? 'bg-white text-primary-700 shadow-2xs' : 'text-gray-600'
+                }`}
+                title="Single card per page for PVC thermal badge printers (Zebra, Evolis, Magicard, Fargo)"
+              >
+                CR80 PVC
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrintLayout('sheet')}
+                className={`px-2 py-1 rounded-md font-semibold transition ${
+                  printLayout === 'sheet' ? 'bg-white text-primary-700 shadow-2xs' : 'text-gray-600'
+                }`}
+                title="A4 Sheet format for standard office printers, heavy cardstock & lamination pouches"
+              >
+                A4 Sheet
+              </button>
+            </div>
+
             <button
               onClick={handlePrint}
               disabled={loading || !cardData}
               className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg shadow-xs flex items-center gap-1.5 transition disabled:opacity-50"
+              title="Print isolated student ID card without application background"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print Card</span>
@@ -145,15 +179,15 @@ export default function StudentIDCardModal({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Visual Cards Display Area */}
+            {/* Visual Cards Display Area (Isolated Target for Printing) */}
             <div
               id="student-id-card-printable"
-              className="flex flex-col sm:flex-row items-center justify-center gap-6 p-6 bg-slate-100 rounded-xl border border-dashed border-slate-300"
+              className="flex flex-col sm:flex-row items-center justify-center gap-6 p-6 bg-slate-100 rounded-xl border border-dashed border-slate-300 print:bg-white print:border-none print:p-0 print:m-0 print:gap-4 print:shadow-none"
             >
               {/* ──────────────── FRONT SIDE ──────────────── */}
               {(side === 'both' || side === 'front') && (
                 <div
-                  className="w-[325px] h-[205px] bg-white rounded-xl shadow-md border border-slate-300 overflow-hidden flex flex-col justify-between relative select-none print:shadow-none print:border"
+                  className="id-card-side id-card-front w-[325px] h-[205px] bg-white rounded-xl shadow-md border border-slate-300 overflow-hidden flex flex-col justify-between relative select-none print:shadow-none print:border print:border-slate-300 print:rounded-lg"
                   style={{ aspectRatio: '85.6 / 53.98' }}
                 >
                   {/* Top Header Banner */}
@@ -224,7 +258,7 @@ export default function StudentIDCardModal({
               {/* ──────────────── BACK SIDE ──────────────── */}
               {(side === 'both' || side === 'back') && (
                 <div
-                  className="w-[325px] h-[205px] bg-white rounded-xl shadow-md border border-slate-300 overflow-hidden flex flex-col justify-between relative select-none print:shadow-none print:border"
+                  className="id-card-side id-card-back w-[325px] h-[205px] bg-white rounded-xl shadow-md border border-slate-300 overflow-hidden flex flex-col justify-between relative select-none print:shadow-none print:border print:border-slate-300 print:rounded-lg"
                   style={{ aspectRatio: '85.6 / 53.98' }}
                 >
                   {/* Top Header */}
@@ -279,8 +313,8 @@ export default function StudentIDCardModal({
               )}
             </div>
 
-            {/* Print Instructions / Specs */}
-            <div className="bg-primary-50/70 border border-blue-200 rounded-xl p-3.5 text-xs text-primary-900 flex items-start gap-2.5">
+            {/* Print Instructions / Specs (Screen-Only; Isolated from Print) */}
+            <div className="bg-primary-50/70 border border-blue-200 rounded-xl p-3.5 text-xs text-primary-900 flex items-start gap-2.5 no-print print:hidden">
               <Shield className="w-4 h-4 text-primary-700 flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-semibold">Thermal PVC & Card Sheet Specifications:</p>
@@ -292,24 +326,34 @@ export default function StudentIDCardModal({
           </div>
         )}
 
-        {/* Modal Footer */}
-        <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-100">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition"
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            disabled={loading || !cardData}
-            className="px-4 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-xs flex items-center gap-1.5 transition disabled:opacity-50"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Print Student ID Card</span>
-          </button>
+        {/* Modal Footer (Screen-Only; Isolated from Print) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 no-print print:hidden">
+          <div className="text-[11px] text-gray-500 flex items-center gap-1.5">
+            <span className="font-medium text-gray-700">Print Format:</span>
+            <span className="font-semibold px-2 py-0.5 bg-slate-100 rounded text-slate-700">
+              {printLayout === 'cr80' ? 'CR80 PVC (85.6 × 54mm)' : 'A4 Sheet (Multi-up)'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={loading || !cardData}
+              className="px-4 py-2 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-xs flex items-center gap-1.5 transition disabled:opacity-50"
+              title="Print isolated student ID card without application background"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print Student ID Card</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
