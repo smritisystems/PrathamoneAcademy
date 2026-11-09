@@ -781,6 +781,229 @@ export interface DashboardStats {
   configured_visibility?: string
 }
 
+// ─── Analytics Workspace Interfaces ──────────────────────────────────────────
+
+export interface AnalyticsMonthlyTrend {
+  month: string
+  month_key: string
+  collected: number
+  transaction_count: number
+  target: number
+  net_collection: number
+  is_current_month: boolean
+}
+
+export interface AnalyticsPaymentMethod {
+  method: string
+  label: string
+  count: number
+  amount: number
+  percentage: number
+}
+
+export interface AnalyticsFeeHead {
+  head_name: string
+  count: number
+  amount: number
+  percentage: number
+}
+
+export interface AnalyticsDailyPulse {
+  date: string
+  count: number
+  amount: number
+}
+
+export interface AnalyticsClassWise {
+  standard_id?: number
+  standard_name: string
+  invoice_count: number
+  student_count: number
+  total_invoiced: number
+  total_paid: number
+  total_outstanding: number
+  collection_rate: number
+}
+
+export interface AnalyticsBatchWise {
+  division_id?: number
+  batch_name: string
+  standard_name: string
+  invoice_count: number
+  student_count: number
+  total_invoiced: number
+  total_paid: number
+  total_outstanding: number
+  collection_rate: number
+}
+
+export interface AnalyticsTopDefaulter {
+  student_id: number
+  student_name: string
+  admission_number: string
+  standard: string
+  batch: string
+  invoice_number: string
+  due_date: string | null
+  days_overdue: number
+  net_amount: number
+  paid_amount: number
+  outstanding_amount: number
+}
+
+export interface AnalyticsStatusDistribution {
+  status: string
+  label: string
+  count: number
+  percentage: number
+}
+
+export interface AnalyticsStandardDistribution {
+  standard_id?: number
+  standard_name: string
+  count: number
+  percentage: number
+}
+
+export interface AnalyticsBatchUtilization {
+  division_id?: number
+  batch_name: string
+  standard_name: string
+  capacity: number
+  enrolled_count: number
+  utilization_rate: number
+}
+
+export interface AnalyticsBoardDistribution {
+  board_id?: number
+  board_name: string
+  count: number
+  percentage: number
+}
+
+export interface AnalyticsFunnelStage {
+  stage: string
+  label: string
+  count: number
+  percentage: number
+}
+
+export interface AnalyticsLeadSource {
+  source: string
+  count: number
+  percentage: number
+}
+
+export interface AnalyticsActivityItem {
+  id: number
+  type: string
+  title: string
+  subtitle: string
+  method?: string
+  timestamp: string
+  link: string
+}
+
+export interface DashboardAnalyticsData {
+  academic_year_id?: number | null
+  institution_id?: number | null
+  fee_collection: {
+    monthly_trends: AnalyticsMonthlyTrend[]
+    payment_methods: AnalyticsPaymentMethod[]
+    fee_heads: AnalyticsFeeHead[]
+    daily_pulse: AnalyticsDailyPulse[]
+    total_collected: number
+    net_collection: number
+    reversals_amount: number
+  }
+  outstanding_analysis: {
+    status_wise: StatusWiseOutstanding
+    class_wise: AnalyticsClassWise[]
+    batch_wise: AnalyticsBatchWise[]
+    top_defaulters: AnalyticsTopDefaulter[]
+    active_outstanding: number
+    total_historical_outstanding: number
+  }
+  student_analysis: {
+    total_unique_students: number
+    active_students: number
+    left_students: number
+    retention_rate: number
+    status_distribution: AnalyticsStatusDistribution[]
+    standard_distribution: AnalyticsStandardDistribution[]
+    batch_utilization: AnalyticsBatchUtilization[]
+    board_distribution: AnalyticsBoardDistribution[]
+    monthly_admissions: { month: string; month_key: string; count: number }[]
+  }
+  admissions_crm: {
+    total_leads: number
+    conversion_rate: number
+    converted_count: number
+    funnel_stages: AnalyticsFunnelStage[]
+    lead_sources: AnalyticsLeadSource[]
+    follow_ups: {
+      total: number
+      completed: number
+      scheduled: number
+      completion_rate: number
+    }
+    demo_classes: {
+      total: number
+      scheduled: number
+      completed: number
+    }
+  }
+  academic_analysis: {
+    inventory: {
+      standards_count: number
+      divisions_count: number
+      subjects_count: number
+    }
+    attendance: {
+      total_records: number
+      present_count: number
+      absent_count: number
+      late_count: number
+      present_percentage: number
+      absent_percentage: number
+      late_percentage: number
+    }
+    examinations: {
+      total_exams: number
+      total_marks_recorded: number
+      passed_count: number
+      pass_percentage: number
+      average_score: number
+      max_score: number
+      grade_distribution: { grade: string; count: number; percentage: number }[]
+    }
+  }
+  transactions_reconciliation: {
+    total_transactions: number
+    total_volume: number
+    status_distribution: { status: string; label: string; count: number; amount: number }[]
+    payment_methods: AnalyticsPaymentMethod[]
+    refunds: {
+      pending_count: number
+      pending_amount: number
+      completed_count: number
+      completed_amount: number
+    }
+    ledger_audit: {
+      total_invoiced: number
+      total_collected: number
+      total_outstanding: number
+      calculated_balance: number
+      variance: number
+      is_reconciled: boolean
+    }
+  }
+  operations: {
+    daily_summary: DailyOperationsSummary
+    recent_activities: AnalyticsActivityItem[]
+  }
+}
+
 // ─── Pagination ───────────────────────────────────────────────────────────────
 
 export interface PaginatedResponse<T> {

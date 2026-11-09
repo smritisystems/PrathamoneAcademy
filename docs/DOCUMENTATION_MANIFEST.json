@@ -5,8 +5,8 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-10T00:37:40.124834",
-  "total_documents": 351,
+  "generated_at": "2026-11-10T01:34:25.608943",
+  "total_documents": 367,
   "modules_catalog": [
     {
       "id": "00_PRODUCT_OVERVIEW",
@@ -5075,6 +5075,57 @@
       "related_modules": [
         "16_DATABASE_API",
         "12_RBAC_SECURITY"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "09_FEES_PAYMENTS_2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1_md",
+      "filename": "2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
+      "relative_path": "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
+      "extension": ".md",
+      "size_bytes": 10683,
+      "sha256": "3d9fe2fb1ddd64cd74fcad4a1d083e45a556d900c7db8364601969f70f573112",
+      "module": "09_FEES_PAYMENTS",
+      "title": "Advanced Dashboard Analytics, Multi-Tab Management Insights & Financial Reconciliation Report",
+      "category": "IMPLEMENTATION-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "dashboard",
+        "analytics",
+        "fee-collection",
+        "outstanding",
+        "crm",
+        "academic",
+        "reconciliation"
+      ],
+      "entities": [
+        "FeeInvoice",
+        "Payment",
+        "Student",
+        "StudentEnrollment",
+        "Lead",
+        "Attendance",
+        "ExamMark"
+      ],
+      "api_routes": [
+        "/api/v1/dashboard/stats",
+        "/api/v1/dashboard/analytics",
+        "/api/v1/dashboard/outstanding-drilldown"
+      ],
+      "related_modules": [
+        "00_PRODUCT_OVERVIEW",
+        "03_ACADEMIC_MANAGEMENT",
+        "04_STUDENT_MANAGEMENT",
+        "09_FEES_PAYMENTS",
+        "10_FINANCE_ACCOUNTING"
       ],
       "product": "PrathamOne EduOS",
       "edition": "Coaching Institute Edition"
@@ -12241,6 +12292,144 @@
       "related_modules": []
     },
     {
+      "id": "assets_screenshots_dashboard_enhanced_full_page_png",
+      "filename": "dashboard_enhanced_full_page.png",
+      "relative_path": "assets/screenshots/dashboard_enhanced_full_page.png",
+      "extension": ".png",
+      "size_bytes": 503504,
+      "sha256": "877f8f60cc130bd150addfbf74696fee9ca2e41cdd2671d06069d40252217553",
+      "module": "assets",
+      "title": "dashboard_enhanced_full_page.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_enhanced_hero_viewport_png",
+      "filename": "dashboard_enhanced_hero_viewport.png",
+      "relative_path": "assets/screenshots/dashboard_enhanced_hero_viewport.png",
+      "extension": ".png",
+      "size_bytes": 507554,
+      "sha256": "b2f9a0ce85dd563f2e9d39549c05bcc70bd2af4ed250b6c22b64132e5565e638",
+      "module": "assets",
+      "title": "dashboard_enhanced_hero_viewport.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_view_bottom_png",
+      "filename": "dashboard_view_bottom.png",
+      "relative_path": "assets/screenshots/dashboard_view_bottom.png",
+      "extension": ".png",
+      "size_bytes": 395529,
+      "sha256": "96c7854a1ca70eb90abf3fbc73bb8fdbda0dda95a05a619edf5992561652f9aa",
+      "module": "assets",
+      "title": "dashboard_view_bottom.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_view_drilldown_modal_png",
+      "filename": "dashboard_view_drilldown_modal.png",
+      "relative_path": "assets/screenshots/dashboard_view_drilldown_modal.png",
+      "extension": ".png",
+      "size_bytes": 512943,
+      "sha256": "be9c04c8a01bcecd164792cfe8f939ead0d27c36d5455dd7a8f6a7578f23ad96",
+      "module": "assets",
+      "title": "dashboard_view_drilldown_modal.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_view_middle_png",
+      "filename": "dashboard_view_middle.png",
+      "relative_path": "assets/screenshots/dashboard_view_middle.png",
+      "extension": ".png",
+      "size_bytes": 489818,
+      "sha256": "cfa18f7516dbdc18c8c25cc90ba1c8025271cdb0c857991a4bb908de87fbb604",
+      "module": "assets",
+      "title": "dashboard_view_middle.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_dashboard_view_top_png",
+      "filename": "dashboard_view_top.png",
+      "relative_path": "assets/screenshots/dashboard_view_top.png",
+      "extension": ".png",
+      "size_bytes": 507563,
+      "sha256": "fc6820250b7754bb0f023f13144e9d7f0486fc702fb61d13eac29b566bcefe27",
+      "module": "assets",
+      "title": "dashboard_view_top.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
       "id": "assets_screenshots_fix1_receipt_edit_modal_png",
       "filename": "fix1_receipt_edit_modal.png",
       "relative_path": "assets/screenshots/fix1_receipt_edit_modal.png",
@@ -12601,6 +12790,213 @@
       "status": "Approved",
       "created_date": "2026-11-06",
       "updated_date": "2026-11-06",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_1_overview_png",
+      "filename": "tab_1_overview.png",
+      "relative_path": "assets/screenshots/tab_1_overview.png",
+      "extension": ".png",
+      "size_bytes": 435469,
+      "sha256": "cbee63574c41d414640e68380644c9887993283237462e3eb7650d2c0e0e0969",
+      "module": "assets",
+      "title": "tab_1_overview.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_2_fee_collection_png",
+      "filename": "tab_2_fee_collection.png",
+      "relative_path": "assets/screenshots/tab_2_fee_collection.png",
+      "extension": ".png",
+      "size_bytes": 406216,
+      "sha256": "9ad05d5a7c2020bee3cf07f111b32b45bda50c4000a717dfe17ed1be5d8e8342",
+      "module": "assets",
+      "title": "tab_2_fee_collection.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_3_outstanding_analysis_png",
+      "filename": "tab_3_outstanding_analysis.png",
+      "relative_path": "assets/screenshots/tab_3_outstanding_analysis.png",
+      "extension": ".png",
+      "size_bytes": 393126,
+      "sha256": "8594fcc218dc8f29f3a8aac7311010ae191f06a936d52ac60b22cd315e1abfe7",
+      "module": "assets",
+      "title": "tab_3_outstanding_analysis.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_3_outstanding_drilldown_modal_png",
+      "filename": "tab_3_outstanding_drilldown_modal.png",
+      "relative_path": "assets/screenshots/tab_3_outstanding_drilldown_modal.png",
+      "extension": ".png",
+      "size_bytes": 492992,
+      "sha256": "e9b45ea9f0ee03a76db5ae98a832e8155849b7720064627dbc98fc20a00ffdf4",
+      "module": "assets",
+      "title": "tab_3_outstanding_drilldown_modal.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_4_student_analysis_png",
+      "filename": "tab_4_student_analysis.png",
+      "relative_path": "assets/screenshots/tab_4_student_analysis.png",
+      "extension": ".png",
+      "size_bytes": 390154,
+      "sha256": "3766c44b37d95854b2e8b3ab968de7fbcede82bb91b4ff6c987fda3fc1ed6d4d",
+      "module": "assets",
+      "title": "tab_4_student_analysis.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_5_admissions_crm_png",
+      "filename": "tab_5_admissions_crm.png",
+      "relative_path": "assets/screenshots/tab_5_admissions_crm.png",
+      "extension": ".png",
+      "size_bytes": 386131,
+      "sha256": "bc97a527a9926a89b40238ce923251c1228807810f40635d4b874a1933013a90",
+      "module": "assets",
+      "title": "tab_5_admissions_crm.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_6_academic_analysis_png",
+      "filename": "tab_6_academic_analysis.png",
+      "relative_path": "assets/screenshots/tab_6_academic_analysis.png",
+      "extension": ".png",
+      "size_bytes": 385069,
+      "sha256": "8eee789635c1107766f09c0e74d97baf22f0a26b1b6338c5996952ce3ddfb783",
+      "module": "assets",
+      "title": "tab_6_academic_analysis.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_7_transactions_reconciliation_png",
+      "filename": "tab_7_transactions_reconciliation.png",
+      "relative_path": "assets/screenshots/tab_7_transactions_reconciliation.png",
+      "extension": ".png",
+      "size_bytes": 385896,
+      "sha256": "bbf5cb8fe6b526a5fbc57c9c74de467019c4038dc3eaf960671667213d37480f",
+      "module": "assets",
+      "title": "tab_7_transactions_reconciliation.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_screenshots_tab_8_operations_png",
+      "filename": "tab_8_operations.png",
+      "relative_path": "assets/screenshots/tab_8_operations.png",
+      "extension": ".png",
+      "size_bytes": 383331,
+      "sha256": "8a09696a67b02d8472436e3a66a13229e37fb34039b6342930b92e45b721f106",
+      "module": "assets",
+      "title": "tab_8_operations.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-10",
+      "updated_date": "2026-11-10",
       "author": "Jawahar R Mallah",
       "organization": "AITDL — AI Technology & Development Lab",
       "tags": [],
@@ -13112,6 +13508,7 @@
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md"
     ],
     "10_fees": [
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md"
     ],
     "10_student_exit_modal": [
@@ -13261,6 +13658,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_OUTSTANDING-CALCULATION-ENGINE_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_TRANSACTION-LIFECYCLE-STATE-TRANSITION-MATRIX_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_VALIDATION-REPORT_API-BACKEND-VALIDATION_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-CHANGELOG_V1.md",
@@ -13435,7 +13833,8 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-SPECIFICATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-08_ACADEMIC-MANAGEMENT_COMPLETION-MATRIX_ACADEMIC-SUBMENU-WORKSPACES_V1.md",
-      "03_ACADEMIC_MANAGEMENT/2026-11-09_ACADEMIC-MANAGEMENT_REPORT_SUBJECT-MASTER-CANONICALIZATION_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-09_ACADEMIC-MANAGEMENT_REPORT_SUBJECT-MASTER-CANONICALIZATION_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md"
     ],
     "academics": [
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md",
@@ -13568,6 +13967,9 @@
     "admissionsettings": [
       "04_STUDENT_MANAGEMENT/2026-11-09_STUDENT-MANAGEMENT_COMPLETION-MATRIX_STUDENT-SUBMENU-WORKSPACES_V1.md"
     ],
+    "advanced": [
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md"
+    ],
     "agent": [
       "24_AI_AGENT_KNOWLEDGE/2026-11-03_AI_AGENT_KNOWLEDGE_POLICY-FRAMEWORK_AI-AGENT-GOVERNANCE_V1.md"
     ],
@@ -13619,6 +14021,7 @@
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
       "08_EXAMINATION/2026-11-08_EXAMINATION_COMPLETION-MATRIX_EXAM-SUBMENU-WORKSPACES_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
@@ -13652,6 +14055,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_REPORT_BULK-RECEIPT-EXPORT-AND-SHARING_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_TRANSACTION-LIFECYCLE-STATE-TRANSITION-MATRIX_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_VALIDATION-REPORT_API-BACKEND-VALIDATION_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md",
@@ -13837,6 +14241,7 @@
       "07_ATTENDANCE/2026-11-03_ATTENDANCE_SPECIFICATION_ATTENDANCE-SPECIFICATION_V1.md",
       "07_ATTENDANCE/2026-11-03_ATTENDANCE_SPECIFICATION_ATTENDANCE-USER-MANUAL_V1.md",
       "07_ATTENDANCE/2026-11-08_ATTENDANCE_COMPLETION-MATRIX_ATTENDANCE-SUBMENU-WORKSPACES_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
@@ -14431,6 +14836,9 @@
     "collapsible": [
       "17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_COLLAPSIBLE-APPLICATION-FOOTER-REPORT_V1.md"
     ],
+    "collection": [
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md"
+    ],
     "collisions": [
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md"
     ],
@@ -14637,6 +15045,7 @@
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-GAP-ANALYSIS_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-PRODUCTION-READINESS_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_LEAD-MANAGEMENT-AND-CRM_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_FORENSIC-AUDIT_GLOBAL-TRAINING-ENVIRONMENT-AND-CRM-DATA-INTEGRITY_V1.md",
@@ -14677,6 +15086,7 @@
       "04_STUDENT_MANAGEMENT/2026-11-05_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-COUNT-RECONCILIATION-DIAGNOSTIC-REPORT_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_ARCHITECTURE_DASHBOARD-AND-REPORTING-DETAILS_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-CHANGELOG_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_SPECIFICATION_REPORTS-DEVELOPER-MANUAL_V1.md",
@@ -14696,6 +15106,24 @@
     ],
     "dashboard_codex_masked_coded_only": [
       "assets/screenshots/dashboard_codex_masked_coded_only.png"
+    ],
+    "dashboard_enhanced_full_page": [
+      "assets/screenshots/dashboard_enhanced_full_page.png"
+    ],
+    "dashboard_enhanced_hero_viewport": [
+      "assets/screenshots/dashboard_enhanced_hero_viewport.png"
+    ],
+    "dashboard_view_bottom": [
+      "assets/screenshots/dashboard_view_bottom.png"
+    ],
+    "dashboard_view_drilldown_modal": [
+      "assets/screenshots/dashboard_view_drilldown_modal.png"
+    ],
+    "dashboard_view_middle": [
+      "assets/screenshots/dashboard_view_middle.png"
+    ],
+    "dashboard_view_top": [
+      "assets/screenshots/dashboard_view_top.png"
     ],
     "dashboards": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
@@ -15216,6 +15644,7 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-09_ACADEMIC-MANAGEMENT_REPORT_SUBJECT-MASTER-CANONICALIZATION_V1.md",
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md"
     ],
     "exammarks": [
@@ -15305,6 +15734,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_FEE-RECEIPT-PDF-AUDIT_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_MATRIX_RECEIPT-FIELD-COMPLETENESS_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_OUTSTANDING-CALCULATION-ENGINE_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-04_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_RECEIPT-PRINTING-AND-PWA-SYSTEM-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-FOOTER-ABSOLUTE-BOTTOM-ALIGNMENT_V1.md",
@@ -15361,6 +15791,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_OUTSTANDING-CALCULATION-ENGINE_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_TRANSACTION-LIFECYCLE-STATE-TRANSITION-MATRIX_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_VALIDATION-REPORT_API-BACKEND-VALIDATION_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
@@ -15496,6 +15927,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_ARCHITECTURE_TRANSACTION-FLOW-DIAGRAMS_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_FINANCIAL-RECONCILIATION-REPORT_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_FORENSIC-AUDIT_DATA-INTEGRITY-GAP-REPORT_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md",
       "12_RBAC_SECURITY/2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md",
       "16_DATABASE_API/2026-11-09_DATABASE-API_MIGRATION-PLAN_FINANCIAL-TRANSACTION-INTEGRITY_V1.md",
@@ -16017,6 +16449,12 @@
     "information": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md"
     ],
+    "insights": [
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md"
+    ],
+    "insights_v1": [
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md"
+    ],
     "installation": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_PRODUCTION-DEPLOYMENT-GUIDE_V1.md",
@@ -16177,6 +16615,7 @@
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-GAP-ANALYSIS_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-PRODUCTION-READINESS_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_LEAD-MANAGEMENT-AND-CRM_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_POST-IMPLEMENTATION-FORENSIC-VALIDATION_V1.md",
@@ -16309,6 +16748,7 @@
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-PLAN_TEACHER-PAYROLL-IMPLEMENTATION-PLAN_V1.md",
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_IMPLEMENTATION-REPORT_TEACHER-PAYROLL-IMPLEMENTATION-REPORT_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-CHANGELOG_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-DEVELOPER-MANUAL_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_USERS-SPECIFICATION_V1.md",
@@ -16634,6 +17074,7 @@
     "multi": [
       "01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-07_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_EMPLOYEE-DOSSIER-ENHANCEMENT_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_GLOBAL-BRANDING-TENANT-ISOLATION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md"
     ],
@@ -16706,6 +17147,7 @@
     "outstanding": [
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_STUDENT-RECEIVABLES-RECONCILIATION_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_OUTSTANDING-CALCULATION-ENGINE_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md",
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md"
     ],
@@ -16789,6 +17231,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_OUTSTANDING-CALCULATION-ENGINE_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_TRANSACTION-LIFECYCLE-STATE-TRANSITION-MATRIX_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_VALIDATION-REPORT_API-BACKEND-VALIDATION_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
@@ -16902,6 +17345,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_FORENSIC-AUDIT_DATA-INTEGRITY-GAP-REPORT_V1.md"
     ],
     "payments_implementation": [
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md"
     ],
     "payments_matrix_receipt": [
@@ -17128,6 +17572,12 @@
       "assets/screenshots/dashboard_codex_decoder_modal.png",
       "assets/screenshots/dashboard_codex_fully_obfuscated.png",
       "assets/screenshots/dashboard_codex_masked_coded_only.png",
+      "assets/screenshots/dashboard_enhanced_full_page.png",
+      "assets/screenshots/dashboard_enhanced_hero_viewport.png",
+      "assets/screenshots/dashboard_view_bottom.png",
+      "assets/screenshots/dashboard_view_drilldown_modal.png",
+      "assets/screenshots/dashboard_view_middle.png",
+      "assets/screenshots/dashboard_view_top.png",
       "assets/screenshots/fix1_receipt_edit_modal.png",
       "assets/screenshots/fix1_receipts_with_edit_button.png",
       "assets/screenshots/fix2_fee_plan_edit_modal.png",
@@ -17143,7 +17593,16 @@
       "assets/screenshots/tab2_session_register.png",
       "assets/screenshots/tab3_profiles_and_rates.png",
       "assets/screenshots/tab4_vouchers_ledger.png",
-      "assets/screenshots/tab5_reports_analytics.png"
+      "assets/screenshots/tab5_reports_analytics.png",
+      "assets/screenshots/tab_1_overview.png",
+      "assets/screenshots/tab_2_fee_collection.png",
+      "assets/screenshots/tab_3_outstanding_analysis.png",
+      "assets/screenshots/tab_3_outstanding_drilldown_modal.png",
+      "assets/screenshots/tab_4_student_analysis.png",
+      "assets/screenshots/tab_5_admissions_crm.png",
+      "assets/screenshots/tab_6_academic_analysis.png",
+      "assets/screenshots/tab_7_transactions_reconciliation.png",
+      "assets/screenshots/tab_8_operations.png"
     ],
     "point": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
@@ -17566,6 +18025,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_FINANCIAL-RECONCILIATION-REPORT_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_STUDENT-RECEIVABLES-RECONCILIATION_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_OUTSTANDING-CALCULATION-ENGINE_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md"
     ],
     "reconciliation_v1": [
@@ -17717,6 +18177,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_STUDENT-RECEIVABLES-RECONCILIATION_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_FORENSIC-AUDIT_DATA-INTEGRITY-GAP-REPORT_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_VALIDATION-REPORT_API-BACKEND-VALIDATION_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
@@ -17785,6 +18246,9 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-MODULE-REPORT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md"
+    ],
+    "report_advanced": [
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md"
     ],
     "report_api": [
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_VALIDATION-REPORT_API-BACKEND-VALIDATION_V1.md"
@@ -18721,6 +19185,7 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_ARCHITECTURE_DASHBOARD-AND-REPORTING-DETAILS_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_STUDENT-RECEIVABLES-RECONCILIATION_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_MATRIX_RECEIPT-FIELD-COMPLETENESS_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
@@ -18779,6 +19244,7 @@
       "04_STUDENT_MANAGEMENT/2026-11-09_STUDENT-MANAGEMENT_DATA-DICTIONARY_RECEIVABLES-REUSE-MATRIX_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-09_STUDENT-MANAGEMENT_SPECIFICATION_STATUS-AND-FINANCIAL-CLASSIFICATION_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_STUDENT-RECEIVABLES-RECONCILIATION_V1.md",
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md",
       "16_DATABASE_API/2026-11-09_DATABASE-API_MIGRATION-PLAN_STUDENT-RECEIVABLES-GOVERNANCE_V1.md"
     ],
@@ -18993,6 +19459,9 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RBAC-REMEDIATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md"
     ],
+    "tab": [
+      "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md"
+    ],
     "tab1_monthly_payroll": [
       "assets/screenshots/tab1_monthly_payroll.png"
     ],
@@ -19007,6 +19476,33 @@
     ],
     "tab5_reports_analytics": [
       "assets/screenshots/tab5_reports_analytics.png"
+    ],
+    "tab_1_overview": [
+      "assets/screenshots/tab_1_overview.png"
+    ],
+    "tab_2_fee_collection": [
+      "assets/screenshots/tab_2_fee_collection.png"
+    ],
+    "tab_3_outstanding_analysis": [
+      "assets/screenshots/tab_3_outstanding_analysis.png"
+    ],
+    "tab_3_outstanding_drilldown_modal": [
+      "assets/screenshots/tab_3_outstanding_drilldown_modal.png"
+    ],
+    "tab_4_student_analysis": [
+      "assets/screenshots/tab_4_student_analysis.png"
+    ],
+    "tab_5_admissions_crm": [
+      "assets/screenshots/tab_5_admissions_crm.png"
+    ],
+    "tab_6_academic_analysis": [
+      "assets/screenshots/tab_6_academic_analysis.png"
+    ],
+    "tab_7_transactions_reconciliation": [
+      "assets/screenshots/tab_7_transactions_reconciliation.png"
+    ],
+    "tab_8_operations": [
+      "assets/screenshots/tab_8_operations.png"
     ],
     "table": [
       "01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md",

@@ -21,7 +21,7 @@ import type {
   PaymentPermissions,
   Institution, AcademicYear, Board, Standard, Division,
   Student, FeeCategory, FeeStructure, FeeInvoice,
-  FeeInstallment, Payment, Receipt, DashboardStats, OutstandingDrilldownResponse,
+  FeeInstallment, Payment, Receipt, DashboardStats, OutstandingDrilldownResponse, DashboardAnalyticsData,
   FeeCollectionRow, OutstandingRow, PaginatedResponse, User,
   FeeRegisterPreviewResponse, FeeRegisterImportExecutionResponse, FeeRegisterImportLog,
   StudentPortalDashboard, StudentAdminProfile, TimetableSlot, StudyMaterialItem, StudyMaterialStats,
@@ -103,6 +103,13 @@ export const dashboardApi = {
     academic_year_id?: number | string
     institution_id?: number | string
   }) => apiClient.get<any[]>('/dashboard/reconciliation', { params }),
+  getAnalytics: (params?: {
+    academic_year_id?: number | string
+    institution_id?: number | string
+    board_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+  }) => apiClient.get<DashboardAnalyticsData>('/dashboard/analytics', { params }),
 }
 
 // ─── Institutions ─────────────────────────────────────────────────────────────
