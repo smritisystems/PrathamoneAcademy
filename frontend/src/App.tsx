@@ -179,7 +179,16 @@ export default function App() {
           <Route path="standards" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
           <Route path="subjects" element={<Suspense fallback={<PageLoader />}><SubjectsPage /></Suspense>} />
           <Route path="batches" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          {/* Students & Admissions Centre Dedicated Workspaces */}
           <Route path="students" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
+          <Route path="students/overview" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
+          <Route path="students/directory" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
+          <Route path="students/admission" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
+          <Route path="students/allocations" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
+          <Route path="students/id-cards" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
+          <Route path="students/history" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
+          <Route path="students/reactivation" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
+          <Route path="students/settings" element={<Suspense fallback={<PageLoader />}><StudentsPage /></Suspense>} />
           <Route path="students/add" element={<Suspense fallback={<PageLoader />}><AddStudentPage /></Suspense>} />
           <Route path="students/:id" element={<Suspense fallback={<PageLoader />}><StudentDetailPage /></Suspense>} />
             {/* Lead Management & CRM Dedicated Workspaces */}

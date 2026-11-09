@@ -109,3 +109,4 @@ High-resolution 1080p visual captures recorded:
 - `screenshot_69_teachers_payroll.png` — Teacher Payroll & Salary Register Workspace
 - `screenshot_70_teachers_performance.png` — Teaching Sessions & Performance Workspace
 - `screenshot_71_teachers_settings.png` — Teacher Policies & Compensation Settings Workspace
+
