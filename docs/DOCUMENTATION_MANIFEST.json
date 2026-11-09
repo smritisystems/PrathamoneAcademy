@@ -5,7 +5,7 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-10T04:59:09.314365",
+  "generated_at": "2026-11-10T05:17:49.442186",
   "total_documents": 376,
   "modules_catalog": [
     {
@@ -7741,8 +7741,8 @@
       "filename": "2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md",
       "relative_path": "17_UI_UX_DESIGN/2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md",
       "extension": ".md",
-      "size_bytes": 6392,
-      "sha256": "1df9a691abec2bef8c8c7d37e765a7040caa7a38f92c43e09f8c3078bff6a70f",
+      "size_bytes": 6924,
+      "sha256": "e2dc0bd1d246d2ea1f9c077ba753c51149f0f2950542f0a61a80863341e28abb",
       "module": "17_UI_UX_DESIGN",
       "title": "Global Ascending / Descending Table Sorting & Filter Control Implementation Report",
       "category": "IMPLEMENTATION-REPORT",

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Complete Teacher Payroll & Payment Management workspace:
  */
@@ -27,7 +27,8 @@ import {
 import { teacherPayrollApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import { PrintFooter, useUniversalPrint } from '../components/printing'
 import { PrintDocumentHeader } from '../components/PrintDocumentBranding'
 import toast from 'react-hot-toast'
@@ -139,6 +140,28 @@ export default function TeacherPayroll() {
       if (selectedTeacherId) params.teacher_id = selectedTeacherId
       return (await teacherPayrollApi.getMonthlyPayrolls(params)).data
     },
+  })
+
+  const PAYROLL_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'payroll_number', label: 'Payroll #' },
+    { key: 'teacher_name', label: 'Teacher Name' },
+    { key: 'net_payable', label: 'Net Payable', type: 'number', defaultDirection: 'desc' },
+    { key: 'total_teaching_hours', label: 'Teaching Hours', type: 'number' },
+    { key: 'base_earnings', label: 'Base Earnings', type: 'number' },
+    { key: 'paid_amount', label: 'Paid Amount', type: 'number' },
+    { key: 'status', label: 'Status' },
+  ]
+
+  const {
+    sortedData: sortedPayrolls,
+    sortKey: payrollSortKey,
+    sortDirection: payrollSortDirection,
+    requestSort: requestPayrollSort,
+    setSort: setPayrollSort,
+    clearSort: clearPayrollSort,
+  } = useTableSort(monthlyPayrolls, {
+    initialKey: 'payroll_number',
+    initialDirection: 'asc',
   })
 
   // Teaching Sessions Query
@@ -488,7 +511,18 @@ export default function TeacherPayroll() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <TableSortSelect
+                options={PAYROLL_SORT_OPTIONS}
+                currentSortKey={payrollSortKey}
+                currentDirection={payrollSortDirection}
+                onSortChange={(key, dir) => {
+                  const opt = PAYROLL_SORT_OPTIONS.find((o) => o.key === key)
+                  setPayrollSort(key, dir, undefined, opt?.type || 'auto')
+                }}
+                onClear={clearPayrollSort}
+                placeholder="Sort Payroll..."
+              />
               <a
                 href={teacherPayrollApi.exportReportUrl('monthly-register', { month: selectedMonth, year: selectedYear })}
                 target="_blank"
@@ -527,7 +561,7 @@ export default function TeacherPayroll() {
                   Retry Load
                 </button>
               </div>
-            ) : monthlyPayrolls.length === 0 ? (
+            ) : sortedPayrolls.length === 0 ? (
               <div className="p-12 text-center text-slate-500">
                 <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <p className="font-bold text-slate-800 text-base">No Payroll Generated for {monthNames[selectedMonth - 1]} {selectedYear}</p>
@@ -556,22 +590,73 @@ export default function TeacherPayroll() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs uppercase">
                     <tr>
-                      <th className="py-3 px-4">Payroll #</th>
-                      <th className="py-3 px-4">Teacher Name</th>
+                      <SortableHeader
+                        columnKey="payroll_number"
+                        label="Payroll #"
+                        currentSortKey={payrollSortKey}
+                        currentDirection={payrollSortDirection}
+                        onSort={requestPayrollSort}
+                      />
+                      <SortableHeader
+                        columnKey="teacher_name"
+                        label="Teacher Name"
+                        currentSortKey={payrollSortKey}
+                        currentDirection={payrollSortDirection}
+                        onSort={requestPayrollSort}
+                      />
                       <th className="py-3 px-4">Method</th>
-                      <th className="py-3 px-4 text-right">Hours / Ltrs</th>
-                      <th className="py-3 px-4 text-right">Base (₹)</th>
+                      <SortableHeader
+                        columnKey="total_teaching_hours"
+                        label="Hours / Ltrs"
+                        align="right"
+                        currentSortKey={payrollSortKey}
+                        currentDirection={payrollSortDirection}
+                        onSort={requestPayrollSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="base_earnings"
+                        label="Base (₹)"
+                        align="right"
+                        currentSortKey={payrollSortKey}
+                        currentDirection={payrollSortDirection}
+                        onSort={requestPayrollSort}
+                        sortType="number"
+                      />
                       <th className="py-3 px-4 text-right">Incentives</th>
                       <th className="py-3 px-4 text-right">Deductions</th>
-                      <th className="py-3 px-4 text-right">Net Payable</th>
-                      <th className="py-3 px-4 text-right">Paid</th>
+                      <SortableHeader
+                        columnKey="net_payable"
+                        label="Net Payable"
+                        align="right"
+                        currentSortKey={payrollSortKey}
+                        currentDirection={payrollSortDirection}
+                        onSort={requestPayrollSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="paid_amount"
+                        label="Paid"
+                        align="right"
+                        currentSortKey={payrollSortKey}
+                        currentDirection={payrollSortDirection}
+                        onSort={requestPayrollSort}
+                        sortType="number"
+                      />
                       <th className="py-3 px-4 text-right">Pending</th>
-                      <th className="py-3 px-4 text-center">Status</th>
+                      <SortableHeader
+                        columnKey="status"
+                        label="Status"
+                        align="center"
+                        currentSortKey={payrollSortKey}
+                        currentDirection={payrollSortDirection}
+                        onSort={requestPayrollSort}
+                      />
                       <th className="py-3 px-4 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {monthlyPayrolls.map((p: any) => {
+                    {sortedPayrolls.map((p: any) => {
                       const isLocked = p.status === 'finalized' || p.status === 'paid'
                       return (
                         <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">

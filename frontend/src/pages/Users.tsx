@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description User management dashboard listing system accounts, roles, access scopes, and invitation workflows.
  */
@@ -28,7 +28,7 @@ import {
 import { usersApi, standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
 import Modal from '../components/Modal'
 import type {
   UserManagementStats, UserListItem, Standard, Division,
@@ -73,6 +73,25 @@ export default function UsersPage() {
   const [selectedDivisionId, setSelectedDivisionId] = useState<number | undefined>(undefined)
   const [sortBy, setSortBy] = useState<'name' | 'username' | 'email' | 'role' | 'last_login' | 'created_at'>('created_at')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  const USER_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'name', label: 'User Name' },
+    { key: 'username', label: 'Username' },
+    { key: 'email', label: 'Email' },
+    { key: 'role', label: 'Role' },
+    { key: 'last_login', label: 'Last Login', type: 'date', defaultDirection: 'desc' },
+    { key: 'created_at', label: 'Date Created', type: 'date', defaultDirection: 'desc' },
+  ]
+
+  const handleSortRequest = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortBy(key as any)
+      setSortDir('asc')
+    }
+    setPage(1)
+  }
 
   // Filter dropdown data
   const [standards, setStandards] = useState<Standard[]>([])
@@ -526,6 +545,24 @@ export default function UsersPage() {
               ))}
             </select>
 
+            {/* Sort Controls */}
+            <TableSortSelect
+              options={USER_SORT_OPTIONS}
+              currentSortKey={sortBy}
+              currentDirection={sortDir}
+              onSortChange={(key, dir) => {
+                setSortBy(key as any)
+                setSortDir(dir)
+                setPage(1)
+              }}
+              onClear={() => {
+                setSortBy('created_at')
+                setSortDir('desc')
+                setPage(1)
+              }}
+              placeholder="Sort Users..."
+            />
+
             {/* Clear Filters Button */}
             {(search || selectedRole !== 'all' || selectedStatus !== 'all' || selectedStandardId || selectedDivisionId) && (
               <button
@@ -559,12 +596,37 @@ export default function UsersPage() {
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">Email & Phone</th>
-                <th className="px-4 py-3">Role</th>
+                <SortableHeader
+                  columnKey="name"
+                  label="User"
+                  currentSortKey={sortBy}
+                  currentDirection={sortDir}
+                  onSort={handleSortRequest}
+                />
+                <SortableHeader
+                  columnKey="email"
+                  label="Email & Phone"
+                  currentSortKey={sortBy}
+                  currentDirection={sortDir}
+                  onSort={handleSortRequest}
+                />
+                <SortableHeader
+                  columnKey="role"
+                  label="Role"
+                  currentSortKey={sortBy}
+                  currentDirection={sortDir}
+                  onSort={handleSortRequest}
+                />
                 <th className="px-4 py-3">Linked Person</th>
                 <th className="px-4 py-3">Access Scope</th>
-                <th className="px-4 py-3">Last Login</th>
+                <SortableHeader
+                  columnKey="last_login"
+                  label="Last Login"
+                  currentSortKey={sortBy}
+                  currentDirection={sortDir}
+                  onSort={handleSortRequest}
+                  sortType="date"
+                />
                 <th className="px-4 py-3 text-center">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>

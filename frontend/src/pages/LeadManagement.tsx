@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Complete Lead Management & CRM workspace featuring KPI metrics, Kanban pipeline,
  */
@@ -37,7 +37,8 @@ import type {
 } from '../types'
 import { useAuthStore, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import { Printer } from 'lucide-react'
 import { PrintFooter, useUniversalPrint } from '../components/printing'
@@ -139,6 +140,29 @@ export default function LeadManagement() {
       return res.data
     },
     staleTime: 15000,
+  })
+
+  const LEAD_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'lead_number', label: 'Lead ID' },
+    { key: 'full_name', label: 'Student Name' },
+    { key: 'class_display', label: 'Class' },
+    { key: 'source', label: 'Source' },
+    { key: 'assigned_to_name', label: 'Counsellor' },
+    { key: 'next_follow_up', label: 'Next Follow-up', type: 'date' },
+    { key: 'stage', label: 'Status' },
+  ]
+
+  const leadsList = leadsListData?.items ?? []
+  const {
+    sortedData: sortedLeads,
+    sortKey: leadSortKey,
+    sortDirection: leadSortDirection,
+    requestSort: requestLeadSort,
+    setSort: setLeadSort,
+    clearSort: clearLeadSort,
+  } = useTableSort(leadsList, {
+    initialKey: 'lead_number',
+    initialDirection: 'desc',
   })
 
   // 4. Standards, Boards, Counsellors, Academic Years
@@ -774,16 +798,29 @@ export default function LeadManagement() {
             })}
           </div>
 
-          <button
-            onClick={() => {
-              setViewMode('list')
-              setTableFilter('recent')
-            }}
-            className="text-xs font-bold text-primary-600 hover:text-primary-700 inline-flex items-center gap-1"
-          >
-            <span>View All Leads</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <TableSortSelect
+              options={LEAD_SORT_OPTIONS}
+              currentSortKey={leadSortKey}
+              currentDirection={leadSortDirection}
+              onSortChange={(key, dir) => {
+                const opt = LEAD_SORT_OPTIONS.find((o) => o.key === key)
+                setLeadSort(key, dir, undefined, opt?.type || 'auto')
+              }}
+              onClear={clearLeadSort}
+              placeholder="Sort Leads..."
+            />
+            <button
+              onClick={() => {
+                setViewMode('list')
+                setTableFilter('recent')
+              }}
+              className="text-xs font-bold text-primary-600 hover:text-primary-700 inline-flex items-center gap-1"
+            >
+              <span>View All Leads</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Table Content */}
@@ -798,19 +835,68 @@ export default function LeadManagement() {
                     aria-label="Select all leads"
                   />
                 </th>
-                <th className="px-4 py-3">Lead ID</th>
-                <th className="px-4 py-3">Student Name</th>
-                <th className="px-4 py-3">Class</th>
-                <th className="px-4 py-3">Interested Course</th>
-                <th className="px-4 py-3">Source</th>
-                <th className="px-4 py-3">Counsellor</th>
-                <th className="px-4 py-3">Next Follow-up</th>
-                <th className="px-4 py-3">Status</th>
+                <SortableHeader
+                  columnKey="lead_number"
+                  label="Lead ID"
+                  currentSortKey={leadSortKey}
+                  currentDirection={leadSortDirection}
+                  onSort={requestLeadSort}
+                />
+                <SortableHeader
+                  columnKey="full_name"
+                  label="Student Name"
+                  currentSortKey={leadSortKey}
+                  currentDirection={leadSortDirection}
+                  onSort={requestLeadSort}
+                />
+                <SortableHeader
+                  columnKey="class_display"
+                  label="Class"
+                  currentSortKey={leadSortKey}
+                  currentDirection={leadSortDirection}
+                  onSort={requestLeadSort}
+                />
+                <SortableHeader
+                  columnKey="interested_course"
+                  label="Interested Course"
+                  currentSortKey={leadSortKey}
+                  currentDirection={leadSortDirection}
+                  onSort={requestLeadSort}
+                />
+                <SortableHeader
+                  columnKey="source"
+                  label="Source"
+                  currentSortKey={leadSortKey}
+                  currentDirection={leadSortDirection}
+                  onSort={requestLeadSort}
+                />
+                <SortableHeader
+                  columnKey="assigned_to_name"
+                  label="Counsellor"
+                  currentSortKey={leadSortKey}
+                  currentDirection={leadSortDirection}
+                  onSort={requestLeadSort}
+                />
+                <SortableHeader
+                  columnKey="next_follow_up"
+                  label="Next Follow-up"
+                  currentSortKey={leadSortKey}
+                  currentDirection={leadSortDirection}
+                  onSort={requestLeadSort}
+                  sortType="date"
+                />
+                <SortableHeader
+                  columnKey="stage"
+                  label="Status"
+                  currentSortKey={leadSortKey}
+                  currentDirection={leadSortDirection}
+                  onSort={requestLeadSort}
+                />
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {leadsListData?.items?.map((item: LeadItem) => {
+              {sortedLeads.map((item: LeadItem) => {
                 const isSelected = selectedLeadId === item.id
 
                 return (

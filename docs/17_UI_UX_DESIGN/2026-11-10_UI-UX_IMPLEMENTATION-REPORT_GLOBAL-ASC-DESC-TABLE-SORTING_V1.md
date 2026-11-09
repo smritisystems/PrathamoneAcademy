@@ -85,6 +85,9 @@ Compliant with **SSOT Rule 001**, **Rule 002**, and **Rule 008**, the sorting me
 | **Examinations** (`Examinations.tsx`) | Examinations Schedules Table | Exam Name, Type, Standard, Max Marks, Passing Marks, Status | Yes (`TableSortSelect`) |
 | **Examinations** (`Examinations.tsx`) | Merit Leaderboard Table | Rank, Student Name, Score, Percentage, Grade | Yes (`SortableHeader`) |
 | **Teacher Management** (`TeacherManagement.tsx`) | Faculty Directory Table | Faculty Member, Employee ID, Specialization, Lifecycle Status | Yes (`TableSortSelect`) |
+| **Teacher Payroll** (`TeacherPayroll.tsx`) | Monthly Payroll Calculation Register | Payroll #, Teacher Name, Net Payable, Hours, Base, Paid, Status | Yes (`TableSortSelect`) |
+| **Lead Management / CRM** (`LeadManagement.tsx`) | Leads Master Register | Lead ID, Student Name, Class, Interested Course, Source, Counsellor, Next Follow-up, Status | Yes (`TableSortSelect`) |
+| **User & Access Management** (`Users.tsx`) | System Accounts & RBAC Directory | User, Email & Phone, Role, Last Login, Status | Yes (`TableSortSelect`) |
 | **Courses & Materials** (`Courses.tsx`) | Study Materials Library Table | Title & Topic, Class & Division, Subject, Resource Type, File Size, Published Date | Yes (`TableSortSelect`) |
 | **Cascading Filters** (`CascadingFilters.tsx`) | Shared Filter Bar Engine | Direct integration for `sortOptions` across any consuming view | Yes (`TableSortSelect`) |
 
@@ -98,3 +101,4 @@ Compliant with **SSOT Rule 001**, **Rule 002**, and **Rule 008**, the sorting me
   - Production bundle build (`vite build`): Verified
   - Corporate Attribution Header compliance: 491/491 files verified (100%)
   - SSOT Rule 010 View-First Governance: Sorting operates in default View Mode without requiring Edit Mode.
+
