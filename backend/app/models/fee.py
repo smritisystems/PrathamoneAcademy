@@ -171,12 +171,14 @@ class FeeInvoice(Base):
     items: Mapped[list["FeeInvoiceItem"]] = relationship(
         "FeeInvoiceItem", back_populates="invoice"
     )
-    installments: Mapped[list["FeeInstallment"]] = relationship(
-        "FeeInstallment", back_populates="invoice"
-    )
     allocations: Mapped[list["PaymentAllocation"]] = relationship(
         "PaymentAllocation", back_populates="invoice"
     )
+
+    @property
+    def installments(self) -> list["FeeInvoiceItem"]:
+        """Backward compatibility property mapping legacy installments to invoice items."""
+        return self.items
 
 
 class FeeInvoiceItem(Base):
@@ -202,4 +204,6 @@ class FeeInvoiceItem(Base):
     )
 
 
-# [DEPRECATED & RETIRED IN P1] FeeInstallment consolidated into FeeInvoiceItem
+# [DEPRECATED & RETIRED IN P1] FeeInstallment alias for backward compatibility
+FeeInstallment = FeeInvoiceItem
+

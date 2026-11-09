@@ -1,0 +1,1138 @@
+{
+  "tables": {
+    "payments": {
+      "exists": true,
+      "count": 171,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('payments_id_seq'::regclass)"
+        },
+        {
+          "name": "student_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "academic_year_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "payment_date",
+          "type": "date",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "payment_method",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "transaction_reference",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "bank_name",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "cheque_number",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "cheque_date",
+          "type": "date",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "status",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "reversed_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "reversal_reason",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "reversed_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "collected_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        },
+        {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "submitted_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "approved_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "posted_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "posted_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "last_edited_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "last_edited_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "edit_count",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "0"
+        },
+        {
+          "name": "is_demo",
+          "type": "boolean",
+          "nullable": "NO",
+          "default": "false"
+        },
+        {
+          "name": "data_environment",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": "'PRODUCTION'::character varying"
+        },
+        {
+          "name": "demo_dataset_id",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        }
+      ]
+    },
+    "payment_receipts": {
+      "exists": true,
+      "count": 171,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('payment_receipts_id_seq'::regclass)"
+        },
+        {
+          "name": "receipt_number",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "payment_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "student_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "payment_date",
+          "type": "date",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "payment_method",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "receipt_data",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "generated_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "1"
+        },
+        {
+          "name": "status",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": "'valid'::character varying"
+        },
+        {
+          "name": "superseded_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "superseded_by_receipt_number",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "reprint_count",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "0"
+        },
+        {
+          "name": "is_demo",
+          "type": "boolean",
+          "nullable": "NO",
+          "default": "false"
+        },
+        {
+          "name": "data_environment",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": "'PRODUCTION'::character varying"
+        },
+        {
+          "name": "demo_dataset_id",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        }
+      ]
+    },
+    "payment_allocations": {
+      "exists": true,
+      "count": 171,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('payment_allocations_id_seq'::regclass)"
+        },
+        {
+          "name": "payment_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "invoice_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "allocated_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        }
+      ]
+    },
+    "fee_invoices": {
+      "exists": true,
+      "count": 39,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('fee_invoices_id_seq'::regclass)"
+        },
+        {
+          "name": "invoice_number",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "student_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "assignment_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "academic_year_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "total_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "discount_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "net_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "paid_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "outstanding_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "status",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "issue_date",
+          "type": "date",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "due_date",
+          "type": "date",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        },
+        {
+          "name": "is_demo",
+          "type": "boolean",
+          "nullable": "NO",
+          "default": "false"
+        },
+        {
+          "name": "data_environment",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": "'PRODUCTION'::character varying"
+        },
+        {
+          "name": "demo_dataset_id",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        }
+      ]
+    },
+    "fee_invoice_items": {
+      "exists": true,
+      "count": 39,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('fee_invoice_items_id_seq'::regclass)"
+        },
+        {
+          "name": "invoice_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "fee_structure_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "discount_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "net_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        }
+      ]
+    },
+    "student_fee_assignments": {
+      "exists": true,
+      "count": 40,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('student_fee_assignments_id_seq'::regclass)"
+        },
+        {
+          "name": "student_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "fee_structure_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "academic_year_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "custom_amount",
+          "type": "numeric",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "concession_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "remarks",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        }
+      ]
+    },
+    "fee_structures": {
+      "exists": true,
+      "count": 39,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('fee_structures_id_seq'::regclass)"
+        },
+        {
+          "name": "institution_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "academic_year_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "standard_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "category_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "frequency",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "installments_count",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "due_day",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "late_fee_amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "late_fee_days",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        }
+      ]
+    },
+    "fee_categories": {
+      "exists": true,
+      "count": 7,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('fee_categories_id_seq'::regclass)"
+        },
+        {
+          "name": "institution_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "name",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        }
+      ]
+    },
+    "refunds": {
+      "exists": true,
+      "count": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('refunds_id_seq'::regclass)"
+        },
+        {
+          "name": "institution_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "student_id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "enrollment_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "payment_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "invoice_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "amount",
+          "type": "numeric",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "refund_date",
+          "type": "date",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "refund_method",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "reference_number",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "reason",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "status",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": "'completed'::character varying"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "processed_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "NO",
+          "default": "now()"
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "nullable": "NO",
+          "default": "now()"
+        },
+        {
+          "name": "requested_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "approved_by_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "rejection_reason",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        }
+      ]
+    },
+    "advance_payments": {
+      "exists": false,
+      "count": 0,
+      "columns": []
+    },
+    "audit_logs": {
+      "exists": true,
+      "count": 325,
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "nullable": "NO",
+          "default": "nextval('audit_logs_id_seq'::regclass)"
+        },
+        {
+          "name": "user_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "action",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "resource_type",
+          "type": "character varying",
+          "nullable": "NO",
+          "default": null
+        },
+        {
+          "name": "resource_id",
+          "type": "integer",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "old_data",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "new_data",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "ip_address",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "user_agent",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": null
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "nullable": "YES",
+          "default": "now()"
+        },
+        {
+          "name": "is_system_audit",
+          "type": "boolean",
+          "nullable": "YES",
+          "default": "false"
+        },
+        {
+          "name": "severity",
+          "type": "character varying",
+          "nullable": "YES",
+          "default": "'info'::character varying"
+        },
+        {
+          "name": "details",
+          "type": "text",
+          "nullable": "YES",
+          "default": null
+        }
+      ]
+    },
+    "financial_periods": {
+      "exists": false,
+      "count": 0,
+      "columns": []
+    },
+    "receipt_sequences": {
+      "exists": false,
+      "count": 0,
+      "columns": []
+    },
+    "invoice_sequences": {
+      "exists": false,
+      "count": 0,
+      "columns": []
+    }
+  },
+  "payments_summary": {
+    "total_amount": 1824500.0,
+    "by_status": [
+      {
+        "status": "reversed",
+        "count": 4,
+        "total": 30200.0
+      },
+      {
+        "status": "completed",
+        "count": 167,
+        "total": 1794300.0
+      }
+    ],
+    "by_method": [
+      {
+        "method": "cheque",
+        "count": 5,
+        "total": 37500.0
+      },
+      {
+        "method": "upi",
+        "count": 48,
+        "total": 408700.0
+      },
+      {
+        "method": "bank_transfer",
+        "count": 99,
+        "total": 1122300.0
+      },
+      {
+        "method": "cash",
+        "count": 19,
+        "total": 256000.0
+      }
+    ]
+  },
+  "invoices_summary": {
+    "total_invoiced": 2894000.0,
+    "total_paid": 1794300.0,
+    "by_status": [
+      {
+        "status": "unpaid",
+        "count": 3,
+        "total": 175000.0,
+        "paid": 0.0
+      },
+      {
+        "status": "partial",
+        "count": 32,
+        "total": 2434000.0,
+        "paid": 1509300.0
+      },
+      {
+        "status": "paid",
+        "count": 4,
+        "total": 285000.0,
+        "paid": 285000.0
+      }
+    ]
+  },
+  "receipts_summary": {
+    "total_receipts": 171,
+    "distinct_receipt_numbers": 171,
+    "has_duplicates": false
+  },
+  "allocations_summary": {},
+  "foreign_keys": [
+    {
+      "table": "refunds",
+      "column": "institution_id",
+      "foreign_table": "institutions",
+      "foreign_column": "id"
+    },
+    {
+      "table": "refunds",
+      "column": "student_id",
+      "foreign_table": "students",
+      "foreign_column": "id"
+    },
+    {
+      "table": "refunds",
+      "column": "enrollment_id",
+      "foreign_table": "student_enrollments",
+      "foreign_column": "id"
+    },
+    {
+      "table": "refunds",
+      "column": "payment_id",
+      "foreign_table": "payments",
+      "foreign_column": "id"
+    },
+    {
+      "table": "refunds",
+      "column": "invoice_id",
+      "foreign_table": "fee_invoices",
+      "foreign_column": "id"
+    },
+    {
+      "table": "refunds",
+      "column": "processed_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "fee_invoice_items",
+      "column": "fee_structure_id",
+      "foreign_table": "fee_structures",
+      "foreign_column": "id"
+    },
+    {
+      "table": "fee_invoice_items",
+      "column": "invoice_id",
+      "foreign_table": "fee_invoices",
+      "foreign_column": "id"
+    },
+    {
+      "table": "fee_invoices",
+      "column": "academic_year_id",
+      "foreign_table": "academic_years",
+      "foreign_column": "id"
+    },
+    {
+      "table": "fee_invoices",
+      "column": "assignment_id",
+      "foreign_table": "student_fee_assignments",
+      "foreign_column": "id"
+    },
+    {
+      "table": "fee_invoices",
+      "column": "student_id",
+      "foreign_table": "students",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "submitted_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "approved_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "posted_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "last_edited_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "refunds",
+      "column": "requested_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "refunds",
+      "column": "approved_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payment_allocations",
+      "column": "invoice_id",
+      "foreign_table": "fee_invoices",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payment_allocations",
+      "column": "payment_id",
+      "foreign_table": "payments",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payment_receipts",
+      "column": "payment_id",
+      "foreign_table": "payments",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payment_receipts",
+      "column": "student_id",
+      "foreign_table": "students",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "academic_year_id",
+      "foreign_table": "academic_years",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "collected_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "reversed_by_id",
+      "foreign_table": "users",
+      "foreign_column": "id"
+    },
+    {
+      "table": "payments",
+      "column": "student_id",
+      "foreign_table": "students",
+      "foreign_column": "id"
+    }
+  ],
+  "constraints": []
+}

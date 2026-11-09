@@ -136,7 +136,20 @@ class PaymentAllocation(Base):
     invoice: Mapped["FeeInvoice"] = relationship(
         "FeeInvoice", back_populates="allocations"
     )
-# installment relationship retired in P1
+
+    def __init__(self, **kwargs):
+        kwargs.pop("installment_id", None)
+        super().__init__(**kwargs)
+
+    @property
+    def installment_id(self) -> Optional[int]:
+        """Retired legacy attribute in P1 consolidation."""
+        return None
+
+    @property
+    def installment(self):
+        """Retired legacy relationship in P1 consolidation."""
+        return None
 
 
 class PaymentReceipt(Base):

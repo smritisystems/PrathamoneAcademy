@@ -33,8 +33,6 @@ from app.models.fee import (
     FeeInvoice,
     FeeInvoiceItem,
     FeeInstallment,
-    Discount,
-    Scholarship,
 )
 from app.models.student import Student
 from app.models.enrollment import StudentEnrollment

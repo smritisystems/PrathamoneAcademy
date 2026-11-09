@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-09
 #  *
 #  * @description Pytest configuration fixtures providing test database session, test client, and auth helpers.
 #  */
@@ -295,24 +295,14 @@ async def test_fee_invoice(db, test_student, test_institution, test_academic_yea
         net_amount=Decimal("24000.00"),
     )
     db.add(item)
-
-    installment = FeeInstallment(
-        invoice_id=invoice.id,
-        installment_number=1,
-        description="Full Payment",
-        amount=Decimal("24000.00"),
-        paid_amount=Decimal("0"),
-        due_date=date(2025, 3, 31),
-        status="unpaid",
-    )
-    db.add(installment)
     await db.commit()
     await db.refresh(invoice)
-    await db.refresh(installment)
+    await db.refresh(item)
 
     return {
         "invoice": invoice,
-        "installment": installment,
+        "item": item,
+        "installment": item,
         "student": test_student,
         "academic_year": test_academic_year,
     }

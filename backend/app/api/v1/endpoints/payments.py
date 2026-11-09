@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-09
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -1378,7 +1378,7 @@ async def build_receipt_response(
         pay_res = await db.execute(
             select(Payment)
             .options(
-                selectinload(Payment.allocations).selectinload(PaymentAllocation.installment),
+                selectinload(Payment.allocations).selectinload(PaymentAllocation.invoice),
                 selectinload(Payment.student),
             )
             .where(Payment.id == receipt.payment_id)
