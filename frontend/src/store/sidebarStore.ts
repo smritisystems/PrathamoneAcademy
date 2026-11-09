@@ -33,6 +33,7 @@ interface SidebarStore {
   studentsOpen: boolean
   staffOpen: boolean
   coursesOpen: boolean
+  communicationOpen: boolean
   setDesktopState: (state: DesktopSidebarState) => void
   toggleCollapse: () => void
   toggleHidden: () => void
@@ -58,6 +59,8 @@ interface SidebarStore {
   toggleStaffOpen: () => void
   setCoursesOpen: (open: boolean | ((prev: boolean) => boolean)) => void
   toggleCoursesOpen: () => void
+  setCommunicationOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  toggleCommunicationOpen: () => void
 }
 
 const getInitialDesktopState = (): DesktopSidebarState => {
@@ -94,6 +97,7 @@ export const useSidebarStore = create<SidebarStore>()(
       studentsOpen: true,
       staffOpen: true,
       coursesOpen: true,
+      communicationOpen: true,
 
       setDesktopState: (desktopState) => set({ desktopState }),
 
@@ -186,6 +190,14 @@ export const useSidebarStore = create<SidebarStore>()(
 
       toggleCoursesOpen: () =>
         set((state) => ({ coursesOpen: !state.coursesOpen })),
+
+      setCommunicationOpen: (updater) =>
+        set((state) => ({
+          communicationOpen: typeof updater === 'function' ? updater(state.communicationOpen) : updater,
+        })),
+
+      toggleCommunicationOpen: () =>
+        set((state) => ({ communicationOpen: !state.communicationOpen })),
     }),
     {
       name: 'prashant_sidebar_state',
@@ -200,6 +212,7 @@ export const useSidebarStore = create<SidebarStore>()(
         studentsOpen: state.studentsOpen,
         staffOpen: state.staffOpen,
         coursesOpen: state.coursesOpen,
+        communicationOpen: state.communicationOpen,
       }),
     }
   )

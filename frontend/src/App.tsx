@@ -292,7 +292,18 @@ export default function App() {
           <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
           <Route path="codex" element={<Suspense fallback={<PageLoader />}><CodeXStudioPage /></Suspense>} />
+          {/* Communication Center Dedicated Workspaces */}
           <Route path="communication" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/overview" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/broadcasts" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/compose" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/whatsapp" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/templates" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/history" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/automations" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/gateways" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/diagnostics" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/settings" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
           <Route path="admin/releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
           <Route path="training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />

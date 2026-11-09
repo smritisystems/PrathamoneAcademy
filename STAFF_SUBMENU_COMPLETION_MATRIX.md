@@ -61,3 +61,4 @@
 6. `screenshot_85_staff_leaves.png` — Leave Applications & Approvals Workspace
 7. `screenshot_86_staff_documents.png` — HR Letters & Official Documentation Studio Workspace
 8. `screenshot_87_staff_settings.png` — Institute Employment & HR Policies Workspace
+

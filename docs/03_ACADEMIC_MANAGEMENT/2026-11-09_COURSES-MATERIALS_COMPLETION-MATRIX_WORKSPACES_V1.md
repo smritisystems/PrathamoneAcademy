@@ -84,3 +84,4 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "08_EXAMINATION", "13_SYSADMIN_SETTI
 6. `screenshot_93_courses_video_lectures.png` — Recorded Lectures & Video Stream Centre Workspace
 7. `screenshot_94_courses_syllabi.png` — Curriculum Syllabi & Academic Streams Workspace
 8. `screenshot_95_courses_settings.png` — Storage Policies, File Formats & Quotas Workspace
+
