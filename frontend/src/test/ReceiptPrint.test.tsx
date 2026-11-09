@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-10
  *
  * @description Unit and DOM integration tests for isolated fee receipt printing and container isolation.
  */
@@ -163,7 +163,7 @@ describe('Receipt Printing Specification & Container Isolation', () => {
       expect(screen.getByText('RCP-2026-0146')).toBeDefined();
       expect(screen.getByText('Johan Iyer')).toBeDefined();
       expect(screen.getByText('PA-2024-000021')).toBeDefined();
-      expect(screen.getByText(/Class IV/)).toBeDefined();
+      expect(screen.getByText('IV')).toBeDefined();
       expect(screen.getByText('INV-2026-0149')).toBeDefined();
       expect(screen.getByText('TXN-2026-0146')).toBeDefined();
       expect(screen.getAllByText(/₹8,500/i).length).toBeGreaterThan(0);
@@ -320,11 +320,11 @@ describe('Receipt Printing Specification & Container Isolation', () => {
       expect(screen.getByText('Authorized Signatory')).toBeDefined();
     });
 
-    it('adaptively caps historical payments to 6 on A5 paper and shows overflow footnote', () => {
-      const eightPayments = Array.from({ length: 8 }, (_, i) => ({
+    it('adaptively caps historical payments to 10 on A5 paper and shows overflow footnote', () => {
+      const fifteenPayments = Array.from({ length: 15 }, (_, i) => ({
         payment_id: i + 1,
         receipt_number: `RCP-2026-${String(i + 1).padStart(4, '0')}`,
-        date: `2026-0${i + 1}-10`,
+        date: `2026-0${(i % 9) + 1}-10`,
         payment_method: 'upi',
         amount: 5000.0,
       }));
@@ -339,7 +339,7 @@ describe('Receipt Printing Specification & Container Isolation', () => {
         payment_date: '2026-11-01',
         payment_method: 'upi',
         status: 'completed',
-        historical_payments: eightPayments,
+        historical_payments: fifteenPayments,
         fee_summary: {
           total_fee_amount: 50000.0,
           previous_payments_total: 40000.0,
@@ -351,13 +351,13 @@ describe('Receipt Printing Specification & Container Isolation', () => {
 
       const { rerender } = render(<PaymentReceiptView receipt={heavyReceipt} initialPaperSize="A5" />);
 
-      // On A5 mode, 6 are rendered and overflow notice appears
-      expect(screen.getByText(/Showing 6 most recent installments/i)).toBeDefined();
+      // On A5 mode, 10 are rendered and overflow notice appears
+      expect(screen.getByText(/Showing 10 most recent installments/i)).toBeDefined();
 
-      // When switched to A4 mode, all 8 are shown without the overflow notice
+      // When switched to A4 mode, all are shown without the overflow notice
       const a4Btn = screen.getByText('A4 Portrait');
       fireEvent.click(a4Btn);
-      expect(screen.queryByText(/Showing 6 most recent installments/i)).toBeNull();
+      expect(screen.queryByText(/Showing 10 most recent installments/i)).toBeNull();
     });
   });
 
@@ -470,7 +470,7 @@ describe('Receipt Printing Specification & Container Isolation', () => {
       render(<PaymentReceiptView receipt={longNameReceipt} initialPaperSize="A5" />);
 
       expect(screen.getByText('Harsimranjeet Singh Randhawa-Bhattacharya')).toBeDefined();
-      expect(screen.getByText('Class XII (Science Stream)')).toBeDefined();
+      expect(screen.getByText('XII (Science Stream)')).toBeDefined();
       expect(screen.getByText('Batch B-Advanced Morning Coaching')).toBeDefined();
     });
 
@@ -532,11 +532,11 @@ describe('Receipt Printing Specification & Container Isolation', () => {
 
       render(<PaymentReceiptView receipt={multiPageReceipt} initialPaperSize="A5" />);
 
-      expect(screen.getByText(/Showing 6 most recent installments/i)).toBeDefined();
+      expect(screen.getByText(/Showing 10 most recent installments/i)).toBeDefined();
 
       const a4Btn = screen.getByText('A4 Portrait');
       fireEvent.click(a4Btn);
-      expect(screen.queryByText(/Showing 6 most recent installments/i)).toBeNull();
+      expect(screen.queryByText(/Showing 10 most recent installments/i)).toBeNull();
       expect(screen.getByText('RCP-2026-0012')).toBeDefined();
     });
 

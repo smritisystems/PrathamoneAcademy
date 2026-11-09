@@ -11,14 +11,14 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   DollarSign, CheckCircle, AlertTriangle, Printer, RotateCcw,
   Download, CreditCard, ArrowRight, FileText, Share2, Edit3,
@@ -101,14 +101,31 @@ export default function Payments() {
     },
   })
 
+  const [searchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search') || ''
+  const initialStatus = searchParams.get('status') || ''
+
   const [filters, setFilters] = useState<FilterState>({
     academicYearId: selectedAcademicYearId || null,
     boardId: null,
     standardId: null,
     divisionId: null,
-    status: '',
-    search: '',
+    status: initialStatus,
+    search: initialSearch,
   })
+
+  // Synchronize deep-linked query parameters (e.g. ?search=... or ?status=...)
+  useEffect(() => {
+    const s = searchParams.get('search')
+    const st = searchParams.get('status')
+    if (s !== null || st !== null) {
+      setFilters((prev) => ({
+        ...prev,
+        search: s !== null ? s : prev.search,
+        status: st !== null ? st : prev.status,
+      }))
+    }
+  }, [searchParams])
 
   // Modal states
   const [reversalModalOpen, setReversalModalOpen] = useState(false)

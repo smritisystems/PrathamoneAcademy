@@ -70,6 +70,7 @@ const feesSubItems = [
   { to: '/fees/structures', label: 'Fee Structures' },
   { to: '/fees/invoicing', label: 'Fee Invoicing' },
   { to: '/fees/collection', label: 'Collection Desk' },
+  { to: '/payments', label: 'Payment Ledger' },
   { to: '/fees/defaulters', label: 'Defaulters & Dues' },
   { to: '/fees/concessions', label: 'Concessions & Waivers' },
   { to: '/fees/online-gateway', label: 'Online Gateway' },
@@ -365,6 +366,9 @@ const isStaffActive = location.pathname.startsWith('/staff')
         (!location.search || location.search === '' || location.search.includes('tab=overview'))
       )
     }
+    if (subTo === '/payments') {
+      return location.pathname.startsWith('/payments') || location.pathname.startsWith('/receipts')
+    }
     const tabName = subTo.replace('/fees/', '')
     return (
       location.pathname === subTo ||
@@ -375,13 +379,8 @@ const isStaffActive = location.pathname.startsWith('/staff')
       (subTo === '/fees/collection' && (
         location.pathname === '/fees/collect' ||
         location.pathname.startsWith('/fees/collect/') ||
-        location.pathname === '/fees/payments' ||
-        location.pathname === '/fees/receipts' ||
-        location.pathname.startsWith('/payments') ||
-        location.pathname.startsWith('/receipts') ||
         location.search.includes('tab=collect') ||
-        location.search.includes('tab=payments') ||
-        location.search.includes('tab=receipts')
+        location.search.includes('tab=collection')
       )) ||
       (subTo === '/fees/reports' && location.search.includes('tab=reports'))
     )

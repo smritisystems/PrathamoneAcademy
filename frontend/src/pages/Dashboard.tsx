@@ -1014,7 +1014,7 @@ export default function DashboardPage() {
                 </div>
 
                 <Link
-                  to="/fees/payments"
+                  to="/payments?status=submitted"
                   className="p-3 rounded-lg bg-slate-50 border border-gray-200 hover:border-primary-300 transition-colors"
                 >
                   <p className="text-[11px] font-medium text-gray-500 uppercase">Pending Verifications</p>
@@ -1098,10 +1098,18 @@ export default function DashboardPage() {
           <div className="bg-white border border-gray-200 rounded-xl shadow-2xs p-4 sm:p-5">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3 border-b border-gray-200">
               <div>
-                <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-                  <Receipt className="w-4 h-4 text-primary-600" />
-                  <span>Recent Fee Payment Transactions</span>
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 text-primary-600" />
+                    <span>Recent Fee Payment Transactions</span>
+                  </h2>
+                  <Link
+                    to="/payments"
+                    className="text-xs font-bold text-primary-600 hover:text-primary-800 ml-2"
+                  >
+                    View All Payments →
+                  </Link>
+                </div>
                 <p className="text-xs text-gray-500">
                   Live feed of cleared student fee payments with verified receipt generation
                 </p>

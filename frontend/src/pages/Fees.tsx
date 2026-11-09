@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -568,7 +568,7 @@ function FeesContent() {
     const path = location.pathname.toLowerCase()
     if (path.includes('/fees/structures') || path.includes('/fees/plans')) return 'structures'
     if (path.includes('/fees/invoicing') || path.includes('/fees/register')) return 'invoicing'
-    if (path.includes('/fees/collection') || path.includes('/fees/collect') || path.includes('/fees/payments') || path.includes('/fees/receipts')) return 'collection'
+    if (path.includes('/fees/collection') || path.includes('/fees/collect')) return 'collection'
     if (path.includes('/fees/defaulters')) return 'defaulters'
     if (path.includes('/fees/concessions')) return 'concessions'
     if (path.includes('/fees/online-gateway')) return 'online-gateway'
@@ -580,7 +580,7 @@ function FeesContent() {
     if (tabParam) {
       if (tabParam === 'plans' || tabParam === 'settings') return 'structures'
       if (tabParam === 'register') return 'invoicing'
-      if (tabParam === 'collect' || tabParam === 'payments' || tabParam === 'receipts') return 'collection'
+      if (tabParam === 'collect') return 'collection'
       if (['overview', 'structures', 'invoicing', 'collection', 'defaulters', 'concessions', 'online-gateway', 'reports'].includes(tabParam)) {
         return tabParam
       }
@@ -592,11 +592,23 @@ function FeesContent() {
 
   // Synchronize tab state with browser navigation & URL pathname
   useEffect(() => {
+    const path = location.pathname.toLowerCase()
+    const tabParam = searchParams.get('tab')
+    if (
+      path.includes('/fees/payments') ||
+      path.includes('/fees/receipts') ||
+      tabParam === 'payments' ||
+      tabParam === 'receipts'
+    ) {
+      navigate('/payments', { replace: true })
+      return
+    }
+
     const derived = getTabFromLocation()
     if (derived && derived !== activeTab) {
       setActiveTab(derived)
     }
-  }, [location.pathname, searchParams])
+  }, [location.pathname, searchParams, navigate])
 
   const setTab = (tab: TabKey, extraParams?: Record<string, string>) => {
     setActiveTab(tab)
@@ -2682,8 +2694,8 @@ function FeesContent() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setTab('payments')}
-                      className="text-xs font-bold text-primary-600 hover:text-primary-800 flex items-center gap-1"
+                      onClick={() => navigate('/payments')}
+                      className="text-xs font-bold text-primary-600 hover:text-primary-800 flex items-center gap-1 cursor-pointer"
                     >
                       View All Payments →
                     </button>
@@ -2794,8 +2806,8 @@ function FeesContent() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setTab('receipts')}
-                      className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold shadow-xs transition-all"
+                      onClick={() => navigate('/payments')}
+                      className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
                     >
                       <Printer className="w-4 h-4 text-slate-500" />
                       <span>Receipt Search / Reprint</span>

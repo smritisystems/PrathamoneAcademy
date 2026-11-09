@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -256,8 +256,8 @@ export default function App() {
           <Route path="fees/register" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/collect" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/collect/:studentId" element={<Suspense fallback={<PageLoader />}><FeeCollectionPage /></Suspense>} />
-          <Route path="fees/payments" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/receipts" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/payments" element={<Navigate to="/payments" replace />} />
+          <Route path="fees/receipts" element={<Navigate to="/payments" replace />} />
           <Route path="fees/plans" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/settings" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/import" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-07
+ * @updated     2026-11-10
  *
  * @description Vitest test suite for Institute Settings workspace, live branding preview, sub-tabs, lookups CRUD, and category persistence.
  */
@@ -156,9 +156,10 @@ describe('Institute Settings & Configuration Workspace', () => {
     expect(screen.getByText('General Lookups')).toBeDefined()
     expect(screen.getByText('Data & Maintenance')).toBeDefined()
 
+    expect(screen.getByText('Navigation & Menu Governance')).toBeDefined()
     expect(screen.getByText('CodeX Configuration Studio')).toBeDefined()
 
-    expect(SETTINGS_CATEGORIES.length).toBe(16)
+    expect(SETTINGS_CATEGORIES.length).toBe(17)
   })
 
   it('filters navigation categories when typing in search box', async () => {
