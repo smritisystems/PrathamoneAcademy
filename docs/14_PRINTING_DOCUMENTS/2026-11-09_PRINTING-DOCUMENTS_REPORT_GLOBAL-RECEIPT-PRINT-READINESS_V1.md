@@ -72,3 +72,4 @@ To ensure visual consistency across screens, thermal receipt printers, and deskt
 ## 4. CERTIFICATION SIGN-OFF
 
 The print and PDF layout systems achieve **100% layout and financial parity**. No inconsistencies between physical printed vouchers and distributed PDF files exist.
+

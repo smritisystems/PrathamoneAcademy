@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-09
  *
  * @description Vitest test suite verifying Fees & Payments overview KPIs, charts, filters, and receipt modals.
  */
@@ -239,8 +239,8 @@ describe('Fees & Payments Module Specifications', () => {
     )
 
     // Workspace Title
-    expect(screen.getByRole('heading', { name: 'Fees & Payments' })).toBeDefined()
-    expect(screen.getByText('Manage student fees, collections, payments, and receipts')).toBeDefined()
+    expect(screen.getByRole('heading', { name: /Fees & Payments/i })).toBeDefined()
+    expect(screen.getByText(/Collections & Institute Audits/i)).toBeDefined()
 
     // Wait for queries to resolve and check Quick Actions & KPI values
     await waitFor(() => {

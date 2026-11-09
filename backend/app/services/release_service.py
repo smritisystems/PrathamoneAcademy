@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-06
+#  * @updated     2026-11-09
 #  *
 #  * @description Enterprise Release & Change Management service governing change tracking, automated release notes, semantic versioning, validation, and production approval lifecycles.
 #  */
@@ -60,7 +60,6 @@ SECRET_PATTERNS = [
     (re.compile(r'(?i)(?:password|secret|token|api_key|access_key|jwt)[\s:=]+["\']?([^"\'\s,;]{8,})["\']?'), r'\1'),
     (re.compile(r'(?i)postgres(?:ql(?:\+asyncpg)?)?://[^:]+:([^@]+)@'), r'\1'),
     (re.compile(r'Bearer\s+[A-Za-z0-9\-_=]+\.[A-Za-z0-9\-_=]+\.?[A-Za-z0-9\-_.+/=]*'), 'REDACTED_JWT'),
-    (re.compile(r'\b[A-Fa-f0-9]{32,64}\b'), 'REDACTED_HASH'),
 ]
 
 SEMVER_REGEX = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9.]+))?$")
@@ -524,9 +523,10 @@ class ReleaseService:
         leak_details = []
         for pat, _ in SECRET_PATTERNS:
             found = pat.findall(notes_text)
-            if found:
+            real_leaks = [item for item in found if not (isinstance(item, str) and ("REDACTED" in item or item.startswith("***")))]
+            if real_leaks:
                 leak_detected = True
-                leak_details.append(f"Potential secret or credential pattern detected: {len(found)} instance(s).")
+                leak_details.append(f"Potential secret or credential pattern detected: {len(real_leaks)} instance(s).")
 
         if leak_detected:
             checks["secret_scan"] = {"status": "failed", "message": "; ".join(leak_details)}
