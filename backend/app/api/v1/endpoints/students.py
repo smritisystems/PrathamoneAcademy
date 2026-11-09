@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-09
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -886,7 +886,7 @@ async def get_student_admin_profile(
     # 6. Fees & Payments
     inv_stmt = (
         select(FeeInvoice)
-        .options(selectinload(FeeInvoice.items), selectinload(FeeInvoice.installments))
+        .options(selectinload(FeeInvoice.items))
         .where(FeeInvoice.student_id == student_id)
         .order_by(desc(FeeInvoice.id))
     )

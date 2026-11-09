@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-05
+#  * @updated     2026-11-09
 #  *
 #  * @description API endpoints dedicated to authenticated student dashboard views, timetables, and grades.
 #  */
@@ -625,7 +625,6 @@ async def get_student_fees(
         select(FeeInvoice)
         .options(
             selectinload(FeeInvoice.items),
-            selectinload(FeeInvoice.installments),
         )
         .where(FeeInvoice.student_id == student.id)
         .order_by(desc(FeeInvoice.id))

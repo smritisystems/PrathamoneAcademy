@@ -738,7 +738,6 @@ async def get_invoice(
         select(FeeInvoice)
         .options(
             selectinload(FeeInvoice.items),
-            selectinload(FeeInvoice.installments),
         )
         .where(FeeInvoice.id == invoice_id)
     )
