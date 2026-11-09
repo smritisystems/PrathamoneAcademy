@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-10 04:28:02  
-**Total Indexed Items:** 375  
+**Last Reindexed:** 2026-11-10 04:59:09  
+**Total Indexed Items:** 376  
 
 ---
 
@@ -31,7 +31,7 @@
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **12** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **5** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **7** | Database Schema & REST API Standards |
-| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **9** | UI/UX Design, Components & Footer |
+| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **10** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **4** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **6** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **45** | Forensic Audits & Data Health |
@@ -326,6 +326,7 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **Application Footer Implementation & Verification Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-FOOTER-IMPLEMENTATION-REPORT_V1.md](17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-FOOTER-IMPLEMENTATION-REPORT_V1.md) | - |
+| **Global Ascending / Descending Table Sorting & Filter Control Implementation Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md](17_UI_UX_DESIGN/2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS |
 | **Global Branding Visual Validation & Acceptance Report** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md](17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md) | 01_ARCHITECTURE, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
 | **Prashant Academy — Board, Class & Student Roster Update Report** | `IMPLEMENTATION-PLAN` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md](17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md) | - |
 | **PrathamOne & PrathamOne EduOS Global Brand Identity Integration Master Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_UI-UX-DESIGN_REPORT_PRATHAMONE-BRAND-IDENTITY-INTEGRATION_V1.md](17_UI_UX_DESIGN/2026-11-07_UI-UX-DESIGN_REPORT_PRATHAMONE-BRAND-IDENTITY-INTEGRATION_V1.md) | frontend.config, frontend.components, 00_PRODUCT_OVERVIEW, 20_AUDITS_COMPLIANCE |

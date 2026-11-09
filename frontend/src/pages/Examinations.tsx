@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Examinations flagship workspace featuring 7 dedicated submenus: overview, schedules, marks entry, analytics, report cards, question papers, and settings.
  */
@@ -32,7 +32,8 @@ import { standardsApi, academicYearsApi, examinationsApi, settingsApi } from '..
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton } from '../components/common'
+import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import ReportCardModal from '../components/ReportCardModal'
 import type { ExamMarksSheet, ExamAnalyticsData } from '../types'
@@ -164,6 +165,26 @@ function ExaminationsContent() {
     enabled: true,
   })
 
+  const EXAM_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'name', label: 'Exam Name' },
+    { key: 'exam_type', label: 'Type' },
+    { key: 'total_marks', label: 'Max Marks', type: 'number' as const },
+    { key: 'passing_marks', label: 'Passing Marks', type: 'number' as const },
+    { key: 'status', label: 'Status' },
+  ]
+
+  const {
+    sortedData: sortedExams,
+    sortKey: examSortKey,
+    sortDirection: examSortDirection,
+    requestSort: requestExamSort,
+    setSort: setExamSort,
+    clearSort: clearExamSort,
+  } = useTableSort(exams, {
+    initialKey: 'name',
+    initialDirection: 'asc',
+  })
+
   // Auto select active exam if none selected
   useEffect(() => {
     if (exams.length > 0 && !selectedExamId) {
@@ -281,6 +302,18 @@ function ExaminationsContent() {
     queryKey: ['exam-analytics', effectiveAnalyticsExamId],
     queryFn: () => examinationsApi.getAnalytics(effectiveAnalyticsExamId!).then((r) => r.data),
     enabled: !!effectiveAnalyticsExamId,
+  })
+
+  const leaderboardList = analytics?.leaderboard ?? []
+  const {
+    sortedData: sortedLeaderboard,
+    sortKey: leaderboardSortKey,
+    sortDirection: leaderboardSortDirection,
+    requestSort: requestLeaderboardSort,
+  } = useTableSort(leaderboardList, {
+    initialKey: 'rank',
+    initialDirection: 'asc',
+    initialType: 'number',
   })
 
   const selectedStdObj = standards.find((s) => String(s.id) === currentStandardId)
@@ -565,22 +598,33 @@ function ExaminationsContent() {
 
           {/* Examinations List Table */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-base font-bold text-gray-900">
                   {selectedStdObj?.name ? `${selectedStdObj.name} — Examinations & Schedules` : 'Examinations'}
                 </h2>
                 <p className="text-xs text-gray-500">
-                  Total {exams.length} examination{exams.length === 1 ? '' : 's'} registered in academic schedule
+                  Total {sortedExams.length} examination{sortedExams.length === 1 ? '' : 's'} registered in academic schedule
                 </p>
               </div>
+              <TableSortSelect
+                options={EXAM_SORT_OPTIONS}
+                currentSortKey={examSortKey}
+                currentDirection={examSortDirection}
+                onSortChange={(key, dir) => {
+                  const opt = EXAM_SORT_OPTIONS.find((o) => o.key === key)
+                  setExamSort(key, dir, undefined, opt?.type || 'auto')
+                }}
+                onClear={clearExamSort}
+                placeholder="Sort Examinations..."
+              />
             </div>
 
             {isLoading ? (
               <div className="flex items-center justify-center h-48">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700" />
               </div>
-            ) : exams.length === 0 ? (
+            ) : sortedExams.length === 0 ? (
               <div className="text-center py-12 text-gray-400">
                 <Award className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                 <p className="text-sm font-medium">No examinations scheduled for this standard</p>
@@ -593,17 +637,52 @@ function ExaminationsContent() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-gray-500 text-left">
-                      <th className="pb-3 font-medium">Exam Name</th>
-                      <th className="pb-3 font-medium">Type</th>
+                      <SortableHeader
+                        columnKey="name"
+                        label="Exam Name"
+                        currentSortKey={examSortKey}
+                        currentDirection={examSortDirection}
+                        onSort={requestExamSort}
+                      />
+                      <SortableHeader
+                        columnKey="exam_type"
+                        label="Type"
+                        currentSortKey={examSortKey}
+                        currentDirection={examSortDirection}
+                        onSort={requestExamSort}
+                      />
                       <th className="pb-3 font-medium">Standard</th>
-                      <th className="pb-3 font-medium text-center">Max Marks</th>
-                      <th className="pb-3 font-medium text-center">Passing Marks</th>
-                      <th className="pb-3 font-medium text-center">Status</th>
+                      <SortableHeader
+                        columnKey="total_marks"
+                        label="Max Marks"
+                        align="center"
+                        currentSortKey={examSortKey}
+                        currentDirection={examSortDirection}
+                        onSort={requestExamSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="passing_marks"
+                        label="Passing Marks"
+                        align="center"
+                        currentSortKey={examSortKey}
+                        currentDirection={examSortDirection}
+                        onSort={requestExamSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="status"
+                        label="Status"
+                        align="center"
+                        currentSortKey={examSortKey}
+                        currentDirection={examSortDirection}
+                        onSort={requestExamSort}
+                      />
                       <th className="pb-3 font-medium text-right">Actions & Reports</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {exams.map((ex: any) => (
+                    {sortedExams.map((ex: any) => (
                       <tr key={ex.id} className="hover:bg-gray-50/50">
                         <td className="py-3 font-medium text-gray-900 flex items-center gap-2">
                           <Award className="w-4 h-4 text-purple-600 flex-shrink-0" />
@@ -977,16 +1056,45 @@ function ExaminationsContent() {
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="border-b border-gray-200 text-gray-500 uppercase text-[10px] text-left">
-                            <th className="py-2 px-3 font-semibold w-14">Rank</th>
-                            <th className="py-2 px-3 font-semibold">Student Name</th>
+                            <SortableHeader
+                              columnKey="rank"
+                              label="Rank"
+                              currentSortKey={leaderboardSortKey}
+                              currentDirection={leaderboardSortDirection}
+                              onSort={requestLeaderboardSort}
+                              sortType="number"
+                              className="w-16"
+                            />
+                            <SortableHeader
+                              columnKey="name"
+                              label="Student Name"
+                              currentSortKey={leaderboardSortKey}
+                              currentDirection={leaderboardSortDirection}
+                              onSort={requestLeaderboardSort}
+                            />
                             <th className="py-2 px-3 font-semibold text-center">Score</th>
-                            <th className="py-2 px-3 font-semibold text-center">Percentage</th>
-                            <th className="py-2 px-3 font-semibold text-center">Grade</th>
+                            <SortableHeader
+                              columnKey="percentage"
+                              label="Percentage"
+                              align="center"
+                              currentSortKey={leaderboardSortKey}
+                              currentDirection={leaderboardSortDirection}
+                              onSort={requestLeaderboardSort}
+                              sortType="number"
+                            />
+                            <SortableHeader
+                              columnKey="grade"
+                              label="Grade"
+                              align="center"
+                              currentSortKey={leaderboardSortKey}
+                              currentDirection={leaderboardSortDirection}
+                              onSort={requestLeaderboardSort}
+                            />
                             <th className="py-2 px-3 font-semibold text-right">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                          {analytics.leaderboard.map((lead) => (
+                          {sortedLeaderboard.map((lead) => (
                             <tr key={lead.student_id} className="hover:bg-slate-50/60">
                               <td className="py-2.5 px-3">
                                 <span

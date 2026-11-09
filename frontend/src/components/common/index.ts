@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-10
  *
  * @description Central export index for shared common components including View-First Edit Mode governance tools.
  */
@@ -36,3 +36,9 @@ export type {
 export { default as DemoBadge } from './DemoBadge'
 export { default as TrainingModeBanner } from './TrainingModeBanner'
 export { default as EnvironmentSwitchModal } from './EnvironmentSwitchModal'
+
+export { default as SortableHeader } from './SortableHeader'
+export type { SortableHeaderProps } from './SortableHeader'
+
+export { default as TableSortSelect } from './TableSortSelect'
+export type { TableSortSelectProps, TableSortOption } from './TableSortSelect'

@@ -29,7 +29,8 @@ import ShareModal from '../components/ShareModal'
 import { paymentsApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin, hasPermission, canUserEditPosted } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import { Lock } from 'lucide-react'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
 import Modal from '../components/Modal'
@@ -181,6 +182,29 @@ export default function Payments() {
       })
       return res.data
     },
+  })
+
+  const PAYMENT_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'payment_date', label: 'Payment Date', type: 'date' as const, defaultDirection: 'desc' as const },
+    { key: 'amount', label: 'Amount', type: 'number' as const },
+    { key: 'receipt_number', label: 'Receipt #' },
+    { key: 'student_name', label: 'Student Name' },
+    { key: 'batch_name', label: 'Batch / Course' },
+    { key: 'payment_method', label: 'Payment Method' },
+    { key: 'status', label: 'Status' },
+  ]
+
+  const {
+    sortedData: sortedPayments,
+    sortKey: paymentSortKey,
+    sortDirection: paymentSortDirection,
+    requestSort: requestPaymentSort,
+    setSort: setPaymentSort,
+    clearSort: clearPaymentSort,
+  } = useTableSort(payments, {
+    initialKey: 'payment_date',
+    initialDirection: 'desc',
+    initialType: 'date',
   })
 
   // Query: Audit Trail for selected payment
@@ -538,6 +562,14 @@ export default function Payments() {
           { value: 'posted', label: 'Posted / Completed' },
           { value: 'reversed', label: 'Reversed' },
         ]}
+        sortOptions={PAYMENT_SORT_OPTIONS}
+        sortKey={paymentSortKey}
+        sortDirection={paymentSortDirection}
+        onSortChange={(key, dir) => {
+          const opt = PAYMENT_SORT_OPTIONS.find((o) => o.key === key)
+          setPaymentSort(key, dir, undefined, opt?.type || 'auto')
+        }}
+        onClearSort={clearPaymentSort}
         title="Filter Transactions"
       />
 
@@ -585,17 +617,30 @@ export default function Payments() {
       </div>
 
       {/* Action Bar */}
-      <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm">
         <div className="text-sm text-gray-600">
-          Showing <strong className="text-gray-900">{payments.length}</strong> transaction record(s)
+          Showing <strong className="text-gray-900">{sortedPayments.length}</strong> transaction record(s)
         </div>
-        <button
-          onClick={exportPaymentsCsv}
-          className="btn-secondary text-xs flex items-center gap-1.5"
-        >
-          <Download className="w-3.5 h-3.5 text-primary-600" />
-          Export CSV
-        </button>
+        <div className="flex items-center gap-3">
+          <TableSortSelect
+            options={PAYMENT_SORT_OPTIONS}
+            currentSortKey={paymentSortKey}
+            currentDirection={paymentSortDirection}
+            onSortChange={(key, dir) => {
+              const opt = PAYMENT_SORT_OPTIONS.find((o) => o.key === key)
+              setPaymentSort(key, dir, undefined, opt?.type || 'auto')
+            }}
+            onClear={clearPaymentSort}
+            placeholder="Sort Payments..."
+          />
+          <button
+            onClick={exportPaymentsCsv}
+            className="btn-secondary text-xs flex items-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5 text-primary-600" />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Payments Table */}
@@ -605,7 +650,7 @@ export default function Payments() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
             <p className="text-sm text-gray-500 mt-2">Loading payments ledger...</p>
           </div>
-        ) : payments.length === 0 ? (
+        ) : sortedPayments.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <p className="text-base font-semibold text-gray-600">No payment transactions found.</p>
             <p className="text-xs text-gray-400 mt-1">
@@ -617,19 +662,71 @@ export default function Payments() {
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold border-b border-gray-200">
                 <tr>
-                  <th className="py-3 px-4">Receipt #</th>
-                  <th className="py-3 px-4">Student</th>
-                  <th className="py-3 px-4">Batch / Course</th>
-                  <th className="py-3 px-4 text-right">Amount</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Method</th>
-                  <th className="py-3 px-4">Reference</th>
-                  <th className="py-3 px-4 text-center">Status</th>
+                  <SortableHeader
+                    columnKey="receipt_number"
+                    label="Receipt #"
+                    currentSortKey={paymentSortKey}
+                    currentDirection={paymentSortDirection}
+                    onSort={requestPaymentSort}
+                  />
+                  <SortableHeader
+                    columnKey="student_name"
+                    label="Student"
+                    currentSortKey={paymentSortKey}
+                    currentDirection={paymentSortDirection}
+                    onSort={requestPaymentSort}
+                  />
+                  <SortableHeader
+                    columnKey="batch_name"
+                    label="Batch / Course"
+                    currentSortKey={paymentSortKey}
+                    currentDirection={paymentSortDirection}
+                    onSort={requestPaymentSort}
+                  />
+                  <SortableHeader
+                    columnKey="amount"
+                    label="Amount"
+                    align="right"
+                    currentSortKey={paymentSortKey}
+                    currentDirection={paymentSortDirection}
+                    onSort={requestPaymentSort}
+                    sortType="number"
+                  />
+                  <SortableHeader
+                    columnKey="payment_date"
+                    label="Date"
+                    currentSortKey={paymentSortKey}
+                    currentDirection={paymentSortDirection}
+                    onSort={requestPaymentSort}
+                    sortType="date"
+                  />
+                  <SortableHeader
+                    columnKey="payment_method"
+                    label="Method"
+                    currentSortKey={paymentSortKey}
+                    currentDirection={paymentSortDirection}
+                    onSort={requestPaymentSort}
+                  />
+                  <SortableHeader
+                    columnKey="transaction_reference"
+                    label="Reference"
+                    currentSortKey={paymentSortKey}
+                    currentDirection={paymentSortDirection}
+                    onSort={requestPaymentSort}
+                  />
+                  <SortableHeader
+                    columnKey="status"
+                    label="Status"
+                    align="center"
+                    currentSortKey={paymentSortKey}
+                    currentDirection={paymentSortDirection}
+                    onSort={requestPaymentSort}
+                  />
                   <th className="py-3 px-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {payments.map((p) => {
+                {sortedPayments.map((p) => {
                   const isPosted = p.status === 'posted' || p.status === 'completed'
                   const isDraft = p.status === 'draft'
                   const isSubmitted = p.status === 'submitted'

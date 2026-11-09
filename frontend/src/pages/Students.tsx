@@ -55,7 +55,8 @@ import { studentsApi, standardsApi, divisionsApi, enrollmentsApi, settingsApi } 
 import { useAuthStore, isUserAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton } from '../components/common'
+import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import Pagination from '../components/Pagination'
 import StudentExitModal from '../components/StudentExitModal'
 import StudentReactivateModal from '../components/StudentReactivateModal'
@@ -197,6 +198,29 @@ function StudentsContent() {
   const students = studentsData?.data ?? []
   const totalStudents = studentsData?.total ?? 0
 
+  const STUDENT_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'admission_number', label: 'Admission No.' },
+    { key: 'student_name', label: 'Student Name' },
+    { key: 'is_active', label: 'Status' },
+    { key: 'gender', label: 'Gender' },
+    { key: 'date_of_birth', label: 'DOB', type: 'date' as const },
+    { key: 'phone', label: 'Phone' },
+    { key: 'city', label: 'City' },
+  ]
+
+  const {
+    sortedData: sortedStudents,
+    sortKey: studentSortKey,
+    sortDirection: studentSortDirection,
+    requestSort: requestStudentSort,
+    setSort: setStudentSort,
+    clearSort: clearStudentSort,
+  } = useTableSort(students, {
+    customExtractors: {
+      student_name: (s) => `${s.first_name || ''} ${s.last_name || ''}`.trim(),
+    },
+  })
+
   // Enrollment Stats
   const { data: enrollStats } = useQuery({
     queryKey: ['enrollments', 'stats', selectedAcademicYearId],
@@ -232,6 +256,17 @@ function StudentsContent() {
   })
 
   const inactiveStudents = (inactiveStudentsData?.data ?? []).filter((s) => !s.is_active)
+
+  const {
+    sortedData: sortedInactiveStudents,
+    sortKey: inactiveSortKey,
+    sortDirection: inactiveSortDirection,
+    requestSort: requestInactiveSort,
+  } = useTableSort(inactiveStudents, {
+    customExtractors: {
+      student_name: (s) => `${s.first_name || ''} ${s.last_name || ''}`.trim(),
+    },
+  })
 
   // ─── Mutations ──────────────────────────────────────────────────────────────
   const handleLifecycleSuccess = () => {
@@ -806,6 +841,21 @@ function StudentsContent() {
                   </select>
                 )}
               </div>
+
+              {/* Sort Selection Control */}
+              <div className="ml-auto pl-2 border-l border-gray-200">
+                <TableSortSelect
+                  options={STUDENT_SORT_OPTIONS}
+                  currentSortKey={studentSortKey}
+                  currentDirection={studentSortDirection}
+                  onSortChange={(key, dir) => {
+                    const opt = STUDENT_SORT_OPTIONS.find((o) => o.key === key)
+                    setStudentSort(key, dir, undefined, opt?.type || 'auto')
+                  }}
+                  onClear={clearStudentSort}
+                  placeholder="Sort Students By..."
+                />
+              </div>
             </div>
           </div>
 
@@ -815,13 +865,56 @@ function StudentsContent() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
-                    <th className="py-3 px-4">Admission No.</th>
-                    <th className="py-3 px-4">Student Name</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Gender</th>
-                    <th className="py-3 px-4">DOB</th>
-                    <th className="py-3 px-4">Phone</th>
-                    <th className="py-3 px-4">City</th>
+                    <SortableHeader
+                      columnKey="admission_number"
+                      label="Admission No."
+                      currentSortKey={studentSortKey}
+                      currentDirection={studentSortDirection}
+                      onSort={requestStudentSort}
+                    />
+                    <SortableHeader
+                      columnKey="student_name"
+                      label="Student Name"
+                      currentSortKey={studentSortKey}
+                      currentDirection={studentSortDirection}
+                      onSort={requestStudentSort}
+                    />
+                    <SortableHeader
+                      columnKey="is_active"
+                      label="Status"
+                      currentSortKey={studentSortKey}
+                      currentDirection={studentSortDirection}
+                      onSort={requestStudentSort}
+                    />
+                    <SortableHeader
+                      columnKey="gender"
+                      label="Gender"
+                      currentSortKey={studentSortKey}
+                      currentDirection={studentSortDirection}
+                      onSort={requestStudentSort}
+                    />
+                    <SortableHeader
+                      columnKey="date_of_birth"
+                      label="DOB"
+                      currentSortKey={studentSortKey}
+                      currentDirection={studentSortDirection}
+                      onSort={requestStudentSort}
+                      sortType="date"
+                    />
+                    <SortableHeader
+                      columnKey="phone"
+                      label="Phone"
+                      currentSortKey={studentSortKey}
+                      currentDirection={studentSortDirection}
+                      onSort={requestStudentSort}
+                    />
+                    <SortableHeader
+                      columnKey="city"
+                      label="City"
+                      currentSortKey={studentSortKey}
+                      currentDirection={studentSortDirection}
+                      onSort={requestStudentSort}
+                    />
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -833,14 +926,14 @@ function StudentsContent() {
                       </td>
                     </tr>
                   )}
-                  {!isLoadingStudents && students.length === 0 && (
+                  {!isLoadingStudents && sortedStudents.length === 0 && (
                     <tr>
                       <td colSpan={8} className="py-10 text-center text-slate-400">
                         No students found matching current filters.
                       </td>
                     </tr>
                   )}
-                  {students.map((s) => (
+                  {sortedStudents.map((s) => (
                     <tr
                       key={s.id}
                       className={`hover:bg-slate-50/80 transition-colors ${
@@ -1472,10 +1565,35 @@ function StudentsContent() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
-                    <th className="py-3 px-4">Adm No.</th>
-                    <th className="py-3 px-4">Student Name</th>
-                    <th className="py-3 px-4">Exit Date</th>
-                    <th className="py-3 px-4">Exit Reason</th>
+                    <SortableHeader
+                      columnKey="admission_number"
+                      label="Adm No."
+                      currentSortKey={inactiveSortKey}
+                      currentDirection={inactiveSortDirection}
+                      onSort={requestInactiveSort}
+                    />
+                    <SortableHeader
+                      columnKey="student_name"
+                      label="Student Name"
+                      currentSortKey={inactiveSortKey}
+                      currentDirection={inactiveSortDirection}
+                      onSort={requestInactiveSort}
+                    />
+                    <SortableHeader
+                      columnKey="exit_date"
+                      label="Exit Date"
+                      currentSortKey={inactiveSortKey}
+                      currentDirection={inactiveSortDirection}
+                      onSort={requestInactiveSort}
+                      sortType="date"
+                    />
+                    <SortableHeader
+                      columnKey="exit_reason"
+                      label="Exit Reason"
+                      currentSortKey={inactiveSortKey}
+                      currentDirection={inactiveSortDirection}
+                      onSort={requestInactiveSort}
+                    />
                     <th className="py-3 px-4">Notes</th>
                     <th className="py-3 px-4 text-right">Action</th>
                   </tr>
@@ -1488,14 +1606,14 @@ function StudentsContent() {
                       </td>
                     </tr>
                   )}
-                  {!isLoadingInactive && inactiveStudents.length === 0 && (
+                  {!isLoadingInactive && sortedInactiveStudents.length === 0 && (
                     <tr>
                       <td colSpan={6} className="py-10 text-center text-slate-400">
                         No inactive or exited students found in archive.
                       </td>
                     </tr>
                   )}
-                  {inactiveStudents.map((s) => (
+                  {sortedInactiveStudents.map((s) => (
                     <tr key={s.id} className="hover:bg-slate-50 transition">
                       <td className="py-3 px-4 font-mono font-semibold text-slate-700">{s.admission_number}</td>
                       <td className="py-3 px-4 font-bold text-slate-900">

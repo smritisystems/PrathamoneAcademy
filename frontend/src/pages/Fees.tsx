@@ -42,7 +42,8 @@ import {
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import PaymentReceiptView from '../components/PaymentReceiptView'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
@@ -734,6 +735,18 @@ function FeesContent() {
     enabled: activeTab === 'overview',
   })
 
+  const recentPaymentsList = overviewData?.recent_payments ?? []
+  const {
+    sortedData: sortedRecentPayments,
+    sortKey: recentPaymentsSortKey,
+    sortDirection: recentPaymentsSortDirection,
+    requestSort: requestRecentPaymentsSort,
+  } = useTableSort(recentPaymentsList, {
+    initialKey: 'payment_date',
+    initialDirection: 'desc',
+    initialType: 'date',
+  })
+
   // ─────────────────────────────────────────────────────────────────────────────
   // TAB 2: FEE REGISTER
   // ─────────────────────────────────────────────────────────────────────────────
@@ -758,6 +771,29 @@ function FeesContent() {
         })
         .then((r) => r.data),
     enabled: activeTab === 'register' || activeTab === 'invoicing',
+  })
+
+  const REGISTER_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'outstanding_amount', label: 'Balance Due', type: 'number' as const, defaultDirection: 'desc' as const },
+    { key: 'student_name', label: 'Student Name' },
+    { key: 'admission_number', label: 'Admission No' },
+    { key: 'standard_name', label: 'Class / Course' },
+    { key: 'net_amount', label: 'Fee Obligation', type: 'number' as const },
+    { key: 'paid_amount', label: 'Paid Amount', type: 'number' as const },
+    { key: 'status', label: 'Status' },
+  ]
+
+  const {
+    sortedData: sortedRegisterEntries,
+    sortKey: registerSortKey,
+    sortDirection: registerSortDirection,
+    requestSort: requestRegisterSort,
+    setSort: setRegisterSort,
+    clearSort: clearRegisterSort,
+  } = useTableSort(registerEntries, {
+    initialKey: 'outstanding_amount',
+    initialDirection: 'desc',
+    initialType: 'number',
   })
 
   const exportRegisterCsv = () => {
@@ -997,6 +1033,17 @@ function FeesContent() {
     enabled: activeTab === 'payments' || activeTab === 'collection',
   })
 
+  const {
+    sortedData: sortedPaymentsList,
+    sortKey: paymentsSortKey,
+    sortDirection: paymentsSortDirection,
+    requestSort: requestPaymentsSort,
+  } = useTableSort(paymentsList, {
+    initialKey: 'payment_date',
+    initialDirection: 'desc',
+    initialType: 'date',
+  })
+
   const reverseMutation = useMutation({
     mutationFn: ({ id, reason }: { id: number; reason: string }) =>
       paymentsApi.reverse(id, reason),
@@ -1054,6 +1101,17 @@ function FeesContent() {
         })
         .then((r) => r.data),
     enabled: activeTab === 'receipts' || activeTab === 'collection',
+  })
+
+  const {
+    sortedData: sortedReceiptsList,
+    sortKey: receiptsSortKey,
+    sortDirection: receiptsSortDirection,
+    requestSort: requestReceiptsSort,
+  } = useTableSort(receiptsList, {
+    initialKey: 'payment_date',
+    initialDirection: 'desc',
+    initialType: 'date',
   })
 
   // Selected receipts calculation & bulk actions
@@ -2705,20 +2763,79 @@ function FeesContent() {
                     <table className="w-full text-left text-xs">
                       <thead className="bg-slate-50/90 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
                         <tr>
-                          <th className="py-2.5 px-3">Receipt No.</th>
-                          <th className="py-2.5 px-3">Date</th>
-                          <th className="py-2.5 px-3">Student</th>
-                          <th className="py-2.5 px-3">Board</th>
-                          <th className="py-2.5 px-3">Class</th>
-                          <th className="py-2.5 px-3">Batch</th>
-                          <th className="py-2.5 px-3 text-right">Amount</th>
-                          <th className="py-2.5 px-3 text-center">Payment Method</th>
-                          <th className="py-2.5 px-3 text-center">Status</th>
+                          <SortableHeader
+                            columnKey="receipt_number"
+                            label="Receipt No."
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                          />
+                          <SortableHeader
+                            columnKey="payment_date"
+                            label="Date"
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                            sortType="date"
+                          />
+                          <SortableHeader
+                            columnKey="student_name"
+                            label="Student"
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                          />
+                          <SortableHeader
+                            columnKey="board_name"
+                            label="Board"
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                          />
+                          <SortableHeader
+                            columnKey="standard_name"
+                            label="Class"
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                          />
+                          <SortableHeader
+                            columnKey="batch_name"
+                            label="Batch"
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                          />
+                          <SortableHeader
+                            columnKey="amount"
+                            label="Amount"
+                            align="right"
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                            sortType="number"
+                          />
+                          <SortableHeader
+                            columnKey="payment_method"
+                            label="Payment Method"
+                            align="center"
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                          />
+                          <SortableHeader
+                            columnKey="status"
+                            label="Status"
+                            align="center"
+                            currentSortKey={recentPaymentsSortKey}
+                            currentDirection={recentPaymentsSortDirection}
+                            onSort={requestRecentPaymentsSort}
+                          />
                           <th className="py-2.5 px-3 text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700">
-                        {overviewData.recent_payments.map((p) => {
+                        {sortedRecentPayments.map((p) => {
                           const methodBadgeClasses =
                             p.payment_method === 'upi' ? 'bg-purple-100 text-purple-700 font-semibold' :
                             p.payment_method === 'cash' ? 'bg-emerald-100 text-emerald-700 font-semibold' :
@@ -2948,9 +3065,20 @@ function FeesContent() {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <TableSortSelect
+                options={REGISTER_SORT_OPTIONS}
+                currentSortKey={registerSortKey}
+                currentDirection={registerSortDirection}
+                onSortChange={(key, dir) => {
+                  const opt = REGISTER_SORT_OPTIONS.find((o) => o.key === key)
+                  setRegisterSort(key, dir, undefined, opt?.type || 'auto')
+                }}
+                onClear={clearRegisterSort}
+                placeholder="Sort Register..."
+              />
               <span className="text-xs font-semibold text-slate-500">
-                {registerEntries.length} Records
+                {sortedRegisterEntries.length} Records
               </span>
               <button
                 type="button"
@@ -2970,7 +3098,7 @@ function FeesContent() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-2" />
                 Loading fee register...
               </div>
-            ) : registerEntries.length === 0 ? (
+            ) : sortedRegisterEntries.length === 0 ? (
               <div className="p-12 text-center text-xs text-slate-400">
                 No fee register entries found for the selected criteria.
               </div>
@@ -2979,19 +3107,74 @@ function FeesContent() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
                     <tr>
-                      <th className="py-2.5 px-3">Admission No</th>
-                      <th className="py-2.5 px-3">Student Name</th>
-                      <th className="py-2.5 px-3">Course / Class</th>
-                      <th className="py-2.5 px-3">Batch</th>
-                      <th className="py-2.5 px-3 text-right">Fee Obligation</th>
-                      <th className="py-2.5 px-3 text-right">Paid Amount</th>
-                      <th className="py-2.5 px-3 text-right">Balance Due</th>
-                      <th className="py-2.5 px-3 text-center">Status</th>
+                      <SortableHeader
+                        columnKey="admission_number"
+                        label="Admission No"
+                        currentSortKey={registerSortKey}
+                        currentDirection={registerSortDirection}
+                        onSort={requestRegisterSort}
+                      />
+                      <SortableHeader
+                        columnKey="student_name"
+                        label="Student Name"
+                        currentSortKey={registerSortKey}
+                        currentDirection={registerSortDirection}
+                        onSort={requestRegisterSort}
+                      />
+                      <SortableHeader
+                        columnKey="standard_name"
+                        label="Course / Class"
+                        currentSortKey={registerSortKey}
+                        currentDirection={registerSortDirection}
+                        onSort={requestRegisterSort}
+                      />
+                      <SortableHeader
+                        columnKey="batch_name"
+                        label="Batch"
+                        currentSortKey={registerSortKey}
+                        currentDirection={registerSortDirection}
+                        onSort={requestRegisterSort}
+                      />
+                      <SortableHeader
+                        columnKey="net_amount"
+                        label="Fee Obligation"
+                        align="right"
+                        currentSortKey={registerSortKey}
+                        currentDirection={registerSortDirection}
+                        onSort={requestRegisterSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="paid_amount"
+                        label="Paid Amount"
+                        align="right"
+                        currentSortKey={registerSortKey}
+                        currentDirection={registerSortDirection}
+                        onSort={requestRegisterSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="outstanding_amount"
+                        label="Balance Due"
+                        align="right"
+                        currentSortKey={registerSortKey}
+                        currentDirection={registerSortDirection}
+                        onSort={requestRegisterSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="status"
+                        label="Status"
+                        align="center"
+                        currentSortKey={registerSortKey}
+                        currentDirection={registerSortDirection}
+                        onSort={requestRegisterSort}
+                      />
                       <th className="py-2.5 px-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {registerEntries.map((row) => (
+                    {sortedRegisterEntries.map((row) => (
                       <tr key={row.student_id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-2.5 px-3 font-mono font-medium text-slate-600">
                           {row.admission_number}
@@ -3354,19 +3537,72 @@ function FeesContent() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200/80">
                     <tr>
-                      <th className="py-2.5 px-3">Receipt #</th>
-                      <th className="py-2.5 px-3">Date</th>
-                      <th className="py-2.5 px-3">Student Name</th>
-                      <th className="py-2.5 px-3">Batch</th>
-                      <th className="py-2.5 px-3 text-right">Amount</th>
-                      <th className="py-2.5 px-3 text-center">Method</th>
-                      <th className="py-2.5 px-3">Reference</th>
-                      <th className="py-2.5 px-3 text-center">Status</th>
+                      <SortableHeader
+                        columnKey="receipt_number"
+                        label="Receipt #"
+                        currentSortKey={paymentsSortKey}
+                        currentDirection={paymentsSortDirection}
+                        onSort={requestPaymentsSort}
+                      />
+                      <SortableHeader
+                        columnKey="payment_date"
+                        label="Date"
+                        currentSortKey={paymentsSortKey}
+                        currentDirection={paymentsSortDirection}
+                        onSort={requestPaymentsSort}
+                        sortType="date"
+                      />
+                      <SortableHeader
+                        columnKey="student_name"
+                        label="Student Name"
+                        currentSortKey={paymentsSortKey}
+                        currentDirection={paymentsSortDirection}
+                        onSort={requestPaymentsSort}
+                      />
+                      <SortableHeader
+                        columnKey="batch_name"
+                        label="Batch"
+                        currentSortKey={paymentsSortKey}
+                        currentDirection={paymentsSortDirection}
+                        onSort={requestPaymentsSort}
+                      />
+                      <SortableHeader
+                        columnKey="amount"
+                        label="Amount"
+                        align="right"
+                        currentSortKey={paymentsSortKey}
+                        currentDirection={paymentsSortDirection}
+                        onSort={requestPaymentsSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="payment_method"
+                        label="Method"
+                        align="center"
+                        currentSortKey={paymentsSortKey}
+                        currentDirection={paymentsSortDirection}
+                        onSort={requestPaymentsSort}
+                      />
+                      <SortableHeader
+                        columnKey="transaction_reference"
+                        label="Reference"
+                        currentSortKey={paymentsSortKey}
+                        currentDirection={paymentsSortDirection}
+                        onSort={requestPaymentsSort}
+                      />
+                      <SortableHeader
+                        columnKey="status"
+                        label="Status"
+                        align="center"
+                        currentSortKey={paymentsSortKey}
+                        currentDirection={paymentsSortDirection}
+                        onSort={requestPaymentsSort}
+                      />
                       <th className="py-2.5 px-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {paymentsList.map((p) => (
+                    {sortedPaymentsList.map((p) => (
                       <tr key={p.id} className="hover:bg-slate-50/70">
                         <td className="py-2.5 px-3 font-mono font-bold text-primary-700">{p.receipt_number}</td>
                         <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">{p.payment_date}</td>
@@ -3518,17 +3754,57 @@ function FeesContent() {
                           title="Select all visible receipts"
                         />
                       </th>
-                      <th className="py-2.5 px-3">Receipt No</th>
-                      <th className="py-2.5 px-3">Date</th>
-                      <th className="py-2.5 px-3">Student Name</th>
-                      <th className="py-2.5 px-3">Admission No</th>
-                      <th className="py-2.5 px-3 text-right">Amount</th>
-                      <th className="py-2.5 px-3 text-center">Method</th>
+                      <SortableHeader
+                        columnKey="receipt_number"
+                        label="Receipt No"
+                        currentSortKey={receiptsSortKey}
+                        currentDirection={receiptsSortDirection}
+                        onSort={requestReceiptsSort}
+                      />
+                      <SortableHeader
+                        columnKey="payment_date"
+                        label="Date"
+                        currentSortKey={receiptsSortKey}
+                        currentDirection={receiptsSortDirection}
+                        onSort={requestReceiptsSort}
+                        sortType="date"
+                      />
+                      <SortableHeader
+                        columnKey="student_name"
+                        label="Student Name"
+                        currentSortKey={receiptsSortKey}
+                        currentDirection={receiptsSortDirection}
+                        onSort={requestReceiptsSort}
+                      />
+                      <SortableHeader
+                        columnKey="admission_number"
+                        label="Admission No"
+                        currentSortKey={receiptsSortKey}
+                        currentDirection={receiptsSortDirection}
+                        onSort={requestReceiptsSort}
+                      />
+                      <SortableHeader
+                        columnKey="amount"
+                        label="Amount"
+                        align="right"
+                        currentSortKey={receiptsSortKey}
+                        currentDirection={receiptsSortDirection}
+                        onSort={requestReceiptsSort}
+                        sortType="number"
+                      />
+                      <SortableHeader
+                        columnKey="payment_method"
+                        label="Method"
+                        align="center"
+                        currentSortKey={receiptsSortKey}
+                        currentDirection={receiptsSortDirection}
+                        onSort={requestReceiptsSort}
+                      />
                       <th className="py-2.5 px-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {receiptsList.map((r) => {
+                    {sortedReceiptsList.map((r) => {
                       const isRowSelected = selectedReceiptNumbers.has(r.receipt_number)
                       return (
                         <tr

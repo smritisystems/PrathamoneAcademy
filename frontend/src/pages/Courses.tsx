@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Enterprise Study Materials & Digital Content management hub comprising 8 dedicated workspaces, live database persistence, and Rule 010 View-First governance.
  */
@@ -33,7 +33,8 @@ import type { StudyMaterialItem, Standard, AcademicSubject as Subject, Division 
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 
 export type CoursesTab =
@@ -227,6 +228,29 @@ function CoursesContent() {
       return res.data
     },
     staleTime: 15000,
+  })
+
+  const MATERIAL_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'title', label: 'Material Title' },
+    { key: 'standard_name', label: 'Class / Standard' },
+    { key: 'subject_name', label: 'Subject' },
+    { key: 'file_type', label: 'Resource Type' },
+    { key: 'file_size', label: 'File Size', type: 'number' as const },
+    { key: 'created_at', label: 'Published Date', type: 'date' as const, defaultDirection: 'desc' as const },
+  ]
+
+  const materialsList = materialsData?.items ?? []
+  const {
+    sortedData: sortedMaterials,
+    sortKey: materialSortKey,
+    sortDirection: materialSortDirection,
+    requestSort: requestMaterialSort,
+    setSort: setMaterialSort,
+    clearSort: clearMaterialSort,
+  } = useTableSort(materialsList, {
+    initialKey: 'created_at',
+    initialDirection: 'desc',
+    initialType: 'date',
   })
 
   // 3. Standards, Subjects, Divisions
@@ -852,6 +876,19 @@ function CoursesContent() {
                 <option value="Video Lecture">Video Lecture</option>
                 <option value="Syllabus">Curriculum Syllabus</option>
               </select>
+
+              {/* Sort Selection Control */}
+              <TableSortSelect
+                options={MATERIAL_SORT_OPTIONS}
+                currentSortKey={materialSortKey}
+                currentDirection={materialSortDirection}
+                onSortChange={(key, dir) => {
+                  const opt = MATERIAL_SORT_OPTIONS.find((o) => o.key === key)
+                  setMaterialSort(key, dir, undefined, opt?.type || 'auto')
+                }}
+                onClear={clearMaterialSort}
+                placeholder="Sort Materials..."
+              />
             </div>
           </div>
 
@@ -861,12 +898,50 @@ function CoursesContent() {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4">Title & Topic</th>
-                    <th className="py-3 px-4">Class & Division</th>
-                    <th className="py-3 px-4">Subject</th>
-                    <th className="py-3 px-4">Resource Type</th>
-                    <th className="py-3 px-4">File Size</th>
-                    <th className="py-3 px-4">Published Date</th>
+                    <SortableHeader
+                      columnKey="title"
+                      label="Title & Topic"
+                      currentSortKey={materialSortKey}
+                      currentDirection={materialSortDirection}
+                      onSort={requestMaterialSort}
+                    />
+                    <SortableHeader
+                      columnKey="standard_name"
+                      label="Class & Division"
+                      currentSortKey={materialSortKey}
+                      currentDirection={materialSortDirection}
+                      onSort={requestMaterialSort}
+                    />
+                    <SortableHeader
+                      columnKey="subject_name"
+                      label="Subject"
+                      currentSortKey={materialSortKey}
+                      currentDirection={materialSortDirection}
+                      onSort={requestMaterialSort}
+                    />
+                    <SortableHeader
+                      columnKey="file_type"
+                      label="Resource Type"
+                      currentSortKey={materialSortKey}
+                      currentDirection={materialSortDirection}
+                      onSort={requestMaterialSort}
+                    />
+                    <SortableHeader
+                      columnKey="file_size"
+                      label="File Size"
+                      currentSortKey={materialSortKey}
+                      currentDirection={materialSortDirection}
+                      onSort={requestMaterialSort}
+                      sortType="number"
+                    />
+                    <SortableHeader
+                      columnKey="created_at"
+                      label="Published Date"
+                      currentSortKey={materialSortKey}
+                      currentDirection={materialSortDirection}
+                      onSort={requestMaterialSort}
+                      sortType="date"
+                    />
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -878,14 +953,14 @@ function CoursesContent() {
                       </td>
                     </tr>
                   )}
-                  {!isMaterialsLoading && (!materialsData?.items || materialsData.items.length === 0) && (
+                  {!isMaterialsLoading && (!sortedMaterials || sortedMaterials.length === 0) && (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-slate-400">
                         No materials found matching criteria.
                       </td>
                     </tr>
                   )}
-                  {materialsData?.items?.map((mat) => (
+                  {sortedMaterials.map((mat) => (
                     <tr key={mat.id} className="hover:bg-slate-50/70 transition">
                       <td className="py-3 px-4 font-bold text-slate-900">
                         <div className="flex items-center gap-2">

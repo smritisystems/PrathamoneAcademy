@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Dedicated Teachers & Faculty Management Centre with 8 first-class workspaces:
  */
@@ -70,7 +70,8 @@ import {
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton } from '../components/common'
+import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import TeacherProfileModal from '../components/TeacherProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
 import toast from 'react-hot-toast'
@@ -506,6 +507,25 @@ function TeacherManagementContent() {
 
     return result
   }, [rawTeachers, directoryStatusTab, search])
+
+  const TEACHER_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'name', label: 'Faculty Name' },
+    { key: 'employee_id', label: 'Employee ID' },
+    { key: 'specialization', label: 'Specialization' },
+    { key: 'status', label: 'Status' },
+  ]
+
+  const {
+    sortedData: sortedTeachers,
+    sortKey: teacherSortKey,
+    sortDirection: teacherSortDirection,
+    requestSort: requestTeacherSort,
+    setSort: setTeacherSort,
+    clearSort: clearTeacherSort,
+  } = useTableSort(filteredTeachers, {
+    initialKey: 'name',
+    initialDirection: 'asc',
+  })
 
   // Filtered assignments
   const filteredAssignments = useMemo(() => {
@@ -1002,15 +1022,28 @@ function TeacherManagementContent() {
             </div>
 
             {/* Search Box */}
-            <div className="relative min-w-[260px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search faculty by name, ID, subject..."
-                className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-primary-500 outline-none shadow-2xs"
+            <div className="flex items-center gap-2 flex-wrap">
+              <TableSortSelect
+                options={TEACHER_SORT_OPTIONS}
+                currentSortKey={teacherSortKey}
+                currentDirection={teacherSortDirection}
+                onSortChange={(key, dir) => {
+                  const opt = TEACHER_SORT_OPTIONS.find((o) => o.key === key)
+                  setTeacherSort(key, dir, undefined, opt?.type || 'auto')
+                }}
+                onClear={clearTeacherSort}
+                placeholder="Sort Faculty..."
               />
+              <div className="relative min-w-[260px]">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search faculty by name, ID, subject..."
+                  className="w-full text-xs pl-9 pr-3 py-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-primary-500 outline-none shadow-2xs"
+                />
+              </div>
             </div>
           </div>
 
@@ -1020,7 +1053,7 @@ function TeacherManagementContent() {
               <div className="p-12 text-center text-xs text-slate-500 font-medium">
                 Loading teacher workforce directory...
               </div>
-            ) : filteredTeachers.length === 0 ? (
+            ) : sortedTeachers.length === 0 ? (
               <div className="p-12 text-center">
                 <GraduationCap className="w-10 h-10 text-slate-300 mx-auto mb-2" />
                 <h4 className="text-sm font-bold text-slate-700">No Teachers Found</h4>
@@ -1033,17 +1066,41 @@ function TeacherManagementContent() {
                 <table className="w-full text-xs text-left">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
                     <tr>
-                      <th className="px-4 py-3">Faculty Member</th>
-                      <th className="px-4 py-3">Employee ID</th>
-                      <th className="px-4 py-3">Specialization & Subject</th>
+                      <SortableHeader
+                        columnKey="name"
+                        label="Faculty Member"
+                        currentSortKey={teacherSortKey}
+                        currentDirection={teacherSortDirection}
+                        onSort={requestTeacherSort}
+                      />
+                      <SortableHeader
+                        columnKey="employee_id"
+                        label="Employee ID"
+                        currentSortKey={teacherSortKey}
+                        currentDirection={teacherSortDirection}
+                        onSort={requestTeacherSort}
+                      />
+                      <SortableHeader
+                        columnKey="specialization"
+                        label="Specialization & Subject"
+                        currentSortKey={teacherSortKey}
+                        currentDirection={teacherSortDirection}
+                        onSort={requestTeacherSort}
+                      />
                       <th className="px-4 py-3">Academic Batches</th>
                       <th className="px-4 py-3">Timetable Status</th>
-                      <th className="px-4 py-3">Lifecycle Status</th>
+                      <SortableHeader
+                        columnKey="status"
+                        label="Lifecycle Status"
+                        currentSortKey={teacherSortKey}
+                        currentDirection={teacherSortDirection}
+                        onSort={requestTeacherSort}
+                      />
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredTeachers.map((tch) => (
+                    {sortedTeachers.map((tch) => (
                       <tr key={tch.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">

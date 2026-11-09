@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Attendance management workspace transforming daily batch roll call, QR terminals, registers, and absenteeism into dedicated functional views.
  */
@@ -61,7 +61,8 @@ import { standardsApi, divisionsApi, studentsApi, attendanceApi } from '../api/e
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { useTableSort } from '../hooks/useTableSort'
 import toast from 'react-hot-toast'
 
 export type AttendanceTabKey =
@@ -134,6 +135,24 @@ function AttendanceContent() {
     new Date().toISOString().split('T')[0]
   )
   const [rows, setRows] = useState<StudentAttendanceRow[]>([])
+
+  const ATTENDANCE_SORT_OPTIONS: TableSortOption[] = [
+    { key: 'admission_number', label: 'Admission #' },
+    { key: 'name', label: 'Student Name' },
+    { key: 'status', label: 'Status' },
+  ]
+
+  const {
+    sortedData: sortedRows,
+    sortKey: attendanceSortKey,
+    sortDirection: attendanceSortDirection,
+    requestSort: requestAttendanceSort,
+    setSort: setAttendanceSort,
+    clearSort: clearAttendanceSort,
+  } = useTableSort(rows, {
+    initialKey: 'admission_number',
+    initialDirection: 'asc',
+  })
 
   // QR Attendance Terminal State
   const [showTerminalModal, setShowTerminalModal] = useState<boolean>(false)
@@ -968,7 +987,18 @@ function AttendanceContent() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <TableSortSelect
+                  options={ATTENDANCE_SORT_OPTIONS}
+                  currentSortKey={attendanceSortKey}
+                  currentDirection={attendanceSortDirection}
+                  onSortChange={(key, dir) => {
+                    const opt = ATTENDANCE_SORT_OPTIONS.find((o) => o.key === key)
+                    setAttendanceSort(key, dir, undefined, opt?.type || 'auto')
+                  }}
+                  onClear={clearAttendanceSort}
+                  placeholder="Sort Roster..."
+                />
                 <button
                   type="button"
                   onClick={() => setAllStatus('present')}
@@ -999,7 +1029,7 @@ function AttendanceContent() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
                   <p className="text-sm text-gray-500 mt-2">Loading students roster...</p>
                 </div>
-              ) : rows.length === 0 ? (
+              ) : sortedRows.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
                   <p>No students enrolled in this standard/batch.</p>
                 </div>
@@ -1007,14 +1037,33 @@ function AttendanceContent() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-gray-600 border-b">
-                      <th className="px-4 py-3 font-semibold">Admission #</th>
-                      <th className="px-4 py-3 font-semibold">Student Name</th>
-                      <th className="px-4 py-3 font-semibold text-center">Status</th>
+                      <SortableHeader
+                        columnKey="admission_number"
+                        label="Admission #"
+                        currentSortKey={attendanceSortKey}
+                        currentDirection={attendanceSortDirection}
+                        onSort={requestAttendanceSort}
+                      />
+                      <SortableHeader
+                        columnKey="name"
+                        label="Student Name"
+                        currentSortKey={attendanceSortKey}
+                        currentDirection={attendanceSortDirection}
+                        onSort={requestAttendanceSort}
+                      />
+                      <SortableHeader
+                        columnKey="status"
+                        label="Status"
+                        align="center"
+                        currentSortKey={attendanceSortKey}
+                        currentDirection={attendanceSortDirection}
+                        onSort={requestAttendanceSort}
+                      />
                       <th className="px-4 py-3 font-semibold">Remarks</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {rows.map((r) => (
+                    {sortedRows.map((r) => (
                       <tr key={r.student_id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 font-mono text-gray-600 font-medium">
                           {r.admission_number}

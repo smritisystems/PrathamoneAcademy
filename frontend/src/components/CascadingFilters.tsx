@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-10
  *
  * @description Cascading filter bar component for academic year, board, class, and batch selection.
  */
@@ -21,6 +21,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Filter, RotateCcw, Calendar, Layers, BookOpen, Users, Search } from 'lucide-react'
 import { academicYearsApi, boardsApi, standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { TableSortSelect, TableSortOption } from './common/TableSortSelect'
+import type { SortDirection } from '../hooks/useTableSort'
 
 export interface FilterState {
   academicYearId?: number | null
@@ -39,6 +41,11 @@ interface CascadingFiltersProps {
   searchPlaceholder?: string
   showStatus?: boolean
   statusOptions?: { value: string; label: string }[]
+  sortOptions?: TableSortOption[]
+  sortKey?: string | null
+  sortDirection?: SortDirection | null
+  onSortChange?: (key: string, direction: SortDirection) => void
+  onClearSort?: () => void
   className?: string
   title?: string
 }
@@ -63,6 +70,11 @@ export default function CascadingFilters({
     { value: 'unpaid', label: 'Unpaid' },
     { value: 'overdue', label: 'Overdue' },
   ],
+  sortOptions,
+  sortKey,
+  sortDirection,
+  onSortChange,
+  onClearSort,
   className = '',
   title = 'Filter Records',
 }: CascadingFiltersProps) {
@@ -293,25 +305,23 @@ export default function CascadingFilters({
         </div>
       </div>
 
-      {(showSearch || showStatus) && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 pt-3 border-t border-gray-100">
+      {(showSearch || showStatus || (sortOptions && onSortChange)) && (
+        <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-100">
           {showSearch && (
-            <div className={showStatus ? 'sm:col-span-2' : 'sm:col-span-3'}>
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={filters.search ?? ''}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder={searchPlaceholder}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-                />
-              </div>
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={filters.search ?? ''}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              />
             </div>
           )}
 
           {showStatus && (
-            <div className={showSearch ? 'sm:col-span-1' : 'sm:col-span-3'}>
+            <div className="min-w-[140px]">
               <select
                 value={filters.status ?? ''}
                 onChange={(e) => handleStatusChange(e.target.value)}
@@ -323,6 +333,18 @@ export default function CascadingFilters({
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {sortOptions && onSortChange && (
+            <div className="ml-auto flex items-center">
+              <TableSortSelect
+                options={sortOptions}
+                currentSortKey={sortKey}
+                currentDirection={sortDirection}
+                onSortChange={onSortChange}
+                onClear={onClearSort}
+              />
             </div>
           )}
         </div>
