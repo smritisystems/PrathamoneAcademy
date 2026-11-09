@@ -149,6 +149,17 @@ const communicationSubItems = [
   { to: '/communication/settings', label: 'Channel Settings' },
 ]
 
+const formsSubItems = [
+  { to: '/forms/overview', label: 'Overview' },
+  { to: '/forms/admissions', label: 'Admission Forms' },
+  { to: '/forms/id-cards', label: 'Student & Staff IDs' },
+  { to: '/forms/financial', label: 'Receipts & Notices' },
+  { to: '/forms/academic', label: 'Hall Tickets & Transcripts' },
+  { to: '/forms/certificates', label: 'Leaving & Experience Certs' },
+  { to: '/forms/bulk-print', label: 'Bulk Print Spooler' },
+  { to: '/forms/audit-logs', label: 'Print Audit Trail' },
+]
+
 const secondaryNavItems: NavItem[] = [
   { to: '/teachers', label: 'Teachers', icon: GraduationCap },
   { to: '/staff', label: 'Staff Directory', icon: Briefcase },
@@ -198,6 +209,8 @@ export default function Sidebar() {
     toggleCoursesOpen,
     communicationOpen,
     toggleCommunicationOpen,
+    formsOpen,
+    toggleFormsOpen,
   } = useSidebarStore()
 
   const navigate = useNavigate()
@@ -295,6 +308,14 @@ const isStaffActive = location.pathname.startsWith('/staff')
       return location.pathname === '/communication/gateways' || location.pathname === '/communication/diagnostics'
     }
     return location.pathname === to || (location.pathname === '/communication' && location.search.includes(to.replace('/communication/', '')))
+  }
+
+  const isFormsActive = location.pathname.startsWith('/forms') || location.pathname.startsWith('/forms-documents')
+  const isFormsSubActive = (to: string) => {
+    if (to === '/forms/overview' || to === '/forms') {
+      return (location.pathname === '/forms' || location.pathname === '/forms/overview' || location.pathname === '/forms-documents') && !location.search
+    }
+    return location.pathname === to || (location.pathname === '/forms' && location.search.includes(to.replace('/forms/', '')))
   }
 
   const isTeachersActive = location.pathname.startsWith('/teachers') || location.pathname === '/teacher-management'
@@ -1906,6 +1927,125 @@ if (item.to === '/staff') {
                         <div className="pl-3 pr-1 pt-1.5 space-y-1">
                           {communicationSubItems.map((sub) => {
                             const isSubActive = isCommunicationSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            if (item.to === '/forms') {
+              return (
+                <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
+                  {isCollapsed ? (
+                    // Collapsed mode: icon with floating interactive flyout popover
+                    <div className="relative group w-full flex justify-center">
+                      <NavLink
+                        to="/forms"
+                        aria-label="Print Forms & KYC"
+                        style={isFormsActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        className={({ isActive }) =>
+                          `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                            isFormsActive
+                              ? 'text-white shadow-md'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`
+                        }
+                      >
+                        <Printer className="w-5 h-5" />
+                      </NavLink>
+
+                      {/* Tooltip */}
+                      <div
+                        role="tooltip"
+                        className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                      >
+                        Print Forms & KYC
+                      </div>
+
+                      {/* Floating Flyout Menu on Hover */}
+                      <div
+                        role="menu"
+                        aria-label="Print Forms Menu"
+                        className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-60 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
+                      >
+                        <div className="px-3 py-1.5 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Print Forms Studio
+                        </div>
+                        <div className="mt-1 space-y-0.5 max-h-72 overflow-y-auto custom-scrollbar">
+                          {formsSubItems.map((sub) => {
+                            const isSubActive = isFormsSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Expanded mode: collapsible accordion
+                    <div className="space-y-0.5">
+                      <div
+                        className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
+                          isFormsActive
+                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        }`}
+                      >
+                        <NavLink
+                          to="/forms"
+                          aria-label="Print Forms & KYC"
+                          className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
+                        >
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isFormsActive ? 'text-white' : 'text-emerald-400'}`} />
+                          <span className="truncate text-xs font-semibold">Print Forms & KYC</span>
+                        </NavLink>
+                        <button
+                          type="button"
+                          onClick={toggleFormsOpen}
+                          aria-expanded={formsOpen}
+                          aria-label="Toggle Forms Submenu"
+                          className="px-2.5 py-2 hover:bg-white/10 rounded-r-xl transition-colors focus:outline-none"
+                        >
+                          {formsOpen ? (
+                            <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isFormsActive ? 'text-white' : 'text-slate-400'}`} />
+                          ) : (
+                            <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isFormsActive ? 'text-white' : 'text-slate-400'}`} />
+                          )}
+                        </button>
+                      </div>
+
+                      {formsOpen && (
+                        <div className="pl-3 pr-1 pt-1.5 space-y-1">
+                          {formsSubItems.map((sub) => {
+                            const isSubActive = isFormsSubActive(sub.to)
                             return (
                               <NavLink
                                 key={sub.to}

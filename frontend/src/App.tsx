@@ -287,7 +287,16 @@ export default function App() {
           <Route path="payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
           <Route path="sysadmin" element={<Suspense fallback={<PageLoader />}><SysAdminWorkspacePage /></Suspense>} />
           <Route path="import-export" element={<Suspense fallback={<PageLoader />}><ImportExportPage /></Suspense>} />
+          {/* Forms & KYC Document Studio Dedicated Workspaces */}
           <Route path="forms" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="forms/overview" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="forms/admissions" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="forms/id-cards" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="forms/financial" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="forms/academic" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="forms/certificates" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="forms/bulk-print" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
+          <Route path="forms/audit-logs" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="forms-documents" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />

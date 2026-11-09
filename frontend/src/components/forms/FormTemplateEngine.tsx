@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Standardized A4 print and preview template engine with DPDP Act 2023 compliance, Aadhaar masking, and signatures.
  */
@@ -631,7 +631,7 @@ export default function FormTemplateEngine({
               </span>
             </div>
             <span className="text-[10px] font-bold text-slate-900 uppercase">Candidate / Student</span>
-            <span className="text-[8px] text-slate-500">Date: {form.generated_at.split(',')[0]}</span>
+            <span className="text-[8px] text-slate-500">Date: {form.generated_at ? form.generated_at.split(',')[0] : ''}</span>
           </div>
 
           {/* Parent Signature */}
