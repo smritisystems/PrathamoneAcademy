@@ -109,3 +109,4 @@ High-resolution 1080p visual captures recorded:
 - `screenshot_61_attendance_leaves.png` — Student Leave Applications Workspace
 - `screenshot_62_attendance_reports.png` — Attendance Analytics & Audit Logs Workspace
 - `screenshot_63_attendance_settings.png` — Attendance Settings & Policy Framework Workspace
+

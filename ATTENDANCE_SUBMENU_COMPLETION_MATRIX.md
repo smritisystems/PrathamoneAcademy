@@ -56,3 +56,4 @@
 6. `screenshot_61_attendance_leaves.png` — Student Leave Applications Workspace
 7. `screenshot_62_attendance_reports.png` — Attendance Analytics & Audit Logs Workspace
 8. `screenshot_63_attendance_settings.png` — Attendance Settings & Policy Framework Workspace
+

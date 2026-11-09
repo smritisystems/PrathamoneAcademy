@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Vitest test suite validating all 8 Attendance Centre dedicated workspace routes, view-first locks, and training isolation.
  */
@@ -213,3 +213,4 @@ describe('Attendance Centre Dedicated Workspace Submenu Suite', () => {
     expect(screen.getByText('TRAINING MODE')).toBeDefined()
   })
 })
+

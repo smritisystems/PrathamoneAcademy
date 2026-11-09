@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -244,6 +244,14 @@ export default function App() {
           <Route path="users" element={<Suspense fallback={<PageLoader />}><UsersPage /></Suspense>} />
           <Route path="users/:id" element={<Suspense fallback={<PageLoader />}><UserProfilePage /></Suspense>} />
           <Route path="teachers" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/overview" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/directory" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/allocations" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/timetable" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/attendance" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/payroll" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/performance" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
+          <Route path="teachers/settings" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
           <Route path="teachers/:id" element={<Suspense fallback={<PageLoader />}><TeacherProfilePage /></Suspense>} />
           <Route path="teacher-management" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
           <Route path="staff" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />

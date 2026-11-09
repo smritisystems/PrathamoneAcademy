@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Zustand state store managing responsive sidebar layout state, collapsed rails, and mobile drawer.
  */
@@ -29,6 +29,7 @@ interface SidebarStore {
   feesOpen: boolean
   examinationsOpen: boolean
   attendanceOpen: boolean
+  teachersOpen: boolean
   setDesktopState: (state: DesktopSidebarState) => void
   toggleCollapse: () => void
   toggleHidden: () => void
@@ -46,6 +47,8 @@ interface SidebarStore {
   toggleExaminationsOpen: () => void
   setAttendanceOpen: (open: boolean | ((prev: boolean) => boolean)) => void
   toggleAttendanceOpen: () => void
+  setTeachersOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  toggleTeachersOpen: () => void
 }
 
 const getInitialDesktopState = (): DesktopSidebarState => {
@@ -78,6 +81,7 @@ export const useSidebarStore = create<SidebarStore>()(
       feesOpen: true,
       examinationsOpen: true,
       attendanceOpen: true,
+      teachersOpen: true,
 
       setDesktopState: (desktopState) => set({ desktopState }),
 
@@ -138,6 +142,14 @@ export const useSidebarStore = create<SidebarStore>()(
 
       toggleAttendanceOpen: () =>
         set((state) => ({ attendanceOpen: !state.attendanceOpen })),
+
+      setTeachersOpen: (updater) =>
+        set((state) => ({
+          teachersOpen: typeof updater === 'function' ? updater(state.teachersOpen) : updater,
+        })),
+
+      toggleTeachersOpen: () =>
+        set((state) => ({ teachersOpen: !state.teachersOpen })),
     }),
     {
       name: 'prashant_sidebar_state',
@@ -148,6 +160,7 @@ export const useSidebarStore = create<SidebarStore>()(
         feesOpen: state.feesOpen,
         examinationsOpen: state.examinationsOpen,
         attendanceOpen: state.attendanceOpen,
+        teachersOpen: state.teachersOpen,
       }),
     }
   )
