@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-07
+#  * @updated     2026-11-09
 #  *
 #  * @description Comprehensive domain service for CodeX configurable feature activation, digit-to-symbol encoding, and scope precedence resolution.
 #  */
@@ -468,6 +468,15 @@ class CodeXService:
         res = await db.execute(stmt)
         config = res.scalar_one_or_none()
         if not config:
+            # Verify institution exists before persisting to avoid FK violation
+            from app.models.institution import Institution
+            inst_row = (await db.execute(select(Institution.id).where(Institution.id == institution_id))).scalar_one_or_none()
+            if not inst_row:
+                return CodexConfig(
+                    institution_id=institution_id,
+                    is_master_enabled=False,
+                    feature_show_actual_amount=True,
+                )
             config = CodexConfig(
                 institution_id=institution_id,
                 is_master_enabled=False,  # MANDATORY DEFAULT: DISABLED

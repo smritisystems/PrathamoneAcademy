@@ -839,12 +839,30 @@ async def get_fees_overview(
         if inst_has_students == 0:
             effective_inst_id = None
 
-    # Base invoice query
+    # Base invoice query with student receivables breakdown
     inv_query = (
         select(
             func.coalesce(func.sum(FeeInvoice.net_amount), 0).label("total_obligation"),
             func.coalesce(func.sum(FeeInvoice.paid_amount), 0).label("total_collected"),
-            func.coalesce(func.sum(FeeInvoice.outstanding_amount), 0).label("total_outstanding"),
+            func.coalesce(
+                func.sum(case((FeeInvoice.status != "written_off", FeeInvoice.outstanding_amount), else_=0)), 0
+            ).label("total_outstanding"),
+            func.coalesce(
+                func.sum(case((and_(Student.is_active.is_(True), FeeInvoice.status != "written_off"), FeeInvoice.outstanding_amount), else_=0)), 0
+            ).label("active_students_outstanding"),
+            func.coalesce(
+                func.sum(case((and_(Student.is_active.is_(False), or_(Student.exit_date.isnot(None), Student.exit_reason.isnot(None)), FeeInvoice.status != "written_off"), FeeInvoice.outstanding_amount), else_=0)), 0
+            ).label("former_students_outstanding"),
+            func.coalesce(
+                func.sum(case((and_(Student.is_active.is_(False), Student.exit_date.is_(None), Student.exit_reason.is_(None), FeeInvoice.status != "written_off"), FeeInvoice.outstanding_amount), else_=0)), 0
+            ).label("inactive_students_outstanding"),
+            func.coalesce(
+                func.sum(case((and_(FeeInvoice.outstanding_amount > 0, FeeInvoice.due_date < func.current_date(), FeeInvoice.status != "written_off"), FeeInvoice.outstanding_amount), else_=0)), 0
+            ).label("overdue_outstanding"),
+            func.coalesce(func.sum(FeeInvoice.discount_amount), 0).label("waived_amount"),
+            func.coalesce(
+                func.sum(case((FeeInvoice.status == "written_off", FeeInvoice.outstanding_amount), else_=0)), 0
+            ).label("written_off_amount"),
             func.count(func.distinct(FeeInvoice.student_id)).label("student_count"),
         )
         .join(Student, FeeInvoice.student_id == Student.id)
@@ -871,7 +889,14 @@ async def get_fees_overview(
     stats = (await db.execute(inv_query)).one()
     total_obligation = float(stats.total_obligation)
     total_collected = float(stats.total_collected)
-    total_outstanding = float(stats.total_outstanding)
+    active_students_outstanding = float(stats.active_students_outstanding)
+    former_students_outstanding = float(stats.former_students_outstanding)
+    inactive_students_outstanding = float(stats.inactive_students_outstanding)
+    total_recoverable_outstanding = round(active_students_outstanding + former_students_outstanding + inactive_students_outstanding, 2)
+    total_outstanding = total_recoverable_outstanding
+    overdue_outstanding = float(stats.overdue_outstanding)
+    waived_amount = float(stats.waived_amount)
+    written_off_amount = float(stats.written_off_amount)
     
     # Authoritative student count: distinct active students with active enrollments
     authoritative_student_count = await get_authoritative_student_count(
@@ -1216,6 +1241,13 @@ async def get_fees_overview(
         "total_obligation": total_obligation,
         "total_collected": total_collected,
         "total_outstanding": total_outstanding,
+        "active_students_outstanding": active_students_outstanding,
+        "former_students_outstanding": former_students_outstanding,
+        "inactive_students_outstanding": inactive_students_outstanding,
+        "total_recoverable_outstanding": total_recoverable_outstanding,
+        "overdue_outstanding": overdue_outstanding,
+        "waived_amount": waived_amount,
+        "written_off_amount": written_off_amount,
         "collection_rate": collection_rate,
         "student_count": student_count,
     }
@@ -1224,7 +1256,18 @@ async def get_fees_overview(
         institution_id=user_inst_id,
         user=current_user,
         data=summary_dict,
-        numeric_fields=["total_obligation", "total_collected", "total_outstanding"],
+        numeric_fields=[
+            "total_obligation",
+            "total_collected",
+            "total_outstanding",
+            "active_students_outstanding",
+            "former_students_outstanding",
+            "inactive_students_outstanding",
+            "total_recoverable_outstanding",
+            "overdue_outstanding",
+            "waived_amount",
+            "written_off_amount",
+        ],
         module="fees",
     )
     await CodeXService.mask_records_list(
@@ -1294,6 +1337,7 @@ async def get_fee_register(
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
     status: Optional[str] = None,
+    student_status: Optional[str] = None,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
@@ -1301,6 +1345,7 @@ async def get_fee_register(
     """
     Consolidated student fee register records with cascading filters:
     Student obligations, payment totals, balance, installment schedule, and recent payment date.
+    Supports filtering by student status: all, active, former/discontinued, transferred, inactive.
     """
     query = (
         select(
@@ -1313,7 +1358,7 @@ async def get_fee_register(
             func.count(Payment.id).label("payment_count"),
             func.max(Payment.payment_date).label("last_payment_date"),
         )
-        .options(selectinload(FeeInvoice.installments))
+        .options(selectinload(FeeInvoice.items))
         .join(Student, FeeInvoice.student_id == Student.id)
         .join(AcademicYear, FeeInvoice.academic_year_id == AcademicYear.id)
         .outerjoin(
@@ -1343,6 +1388,16 @@ async def get_fee_register(
         query = query.where(StudentEnrollment.division_id == division_id)
     if status:
         query = query.where(FeeInvoice.status == status)
+    if student_status:
+        st_lower = student_status.strip().lower()
+        if st_lower == "active":
+            query = query.where(Student.is_active.is_(True))
+        elif st_lower in ("former", "discontinued", "withdrawn"):
+            query = query.where(Student.is_active.is_(False))
+        elif st_lower == "transferred":
+            query = query.where(StudentEnrollment.status == "transferred")
+        elif st_lower == "inactive":
+            query = query.where(Student.is_active.is_(False), Student.exit_date.is_(None))
     if search:
         search_term = f"%{search.strip()}%"
         query = query.where(
@@ -1367,10 +1422,16 @@ async def get_fee_register(
 
     register_entries = []
     for inv, student, ay, std, div, brd, p_count, last_p_date in rows:
+        st_class = "active" if student.is_active else ("former" if (student.exit_date or student.exit_reason) else "inactive")
         register_entries.append({
             "student_id": student.id,
             "admission_number": student.admission_number,
             "student_name": f"{student.first_name} {student.last_name}",
+            "student_is_active": student.is_active,
+            "student_status": st_class,
+            "exit_date": str(student.exit_date) if student.exit_date else None,
+            "exit_reason": student.exit_reason or None,
+            "is_former": not student.is_active,
             "phone": student.phone or "—",
             "board_id": brd.id if brd else None,
             "board_name": brd.name if brd else "General",
@@ -1398,7 +1459,7 @@ async def get_fee_register(
                     "description": inst.description,
                     "amount": float(inst.amount),
                     "paid_amount": float(inst.paid_amount),
-                    "due_date": str(inst.due_date),
+                    "due_date": str(inst.due_date) if inst.due_date else "",
                     "status": inst.status,
                 }
                 for inst in (inv.installments or [])
@@ -1425,4 +1486,130 @@ async def get_fee_register(
                 module="fees",
             )
     return register_entries
+
+
+@router.get("/former-students-recovery")
+async def get_former_students_recovery(
+    academic_year_id: Optional[int] = None,
+    board_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    min_outstanding: Optional[float] = None,
+    search: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Dedicated recovery register for former / discontinued / withdrawn students with outstanding debt liabilities.
+    Ensures that debts are never dropped or hidden upon student exit.
+    """
+    query = (
+        select(
+            FeeInvoice,
+            Student,
+            AcademicYear,
+            Standard,
+            Division,
+            Board,
+            func.max(Payment.payment_date).label("last_payment_date"),
+        )
+        .join(Student, FeeInvoice.student_id == Student.id)
+        .join(AcademicYear, FeeInvoice.academic_year_id == AcademicYear.id)
+        .outerjoin(
+            StudentEnrollment,
+            (FeeInvoice.student_id == StudentEnrollment.student_id)
+            & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
+        )
+        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .outerjoin(
+            Payment,
+            (FeeInvoice.student_id == Payment.student_id)
+            & (FeeInvoice.academic_year_id == Payment.academic_year_id)
+            & (Payment.status.in_(["posted", "completed"])),
+        )
+        .where(FeeInvoice.status != "cancelled")
+        .where(FeeInvoice.outstanding_amount > 0)
+        .where(or_(Student.is_active.is_(False), Student.exit_date.isnot(None), Student.exit_reason.isnot(None)))
+    )
+
+    if academic_year_id:
+        query = query.where(FeeInvoice.academic_year_id == academic_year_id)
+    if board_id:
+        query = query.where(Division.board_id == board_id)
+    if standard_id:
+        query = query.where(StudentEnrollment.standard_id == standard_id)
+    if min_outstanding:
+        query = query.where(FeeInvoice.outstanding_amount >= min_outstanding)
+    if search:
+        search_term = f"%{search.strip()}%"
+        query = query.where(
+            or_(
+                Student.first_name.ilike(search_term),
+                Student.last_name.ilike(search_term),
+                Student.admission_number.ilike(search_term),
+                FeeInvoice.invoice_number.ilike(search_term),
+            )
+        )
+
+    query = query.group_by(
+        FeeInvoice.id,
+        Student.id,
+        AcademicYear.id,
+        Standard.id,
+        Division.id,
+        Board.id,
+    ).order_by(desc(FeeInvoice.outstanding_amount), Student.first_name.asc())
+
+    rows = (await db.execute(query)).all()
+
+    recovery_records = []
+    total_recoverable = Decimal("0")
+    today = date.today()
+
+    for inv, student, ay, std, div, brd, last_p_date in rows:
+        days_since_exit = None
+        if student.exit_date:
+            days_since_exit = (today - student.exit_date).days
+
+        total_recoverable += inv.outstanding_amount
+        recovery_records.append({
+            "student_id": student.id,
+            "admission_number": student.admission_number,
+            "student_name": f"{student.first_name} {student.last_name}",
+            "phone": student.phone or "—",
+            "email": student.email or "—",
+            "exit_date": str(student.exit_date) if student.exit_date else None,
+            "exit_reason": student.exit_reason or "Discontinued / Left",
+            "exit_notes": student.exit_notes or None,
+            "days_since_exit": days_since_exit,
+            "board_name": brd.name if brd else "General",
+            "standard_name": std.name if std else "—",
+            "batch_name": div.name if div else "Unassigned",
+            "academic_year_name": ay.name,
+            "invoice_id": inv.id,
+            "invoice_number": inv.invoice_number,
+            "total_obligation": float(inv.net_amount),
+            "paid_amount": float(inv.paid_amount),
+            "outstanding_amount": float(inv.outstanding_amount),
+            "status": inv.status,
+            "due_date": str(inv.due_date) if inv.due_date else None,
+            "last_payment_date": str(last_p_date) if last_p_date else None,
+        })
+
+    user_inst_id = getattr(current_user, "institution_id", None) or 1
+    recovery_records = await CodeXService.mask_records_list(
+        db=db,
+        institution_id=user_inst_id,
+        user=current_user,
+        records=recovery_records,
+        numeric_fields=["total_obligation", "paid_amount", "outstanding_amount"],
+        module="fees",
+    )
+
+    return {
+        "debtors_count": len(recovery_records),
+        "total_recoverable_outstanding": float(total_recoverable),
+        "records": recovery_records,
+    }
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -27,6 +27,7 @@ import type {
   StudentPortalDashboard, StudentAdminProfile, TimetableSlot, StudyMaterialItem, StudyMaterialStats,
   StudentDocumentItem, TestResultItem, UpcomingTestItem,
   FeeOverviewData, FeeRegisterEntry, PaymentReceiptListItem, PaymentTransactionItem,
+  FormerStudentRecoveryResponse,
   AcademicOverviewResponse, BatchRosterResponse,
   SupportedEntity, ImportPreviewResponse, ImportExecuteResult, ImportHistoryItem,
   ImportHistoryDetail, ExportFilterParams,
@@ -456,8 +457,17 @@ export const feesApi = {
     standard_id?: number | string
     division_id?: number | string
     status?: string
+    student_status?: string
     search?: string
   }) => apiClient.get<FeeRegisterEntry[]>('/fees/register', { params }),
+
+  getFormerStudentsRecovery: (params?: {
+    academic_year_id?: number | string
+    board_id?: number | string
+    standard_id?: number | string
+    min_outstanding?: number
+    search?: string
+  }) => apiClient.get<FormerStudentRecoveryResponse>('/fees/former-students-recovery', { params }),
 
   getStudentFeeDetails: (studentId: number | string) =>
     apiClient.get(`/fees/students/${studentId}/fee-details`),

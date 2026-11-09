@@ -725,12 +725,13 @@ function FeesContent() {
   // TAB 2: FEE REGISTER
   // ─────────────────────────────────────────────────────────────────────────────
   const [registerStatusFilter, setRegisterStatusFilter] = useState('')
+  const [registerStudentStatusFilter, setRegisterStudentStatusFilter] = useState('')
   const [registerSearchText, setRegisterSearchText] = useState('')
   const [selectedInstallments, setSelectedInstallments] = useState<FeeRegisterInstallment[] | null>(null)
   const [selectedStudentName, setSelectedStudentName] = useState<string>('')
 
   const { data: registerEntries = [], isLoading: loadingRegister } = useQuery({
-    queryKey: ['fee-register', appliedFilters, registerStatusFilter, registerSearchText],
+    queryKey: ['fee-register', appliedFilters, registerStatusFilter, registerStudentStatusFilter, registerSearchText],
     queryFn: () =>
       feesApi
         .getRegister({
@@ -739,6 +740,7 @@ function FeesContent() {
           standard_id: appliedFilters.standardId ?? undefined,
           division_id: appliedFilters.divisionId ?? undefined,
           status: registerStatusFilter || undefined,
+          student_status: registerStudentStatusFilter || undefined,
           search: registerSearchText || appliedFilters.search || undefined,
         })
         .then((r) => r.data),
@@ -2337,21 +2339,28 @@ function FeesContent() {
                     </div>
                   </div>
 
-                  {/* 4. Outstanding */}
+                  {/* 4. Outstanding & Recovery Breakdown */}
                   <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex items-center gap-3.5 hover:shadow-md transition-shadow">
                     <div className="p-3 rounded-xl bg-orange-50 text-orange-600 flex-shrink-0">
                       <AlertTriangle className="w-5 h-5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-slate-500">
-                        Outstanding
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-slate-500">
+                          Total Recoverable
+                        </p>
+                        <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-200">
+                          {(100 - overviewData.summary.collection_rate).toFixed(1)}% due
+                        </span>
+                      </div>
+                      <p className="text-2xl font-black text-orange-600 leading-tight mt-0.5">
+                        {fmt(overviewData.summary.total_recoverable_outstanding ?? overviewData.summary.total_outstanding)}
                       </p>
-                      <p className="text-2xl font-black text-orange-600 leading-tight">
-                        {fmt(overviewData.summary.total_outstanding)}
-                      </p>
-                      <p className="text-[11px] font-medium text-orange-600">
-                        ({(100 - overviewData.summary.collection_rate).toFixed(1)}%)
-                      </p>
+                      <div className="flex items-center gap-1.5 mt-1 text-[11px] font-medium text-slate-600">
+                        <span>Active: <strong className="text-slate-900">{fmt(overviewData.summary.active_students_outstanding ?? overviewData.summary.total_outstanding)}</strong></span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-amber-700">Former: <strong className="text-amber-900">{fmt(overviewData.summary.former_students_outstanding ?? 0)}</strong></span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2772,7 +2781,7 @@ function FeesContent() {
         <div className="space-y-4">
           {/* Controls Bar */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <input
                 type="text"
                 value={registerSearchText}
@@ -2785,10 +2794,22 @@ function FeesContent() {
                 onChange={(e) => setRegisterStatusFilter(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
               >
-                <option value="">All Statuses</option>
+                <option value="">All Invoices</option>
                 <option value="paid">Paid in Full</option>
                 <option value="partial">Partial Due</option>
                 <option value="unpaid">Unpaid / Overdue</option>
+              </select>
+              <select
+                value={registerStudentStatusFilter}
+                onChange={(e) => setRegisterStudentStatusFilter(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                data-testid="filter-student-status"
+              >
+                <option value="">All Students</option>
+                <option value="active">Active Enrolled</option>
+                <option value="former">Former / Discontinued</option>
+                <option value="transferred">Transferred</option>
+                <option value="inactive">Inactive / On Hold</option>
               </select>
             </div>
 
@@ -2841,8 +2862,18 @@ function FeesContent() {
                           {row.admission_number}
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className="font-bold text-slate-900 block">{row.student_name}</span>
-                          <span className="text-[11px] text-slate-400">{row.phone}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-900 block">{row.student_name}</span>
+                            {row.is_former && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                Former Student
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400">
+                            {row.phone}
+                            {row.exit_date && ` • Exited: ${row.exit_date}`}
+                          </span>
                         </td>
                         <td className="py-2.5 px-3 text-slate-600">
                           {row.board_name} – {row.standard_name}

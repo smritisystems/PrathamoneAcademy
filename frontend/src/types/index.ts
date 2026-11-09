@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -483,6 +483,13 @@ export interface FeeOverviewData {
     total_outstanding: number
     collection_rate: number
     student_count: number
+    active_students_outstanding?: number
+    former_students_outstanding?: number
+    inactive_students_outstanding?: number
+    total_recoverable_outstanding?: number
+    overdue_outstanding?: number
+    waived_amount?: number
+    written_off_amount?: number
   }
   board_breakdown: BoardBreakdown[]
   batch_breakdown: BatchBreakdown[]
@@ -507,6 +514,11 @@ export interface FeeRegisterEntry {
   admission_number: string
   academic_year?: string
   student_name: string
+  student_is_active?: boolean
+  student_status?: string
+  exit_date?: string | null
+  exit_reason?: string | null
+  is_former?: boolean
   phone: string
   board_id?: number | null
   board_name: string
@@ -528,6 +540,36 @@ export interface FeeRegisterEntry {
   payment_count: number
   last_payment_date?: string | null
   installments: FeeRegisterInstallment[]
+}
+
+export interface FormerStudentRecoveryRecord {
+  student_id: number
+  admission_number: string
+  student_name: string
+  phone: string
+  email: string
+  exit_date: string | null
+  exit_reason: string
+  exit_notes?: string | null
+  days_since_exit: number | null
+  board_name: string
+  standard_name: string
+  batch_name: string
+  academic_year_name: string
+  invoice_id: number
+  invoice_number: string
+  total_obligation: number
+  paid_amount: number
+  outstanding_amount: number
+  status: string
+  due_date?: string | null
+  last_payment_date?: string | null
+}
+
+export interface FormerStudentRecoveryResponse {
+  debtors_count: number
+  total_recoverable_outstanding: number
+  records: FormerStudentRecoveryRecord[]
 }
 
 export interface HistoricalPaymentItem {

@@ -203,6 +203,22 @@ class FeeInvoiceItem(Base):
         "FeeInvoice", back_populates="items"
     )
 
+    @property
+    def installment_number(self) -> int:
+        return 1
+
+    @property
+    def paid_amount(self) -> Decimal:
+        return Decimal("0")
+
+    @property
+    def due_date(self) -> date | None:
+        return None
+
+    @property
+    def status(self) -> str:
+        return "unpaid"
+
 
 # [DEPRECATED & RETIRED IN P1] FeeInstallment alias for backward compatibility
 FeeInstallment = FeeInvoiceItem
