@@ -1862,6 +1862,7 @@ class BulkReceiptPdfRequest(BaseModel):
     receipt_numbers: List[str]
     print_logo: Optional[bool] = None
     print_tagline: Optional[bool] = None
+    print_software_branding: Optional[bool] = None
 
 
 @router.get("/receipts/{receipt_number}/pdf")
@@ -1869,6 +1870,7 @@ async def get_receipt_pdf(
     receipt_number: str,
     print_logo: Optional[bool] = Query(None, description="Override print logo setting"),
     print_tagline: Optional[bool] = Query(None, description="Override print tagline setting"),
+    print_software_branding: Optional[bool] = Query(None, description="Override print software branding setting"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -1920,6 +1922,8 @@ async def get_receipt_pdf(
         institution_dict["print_receipt_logo"] = print_logo
     if print_tagline is not None:
         institution_dict["print_receipt_tagline"] = print_tagline
+    if print_software_branding is not None:
+        institution_dict["print_software_branding"] = print_software_branding
 
     pdf_bytes = ReceiptPdfService.generate_receipt_pdf(receipt_payload, institution_dict)
     filename = sanitize_receipt_filename(receipt_payload.get("student_name") or "Student", receipt.receipt_number)
@@ -1985,6 +1989,8 @@ async def export_bulk_receipts_zip(
             inst_dict["print_receipt_logo"] = payload.print_logo
         if payload.print_tagline is not None:
             inst_dict["print_receipt_tagline"] = payload.print_tagline
+        if payload.print_software_branding is not None:
+            inst_dict["print_software_branding"] = payload.print_software_branding
         receipt_items.append((r_payload, inst_dict))
 
     if not receipt_items:

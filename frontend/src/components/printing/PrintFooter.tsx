@@ -11,7 +11,7 @@
  *
  * @version     2.1.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-10
  *
  * @description Canonical Global Print Footer component enforcing two-row right/center aligned standard with absolute bottom positioning and spacer reservation across all printable outputs.
  */
@@ -84,6 +84,13 @@ export interface PrintFooterProps {
   customRow1Text?: string
 
   /**
+   * Layout mode: 'single-row' (distributed modern footer: Left = Document ID, Center = Page, Right = Software Branding)
+   * or 'two-row' (stacked right-aligned metadata + centered branding).
+   * Defaults to 'single-row' for receipts and vouchers, 'two-row' for full multi-page reports.
+   */
+  layoutMode?: 'single-row' | 'two-row'
+
+  /**
    * Additional custom CSS classes.
    */
   className?: string
@@ -113,10 +120,18 @@ export function PrintFooter({
   fixedBottom = true,
   showDivider = true,
   customRow1Text,
+  layoutMode,
   className = '',
 }: PrintFooterProps) {
   const isTraining = useEnvironmentStore((s) => s.isTrainingMode)
   const classification = isTraining ? 'DEMO / TRAINING ONLY' : (propClassification || 'Confidential')
+
+  const resolvedLayout =
+    layoutMode ||
+    (classification?.toLowerCase().includes('voucher') ||
+    classification?.toLowerCase().includes('receipt')
+      ? 'single-row'
+      : 'single-row')
 
   // Build Row 1 components: Classification · Document ID: ID · Page X of Y
   const row1Parts: React.ReactNode[] = []
@@ -168,36 +183,73 @@ export function PrintFooter({
             : ''
         } ${className}`}
       >
-        {/* ── Footer Row 1: RIGHT-ALIGNED Standard Readable Metadata ── */}
-        <div
-          data-testid="print-footer-row-1"
-          className="flex items-center justify-end gap-1.5 text-slate-600 print:text-slate-600 text-[9.5px] print:text-[8pt] font-sans font-normal leading-tight text-right"
-          style={{
-            fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-            color: '#475569',
-          }}
-        >
-          {row1Parts.map((part, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && <span className="text-slate-400 print:text-slate-400 px-0.5 select-none">·</span>}
-              {part}
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* ── Footer Row 2: CENTER-ALIGNED Subtle Software Attribution ── */}
-        {showSoftwareBranding && (
+        {resolvedLayout === 'single-row' ? (
+          /* ── Single-Row Distributed Layout: Left = Document ID, Center = Page, Right = Software Branding ── */
           <div
-            data-testid="print-footer-row-2"
-            className="text-center text-slate-400 print:text-slate-400 text-[7.5px] print:text-[6.5pt] mt-1 print:mt-0.5 leading-none tracking-normal font-light select-none"
+            data-testid="print-footer-single-row"
+            className="flex items-center justify-between gap-2 text-slate-500 print:text-slate-500 text-[8.5px] print:text-[7pt] font-sans font-normal leading-tight w-full"
             style={{
               fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-              color: '#94a3b8',
-              letterSpacing: '0.015em',
+              color: '#64748b',
             }}
           >
-            {softwareBrandingText || PRINT_SHARE_BRANDING.text}
+            {/* Left: Classification & Document ID */}
+            <div className="flex items-center gap-1.5 text-left shrink-0">
+              {classification && <span className="font-medium text-slate-600">{classification}</span>}
+              {classification && showDocumentId && documentId && <span className="text-slate-400 select-none">·</span>}
+              {showDocumentId && documentId && <span className="font-mono text-slate-600">Doc ID: {documentId}</span>}
+            </div>
+
+            {/* Center: Pagination */}
+            {showPagination && (
+              <div className="text-center text-slate-400 text-[8px] print:text-[6.5pt] grow">
+                Page {pageNumber} of {totalPages}
+              </div>
+            )}
+
+            {/* Right: Subtle Software Attribution */}
+            {showSoftwareBranding && (
+              <div
+                className="text-right text-slate-400 print:text-slate-400 text-[7px] print:text-[6pt] font-light tracking-wide shrink-0 select-none"
+                style={{ color: '#94a3b8' }}
+              >
+                {softwareBrandingText || PRINT_SHARE_BRANDING.text}
+              </div>
+            )}
           </div>
+        ) : (
+          /* ── Legacy Two-Row Stacked Layout ── */
+          <>
+            <div
+              data-testid="print-footer-row-1"
+              className="flex items-center justify-end gap-1.5 text-slate-600 print:text-slate-600 text-[9.5px] print:text-[8pt] font-sans font-normal leading-tight text-right"
+              style={{
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                color: '#475569',
+              }}
+            >
+              {row1Parts.map((part, index) => (
+                <React.Fragment key={index}>
+                  {index > 0 && <span className="text-slate-400 print:text-slate-400 px-0.5 select-none">·</span>}
+                  {part}
+                </React.Fragment>
+              ))}
+            </div>
+
+            {showSoftwareBranding && (
+              <div
+                data-testid="print-footer-row-2"
+                className="text-center text-slate-400 print:text-slate-400 text-[7.5px] print:text-[6.5pt] mt-1 print:mt-0.5 leading-none tracking-normal font-light select-none"
+                style={{
+                  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                  color: '#94a3b8',
+                  letterSpacing: '0.015em',
+                }}
+              >
+                {softwareBrandingText || PRINT_SHARE_BRANDING.text}
+              </div>
+            )}
+          </>
         )}
       </footer>
     </>

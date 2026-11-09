@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -142,6 +142,7 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "dpdp_notice_enabled": True,
         "print_receipt_logo": False,
         "print_receipt_tagline": False,
+        "print_software_branding": True,
     },
     "system": {
         "locale": "en-IN",

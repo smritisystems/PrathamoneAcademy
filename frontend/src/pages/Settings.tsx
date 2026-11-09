@@ -2538,6 +2538,20 @@ export default function Settings() {
                           </select>
                           <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the academy tagline under the institution title.</p>
                         </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Software Attribution in Print Footers
+                          </label>
+                          <select
+                            value={String(allSettings.documents?.print_software_branding ?? 'true')}
+                            onChange={(e) => handleSettingChange('documents', 'print_software_branding', e.target.value === 'true')}
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                          >
+                            <option value="true">Include Understated Software Attribution (Recommended)</option>
+                            <option value="false">Omit Software Attribution (White-Label Clean)</option>
+                          </select>
+                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the subtle PrathamOne micro-attribution watermark in print footers.</p>
+                        </div>
                         <div className="sm:col-span-2">
                           <label className="block text-xs font-medium text-gray-700 mb-1">
                             Computer-Generated Disclaimer Text
