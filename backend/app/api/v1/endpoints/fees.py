@@ -896,7 +896,7 @@ async def get_fees_overview(
     overdue_outstanding = float(stats.overdue_outstanding)
     waived_amount = float(stats.waived_amount)
     written_off_amount = float(stats.written_off_amount)
-    
+
     # Authoritative student count: distinct active students with active enrollments
     authoritative_student_count = await get_authoritative_student_count(
         db=db,
