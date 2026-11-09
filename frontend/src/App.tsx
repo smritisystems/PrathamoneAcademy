@@ -175,7 +175,16 @@ export default function App() {
           <Route path="academic/settings" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
           <Route path="boards" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
           <Route path="timetable" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
+          {/* Study Materials & Digital Content Dedicated Workspaces */}
           <Route path="courses" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
+          <Route path="courses/overview" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
+          <Route path="courses/repository" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
+          <Route path="courses/upload" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
+          <Route path="courses/notes" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
+          <Route path="courses/question-banks" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
+          <Route path="courses/video-lectures" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
+          <Route path="courses/syllabi" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
+          <Route path="courses/settings" element={<Suspense fallback={<PageLoader />}><CoursesPage /></Suspense>} />
           <Route path="standards" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
           <Route path="subjects" element={<Suspense fallback={<PageLoader />}><SubjectsPage /></Suspense>} />
           <Route path="batches" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />

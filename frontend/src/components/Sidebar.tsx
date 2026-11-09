@@ -127,6 +127,17 @@ const staffSubItems = [
   { to: '/staff/settings', label: 'HR Policies' },
 ]
 
+const coursesSubItems = [
+  { to: '/courses/overview', label: 'Materials Overview' },
+  { to: '/courses/repository', label: 'Master Library' },
+  { to: '/courses/upload', label: 'Upload Content' },
+  { to: '/courses/notes', label: 'Chapter Notes' },
+  { to: '/courses/question-banks', label: 'Question Banks' },
+  { to: '/courses/video-lectures', label: 'Video Lectures' },
+  { to: '/courses/syllabi', label: 'Curriculum Syllabi' },
+  { to: '/courses/settings', label: 'Storage Policies' },
+]
+
 const secondaryNavItems: NavItem[] = [
   { to: '/teachers', label: 'Teachers', icon: GraduationCap },
   { to: '/staff', label: 'Staff Directory', icon: Briefcase },
@@ -172,6 +183,8 @@ export default function Sidebar() {
     toggleStudentsOpen,
     staffOpen,
     toggleStaffOpen,
+    coursesOpen,
+    toggleCoursesOpen,
   } = useSidebarStore()
 
   const navigate = useNavigate()
@@ -221,7 +234,7 @@ export default function Sidebar() {
     location.pathname.startsWith('/standards') ||
     location.pathname.startsWith('/batches') ||
     location.pathname.startsWith('/subjects') ||
-    location.pathname.startsWith('/courses') ||
+    false ||
     location.pathname.startsWith('/boards') ||
     location.pathname.startsWith('/timetable') ||
     location.pathname.startsWith('/boards') ||
@@ -247,6 +260,14 @@ const isStaffActive = location.pathname.startsWith('/staff')
       return (location.pathname === '/staff' || location.pathname === '/staff/overview') && !location.search
     }
     return location.pathname === to || (location.pathname === '/staff' && location.search.includes(to.replace('/staff/', '')))
+  }
+
+  const isCoursesActive = location.pathname.startsWith('/courses')
+  const isCoursesSubActive = (to: string) => {
+    if (to === '/courses/overview' || to === '/courses') {
+      return (location.pathname === '/courses' || location.pathname === '/courses/overview') && !location.search
+    }
+    return location.pathname === to || (location.pathname === '/courses' && location.search.includes(to.replace('/courses/', '')))
   }
 
   const isTeachersActive = location.pathname.startsWith('/teachers') || location.pathname === '/teacher-management'
@@ -1620,6 +1641,125 @@ if (item.to === '/staff') {
                         <div className="pl-3 pr-1 pt-1.5 space-y-1">
                           {feesSubItems.map((sub) => {
                             const isSubActive = isFeesSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            if (item.to === '/courses') {
+              return (
+                <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
+                  {isCollapsed ? (
+                    // Collapsed mode: icon with floating interactive flyout popover
+                    <div className="relative group w-full flex justify-center">
+                      <NavLink
+                        to="/courses"
+                        aria-label="Study Materials"
+                        style={isCoursesActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        className={({ isActive }) =>
+                          `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                            isCoursesActive
+                              ? 'text-white shadow-md'
+                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          }`
+                        }
+                      >
+                        <BookOpen className="w-5 h-5" />
+                      </NavLink>
+
+                      {/* Tooltip */}
+                      <div
+                        role="tooltip"
+                        className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                      >
+                        Study Materials
+                      </div>
+
+                      {/* Floating Flyout Menu on Hover */}
+                      <div
+                        role="menu"
+                        aria-label="Study Materials Menu"
+                        className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
+                      >
+                        <div className="px-3 py-1.5 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Study Materials & Content
+                        </div>
+                        <div className="mt-1 space-y-0.5 max-h-72 overflow-y-auto custom-scrollbar">
+                          {coursesSubItems.map((sub) => {
+                            const isSubActive = isCoursesSubActive(sub.to)
+                            return (
+                              <NavLink
+                                key={sub.to}
+                                to={sub.to}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
+                                  isSubActive
+                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                }`}
+                              >
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <span className="truncate">{sub.label}</span>
+                              </NavLink>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Expanded mode: Accordion parent button + sub-items
+                    <div>
+                      <div
+                        className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
+                          isCoursesActive
+                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        }`}
+                      >
+                        <NavLink
+                          to="/courses"
+                          aria-label="Study Materials"
+                          className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
+                        >
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isCoursesActive ? 'text-white' : 'text-sky-400'}`} />
+                          <span className="truncate text-xs font-semibold">Study Materials</span>
+                        </NavLink>
+                        <button
+                          type="button"
+                          onClick={toggleCoursesOpen}
+                          aria-expanded={coursesOpen}
+                          aria-label="Toggle Courses Submenu"
+                          className="px-2.5 py-2 hover:bg-white/10 rounded-r-xl transition-colors focus:outline-none"
+                        >
+                          {coursesOpen ? (
+                            <ChevronDown className={`w-4 h-4 flex-shrink-0 ${isCoursesActive ? 'text-white' : 'text-slate-400'}`} />
+                          ) : (
+                            <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isCoursesActive ? 'text-white' : 'text-slate-400'}`} />
+                          )}
+                        </button>
+                      </div>
+
+                      {coursesOpen && (
+                        <div className="pl-3 pr-1 pt-1.5 space-y-1">
+                          {coursesSubItems.map((sub) => {
+                            const isSubActive = isCoursesSubActive(sub.to)
                             return (
                               <NavLink
                                 key={sub.to}
