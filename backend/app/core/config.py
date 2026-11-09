@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.52.1"
-    BUILD_NUMBER: str = "2026.11.09-REV-092-v1.52.1-E11B82E"
+    VERSION: str = "1.60.1"
+    BUILD_NUMBER: str = "2026.11.09-REV-107-v1.60.1-F836F86"
     RELEASE_CHANNEL: str = "Stable"
     RELEASE_STATUS: str = "Production Candidate"
     BUILD_DATE: str = "2026-11-09"
