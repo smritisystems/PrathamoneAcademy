@@ -2552,6 +2552,34 @@ export default function Settings() {
                           </select>
                           <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the subtle PrathamOne micro-attribution watermark in print footers.</p>
                         </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Top Sovereign Accent Trim (Navy & Gold)
+                          </label>
+                          <select
+                            value={String(allSettings.documents?.print_sovereign_trim ?? 'false')}
+                            onChange={(e) => handleSettingChange('documents', 'print_sovereign_trim', e.target.value === 'true')}
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                          >
+                            <option value="false">Do Not Print Trim (Clean Minimal) (Default)</option>
+                            <option value="true">Show Sovereign Dual Trim (Navy & Gold)</option>
+                          </select>
+                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the royal navy and burnished gold header accent bar.</p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Top-Right Official Verification Seal
+                          </label>
+                          <select
+                            value={String(allSettings.documents?.print_verification_seal ?? 'false')}
+                            onChange={(e) => handleSettingChange('documents', 'print_verification_seal', e.target.value === 'true')}
+                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                          >
+                            <option value="false">Do Not Print Seal (Default)</option>
+                            <option value="true">Show Official Verification Seal ("★ OFFICIAL ★ PA VERIFIED")</option>
+                          </select>
+                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the institutional circular verification emblem.</p>
+                        </div>
                         <div className="sm:col-span-2">
                           <label className="block text-xs font-medium text-gray-700 mb-1">
                             Computer-Generated Disclaimer Text

@@ -143,6 +143,8 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "print_receipt_logo": False,
         "print_receipt_tagline": False,
         "print_software_branding": True,
+        "print_sovereign_trim": False,
+        "print_verification_seal": False,
     },
     "system": {
         "locale": "en-IN",

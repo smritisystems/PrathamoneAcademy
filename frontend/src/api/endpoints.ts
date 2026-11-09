@@ -562,10 +562,28 @@ export const paymentsApi = {
   }) => apiClient.get<PaymentReceiptListItem[]>('/payments/receipts-list', { params }),
   reprintReceipt: (receiptNumber: string, reason?: string) =>
     apiClient.post<{ receipt_number: string; reprint_count: number; message: string; is_duplicate: boolean }>(`/payments/receipts/${receiptNumber}/reprint`, { reason }),
-  downloadReceiptPdf: (receiptNumber: string) =>
-    apiClient.get(`/payments/receipts/${receiptNumber}/pdf`, { responseType: 'blob' }),
-  exportBulkReceiptsZip: (receiptNumbers: string[]) =>
-    apiClient.post('/payments/receipts/bulk-pdf-zip', { receipt_numbers: receiptNumbers }, { responseType: 'blob' }),
+  downloadReceiptPdf: (
+    receiptNumber: string,
+    params?: {
+      print_logo?: boolean
+      print_tagline?: boolean
+      print_software_branding?: boolean
+      print_sovereign_trim?: boolean
+      print_verification_seal?: boolean
+    }
+  ) =>
+    apiClient.get(`/payments/receipts/${receiptNumber}/pdf`, { params, responseType: 'blob' }),
+  exportBulkReceiptsZip: (
+    receiptNumbers: string[],
+    options?: {
+      print_logo?: boolean
+      print_tagline?: boolean
+      print_software_branding?: boolean
+      print_sovereign_trim?: boolean
+      print_verification_seal?: boolean
+    }
+  ) =>
+    apiClient.post('/payments/receipts/bulk-pdf-zip', { receipt_numbers: receiptNumbers, ...options }, { responseType: 'blob' }),
   requestRefund: (paymentId: number | string, data: {
     amount: number
     reason: string

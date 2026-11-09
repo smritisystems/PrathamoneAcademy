@@ -244,7 +244,7 @@ class ReceiptPdfService:
         inst_phone = inst.get("phone") or "+91-7021789907"
         inst_email = inst.get("email") or "tejam.prashnat@gmail.com"
 
-        # Check settings for logo and tagline visibility
+        # Check settings for logo, tagline, sovereign trim, and verification seal visibility
         show_logo = inst.get("print_receipt_logo", True)
         if isinstance(show_logo, str):
             show_logo = show_logo.lower().strip() in ("true", "1", "yes")
@@ -253,22 +253,33 @@ class ReceiptPdfService:
         if isinstance(show_tagline, str):
             show_tagline = show_tagline.lower().strip() in ("true", "1", "yes")
 
+        show_sovereign_trim = inst.get("print_sovereign_trim", False)
+        if isinstance(show_sovereign_trim, str):
+            show_sovereign_trim = show_sovereign_trim.lower().strip() in ("true", "1", "yes")
+
+        show_verification_seal = inst.get("print_verification_seal", False)
+        if isinstance(show_verification_seal, str):
+            show_verification_seal = show_verification_seal.lower().strip() in ("true", "1", "yes")
+
         # 0. Outer Card Border
         page.draw_rect(fitz.Rect(8, 8, 412, 587), color=cls.C_BORDER, radius=0.03, width=0.8)
 
-        # 0.1 Top Sovereign Navy & Gold Accent Strip (Certificate Trim)
-        page.draw_rect(fitz.Rect(8, 8, 412, 10.5), color=cls.C_DARK_NAVY, fill=cls.C_DARK_NAVY)
-        page.draw_rect(fitz.Rect(8, 10.5, 412, 11.5), color=(0.83, 0.69, 0.22), fill=(0.83, 0.69, 0.22))
+        # 0.1 Top Sovereign Navy & Gold Accent Strip (Certificate Trim - Default: False)
+        if show_sovereign_trim:
+            page.draw_rect(fitz.Rect(8, 8, 412, 10.5), color=cls.C_DARK_NAVY, fill=cls.C_DARK_NAVY)
+            page.draw_rect(fitz.Rect(8, 10.5, 412, 11.5), color=(0.83, 0.69, 0.22), fill=(0.83, 0.69, 0.22))
 
         # 1. Executive Header Block (y = 16 to 62)
         # Top-Left: Executive Dual-Ring Collegiate Crest
-        cx_logo, cy_logo = 36, 38
-        page.draw_circle(fitz.Point(cx_logo, cy_logo), 17.5, color=cls.C_DARK_NAVY, fill=cls.C_DARK_NAVY)
-        page.draw_circle(fitz.Point(cx_logo, cy_logo), 15.0, color=(0.85, 0.69, 0.22), width=0.8)
-        pa_l = fitz.get_text_length("PA", fontname="hebo", fontsize=11.5)
-        page.insert_text(fitz.Point(cx_logo - pa_l / 2.0, cy_logo + 4.2), "PA", fontname="hebo", fontsize=11.5, color=(1, 1, 1))
-
-        header_text_x = 62
+        if show_logo:
+            cx_logo, cy_logo = 36, 38
+            page.draw_circle(fitz.Point(cx_logo, cy_logo), 17.5, color=cls.C_DARK_NAVY, fill=cls.C_DARK_NAVY)
+            page.draw_circle(fitz.Point(cx_logo, cy_logo), 15.0, color=(0.85, 0.69, 0.22), width=0.8)
+            pa_l = fitz.get_text_length("PA", fontname="hebo", fontsize=11.5)
+            page.insert_text(fitz.Point(cx_logo - pa_l / 2.0, cy_logo + 4.2), "PA", fontname="hebo", fontsize=11.5, color=(1, 1, 1))
+            header_text_x = 62
+        else:
+            header_text_x = 20
 
         # Center-Left: Stately Academy Wordmark & Subtitle
         page.insert_text(fitz.Point(header_text_x, 26), inst_name, fontname="hebo", fontsize=12.5, color=cls.C_DARK_NAVY)
@@ -291,22 +302,23 @@ class ReceiptPdfService:
         contact_str = "    •    ".join(contact_parts)
         page.insert_text(fitz.Point(header_text_x, 53), contact_str[:105], fontname="helv", fontsize=5.5, color=cls.C_TEXT_GRAY)
 
-        # Top-Right: Official Institutional Verification Seal (Balances header layout)
-        cx_seal, cy_seal = 372, 38
-        page.draw_circle(fitz.Point(cx_seal, cy_seal), 18.0, color=(0.70, 0.78, 0.88), width=0.6)
-        page.draw_circle(fitz.Point(cx_seal, cy_seal), 15.0, color=(0.80, 0.86, 0.94), width=0.5)
+        # Top-Right: Official Institutional Verification Seal (Balances header layout - Default: False)
+        if show_verification_seal:
+            cx_seal, cy_seal = 372, 38
+            page.draw_circle(fitz.Point(cx_seal, cy_seal), 18.0, color=(0.70, 0.78, 0.88), width=0.6)
+            page.draw_circle(fitz.Point(cx_seal, cy_seal), 15.0, color=(0.80, 0.86, 0.94), width=0.5)
 
-        s_top = "★ OFFICIAL ★"
-        s_top_l = fitz.get_text_length(s_top, fontname="hebo", fontsize=3.8)
-        page.insert_text(fitz.Point(cx_seal - s_top_l / 2.0, cy_seal - 7.5), s_top, fontname="hebo", fontsize=3.8, color=(0.40, 0.50, 0.65))
+            s_top = "★ OFFICIAL ★"
+            s_top_l = fitz.get_text_length(s_top, fontname="hebo", fontsize=3.8)
+            page.insert_text(fitz.Point(cx_seal - s_top_l / 2.0, cy_seal - 7.5), s_top, fontname="hebo", fontsize=3.8, color=(0.40, 0.50, 0.65))
 
-        s_mid = "PA"
-        s_mid_l = fitz.get_text_length(s_mid, fontname="hebo", fontsize=8.5)
-        page.insert_text(fitz.Point(cx_seal - s_mid_l / 2.0, cy_seal + 3.0), s_mid, fontname="hebo", fontsize=8.5, color=(0.15, 0.30, 0.55))
+            s_mid = "PA"
+            s_mid_l = fitz.get_text_length(s_mid, fontname="hebo", fontsize=8.5)
+            page.insert_text(fitz.Point(cx_seal - s_mid_l / 2.0, cy_seal + 3.0), s_mid, fontname="hebo", fontsize=8.5, color=(0.15, 0.30, 0.55))
 
-        s_bot = "VERIFIED"
-        s_bot_l = fitz.get_text_length(s_bot, fontname="hebo", fontsize=3.8)
-        page.insert_text(fitz.Point(cx_seal - s_bot_l / 2.0, cy_seal + 11.0), s_bot, fontname="hebo", fontsize=3.8, color=(0.40, 0.50, 0.65))
+            s_bot = "VERIFIED"
+            s_bot_l = fitz.get_text_length(s_bot, fontname="hebo", fontsize=3.8)
+            page.insert_text(fitz.Point(cx_seal - s_bot_l / 2.0, cy_seal + 11.0), s_bot, fontname="hebo", fontsize=3.8, color=(0.40, 0.50, 0.65))
 
         # 2. Official Fee Receipt Ribbon (y = 66 to 88)
         page.draw_rect(fitz.Rect(18, 66, 402, 88), color=None, fill=cls.C_LIGHT_BLUE, radius=0.08)

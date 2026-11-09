@@ -191,6 +191,8 @@ export default function PaymentReceiptView({
   const disclaimerText =
     documentSettings?.disclaimer_text ||
     'This is a computer-generated receipt and does not require a physical signature.'
+  const showSovereignTrim = Boolean(documentSettings?.print_sovereign_trim ?? false)
+  const showVerificationSeal = Boolean(documentSettings?.print_verification_seal ?? false)
 
   // Dynamic branding fields from existing Institute Profile
   const academyName = (branding.academyName || branding.appName || 'PrathamOne EduOS').toUpperCase()
@@ -489,10 +491,12 @@ export default function PaymentReceiptView({
           </div>
         )}
 
-        {/* Top Sovereign Navy & Gold Accent Strip */}
-        <div className="w-full h-1 bg-[#0b2b5c] rounded-t-xl overflow-hidden relative z-10">
-          <div className="w-full h-0.5 bg-[#d4af37] absolute bottom-0" />
-        </div>
+        {/* Top Sovereign Navy & Gold Accent Strip (Configurable - Default: Off) */}
+        {showSovereignTrim && (
+          <div className="w-full h-1 bg-[#0b2b5c] rounded-t-xl overflow-hidden relative z-10">
+            <div className="w-full h-0.5 bg-[#d4af37] absolute bottom-0" />
+          </div>
+        )}
 
         {/* 1. Official Academy Header */}
         <header className="receipt-header flex items-center justify-between gap-3 pt-2.5 pb-2 relative z-10">
@@ -552,12 +556,14 @@ export default function PaymentReceiptView({
             </div>
           </div>
 
-          {/* Top-Right: Official Institutional Verification Seal */}
-          <div className="hidden sm:flex flex-col items-center justify-center w-12 h-12 rounded-full border border-slate-300 border-dashed text-center shrink-0 p-1 select-none opacity-85 bg-slate-50/50">
-            <span className="text-[6px] font-black text-slate-500 tracking-wider">OFFICIAL</span>
-            <span className="text-[10px] font-black text-blue-950 font-serif leading-none my-0.5">PA</span>
-            <span className="text-[6px] font-bold text-slate-400 tracking-wider">VERIFIED</span>
-          </div>
+          {/* Top-Right: Official Institutional Verification Seal (Configurable - Default: Off) */}
+          {showVerificationSeal && (
+            <div className="hidden sm:flex flex-col items-center justify-center w-12 h-12 rounded-full border border-slate-300 border-dashed text-center shrink-0 p-1 select-none opacity-85 bg-slate-50/50">
+              <span className="text-[6px] font-black text-slate-500 tracking-wider">OFFICIAL</span>
+              <span className="text-[10px] font-black text-blue-950 font-serif leading-none my-0.5">PA</span>
+              <span className="text-[6px] font-bold text-slate-400 tracking-wider">VERIFIED</span>
+            </div>
+          )}
         </header>
 
         {/* 2. Official Fee Receipt Two-Tone Banner */}

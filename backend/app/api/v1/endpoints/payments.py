@@ -1806,14 +1806,23 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
     if not inst and inst_id != 1:
         inst = await db.get(Institution, 1)
 
-    # Centralized SSOT lookup for Documents & Print settings (Default: False)
-    print_logo = False
+    # Centralized SSOT lookup for Documents & Print settings (Default: False for trims/seals, True for software branding)
+    print_logo = True
     print_tagline = False
+    print_software_branding = True
+    print_sovereign_trim = False
+    print_verification_seal = False
     try:
         stmt = select(InstitutionSetting).where(
             InstitutionSetting.institution_id == inst_id,
             InstitutionSetting.category == "documents",
-            InstitutionSetting.key.in_(["print_receipt_logo", "print_receipt_tagline"]),
+            InstitutionSetting.key.in_([
+                "print_receipt_logo",
+                "print_receipt_tagline",
+                "print_software_branding",
+                "print_sovereign_trim",
+                "print_verification_seal",
+            ]),
         )
         res = await db.execute(stmt)
         for row in res.scalars().all():
@@ -1822,6 +1831,12 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
                 print_logo = val in ("true", "1", "yes")
             elif row.key == "print_receipt_tagline":
                 print_tagline = val in ("true", "1", "yes")
+            elif row.key == "print_software_branding":
+                print_software_branding = val in ("true", "1", "yes")
+            elif row.key == "print_sovereign_trim":
+                print_sovereign_trim = val in ("true", "1", "yes")
+            elif row.key == "print_verification_seal":
+                print_verification_seal = val in ("true", "1", "yes")
     except Exception:
         pass
 
@@ -1842,6 +1857,9 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
             "logo_url": inst.logo_url,
             "print_receipt_logo": print_logo,
             "print_receipt_tagline": print_tagline,
+            "print_software_branding": print_software_branding,
+            "print_sovereign_trim": print_sovereign_trim,
+            "print_verification_seal": print_verification_seal,
         }
     return {
         "name": "Prashant Academy",
@@ -1855,6 +1873,9 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
         "tax_id": "AABCP1234K",
         "print_receipt_logo": print_logo,
         "print_receipt_tagline": print_tagline,
+        "print_software_branding": print_software_branding,
+        "print_sovereign_trim": print_sovereign_trim,
+        "print_verification_seal": print_verification_seal,
     }
 
 
@@ -1863,6 +1884,8 @@ class BulkReceiptPdfRequest(BaseModel):
     print_logo: Optional[bool] = None
     print_tagline: Optional[bool] = None
     print_software_branding: Optional[bool] = None
+    print_sovereign_trim: Optional[bool] = None
+    print_verification_seal: Optional[bool] = None
 
 
 @router.get("/receipts/{receipt_number}/pdf")
@@ -1871,6 +1894,8 @@ async def get_receipt_pdf(
     print_logo: Optional[bool] = Query(None, description="Override print logo setting"),
     print_tagline: Optional[bool] = Query(None, description="Override print tagline setting"),
     print_software_branding: Optional[bool] = Query(None, description="Override print software branding setting"),
+    print_sovereign_trim: Optional[bool] = Query(None, description="Override print sovereign trim setting"),
+    print_verification_seal: Optional[bool] = Query(None, description="Override print verification seal setting"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -1924,6 +1949,10 @@ async def get_receipt_pdf(
         institution_dict["print_receipt_tagline"] = print_tagline
     if print_software_branding is not None:
         institution_dict["print_software_branding"] = print_software_branding
+    if print_sovereign_trim is not None:
+        institution_dict["print_sovereign_trim"] = print_sovereign_trim
+    if print_verification_seal is not None:
+        institution_dict["print_verification_seal"] = print_verification_seal
 
     pdf_bytes = ReceiptPdfService.generate_receipt_pdf(receipt_payload, institution_dict)
     filename = sanitize_receipt_filename(receipt_payload.get("student_name") or "Student", receipt.receipt_number)
@@ -1991,6 +2020,10 @@ async def export_bulk_receipts_zip(
             inst_dict["print_receipt_tagline"] = payload.print_tagline
         if payload.print_software_branding is not None:
             inst_dict["print_software_branding"] = payload.print_software_branding
+        if payload.print_sovereign_trim is not None:
+            inst_dict["print_sovereign_trim"] = payload.print_sovereign_trim
+        if payload.print_verification_seal is not None:
+            inst_dict["print_verification_seal"] = payload.print_verification_seal
         receipt_items.append((r_payload, inst_dict))
 
     if not receipt_items:
