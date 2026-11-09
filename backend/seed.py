@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-09
 #  *
 #  * @description Database master seeder initializing superadmin account, demo batches, and curriculum subjects.
 #  */
@@ -48,7 +48,7 @@ async def seed():
     from app.models.enrollment import StudentEnrollment
     from app.models.fee import (
         FeeCategory, FeeStructure, StudentFeeAssignment,
-        FeeInvoice, FeeInvoiceItem, FeeInstallment, Discount
+        FeeInvoice, FeeInvoiceItem
     )
     from app.models.payment import Payment, PaymentAllocation, PaymentReceipt
     from app.core.database import Base
@@ -309,17 +309,6 @@ async def seed():
         )
         session.add(invoice_item)
 
-        installment = FeeInstallment(
-            invoice_id=invoice.id,
-            installment_number=1,
-            description="Annual Fee 2024-25",
-            amount=Decimal("24000.00"),
-            paid_amount=Decimal("16000.00"),
-            due_date=date(2025, 3, 31),
-            status="partial",
-        )
-        session.add(installment)
-        await session.flush()
 
         # --- Payment 1: ₹5,000 (Cash) ---
         payment1 = Payment(

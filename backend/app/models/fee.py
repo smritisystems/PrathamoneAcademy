@@ -223,3 +223,7 @@ class FeeInvoiceItem(Base):
 # [DEPRECATED & RETIRED IN P1] FeeInstallment alias for backward compatibility
 FeeInstallment = FeeInvoiceItem
 
+
+# [DEPRECATED & RETIRED IN P1] Backward compatibility stubs
+Discount = None
+Scholarship = None
