@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-08
+#  * @updated     2026-11-09
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -42,7 +42,7 @@ from app.models.enrollment import StudentEnrollment
 from app.models.standard import Standard
 from app.models.board import Board
 from app.models.division import Division
-from app.models.subject import Subject
+from app.models.subject import Subject, SubjectMapping
 from app.models.academic_year import AcademicYear
 from app.models.communication import CommunicationLog
 from app.models.institution import Institution
@@ -1813,11 +1813,22 @@ async def schedule_demo_class(
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
 
+    sm_id = None
+    if data.subject_id:
+        sm_id = (
+            await db.execute(
+                select(SubjectMapping.id).where(
+                    SubjectMapping.legacy_subject_id == data.subject_id
+                )
+            )
+        ).scalar_one_or_none()
+
     demo = LeadDemoClass(
         lead_id=lead.id,
         institution_id=effective_inst_id,
         standard_id=data.standard_id or lead.standard_id,
         subject_id=data.subject_id,
+        subject_mapping_id=sm_id,
         teacher_id=data.teacher_id,
         scheduled_at=data.scheduled_at,
         status="scheduled",

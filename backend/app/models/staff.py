@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-07
+#  * @updated     2026-11-09
 #  *
 #  * @description SQLAlchemy models for Staff Profiles, Documents, Academic Assignments, Attendance, Leaves, and Generated Documents.
 #  */
@@ -213,6 +213,9 @@ class TeacherAssignment(Base):
     subject_id: Mapped[int] = mapped_column(
         ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
+    subject_mapping_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subject_mappings.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     weekly_hours: Mapped[float] = mapped_column(Float, default=4.0)
     is_class_teacher: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -228,6 +231,7 @@ class TeacherAssignment(Base):
     standard: Mapped["Standard"] = relationship("Standard")
     division: Mapped["Division"] = relationship("Division")
     subject: Mapped["Subject"] = relationship("Subject")
+    subject_mapping: Mapped["SubjectMapping | None"] = relationship("SubjectMapping")
 
 
 class StaffAttendance(Base):

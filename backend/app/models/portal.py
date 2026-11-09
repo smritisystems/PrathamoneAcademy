@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-09
 #  *
 #  * @description SQLAlchemy models defining student portal credentials, announcements, and study material links.
 #  */
@@ -42,6 +42,9 @@ class TimetableEntry(Base):
     subject_id: Mapped[int] = mapped_column(
         ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
+    subject_mapping_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subject_mappings.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     teacher_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -56,6 +59,7 @@ class TimetableEntry(Base):
 
     division: Mapped["Division"] = relationship("Division")
     subject: Mapped["Subject"] = relationship("Subject")
+    subject_mapping: Mapped["SubjectMapping | None"] = relationship("SubjectMapping")
     teacher: Mapped["User | None"] = relationship("User", foreign_keys=[teacher_id])
 
 
@@ -72,6 +76,9 @@ class StudyMaterial(Base):
     subject_id: Mapped[int] = mapped_column(
         ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
+    subject_mapping_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subject_mappings.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     division_id: Mapped[int | None] = mapped_column(
         ForeignKey("divisions.id", ondelete="SET NULL"), nullable=True
     )
@@ -86,6 +93,7 @@ class StudyMaterial(Base):
 
     standard: Mapped["Standard"] = relationship("Standard")
     subject: Mapped["Subject"] = relationship("Subject")
+    subject_mapping: Mapped["SubjectMapping | None"] = relationship("SubjectMapping")
     division: Mapped["Division | None"] = relationship("Division")
 
 

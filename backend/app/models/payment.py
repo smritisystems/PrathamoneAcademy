@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-09
 #  *
 #  * @description SQLAlchemy models defining financial transactions, ERP payment workflow lifecycle, receipt versioning, and refunds.
 #  */
@@ -122,9 +122,7 @@ class PaymentAllocation(Base):
     invoice_id: Mapped[int] = mapped_column(
         ForeignKey("fee_invoices.id"), nullable=False, index=True
     )
-    installment_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("fee_installments.id"), nullable=True
-    )
+    # installment_id retired in P1 consolidation; allocations map to invoice_id
     allocated_amount: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), nullable=False
     )
@@ -138,9 +136,7 @@ class PaymentAllocation(Base):
     invoice: Mapped["FeeInvoice"] = relationship(
         "FeeInvoice", back_populates="allocations"
     )
-    installment: Mapped[Optional["FeeInstallment"]] = relationship(
-        "FeeInstallment", back_populates="allocations"
-    )
+# installment relationship retired in P1
 
 
 class PaymentReceipt(Base):

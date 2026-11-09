@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-09
 #  *
 #  * @description SQLAlchemy models defining exams, test schedules, subjects, and student score marks.
 #  */
@@ -71,6 +71,9 @@ class ExamMark(Base):
     subject_id: Mapped[int] = mapped_column(
         ForeignKey("subjects.id"), nullable=False
     )
+    subject_mapping_id: Mapped[int | None] = mapped_column(
+        ForeignKey("subject_mappings.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     marks_obtained: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=True)
     grade: Mapped[str] = mapped_column(String(5), nullable=True)
     remarks: Mapped[str] = mapped_column(String(200), nullable=True)
@@ -88,4 +91,5 @@ class ExamMark(Base):
     subject: Mapped["Subject"] = relationship(
         "Subject", back_populates="exam_marks"
     )
+    subject_mapping: Mapped["SubjectMapping | None"] = relationship("SubjectMapping")
 

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-09
 #  *
 #  * @description SQLAlchemy models defining fee structures, fee categories, invoices, and installments.
 #  */
@@ -92,38 +92,7 @@ class FeeStructure(Base):
     )
 
 
-class Discount(Base):
-    __tablename__ = "discounts"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    institution_id: Mapped[int] = mapped_column(
-        ForeignKey("institutions.id"), nullable=False
-    )
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    discount_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    value: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
-
-class Scholarship(Base):
-    __tablename__ = "scholarships"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    institution_id: Mapped[int] = mapped_column(
-        ForeignKey("institutions.id"), nullable=False
-    )
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
+# [DEPRECATED & RETIRED IN P1] Discount and Scholarship consolidated into StudentFeeAssignment
 
 class StudentFeeAssignment(Base):
     __tablename__ = "student_fee_assignments"
@@ -141,12 +110,7 @@ class StudentFeeAssignment(Base):
     academic_year_id: Mapped[int] = mapped_column(
         ForeignKey("academic_years.id"), nullable=False
     )
-    discount_id: Mapped[int] = mapped_column(
-        ForeignKey("discounts.id"), nullable=True
-    )
-    scholarship_id: Mapped[int] = mapped_column(
-        ForeignKey("scholarships.id"), nullable=True
-    )
+# Consolidated in student_fee_assignments via concession_amount and scholarship_name
     custom_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=True)
     concession_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
     remarks: Mapped[str] = mapped_column(String(500), nullable=True)
@@ -238,33 +202,4 @@ class FeeInvoiceItem(Base):
     )
 
 
-class FeeInstallment(Base):
-    __tablename__ = "fee_installments"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    invoice_id: Mapped[int] = mapped_column(
-        ForeignKey("fee_invoices.id"), nullable=False
-    )
-    installment_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    description: Mapped[str] = mapped_column(String(200), nullable=True)
-    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    paid_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
-    due_date: Mapped[date] = mapped_column(Date, nullable=False)
-    status: Mapped[str] = mapped_column(String(20), default="unpaid")
-    late_fee_applied: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
-    )
-
-    invoice: Mapped["FeeInvoice"] = relationship(
-        "FeeInvoice", back_populates="installments"
-    )
-    allocations: Mapped[list["PaymentAllocation"]] = relationship(
-        "PaymentAllocation", back_populates="installment"
-    )
-
+# [DEPRECATED & RETIRED IN P1] FeeInstallment consolidated into FeeInvoiceItem

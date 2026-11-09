@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-09
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -27,7 +27,7 @@ from app.models.enrollment import StudentEnrollment
 from app.models.subject import Subject, CanonicalSubject, SubjectMapping
 from app.models.fee import (
     FeeCategory, FeeStructure, StudentFeeAssignment,
-    FeeInvoice, FeeInvoiceItem, FeeInstallment, Discount, Scholarship
+    FeeInvoice, FeeInvoiceItem
 )
 from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.attendance import Attendance
@@ -86,10 +86,7 @@ __all__ = [
     "StudentFeeAssignment",
     "FeeInvoice",
     "FeeInvoiceItem",
-    "FeeInstallment",
-    "Discount",
-    "Scholarship",
-    "Payment",
+                "Payment",
     "PaymentAllocation",
     "PaymentReceipt",
     "Refund",

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-06
+#  * @updated     2026-11-09
 #  *
 #  * @description API endpoints for class timetable scheduling, room allocation, and collision detection.
 #  */
@@ -27,7 +27,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role
 from app.models.portal import TimetableEntry
 from app.models.division import Division
-from app.models.subject import Subject
+from app.models.subject import Subject, SubjectMapping
 from app.models.standard import Standard
 from app.models.board import Board
 from app.models.user import User
@@ -278,9 +278,18 @@ async def create_timetable_entry(
     if conflict_check["has_conflict"]:
         raise HTTPException(status_code=400, detail=conflict_check["details"])
 
+    sm_id = (
+        await db.execute(
+            select(SubjectMapping.id).where(
+                SubjectMapping.legacy_subject_id == data.subject_id
+            )
+        )
+    ).scalar_one_or_none()
+
     entry = TimetableEntry(
         division_id=data.division_id,
         subject_id=data.subject_id,
+        subject_mapping_id=sm_id,
         day_of_week=data.day_of_week,
         start_time=data.start_time,
         end_time=data.end_time,

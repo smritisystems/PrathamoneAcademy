@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-09
 #  *
 #  * @description Domain service for exam marks management, grade calculation, cohort analytics, and official report cards.
 #  */
@@ -24,7 +24,7 @@ from sqlalchemy import select, and_, func
 from sqlalchemy.orm import selectinload
 
 from app.models.exam import Examination, ExamMark
-from app.models.subject import Subject
+from app.models.subject import Subject, SubjectMapping
 from app.models.student import Student, Guardian
 from app.models.enrollment import StudentEnrollment
 from app.models.standard import Standard
@@ -168,11 +168,15 @@ async def save_exam_marks_bulk(
     if not exam:
         raise ValueError(f"Examination #{exam_id} not found")
 
-    # Fetch subjects max marks lookup
+    # Fetch subjects max marks and canonical subject_mapping_id lookup
     subj_res = await db.execute(
-        select(Subject.id, Subject.max_marks).where(Subject.standard_id == exam.standard_id)
+        select(Subject.id, Subject.max_marks, SubjectMapping.id)
+        .outerjoin(SubjectMapping, SubjectMapping.legacy_subject_id == Subject.id)
+        .where(Subject.standard_id == exam.standard_id)
     )
-    subj_max_map = {row[0]: row[1] or exam.max_marks for row in subj_res.all()}
+    subj_rows = subj_res.all()
+    subj_max_map = {row[0]: row[1] or exam.max_marks for row in subj_rows}
+    subj_map_map = {row[0]: row[2] for row in subj_rows}
 
     saved_count = 0
     for item in entries:
@@ -193,6 +197,7 @@ async def save_exam_marks_bulk(
             grade = calculate_grade(float(marks_decimal), float(sub_max))
             marks_obtained = marks_decimal
 
+        mapping_id = subj_map_map.get(subject_id)
         existing = await db.scalar(
             select(ExamMark).where(
                 and_(
@@ -207,11 +212,14 @@ async def save_exam_marks_bulk(
             existing.grade = grade
             existing.is_absent = is_absent
             existing.remarks = remarks
+            if mapping_id and not existing.subject_mapping_id:
+                existing.subject_mapping_id = mapping_id
         else:
             new_mark = ExamMark(
                 examination_id=exam_id,
                 student_id=student_id,
                 subject_id=subject_id,
+                subject_mapping_id=mapping_id,
                 marks_obtained=marks_obtained,
                 grade=grade,
                 is_absent=is_absent,

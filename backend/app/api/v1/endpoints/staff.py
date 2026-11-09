@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-07
+#  * @updated     2026-11-09
 #  *
 #  * @description Comprehensive API endpoints for Teacher & Staff Management, assignments, attendance, leaves, and documents.
 #  */
@@ -53,7 +53,7 @@ from app.models.academic_year import AcademicYear
 from app.models.board import Board
 from app.models.standard import Standard
 from app.models.division import Division
-from app.models.subject import Subject
+from app.models.subject import Subject, SubjectMapping
 from app.models.institution import Institution
 from app.services.workforce_service import (
     get_teacher_workforce_dashboard,
@@ -1404,6 +1404,14 @@ async def create_teacher_assignment(
             detail="A teacher is already actively assigned to this subject and batch for the current academic session."
         )
 
+    sm_id = (
+        await db.execute(
+            select(SubjectMapping.id).where(
+                SubjectMapping.legacy_subject_id == data.subject_id
+            )
+        )
+    ).scalar_one_or_none()
+
     assignment = TeacherAssignment(
         teacher_user_id=data.teacher_user_id,
         academic_year_id=data.academic_year_id,
@@ -1411,6 +1419,7 @@ async def create_teacher_assignment(
         standard_id=data.standard_id,
         division_id=data.division_id,
         subject_id=data.subject_id,
+        subject_mapping_id=sm_id,
         weekly_hours=data.weekly_hours or 4.0,
         is_class_teacher=data.is_class_teacher or False,
         is_active=True,

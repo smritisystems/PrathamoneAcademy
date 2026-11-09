@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-09
 #  *
 #  * @description REST API router managing academic study materials, question banks, and syllabus documents.
 #  */
@@ -27,7 +27,7 @@ from app.core.deps import get_current_active_user, enforce_institution_access
 from app.models.user import User
 from app.models.portal import StudyMaterial
 from app.models.standard import Standard
-from app.models.subject import Subject
+from app.models.subject import Subject, SubjectMapping
 from app.models.division import Division
 
 router = APIRouter()
@@ -199,10 +199,19 @@ async def create_study_material(
     if not subj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Specified Subject not found.")
 
+    sm_id = (
+        await db.execute(
+            select(SubjectMapping.id).where(
+                SubjectMapping.legacy_subject_id == payload.subject_id
+            )
+        )
+    ).scalar_one_or_none()
+
     material = StudyMaterial(
         institution_id=institution_id,
         standard_id=payload.standard_id,
         subject_id=payload.subject_id,
+        subject_mapping_id=sm_id,
         division_id=payload.division_id,
         title=payload.title.strip(),
         description=payload.description.strip() if payload.description else None,

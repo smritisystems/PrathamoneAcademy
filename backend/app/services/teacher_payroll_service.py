@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-09
 #  *
 #  * @description Complete business logic and calculation engine for Teacher Payroll,
 #  */
@@ -34,7 +34,7 @@ from app.models.user import User, AuditLog
 from app.models.institution import Institution
 from app.models.academic_year import AcademicYear
 from app.models.division import Division
-from app.models.subject import Subject
+from app.models.subject import Subject, SubjectMapping
 from app.models.portal import TimetableEntry
 from app.models.staff import StaffProfile
 from app.models.teacher_payroll import (
@@ -356,6 +356,14 @@ async def log_teaching_session(
 
     session_code = await generate_next_session_code(db, sess_date)
 
+    sm_id = (
+        await db.execute(
+            select(SubjectMapping.id).where(
+                SubjectMapping.legacy_subject_id == int(data["subject_id"])
+            )
+        )
+    ).scalar_one_or_none()
+
     session = TeachingSession(
         session_code=session_code,
         institution_id=inst_id,
@@ -363,6 +371,7 @@ async def log_teaching_session(
         teacher_user_id=teacher_id,
         substitute_teacher_id=sub_teacher_id,
         subject_id=int(data["subject_id"]),
+        subject_mapping_id=sm_id,
         division_id=int(data["division_id"]),
         timetable_entry_id=int(data["timetable_entry_id"]) if data.get("timetable_entry_id") else None,
         session_date=sess_date,
