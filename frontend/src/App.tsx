@@ -245,13 +245,20 @@ export default function App() {
           {/* Fees & Payments Dedicated Workspaces */}
           <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/overview" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/structures" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/invoicing" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/collection" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/defaulters" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/concessions" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/online-gateway" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          <Route path="fees/reports" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+          {/* Backwards compatibility aliases */}
           <Route path="fees/register" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/collect" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/collect/:studentId" element={<Suspense fallback={<PageLoader />}><FeeCollectionPage /></Suspense>} />
           <Route path="fees/payments" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/receipts" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/plans" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/reports" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/settings" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/import" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
           <Route path="import/fee-register" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />

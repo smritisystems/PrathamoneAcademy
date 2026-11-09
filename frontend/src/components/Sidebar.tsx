@@ -64,13 +64,13 @@ const crmSubItems = [
 
 const feesSubItems = [
   { to: '/fees/overview', label: 'Overview' },
-  { to: '/fees/register', label: 'Fee Register' },
-  { to: '/fees/collect', label: 'Collect Fees' },
-  { to: '/fees/payments', label: 'Payments' },
-  { to: '/fees/receipts', label: 'Receipts' },
-  { to: '/fees/plans', label: 'Fee Plans' },
-  { to: '/fees/reports', label: 'Reports' },
-  { to: '/fees/settings', label: 'Settings' },
+  { to: '/fees/structures', label: 'Fee Structures' },
+  { to: '/fees/invoicing', label: 'Fee Invoicing' },
+  { to: '/fees/collection', label: 'Collection Desk' },
+  { to: '/fees/defaulters', label: 'Defaulters & Dues' },
+  { to: '/fees/concessions', label: 'Concessions & Waivers' },
+  { to: '/fees/online-gateway', label: 'Online Gateway' },
+  { to: '/fees/reports', label: 'Financial Daybook' },
 ]
 
 const examSubItems = [
@@ -365,9 +365,22 @@ const isStaffActive = location.pathname.startsWith('/staff')
     const tabName = subTo.replace('/fees/', '')
     return (
       location.pathname === subTo ||
+      location.pathname.startsWith(`${subTo}/`) ||
       (location.pathname === '/fees' && location.search.includes(`tab=${tabName}`)) ||
-      (subTo === '/fees/payments' && location.pathname.startsWith('/payments')) ||
-      (subTo === '/fees/receipts' && location.pathname.startsWith('/receipts'))
+      (subTo === '/fees/structures' && (location.pathname === '/fees/plans' || location.search.includes('tab=plans'))) ||
+      (subTo === '/fees/invoicing' && (location.pathname === '/fees/register' || location.search.includes('tab=register'))) ||
+      (subTo === '/fees/collection' && (
+        location.pathname === '/fees/collect' ||
+        location.pathname.startsWith('/fees/collect/') ||
+        location.pathname === '/fees/payments' ||
+        location.pathname === '/fees/receipts' ||
+        location.pathname.startsWith('/payments') ||
+        location.pathname.startsWith('/receipts') ||
+        location.search.includes('tab=collect') ||
+        location.search.includes('tab=payments') ||
+        location.search.includes('tab=receipts')
+      )) ||
+      (subTo === '/fees/reports' && location.search.includes('tab=reports'))
     )
   }
 

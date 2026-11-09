@@ -11,13 +11,13 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-09
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams, useLocation, useNavigate, useInRouterContext, MemoryRouter } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, CreditCard, TrendingUp, AlertCircle, Users, Layers,
@@ -26,7 +26,8 @@ import {
   ArrowRight, Calendar, Info, Clock, AlertTriangle, Settings, FileText,
   ChevronRight, ChevronDown, Coins, Bell, Percent, Award, Trash2,
   ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap, Sliders,
-  Edit3, Lock
+  Edit3, Lock, QrCode, Send, Smartphone, Share2, CheckCheck, BadgePercent,
+  Copy, ArrowUpRight, Check, Sparkles
 } from 'lucide-react'
 import { useEnvironmentStore } from '../store/environmentStore'
 import {
@@ -40,7 +41,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
 import Modal from '../components/Modal'
 import PaymentReceiptView from '../components/PaymentReceiptView'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
@@ -54,26 +55,35 @@ import type {
 } from '../types'
 import toast from 'react-hot-toast'
 
-type TabKey =
+export type TabKey =
   | 'overview'
+  | 'structures'
+  | 'invoicing'
+  | 'collection'
+  | 'defaulters'
+  | 'concessions'
+  | 'online-gateway'
+  | 'reports'
+  // Legacy aliases
   | 'register'
   | 'collect'
   | 'payments'
   | 'receipts'
   | 'plans'
-  | 'reports'
   | 'settings'
 
-const TABS: { id: TabKey; label: string; icon: React.ElementType }[] = [
-  { id: 'overview', label: 'Overview', icon: Home },
-  { id: 'register', label: 'Fee Register', icon: FileSpreadsheet },
-  { id: 'collect', label: 'Collect Fees', icon: CreditCard },
-  { id: 'payments', label: 'Payments', icon: CreditCard },
-  { id: 'receipts', label: 'Receipts', icon: Receipt },
-  { id: 'plans', label: 'Fee Plans', icon: Layers },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
+export const FEES_TABS: { id: TabKey; label: string; icon: React.ElementType; route: string }[] = [
+  { id: 'overview', label: 'Overview', icon: Home, route: '/fees/overview' },
+  { id: 'structures', label: 'Fee Structures', icon: Layers, route: '/fees/structures' },
+  { id: 'invoicing', label: 'Fee Invoicing', icon: FileSpreadsheet, route: '/fees/invoicing' },
+  { id: 'collection', label: 'Collection Desk', icon: CreditCard, route: '/fees/collection' },
+  { id: 'defaulters', label: 'Defaulters & Dues', icon: AlertCircle, route: '/fees/defaulters' },
+  { id: 'concessions', label: 'Concessions & Waivers', icon: Percent, route: '/fees/concessions' },
+  { id: 'online-gateway', label: 'Online Gateway', icon: Zap, route: '/fees/online-gateway' },
+  { id: 'reports', label: 'Financial Daybook', icon: BarChart3, route: '/fees/reports' },
 ]
+
+export const TABS = FEES_TABS
 
 export const fmt = (n: number | string | undefined | null) =>
   new Intl.NumberFormat('en-IN', {
@@ -152,7 +162,7 @@ export const numberToWordsINR = (num: number): string => {
   return res.replace(/\s+/g, ' ').trim()
 }
 
-export default function Fees() {
+function FeesContent() {
   const branding = useBranding()
   const editScope = 'finance:fees'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
@@ -164,21 +174,415 @@ export default function Fees() {
   const queryClient = useQueryClient()
   const { isTrainingMode } = useEnvironmentStore()
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // WORKSPACE 5: DEFAULTERS & DUES STATE
+  // ─────────────────────────────────────────────────────────────────────────────
+  const [defaulterAgingFilter, setDefaulterAgingFilter] = useState<'all' | '1-30' | '31-60' | '60+'>('all')
+  const [defaulterSearchQuery, setDefaulterSearchQuery] = useState('')
+  const [defaulterStandardFilter, setDefaulterStandardFilter] = useState<string>('')
+  const [isBulkReminderModalOpen, setIsBulkReminderModalOpen] = useState(false)
+  const [reminderTemplate, setReminderTemplate] = useState('Dear Guardian, this is a gentle fee reminder from Prashant Academy for pending dues. Please clear at your earliest convenience.')
+
+  const [defaultersList, setDefaultersList] = useState([
+    {
+      id: 1,
+      student_id: 101,
+      student_name: 'Aarav Sharma',
+      roll_number: '10-A-01',
+      admission_number: 'ADM-2025-0101',
+      standard: 'Standard 10',
+      division: 'Division A',
+      guardian_name: 'Rajesh Sharma',
+      guardian_phone: '+91 98230 11223',
+      total_fee: 75000,
+      paid_amount: 35000,
+      overdue_amount: 40000,
+      overdue_days: 68,
+      last_payment_date: '2026-08-15',
+    },
+    {
+      id: 2,
+      student_id: 102,
+      student_name: 'Diya Patel',
+      roll_number: '10-A-04',
+      admission_number: 'ADM-2025-0104',
+      standard: 'Standard 10',
+      division: 'Division A',
+      guardian_name: 'Ketan Patel',
+      guardian_phone: '+91 98221 44556',
+      total_fee: 75000,
+      paid_amount: 50000,
+      overdue_amount: 25000,
+      overdue_days: 42,
+      last_payment_date: '2026-09-10',
+    },
+    {
+      id: 3,
+      student_id: 103,
+      student_name: 'Rohan Gupta',
+      roll_number: '12-SCI-12',
+      admission_number: 'ADM-2025-0212',
+      standard: 'Standard 12 Science',
+      division: 'Division A',
+      guardian_name: 'Suresh Gupta',
+      guardian_phone: '+91 98233 77889',
+      total_fee: 95000,
+      paid_amount: 45000,
+      overdue_amount: 50000,
+      overdue_days: 75,
+      last_payment_date: '2026-08-01',
+    },
+    {
+      id: 4,
+      student_id: 104,
+      student_name: 'Ananya Deshmukh',
+      roll_number: '9-B-08',
+      admission_number: 'ADM-2025-0088',
+      standard: 'Standard 9',
+      division: 'Division B',
+      guardian_name: 'Anil Deshmukh',
+      guardian_phone: '+91 98244 11334',
+      total_fee: 65000,
+      paid_amount: 45000,
+      overdue_amount: 20000,
+      overdue_days: 22,
+      last_payment_date: '2026-10-05',
+    },
+    {
+      id: 5,
+      student_id: 105,
+      student_name: 'Kabir Verma',
+      roll_number: '11-SCI-05',
+      admission_number: 'ADM-2025-0305',
+      standard: 'Standard 11 Science',
+      division: 'Division B',
+      guardian_name: 'Vikas Verma',
+      guardian_phone: '+91 98255 66778',
+      total_fee: 90000,
+      paid_amount: 60000,
+      overdue_amount: 30000,
+      overdue_days: 18,
+      last_payment_date: '2026-10-12',
+    },
+    {
+      id: 6,
+      student_id: 106,
+      student_name: 'Meera Iyer',
+      roll_number: '12-COM-15',
+      admission_number: 'ADM-2025-0415',
+      standard: 'Standard 12 Commerce',
+      division: 'Division A',
+      guardian_name: 'Ramanathan Iyer',
+      guardian_phone: '+91 98266 88990',
+      total_fee: 80000,
+      paid_amount: 40000,
+      overdue_amount: 40000,
+      overdue_days: 52,
+      last_payment_date: '2026-09-02',
+    },
+  ])
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // WORKSPACE 6: CONCESSIONS & WAIVERS STATE
+  // ─────────────────────────────────────────────────────────────────────────────
+  const [concessionFilterType, setConcessionFilterType] = useState<string>('all')
+  const [concessionFilterStatus, setConcessionFilterStatus] = useState<string>('all')
+  const [concessionSearchQuery, setConcessionSearchQuery] = useState('')
+  const [isNewConcessionModalOpen, setIsNewConcessionModalOpen] = useState(false)
+  const [concessionForm, setConcessionForm] = useState({
+    student_name: '',
+    admission_number: '',
+    standard: 'Standard 10',
+    category: 'merit',
+    title: 'Merit Scholarship',
+    discount_percentage: 25,
+    concession_amount: 18750,
+    remarks: '',
+  })
+
+  const [concessionsList, setConcessionsList] = useState([
+    {
+      id: 1,
+      student_id: 201,
+      student_name: 'Ishaan Kulkarni',
+      roll_number: '10-A-15',
+      admission_number: 'ADM-2025-0115',
+      standard: 'Standard 10',
+      category: 'merit',
+      title: 'Merit Scholarship (Top 1% Entrance)',
+      discount_percentage: 50,
+      concession_amount: 37500,
+      academic_year: '2025-2026',
+      status: 'Approved',
+      approved_by: 'Director Academic Board',
+      approval_date: '2026-06-15',
+      remarks: 'Entrance Test Rank 2, sustained >90% aggregate',
+    },
+    {
+      id: 2,
+      student_id: 202,
+      student_name: 'Sanya Kulkarni',
+      roll_number: '8-B-09',
+      admission_number: 'ADM-2025-0089',
+      standard: 'Standard 8',
+      category: 'sibling',
+      title: 'Sibling Discount (Younger Ward)',
+      discount_percentage: 20,
+      concession_amount: 12000,
+      academic_year: '2025-2026',
+      status: 'Approved',
+      approved_by: 'Finance Committee',
+      approval_date: '2026-06-20',
+      remarks: 'Sibling of Ishaan Kulkarni (Standard 10)',
+    },
+    {
+      id: 3,
+      student_id: 203,
+      student_name: 'Varun Patil',
+      roll_number: '12-SCI-22',
+      admission_number: 'ADM-2025-0222',
+      standard: 'Standard 12 Science',
+      category: 'hardship',
+      title: 'Special Hardship Waiver',
+      discount_percentage: 35,
+      concession_amount: 33250,
+      academic_year: '2025-2026',
+      status: 'Pending',
+      approved_by: 'Under Review',
+      approval_date: '2026-11-02',
+      remarks: 'Medical emergency in family, application submitted with receipts',
+    },
+    {
+      id: 4,
+      student_id: 204,
+      student_name: 'Pooja Joshi',
+      roll_number: '11-SCI-11',
+      admission_number: 'ADM-2025-0311',
+      standard: 'Standard 11 Science',
+      category: 'staff_ward',
+      title: 'Faculty Ward Concession',
+      discount_percentage: 50,
+      concession_amount: 45000,
+      academic_year: '2025-2026',
+      status: 'Approved',
+      approved_by: 'Admin Office',
+      approval_date: '2026-07-01',
+      remarks: 'Ward of Senior Physics Faculty Prof. V. Joshi',
+    },
+  ])
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // WORKSPACE 7: ONLINE GATEWAY STATE
+  // ─────────────────────────────────────────────────────────────────────────────
+  const [onlineQrAmount, setOnlineQrAmount] = useState<number>(25000)
+  const [onlineQrStudentName, setOnlineQrStudentName] = useState<string>('Aarav Sharma')
+  const [onlineQrInvoiceNo, setOnlineQrInvoiceNo] = useState<string>('INV-2026-0104')
+  const [qrCopied, setQrCopied] = useState(false)
+  const [paymentLinkCopied, setPaymentLinkCopied] = useState(false)
+
+  const [onlineSettlements] = useState([
+    {
+      id: 1,
+      gateway_ref: 'pay_N9uW2kL80d7X',
+      order_id: 'order_N9uT1aQ79f',
+      student_name: 'Aarav Sharma',
+      admission_number: 'ADM-2025-0101',
+      payment_method: 'UPI',
+      gross_amount: 25000,
+      gateway_fee: 0,
+      net_payout: 25000,
+      settlement_status: 'Settled',
+      settlement_time: '2026-11-08 14:32 IST',
+      webhook_status: 'Delivered (200 OK)',
+    },
+    {
+      id: 2,
+      gateway_ref: 'pay_N9tL1qP55e2Y',
+      order_id: 'order_N9tK0bM44c',
+      student_name: 'Diya Patel',
+      admission_number: 'ADM-2025-0104',
+      payment_method: 'Netbanking',
+      gross_amount: 35000,
+      gateway_fee: 350,
+      net_payout: 34650,
+      settlement_status: 'Settled',
+      settlement_time: '2026-11-08 11:15 IST',
+      webhook_status: 'Delivered (200 OK)',
+    },
+    {
+      id: 3,
+      gateway_ref: 'pay_N9sA8wK33z1M',
+      order_id: 'order_N9sZ7vJ22p',
+      student_name: 'Rohan Gupta',
+      admission_number: 'ADM-2025-0212',
+      payment_method: 'Credit Card',
+      gross_amount: 45000,
+      gateway_fee: 810,
+      net_payout: 44190,
+      settlement_status: 'Processing',
+      settlement_time: '2026-11-09 09:40 IST',
+      webhook_status: 'Delivered (200 OK)',
+    },
+    {
+      id: 4,
+      gateway_ref: 'pay_N9rM4kH11x9T',
+      order_id: 'order_N9rL3jG00k',
+      student_name: 'Ananya Deshmukh',
+      admission_number: 'ADM-2025-0088',
+      payment_method: 'UPI',
+      gross_amount: 20000,
+      gateway_fee: 0,
+      net_payout: 20000,
+      settlement_status: 'Settled',
+      settlement_time: '2026-11-09 10:20 IST',
+      webhook_status: 'Delivered (200 OK)',
+    },
+  ])
+
+  // Handlers for Defaulters, Concessions & Online Gateway
+  const handleSendSingleReminder = (defaulter: typeof defaultersList[0]) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to send fee reminders.')
+      return
+    }
+    toast.success(`Fee reminder SMS & WhatsApp dispatched to ${defaulter.guardian_name} (${defaulter.guardian_phone}) for ${defaulter.student_name}.`)
+  }
+
+  const handleBulkReminderConfirm = () => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to dispatch bulk reminders.')
+      return
+    }
+    setIsBulkReminderModalOpen(false)
+    toast.success(`Bulk Fee Reminders successfully dispatched to ${filteredDefaulters.length} guardians via SMS & WhatsApp Gateway!`)
+  }
+
+  const handleCreateConcessionSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to apply concessions.')
+      return
+    }
+    if (!concessionForm.student_name.trim()) {
+      toast.error('Please enter student name.')
+      return
+    }
+    const newRecord = {
+      id: Date.now(),
+      student_id: 300 + concessionsList.length,
+      student_name: concessionForm.student_name,
+      roll_number: 'NEW-01',
+      admission_number: concessionForm.admission_number || `ADM-2025-0${300 + concessionsList.length}`,
+      standard: concessionForm.standard,
+      category: concessionForm.category as any,
+      title: concessionForm.title,
+      discount_percentage: Number(concessionForm.discount_percentage) || 0,
+      concession_amount: Number(concessionForm.concession_amount) || 0,
+      academic_year: '2025-2026',
+      status: 'Approved' as const,
+      approved_by: `${user?.first_name || 'Admin'} (Institute Authority)`,
+      approval_date: new Date().toISOString().split('T')[0],
+      remarks: concessionForm.remarks || 'Standard Fee Waiver Approved',
+    }
+    setConcessionsList([newRecord, ...concessionsList])
+    setIsNewConcessionModalOpen(false)
+    toast.success(`Concession granted: ${fmt(newRecord.concession_amount)} waiver applied for ${newRecord.student_name}.`)
+  }
+
+  const handleApproveConcession = (id: number) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to approve concessions.')
+      return
+    }
+    setConcessionsList(prev => prev.map(c => c.id === id ? { ...c, status: 'Approved', approved_by: `${user?.first_name || 'Admin'}` } : c))
+    toast.success('Concession application approved successfully!')
+  }
+
+  const handleRejectConcession = (id: number) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to reject concessions.')
+      return
+    }
+    setConcessionsList(prev => prev.map(c => c.id === id ? { ...c, status: 'Rejected' } : c))
+    toast.error('Concession application marked as rejected.')
+  }
+
+  const handleGenerateQr = () => {
+    toast.success(`Dynamic UPI BharatQR refreshed for ${onlineQrStudentName} (₹${onlineQrAmount.toLocaleString('en-IN')})`)
+  }
+
+  const handleCopyQrLink = () => {
+    const upiLink = `upi://pay?pa=prashantacademy@icici&pn=Prashant+Academy&am=${onlineQrAmount}&cu=INR&tn=Fee+Payment+${onlineQrInvoiceNo}`
+    navigator.clipboard.writeText(upiLink)
+    setQrCopied(true)
+    setTimeout(() => setQrCopied(false), 2000)
+    toast.success('UPI Intent URL copied to clipboard!')
+  }
+
+  const handleCopyPaymentLink = () => {
+    const link = `https://pay.prashantacademy.com/inv/${onlineQrInvoiceNo}`
+    navigator.clipboard.writeText(link)
+    setPaymentLinkCopied(true)
+    setTimeout(() => setPaymentLinkCopied(false), 2000)
+    toast.success('Payment portal link copied to clipboard!')
+  }
+
+  // Filtered defaulters
+  const filteredDefaulters = defaultersList.filter(d => {
+    if (defaulterStandardFilter && d.standard !== defaulterStandardFilter) return false
+    if (defaulterAgingFilter === '1-30' && (d.overdue_days < 1 || d.overdue_days > 30)) return false
+    if (defaulterAgingFilter === '31-60' && (d.overdue_days < 31 || d.overdue_days > 60)) return false
+    if (defaulterAgingFilter === '60+' && d.overdue_days <= 60) return false
+    if (defaulterSearchQuery) {
+      const q = defaulterSearchQuery.toLowerCase()
+      return (
+        d.student_name.toLowerCase().includes(q) ||
+        d.roll_number.toLowerCase().includes(q) ||
+        d.admission_number.toLowerCase().includes(q) ||
+        d.guardian_name.toLowerCase().includes(q) ||
+        d.guardian_phone.includes(q)
+      )
+    }
+    return true
+  })
+
+  // Filtered concessions
+  const filteredConcessions = concessionsList.filter(c => {
+    if (concessionFilterType !== 'all' && c.category !== concessionFilterType) return false
+    if (concessionFilterStatus !== 'all' && c.status.toLowerCase() !== concessionFilterStatus.toLowerCase()) return false
+    if (concessionSearchQuery) {
+      const q = concessionSearchQuery.toLowerCase()
+      return (
+        c.student_name.toLowerCase().includes(q) ||
+        c.admission_number.toLowerCase().includes(q) ||
+        c.title.toLowerCase().includes(q)
+      )
+    }
+    return true
+  })
+
+
   // Derive active tab from URL pathname or search params
   const getTabFromLocation = (): TabKey => {
     const path = location.pathname.toLowerCase()
-    if (path.endsWith('/fees/register') || path === '/fees/register') return 'register'
-    if (path.endsWith('/fees/collect') || path === '/fees/collect') return 'collect'
-    if (path.endsWith('/fees/payments') || path === '/fees/payments') return 'payments'
-    if (path.endsWith('/fees/receipts') || path === '/fees/receipts') return 'receipts'
-    if (path.endsWith('/fees/plans') || path === '/fees/plans') return 'plans'
-    if (path.endsWith('/fees/reports') || path === '/fees/reports') return 'reports'
-    if (path.endsWith('/fees/settings') || path === '/fees/settings') return 'settings'
-    if (path.endsWith('/fees/overview') || path === '/fees/overview') return 'overview'
+    if (path.includes('/fees/structures') || path.includes('/fees/plans')) return 'structures'
+    if (path.includes('/fees/invoicing') || path.includes('/fees/register')) return 'invoicing'
+    if (path.includes('/fees/collection') || path.includes('/fees/collect') || path.includes('/fees/payments') || path.includes('/fees/receipts')) return 'collection'
+    if (path.includes('/fees/defaulters')) return 'defaulters'
+    if (path.includes('/fees/concessions')) return 'concessions'
+    if (path.includes('/fees/online-gateway')) return 'online-gateway'
+    if (path.includes('/fees/reports')) return 'reports'
+    if (path.includes('/fees/settings')) return 'structures'
+    if (path.includes('/fees/overview')) return 'overview'
 
     const tabParam = searchParams.get('tab') as TabKey
-    if (tabParam && ['overview', 'register', 'collect', 'payments', 'receipts', 'plans', 'reports', 'settings'].includes(tabParam)) {
-      return tabParam
+    if (tabParam) {
+      if (tabParam === 'plans' || tabParam === 'settings') return 'structures'
+      if (tabParam === 'register') return 'invoicing'
+      if (tabParam === 'collect' || tabParam === 'payments' || tabParam === 'receipts') return 'collection'
+      if (['overview', 'structures', 'invoicing', 'collection', 'defaulters', 'concessions', 'online-gateway', 'reports'].includes(tabParam)) {
+        return tabParam
+      }
     }
     return 'overview'
   }
@@ -338,7 +742,7 @@ export default function Fees() {
           search: registerSearchText || appliedFilters.search || undefined,
         })
         .then((r) => r.data),
-    enabled: activeTab === 'register',
+    enabled: activeTab === 'register' || activeTab === 'invoicing',
   })
 
   const exportRegisterCsv = () => {
@@ -403,7 +807,7 @@ export default function Fees() {
           page_size: 15,
         })
         .then((r) => r.data.data),
-    enabled: activeTab === 'collect' && collectStudentSearch.length >= 1,
+    enabled: (activeTab === 'collect' || activeTab === 'collection') && collectStudentSearch.length >= 1,
   })
 
   // Selected student details
@@ -413,7 +817,7 @@ export default function Fees() {
       selectedCollectStudentId
         ? studentsApi.get(selectedCollectStudentId).then((r) => r.data)
         : null,
-    enabled: !!selectedCollectStudentId && activeTab === 'collect',
+    enabled: !!selectedCollectStudentId && (activeTab === 'collect' || activeTab === 'collection'),
   })
 
   // Selected student's active invoice
@@ -428,7 +832,7 @@ export default function Fees() {
             })
             .then((r) => r.data)
         : Promise.resolve([]),
-    enabled: !!selectedCollectStudentId && activeTab === 'collect',
+    enabled: !!selectedCollectStudentId && (activeTab === 'collect' || activeTab === 'collection'),
   })
 
   const activeInvoice = collectInvoices[0] as FeeInvoice | undefined
@@ -575,7 +979,7 @@ export default function Fees() {
           search: paymentSearch || undefined,
         })
         .then((r) => r.data),
-    enabled: activeTab === 'payments',
+    enabled: activeTab === 'payments' || activeTab === 'collection',
   })
 
   const reverseMutation = useMutation({
@@ -630,7 +1034,7 @@ export default function Fees() {
           search: receiptSearchText || undefined,
         })
         .then((r) => r.data),
-    enabled: activeTab === 'receipts',
+    enabled: activeTab === 'receipts' || activeTab === 'collection',
   })
 
   // Full detailed receipt query for modal
@@ -763,13 +1167,13 @@ export default function Fees() {
           academic_year_id: appliedFilters.academicYearId ?? undefined,
         })
         .then((r) => r.data),
-    enabled: activeTab === 'plans',
+    enabled: activeTab === 'plans' || activeTab === 'structures',
   })
 
   const { data: feeCategories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['fee-categories', selectedInstitutionId],
     queryFn: () => feeCategoriesApi.list(selectedInstitutionId ?? undefined).then((r) => r.data),
-    enabled: activeTab === 'plans',
+    enabled: activeTab === 'plans' || activeTab === 'structures',
   })
 
   // Create Fee Structure Form state
@@ -1469,12 +1873,69 @@ export default function Fees() {
     requiresEditMode?: boolean
   }> = {
     overview: {
-      title: 'Fees & Payments',
-      subtitle: 'Manage student fees, collections, payments, and receipts',
-      icon: Coins,
+      title: 'Fees & Payments Overview',
+      subtitle: 'Financial Operations, Fee Registers, Collections & Institute Audits',
+      icon: Home,
       actionLabel: 'Record Payment',
       actionIcon: CreditCard,
-      onAction: () => setTab('collect'),
+      onAction: () => setTab('collection'),
+      requiresEditMode: false,
+    },
+    structures: {
+      title: 'Fee Structures & Schedules',
+      subtitle: 'Standard-wise fee templates, component categories, installment schedules, and late fees',
+      icon: Layers,
+      actionLabel: 'Create Fee Plan',
+      actionIcon: Plus,
+      onAction: () => setIsNewStructureModalOpen(true),
+      requiresEditMode: true,
+    },
+    invoicing: {
+      title: 'Fee Invoicing & Register',
+      subtitle: 'Comprehensive student-wise fee ledger, installments, concessions, and balance tracking',
+      icon: FileSpreadsheet,
+      actionLabel: 'Collect Fee',
+      actionIcon: CreditCard,
+      onAction: () => setTab('collection'),
+      requiresEditMode: false,
+    },
+    collection: {
+      title: 'Fee Collection Desk & POS',
+      subtitle: 'Cash counter terminal, student lookup, instant payment recording, and duplicate receipts',
+      icon: CreditCard,
+      actionLabel: 'Reset Terminal',
+      actionIcon: RotateCcw,
+      onAction: () => {
+        setSelectedCollectStudentId(null)
+        setCollectStudentSearch('')
+      },
+      requiresEditMode: false,
+    },
+    defaulters: {
+      title: 'Fee Defaulters & Overdue Dues',
+      subtitle: 'Aging analysis (1–30, 31–60, 60+ days overdue), contact records, and multi-channel reminder dispatch',
+      icon: AlertCircle,
+      actionLabel: 'Dispatch Reminders',
+      actionIcon: Bell,
+      onAction: () => setIsBulkReminderModalOpen(true),
+      requiresEditMode: true,
+    },
+    concessions: {
+      title: 'Fee Concessions & Scholarship Waivers',
+      subtitle: 'Merit scholarships, sibling discounts, hardship waivers, and fee adjustment approval workflows',
+      icon: Percent,
+      actionLabel: 'Apply Concession',
+      actionIcon: Plus,
+      onAction: () => setIsNewConcessionModalOpen(true),
+      requiresEditMode: true,
+    },
+    'online-gateway': {
+      title: 'Online Payments & Gateway Desk',
+      subtitle: 'UPI BharatQR generation, payment links generator, Razorpay/Stripe webhooks, and instant settlement ledger',
+      icon: Zap,
+      actionLabel: 'Generate QR',
+      actionIcon: QrCode,
+      onAction: () => handleGenerateQr(),
       requiresEditMode: false,
     },
     register: {
@@ -1783,14 +2244,15 @@ export default function Fees() {
       </div>
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* 3. TABS NAVIGATION BAR                                                    */}
+      {/* 3. TABS NAVIGATION BAR (8 DEDICATED WORKSPACES)                           */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-1.5 shadow-xs flex items-center gap-1 overflow-x-auto custom-scrollbar">
-        {TABS.filter(tab => tab.id !== 'settings' || (hasPermission(user, 'fee_workflow:configure') || isUserAdmin(user))).map((tab) => {
-          const isActive = activeTab === tab.id
+        {FEES_TABS.map((tab) => {
+          const isActive = activeTab === tab.id || (tab.id === 'structures' && (activeTab === 'plans' || activeTab === 'settings')) || (tab.id === 'invoicing' && activeTab === 'register') || (tab.id === 'collection' && (activeTab === 'collect' || activeTab === 'payments' || activeTab === 'receipts'))
           return (
             <button
               key={tab.id}
+              data-testid={`tab-${tab.id}`}
               onClick={() => setTab(tab.id)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 isActive
@@ -2306,7 +2768,7 @@ export default function Fees() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* TAB 2: FEE REGISTER                                                        */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'register' && (
+      {(activeTab === 'invoicing' || activeTab === 'register') && (
         <div className="space-y-4">
           {/* Controls Bar */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -2439,7 +2901,7 @@ export default function Fees() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* TAB 3: COLLECT FEES (TERMINAL)                                             */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'collect' && (
+      {(activeTab === 'collection' || activeTab === 'collect') && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left Column: Student Lookup & Profile */}
           <div className="lg:col-span-5 space-y-4">
@@ -2888,7 +3350,7 @@ export default function Fees() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* TAB 6: FEE PLANS (STRUCTURES & CATEGORIES)                                 */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {activeTab === 'plans' && (
+      {(activeTab === 'structures' || activeTab === 'plans') && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -3153,6 +3615,702 @@ export default function Fees() {
       )}
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* WORKSPACE 5: DEFAULTERS & OVERDUE DUES                                     */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === 'defaulters' && (
+        <div className="space-y-5" data-testid="workspace-defaulters">
+          {/* Defaulter Aging Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Mild (1–30 Days)</span>
+                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                  <Clock className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(50000)}</div>
+              <p className="text-[11px] text-amber-700 font-semibold mt-1">2 Students in grace window</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Moderate (31–60 Days)</span>
+                <div className="w-8 h-8 rounded-xl bg-orange-50 border border-orange-200/60 flex items-center justify-center text-orange-600">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(65000)}</div>
+              <p className="text-[11px] text-orange-700 font-semibold mt-1">2 Students reminder escalated</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Critical (60+ Days)</span>
+                <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200/60 flex items-center justify-center text-rose-600">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(90000)}</div>
+              <p className="text-[11px] text-rose-700 font-semibold mt-1">2 Students urgent recovery</p>
+            </div>
+
+            <div className="bg-gradient-to-tr from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Total Defaulter Dues</span>
+                <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                  <Coins className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-white">{fmt(205000)}</div>
+              <p className="text-[11px] text-emerald-400 font-medium mt-1">6 Active Defaulters Filtered</p>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={defaulterSearchQuery}
+                  onChange={(e) => setDefaulterSearchQuery(e.target.value)}
+                  placeholder="Search defaulter by student name, roll # or guardian phone..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              {/* Aging bracket buttons */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                {(['all', '1-30', '31-60', '60+'] as const).map((bracket) => (
+                  <button
+                    key={bracket}
+                    type="button"
+                    onClick={() => setDefaulterAgingFilter(bracket)}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
+                      defaulterAgingFilter === bracket
+                        ? 'bg-white text-slate-900 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {bracket === 'all' ? 'All Aging' : `${bracket} d`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isEditMode) {
+                    toast.error('Locked in View Mode: Please activate Edit Mode above to dispatch bulk fee reminders.')
+                    return
+                  }
+                  setIsBulkReminderModalOpen(true)
+                }}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all ${
+                  isEditMode
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white active:scale-95'
+                    : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                }`}
+                title={isEditMode ? 'Dispatch fee reminders to all filtered guardians' : 'Locked in View Mode: Enable Edit Mode to dispatch reminders'}
+              >
+                {!isEditMode && <Lock className="w-3.5 h-3.5 text-slate-400" />}
+                <Bell className="w-3.5 h-3.5" />
+                <span>Dispatch Bulk Reminders ({filteredDefaulters.length})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Defaulters Table */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3 px-4">Student & Roll No</th>
+                    <th className="py-3 px-4">Class & Division</th>
+                    <th className="py-3 px-4">Guardian Contact</th>
+                    <th className="py-3 px-4 text-right">Total Fee</th>
+                    <th className="py-3 px-4 text-right">Paid Amount</th>
+                    <th className="py-3 px-4 text-right">Overdue Balance</th>
+                    <th className="py-3 px-4 text-center">Aging Days</th>
+                    <th className="py-3 px-4 text-center">Status Risk</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredDefaulters.map((d) => {
+                    const isCritical = d.overdue_days > 60
+                    const isModerate = d.overdue_days > 30 && d.overdue_days <= 60
+                    return (
+                      <tr key={d.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900">{d.student_name}</div>
+                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">{d.admission_number} | Roll: {d.roll_number}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-slate-800">{d.standard}</div>
+                          <div className="text-[10px] text-slate-500">{d.division}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-slate-800">{d.guardian_name}</div>
+                          <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                            <Smartphone className="w-3 h-3 text-slate-400" />
+                            <span>{d.guardian_phone}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-medium text-slate-700">{fmt(d.total_fee)}</td>
+                        <td className="py-3 px-4 text-right font-mono font-medium text-emerald-600">{fmt(d.paid_amount)}</td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-rose-600">{fmt(d.overdue_amount)}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="font-mono font-bold text-slate-800">{d.overdue_days} d</span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            isCritical
+                              ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                              : isModerate
+                              ? 'bg-orange-100 text-orange-800 border border-orange-200'
+                              : 'bg-amber-100 text-amber-800 border border-amber-200'
+                          }`}>
+                            {isCritical ? 'Critical (60+ d)' : isModerate ? 'Moderate (31-60 d)' : 'Mild (1-30 d)'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleSendSingleReminder(d)}
+                              className={`p-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                isEditMode
+                                  ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              }`}
+                              title={isEditMode ? 'Send Fee Reminder SMS/WhatsApp' : 'Locked in View Mode'}
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCollectStudentId(d.student_id)
+                                setCollectStudentSearch(d.student_name)
+                                setTab('collection', { studentId: String(d.student_id) })
+                              }}
+                              className="px-2.5 py-1 bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg text-xs font-bold transition-all"
+                            >
+                              Collect
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {filteredDefaulters.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
+                        No fee defaulters match current search and aging criteria.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* WORKSPACE 6: CONCESSIONS & SCHOLARSHIP WAIVERS                             */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === 'concessions' && (
+        <div className="space-y-5" data-testid="workspace-concessions">
+          {/* Concession KPI Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Concessions</span>
+                <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-600">
+                  <BadgePercent className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(127750)}</div>
+              <p className="text-[11px] text-purple-700 font-semibold mt-1">4 Enrolled Wards Covered</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Merit Scholarships</span>
+                <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600">
+                  <Award className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-slate-900">1 Student</div>
+              <p className="text-[11px] text-blue-700 font-semibold mt-1">{fmt(37500)} merit waiver</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sibling Discounts</span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                  <Users className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-slate-900">1 Student</div>
+              <p className="text-[11px] text-emerald-700 font-semibold mt-1">20% sibling policy rate</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Review</span>
+                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                  <Clock className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-slate-900">1 Application</div>
+              <p className="text-[11px] text-amber-700 font-semibold mt-1">Awaiting committee approval</p>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={concessionSearchQuery}
+                  onChange={(e) => setConcessionSearchQuery(e.target.value)}
+                  placeholder="Search concessions by student name, admission #, title..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <select
+                value={concessionFilterType}
+                onChange={(e) => setConcessionFilterType(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="all">All Concession Types</option>
+                <option value="merit">Merit Scholarship</option>
+                <option value="sibling">Sibling Discount</option>
+                <option value="staff_ward">Faculty / Staff Ward</option>
+                <option value="hardship">Special Hardship Waiver</option>
+              </select>
+
+              <select
+                value={concessionFilterStatus}
+                onChange={(e) => setConcessionFilterStatus(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="all">All Approval Statuses</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isEditMode) {
+                    toast.error('Locked in View Mode: Please activate Edit Mode above to grant new concessions.')
+                    return
+                  }
+                  setIsNewConcessionModalOpen(true)
+                }}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all ${
+                  isEditMode
+                    ? 'bg-primary-600 hover:bg-primary-700 text-white active:scale-95'
+                    : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                }`}
+                title={isEditMode ? 'Grant new concession or scholarship waiver' : 'Locked in View Mode: Enable Edit Mode to apply concession'}
+              >
+                {!isEditMode && <Lock className="w-3.5 h-3.5 text-slate-400" />}
+                <Plus className="w-3.5 h-3.5" />
+                <span>Apply Concession</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Concessions Table */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3 px-4">Student & Admission</th>
+                    <th className="py-3 px-4">Class</th>
+                    <th className="py-3 px-4">Scheme / Title</th>
+                    <th className="py-3 px-4">Category</th>
+                    <th className="py-3 px-4 text-center">Discount %</th>
+                    <th className="py-3 px-4 text-right">Amount Waived</th>
+                    <th className="py-3 px-4">Approved By</th>
+                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredConcessions.map((c) => (
+                    <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900">{c.student_name}</div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">{c.admission_number}</div>
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-slate-800">{c.standard}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900">{c.title}</div>
+                        {c.remarks && <div className="text-[10px] text-slate-500 italic mt-0.5">{c.remarks}</div>}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="capitalize font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[10px]">
+                          {c.category.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center font-mono font-bold text-slate-800">
+                        {c.discount_percentage ? `${c.discount_percentage}%` : '-'}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-purple-700">{fmt(c.concession_amount)}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-slate-800">{c.approved_by}</div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">{c.approval_date}</div>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          c.status === 'Approved'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : c.status === 'Pending'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : 'bg-rose-100 text-rose-800 border border-rose-200'
+                        }`}>
+                          {c.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {c.status === 'Pending' ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleApproveConcession(c.id)}
+                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                                isEditMode
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              }`}
+                              title={isEditMode ? 'Approve Waiver' : 'Locked in View Mode'}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectConcession(c.id)}
+                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                                isEditMode
+                                  ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
+                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              }`}
+                              title={isEditMode ? 'Reject Waiver' : 'Locked in View Mode'}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-semibold">Processed</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredConcessions.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
+                        No concession records match current criteria.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* WORKSPACE 7: ONLINE PAYMENTS & INSTANT GATEWAY DESK                        */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === 'online-gateway' && (
+        <div className="space-y-5" data-testid="workspace-online-gateway">
+          {/* Gateway Integration Status Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">UPI BharatQR</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  ONLINE
+                </span>
+              </div>
+              <div className="text-sm font-bold text-slate-900 font-mono">prashantacademy@icici</div>
+              <p className="text-[11px] text-slate-500 font-medium mt-1">NPCI Dynamic Merchant Terminal</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Razorpay Gateway</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                  LIVE
+                </span>
+              </div>
+              <div className="text-sm font-bold text-slate-900 font-mono">rzp_live_9a7xK2...</div>
+              <p className="text-[11px] text-blue-700 font-medium mt-1">Webhook: 200 OK (0 retries)</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Stripe International</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                  CONFIGURED
+                </span>
+              </div>
+              <div className="text-sm font-bold text-slate-900 font-mono">pk_live_51P8...</div>
+              <p className="text-[11px] text-slate-500 font-medium mt-1">NRI / Expat Tuition Collection</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Daily Settlement</span>
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center text-indigo-600">
+                  <CheckCheck className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-sm font-extrabold text-slate-900">Today 23:59 IST</div>
+              <p className="text-[11px] text-emerald-700 font-semibold mt-1">Auto-payout to HDFC Escrow</p>
+            </div>
+          </div>
+
+          {/* Interactive Tools: Dynamic QR Generator & Payment Link Sharing */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Dynamic UPI QR Code Generator Terminal */}
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <QrCode className="w-4 h-4 text-primary-600" />
+                  <h3 className="text-sm font-extrabold text-slate-900">Dynamic BharatQR Generator</h3>
+                </div>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Zero Merchant Surcharge
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Student Account / Name</label>
+                  <input
+                    type="text"
+                    value={onlineQrStudentName}
+                    onChange={(e) => setOnlineQrStudentName(e.target.value)}
+                    placeholder="Enter student name..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Invoice Reference</label>
+                    <input
+                      type="text"
+                      value={onlineQrInvoiceNo}
+                      onChange={(e) => setOnlineQrInvoiceNo(e.target.value)}
+                      placeholder="INV-2026-0001"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Collection Amount (INR)</label>
+                    <input
+                      type="number"
+                      value={onlineQrAmount}
+                      onChange={(e) => setOnlineQrAmount(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                    />
+                  </div>
+                </div>
+
+                {/* Styled Visual QR Code Display Card */}
+                <div className="p-4 bg-gradient-to-b from-slate-50 to-slate-100/70 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Scan with any UPI App</div>
+                  
+                  {/* High contrast QR code mock SVG */}
+                  <div className="p-3 bg-white rounded-2xl border-2 border-slate-900/80 shadow-md">
+                    <svg viewBox="0 0 100 100" className="w-40 h-40">
+                      {/* Standard QR Corner Markers */}
+                      <rect x="5" y="5" width="28" height="28" rx="4" fill="#0f172a" />
+                      <rect x="9" y="9" width="20" height="20" rx="2" fill="#ffffff" />
+                      <rect x="13" y="13" width="12" height="12" rx="1" fill="#0f172a" />
+
+                      <rect x="67" y="5" width="28" height="28" rx="4" fill="#0f172a" />
+                      <rect x="71" y="9" width="20" height="20" rx="2" fill="#ffffff" />
+                      <rect x="75" y="13" width="12" height="12" rx="1" fill="#0f172a" />
+
+                      <rect x="5" y="67" width="28" height="28" rx="4" fill="#0f172a" />
+                      <rect x="9" y="71" width="20" height="20" rx="2" fill="#ffffff" />
+                      <rect x="13" y="75" width="12" height="12" rx="1" fill="#0f172a" />
+
+                      {/* Random Grid Matrix Elements for Authentic QR Look */}
+                      <rect x="38" y="10" width="8" height="8" fill="#0f172a" />
+                      <rect x="50" y="10" width="8" height="8" fill="#0f172a" />
+                      <rect x="38" y="22" width="16" height="6" fill="#0f172a" />
+                      <rect x="10" y="40" width="8" height="16" fill="#0f172a" />
+                      <rect x="22" y="44" width="12" height="8" fill="#0f172a" />
+                      <rect x="42" y="38" width="16" height="16" rx="3" fill="#2563eb" />
+                      <circle cx="50" cy="46" r="4" fill="#ffffff" />
+                      <rect x="66" y="40" width="12" height="8" fill="#0f172a" />
+                      <rect x="82" y="44" width="8" height="14" fill="#0f172a" />
+                      <rect x="38" y="66" width="12" height="12" fill="#0f172a" />
+                      <rect x="54" y="66" width="8" height="8" fill="#0f172a" />
+                      <rect x="68" y="72" width="18" height="10" fill="#0f172a" />
+                      <rect x="40" y="82" width="20" height="8" fill="#0f172a" />
+                    </svg>
+                  </div>
+
+                  <div className="font-mono text-sm font-extrabold text-slate-900 tracking-tight">
+                    {fmt(onlineQrAmount)}
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">
+                    pa: prashantacademy@icici | Ref: {onlineQrInvoiceNo}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 w-full">
+                    <button
+                      type="button"
+                      onClick={handleCopyQrLink}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all"
+                    >
+                      {qrCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{qrCopied ? 'Copied' : 'Copy UPI Link'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toast.success('Sending UPI QR to connected thermal receipt printer...')}
+                      className="px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all"
+                      title="Print Standee Slip"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Online Payment Link Dispatcher & Gateway Webhooks Status */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-emerald-600" />
+                    <h3 className="text-sm font-extrabold text-slate-900">Instant Online Payment Portal Link</h3>
+                  </div>
+                  <span className="text-xs font-bold text-slate-500">Parent Self-Service</span>
+                </div>
+
+                <p className="text-xs text-slate-600">
+                  Parents can pay tuition fees through Credit Card, Debit Card, Netbanking, or EMI directly via this secure link.
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`https://pay.prashantacademy.com/inv/${onlineQrInvoiceNo}`}
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-800 select-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyPaymentLink}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
+                  >
+                    {paymentLinkCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{paymentLinkCopied ? 'Copied' : 'Copy Link'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isEditMode) {
+                        toast.error('Locked in View Mode: Please activate Edit Mode to send payment links.')
+                        return
+                      }
+                      toast.success(`Payment link dispatched via WhatsApp & SMS to guardian of ${onlineQrStudentName}!`)
+                    }}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all ${
+                      isEditMode
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                    }`}
+                    title={isEditMode ? 'Send to Guardian via WhatsApp' : 'Locked in View Mode'}
+                  >
+                    {!isEditMode && <Lock className="w-3.5 h-3.5 text-slate-400" />}
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Online Settlement Ledger */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                    Recent Gateway Settlements & Webhook Receipts
+                  </h4>
+                  <span className="text-[11px] text-slate-400 font-medium">Reconciled Daily</span>
+                </div>
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th className="py-2.5 px-3">Gateway Ref</th>
+                        <th className="py-2.5 px-3">Student Name</th>
+                        <th className="py-2.5 px-3">Method</th>
+                        <th className="py-2.5 px-3 text-right">Gross (INR)</th>
+                        <th className="py-2.5 px-3 text-right">Fee / GST</th>
+                        <th className="py-2.5 px-3 text-right">Net Payout</th>
+                        <th className="py-2.5 px-3 text-center">Settlement</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {onlineSettlements.map((s) => (
+                        <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-2.5 px-3">
+                            <div className="font-mono font-bold text-primary-600">{s.gateway_ref}</div>
+                            <div className="text-[10px] text-slate-400 font-mono">{s.order_id}</div>
+                          </td>
+                          <td className="py-2.5 px-3 font-semibold text-slate-800">{s.student_name}</td>
+                          <td className="py-2.5 px-3 font-medium text-slate-700">{s.payment_method}</td>
+                          <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">{fmt(s.gross_amount)}</td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-500">{fmt(s.gateway_fee)}</td>
+                          <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">{fmt(s.net_payout)}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              s.settlement_status === 'Settled'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {s.settlement_status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* TAB 8: SETTINGS                                                            */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'settings' && (
@@ -3233,6 +4391,160 @@ export default function Fees() {
             </button>
           </form>
         </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL: BULK FEE REMINDERS DISPATCH                                         */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {isBulkReminderModalOpen && (
+        <Modal
+          isOpen={isBulkReminderModalOpen}
+          onClose={() => setIsBulkReminderModalOpen(false)}
+          title="Dispatch Bulk Fee Reminders"
+          size="md"
+        >
+          <div className="space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+              <span className="font-bold">Target Audience:</span> You are about to dispatch fee reminders to <strong>{filteredDefaulters.length} guardians</strong> with active overdue dues.
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Reminder Notification Message</label>
+              <textarea
+                value={reminderTemplate}
+                onChange={(e) => setReminderTemplate(e.target.value)}
+                rows={3}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsBulkReminderModalOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkReminderConfirm}
+                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Confirm & Dispatch to {filteredDefaulters.length} Guardians</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL: APPLY NEW CONCESSION / WAIVER                                       */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {isNewConcessionModalOpen && (
+        <Modal
+          isOpen={isNewConcessionModalOpen}
+          onClose={() => setIsNewConcessionModalOpen(false)}
+          title="Apply Fee Concession or Scholarship"
+          size="md"
+        >
+          <form onSubmit={handleCreateConcessionSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name</label>
+              <input
+                type="text"
+                required
+                value={concessionForm.student_name}
+                onChange={(e) => setConcessionForm({ ...concessionForm, student_name: e.target.value })}
+                placeholder="e.g. Rahul Patil"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Admission Number</label>
+                <input
+                  type="text"
+                  value={concessionForm.admission_number}
+                  onChange={(e) => setConcessionForm({ ...concessionForm, admission_number: e.target.value })}
+                  placeholder="ADM-2025-0245"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Standard / Class</label>
+                <select
+                  value={concessionForm.standard}
+                  onChange={(e) => setConcessionForm({ ...concessionForm, standard: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800"
+                >
+                  <option value="Standard 8">Standard 8</option>
+                  <option value="Standard 9">Standard 9</option>
+                  <option value="Standard 10">Standard 10</option>
+                  <option value="Standard 11 Science">Standard 11 Science</option>
+                  <option value="Standard 12 Science">Standard 12 Science</option>
+                  <option value="Standard 12 Commerce">Standard 12 Commerce</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Concession Category</label>
+                <select
+                  value={concessionForm.category}
+                  onChange={(e) => setConcessionForm({ ...concessionForm, category: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800"
+                >
+                  <option value="merit">Merit Scholarship</option>
+                  <option value="sibling">Sibling Discount</option>
+                  <option value="staff_ward">Faculty / Staff Ward</option>
+                  <option value="hardship">Special Hardship Waiver</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Waived Amount (INR)</label>
+                <input
+                  type="number"
+                  required
+                  value={concessionForm.concession_amount}
+                  onChange={(e) => setConcessionForm({ ...concessionForm, concession_amount: Number(e.target.value) })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Justification / Committee Resolution</label>
+              <textarea
+                value={concessionForm.remarks}
+                onChange={(e) => setConcessionForm({ ...concessionForm, remarks: e.target.value })}
+                rows={2}
+                placeholder="Reference board approval number or merit rank..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsNewConcessionModalOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Grant Fee Concession</span>
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
@@ -3818,4 +5130,16 @@ export default function Fees() {
       )}
     </div>
   )
+}
+
+export default function Fees() {
+  const inRouter = useInRouterContext()
+  if (!inRouter) {
+    return (
+      <MemoryRouter initialEntries={['/fees/overview']}>
+        <FeesContent />
+      </MemoryRouter>
+    )
+  }
+  return <FeesContent />
 }
