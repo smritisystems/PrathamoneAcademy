@@ -235,32 +235,28 @@ class ReceiptPdfService:
         cleaned_st_name = clean_display_name(str(receipt_data.get("student_name") or "—"))
         page.insert_text(fitz.Point(86, 118), cleaned_st_name[:32], fontname="hebo", fontsize=7.8, color=cls.C_DARK)
 
-        # Admission No & Roll No
+        # Admission No
         page.insert_text(fitz.Point(26, 129), "Admission No:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
         adm_no = str(receipt_data.get("admission_number") or "—")
-        roll_no = str(receipt_data.get("roll_number") or "").strip()
-        adm_str = f"{adm_no}  (Roll No: {roll_no})" if roll_no and roll_no != "—" else adm_no
-        page.insert_text(fitz.Point(86, 129), adm_str[:36], fontname="hebo", fontsize=7.0, color=cls.C_DARK)
+        page.insert_text(fitz.Point(86, 129), adm_no[:32], fontname="hebo", fontsize=7.2, color=cls.C_DARK)
+
+        # Roll Number
+        page.insert_text(fitz.Point(26, 140), "Roll Number:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        roll_no = str(receipt_data.get("roll_number") or "—").strip()
+        page.insert_text(fitz.Point(86, 140), roll_no[:24], fontname="hebo", fontsize=7.2, color=cls.C_DARK)
 
         # Class / Standard & Batch
-        page.insert_text(fitz.Point(26, 140), "Class / Batch:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(26, 151), "Class / Batch:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
         std_name = str(receipt_data.get("standard") or "—")
         batch_name = str(receipt_data.get("division") or receipt_data.get("batch") or "—")
         std_div = f"{std_name} · {batch_name}"
-        page.insert_text(fitz.Point(86, 140), std_div[:34], fontname="helv", fontsize=7.0, color=cls.C_DARK)
+        page.insert_text(fitz.Point(86, 151), std_div[:34], fontname="helv", fontsize=7.0, color=cls.C_DARK)
 
         # Board & Academic Year
-        page.insert_text(fitz.Point(26, 151), "Board & Year:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
+        page.insert_text(fitz.Point(26, 162), "Board & Year:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
         board_val = str(receipt_data.get("board") or "ICSE")
         ay_val = str(receipt_data.get("academic_year") or "2026 – 2027")
-        page.insert_text(fitz.Point(86, 151), f"{board_val} · AY {ay_val}"[:34], fontname="helv", fontsize=7.0, color=cls.C_DARK)
-
-        # Parent / Guardian & Phone
-        page.insert_text(fitz.Point(26, 162), "Guardian / Ph:", fontname="helv", fontsize=7.0, color=cls.C_SLATE)
-        guard_val = clean_display_name(str(receipt_data.get("guardian_name") or ""))
-        phone_val = str(receipt_data.get("guardian_phone") or receipt_data.get("student_phone") or "").strip()
-        guard_str = f"{guard_val} · {phone_val}" if guard_val and phone_val and guard_val != "—" else (guard_val or phone_val or "—")
-        page.insert_text(fitz.Point(86, 162), guard_str[:34], fontname="helv", fontsize=6.8, color=cls.C_DARK)
+        page.insert_text(fitz.Point(86, 162), f"{board_val} · AY {ay_val}"[:34], fontname="helv", fontsize=7.0, color=cls.C_DARK)
 
         # Right Column: Receipt Details
         page.insert_text(fitz.Point(216, 107), "TRANSACTION METADATA", fontname="hebo", fontsize=6.8, color=cls.C_ROYAL)
