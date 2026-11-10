@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description Enterprise Release & Change Management service governing change tracking, automated release notes, semantic versioning, validation, and production approval lifecycles.
 #  */
@@ -229,10 +229,31 @@ def format_markdown_release_notes(
 
 
 class ReleaseService:
-    @staticmethod
-    def get_git_commits(since_commit: Optional[str] = None, max_count: int = 40) -> List[Dict[str, Any]]:
+    @classmethod
+    def get_manifest_data(cls) -> Optional[Dict[str, Any]]:
+        """
+        Loads the release manifest containing git revision history and metadata.
+        """
+        candidates = [
+            os.path.join(os.path.dirname(__file__), "..", "release_manifest.json"),
+            "/app/app/release_manifest.json",
+            "/app/release_manifest.json",
+            os.path.join(os.getcwd(), "backend", "app", "release_manifest.json"),
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                try:
+                    with open(c, "r", encoding="utf-8") as fp:
+                        return json.load(fp)
+                except Exception:
+                    continue
+        return None
+
+    @classmethod
+    def get_git_commits(cls, since_commit: Optional[str] = None, max_count: int = 40) -> List[Dict[str, Any]]:
         """
         Extracts recent git commits and changed files if git repository is accessible.
+        Falls back to release_manifest.json when running inside containerized runtimes.
         """
         commits: List[Dict[str, Any]] = []
         try:
@@ -258,20 +279,47 @@ class ReleaseService:
                         "is_breaking": is_breaking,
                     })
         except Exception:
-            # Fallback if git binary or repo not mounted
-            pass
+            commits = []
+
+        if not commits:
+            manifest = cls.get_manifest_data()
+            if manifest and "all_commits" in manifest:
+                all_c = manifest["all_commits"]  # newest first
+                if since_commit:
+                    clean_since = since_commit.strip().lower()
+                    unreleased = []
+                    found_since = False
+                    for c in all_c:
+                        c_hash = c.get("hash", "").lower()
+                        c_short = c.get("short_hash", "").lower()
+                        if c_hash.startswith(clean_since) or clean_since.startswith(c_short) or clean_since.startswith(c_hash):
+                            found_since = True
+                            break
+                        unreleased.append(c)
+                    if found_since:
+                        commits = unreleased
+                    else:
+                        commits = unreleased
+                else:
+                    commits = all_c[:max_count]
 
         return commits
 
-    @staticmethod
-    def get_git_changed_files(since_commit: Optional[str] = None) -> List[str]:
+    @classmethod
+    def get_git_changed_files(cls, since_commit: Optional[str] = None) -> List[str]:
         try:
             cmd = ["git", "diff", "--name-only", f"{since_commit}..HEAD" if since_commit else "HEAD~10..HEAD"]
             output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=5).decode("utf-8", errors="ignore")
             files = [line.strip() for line in output.strip().split("\n") if line.strip()]
-            return files
+            if files:
+                return files
         except Exception:
-            return []
+            pass
+
+        manifest = cls.get_manifest_data()
+        if manifest and "changed_files" in manifest:
+            return manifest["changed_files"]
+        return []
 
     @staticmethod
     def get_alembic_migrations() -> List[str]:
@@ -279,7 +327,6 @@ class ReleaseService:
         Detects available Alembic migration revisions from disk.
         """
         migrations = []
-        # check both relative to project and backend
         candidates = [
             os.path.join(os.getcwd(), "backend", "alembic", "versions"),
             os.path.join(os.getcwd(), "alembic", "versions"),
@@ -297,6 +344,7 @@ class ReleaseService:
     async def get_current_release(cls, db: AsyncSession) -> Dict[str, Any]:
         """
         Returns the current authoritative published release, or system baseline.
+        Auto-synchronizes active release with settings.VERSION / manifest if DB is behind.
         """
         stmt = (
             select(SystemRelease)
@@ -306,6 +354,73 @@ class ReleaseService:
         )
         res = await db.execute(stmt)
         active = res.scalar_one_or_none()
+
+        manifest = cls.get_manifest_data()
+        authoritative_version = (manifest and manifest.get("version")) or settings.VERSION
+        authoritative_build = (manifest and manifest.get("build_number")) or getattr(settings, "BUILD_NUMBER", "")
+
+        # Check if database release is missing or outdated compared to deployed code
+        needs_auto_sync = False
+        if not active:
+            needs_auto_sync = True
+        else:
+            try:
+                active_v = parse_semver(active.version)
+                auth_v = parse_semver(authoritative_version)
+                if active_v < auth_v:
+                    needs_auto_sync = True
+            except Exception:
+                if active.version != authoritative_version:
+                    needs_auto_sync = True
+
+        if needs_auto_sync:
+            now = datetime.now(timezone.utc)
+            existing_auth = (await db.execute(
+                select(SystemRelease).where(SystemRelease.version == authoritative_version)
+            )).scalar_one_or_none()
+
+            md_notes = (manifest and manifest.get("markdown_notes")) or f"# Release Notes — PrathamOne EduOS v{authoritative_version}\n\nAutomated baseline deployment."
+            struct_notes = json.dumps((manifest and manifest.get("structured_notes")) or {"added": [f"Feature release v{authoritative_version}"]})
+            summary_json = json.dumps({
+                "version": authoritative_version,
+                "total_commits": (manifest and manifest.get("revision_count", 0)),
+                "build_number": authoritative_build,
+            })
+
+            if existing_auth:
+                existing_auth.status = "published"
+                existing_auth.build_number = authoritative_build or existing_auth.build_number
+                existing_auth.published_at = now
+                existing_auth.git_commit_end = (manifest and manifest.get("latest_hash")) or existing_auth.git_commit_end
+                if not existing_auth.release_notes_markdown:
+                    existing_auth.release_notes_markdown = md_notes
+                active = existing_auth
+            else:
+                new_rel = SystemRelease(
+                    version=authoritative_version,
+                    build_number=authoritative_build,
+                    title=f"Release v{authoritative_version} — Academic & Financial Governance Baseline",
+                    status="published",
+                    environment="production",
+                    git_branch="master",
+                    git_commit_end=(manifest and manifest.get("latest_hash")),
+                    git_tag=f"v{authoritative_version}",
+                    release_notes_markdown=md_notes,
+                    release_notes_structured=struct_notes,
+                    change_summary=summary_json,
+                    validation_status="passed",
+                    created_by_id=1,
+                    approved_by_id=1,
+                    published_by_id=1,
+                    approved_at=now,
+                    published_at=now,
+                )
+                db.add(new_rel)
+                active = new_rel
+
+            await db.commit()
+            await db.refresh(active)
+
         if active:
             return {
                 "id": active.id,
@@ -341,16 +456,10 @@ class ReleaseService:
         """
         Calculates unreleased commits, modified files, migrations, and recommended version bump.
         """
-        # Find last published release
-        stmt = (
-            select(SystemRelease)
-            .where(SystemRelease.status == "published")
-            .order_by(desc(SystemRelease.published_at), desc(SystemRelease.id))
-            .limit(1)
-        )
-        last_rel = (await db.execute(stmt)).scalar_one_or_none()
-        last_commit = last_rel.git_commit_end if last_rel else None
-        curr_version = last_rel.version if last_rel else settings.VERSION
+        # Ensure active release is synchronized with deployed system
+        current_rel = await cls.get_current_release(db)
+        curr_version = current_rel["version"]
+        last_commit = current_rel.get("git_commit")
 
         commits = cls.get_git_commits(since_commit=last_commit)
         changed_files = cls.get_git_changed_files(since_commit=last_commit)

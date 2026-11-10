@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-10
 #  *
 #  * @description Automated versioning engine dynamically calculating semantic versions, revision counts, and build metadata across frontend and backend.
 #  */
@@ -41,6 +41,34 @@ EDITION = "Coaching Institute Edition"
 
 SEMVER_REGEX = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9.]+))?$")
 
+# Conventional commit categories mapping
+CONVENTIONAL_CATEGORIES = {
+    "feat": "added",
+    "feature": "added",
+    "add": "added",
+    "fix": "fixed",
+    "bugfix": "fixed",
+    "security": "security",
+    "sec": "security",
+    "vuln": "security",
+    "refactor": "changed",
+    "perf": "changed",
+    "style": "changed",
+    "chore": "changed",
+    "build": "changed",
+    "ci": "changed",
+    "docs": "changed",
+    "doc": "changed",
+    "migration": "database",
+    "db": "database",
+    "schema": "database",
+    "deprecate": "deprecated",
+    "deprecated": "deprecated",
+    "remove": "deprecated",
+    "revert": "fixed",
+    "test": "changed",
+}
+
 
 def parse_semver(version_str: str) -> Tuple[int, int, int, Optional[str]]:
     clean = version_str.lstrip("v").strip()
@@ -50,35 +78,158 @@ def parse_semver(version_str: str) -> Tuple[int, int, int, Optional[str]]:
     return int(m.group(1)), int(m.group(2)), int(m.group(3)), m.group(4)
 
 
+def categorize_commit_message(msg: str) -> Tuple[str, str, bool]:
+    is_breaking = "BREAKING CHANGE" in msg or "!:" in msg
+    clean = msg.strip().split("\n")[0]
+    match = re.match(r"^([a-zA-Z]+)(?:\([^\)]+\))?!?:?\s*(.*)$", clean)
+    if match:
+        prefix = match.group(1).lower()
+        desc = match.group(2).strip() or clean
+        cat = CONVENTIONAL_CATEGORIES.get(prefix, "changed")
+        return cat, desc, is_breaking
+
+    lower = clean.lower()
+    if lower.startswith("add ") or lower.startswith("create ") or "feature" in lower:
+        return "added", clean, is_breaking
+    if lower.startswith("fix ") or lower.startswith("resolve ") or "bug" in lower or "error" in lower:
+        return "fixed", clean, is_breaking
+    if "security" in lower or "audit" in lower or "cve" in lower or "token" in lower:
+        return "security", clean, is_breaking
+    if "migration" in lower or "alembic" in lower or "table" in lower or "schema" in lower:
+        return "database", clean, is_breaking
+    return "changed", clean, is_breaking
+
+
+def detect_affected_modules(file_paths: List[str]) -> List[str]:
+    modules = set()
+    for path in file_paths:
+        p = path.lower()
+        if "student" in p:
+            modules.add("students")
+        if "fee" in p or "concession" in p:
+            modules.add("fees")
+        if "payment" in p or "receipt" in p:
+            modules.add("payments")
+        if "academic" in p or "standard" in p or "division" in p or "board" in p:
+            modules.add("academic")
+        if "report" in p:
+            modules.add("reports")
+        if "setting" in p:
+            modules.add("settings")
+        if "auth" in p or "user" in p:
+            modules.add("auth")
+        if "staff" in p or "teacher" in p:
+            modules.add("staff")
+        if "communication" in p or "message" in p:
+            modules.add("communication")
+        if "alembic" in p or "migration" in p:
+            modules.add("database")
+        if "frontend" in p or "src/pages" in p or "src/components" in p:
+            modules.add("frontend_ui")
+    return sorted(list(modules)) or ["core_platform"]
+
+
+def format_markdown_release_notes(
+    version: str,
+    title: str,
+    build_number: str,
+    environment: str,
+    structured: Dict[str, List[str]],
+    summary: Dict[str, Any],
+) -> str:
+    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    md = [
+        f"# Release Notes — PrathamOne EduOS v{version}",
+        f"**Release Title**: {title}  ",
+        f"**Release Date**: {date_str}  ",
+        f"**Build Identifier**: `{build_number}`  ",
+        f"**Target Environment**: `{environment.upper()}`  ",
+        "",
+    ]
+
+    section_titles = [
+        ("security", "🛡️ Security & Integrity Hardening"),
+        ("added", "✨ Added Features & Capabilities"),
+        ("changed", "🔄 Changed & Architectural Enhancements"),
+        ("fixed", "🐛 Fixed & Bug Remediations"),
+        ("database", "🗄️ Database & Schema Migrations"),
+        ("deprecated", "⚠️ Deprecated & Removed"),
+    ]
+
+    has_entries = False
+    for key, header in section_titles:
+        items = structured.get(key, [])
+        if items:
+            has_entries = True
+            md.append(f"### {header}")
+            for it in items[:15]:  # top 15 highlights per section
+                md.append(f"- {it}")
+            md.append("")
+
+    if not has_entries:
+        md.append("### ✨ Operational Updates")
+        md.append("- Routine performance optimization and system maintenance updates.")
+        md.append("")
+
+    total_commits = summary.get("total_commits", 0)
+    changed_files = summary.get("changed_files", 0)
+    modules = ", ".join(summary.get("affected_modules", ["core_platform"]))
+    md.append("### 📊 Change Metrics & Audit Attribution")
+    md.append(f"- **Total Commits Included**: {total_commits}")
+    md.append(f"- **Files Modified**: {changed_files}")
+    md.append(f"- **Affected System Modules**: {modules}")
+    md.append("- **Verification**: Compliant with AITDL Enterprise Release Standards & DPDP Act 2023.")
+
+    return "\n".join(md)
+
+
 def get_git_revision_history(baseline: str = BASELINE_COMMIT) -> List[Dict[str, Any]]:
     """
     Returns list of commits from baseline to HEAD in chronological order (oldest first).
     """
     commits: List[Dict[str, Any]] = []
     try:
-        # Check if baseline commit exists in repo
         check_cmd = ["git", "cat-file", "-t", baseline]
         res = subprocess.run(check_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if res.returncode != 0:
-            # Fallback to entire log if baseline commit hash not present
-            cmd = ["git", "log", "--reverse", "--pretty=format:%h|%H|%ad|%s", "--date=iso-strict"]
+            cmd = ["git", "log", "--reverse", "--pretty=format:%h|%H|%ad|%an|%s", "--date=iso-strict"]
         else:
-            cmd = ["git", "log", f"{baseline}..HEAD", "--reverse", "--pretty=format:%h|%H|%ad|%s", "--date=iso-strict"]
+            cmd = ["git", "log", f"{baseline}..HEAD", "--reverse", "--pretty=format:%h|%H|%ad|%an|%s", "--date=iso-strict"]
 
         output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=10).decode("utf-8", errors="ignore")
         for line in output.strip().split("\n"):
             line = line.strip()
             if not line or "|" not in line:
                 continue
-            parts = line.split("|", 3)
-            if len(parts) == 4:
-                short_hash, full_hash, date_str, subject = parts
+            parts = line.split("|", 4)
+            if len(parts) == 5:
+                short_hash, full_hash, date_str, author, subject = parts
                 task_type = classify_commit_type(subject)
+                cat, clean_desc, is_breaking = categorize_commit_message(subject)
                 commits.append({
                     "short_hash": short_hash,
                     "full_hash": full_hash,
                     "date": date_str,
+                    "author": author,
                     "subject": subject,
+                    "clean_desc": clean_desc,
+                    "category": cat,
+                    "is_breaking": is_breaking,
+                    "type": task_type,
+                })
+            elif len(parts) == 4:
+                short_hash, full_hash, date_str, subject = parts
+                task_type = classify_commit_type(subject)
+                cat, clean_desc, is_breaking = categorize_commit_message(subject)
+                commits.append({
+                    "short_hash": short_hash,
+                    "full_hash": full_hash,
+                    "date": date_str,
+                    "author": "Jawahar R. Mallah",
+                    "subject": subject,
+                    "clean_desc": clean_desc,
+                    "category": cat,
+                    "is_breaking": is_breaking,
                     "type": task_type,
                 })
     except Exception as e:
@@ -177,12 +328,114 @@ def update_file_regex(path: str, pattern: str, replacement: str, dry_run: bool =
     return True
 
 
+def generate_release_manifest(
+    version: str,
+    build_number: str,
+    stats: Dict[str, Any],
+    commits: List[Dict[str, Any]],
+    root_dir: str = ".",
+    dry_run: bool = False,
+) -> Dict[str, Any]:
+    """
+    Generates backend/app/release_manifest.json with authoritative revision history,
+    categorized notes, and build metadata to decouple runtime from host git CLI.
+    """
+    today_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # Get changed files if git is available
+    changed_files: List[str] = []
+    try:
+        diff_out = subprocess.check_output(
+            ["git", "diff", "--name-only", f"{BASELINE_COMMIT}..HEAD"],
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        ).decode("utf-8", errors="ignore")
+        changed_files = [f.strip() for f in diff_out.strip().split("\n") if f.strip()]
+    except Exception:
+        pass
+
+    affected_modules = detect_affected_modules(changed_files)
+
+    # Format structured release notes
+    structured: Dict[str, List[str]] = {
+        "security": [],
+        "added": [],
+        "changed": [],
+        "fixed": [],
+        "database": [],
+        "deprecated": [],
+    }
+
+    # Commits for manifest: reversed (newest first)
+    all_commits_reversed: List[Dict[str, Any]] = []
+    for c in reversed(commits):
+        cat = c.get("category", "changed")
+        subj = c.get("clean_desc") or c.get("subject", "")
+        formatted_entry = f"[{c['short_hash']}] {subj}"
+        if formatted_entry not in structured.setdefault(cat, []):
+            structured[cat].append(formatted_entry)
+
+        all_commits_reversed.append({
+            "hash": c["full_hash"],
+            "short_hash": c["short_hash"],
+            "author": c.get("author", "Jawahar R. Mallah"),
+            "date": c["date"],
+            "subject": subj,
+            "category": cat,
+            "is_breaking": c.get("is_breaking", False),
+        })
+
+    markdown_notes = format_markdown_release_notes(
+        version=version,
+        title=f"Release v{version} — Academic & Financial Governance Baseline",
+        build_number=build_number,
+        environment="production",
+        structured=structured,
+        summary={
+            "total_commits": stats.get("revision_count", len(commits)),
+            "changed_files": len(changed_files),
+            "affected_modules": affected_modules,
+        },
+    )
+
+    manifest_data = {
+        "product": PRODUCT_NAME,
+        "edition": EDITION,
+        "version": version,
+        "build_number": build_number,
+        "build_date": today_date,
+        "latest_hash": stats.get("latest_hash", ""),
+        "revision_count": stats.get("revision_count", len(commits)),
+        "feature_count": stats.get("feature_count", 0),
+        "patch_count": stats.get("patch_count", 0),
+        "major_count": stats.get("major_count", 0),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "affected_modules": affected_modules,
+        "changed_files": changed_files[:100],
+        "structured_notes": structured,
+        "markdown_notes": markdown_notes,
+        "all_commits": all_commits_reversed,
+    }
+
+    manifest_path = os.path.join(root_dir, "backend", "app", "release_manifest.json")
+    if not dry_run:
+        try:
+            with open(manifest_path, "w", encoding="utf-8") as fp:
+                json.dump(manifest_data, fp, indent=2)
+        except Exception as e:
+            print(f"  [WARN] Failed writing release_manifest.json: {e}", file=sys.stderr)
+
+    return manifest_data
+
+
 def synchronize_all_version_sources(
     version: str,
     build_number: str,
+    commits: Optional[List[Dict[str, Any]]] = None,
+    stats: Optional[Dict[str, Any]] = None,
     root_dir: str = ".",
     dry_run: bool = False,
-) -> List[str]:
+) -> Tuple[List[str], Optional[Dict[str, Any]]]:
     """
     Synchronizes the authoritative version and build metadata across all files.
     """
@@ -237,42 +490,99 @@ def synchronize_all_version_sources(
             if ok and rel_path not in updated_files:
                 updated_files.append(rel_path)
 
-    return updated_files
+    manifest_data = None
+    if commits is not None and stats is not None:
+        manifest_data = generate_release_manifest(
+            version=version,
+            build_number=build_number,
+            stats=stats,
+            commits=commits,
+            root_dir=root_dir,
+            dry_run=dry_run,
+        )
+        manifest_rel = os.path.join("backend", "app", "release_manifest.json")
+        if not dry_run and manifest_rel not in updated_files:
+            updated_files.append(manifest_rel)
+
+    return updated_files, manifest_data
 
 
-def run_database_release_sync(version: str, build_number: str, title: str):
+def run_database_release_sync(
+    version: str,
+    build_number: str,
+    title: str,
+    latest_hash: str = "",
+    markdown_notes: str = "",
+    structured_notes: Optional[Dict[str, Any]] = None,
+    change_summary: Optional[Dict[str, Any]] = None,
+):
     """
-    Updates or inserts the active release record in Postgres if container is available.
+    Updates or inserts the active release record in Postgres inside the Docker container.
+    Reads authoritative metadata directly from /app/app/release_manifest.json inside container.
     """
-    python_script = f"""
+    python_script = """
 import asyncio
+import json
+import os
+from datetime import datetime, timezone
 from app.core.database import AsyncSessionLocal
 from app.models.release import SystemRelease
-from sqlalchemy import select, desc
-from datetime import datetime, timezone
+from sqlalchemy import select
 
 async def sync():
+    manifest_paths = [
+        "/app/app/release_manifest.json",
+        "/app/release_manifest.json",
+        os.path.join(os.getcwd(), "backend", "app", "release_manifest.json"),
+    ]
+    data = {}
+    for p in manifest_paths:
+        if os.path.isfile(p):
+            with open(p, "r", encoding="utf-8") as fp:
+                data = json.load(fp)
+            break
+
+    version = data.get("version", "1.72.1")
+    build_number = data.get("build_number", "")
+    title = f"Release v{version} — Academic & Financial Governance Baseline"
+    latest_hash = data.get("latest_hash", "")
+    markdown_notes = data.get("markdown_notes", f"# Release Notes v{version}")
+    structured_notes = json.dumps(data.get("structured_notes", {}))
+    change_summary = json.dumps({
+        "total_commits": data.get("revision_count", 0),
+        "features_count": data.get("feature_count", 0),
+        "patches_count": data.get("patch_count", 0),
+        "version": version,
+        "build_number": build_number,
+    })
+
     async with AsyncSessionLocal() as session:
-        # Check if release row for this version exists
-        res = await session.execute(select(SystemRelease).where(SystemRelease.version == '{version}'))
+        res = await session.execute(select(SystemRelease).where(SystemRelease.version == version))
         existing = res.scalar_one_or_none()
         now = datetime.now(timezone.utc)
         if existing:
-            existing.build_number = '{build_number}'
+            existing.build_number = build_number
             existing.status = 'published'
             existing.published_at = now
-            existing.title = '{title}'
+            existing.title = title
+            existing.git_commit_end = latest_hash
+            existing.release_notes_markdown = markdown_notes
+            existing.release_notes_structured = structured_notes
+            existing.change_summary = change_summary
+            existing.validation_status = 'passed'
         else:
             rel = SystemRelease(
-                version='{version}',
-                build_number='{build_number}',
-                title='{title}',
+                version=version,
+                build_number=build_number,
+                title=title,
                 status='published',
                 environment='production',
                 git_branch='master',
-                release_notes_markdown='# Release Notes v{version}\\n\\nAutomated release update generated from revision history.',
-                release_notes_structured='{{"added": ["Automated feature release v{version}"]}}',
-                change_summary='{{"version": "{version}"}}',
+                git_commit_end=latest_hash,
+                git_tag=f'v{version}',
+                release_notes_markdown=markdown_notes,
+                release_notes_structured=structured_notes,
+                change_summary=change_summary,
                 validation_status='passed',
                 created_by_id=1,
                 approved_by_id=1,
@@ -282,24 +592,50 @@ async def sync():
             )
             session.add(rel)
         await session.commit()
-        print("[DB] Release v{version} published in database.")
+        print(f"[DB] Release v{version} ({build_number}) published in database.")
 
 if __name__ == '__main__':
     asyncio.run(sync())
 """
+    # 1. Try docker exec on running container
     try:
-        cmd = [
-            "docker-compose",
-            "exec",
-            "-T",
-            "backend",
-            "python",
-            "-c",
-            python_script,
-        ]
-        subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+        proc = subprocess.run(
+            ["docker", "exec", "-i", "prashant_academy_backend", "python", "-"],
+            input=python_script,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=20,
+        )
+        if proc.returncode == 0:
+            lines = [l for l in proc.stdout.strip().split("\n") if "[DB]" in l or "published" in l]
+            msg = lines[-1] if lines else proc.stdout.strip()
+            print(f"  [DATABASE] {msg or 'Synchronized release in database.'}")
+            return True
+        else:
+            print(f"  [WARN] Database release sync stderr: {proc.stderr[:160]}", file=sys.stderr)
+    except Exception as e:
+        print(f"  [WARN] docker exec failed: {e}", file=sys.stderr)
+
+    # 2. Fallback to docker compose exec
+    try:
+        proc = subprocess.run(
+            ["docker", "compose", "exec", "-T", "backend", "python", "-"],
+            input=python_script,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=20,
+        )
+        if proc.returncode == 0:
+            lines = [l for l in proc.stdout.strip().split("\n") if "[DB]" in l or "published" in l]
+            msg = lines[-1] if lines else proc.stdout.strip()
+            print(f"  [DATABASE] {msg or 'Synchronized release in database.'}")
+            return True
     except Exception:
         pass
+
+    return False
 
 
 def main():
@@ -386,9 +722,11 @@ def main():
     print(f"  Build Number:     {build_num}")
     print(f"  Revisions Count:  {stats['revision_count']}")
 
-    updated = synchronize_all_version_sources(
+    updated, manifest_data = synchronize_all_version_sources(
         version=version,
         build_number=build_num,
+        commits=commits,
+        stats=stats,
         dry_run=args.dry_run,
     )
 
@@ -410,8 +748,26 @@ def main():
 
     # Synchronize database release record if requested or in sync mode
     if args.sync and not args.dry_run:
-        release_title = f"Release v{version} — PrathamOne EduOS Platform Updates"
-        run_database_release_sync(version, build_num, release_title)
+        release_title = f"Release v{version} — Academic & Financial Governance Baseline"
+        latest_hash = stats.get("latest_hash", "")
+        md_notes = manifest_data.get("markdown_notes", "") if manifest_data else ""
+        struct_notes = manifest_data.get("structured_notes") if manifest_data else None
+        change_summary = {
+            "total_commits": stats.get("revision_count", len(commits)),
+            "features_count": stats.get("feature_count", 0),
+            "patches_count": stats.get("patch_count", 0),
+            "version": version,
+            "build_number": build_num,
+        }
+        run_database_release_sync(
+            version=version,
+            build_number=build_num,
+            title=release_title,
+            latest_hash=latest_hash,
+            markdown_notes=md_notes,
+            structured_notes=struct_notes,
+            change_summary=change_summary,
+        )
 
     if args.git_tag and not args.dry_run:
         try:
