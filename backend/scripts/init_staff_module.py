@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-05
+#  * @updated     2026-11-11
 #  *
 #  * @description Database migration and seeder initializing Teacher & Staff Management tables, profiles, assignments, attendance, leaves, and documents.
 #  */
@@ -516,17 +516,19 @@ async def initialize_staff_module():
         await session.execute(text("DELETE FROM staff_generated_documents;"))
         for u in staff_users[:4]:
             u_id = u[0]
+            slip_ref = f"SLIP-2026-10-{u_id:04d}"
+            appt_ref = f"APPT-PA-2026-{u_id:04d}"
             await session.execute(text("""
                 INSERT INTO staff_generated_documents (
                     user_id, form_id, reference_number, document_type, title, period_month, status, generated_by_id, generated_at
                 ) VALUES (
-                    :u_id, 'monthly_salary_slip', 'SLIP-2026-10-' || LPAD(:u_id::text, 4, '0'),
+                    :u_id, 'monthly_salary_slip', :slip_ref,
                     'Monthly Salary Slip', 'Official Salary Statement for October 2026', 'October 2026', 'official', 1, NOW()
                 ), (
-                    :u_id, 'appointment_letter', 'APPT-PA-2026-' || LPAD(:u_id::text, 4, '0'),
+                    :u_id, 'appointment_letter', :appt_ref,
                     'Appointment Letter', 'Formal Faculty Appointment Agreement & Service Confirmation', NULL, 'official', 1, NOW()
                 ) ON CONFLICT (reference_number) DO NOTHING;
-            """), {"u_id": u_id})
+            """), {"u_id": u_id, "slip_ref": slip_ref, "appt_ref": appt_ref})
 
         await session.commit()
 
