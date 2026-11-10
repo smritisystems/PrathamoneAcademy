@@ -108,3 +108,4 @@ async def test_duplicate_concession_application_rejection(admin_headers):
         res = await client.post("/api/v1/fees/concessions/applications", json=duplicate_payload, headers=admin_headers)
         assert res.status_code == 400
         assert "duplicate application prohibited" in res.json()["detail"].lower()
+
