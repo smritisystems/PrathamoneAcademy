@@ -17,9 +17,11 @@
 #  */
 
 import json
+from decimal import Decimal
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Dict, List, Any
 from sqlalchemy import select, func, or_, and_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
@@ -59,7 +61,7 @@ class SafeDeleteService:
     """
 
     FINANCIAL_IMMUTABLE_TYPES = {
-        "payment", "payment_receipt", "fee_invoice", "refund", "teacher_payroll", "fee_installment"
+        "payment_receipt", "refund", "teacher_payroll", "fee_installment"
     }
 
     @classmethod
@@ -117,6 +119,9 @@ class SafeDeleteService:
             "exam": cls._check_examination,
             "lead": cls._check_lead,
             "lookup_item": cls._check_lookup_item,
+            "payment": cls._check_payment,
+            "fee_invoice": cls._check_fee_invoice,
+            "invoice": cls._check_fee_invoice,
         }
 
         handler = handler_map.get(normalized_type)
@@ -883,6 +888,181 @@ class SafeDeleteService:
             recommended_action="delete" if is_eligible else "deactivate"
         )
 
+    @classmethod
+    async def _check_payment(cls, db: AsyncSession, payment_id: int, current_user: Optional[User]) -> DeletionEligibilityReport:
+        stmt = (
+            select(Payment)
+            .options(
+                selectinload(Payment.receipts),
+                selectinload(Payment.allocations),
+                selectinload(Payment.student),
+            )
+            .where(Payment.id == payment_id)
+        )
+        payment = (await db.execute(stmt)).scalar_one_or_none()
+        if not payment:
+            raise HTTPException(status_code=404, detail=f"Payment with ID {payment_id} not found")
+
+        name = f"Payment #{payment.id} (₹{payment.amount}, Status: {payment.status})"
+        counts: Dict[str, int] = {}
+        details: List[str] = []
+
+        receipt_count = len(payment.receipts) if payment.receipts else 0
+        if receipt_count > 0:
+            counts["Issued Payment Receipts"] = receipt_count
+            receipt_nums = [r.receipt_number for r in payment.receipts]
+            details.append(f"{receipt_count} issued receipt(s): {', '.join(receipt_nums)}")
+
+        # Draft payment with zero receipts is eligible for permanent deletion
+        if payment.status == "draft" and receipt_count == 0:
+            return DeletionEligibilityReport(
+                entity_type="payment",
+                entity_id=payment_id,
+                entity_name=name,
+                is_eligible=True,
+                recommended_action="delete",
+            )
+
+        # Posted or completed payments
+        if payment.status in ("posted", "completed"):
+            return DeletionEligibilityReport(
+                entity_type="payment",
+                entity_id=payment_id,
+                entity_name=name,
+                is_eligible=False,
+                block_category="transaction_history",
+                block_reason=(
+                    f"Permanent deletion prohibited: Payment #{payment.id} has posted financial ledger entries. "
+                    "In accordance with double-entry accounting standards and Global Transaction Governance, "
+                    "posted transactions cannot be permanently erased."
+                ),
+                dependent_counts=counts,
+                dependent_details=details,
+                can_deactivate=False,
+                can_archive=False,
+                recommended_action="reversal",
+                reversal_guidance=(
+                    "Use the authorized 'Payment Reversal' workflow (/api/v1/payments/{payment_id}/reverse) "
+                    "which restores invoice balances, marks receipts as voided, and maintains an immutable audit trail."
+                ),
+            )
+
+        if payment.status == "reversed":
+            return DeletionEligibilityReport(
+                entity_type="payment",
+                entity_id=payment_id,
+                entity_name=name,
+                is_eligible=False,
+                block_category="transaction_history",
+                block_reason=(
+                    f"Permanent deletion prohibited: Payment #{payment.id} is a reversed transaction. "
+                    "Reversal audit records and historical financial ledgers must be permanently preserved."
+                ),
+                dependent_counts=counts,
+                dependent_details=details,
+                can_deactivate=False,
+                can_archive=False,
+                recommended_action="reversal",
+                reversal_guidance="This transaction is already reversed and preserved as an immutable audit record.",
+            )
+
+        # submitted, approved, or cancelled
+        return DeletionEligibilityReport(
+            entity_type="payment",
+            entity_id=payment_id,
+            entity_name=name,
+            is_eligible=False,
+            block_category="transaction_history",
+            block_reason=(
+                f"Permanent deletion prohibited: Payment #{payment.id} has status '{payment.status}'. "
+                "Only unposted draft payments may be permanently deleted. "
+                "For unposted submitted or approved payments, use the Cancellation workflow."
+            ),
+            dependent_counts=counts,
+            dependent_details=details,
+            can_deactivate=False,
+            can_archive=False,
+            recommended_action="cancel",
+            reversal_guidance="Use /api/v1/payments/{payment_id}/cancel to cancel unposted workflow items.",
+        )
+
+    @classmethod
+    async def _check_fee_invoice(cls, db: AsyncSession, invoice_id: int, current_user: Optional[User]) -> DeletionEligibilityReport:
+        stmt = (
+            select(FeeInvoice)
+            .options(
+                selectinload(FeeInvoice.payments),
+                selectinload(FeeInvoice.items),
+                selectinload(FeeInvoice.student),
+            )
+            .where(FeeInvoice.id == invoice_id)
+        )
+        invoice = (await db.execute(stmt)).scalar_one_or_none()
+        if not invoice:
+            raise HTTPException(status_code=404, detail=f"Fee Invoice with ID {invoice_id} not found")
+
+        name = f"Invoice #{invoice.invoice_number} ({invoice.title or 'Fee Invoice'}, Status: {invoice.status})"
+        counts: Dict[str, int] = {}
+        details: List[str] = []
+
+        payment_count = len(invoice.payments) if invoice.payments else 0
+        if payment_count > 0:
+            counts["Linked Payment Allocations"] = payment_count
+            details.append(f"{payment_count} linked payment transaction(s)")
+
+        if invoice.paid_amount and invoice.paid_amount > Decimal("0"):
+            counts["Recorded Paid Amount"] = int(invoice.paid_amount)
+            details.append(f"Recorded paid amount of ₹{invoice.paid_amount}")
+
+        # If any payment has been credited against the invoice, deletion is blocked
+        if payment_count > 0 or (invoice.paid_amount and invoice.paid_amount > Decimal("0")):
+            return DeletionEligibilityReport(
+                entity_type="fee_invoice",
+                entity_id=invoice_id,
+                entity_name=name,
+                is_eligible=False,
+                block_category="transaction_history",
+                block_reason=(
+                    f"Permanent deletion prohibited: Invoice #{invoice.invoice_number} has recorded payment credits "
+                    f"(Paid: ₹{invoice.paid_amount}). Financial ledgers cannot be deleted while payments reference them."
+                ),
+                dependent_counts=counts,
+                dependent_details=details,
+                can_deactivate=False,
+                can_archive=False,
+                recommended_action="reversal",
+                reversal_guidance="Reverse or refund all linked payments before attempting invoice adjustments.",
+            )
+
+        # Draft invoice with 0 payments is eligible
+        if invoice.status == "draft":
+            return DeletionEligibilityReport(
+                entity_type="fee_invoice",
+                entity_id=invoice_id,
+                entity_name=name,
+                is_eligible=True,
+                recommended_action="delete",
+            )
+
+        # Posted/issued invoices with document numbers
+        return DeletionEligibilityReport(
+            entity_type="fee_invoice",
+            entity_id=invoice_id,
+            entity_name=name,
+            is_eligible=False,
+            block_category="transaction_history",
+            block_reason=(
+                f"Permanent deletion prohibited: Invoice #{invoice.invoice_number} is in '{invoice.status}' state "
+                "with an issued document number. Document numbering integrity requires preserving the serial sequence."
+            ),
+            dependent_counts=counts,
+            dependent_details=details,
+            can_deactivate=False,
+            can_archive=False,
+            recommended_action="cancellation",
+            reversal_guidance="Use /api/v1/fees/invoices/{invoice_id}/cancel to void the invoice and maintain number auditing.",
+        )
+
     # ──────────────────────────────────────────────────────────────────────────
     # In-Transaction Execution (Permanent Delete, Deactivate, Archive)
     # ──────────────────────────────────────────────────────────────────────────
@@ -937,6 +1117,28 @@ class SafeDeleteService:
             target = (await db.execute(select(Lead).where(Lead.id == entity_id))).scalar_one_or_none()
         elif normalized_type == "lookup_item":
             target = (await db.execute(select(LookupItem).where(LookupItem.id == entity_id))).scalar_one_or_none()
+        elif normalized_type == "payment":
+            target = (
+                await db.execute(
+                    select(Payment)
+                    .options(selectinload(Payment.allocations))
+                    .where(Payment.id == entity_id)
+                )
+            ).scalar_one_or_none()
+            if target:
+                for alloc in target.allocations:
+                    await db.delete(alloc)
+        elif normalized_type in ("fee_invoice", "invoice"):
+            target = (
+                await db.execute(
+                    select(FeeInvoice)
+                    .options(selectinload(FeeInvoice.items))
+                    .where(FeeInvoice.id == entity_id)
+                )
+            ).scalar_one_or_none()
+            if target:
+                for item in target.items:
+                    await db.delete(item)
 
         if not target:
             raise HTTPException(status_code=404, detail=f"{entity_type.title()} #{entity_id} not found")

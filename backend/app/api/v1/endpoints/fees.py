@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -42,6 +42,7 @@ from app.models.division import Division
 from app.models.academic_year import AcademicYear
 from app.models.payment import Payment, PaymentReceipt
 from app.services.codex_service import CodeXService
+from app.services.sequence import generate_next_invoice_number
 from app.services.student_metrics import (
     get_authoritative_student_count,
     get_authoritative_student_counts_by_board,
@@ -49,7 +50,7 @@ from app.services.student_metrics import (
     get_student_reconciliation_diagnostic,
 )
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal
 import uuid
 
@@ -134,6 +135,11 @@ class InvoiceCreate(BaseModel):
     due_date: Optional[date] = None
     notes: Optional[str] = None
     installments: Optional[List[InstallmentConfig]] = None
+
+
+class CancelInvoiceRequest(BaseModel):
+    reason: str
+
 
 
 # ---------- Fee Categories ----------
@@ -503,8 +509,9 @@ async def adjust_student_fees(
         invoice = any_inv_res.scalar_one_or_none()
 
     if not invoice:
+        inv_number = await generate_next_invoice_number(db, institution_id=getattr(student, "institution_id", 1), academic_year_id=ay_id)
         invoice = FeeInvoice(
-            invoice_number=f"INV-{date.today().year}-{uuid.uuid4().hex[:6].upper()}",
+            invoice_number=inv_number,
             student_id=student_id,
             assignment_id=assignment.id,
             academic_year_id=ay_id,
@@ -665,7 +672,11 @@ async def create_fee_invoice(
     discount_amount += assignment.concession_amount
     net_amount = max(base_amount - discount_amount, Decimal("0"))
 
-    invoice_number = f"INV-{data.academic_year_id}-{uuid.uuid4().hex[:8].upper()}"
+    invoice_number = await generate_next_invoice_number(
+        db,
+        institution_id=getattr(student, "institution_id", 1),
+        academic_year_id=data.academic_year_id,
+    )
 
     invoice = FeeInvoice(
         invoice_number=invoice_number,
@@ -781,6 +792,139 @@ async def get_invoice(
             for inst in invoice.installments
         ],
     }
+
+
+@router.delete("/invoices/{invoice_id}")
+async def delete_fee_invoice(
+    invoice_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "sysadmin")),
+):
+    """
+    POLICY RULE B & C:
+    Permanent deletion of a fee invoice is permitted ONLY when it is an unposted/unpaid draft
+    with zero payments, zero allocations, and zero ledger impact.
+    Once issued, partially paid, or posted, permanent deletion is strictly blocked.
+    """
+    res = await db.execute(
+        select(FeeInvoice)
+        .options(selectinload(FeeInvoice.allocations), selectinload(FeeInvoice.items))
+        .where(FeeInvoice.id == invoice_id)
+    )
+    invoice = res.scalar_one_or_none()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Fee invoice not found")
+
+    # If any payments have been recorded or allocations exist, block deletion
+    if (invoice.paid_amount and invoice.paid_amount > Decimal("0")) or len(invoice.allocations) > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Posted Transaction Protection Violation: Cannot permanently delete invoice '{invoice.invoice_number}'. "
+                f"Recorded payments of ₹{invoice.paid_amount:,.2f} exist on this invoice. "
+                "In compliance with Immutable Numbering Policy, posted billing transactions cannot be erased. "
+                "Use the Payment Reversal and Invoice Cancellation workflow instead."
+            ),
+        )
+
+    # If the invoice was already issued/posted or cancelled, block permanent delete to retain numbering continuity
+    if invoice.status in ("paid", "partial", "cancelled"):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Cannot permanently delete invoice '{invoice.invoice_number}' in '{invoice.status}' status. "
+                "Issued and cancelled document numbers are immutable. Use cancellation if required."
+            ),
+        )
+
+    # For unposted/unpaid draft invoices with 0 payments: allow deletion
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="delete_draft_invoice",
+        resource_type="fee_invoice",
+        resource_id=invoice.id,
+        old_data=json.dumps({
+            "invoice_number": invoice.invoice_number,
+            "student_id": invoice.student_id,
+            "total_amount": float(invoice.total_amount),
+            "status": invoice.status,
+        }),
+        details=f"Draft invoice '{invoice.invoice_number}' permanently deleted by {current_user.username}",
+    )
+    db.add(audit)
+
+    # Delete invoice line items
+    for item in invoice.items:
+        await db.delete(item)
+    await db.delete(invoice)
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": f"Draft invoice '{invoice.invoice_number}' deleted successfully.",
+        "invoice_id": invoice_id,
+    }
+
+
+@router.post("/invoices/{invoice_id}/cancel")
+async def cancel_fee_invoice(
+    invoice_id: int,
+    data: CancelInvoiceRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "principal", "sysadmin")),
+):
+    """
+    POLICY RULE C & D:
+    Cancels an issued fee invoice while strictly preserving the original invoice record,
+    its serial invoice_number, and complete audit history.
+    """
+    res = await db.execute(
+        select(FeeInvoice)
+        .options(selectinload(FeeInvoice.allocations))
+        .where(FeeInvoice.id == invoice_id)
+    )
+    invoice = res.scalar_one_or_none()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Fee invoice not found")
+
+    if invoice.status == "cancelled":
+        raise HTTPException(status_code=400, detail=f"Invoice '{invoice.invoice_number}' is already cancelled")
+
+    if invoice.paid_amount and invoice.paid_amount > Decimal("0"):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Cannot cancel invoice '{invoice.invoice_number}' because it has ₹{invoice.paid_amount:,.2f} "
+                "in recorded payments. Please reverse or refund the payments before cancelling the invoice."
+            ),
+        )
+
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    old_status = invoice.status
+    invoice.status = "cancelled"
+    invoice.outstanding_amount = Decimal("0.00")
+    invoice.notes = f"{invoice.notes or ''}\n[Cancelled by {current_user.username} on {now_str}: {data.reason}]".strip()
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="cancel_fee_invoice",
+        resource_type="fee_invoice",
+        resource_id=invoice.id,
+        old_data=json.dumps({"status": old_status, "invoice_number": invoice.invoice_number}),
+        new_data=json.dumps({"status": "cancelled", "reason": data.reason}),
+        details=f"Invoice '{invoice.invoice_number}' cancelled. Reason: {data.reason}",
+        severity="warning",
+    )
+    db.add(audit)
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": f"Invoice '{invoice.invoice_number}' cancelled successfully. Original serial number retained.",
+        "invoice_number": invoice.invoice_number,
+        "status": "cancelled",
+    }
+
 
 
 @router.get("/installments")

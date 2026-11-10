@@ -23,7 +23,7 @@ import {
   DollarSign, CheckCircle, AlertTriangle, Printer, RotateCcw,
   Download, CreditCard, ArrowRight, FileText, Share2, Edit3,
   Send, CheckCheck, Undo2, History, AlertCircle, RefreshCw,
-  Clock, ShieldAlert, Sparkles, ChevronRight
+  Clock, ShieldAlert, Sparkles, ChevronRight, Trash2, XCircle
 } from 'lucide-react'
 import ShareModal from '../components/ShareModal'
 import { paymentsApi } from '../api/endpoints'
@@ -76,6 +76,8 @@ export default function Payments() {
   const canEditPosted = userPerms ? userPerms.can_edit_posted : canUserEditPosted(user)
   const canApprove = userPerms ? userPerms.can_approve_refund : APPROVER_ROLES.includes(userRole)
   const canRefund = userPerms ? userPerms.can_process_refund : ['superadmin', 'sysadmin', 'admin', 'principal', 'accountant'].includes(userRole)
+  const canDeleteDraft = userPerms ? Boolean((userPerms as any).can_delete_draft) : APPROVER_ROLES.includes(userRole)
+  const canCancel = userPerms ? Boolean((userPerms as any).can_cancel) : APPROVER_ROLES.includes(userRole)
   const canEditSubmitted = userPerms ? userPerms.can_edit_submitted : true
   const canViewAudit = userPerms ? userPerms.can_view_audit : true
 
@@ -279,6 +281,36 @@ export default function Payments() {
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.detail || 'Failed to post payment')
+    },
+  })
+
+  // Mutation: Delete Draft
+  const [deletingDraftPayment, setDeletingDraftPayment] = useState<PaymentTransactionItem | null>(null)
+  const deleteDraftMutation = useMutation({
+    mutationFn: (id: number) => paymentsApi.deleteDraft(id),
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Draft payment deleted successfully')
+      invalidatePaymentQueries()
+      setDeletingDraftPayment(null)
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Failed to delete draft payment')
+    },
+  })
+
+  // Mutation: Cancel Unposted Payment
+  const [cancellingPayment, setCancellingPayment] = useState<PaymentTransactionItem | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const cancelPaymentMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => paymentsApi.cancelPayment(id, reason),
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Payment cancelled successfully')
+      invalidatePaymentQueries()
+      setCancellingPayment(null)
+      setCancelReason('')
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Failed to cancel payment')
     },
   })
 
@@ -839,6 +871,17 @@ export default function Payments() {
                                 <CheckCheck className="w-3 h-3" />
                                 <span>Post</span>
                               </button>
+                              {canDeleteDraft && (
+                                <button
+                                  type="button"
+                                  onClick={() => setDeletingDraftPayment(p)}
+                                  className="text-xs text-red-600 hover:text-red-800 font-medium py-1 px-2 border border-red-200 rounded hover:bg-red-50 inline-flex items-center gap-1"
+                                  title="Permanently Delete Draft Payment"
+                                >
+                                  <Trash2 className="w-3 h-3 text-red-500" />
+                                  <span>Delete</span>
+                                </button>
+                              )}
                             </>
                           )}
 
@@ -875,6 +918,20 @@ export default function Payments() {
                                 <Edit3 className="w-3 h-3" />
                                 <span>Edit</span>
                               </button>
+                              {canCancel && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCancellingPayment(p)
+                                    setCancelReason('')
+                                  }}
+                                  className="text-xs text-amber-700 hover:text-amber-900 font-medium py-1 px-2 border border-amber-200 rounded hover:bg-amber-50 inline-flex items-center gap-1"
+                                  title="Cancel unposted payment transaction"
+                                >
+                                  <XCircle className="w-3 h-3 text-amber-600" />
+                                  <span>Cancel</span>
+                                </button>
+                              )}
                             </>
                           )}
 
@@ -900,6 +957,20 @@ export default function Payments() {
                                 <Edit3 className="w-3 h-3" />
                                 <span>Edit</span>
                               </button>
+                              {canCancel && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCancellingPayment(p)
+                                    setCancelReason('')
+                                  }}
+                                  className="text-xs text-amber-700 hover:text-amber-900 font-medium py-1 px-2 border border-amber-200 rounded hover:bg-amber-50 inline-flex items-center gap-1"
+                                  title="Cancel unposted payment voucher"
+                                >
+                                  <XCircle className="w-3 h-3 text-amber-600" />
+                                  <span>Cancel</span>
+                                </button>
+                              )}
                             </>
                           )}
 
@@ -955,6 +1026,18 @@ export default function Payments() {
                                 <span>Reverse</span>
                               </button>
                             </>
+                          )}
+
+                          {/* CANCELLED / REVERSED ACTIONS */}
+                          {(p.status === 'cancelled' || p.status === 'reversed') && p.receipt_number && (
+                            <Link
+                              to={`/receipts/${p.receipt_number}`}
+                              className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-gray-500 hover:text-gray-700"
+                              title="Print / View Voided Historical Receipt"
+                            >
+                              <Printer className="w-3 h-3 text-gray-400" />
+                              <span>Historical Receipt</span>
+                            </Link>
                           )}
 
                           {/* AUDIT TRAIL ACTION (All payments) */}
@@ -1469,6 +1552,100 @@ export default function Payments() {
                 className="btn-primary text-xs py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white"
               >
                 {togglePermMutation.isPending ? 'Authorizing...' : 'Authorize & Unlock'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL: Safe Delete Draft Payment */}
+      {deletingDraftPayment && (
+        <Modal
+          isOpen={!!deletingDraftPayment}
+          onClose={() => setDeletingDraftPayment(null)}
+          title={`Confirm Draft Payment Deletion — #${deletingDraftPayment.id}`}
+        >
+          <div className="space-y-4">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 space-y-1">
+              <p className="font-semibold flex items-center gap-1 text-red-900">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                Permanent Draft Removal
+              </p>
+              <p>
+                Are you sure you want to permanently delete draft payment <strong>#{deletingDraftPayment.id}</strong> ({fmt(deletingDraftPayment.amount)}) for <strong>{deletingDraftPayment.student_name}</strong>?
+              </p>
+              <p className="text-[11px] text-gray-500">
+                This transaction has not been posted to the financial ledger and no receipt numbers were allocated. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setDeletingDraftPayment(null)}
+                className="btn-secondary text-xs py-1.5 px-3"
+              >
+                Keep Draft
+              </button>
+              <button
+                type="button"
+                disabled={deleteDraftMutation.isPending}
+                onClick={() => deleteDraftMutation.mutate(deletingDraftPayment.id)}
+                className="btn-primary text-xs py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white"
+              >
+                {deleteDraftMutation.isPending ? 'Deleting...' : 'Confirm Permanent Delete'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL: Cancel Unposted Payment */}
+      {cancellingPayment && (
+        <Modal
+          isOpen={!!cancellingPayment}
+          onClose={() => setCancellingPayment(null)}
+          title={`Cancel Payment Transaction — #${cancellingPayment.id}`}
+        >
+          <div className="space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 space-y-1">
+              <p className="font-semibold flex items-center gap-1">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                Audited Transaction Cancellation
+              </p>
+              <p>
+                Cancelling payment <strong>#{cancellingPayment.id}</strong> ({fmt(cancellingPayment.amount)}) will mark its workflow status as <strong>Cancelled</strong>. The historical record and audit trail will be permanently preserved.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Reason for Cancellation <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="State the reason for cancelling this payment (e.g. Disapproved, duplicate submission, parent cancelled payment)..."
+                rows={3}
+                className="w-full text-xs rounded border border-gray-300 p-2 focus:ring-1 focus:ring-primary-500"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setCancellingPayment(null)}
+                className="btn-secondary text-xs py-1.5 px-3"
+              >
+                Dismiss
+              </button>
+              <button
+                type="button"
+                disabled={!cancelReason.trim() || cancelPaymentMutation.isPending}
+                onClick={() => cancelPaymentMutation.mutate({ id: cancellingPayment.id, reason: cancelReason.trim() })}
+                className="btn-primary text-xs py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {cancelPaymentMutation.isPending ? 'Cancelling...' : 'Confirm Cancellation'}
               </button>
             </div>
           </div>

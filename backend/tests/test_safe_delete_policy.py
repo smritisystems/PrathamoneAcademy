@@ -28,10 +28,10 @@ from app.services.safe_delete_service import SafeDeleteService
 @pytest.mark.asyncio
 async def test_financial_records_permanent_delete_strictly_blocked(db):
     """
-    POLICY RULE 6: Never permanently delete posted payments, receipts, invoices, refunds,
+    POLICY RULE 6: Never permanently delete posted receipts, refunds, vouchers,
     or ledger entries. They must be permanently blocked with reversal guidance.
     """
-    immutable_types = ["payment", "payment_receipt", "fee_invoice", "refund", "teacher_payroll"]
+    immutable_types = ["payment_receipt", "refund", "teacher_payroll", "fee_installment"]
 
     for f_type in immutable_types:
         report = await SafeDeleteService.check_eligibility(db, f_type, 9999)
@@ -201,7 +201,7 @@ async def test_governance_api_endpoints(client, auth_headers, test_institution):
     # 1. Check endpoint for immutable financial type
     resp = await client.get(
         "/api/v1/governance/safe-delete/check",
-        params={"entity_type": "payment", "entity_id": 101},
+        params={"entity_type": "payment_receipt", "entity_id": 101},
         headers=auth_headers,
     )
     assert resp.status_code == 200

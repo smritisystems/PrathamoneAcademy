@@ -503,6 +503,12 @@ export const feesApi = {
       reason: string
     }
   ) => apiClient.post(`/fees/students/${studentId}/adjust-fees`, data),
+
+  deleteInvoice: (invoiceId: number | string) =>
+    apiClient.delete<{ success: boolean; message: string; invoice_id: number }>(`/fees/invoices/${invoiceId}`),
+
+  cancelInvoice: (invoiceId: number | string, reason: string) =>
+    apiClient.post<{ success: boolean; message: string; invoice_id: number; status: string }>(`/fees/invoices/${invoiceId}/cancel`, { reason }),
 }
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
@@ -547,6 +553,10 @@ export const paymentsApi = {
     apiClient.post<{ message: string; status: string; payment_id: number }>(`/payments/${id}/submit`),
   approve: (id: number | string, data?: { remarks?: string }) =>
     apiClient.post<{ message: string; status: string; payment_id: number }>(`/payments/${id}/approve`, data || {}),
+  deleteDraft: (id: number | string) =>
+    apiClient.delete<{ success: boolean; message: string; payment_id: number }>(`/payments/${id}`),
+  cancelPayment: (id: number | string, reason: string) =>
+    apiClient.post<{ success: boolean; message: string; payment_id: number; status: string }>(`/payments/${id}/cancel`, { reason }),
   postPayment: (id: number | string) =>
     apiClient.post<{ message: string; status: string; receipt_number: string; payment_id: number }>(`/payments/${id}/post`),
   reverse: (id: number | string, reason: string) =>

@@ -39,7 +39,7 @@ from app.models.user import User, AuditLog
 from app.models.academic_year import AcademicYear
 from app.models.institution import Institution
 from app.models.settings import InstitutionSetting
-from app.services.sequence import generate_next_receipt_number
+from app.services.sequence import generate_next_receipt_number, generate_next_refund_number, log_sequence_gap
 from app.services.codex_service import CodeXService
 from app.services.receipt_pdf_service import ReceiptPdfService, sanitize_receipt_filename
 from app.services.payment_gateway import (
@@ -173,6 +173,19 @@ async def get_my_payment_permissions(
     """
     can_view_all = await has_permission(db, current_user, "payments", "view")
     can_draft = await has_permission(db, current_user, "payments", "draft")
+    can_delete_draft = (
+        await has_permission(db, current_user, "payments", "draft_delete")
+        or await has_permission(db, current_user, "payments", "delete")
+        or current_user.role in APPROVER_ROLES
+    )
+    can_cancel = (
+        await has_permission(db, current_user, "payments", "cancel")
+        or current_user.role in APPROVER_ROLES
+    )
+    can_reverse = (
+        await has_permission(db, current_user, "payments", "reverse")
+        or current_user.role in (APPROVER_ROLES | {"accountant"})
+    )
     can_edit_submitted = await has_permission(db, current_user, "payments", "edit_submitted")
     can_edit_posted = await has_permission(db, current_user, "payments", "edit_posted", allow_wildcard=False)
     can_config = await has_permission(db, current_user, "fee_workflow", "configure")
@@ -189,6 +202,9 @@ async def get_my_payment_permissions(
         "can_view_all": can_view_all,
         "can_create_draft": can_draft,
         "can_edit_draft": can_draft,
+        "can_delete_draft": can_delete_draft,
+        "can_cancel": can_cancel,
+        "can_reverse": can_reverse,
         "can_edit_submitted": can_edit_submitted,
         "can_edit_posted": can_edit_posted,
         "can_configure_workflow": can_config,
@@ -466,6 +482,164 @@ async def submit_draft_payment(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 2B. SAFE DELETE DRAFT PAYMENT (Transaction Deletion Policy)
+# ─────────────────────────────────────────────────────────────────────────────
+@router.delete("/{payment_id}")
+async def delete_payment(
+    payment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Permanently deletes an unposted, unsubmitted draft payment.
+    Permanent deletion is strictly blocked for any submitted, approved, posted, completed,
+    or reversed payment to preserve historical financial ledger integrity and document sequences.
+    """
+    can_delete = (
+        await has_permission(db, current_user, "payments", "draft_delete")
+        or await has_permission(db, current_user, "payments", "delete")
+        or current_user.role in APPROVER_ROLES
+    )
+    if not can_delete:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'payments:draft_delete' privilege.",
+        )
+
+    result = await db.execute(
+        select(Payment)
+        .options(
+            selectinload(Payment.allocations),
+            selectinload(Payment.receipts),
+            selectinload(Payment.student),
+        )
+        .where(Payment.id == payment_id)
+    )
+    payment = result.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment record not found")
+
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
+
+    # Permanent deletion allowed ONLY for unsubmitted, unposted drafts
+    if payment.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Permanent deletion blocked: Payment #{payment.id} has status '{payment.status}'. "
+                "In accordance with Global Transaction Governance, only unposted draft transactions "
+                "with zero ledger and document impact may be permanently deleted. "
+                "For posted transactions, use the authorized Reversal (/reverse) or Cancellation (/cancel) workflow."
+            ),
+        )
+
+    # Check if any receipt was ever generated
+    if payment.receipts and len(payment.receipts) > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Permanent deletion blocked: Official receipt(s) have been generated for Payment #{payment.id}.",
+        )
+
+    # Delete allocations first
+    for alloc in payment.allocations:
+        await db.delete(alloc)
+
+    # Record audit log before deleting
+    audit = AuditLog(
+        user_id=current_user.id,
+        action="delete_draft_payment",
+        resource_type="payment",
+        resource_id=payment.id,
+        old_data=f"Draft payment #{payment.id} for student #{payment.student_id} (Amount: {payment.amount}) permanently deleted.",
+        details=json.dumps({
+            "action": "delete_draft_payment",
+            "payment_id": payment.id,
+            "student_id": payment.student_id,
+            "amount": str(payment.amount),
+            "status": "draft",
+        }),
+    )
+    db.add(audit)
+
+    await db.delete(payment)
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": f"Draft payment #{payment_id} permanently deleted successfully.",
+        "payment_id": payment_id,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2C. CANCEL UNPOSTED PAYMENT TRANSACTION
+# ─────────────────────────────────────────────────────────────────────────────
+@router.post("/{payment_id}/cancel")
+async def cancel_payment(
+    payment_id: int,
+    data: ReversalRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
+):
+    """
+    Cancels an unposted submitted or approved payment transaction.
+    For posted payments that have affected ledger balances, use /reverse instead.
+    """
+    result = await db.execute(
+        select(Payment)
+        .options(
+            selectinload(Payment.allocations),
+            selectinload(Payment.receipts),
+            selectinload(Payment.student),
+        )
+        .where(Payment.id == payment_id)
+    )
+    payment = result.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment record not found")
+
+    if payment.student:
+        check_institution_access(payment.student.institution_id, current_user)
+
+    if payment.status in ("posted", "completed"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot cancel a posted payment using /cancel. Use /reverse to restore invoice balances and void receipts.",
+        )
+    if payment.status == "cancelled":
+        raise HTTPException(status_code=400, detail="Payment is already cancelled")
+    if payment.status == "reversed":
+        raise HTTPException(status_code=400, detail="Payment is already reversed")
+
+    old_status = payment.status
+    now = datetime.now(timezone.utc)
+    payment.status = "cancelled"
+    payment.reversal_reason = data.reason
+    payment.reversed_at = now
+    payment.reversed_by_id = current_user.id
+
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="payment_cancelled",
+        payment_id=payment.id,
+        old_data={"status": old_status},
+        new_data={"status": "cancelled", "reason": data.reason},
+        reason=data.reason,
+        severity="warning",
+    )
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": f"Payment #{payment.id} cancelled successfully",
+        "payment_id": payment.id,
+        "status": "cancelled",
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 3. APPROVE SUBMITTED PAYMENT (Standard ERP Mode)
 # ─────────────────────────────────────────────────────────────────────────────
 @router.post("/{payment_id}/approve")
@@ -474,7 +648,7 @@ async def approve_payment(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
-    """Approves a submitted payment under Standard ERP workflow rules."""
+    """Approves a submitted payment under Standard ERP workflow rules with Segregation of Duties."""
     result = await db.execute(select(Payment).options(selectinload(Payment.student)).where(Payment.id == payment_id))
     payment = result.scalar_one_or_none()
     if not payment:
@@ -483,6 +657,13 @@ async def approve_payment(
         check_institution_access(payment.student.institution_id, current_user)
     if payment.status != "submitted":
         raise HTTPException(status_code=400, detail=f"Cannot approve payment in '{payment.status}' state")
+
+    # POLICY RULE F: Segregation of Duties - Submitter cannot approve their own transaction
+    if payment.submitted_by_id and payment.submitted_by_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Segregation of Duties Violation: You cannot approve a payment transaction you submitted yourself.",
+        )
 
     now = datetime.now(timezone.utc)
     payment.status = "approved"
@@ -735,6 +916,11 @@ async def cancel_receipt(
         "message": f"Receipt {receipt_number} cancelled successfully",
         "receipt_number": receipt_number,
         "status": "cancelled",
+        "refund_guidance": (
+            "Receipt cancellation invalidates the issued proof of payment but does NOT constitute financial disbursement. "
+            "If funds were physically received and must be remitted back to the student/parent, initiate an official "
+            "Refund Workflow via /api/v1/payments/{payment_id}/refunds."
+        ),
     }
 
 
@@ -795,6 +981,13 @@ async def create_payment_refund(
     is_admin = getattr(current_user, "role", None) in APPROVER_ROLES
     initial_status = "completed" if (is_admin and data.process_now) else "requested"
 
+    # Sequential refund reference number generation conforming to Immutable Numbering Policy
+    ref_num = data.reference_number
+    if not ref_num:
+        ref_num = await generate_next_refund_number(
+            db, institution_id=effective_inst_id, academic_year_id=payment.academic_year_id
+        )
+
     now = datetime.now(timezone.utc)
     refund = Refund(
         institution_id=effective_inst_id,
@@ -804,7 +997,7 @@ async def create_payment_refund(
         amount=data.amount,
         refund_date=date.today(),
         refund_method=data.refund_method,
-        reference_number=data.reference_number,
+        reference_number=ref_num,
         reason=data.reason,
         notes=data.notes,
         status=initial_status,
@@ -826,7 +1019,7 @@ async def create_payment_refund(
             action=f"refund_{initial_status}",
             payment_id=payment.id,
             old_data=None,
-            new_data={"refund_id": refund.id, "amount": float(data.amount), "status": initial_status},
+            new_data={"refund_id": refund.id, "amount": float(data.amount), "status": initial_status, "reference_number": ref_num},
             reason=f"Refund of ₹{data.amount} for payment {payment.id}: {data.reason}",
         )
 
@@ -835,6 +1028,7 @@ async def create_payment_refund(
     return {
         "refund_id": refund.id,
         "payment_id": payment.id,
+        "reference_number": ref_num,
         "amount": float(refund.amount),
         "status": refund.status,
         "message": "Refund processed successfully" if initial_status == "completed" else "Refund requested for approval",
@@ -853,7 +1047,7 @@ async def approve_refund(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions: requires 'payments:refund_approve' privilege.",
         )
-    """Approves a requested refund."""
+    """Approves a requested refund with Segregation of Duties."""
     result = await db.execute(select(Refund).where(Refund.id == refund_id))
     refund = result.scalar_one_or_none()
     if not refund:
@@ -861,6 +1055,13 @@ async def approve_refund(
     check_institution_access(refund.institution_id, current_user)
     if refund.status != "requested":
         raise HTTPException(status_code=400, detail=f"Cannot approve refund in '{refund.status}' state")
+
+    # POLICY RULE F: Segregation of Duties - Requester cannot approve their own refund
+    if refund.requested_by_id and refund.requested_by_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Segregation of Duties Violation: You cannot approve a refund request you submitted yourself.",
+        )
 
     now = datetime.now(timezone.utc)
     refund.status = "approved"

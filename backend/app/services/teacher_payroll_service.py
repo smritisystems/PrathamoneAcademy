@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description Complete business logic and calculation engine for Teacher Payroll,
 #  */
@@ -84,42 +84,16 @@ async def generate_next_session_code(db: AsyncSession, session_date: date) -> st
 
 
 async def generate_next_payroll_number(db: AsyncSession, year: int, month: int) -> str:
-    """Format: PRL-{YYYY}-{MM:02d}-{SEQ:04d} e.g. PRL-2026-11-0001"""
-    prefix = f"PRL-{year}-{month:02d}-"
-    stmt = select(TeacherPayroll.payroll_number).where(
-        TeacherPayroll.payroll_number.like(f"{prefix}%")
-    ).order_by(desc(TeacherPayroll.id))
-    result = await db.execute(stmt)
-    numbers = result.scalars().all()
-    max_seq = 0
-    for num in numbers:
-        try:
-            seq_part = int(num.split("-")[-1])
-            if seq_part > max_seq:
-                max_seq = seq_part
-        except (ValueError, IndexError):
-            pass
-    return f"{prefix}{max_seq + 1:04d}"
+    """Format: PRL-{YYYY}-{MM:02d}-{SEQ:04d} e.g. PRL-2026-11-0001 (Delegates to canonical Sequence service)"""
+    from app.services.sequence import generate_next_payroll_number as seq_gen
+    return await seq_gen(db, year, month)
 
 
 async def generate_next_voucher_number(db: AsyncSession, payment_date: date) -> str:
-    """Format: TPV-{YYYY}-{SEQ:04d} e.g. TPV-2026-0001"""
-    year = payment_date.year
-    prefix = f"TPV-{year}-"
-    stmt = select(TeacherPaymentVoucher.voucher_number).where(
-        TeacherPaymentVoucher.voucher_number.like(f"{prefix}%")
-    ).order_by(desc(TeacherPaymentVoucher.id))
-    result = await db.execute(stmt)
-    numbers = result.scalars().all()
-    max_seq = 0
-    for num in numbers:
-        try:
-            seq_part = int(num.split("-")[-1])
-            if seq_part > max_seq:
-                max_seq = seq_part
-        except (ValueError, IndexError):
-            pass
-    return f"{prefix}{max_seq + 1:04d}"
+    """Format: TPV-{YYYY}-{SEQ:04d} e.g. TPV-2026-0001 (Delegates to canonical Sequence service)"""
+    from app.services.sequence import generate_next_voucher_number as seq_gen
+    return await seq_gen(db, payment_date)
+
 
 
 # ============================================================================
