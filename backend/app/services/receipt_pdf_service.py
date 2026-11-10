@@ -255,14 +255,14 @@ class ReceiptPdfService:
         page = doc.new_page(width=420.0, height=595.0)
 
         inst = institution_data or {}
-        inst_name = (inst.get("name") or "PRASHANT ACADEMY").upper()
-        inst_tagline = inst.get("tagline") or "Learn • Practice • Achieve"
-        inst_address = inst.get("address") or "Shop No16, 14, 12, Aquarius Taurus Building, Jankalyan Nagar, Malad West"
-        inst_city = inst.get("city") or "Mumbai"
-        inst_state = inst.get("state") or "Maharashtra"
-        inst_pincode = inst.get("pincode") or "400095"
-        inst_phone = inst.get("phone") or "+91-7021789907"
-        inst_email = inst.get("email") or "tejam.prashnat@gmail.com"
+        inst_name = (str(inst.get("name") or "").strip() or "PRASHANT ACADEMY").upper()
+        inst_tagline = str(inst.get("tagline") or "").strip() or "Learn • Practice • Achieve"
+        inst_address = str(inst.get("address") or "").strip() or "Shop No16, 14, 12, Aquarius Taurus Building, Jankalyan Nagar, Malad West"
+        inst_city = str(inst.get("city") or "").strip() or "Mumbai"
+        inst_state = str(inst.get("state") or "").strip() or "Maharashtra"
+        inst_pincode = str(inst.get("pincode") or "").strip() or "400095"
+        inst_phone = str(inst.get("phone") or "").strip() or "+91-7021789907"
+        inst_email = str(inst.get("email") or "").strip() or "tejam.prashnat@gmail.com"
 
         # Check settings for logo, tagline, sovereign trim, and verification seal visibility
         show_logo = inst.get("print_receipt_logo", True)
@@ -511,16 +511,24 @@ class ReceiptPdfService:
         insert_amount_with_rupee(page, fitz.Point(372, 311.5), out_bal, fontsize=5.8, color=cls.C_TEXT_DARK)
 
         # 7. Previous Payment Details (Installments) Table (y = 332 to dynamic bottom)
-        page.insert_text(fitz.Point(26, 342), "PREVIOUS PAYMENT DETAILS (INSTALLMENTS)", fontname="hebo", fontsize=7.2, color=cls.C_DARK_NAVY)
-        cnt_str = f"{prev_count} Payment{'s' if prev_count != 1 else ''}"
+        ledger_entries = receipt_data.get("all_installments") or historical_payments
+        use_all_installments = bool(receipt_data.get("all_installments"))
+        entry_count = len(ledger_entries)
+
+        table_title = "PAYMENT INSTALLMENTS HISTORY (TO DATE)" if use_all_installments else "PREVIOUS PAYMENT DETAILS (INSTALLMENTS)"
+        page.insert_text(fitz.Point(26, 342), table_title, fontname="hebo", fontsize=7.2, color=cls.C_DARK_NAVY)
+        cnt_str = f"{entry_count} Installment{'s' if entry_count != 1 else ''}"
         cnt_l = fitz.get_text_length(cnt_str, fontname="helv", fontsize=6.5)
         page.insert_text(fitz.Point(402 - cnt_l, 342), cnt_str, fontname="helv", fontsize=6.5, color=cls.C_TEXT_GRAY)
 
-        # Dynamic table row height based on number of historical payments
-        total_hist = len(historical_payments) if historical_payments else 0
-        row_count = max(1, min(total_hist, 10)) if total_hist > 0 else 1
-        if row_count > 6:
-            row_h = 11.2
+        # Dynamic table row height based on number of payments
+        total_entries = len(ledger_entries) if ledger_entries else 0
+        row_count = max(1, min(total_entries, 12)) if total_entries > 0 else 1
+        if row_count > 8:
+            row_h = 10.5
+            font_size_row = 6.0
+        elif row_count > 5:
+            row_h = 11.5
             font_size_row = 6.3
         elif row_count > 3:
             row_h = 12.8
@@ -547,19 +555,27 @@ class ReceiptPdfService:
         page.insert_text(fitz.Point(392 - a_l, tbl_top + 10.5), "AMOUNT", fontname="hebo", fontsize=6.5, color=cls.C_DARK_NAVY)
 
         # Data Rows
-        if historical_payments:
-            for idx, hp in enumerate(historical_payments[:10], start=1):
+        if ledger_entries:
+            for idx, hp in enumerate(ledger_entries[:12], start=1):
                 ry = tbl_top + tbl_header_h + (idx - 1) * row_h
                 page.draw_line(fitz.Point(18, ry), fitz.Point(402, ry), color=(0.93, 0.95, 0.97), width=0.5)
-                page.insert_text(fitz.Point(26, ry + row_h - 3.5), str(idx), fontname="helv", fontsize=font_size_row, color=cls.C_TEXT_DARK)
+                is_curr = bool(hp.get("is_current_receipt") or hp.get("receipt_number") == rec_num)
+
+                num_col = cls.C_ROYAL_BLUE if is_curr else cls.C_TEXT_DARK
+                page.insert_text(fitz.Point(26, ry + row_h - 3.5), str(idx), fontname="hebo" if is_curr else "helv", fontsize=font_size_row, color=num_col)
                 hp_date = format_display_date(hp.get("date"))
-                page.insert_text(fitz.Point(44, ry + row_h - 3.5), hp_date, fontname="helv", fontsize=font_size_row, color=cls.C_TEXT_DARK)
+                page.insert_text(fitz.Point(44, ry + row_h - 3.5), hp_date, fontname="hebo" if is_curr else "helv", fontsize=font_size_row, color=num_col)
+
                 hp_rec = str(hp.get("receipt_number") or f"RCP-HIST-{idx}")
-                page.insert_text(fitz.Point(120, ry + row_h - 3.5), hp_rec, fontname="hebo", fontsize=font_size_row, color=cls.C_ROYAL_BLUE)
+                if is_curr:
+                    page.insert_text(fitz.Point(120, ry + row_h - 3.5), f"{hp_rec} ★", fontname="hebo", fontsize=font_size_row, color=cls.C_ROYAL_BLUE)
+                else:
+                    page.insert_text(fitz.Point(120, ry + row_h - 3.5), hp_rec, fontname="hebo", fontsize=font_size_row, color=cls.C_ROYAL_BLUE)
+
                 hp_met = cls.METHOD_NAMES.get(str(hp.get("payment_method") or "cash").lower(), str(hp.get("payment_method") or "Cash").capitalize())
                 page.insert_text(fitz.Point(210, ry + row_h - 3.5), hp_met, fontname="helv", fontsize=font_size_row, color=cls.C_TEXT_DARK)
                 hp_amt = float(hp.get("amount") or 0.0)
-                insert_amount_with_rupee(page, fitz.Point(392, ry + row_h - 3.5), hp_amt, fontsize=font_size_row, color=cls.C_TEXT_DARK, right_align=True)
+                insert_amount_with_rupee(page, fitz.Point(392, ry + row_h - 3.5), hp_amt, fontsize=font_size_row, color=cls.C_ROYAL_BLUE if is_curr else cls.C_TEXT_DARK, right_align=True, bold=is_curr)
         else:
             ry = tbl_top + tbl_header_h
             page.draw_line(fitz.Point(18, ry), fitz.Point(402, ry), color=(0.93, 0.95, 0.97), width=0.5)
@@ -569,8 +585,10 @@ class ReceiptPdfService:
         # Total Row at bottom of table
         tot_ry = tbl_bottom - tbl_total_row_h
         page.draw_rect(fitz.Rect(18, tot_ry, 402, tbl_bottom), color=cls.C_BORDER, fill=(0.98, 0.99, 1.0), width=0.5)
-        page.insert_text(fitz.Point(220, tot_ry + 10), "Previous Payments Total:", fontname="hebo", fontsize=6.8, color=cls.C_TEXT_DARK)
-        insert_amount_with_rupee(page, fitz.Point(392, tot_ry + 10), prev_paid, fontsize=7.2, color=cls.C_TEXT_DARK, right_align=True)
+        tot_label = "Total Installments Paid:" if use_all_installments else "Previous Payments Total:"
+        tot_display_amount = tot_paid if use_all_installments else prev_paid
+        page.insert_text(fitz.Point(220, tot_ry + 10), tot_label, fontname="hebo", fontsize=6.8, color=cls.C_TEXT_DARK)
+        insert_amount_with_rupee(page, fitz.Point(392, tot_ry + 10), tot_display_amount, fontsize=7.2, color=cls.C_TEXT_DARK, right_align=True)
 
         # 8. Footer Section (positioned relative to tbl_bottom)
         footer_top = max(432.0, tbl_bottom + 10.0)

@@ -226,6 +226,10 @@ export default function Payments() {
     queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
     queryClient.invalidateQueries({ queryKey: ['fee-register'] })
     queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
+    queryClient.invalidateQueries({ queryKey: ['student-admin-profile'] })
+    queryClient.invalidateQueries({ queryKey: ['student-fees'] })
+    queryClient.invalidateQueries({ queryKey: ['student-invoices'] })
   }
 
   // Mutation: Reverse

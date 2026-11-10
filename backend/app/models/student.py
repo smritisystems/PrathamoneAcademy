@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-10
 #  *
 #  * @description SQLAlchemy model defining student personal profile, contact information, and parent records.
 #  */
@@ -75,6 +75,9 @@ class Student(Base):
     )
     fee_assignments: Mapped[list["StudentFeeAssignment"]] = relationship(
         "StudentFeeAssignment", back_populates="student"
+    )
+    concession_applications: Mapped[list["StudentConcessionApplication"]] = relationship(
+        "StudentConcessionApplication", back_populates="student", order_by="desc(StudentConcessionApplication.created_at)"
     )
     payments: Mapped[list["Payment"]] = relationship(
         "Payment", back_populates="student"

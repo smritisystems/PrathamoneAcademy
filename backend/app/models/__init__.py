@@ -27,7 +27,8 @@ from app.models.enrollment import StudentEnrollment
 from app.models.subject import Subject, CanonicalSubject, SubjectMapping
 from app.models.fee import (
     FeeCategory, FeeStructure, StudentFeeAssignment,
-    FeeInvoice, FeeInvoiceItem
+    FeeInvoice, FeeInvoiceItem,
+    FeeConcessionType, StudentConcessionApplication, FeeConcessionAllocation
 )
 from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.attendance import Attendance
@@ -89,7 +90,10 @@ __all__ = [
     "StudentFeeAssignment",
     "FeeInvoice",
     "FeeInvoiceItem",
-                "Payment",
+    "FeeConcessionType",
+    "StudentConcessionApplication",
+    "FeeConcessionAllocation",
+    "Payment",
     "PaymentAllocation",
     "PaymentReceipt",
     "Refund",

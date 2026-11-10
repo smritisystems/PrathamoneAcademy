@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -158,8 +158,12 @@ export default function StudentDetailPage() {
       const currentPkg =
         data.custom_package_amount !== null && data.custom_package_amount !== undefined
           ? String(data.custom_package_amount)
+          : (data as any).custom_amount !== null && (data as any).custom_amount !== undefined
+          ? String((data as any).custom_amount)
           : data.current_structure
           ? String(data.current_structure.amount)
+          : (data as any).assigned_structure
+          ? String((data as any).assigned_structure.base_amount)
           : '0'
       const currentConcession =
         data.concession_amount !== null && data.concession_amount !== undefined
@@ -167,7 +171,7 @@ export default function StudentDetailPage() {
           : '0'
 
       setAdjustForm({
-        fee_structure_id: data.current_structure?.id || (data.available_structures?.[0]?.id ?? 0),
+        fee_structure_id: data.current_structure?.id || (data as any).assigned_structure?.id || (data.available_structures?.[0]?.id ?? 0),
         package_amount: currentPkg,
         concession_amount: currentConcession,
         reason: '',
@@ -223,8 +227,12 @@ export default function StudentDetailPage() {
       toast.success(res.data.message || 'Student fee adjustment applied successfully!')
       setAdjustFeesSuccess(res.data.message || 'Fee adjusted successfully.')
       queryClient.invalidateQueries({ queryKey: ['student-admin-profile', studentId] })
+      queryClient.invalidateQueries({ queryKey: ['student-fees', studentId] })
+      queryClient.invalidateQueries({ queryKey: ['student-invoices', studentId] })
+      queryClient.invalidateQueries({ queryKey: ['student', studentId] })
       queryClient.invalidateQueries({ queryKey: ['student-lifecycle-history', studentId] })
       queryClient.invalidateQueries({ queryKey: ['students'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] })
       setTimeout(() => {
         setShowAdjustFeesModal(false)
         setAdjustFeesSuccess(null)
@@ -2218,22 +2226,26 @@ export default function StudentDetailPage() {
                   )}
 
                   {/* Account Snapshot */}
-                  {feeDetails?.current_invoice && (
-                    <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 grid grid-cols-3 gap-2 text-center">
-                      <div>
-                        <span className="block text-[10px] font-semibold text-slate-500 uppercase">Current Net Fee</span>
-                        <span className="text-xs font-bold text-slate-900">{fmt(feeDetails.current_invoice.net_amount)}</span>
+                  {(() => {
+                    const invSnap = feeDetails?.current_invoice || (feeDetails as any)?.invoice
+                    if (!invSnap) return null
+                    return (
+                      <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <span className="block text-[10px] font-semibold text-slate-500 uppercase">Current Net Fee</span>
+                          <span className="text-xs font-bold text-slate-900">{fmt(invSnap.net_amount)}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] font-semibold text-slate-500 uppercase">Paid So Far</span>
+                          <span className="text-xs font-bold text-emerald-700">{fmt(invSnap.paid_amount)}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] font-semibold text-slate-500 uppercase">Outstanding</span>
+                          <span className="text-xs font-bold text-rose-700">{fmt(invSnap.outstanding_amount)}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="block text-[10px] font-semibold text-slate-500 uppercase">Paid So Far</span>
-                        <span className="text-xs font-bold text-emerald-700">{fmt(feeDetails.current_invoice.paid_amount)}</span>
-                      </div>
-                      <div>
-                        <span className="block text-[10px] font-semibold text-slate-500 uppercase">Outstanding</span>
-                        <span className="text-xs font-bold text-rose-700">{fmt(feeDetails.current_invoice.outstanding_amount)}</span>
-                      </div>
-                    </div>
-                  )}
+                    )
+                  })()}
 
                   {/* Fee Plan Selection */}
                   <div>
@@ -2295,7 +2307,7 @@ export default function StudentDetailPage() {
                     const pkg = parseFloat(adjustForm.package_amount) || 0
                     const conc = parseFloat(adjustForm.concession_amount) || 0
                     const net = Math.max(0, pkg - conc)
-                    const paid = feeDetails?.current_invoice?.paid_amount || 0
+                    const paid = feeDetails?.current_invoice?.paid_amount || (feeDetails as any)?.invoice?.paid_amount || 0
                     const newBal = Math.max(0, net - paid)
 
                     return (

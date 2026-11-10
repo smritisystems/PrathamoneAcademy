@@ -391,24 +391,31 @@ async def get_student_fee_details(
             "base_amount": float(assignment.fee_structure.amount),
         }
 
+    custom_val = float(assignment.custom_amount) if (assignment and assignment.custom_amount is not None) else (assigned_structure["base_amount"] if assigned_structure else 0.0)
+    inv_data = {
+        "id": invoice.id if invoice else None,
+        "invoice_number": invoice.invoice_number if invoice else None,
+        "total_amount": float(invoice.total_amount) if invoice else 0.0,
+        "discount_amount": float(invoice.discount_amount) if invoice else 0.0,
+        "net_amount": float(invoice.net_amount) if invoice else 0.0,
+        "paid_amount": float(invoice.paid_amount) if invoice else 0.0,
+        "outstanding_amount": float(invoice.outstanding_amount) if invoice else 0.0,
+        "status": invoice.status if invoice else "none",
+    } if invoice else None
+
     return {
         "student_id": student.id,
         "student_name": f"{student.first_name} {student.last_name}",
         "admission_number": student.admission_number,
         "academic_year_id": ay_id,
         "assigned_structure": assigned_structure,
-        "custom_amount": float(assignment.custom_amount) if (assignment and assignment.custom_amount is not None) else (assigned_structure["base_amount"] if assigned_structure else 0.0),
+        "current_structure": assigned_structure,
+        "custom_amount": custom_val,
+        "custom_package_amount": custom_val,
         "concession_amount": float(assignment.concession_amount) if assignment else 0.0,
         "remarks": assignment.remarks if assignment else "",
-        "invoice": {
-            "invoice_number": invoice.invoice_number if invoice else None,
-            "total_amount": float(invoice.total_amount) if invoice else 0.0,
-            "discount_amount": float(invoice.discount_amount) if invoice else 0.0,
-            "net_amount": float(invoice.net_amount) if invoice else 0.0,
-            "paid_amount": float(invoice.paid_amount) if invoice else 0.0,
-            "outstanding_amount": float(invoice.outstanding_amount) if invoice else 0.0,
-            "status": invoice.status if invoice else "none",
-        } if invoice else None,
+        "invoice": inv_data,
+        "current_invoice": inv_data,
         "available_structures": [
             {"id": s.id, "name": s.name, "amount": float(s.amount), "frequency": s.frequency}
             for s in structures
@@ -539,6 +546,46 @@ async def adjust_student_fees(
         else:
             invoice.status = "unpaid"
         invoice.notes = (invoice.notes or "") + f" | Adjusted by {current_user.username}: {reason}"
+
+    # Synchronize invoice line items
+    items_res = await db.execute(select(FeeInvoiceItem).where(FeeInvoiceItem.invoice_id == invoice.id))
+    inv_items = items_res.scalars().all()
+    if inv_items:
+        primary_item = inv_items[0]
+        primary_item.amount = package_amt
+        primary_item.net_amount = net_amt
+        primary_item.description = f"Annual Academic & Coaching Tuition Fee (Adjusted: {reason})"
+    else:
+        new_item = FeeInvoiceItem(
+            invoice_id=invoice.id,
+            amount=package_amt,
+            net_amount=net_amt,
+            description=f"Annual Academic & Coaching Tuition Fee (Adjusted: {reason})",
+        )
+        db.add(new_item)
+
+    # Recalculate installments if present
+    inst_res = await db.execute(
+        select(FeeInstallment)
+        .where(FeeInstallment.invoice_id == invoice.id)
+        .order_by(FeeInstallment.installment_number)
+    )
+    insts = inst_res.scalars().all()
+    if insts:
+        rem_net = net_amt
+        per_inst = round(net_amt / len(insts), 2)
+        for idx, inst in enumerate(insts):
+            if idx == len(insts) - 1:
+                inst.amount = rem_net
+            else:
+                inst.amount = per_inst
+                rem_net -= per_inst
+            if inst.paid_amount >= inst.amount - Decimal("0.01"):
+                inst.status = "paid"
+            elif inst.paid_amount > Decimal("0.00"):
+                inst.status = "partial"
+            else:
+                inst.status = "unpaid"
 
     # Log audit entry
     audit = AuditLog(

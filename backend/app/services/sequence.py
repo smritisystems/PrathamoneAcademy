@@ -369,6 +369,68 @@ async def generate_next_refund_number(
     return formatted
 
 
+# ─── 5B. SCHOLARSHIP & CONCESSION APPLICATION NUMBER GENERATOR ─────────────────
+
+async def generate_next_concession_number(
+    db: AsyncSession,
+    institution_id: int = 1,
+    academic_year_id: Optional[int] = None,
+) -> str:
+    """
+    Generates next sequential concession application number (e.g. SCH-2026-0001).
+    Scans all existing concession application records to ensure no duplicates.
+    """
+    await acquire_sequence_lock(db, institution_id)
+
+    prefix = "SCH"
+    year_str = await _resolve_academic_year_str(db, academic_year_id)
+    pattern = f"{prefix}-{year_str}-%"
+
+    from app.models.fee import StudentConcessionApplication
+
+    res = await db.execute(
+        select(StudentConcessionApplication.application_number).where(
+            StudentConcessionApplication.application_number.like(pattern)
+        )
+    )
+    app_numbers = res.scalars().all()
+
+    max_seq = 0
+    for a_num in app_numbers:
+        if a_num:
+            parts = a_num.split("-")
+            if parts:
+                last_part = parts[-1]
+                if last_part.isdigit():
+                    val = int(last_part)
+                    if val > max_seq:
+                        max_seq = val
+
+    next_seq = max_seq + 1
+    formatted = f"{prefix}-{year_str}-{next_seq:04d}"
+
+    existing = (
+        await db.execute(
+            select(StudentConcessionApplication.id).where(
+                StudentConcessionApplication.application_number == formatted
+            )
+        )
+    ).scalar_one_or_none()
+
+    while existing:
+        next_seq += 1
+        formatted = f"{prefix}-{year_str}-{next_seq:04d}"
+        existing = (
+            await db.execute(
+                select(StudentConcessionApplication.id).where(
+                    StudentConcessionApplication.application_number == formatted
+                )
+            )
+        ).scalar_one_or_none()
+
+    return formatted
+
+
 # ─── 6. AUDITABLE NUMBERING GAP TRACKER ───────────────────────────────────────
 
 async def log_sequence_gap(

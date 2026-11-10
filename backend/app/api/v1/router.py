@@ -51,6 +51,7 @@ from app.api.v1.endpoints import (
     study_materials,
     navigation,
     governance,
+    concessions,
 )
 
 api_router = APIRouter()
@@ -76,6 +77,7 @@ api_router.include_router(
     attendance.router, prefix="/attendance", tags=["attendance"]
 )
 api_router.include_router(fees.router, prefix="/fees", tags=["fees"])
+api_router.include_router(concessions.router, prefix="/fees/concessions", tags=["fee-concessions"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 api_router.include_router(

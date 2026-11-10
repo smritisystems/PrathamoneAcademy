@@ -194,13 +194,14 @@ export default function PaymentReceiptView({
   const showSovereignTrim = Boolean(documentSettings?.print_sovereign_trim ?? false)
   const showVerificationSeal = Boolean(documentSettings?.print_verification_seal ?? false)
 
-  // Dynamic branding fields from existing Institute Profile
-  const academyName = (branding.academyName || branding.appName || 'PrathamOne EduOS').toUpperCase()
-  const academyTagline = branding.tagline || 'Coaching Institute Management System'
-  const academyAddress = branding.institutionAddress || branding.support?.address || ''
-  const academyPhone = branding.institutionPhone || branding.support?.phone || ''
-  const academyEmail = branding.institutionEmail || branding.support?.academyEmail || ''
-  const academyWebsite = branding.institutionWebsite || branding.support?.website || ''
+  // Authoritative branding fields from receipt or existing Institute Profile
+  const instFromServer = receipt.institution
+  const academyName = (instFromServer?.name || branding.academyName || branding.appName || 'Prashant Academy').toUpperCase()
+  const academyTagline = instFromServer?.tagline || branding.tagline || 'Centre for Academic Excellence • Estd. 2018'
+  const academyAddress = instFromServer?.address || branding.institutionAddress || branding.support?.address || 'Shop No16, 14, 12, Aquarius Taurus Building, Jankalyan Nagar, Malad West, Mumbai - 400095'
+  const academyPhone = instFromServer?.phone || branding.institutionPhone || branding.support?.phone || '+91-7021789907'
+  const academyEmail = instFromServer?.email || branding.institutionEmail || branding.support?.academyEmail || 'tejam.prashnat@gmail.com'
+  const academyWebsite = instFromServer?.website || branding.institutionWebsite || branding.support?.website || ''
 
   const [paperSize, setPaperSize] = useState<'A5' | 'A4'>(initialPaperSize)
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false)
@@ -258,10 +259,36 @@ export default function PaymentReceiptView({
 
   const historicalPayments: any[] = receipt.historical_payments || []
 
-  // Dynamically accommodate all historical payments (up to 10 on A5 with compact padding, up to 25 on A4)
-  const maxHistoricalToDisplay = paperSize === 'A5' ? 10 : 25
-  const visibleHistorical = historicalPayments.slice(0, maxHistoricalToDisplay)
-  const hiddenCount = historicalPayments.length - visibleHistorical.length
+  // Full chronological installments to date, including current receipt
+  const rawInstallments: any[] = receipt.all_installments && receipt.all_installments.length > 0
+    ? receipt.all_installments
+    : historicalPayments.length > 0
+    ? [
+        ...historicalPayments,
+        {
+          payment_id: receipt.payment_id,
+          receipt_number: receipt.receipt_number,
+          date: receipt.payment_date,
+          payment_method: receipt.payment_method,
+          amount: receipt.amount,
+          is_current_receipt: true,
+        },
+      ]
+    : [
+        {
+          payment_id: receipt.payment_id,
+          receipt_number: receipt.receipt_number,
+          date: receipt.payment_date,
+          payment_method: receipt.payment_method,
+          amount: receipt.amount,
+          is_current_receipt: true,
+        },
+      ]
+
+  // Dynamically accommodate all installments (up to 12 on A5 with compact padding, up to 25 on A4)
+  const maxHistoricalToDisplay = paperSize === 'A5' ? 12 : 25
+  const visibleHistorical = rawInstallments.slice(0, maxHistoricalToDisplay)
+  const hiddenCount = rawInstallments.length - visibleHistorical.length
 
   const handlePrint = () => {
     printReceiptElement({
@@ -837,12 +864,12 @@ export default function PaymentReceiptView({
                 <Layers className="w-3 h-3 text-white" />
               </div>
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-900">
-                PREVIOUS PAYMENT DETAILS (INSTALLMENTS)
+                PAYMENT INSTALLMENTS HISTORY (TO DATE)
               </span>
               <span className="sr-only">Historical Payment Details</span>
             </div>
             <span className="text-[10px] font-semibold text-slate-500">
-              {historicalPayments.length} Payments
+              {visibleHistorical.length} Installments
             </span>
           </div>
 
@@ -861,47 +888,57 @@ export default function PaymentReceiptView({
                 {visibleHistorical.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-2.5 px-3 text-center text-slate-500 italic bg-white">
-                      No previous payments. (This is the initial payment against this fee obligation.)
+                      No recorded installments to date.
                     </td>
                   </tr>
                 ) : (
-                  visibleHistorical.map((p: any, idx: number) => (
-                    <tr key={p.payment_id || idx} className="hover:bg-slate-50/50">
-                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2 text-center font-medium text-slate-500`}>
-                        {idx + 1}
-                      </td>
-                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 font-medium whitespace-nowrap`}>
-                        {p.date
-                          ? new Date(p.date).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })
-                          : '—'}
-                      </td>
-                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 font-mono font-bold text-primary-700 whitespace-nowrap`}>
-                        {p.receipt_number}
-                      </td>
-                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 capitalize whitespace-nowrap`}>
-                        {METHOD_LABELS[p.payment_method] ||
-                          p.payment_method?.replace(/_/g, ' ') ||
-                          'Bank Transfer'}
-                      </td>
-                      <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 text-right font-bold text-slate-900 whitespace-nowrap tabular-nums`}>
-                        {fmt(p.amount)}
-                      </td>
-                    </tr>
-                  ))
+                  visibleHistorical.map((p: any, idx: number) => {
+                    const isCurrent = Boolean(p.is_current_receipt || p.receipt_number === receipt.receipt_number)
+                    return (
+                      <tr key={p.payment_id || idx} className={isCurrent ? 'bg-blue-50/70 font-semibold' : 'hover:bg-slate-50/50'}>
+                        <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2 text-center font-medium ${isCurrent ? 'text-primary-700 font-bold' : 'text-slate-500'}`}>
+                          {idx + 1}
+                        </td>
+                        <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 font-medium whitespace-nowrap`}>
+                          {p.date
+                            ? new Date(p.date).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })
+                            : '—'}
+                        </td>
+                        <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 font-mono font-bold text-primary-700 whitespace-nowrap`}>
+                          <div className="flex items-center gap-1.5">
+                            <span>{p.receipt_number}</span>
+                            {isCurrent && (
+                              <span className="text-[7.5px] px-1 py-0.2 bg-blue-600 text-white rounded font-bold uppercase tracking-wider">
+                                ★ Current
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 capitalize whitespace-nowrap`}>
+                          {METHOD_LABELS[p.payment_method] ||
+                            p.payment_method?.replace(/_/g, ' ') ||
+                            'Bank Transfer'}
+                        </td>
+                        <td className={`${visibleHistorical.length > 5 ? 'py-0.5' : 'py-1'} px-2.5 text-right font-bold ${isCurrent ? 'text-primary-900' : 'text-slate-900'} whitespace-nowrap tabular-nums`}>
+                          {fmt(p.amount)}
+                        </td>
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
               {visibleHistorical.length > 0 && (
                 <tfoot className="bg-slate-50 font-bold text-slate-800 text-[9.5px] border-t border-slate-200">
                   <tr>
                     <td colSpan={4} className="py-1 px-2.5 text-right font-bold text-slate-600">
-                      Previous Payments Total:
+                      Total Installments Paid to Date:
                     </td>
-                    <td className="py-1 px-2.5 text-right font-bold text-blue-950 tabular-nums">
-                      {fmt(feeSummary.previous_payments_total)}
+                    <td className="py-1 px-2.5 text-right font-bold text-emerald-800 tabular-nums">
+                      {fmt(feeSummary.total_paid_to_date)}
                     </td>
                   </tr>
                 </tfoot>

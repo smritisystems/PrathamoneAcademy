@@ -1792,10 +1792,26 @@ async def build_receipt_response(
 
     outstanding_balance = max(Decimal("0.00"), total_fee_amount - total_paid_to_date)
 
+    all_installments = list(historical_payments)
+    if payment.status in ("posted", "completed"):
+        all_installments.append({
+            "payment_id": payment.id,
+            "receipt_number": receipt.receipt_number,
+            "date": str(payment.payment_date),
+            "payment_method": payment.payment_method,
+            "amount": float(current_payment_amount),
+            "transaction_reference": payment.transaction_reference,
+            "is_current_receipt": True,
+        })
+
     student = payment.student
-    raw_student_name = receipt_data.get("student_name") or (f"{student.first_name} {student.last_name}" if student else "")
-    student_name = re.sub(r"[\s\-_]+$", "", (raw_student_name or "").strip()) or raw_student_name
-    admission_number = receipt_data.get("admission_number") or (student.admission_number if student else "")
+    if student:
+        canonical_student_name = f"{student.first_name or ''} {student.last_name or ''}".strip()
+        student_name = re.sub(r"[\s\-_]+$", "", canonical_student_name).strip() or canonical_student_name
+    else:
+        raw_student_name = receipt_data.get("student_name") or ""
+        student_name = re.sub(r"[\s\-_]+$", "", (raw_student_name or "").strip()) or raw_student_name
+    admission_number = (student.admission_number if student else None) or receipt_data.get("admission_number") or ""
 
     standard_name = receipt_data.get("standard")
     division_name = receipt_data.get("batch") or receipt_data.get("division")
@@ -1889,7 +1905,11 @@ async def build_receipt_response(
     is_superseded = receipt.status == "superseded"
     is_voided = payment.status == "reversed" or receipt.status == "voided"
 
+    inst_id = (student.institution_id if student else None) or getattr(payment, "institution_id", 1) or 1
+    inst_dict = await get_institution_dict(db, inst_id)
+
     res_payload = {
+        "institution": inst_dict,
         "receipt_number": receipt.receipt_number,
         "payment_id": payment.id,
         "academic_year": academic_year_name or "2026 – 27",
@@ -1920,6 +1940,7 @@ async def build_receipt_response(
         "invoice_id": invoice.id if invoice else target_invoice_id,
         "invoice_number": invoice_number,
         "historical_payments": historical_payments,
+        "all_installments": all_installments,
         "fee_summary": fee_summary,
         "allocations": allocations_list,
         "collected_by": collected_by,

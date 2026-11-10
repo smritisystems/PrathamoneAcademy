@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description Service managing payment lifecycle states, ERP approval rules, audited modifications, receipt versioning, and refunds.
 #  */
@@ -577,10 +577,54 @@ async def execute_payment_edit(
             PaymentAllocation.__table__.delete().where(PaymentAllocation.payment_id == payment.id)
         )
 
-        new_allocs_input = update_data.get("allocations") or [
-            {"invoice_id": a.invoice_id, "installment_id": a.installment_id, "amount": float(a.allocated_amount)}
-            for a in old_allocs
-        ]
+        new_allocs_input = update_data.get("allocations")
+        if not new_allocs_input:
+            # If no manual allocations provided, auto-rebalance against existing allocations or active invoice
+            if len(old_allocs) == 1:
+                # Single invoice allocation: update allocation amount to match new payment amount exactly
+                new_allocs_input = [{
+                    "invoice_id": old_allocs[0].invoice_id,
+                    "installment_id": old_allocs[0].installment_id,
+                    "amount": float(new_amount),
+                }]
+            elif len(old_allocs) > 1:
+                # Proportional scaling across existing allocations
+                old_total_alloc = sum(a.allocated_amount for a in old_allocs)
+                if old_total_alloc > 0:
+                    ratio = new_amount / old_total_alloc
+                    new_allocs_input = [
+                        {
+                            "invoice_id": a.invoice_id,
+                            "installment_id": a.installment_id,
+                            "amount": float(round(a.allocated_amount * ratio, 2)),
+                        }
+                        for a in old_allocs
+                    ]
+                    # Adjust rounding difference on the last allocation
+                    allocated_so_far = sum(Decimal(str(x["amount"])) for x in new_allocs_input[:-1])
+                    new_allocs_input[-1]["amount"] = float(new_amount - allocated_so_far)
+                else:
+                    new_allocs_input = [
+                        {"invoice_id": a.invoice_id, "installment_id": a.installment_id, "amount": float(a.allocated_amount)}
+                        for a in old_allocs
+                    ]
+            else:
+                # No old allocations: find student's active invoice
+                act_inv_res = await db.execute(
+                    select(FeeInvoice).where(
+                        FeeInvoice.student_id == payment.student_id,
+                        FeeInvoice.status != "cancelled",
+                    ).order_by(desc(FeeInvoice.id))
+                )
+                act_inv = act_inv_res.scalars().first()
+                if act_inv:
+                    new_allocs_input = [{
+                        "invoice_id": act_inv.id,
+                        "installment_id": None,
+                        "amount": float(new_amount),
+                    }]
+                else:
+                    new_allocs_input = []
 
         for alloc in new_allocs_input:
             alloc_amt = Decimal(str(alloc["amount"]))
@@ -602,6 +646,8 @@ async def execute_payment_edit(
                     inv.status = "paid"
                 elif inv.paid_amount > Decimal("0.00"):
                     inv.status = "partial"
+                else:
+                    inv.status = "unpaid"
 
             if alloc.get("installment_id"):
                 inst_res = await db.execute(
