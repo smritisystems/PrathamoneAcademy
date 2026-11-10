@@ -31,6 +31,8 @@ from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role
 from app.models.user import User, AuditLog
 from app.models.student import Student
+from app.models.enrollment import StudentEnrollment
+from app.models.standard import Standard
 from app.models.academic_year import AcademicYear
 from app.models.fee import (
     FeeConcessionType,
@@ -45,7 +47,7 @@ from app.services.concession_service import (
     ConcessionWorkflowService,
 )
 
-router = APIRouter(prefix="/concessions", tags=["fees-concessions"])
+router = APIRouter(tags=["fees-concessions"])
 
 
 # ─── PYDANTIC SCHEMAS ─────────────────────────────────────────────────────────
@@ -91,6 +93,19 @@ class ConcessionApplicationCreate(BaseModel):
     sponsor_sanctioned_amount: Optional[Decimal] = None
     supporting_document_url: Optional[str] = None
     remarks: Optional[str] = None
+
+
+class ConcessionBulkApplicationCreate(BaseModel):
+    student_ids: List[int]
+    concession_type_id: int
+    academic_year_id: Optional[int] = None
+    requested_amount: Optional[Decimal] = None
+    requested_percentage: Optional[Decimal] = None
+    applicant_type: str = "staff_nomination"
+    sponsor_name: Optional[str] = None
+    sponsor_reference: Optional[str] = None
+    remarks: Optional[str] = None
+    auto_approve: bool = False
 
 
 class ConcessionVerificationRequest(BaseModel):
@@ -259,7 +274,9 @@ async def list_applications(
         select(StudentConcessionApplication)
         .options(
             selectinload(StudentConcessionApplication.concession_type),
-            selectinload(StudentConcessionApplication.student),
+            selectinload(StudentConcessionApplication.student)
+            .selectinload(Student.enrollments)
+            .selectinload(StudentEnrollment.standard),
             selectinload(StudentConcessionApplication.invoice),
         )
         .where(StudentConcessionApplication.institution_id == inst_id)
@@ -294,12 +311,19 @@ async def list_applications(
     for a in apps:
         s_name = f"{a.student.first_name} {a.student.last_name}" if a.student else "Unknown"
         adm_no = a.student.admission_number if a.student else "—"
+        std_name = "—"
+        if a.student and a.student.enrollments:
+            active_enr = next((e for e in a.student.enrollments if e.status == "active"), a.student.enrollments[0])
+            if active_enr and active_enr.standard:
+                std_name = active_enr.standard.name
+
         result.append({
             "id": a.id,
             "application_number": a.application_number,
             "student_id": a.student_id,
             "student_name": s_name,
             "admission_number": adm_no,
+            "standard": std_name,
             "concession_type_id": a.concession_type_id,
             "concession_name": a.concession_type.name if a.concession_type else "Concession",
             "category": a.concession_type.category if a.concession_type else "general",
@@ -364,6 +388,65 @@ async def submit_application(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/applications/bulk", status_code=status.HTTP_201_CREATED)
+async def submit_bulk_applications(
+    payload: ConcessionBulkApplicationCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("superadmin", "admin", "accountant", "principal")),
+):
+    inst_id = current_user.institution_id or 1
+    ay_id = payload.academic_year_id
+    if not ay_id:
+        ay_row = (await db.execute(select(AcademicYear).where(AcademicYear.is_active == True).order_by(desc(AcademicYear.id)))).scalars().first()
+        ay_id = ay_row.id if ay_row else 1
+
+    created_apps = []
+    errors = []
+
+    for sid in payload.student_ids:
+        try:
+            app = await ConcessionWorkflowService.submit_application(
+                db=db,
+                institution_id=inst_id,
+                student_id=sid,
+                concession_type_id=payload.concession_type_id,
+                academic_year_id=ay_id,
+                nominator=current_user,
+                requested_amount=payload.requested_amount,
+                requested_percentage=payload.requested_percentage,
+                applicant_type=payload.applicant_type,
+                sponsor_name=payload.sponsor_name,
+                sponsor_reference=payload.sponsor_reference,
+                remarks=payload.remarks,
+            )
+            if payload.auto_approve:
+                await ConcessionWorkflowService.approve_application(
+                    db=db,
+                    application_id=app.id,
+                    approver=current_user,
+                    approved_amount=app.requested_amount,
+                    remarks=payload.remarks or "Bulk batch approval",
+                    auto_apply=True,
+                )
+            created_apps.append({
+                "student_id": sid,
+                "application_id": app.id,
+                "application_number": app.application_number,
+                "amount": float(app.requested_amount),
+                "status": app.status,
+            })
+        except Exception as e:
+            errors.append({"student_id": sid, "error": str(e)})
+
+    return {
+        "message": f"Processed {len(created_apps)} of {len(payload.student_ids)} bulk concession applications.",
+        "successful_count": len(created_apps),
+        "failed_count": len(errors),
+        "applications": created_apps,
+        "errors": errors,
+    }
 
 
 @router.get("/applications/{application_id}")

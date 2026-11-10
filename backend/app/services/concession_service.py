@@ -36,7 +36,7 @@ from app.models.fee import (
 from app.models.student import Student, Guardian
 from app.models.user import User, AuditLog
 from app.models.academic_year import AcademicYear
-from app.models.exam import ExamMark
+from app.models.exam import ExamMark, Examination
 from app.models.attendance import Attendance
 from app.services.sequence import generate_next_concession_number
 
@@ -92,9 +92,13 @@ class ConcessionEligibilityService:
         # 2. Category-Specific Evaluations
         if cat == "merit":
             # Check exam marks in academic year
-            exam_stmt = select(ExamMark.marks_obtained, ExamMark.max_marks).where(
-                ExamMark.student_id == student_id,
-                ExamMark.is_absent == False,
+            exam_stmt = (
+                select(ExamMark.marks_obtained, Examination.max_marks)
+                .join(Examination, Examination.id == ExamMark.examination_id)
+                .where(
+                    ExamMark.student_id == student_id,
+                    ExamMark.is_absent == False,
+                )
             )
             exam_rows = (await db.execute(exam_stmt)).all()
             total_obt = sum(float(r[0] or 0) for r in exam_rows)

@@ -133,19 +133,30 @@ PrathamOne EduOS provides two distinct methods for granting fee concessions:
 
 ---
 
-### Method B: Institutional Concession & Scholarship Engine
+### Method B: Institutional Concession & Scholarship Engine (`/fees/concessions`)
 
-For institutional-level policies where students submit applications or qualify based on rules:
-1. Navigate to **Fees & Accounting** (`/fees`) from the main sidebar.
-2. Click on the **Concessions & Scholarships** tab.
-3. **Configure Categories:** Define policies such as:
-   - *Merit Scholarship* (e.g., 25% for >90% score)
-   - *Sibling Discount* (e.g., flat ₹5,000 discount)
-   - *Staff-Child Concession* (e.g., 50% waiver)
-   - *Need-Based Assistance*
-4. **Submit Application:** Link the student to the policy with supporting verification documents.
-5. **Multi-Level Approval:** An authorized Super Admin / Accountant reviews and approves the application.
-6. Once approved, the concession automatically applies against the student's next generated invoice or creates a credit memo ledger entry.
+The centralized Fee Concession & Scholarship Workspace provides both **Single Student** and **Bulk / Batch** concession granting capabilities:
+
+1. Navigate to **Fees & Accounting** $\rightarrow$ **Concessions & Waivers** tab (`/fees/concessions`).
+2. Unlock **Edit Mode** via the orange header button.
+3. Click **"Apply Concession"** to open the modal.
+
+#### 1. Single Student Mode:
+- **Searchable Student Autocomplete:** Type student name or admission number to search live enrolled students.
+- **Scheme Selection:** Pick from active schemes (Merit Scholarship, Sibling Discount, Faculty/Staff Ward, Need-Based Assistance, Emergency Waiver, Early Admission Campaign).
+- **Automated Eligibility Engine:** The system instantly evaluates:
+  - *Academic Merit Benchmark:* Exam marks percentage across recorded exams.
+  - *Sibling Match:* Automatically scans database for co-enrolled siblings sharing guardian contact/Aadhar.
+  - *Staff-Child Verification:* Scans staff users matching guardian contact.
+  - *Attendance Compliance:* Verifies $\ge 75\%$ session attendance.
+- **Live Calculation:** Enter custom percentage or amount; review net deduction.
+- **Submit:** Creates an official application record (`CON-2026-XXXX`).
+
+#### 2. Bulk / Batch Selection Mode:
+- **Standard / Class Filter:** Select target standard (e.g. *Class 10 - Science*).
+- **Multi-Student Checklist:** Use **"Select All"** or check individual students.
+- **Scheme & Auto-Approve:** Choose concession scheme and toggle *"Automatically approve and apply directly to active fee invoices"*.
+- **One-Click Application:** Simultaneously applies the concession across all selected students with atomic invoice ledger synchronization.
 
 ---
 
@@ -166,3 +177,4 @@ To apply these fixes and features on the remote client server:
    docker compose restart
    ```
 All reconciliations, auto-balancing engines, and View-First concession workflows will be live immediately.
+

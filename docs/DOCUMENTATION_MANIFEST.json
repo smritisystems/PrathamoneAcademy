@@ -5,7 +5,7 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-10T15:14:59.952945",
+  "generated_at": "2026-11-10T16:41:09.073963",
   "total_documents": 383,
   "modules_catalog": [
     {
@@ -5364,8 +5364,8 @@
       "filename": "2026-11-10_FEES-PAYMENTS_USER-GUIDE_FEE-CONCESSIONS-AND-PAYMENT-RECONCILIATION_V1.md",
       "relative_path": "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_USER-GUIDE_FEE-CONCESSIONS-AND-PAYMENT-RECONCILIATION_V1.md",
       "extension": ".md",
-      "size_bytes": 8790,
-      "sha256": "5f33f04e4d1c113079ff9a71d5b15e6b817abb3fd41fae0321e8bcacf483e9bb",
+      "size_bytes": 9712,
+      "sha256": "ed36a884512afd136ae623b5aff0c12ffc1e1c15ab152c2b9d3baf1949eec19e",
       "module": "09_FEES_PAYMENTS",
       "title": "Fee Concession Application and Payment Reconciliation User Guide",
       "category": "USER-GUIDE",

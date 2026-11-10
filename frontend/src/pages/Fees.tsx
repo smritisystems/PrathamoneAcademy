@@ -38,7 +38,8 @@ import {
 import {
   feesApi, paymentsApi, feeCategoriesApi, feeStructuresApi,
   studentsApi, invoicesApi, reportsApi, academicYearsApi, boardsApi,
-  standardsApi, divisionsApi, settingsApi
+  standardsApi, divisionsApi, settingsApi, concessionsApi,
+  ConcessionType, ConcessionApplication, ConcessionEligibilityResult
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
@@ -291,87 +292,107 @@ function FeesContent() {
   const [concessionFilterStatus, setConcessionFilterStatus] = useState<string>('all')
   const [concessionSearchQuery, setConcessionSearchQuery] = useState('')
   const [isNewConcessionModalOpen, setIsNewConcessionModalOpen] = useState(false)
-  const [concessionForm, setConcessionForm] = useState({
-    student_name: '',
-    admission_number: '',
-    standard: 'Standard 10',
-    category: 'merit',
-    title: 'Merit Scholarship',
-    discount_percentage: 25,
-    concession_amount: 18750,
-    remarks: '',
+  const [concessionApplicationMode, setConcessionApplicationMode] = useState<'single' | 'bulk'>('single')
+
+  // Single student form
+  const [selectedStudentForConcession, setSelectedStudentForConcession] = useState<{ id: number; name: string; admission_number: string; standard?: string } | null>(null)
+  const [studentConcessionSearch, setStudentConcessionSearch] = useState('')
+  const [selectedConcessionTypeId, setSelectedConcessionTypeId] = useState<number | ''>('')
+  const [concessionAmountValue, setConcessionAmountValue] = useState<number | ''>('')
+  const [concessionPercentageValue, setConcessionPercentageValue] = useState<number | ''>('')
+  const [concessionRemarks, setConcessionRemarks] = useState('')
+  const [eligibilityResult, setEligibilityResult] = useState<ConcessionEligibilityResult | null>(null)
+  const [isEvaluatingEligibility, setIsEvaluatingEligibility] = useState(false)
+  const [isSubmittingConcession, setIsSubmittingConcession] = useState(false)
+
+  // Bulk student form
+  const [bulkStandardId, setBulkStandardId] = useState<number | ''>('')
+  const [bulkSelectedStudentIds, setBulkSelectedStudentIds] = useState<number[]>([])
+  const [bulkAutoApprove, setBulkAutoApprove] = useState(true)
+
+  // Queries for concessions
+  const { data: concessionTypes = [] } = useQuery({
+    queryKey: ['concession-types'],
+    queryFn: () => concessionsApi.getTypes().then((r) => r.data),
   })
 
-  const [concessionsList, setConcessionsList] = useState([
-    {
-      id: 1,
-      student_id: 201,
-      student_name: 'Ishaan Kulkarni',
-      roll_number: '10-A-15',
-      admission_number: 'ADM-2025-0115',
-      standard: 'Standard 10',
-      category: 'merit',
-      title: 'Merit Scholarship (Top 1% Entrance)',
-      discount_percentage: 50,
-      concession_amount: 37500,
-      academic_year: '2025-2026',
-      status: 'Approved',
-      approved_by: 'Director Academic Board',
-      approval_date: '2026-06-15',
-      remarks: 'Entrance Test Rank 2, sustained >90% aggregate',
-    },
-    {
-      id: 2,
-      student_id: 202,
-      student_name: 'Sanya Kulkarni',
-      roll_number: '8-B-09',
-      admission_number: 'ADM-2025-0089',
-      standard: 'Standard 8',
-      category: 'sibling',
-      title: 'Sibling Discount (Younger Ward)',
-      discount_percentage: 20,
-      concession_amount: 12000,
-      academic_year: '2025-2026',
-      status: 'Approved',
-      approved_by: 'Finance Committee',
-      approval_date: '2026-06-20',
-      remarks: 'Sibling of Ishaan Kulkarni (Standard 10)',
-    },
-    {
-      id: 3,
-      student_id: 203,
-      student_name: 'Varun Patil',
-      roll_number: '12-SCI-22',
-      admission_number: 'ADM-2025-0222',
-      standard: 'Standard 12 Science',
-      category: 'hardship',
-      title: 'Special Hardship Waiver',
-      discount_percentage: 35,
-      concession_amount: 33250,
-      academic_year: '2025-2026',
-      status: 'Pending',
-      approved_by: 'Under Review',
-      approval_date: '2026-11-02',
-      remarks: 'Medical emergency in family, application submitted with receipts',
-    },
-    {
-      id: 4,
-      student_id: 204,
-      student_name: 'Pooja Joshi',
-      roll_number: '11-SCI-11',
-      admission_number: 'ADM-2025-0311',
-      standard: 'Standard 11 Science',
-      category: 'staff_ward',
-      title: 'Faculty Ward Concession',
-      discount_percentage: 50,
-      concession_amount: 45000,
-      academic_year: '2025-2026',
-      status: 'Approved',
-      approved_by: 'Admin Office',
-      approval_date: '2026-07-01',
-      remarks: 'Ward of Senior Physics Faculty Prof. V. Joshi',
-    },
-  ])
+  const {
+    data: concessionApplications = [],
+    refetch: refetchConcessions,
+    isLoading: isLoadingConcessions,
+  } = useQuery({
+    queryKey: ['concession-applications', concessionFilterType, concessionFilterStatus, concessionSearchQuery],
+    queryFn: () =>
+      concessionsApi
+        .getApplications({
+          concession_type_id: concessionFilterType !== 'all' ? Number(concessionFilterType) : undefined,
+          status: concessionFilterStatus !== 'all' ? concessionFilterStatus : undefined,
+          search: concessionSearchQuery.trim() || undefined,
+        })
+        .then((r) => r.data),
+  })
+
+  const { data: concessionAnalytics, refetch: refetchConcessionAnalytics } = useQuery({
+    queryKey: ['concession-analytics', selectedAcademicYearId],
+    queryFn: () =>
+      concessionsApi
+        .getAnalytics(selectedAcademicYearId ?? undefined)
+        .then((r) => r.data),
+  })
+
+  // Single student search for concession modal
+  const { data: studentConcessionResults = [] } = useQuery({
+    queryKey: ['student-concession-search', studentConcessionSearch],
+    queryFn: () =>
+      studentsApi
+        .list({
+          search: studentConcessionSearch.trim() || undefined,
+          page_size: 15,
+        })
+        .then((r) => r.data.data),
+    enabled: isNewConcessionModalOpen && concessionApplicationMode === 'single' && studentConcessionSearch.trim().length >= 1,
+  })
+
+  // Bulk standard students for concession modal
+  const { data: bulkStandardStudents = [] } = useQuery({
+    queryKey: ['bulk-standard-students', bulkStandardId],
+    queryFn: () =>
+      studentsApi
+        .list({
+          standard_id: bulkStandardId ? Number(bulkStandardId) : undefined,
+          page_size: 100,
+        })
+        .then((r) => r.data.data),
+    enabled: isNewConcessionModalOpen && concessionApplicationMode === 'bulk' && !!bulkStandardId,
+  })
+
+  // Automated eligibility evaluation when student and scheme are selected
+  useEffect(() => {
+    if (selectedStudentForConcession && selectedConcessionTypeId) {
+      setIsEvaluatingEligibility(true)
+      concessionsApi
+        .evaluateEligibility(selectedStudentForConcession.id, Number(selectedConcessionTypeId))
+        .then((r) => setEligibilityResult(r.data))
+        .catch(() => setEligibilityResult(null))
+        .finally(() => setIsEvaluatingEligibility(false))
+
+      const cType = concessionTypes.find((t) => t.id === Number(selectedConcessionTypeId))
+      if (cType) {
+        if (cType.calculation_type === 'percentage') {
+          setConcessionPercentageValue(cType.default_value)
+          setConcessionAmountValue('')
+        } else if (cType.calculation_type === 'full_waiver') {
+          setConcessionPercentageValue(100)
+          setConcessionAmountValue('')
+        } else {
+          setConcessionAmountValue(cType.default_value)
+          setConcessionPercentageValue('')
+        }
+      }
+    } else {
+      setEligibilityResult(null)
+    }
+  }, [selectedStudentForConcession, selectedConcessionTypeId, concessionTypes])
 
   // ─────────────────────────────────────────────────────────────────────────────
   // WORKSPACE 7: ONLINE GATEWAY STATE
@@ -459,54 +480,133 @@ function FeesContent() {
     toast.success(`Bulk Fee Reminders successfully dispatched to ${filteredDefaulters.length} guardians via SMS & WhatsApp Gateway!`)
   }
 
-  const handleCreateConcessionSubmit = (e: React.FormEvent) => {
+  const handleCreateConcessionSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isEditMode) {
       toast.error('Locked in View Mode: Activate Edit Mode above to apply concessions.')
       return
     }
-    if (!concessionForm.student_name.trim()) {
-      toast.error('Please enter student name.')
-      return
+
+    if (concessionApplicationMode === 'single') {
+      if (!selectedStudentForConcession) {
+        toast.error('Please search and select an enrolled student.')
+        return
+      }
+      if (!selectedConcessionTypeId) {
+        toast.error('Please select a concession scheme.')
+        return
+      }
+
+      setIsSubmittingConcession(true)
+      try {
+        const res = await concessionsApi.createApplication({
+          student_id: selectedStudentForConcession.id,
+          concession_type_id: Number(selectedConcessionTypeId),
+          academic_year_id: selectedAcademicYearId ?? undefined,
+          requested_amount: concessionAmountValue ? Number(concessionAmountValue) : undefined,
+          requested_percentage: concessionPercentageValue ? Number(concessionPercentageValue) : undefined,
+          remarks: concessionRemarks.trim() || undefined,
+        })
+        toast.success(res.data.message || 'Concession application submitted successfully!')
+        refetchConcessions()
+        refetchConcessionAnalytics()
+        setIsNewConcessionModalOpen(false)
+        setSelectedStudentForConcession(null)
+        setStudentConcessionSearch('')
+        setSelectedConcessionTypeId('')
+        setConcessionAmountValue('')
+        setConcessionPercentageValue('')
+        setConcessionRemarks('')
+        setEligibilityResult(null)
+      } catch (err: any) {
+        toast.error(err?.response?.data?.detail || 'Failed to submit concession application.')
+      } finally {
+        setIsSubmittingConcession(false)
+      }
+    } else {
+      // Bulk mode
+      if (bulkSelectedStudentIds.length === 0) {
+        toast.error('Please select at least one student for bulk concession.')
+        return
+      }
+      if (!selectedConcessionTypeId) {
+        toast.error('Please select a concession scheme.')
+        return
+      }
+
+      setIsSubmittingConcession(true)
+      try {
+        const res = await concessionsApi.createBulkApplications({
+          student_ids: bulkSelectedStudentIds,
+          concession_type_id: Number(selectedConcessionTypeId),
+          academic_year_id: selectedAcademicYearId ?? undefined,
+          requested_amount: concessionAmountValue ? Number(concessionAmountValue) : undefined,
+          requested_percentage: concessionPercentageValue ? Number(concessionPercentageValue) : undefined,
+          remarks: concessionRemarks.trim() || undefined,
+          auto_approve: bulkAutoApprove,
+        })
+        toast.success(res.data.message)
+        refetchConcessions()
+        refetchConcessionAnalytics()
+        setIsNewConcessionModalOpen(false)
+        setBulkSelectedStudentIds([])
+        setConcessionRemarks('')
+      } catch (err: any) {
+        toast.error(err?.response?.data?.detail || 'Failed to apply bulk concessions.')
+      } finally {
+        setIsSubmittingConcession(false)
+      }
     }
-    const newRecord = {
-      id: Date.now(),
-      student_id: 300 + concessionsList.length,
-      student_name: concessionForm.student_name,
-      roll_number: 'NEW-01',
-      admission_number: concessionForm.admission_number || `ADM-2025-0${300 + concessionsList.length}`,
-      standard: concessionForm.standard,
-      category: concessionForm.category as any,
-      title: concessionForm.title,
-      discount_percentage: Number(concessionForm.discount_percentage) || 0,
-      concession_amount: Number(concessionForm.concession_amount) || 0,
-      academic_year: '2025-2026',
-      status: 'Approved' as const,
-      approved_by: `${user?.first_name || 'Admin'} (Institute Authority)`,
-      approval_date: new Date().toISOString().split('T')[0],
-      remarks: concessionForm.remarks || 'Standard Fee Waiver Approved',
-    }
-    setConcessionsList([newRecord, ...concessionsList])
-    setIsNewConcessionModalOpen(false)
-    toast.success(`Concession granted: ${fmt(newRecord.concession_amount)} waiver applied for ${newRecord.student_name}.`)
   }
 
-  const handleApproveConcession = (id: number) => {
+  const handleApproveConcession = async (id: number) => {
     if (!isEditMode) {
       toast.error('Locked in View Mode: Activate Edit Mode above to approve concessions.')
       return
     }
-    setConcessionsList(prev => prev.map(c => c.id === id ? { ...c, status: 'Approved', approved_by: `${user?.first_name || 'Admin'}` } : c))
-    toast.success('Concession application approved successfully!')
+    try {
+      const res = await concessionsApi.approveApplication(id, { auto_apply: true })
+      toast.success(res.data.message || 'Concession approved and applied to invoice!')
+      refetchConcessions()
+      refetchConcessionAnalytics()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to approve concession.')
+    }
   }
 
-  const handleRejectConcession = (id: number) => {
+  const handleRejectConcession = async (id: number) => {
     if (!isEditMode) {
       toast.error('Locked in View Mode: Activate Edit Mode above to reject concessions.')
       return
     }
-    setConcessionsList(prev => prev.map(c => c.id === id ? { ...c, status: 'Rejected' } : c))
-    toast.error('Concession application marked as rejected.')
+    const reason = window.prompt('Enter rejection reason:')
+    if (!reason || !reason.trim()) {
+      toast.error('A rejection reason is required.')
+      return
+    }
+    try {
+      const res = await concessionsApi.rejectApplication(id, { rejection_reason: reason.trim() })
+      toast.success(res.data.message || 'Concession application rejected.')
+      refetchConcessions()
+      refetchConcessionAnalytics()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to reject concession.')
+    }
+  }
+
+  const handleApplyConcession = async (id: number) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to apply concessions.')
+      return
+    }
+    try {
+      const res = await concessionsApi.applyApplication(id)
+      toast.success(res.data.message || 'Concession allocated to fee invoice!')
+      refetchConcessions()
+      refetchConcessionAnalytics()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to apply concession.')
+    }
   }
 
   const handleGenerateQr = () => {
@@ -548,16 +648,21 @@ function FeesContent() {
     return true
   })
 
-  // Filtered concessions
-  const filteredConcessions = concessionsList.filter(c => {
-    if (concessionFilterType !== 'all' && c.category !== concessionFilterType) return false
+  // Filtered concessions from live backend
+  const filteredConcessions = concessionApplications.filter(c => {
+    if (concessionFilterType !== 'all') {
+      const matchesId = String(c.concession_type_id) === concessionFilterType
+      const matchesCategory = c.category === concessionFilterType
+      if (!matchesId && !matchesCategory) return false
+    }
     if (concessionFilterStatus !== 'all' && c.status.toLowerCase() !== concessionFilterStatus.toLowerCase()) return false
     if (concessionSearchQuery) {
       const q = concessionSearchQuery.toLowerCase()
       return (
         c.student_name.toLowerCase().includes(q) ||
         c.admission_number.toLowerCase().includes(q) ||
-        c.title.toLowerCase().includes(q)
+        c.concession_name.toLowerCase().includes(q) ||
+        c.application_number.toLowerCase().includes(q)
       )
     }
     return true
@@ -4442,35 +4547,37 @@ function FeesContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Concessions</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Concessions Awarded</span>
                 <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-600">
                   <BadgePercent className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-extrabold text-slate-900">{fmt(127750)}</div>
-              <p className="text-[11px] text-purple-700 font-semibold mt-1">4 Enrolled Wards Covered</p>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(concessionAnalytics?.total_concessions_awarded ?? 0)}</div>
+              <p className="text-[11px] text-purple-700 font-semibold mt-1">
+                {concessionApplications.length} Application{concessionApplications.length === 1 ? '' : 's'} Logged
+              </p>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Merit Scholarships</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Applied to Invoices</span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(concessionAnalytics?.total_concessions_applied ?? 0)}</div>
+              <p className="text-[11px] text-emerald-700 font-semibold mt-1">Directly reduced invoice obligations</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Policy Schemes</span>
                 <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600">
                   <Award className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-extrabold text-slate-900">1 Student</div>
-              <p className="text-[11px] text-blue-700 font-semibold mt-1">{fmt(37500)} merit waiver</p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sibling Discounts</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
-                  <Users className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-xl font-extrabold text-slate-900">1 Student</div>
-              <p className="text-[11px] text-emerald-700 font-semibold mt-1">20% sibling policy rate</p>
+              <div className="text-xl font-extrabold text-slate-900">{concessionTypes.filter(t => t.is_active).length} Schemes</div>
+              <p className="text-[11px] text-blue-700 font-semibold mt-1">Merit, Sibling, Staff, Need-Based</p>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
@@ -4480,8 +4587,10 @@ function FeesContent() {
                   <Clock className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-extrabold text-slate-900">1 Application</div>
-              <p className="text-[11px] text-amber-700 font-semibold mt-1">Awaiting committee approval</p>
+              <div className="text-xl font-extrabold text-slate-900">
+                {concessionApplications.filter(a => a.status === 'pending_approval' || a.status === 'under_verification').length}
+              </div>
+              <p className="text-[11px] text-amber-700 font-semibold mt-1">Awaiting committee verification</p>
             </div>
           </div>
 
@@ -4505,10 +4614,11 @@ function FeesContent() {
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Concession Types</option>
-                <option value="merit">Merit Scholarship</option>
-                <option value="sibling">Sibling Discount</option>
-                <option value="staff_ward">Faculty / Staff Ward</option>
-                <option value="hardship">Special Hardship Waiver</option>
+                {concessionTypes.map((t) => (
+                  <option key={t.id} value={String(t.id)}>
+                    {t.name}
+                  </option>
+                ))}
               </select>
 
               <select
@@ -4517,9 +4627,12 @@ function FeesContent() {
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Approval Statuses</option>
-                <option value="approved">Approved</option>
-                <option value="pending">Pending</option>
+                <option value="applied">Applied to Invoice</option>
+                <option value="approved">Approved (Pending Allocation)</option>
+                <option value="pending_approval">Pending Approval</option>
+                <option value="under_verification">Under Verification</option>
                 <option value="rejected">Rejected</option>
+                <option value="withdrawn">Withdrawn</option>
               </select>
             </div>
 
@@ -4559,7 +4672,7 @@ function FeesContent() {
                     <th className="py-3 px-4">Category</th>
                     <th className="py-3 px-4 text-center">Discount %</th>
                     <th className="py-3 px-4 text-right">Amount Waived</th>
-                    <th className="py-3 px-4">Approved By</th>
+                    <th className="py-3 px-4">Funding Source</th>
                     <th className="py-3 px-4 text-center">Status</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
@@ -4569,12 +4682,14 @@ function FeesContent() {
                     <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-3 px-4">
                         <div className="font-bold text-slate-900">{c.student_name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">{c.admission_number}</div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          {c.admission_number} • <span className="text-primary-600">{c.application_number}</span>
+                        </div>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-slate-800">{c.standard}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-800">{c.standard || '—'}</td>
                       <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{c.title}</div>
-                        {c.remarks && <div className="text-[10px] text-slate-500 italic mt-0.5">{c.remarks}</div>}
+                        <div className="font-bold text-slate-900">{c.concession_name}</div>
+                        {c.approval_remarks && <div className="text-[10px] text-slate-500 italic mt-0.5">{c.approval_remarks}</div>}
                       </td>
                       <td className="py-3 px-4">
                         <span className="capitalize font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[10px]">
@@ -4582,36 +4697,44 @@ function FeesContent() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center font-mono font-bold text-slate-800">
-                        {c.discount_percentage ? `${c.discount_percentage}%` : '-'}
+                        {c.requested_percentage ? `${c.requested_percentage}%` : '—'}
                       </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-purple-700">{fmt(c.concession_amount)}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-purple-700">
+                        {fmt(c.applied_amount > 0 ? c.applied_amount : (c.approved_amount > 0 ? c.approved_amount : c.requested_amount))}
+                      </td>
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-800">{c.approved_by}</div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">{c.approval_date}</div>
+                        <div className="font-semibold text-slate-800">
+                          {c.funding_source === 'external_sponsor' ? (c.sponsor_name || 'External Sponsor') : 'Institute Fund'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          {c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : '—'}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          c.status === 'Approved'
+                          c.status === 'applied'
+                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                            : c.status === 'approved'
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : c.status === 'Pending'
+                            : c.status === 'pending_approval' || c.status === 'under_verification'
                             ? 'bg-amber-100 text-amber-800 border border-amber-200'
                             : 'bg-rose-100 text-rose-800 border border-rose-200'
                         }`}>
-                          {c.status}
+                          {c.status.replace('_', ' ').toUpperCase()}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {c.status === 'Pending' ? (
+                        {c.status === 'pending_approval' || c.status === 'under_verification' ? (
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               type="button"
                               onClick={() => handleApproveConcession(c.id)}
                               className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
                                 isEditMode
-                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                                   : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                               }`}
-                              title={isEditMode ? 'Approve Waiver' : 'Locked in View Mode'}
+                              title={isEditMode ? 'Approve & Apply to Invoice' : 'Locked in View Mode'}
                             >
                               Approve
                             </button>
@@ -4623,13 +4746,26 @@ function FeesContent() {
                                   ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
                                   : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                               }`}
-                              title={isEditMode ? 'Reject Waiver' : 'Locked in View Mode'}
+                              title={isEditMode ? 'Reject Application' : 'Locked in View Mode'}
                             >
                               Reject
                             </button>
                           </div>
+                        ) : c.status === 'approved' ? (
+                          <button
+                            type="button"
+                            onClick={() => handleApplyConcession(c.id)}
+                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                              isEditMode
+                                ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                            }`}
+                            title={isEditMode ? 'Apply to Student Invoice' : 'Locked in View Mode'}
+                          >
+                            Apply to Invoice
+                          </button>
                         ) : (
-                          <span className="text-[10px] text-slate-400 font-semibold">Processed</span>
+                          <span className="text-[10px] text-slate-400 font-semibold capitalize">{c.status}</span>
                         )}
                       </td>
                     </tr>
@@ -5056,102 +5192,372 @@ function FeesContent() {
       {isNewConcessionModalOpen && (
         <Modal
           isOpen={isNewConcessionModalOpen}
-          onClose={() => setIsNewConcessionModalOpen(false)}
-          title="Apply Fee Concession or Scholarship"
-          size="md"
+          onClose={() => {
+            setIsNewConcessionModalOpen(false)
+            setSelectedStudentForConcession(null)
+            setStudentConcessionSearch('')
+            setEligibilityResult(null)
+          }}
+          title="Grant Fee Concession or Scholarship"
+          size="lg"
         >
           <form onSubmit={handleCreateConcessionSubmit} className="space-y-4">
+            {/* Mode Toggle: Single vs Bulk */}
+            <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setConcessionApplicationMode('single')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                  concessionApplicationMode === 'single'
+                    ? 'bg-white text-primary-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Single Student Application
+              </button>
+              <button
+                type="button"
+                onClick={() => setConcessionApplicationMode('bulk')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                  concessionApplicationMode === 'bulk'
+                    ? 'bg-white text-primary-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Bulk / Batch Concession
+              </button>
+            </div>
+
+            {concessionApplicationMode === 'single' ? (
+              <>
+                {/* Searchable Student Selector */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Select Enrolled Student <span className="text-red-500">*</span>
+                  </label>
+                  {!selectedStudentForConcession ? (
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={studentConcessionSearch}
+                        onChange={(e) => setStudentConcessionSearch(e.target.value)}
+                        placeholder="Search student by name or admission number..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                      {studentConcessionResults && studentConcessionResults.length > 0 && (
+                        <div className="absolute z-20 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-white shadow-lg">
+                          {studentConcessionResults.map((st) => (
+                            <div
+                              key={st.id}
+                              onClick={() => {
+                                setSelectedStudentForConcession({
+                                  id: st.id,
+                                  name: `${st.first_name} ${st.last_name}`.trim(),
+                                  admission_number: st.admission_number,
+                                  standard: (st as any).standard?.name || (st as any).enrollments?.[0]?.standard?.name,
+                                })
+                                setStudentConcessionSearch('')
+                              }}
+                              className="p-2.5 hover:bg-primary-50 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                            >
+                              <div>
+                                <p className="font-bold text-slate-800">{st.first_name} {st.last_name}</p>
+                                <p className="text-[10px] text-slate-400 font-mono">{st.admission_number}</p>
+                              </div>
+                              <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-md">
+                                Select
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-primary-50/70 border border-primary-200/80 rounded-xl flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-slate-900 text-xs">{selectedStudentForConcession.name}</div>
+                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                          {selectedStudentForConcession.admission_number}
+                          {selectedStudentForConcession.standard && ` • ${selectedStudentForConcession.standard}`}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedStudentForConcession(null)
+                          setEligibilityResult(null)
+                        }}
+                        className="text-xs text-rose-600 hover:text-rose-800 font-semibold px-2 py-1 rounded-lg hover:bg-rose-50 transition"
+                      >
+                        Change Student
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Scheme & Category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Concession / Scholarship Scheme <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={selectedConcessionTypeId}
+                      onChange={(e) => setSelectedConcessionTypeId(e.target.value ? Number(e.target.value) : '')}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">Select Scheme</option>
+                      {concessionTypes.filter(t => t.is_active).map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({t.calculation_type === 'percentage' ? `${t.default_value}%` : t.calculation_type === 'full_waiver' ? '100% Waiver' : fmt(t.default_value)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Concession Benefit Value
+                    </label>
+                    {(() => {
+                      const selScheme = concessionTypes.find((t) => t.id === Number(selectedConcessionTypeId))
+                      if (selScheme?.calculation_type === 'percentage') {
+                        return (
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="1"
+                              max="100"
+                              value={concessionPercentageValue}
+                              onChange={(e) => setConcessionPercentageValue(Number(e.target.value) || '')}
+                              placeholder="e.g. 25"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            value={concessionAmountValue}
+                            onChange={(e) => setConcessionAmountValue(Number(e.target.value) || '')}
+                            placeholder="e.g. 10000"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          />
+                        </div>
+                      )
+                    })()}
+                  </div>
+                </div>
+
+                {/* Live Automated Eligibility Evaluator Badge */}
+                {isEvaluatingEligibility && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-center gap-2">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary-600" />
+                    <span>Evaluating student academic records, attendance, and sibling matching...</span>
+                  </div>
+                )}
+
+                {eligibilityResult && !isEvaluatingEligibility && (
+                  <div className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                    eligibilityResult.eligible
+                      ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                      : 'bg-amber-50/70 border-amber-200 text-amber-900'
+                  }`}>
+                    <div className="flex items-center gap-1.5 font-bold">
+                      {eligibilityResult.eligible ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span>Eligible for {eligibilityResult.concession_name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                          <span>Discretionary Approval Required</span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-[11px] opacity-90">{eligibilityResult.summary}</p>
+                    {eligibilityResult.criteria && eligibilityResult.criteria.length > 0 && (
+                      <div className="mt-1 space-y-1 pt-1 border-t border-black/5 text-[10px]">
+                        {eligibilityResult.criteria.map((cr, idx) => (
+                          <div key={idx} className="flex items-center justify-between">
+                            <span className="font-semibold">{cr.name}:</span>
+                            <span className={cr.passed ? 'text-emerald-700 font-bold' : 'text-amber-700 font-bold'}>
+                              {cr.observed} {cr.passed ? '✓' : '(Review Required)'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Bulk / Batch Mode */
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Select Standard / Class <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={bulkStandardId}
+                      onChange={(e) => {
+                        setBulkStandardId(e.target.value ? Number(e.target.value) : '')
+                        setBulkSelectedStudentIds([])
+                      }}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800"
+                    >
+                      <option value="">Select Class</option>
+                      {standards.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Concession Scheme <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={selectedConcessionTypeId}
+                      onChange={(e) => setSelectedConcessionTypeId(e.target.value ? Number(e.target.value) : '')}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800"
+                    >
+                      <option value="">Select Scheme</option>
+                      {concessionTypes.filter(t => t.is_active).map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Student Checklist */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-700">
+                      Select Students ({bulkSelectedStudentIds.length} of {bulkStandardStudents.length} selected)
+                    </label>
+                    {bulkStandardStudents.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (bulkSelectedStudentIds.length === bulkStandardStudents.length) {
+                            setBulkSelectedStudentIds([])
+                          } else {
+                            setBulkSelectedStudentIds(bulkStandardStudents.map(s => s.id))
+                          }
+                        }}
+                        className="text-[11px] font-bold text-primary-600 hover:text-primary-800"
+                      >
+                        {bulkSelectedStudentIds.length === bulkStandardStudents.length ? 'Deselect All' : 'Select All'}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50 p-1">
+                    {bulkStandardStudents.length === 0 ? (
+                      <p className="text-center py-6 text-xs text-slate-400">
+                        {bulkStandardId ? 'No students found in selected standard.' : 'Please choose a standard above to view enrolled students.'}
+                      </p>
+                    ) : (
+                      bulkStandardStudents.map((st) => {
+                        const isChecked = bulkSelectedStudentIds.includes(st.id)
+                        return (
+                          <div
+                            key={st.id}
+                            onClick={() => {
+                              if (isChecked) {
+                                setBulkSelectedStudentIds(bulkSelectedStudentIds.filter(id => id !== st.id))
+                              } else {
+                                setBulkSelectedStudentIds([...bulkSelectedStudentIds, st.id])
+                              }
+                            }}
+                            className={`p-2 rounded-lg cursor-pointer flex items-center justify-between text-xs transition-colors ${
+                              isChecked ? 'bg-primary-50/80 font-bold' : 'hover:bg-white'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {}}
+                                className="rounded text-primary-600 focus:ring-primary-500"
+                              />
+                              <span className="text-slate-800">{st.first_name} {st.last_name}</span>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-mono">{st.admission_number}</span>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="bulk-auto-approve"
+                    checked={bulkAutoApprove}
+                    onChange={(e) => setBulkAutoApprove(e.target.checked)}
+                    className="rounded text-primary-600 focus:ring-primary-500"
+                  />
+                  <label htmlFor="bulk-auto-approve" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                    Automatically approve and apply directly to active fee invoices
+                  </label>
+                </div>
+              </>
+            )}
+
+            {/* Justification / Notes */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Student Full Name</label>
-              <input
-                type="text"
-                required
-                value={concessionForm.student_name}
-                onChange={(e) => setConcessionForm({ ...concessionForm, student_name: e.target.value })}
-                placeholder="e.g. Rahul Patil"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Admission Number</label>
-                <input
-                  type="text"
-                  value={concessionForm.admission_number}
-                  onChange={(e) => setConcessionForm({ ...concessionForm, admission_number: e.target.value })}
-                  placeholder="ADM-2025-0245"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Standard / Class</label>
-                <select
-                  value={concessionForm.standard}
-                  onChange={(e) => setConcessionForm({ ...concessionForm, standard: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800"
-                >
-                  <option value="Standard 8">Standard 8</option>
-                  <option value="Standard 9">Standard 9</option>
-                  <option value="Standard 10">Standard 10</option>
-                  <option value="Standard 11 Science">Standard 11 Science</option>
-                  <option value="Standard 12 Science">Standard 12 Science</option>
-                  <option value="Standard 12 Commerce">Standard 12 Commerce</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Concession Category</label>
-                <select
-                  value={concessionForm.category}
-                  onChange={(e) => setConcessionForm({ ...concessionForm, category: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800"
-                >
-                  <option value="merit">Merit Scholarship</option>
-                  <option value="sibling">Sibling Discount</option>
-                  <option value="staff_ward">Faculty / Staff Ward</option>
-                  <option value="hardship">Special Hardship Waiver</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Waived Amount (INR)</label>
-                <input
-                  type="number"
-                  required
-                  value={concessionForm.concession_amount}
-                  onChange={(e) => setConcessionForm({ ...concessionForm, concession_amount: Number(e.target.value) })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Justification / Committee Resolution</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Justification / Resolution Notes <span className="text-red-500">*</span>
+              </label>
               <textarea
-                value={concessionForm.remarks}
-                onChange={(e) => setConcessionForm({ ...concessionForm, remarks: e.target.value })}
+                required
+                value={concessionRemarks}
+                onChange={(e) => setConcessionRemarks(e.target.value)}
                 rows={2}
-                placeholder="Reference board approval number or merit rank..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800"
+                placeholder="Audit reason (e.g. Sibling discount approved as per management policy, admission campaign)..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => setIsNewConcessionModalOpen(false)}
+                onClick={() => {
+                  setIsNewConcessionModalOpen(false)
+                  setSelectedStudentForConcession(null)
+                  setEligibilityResult(null)
+                }}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5"
+                disabled={isSubmittingConcession}
+                className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5 disabled:opacity-50"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>Grant Fee Concession</span>
+                {isSubmittingConcession ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+                <span>
+                  {concessionApplicationMode === 'single' ? 'Grant Fee Concession' : `Apply to ${bulkSelectedStudentIds.length} Students`}
+                </span>
               </button>
             </div>
           </form>

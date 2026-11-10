@@ -511,6 +511,156 @@ export const feesApi = {
     apiClient.post<{ success: boolean; message: string; invoice_id: number; status: string }>(`/fees/invoices/${invoiceId}/cancel`, { reason }),
 }
 
+// ─── Fee Concessions & Scholarships ──────────────────────────────────────────
+
+export interface ConcessionType {
+  id: number
+  institution_id: number
+  code: string
+  name: string
+  category: string
+  description?: string
+  funding_source: string
+  calculation_type: 'percentage' | 'fixed_amount' | 'full_waiver'
+  default_value: number
+  max_discount_amount?: number
+  is_stackable: boolean
+  requires_documents: boolean
+  is_active: boolean
+  created_at?: string
+}
+
+export interface ConcessionApplication {
+  id: number
+  application_number: string
+  student_id: number
+  student_name: string
+  admission_number: string
+  standard?: string
+  concession_type_id: number
+  concession_name: string
+  category: string
+  requested_amount: number
+  requested_percentage?: number
+  approved_amount: number
+  applied_amount: number
+  funding_source: string
+  sponsor_name?: string
+  sponsor_sanctioned_amount?: number
+  sponsor_received_amount: number
+  status: 'draft' | 'under_verification' | 'pending_approval' | 'approved' | 'applied' | 'rejected' | 'withdrawn' | 'cancelled'
+  applicant_type: string
+  invoice_id?: number
+  invoice_number?: string
+  approval_remarks?: string
+  rejection_reason?: string
+  withdrawal_reason?: string
+  supporting_document_url?: string
+  created_at?: string
+  approved_at?: string
+}
+
+export interface ConcessionAnalytics {
+  academic_year_id: number
+  academic_year_name: string
+  total_applications: number
+  total_concessions_awarded: number
+  total_concessions_applied: number
+  by_category: Record<string, { count: number; awarded: number }>
+  by_status: Record<string, number>
+}
+
+export interface ConcessionEligibilityResult {
+  eligible: boolean
+  student_id: number
+  concession_type_id: number
+  concession_name: string
+  category: string
+  summary: string
+  criteria: Array<{
+    name: string
+    required: string
+    observed: string
+    passed: boolean
+  }>
+}
+
+export const concessionsApi = {
+  getTypes: (params?: { category?: string; is_active?: boolean }) =>
+    apiClient.get<ConcessionType[]>('/fees/concessions/types', { params }),
+
+  getApplications: (params?: {
+    student_id?: number
+    status?: string
+    concession_type_id?: number
+    funding_source?: string
+    search?: string
+    limit?: number
+    offset?: number
+  }) => apiClient.get<ConcessionApplication[]>('/fees/concessions/applications', { params }),
+
+  getApplicationDetail: (id: number) =>
+    apiClient.get<ConcessionApplication & { eligibility_evaluation?: ConcessionEligibilityResult }>(`/fees/concessions/applications/${id}`),
+
+  createApplication: (data: {
+    student_id: number
+    concession_type_id: number
+    academic_year_id?: number
+    requested_amount?: number
+    requested_percentage?: number
+    applicant_type?: string
+    sponsor_name?: string
+    sponsor_reference?: string
+    sponsor_sanctioned_amount?: number
+    supporting_document_url?: string
+    remarks?: string
+  }) => apiClient.post<{ message: string; id: number; application_number: string; status: string }>('/fees/concessions/applications', data),
+
+  createBulkApplications: (data: {
+    student_ids: number[]
+    concession_type_id: number
+    academic_year_id?: number
+    requested_amount?: number
+    requested_percentage?: number
+    applicant_type?: string
+    sponsor_name?: string
+    sponsor_reference?: string
+    remarks?: string
+    auto_approve?: boolean
+  }) => apiClient.post<{
+    message: string
+    successful_count: number
+    failed_count: number
+    applications: Array<{ student_id: number; application_id: number; application_number: string; amount: number; status: string }>
+    errors: Array<{ student_id: number; error: string }>
+  }>('/fees/concessions/applications/bulk', data),
+
+  evaluateEligibility: (studentId: number, typeId: number, academicYearId?: number) =>
+    apiClient.get<ConcessionEligibilityResult>(`/fees/concessions/evaluate/${studentId}/${typeId}`, {
+      params: academicYearId ? { academic_year_id: academicYearId } : undefined,
+    }),
+
+  verifyApplication: (id: number, data: { notes: string; supporting_document_url?: string }) =>
+    apiClient.post<{ message: string; status: string }>(`/fees/concessions/applications/${id}/verify`, data),
+
+  approveApplication: (id: number, data: { approved_amount?: number; remarks?: string; auto_apply?: boolean }) =>
+    apiClient.post<{ message: string; id: number; status: string; approved_amount: number; applied: boolean }>(`/fees/concessions/applications/${id}/approve`, data),
+
+  rejectApplication: (id: number, data: { rejection_reason: string }) =>
+    apiClient.post<{ message: string; id: number; status: string }>(`/fees/concessions/applications/${id}/reject`, data),
+
+  applyApplication: (id: number) =>
+    apiClient.post<{ message: string; allocation_id: number; allocated_amount: number; invoice_id: number }>(`/fees/concessions/applications/${id}/apply`),
+
+  withdrawApplication: (id: number, data: { withdrawal_reason: string }) =>
+    apiClient.post<{ message: string; id: number; status: string }>(`/fees/concessions/applications/${id}/withdraw`, data),
+
+  getAnalytics: (academicYearId?: number) =>
+    apiClient.get<ConcessionAnalytics>('/fees/concessions/analytics', {
+      params: academicYearId ? { academic_year_id: academicYearId } : undefined,
+    }),
+}
+
 // ─── Payments ─────────────────────────────────────────────────────────────────
 
 export const paymentsApi = {
