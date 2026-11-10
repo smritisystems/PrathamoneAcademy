@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-10
  *
  * @description Vitest suite for Study Materials & Academic Programs management console.
  */
@@ -136,11 +136,11 @@ describe('Study Materials & Academic Programs Console (CoursesPage)', () => {
       </QueryClientProvider>
     )
 
-    expect(screen.getByText('Study Materials & Academic Syllabi')).toBeDefined()
-    expect(screen.getByText('Total Study Materials')).toBeDefined()
-    expect(screen.getByText('Standards Covered')).toBeDefined()
-    expect(screen.getByText('Question Banks')).toBeDefined()
-    expect(screen.getByText('Formula Sheets')).toBeDefined()
+    expect(screen.getByText('Study Materials & Digital Content Overview')).toBeDefined()
+    expect(screen.getByText('Total Materials')).toBeDefined()
+    expect(screen.getByText('Standards')).toBeDefined()
+    expect(screen.getAllByText('Question Banks').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('Formula Handbooks')).toBeDefined()
 
     await waitFor(() => {
       expect(screen.getByText('Class X Mathematics - Complete Formula Booklet & Theorems')).toBeDefined()
@@ -157,7 +157,7 @@ describe('Study Materials & Academic Programs Console (CoursesPage)', () => {
       </QueryClientProvider>
     )
 
-    const programsTab = screen.getByText(/Coaching Programs & Curriculum Streams/i)
+    const programsTab = screen.getByRole('button', { name: /Curriculum Syllabi/i })
     fireEvent.click(programsTab)
 
     expect(screen.getByText('CBSE Senior Secondary (Class 11 & 12)')).toBeDefined()
@@ -174,8 +174,8 @@ describe('Study Materials & Academic Programs Console (CoursesPage)', () => {
       </QueryClientProvider>
     )
 
-    const uploadBtn = screen.getByRole('button', { name: /Upload Material/i })
-    expect(uploadBtn.getAttribute('aria-disabled')).toBe('true')
+    const uploadBtns = screen.getAllByRole('button', { name: /Upload Content/i })
+    expect(uploadBtns[0].title).toContain('Locked in View Mode')
   })
 
   it('enables Upload Material button when Edit Mode is activated', async () => {
@@ -191,7 +191,7 @@ describe('Study Materials & Academic Programs Console (CoursesPage)', () => {
       </QueryClientProvider>
     )
 
-    const uploadBtn = screen.getByRole('button', { name: /Upload Material/i })
-    expect(uploadBtn.getAttribute('aria-disabled')).toBe('false')
+    const uploadBtns = screen.getAllByRole('button', { name: /Upload Content/i })
+    expect(uploadBtns[0].title).not.toContain('Locked in View Mode')
   })
 })

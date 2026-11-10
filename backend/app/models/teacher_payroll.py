@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-10
 #  *
 #  * @description SQLAlchemy models for Teacher Payment Profiles, Teaching Session Register, Monthly Payroll, and Payment Vouchers.
 #  */
@@ -154,6 +154,9 @@ class TeachingSession(Base):
     )
     subject_id: Mapped[int] = mapped_column(
         ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
+    )
+    subject_mapping_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("subject_mappings.id", ondelete="SET NULL"), nullable=True, index=True
     )
     division_id: Mapped[int] = mapped_column(
         ForeignKey("divisions.id", ondelete="CASCADE"), nullable=False, index=True

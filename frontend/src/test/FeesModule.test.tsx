@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-09
+ * @updated     2026-11-10
  *
  * @description Vitest test suite verifying Fees & Payments overview KPIs, charts, filters, and receipt modals.
  */
@@ -250,7 +250,7 @@ describe('Fees & Payments Module Specifications', () => {
       expect(screen.getAllByText('Total Students').length).toBeGreaterThanOrEqual(1)
       expect(screen.getAllByText('Total Fees Due').length).toBeGreaterThanOrEqual(1)
       expect(screen.getAllByText('Collected').length).toBeGreaterThanOrEqual(1)
-      expect(screen.getAllByText('Outstanding').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getAllByText(/Total Recoverable|Outstanding/i).length).toBeGreaterThanOrEqual(1)
     })
   })
 })

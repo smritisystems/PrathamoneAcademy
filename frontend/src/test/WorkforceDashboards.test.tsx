@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-07
+ * @updated     2026-11-10
  *
  * @description Unit tests verifying Teacher and Staff Workforce Dashboards, live KPI metrics, unassigned teacher highlights, lifecycle transitions, and 15-tab profile modals.
  */
@@ -24,7 +24,7 @@ import TeacherManagement from '../pages/TeacherManagement'
 import StaffManagement from '../pages/StaffManagement'
 import TeacherProfileModal from '../components/TeacherProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
-import { staffApi, boardsApi, standardsApi, divisionsApi, subjectsApi, academicYearsApi } from '../api/endpoints'
+import { staffApi, boardsApi, standardsApi, divisionsApi, subjectsApi, academicYearsApi, teacherPayrollApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import type { TeacherDashboardData, StaffDashboardData } from '../types'
 
@@ -270,19 +270,26 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
     vi.spyOn(standardsApi, 'list').mockResolvedValue({ data: [{ id: 10, name: 'Std 10' }] } as any)
     vi.spyOn(divisionsApi, 'list').mockResolvedValue({ data: [{ id: 25, name: 'Div A' }] } as any)
     vi.spyOn(subjectsApi, 'list').mockResolvedValue({ data: [{ id: 1, name: 'Mathematics', code: 'MATH10' }] } as any)
+
+    vi.spyOn(staffApi, 'assignmentsList').mockResolvedValue({ data: [] } as any)
+    vi.spyOn(staffApi, 'dailyAttendance').mockResolvedValue({ data: { records: [] } } as any)
+    vi.spyOn(staffApi, 'leavesList').mockResolvedValue({ data: [] } as any)
+    vi.spyOn(staffApi, 'documentCatalogue').mockResolvedValue({ data: [] } as any)
+    vi.spyOn(teacherPayrollApi, 'getSessions').mockResolvedValue({ data: { items: [], total: 0 } } as any)
+    vi.spyOn(teacherPayrollApi, 'getMonthlyPayrolls').mockResolvedValue({ data: [] } as any)
   })
 
   it('renders Teacher Workspace with live 13 KPI metric cards and unassigned teacher badge', async () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={['/teachers/overview']}>
           <TeacherManagement />
         </MemoryRouter>
       </QueryClientProvider>
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Teacher Workspace')).toBeDefined()
+      expect(screen.getByText('Faculty Workforce Overview')).toBeDefined()
     })
 
     // Wait for async query data to render
@@ -291,12 +298,11 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
     })
 
     // Check Live KPI Cards
-    expect(screen.getByText('Total Teachers')).toBeDefined()
-    expect(screen.getByText('Monthly Teaching Hours')).toBeDefined()
-    expect(screen.getByText('Teacher Status Distribution')).toBeDefined()
+    expect(screen.getByText('Total Faculty')).toBeDefined()
+    expect(screen.getAllByText('Faculty Employment Distribution').length).toBeGreaterThanOrEqual(1)
 
     // Verify unassigned teacher highlight
-    expect(screen.getByText('Unassigned • Allocate')).toBeDefined()
+    expect(screen.getAllByText('Unassigned').length).toBeGreaterThanOrEqual(1)
 
     // Verify assigned teacher details
     expect(screen.getByText('Ramesh Sharma')).toBeDefined()
@@ -306,19 +312,21 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
   it('filters teacher list when clicking Unassigned sub-filter tab', async () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={['/teachers/directory']}>
           <TeacherManagement />
         </MemoryRouter>
       </QueryClientProvider>
     )
 
     await waitFor(() => {
+      expect(screen.getAllByText('Faculty Directory & Dossiers').length).toBeGreaterThanOrEqual(1)
       expect(screen.getByText('Priya Kulkarni')).toBeDefined()
+      expect(screen.getByText('Ramesh Sharma')).toBeDefined()
     })
 
-    // Click on "Unassigned" tab button
-    const unassignedButtons = screen.getAllByText('Unassigned')
-    fireEvent.click(unassignedButtons[0])
+    // Click on "Unassigned" status filter button
+    const unassignedPill = screen.getByRole('button', { name: /^Unassigned/i })
+    fireEvent.click(unassignedPill)
 
     await waitFor(() => {
       expect(screen.getByText('Priya Kulkarni')).toBeDefined()
@@ -389,17 +397,23 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
   it('renders Non-Teaching Staff Workspace with department and headcount KPIs', async () => {
     render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={['/staff/overview']}>
           <StaffManagement />
         </MemoryRouter>
       </QueryClientProvider>
     )
 
     await waitFor(() => {
-      expect(screen.getByText('Total Staff')).toBeDefined()
+      expect(screen.getByText('Staff Workforce Overview & HR Analytics')).toBeDefined()
     })
 
-    expect(screen.getByText('Active Staff')).toBeDefined()
+    expect(screen.getByText('Total Non-Teaching Staff')).toBeDefined()
+    expect(screen.getByText('Present on Duty')).toBeDefined()
+
+    // Switch to Staff Register tab
+    const dirTabs = screen.getAllByRole('button', { name: /Staff Register/i })
+    fireEvent.click(dirTabs[0])
+
     await waitFor(() => {
       expect(screen.getByText('Rajesh Sharma')).toBeDefined()
     })

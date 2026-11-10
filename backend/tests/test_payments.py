@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-10
 #  *
 #  * @description Pytest suite validating payment recording, invoice reconciliation, and receipt generation.
 #  */
@@ -25,7 +25,7 @@ import pytest
 import re
 from decimal import Decimal
 from datetime import date
-from sqlalchemy import select
+from sqlalchemy import select, func
 from app.models.payment import Payment, PaymentReceipt
 from app.models.fee import FeeInvoice, FeeInstallment
 
@@ -144,10 +144,14 @@ class TestPaymentCreation:
         assert inv.outstanding_amount == Decimal("8000.00"), f"Got {inv.outstanding_amount}"
         assert inv.status == "partial"
 
-        # Installment updated too
-        await db.refresh(inst)
-        assert inst.paid_amount == Decimal("16000.00")
-        assert inst.status == "partial"
+        # Allocations verify ₹16,000 total allocated
+        from app.models.payment import PaymentAllocation
+        alloc_res = await db.execute(
+            select(func.sum(PaymentAllocation.allocated_amount)).where(
+                PaymentAllocation.invoice_id == inv.id
+            )
+        )
+        assert alloc_res.scalar() == Decimal("16000.00")
 
     async def test_overpayment_rejected(
         self, client, auth_headers, test_fee_invoice

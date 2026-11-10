@@ -128,10 +128,9 @@ export function PrintFooter({
 
   const resolvedLayout =
     layoutMode ||
-    (classification?.toLowerCase().includes('voucher') ||
-    classification?.toLowerCase().includes('receipt')
+    (classification?.toLowerCase().includes('receipt')
       ? 'single-row'
-      : 'single-row')
+      : 'two-row')
 
   // Build Row 1 components: Classification · Document ID: ID · Page X of Y
   const row1Parts: React.ReactNode[] = []

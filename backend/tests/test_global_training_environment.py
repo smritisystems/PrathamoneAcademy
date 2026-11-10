@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-10
 #  *
 #  * @description Test suite verifying Global Training & Demo Environment tenant isolation, baseline dataset seeding, reporting governance, and dependency-aware reset engine with absolute production safety.
 #  */
@@ -82,6 +82,11 @@ async def test_baseline_dataset_contents(db, test_institution, admin_user):
 
 async def test_reporting_governance_isolation(client: AsyncClient, db, test_institution, admin_user, auth_headers):
     """Verifies that production reports strictly exclude demo records, and training reports include demo records."""
+    from app.models.crm import Lead
+    from sqlalchemy import delete
+    await db.execute(delete(Lead).where(Lead.is_demo == False))
+    await db.commit()
+
     # Ensure baseline dataset is present
     await seed_training_dataset(db, seed_user_id=admin_user.id)
 

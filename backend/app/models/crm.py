@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-10
 #  *
 #  * @description SQLAlchemy models for Lead Management & CRM: Enquiries, Follow-up Logs, Demo Classes, and Admission Conversion.
 #  */
@@ -203,6 +203,9 @@ class LeadDemoClass(Base):
     )
     subject_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("subjects.id"), nullable=True
+    )
+    subject_mapping_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("subject_mappings.id", ondelete="SET NULL"), nullable=True, index=True
     )
     teacher_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=True

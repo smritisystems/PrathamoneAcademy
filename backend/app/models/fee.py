@@ -210,25 +210,49 @@ class FeeInvoiceItem(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
+    def __init__(self, **kwargs):
+        if "amount" in kwargs and "net_amount" not in kwargs:
+            disc = kwargs.get("discount_amount", Decimal("0")) or Decimal("0")
+            kwargs["net_amount"] = kwargs["amount"] - disc
+        if "description" not in kwargs:
+            kwargs["description"] = "Tuition Fee Item"
+        super().__init__(**kwargs)
+
     invoice: Mapped["FeeInvoice"] = relationship(
         "FeeInvoice", back_populates="items"
     )
 
     @property
     def installment_number(self) -> int:
-        return 1
+        return getattr(self, "_installment_number", 1)
+
+    @installment_number.setter
+    def installment_number(self, value: int) -> None:
+        self._installment_number = value
 
     @property
     def paid_amount(self) -> Decimal:
-        return Decimal("0")
+        return getattr(self, "_paid_amount", Decimal("0"))
+
+    @paid_amount.setter
+    def paid_amount(self, value: Decimal) -> None:
+        self._paid_amount = value
 
     @property
     def due_date(self) -> date | None:
-        return None
+        return getattr(self, "_due_date", None)
+
+    @due_date.setter
+    def due_date(self, value: date | None) -> None:
+        self._due_date = value
 
     @property
     def status(self) -> str:
-        return "unpaid"
+        return getattr(self, "_status", "unpaid")
+
+    @status.setter
+    def status(self, value: str) -> None:
+        self._status = value
 
 
 # ─── FEE CONCESSION & SCHOLARSHIP MANAGEMENT MODELS ─────────────────────────────

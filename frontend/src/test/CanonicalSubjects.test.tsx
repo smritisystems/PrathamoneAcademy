@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-10
  *
  * @description Comprehensive test suite validating Canonical Subject Master architecture, dual view modes, live duplicate prevention, and View-First Edit Mode governance.
  */
@@ -304,7 +304,7 @@ describe('Canonical Subject Master & Applicability Mappings Suite', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Confirm Curriculum Mapping Deletion/i)).toBeDefined()
-      expect(screen.getByText(/Target Entity for Removal:/i)).toBeDefined()
+      expect(screen.getByText(/Target Record:/i)).toBeDefined()
     })
   })
 })

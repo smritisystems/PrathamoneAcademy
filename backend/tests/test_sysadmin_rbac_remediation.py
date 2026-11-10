@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-10
 #  *
 #  * @description Test suite verifying RBAC audit remediations: academic write endpoint security, role gates, universal editor allowlists, cross-tenant isolation, and posted payment edit protection.
 #  */
@@ -274,11 +274,11 @@ async def test_universal_edit_sysadmin_deactivation_safeguard(client, db, test_i
     sysadmin = await create_user_with_role(db, "sysadmin", test_institution.id)
     sys_headers = await get_headers_for_user(client, sysadmin)
 
-    # Deactivate any other active sysadmins in test session
+    # Deactivate any other active sysadmins/superadmins in test session
     others = (
         await db.execute(
             select(User).where(
-                User.role == "sysadmin",
+                User.role.in_(["sysadmin", "superadmin", "super_admin"]),
                 User.id != sysadmin.id,
                 User.is_active == True,
             )

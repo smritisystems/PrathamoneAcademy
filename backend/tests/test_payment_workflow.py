@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description Test suite verifying payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refunds.
 #  */
@@ -22,7 +22,34 @@ from datetime import date
 from sqlalchemy import select
 from app.models.payment import Payment, PaymentReceipt, Refund
 from app.models.fee import FeeInvoice
-from app.models.user import AuditLog
+from app.models.user import AuditLog, User, Role
+from app.core.security import get_password_hash, create_access_token
+
+
+@pytest.fixture
+async def reviewer_headers(db, test_institution):
+    import random
+    suffix = random.randint(100000, 999999)
+    role_res = await db.execute(select(Role).where(Role.name == "superadmin"))
+    admin_role = role_res.scalar_one_or_none()
+    role_id = admin_role.id if admin_role else None
+
+    reviewer = User(
+        username=f"reviewer_{suffix}",
+        email=f"reviewer_{suffix}@test.com",
+        hashed_password=get_password_hash("testpassword"),
+        first_name="Reviewer",
+        last_name="Admin",
+        role="superadmin",
+        role_id=role_id,
+        institution_id=test_institution.id,
+    )
+    db.add(reviewer)
+    await db.commit()
+    await db.refresh(reviewer)
+    token = create_access_token(data={"sub": str(reviewer.id)})
+    return {"Authorization": f"Bearer {token}"}
+
 
 
 @pytest.mark.asyncio
@@ -116,7 +143,7 @@ async def test_simple_mode_payment_posting(
 
 @pytest.mark.asyncio
 async def test_standard_erp_mode_approval_gates(
-    client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
+    client, auth_headers, reviewer_headers, test_student, test_academic_year, test_fee_invoice, db
 ):
     """
     Requirement 2: Standard ERP Mode enforces approval for amounts exceeding threshold or cheque payments.
@@ -153,8 +180,8 @@ async def test_standard_erp_mode_approval_gates(
     payment_id = pay_data["payment_id"]
     assert pay_data["status"] == "submitted"
 
-    # 3. Approve payment
-    approve_res = await client.post(f"/api/v1/payments/{payment_id}/approve", headers=auth_headers)
+    # 3. Approve payment by independent reviewer (Segregation of Duties)
+    approve_res = await client.post(f"/api/v1/payments/{payment_id}/approve", headers=reviewer_headers)
     assert approve_res.status_code == 200
     assert approve_res.json()["status"] == "approved"
 
@@ -310,7 +337,7 @@ async def test_receipt_reprint_and_duplicate_copy(
 
 @pytest.mark.asyncio
 async def test_refund_workflow_and_balance_integrity(
-    client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
+    client, auth_headers, reviewer_headers, test_student, test_academic_year, test_fee_invoice, db
 ):
     """
     Requirement 6: Refunds are linked to the original payment, validated against remaining refundable balance,
@@ -360,8 +387,8 @@ async def test_refund_workflow_and_balance_integrity(
     assert excess_res.status_code == 400
     assert "exceeds remaining refundable balance" in excess_res.json()["detail"]
 
-    # 4. Approve refund
-    app_res = await client.post(f"/api/v1/payments/refunds/{ref_id}/approve", headers=auth_headers)
+    # 4. Approve refund by independent reviewer (Segregation of Duties)
+    app_res = await client.post(f"/api/v1/payments/refunds/{ref_id}/approve", headers=reviewer_headers)
     assert app_res.status_code == 200
     assert app_res.json()["status"] == "approved"
 
@@ -467,7 +494,7 @@ async def test_financial_period_locking_blocks_mutation(
 
     today = date.today()
     period = FinancialPeriod(
-        institution_id=1,
+        institution_id=test_student.institution_id,
         academic_year_id=test_academic_year.id,
         name="Locked Test Month",
         period_type="monthly",

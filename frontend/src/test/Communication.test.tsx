@@ -11,15 +11,17 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-06
+ * @updated     2026-11-10
  *
  * @description Vitest test suite for Communication Center workspace, covering compose & send, templates catalogue, delivery logs, diagnostics, and automated outbound triggers.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import Communication from '../pages/Communication'
 import { communicationApi } from '../api/endpoints'
+import { useEditModeStore } from '../store/editModeStore'
 
 vi.mock('../store/authStore', () => ({
   useAuthStore: () => ({
@@ -181,15 +183,26 @@ describe('Communication Center Workspace', () => {
     } as any)
   })
 
+  const renderWithRoute = (initialPath = '/communication/overview') => {
+    return render(
+      <MemoryRouter initialEntries={[initialPath]}>
+        <Routes>
+          <Route path="/communication/*" element={<Communication />} />
+          <Route path="/communication" element={<Communication />} />
+        </Routes>
+      </MemoryRouter>
+    )
+  }
+
   it('renders the header and the five primary navigation tabs', async () => {
-    render(<Communication />)
+    renderWithRoute('/communication/overview')
 
     expect(screen.getByText('Communication Center')).toBeDefined()
-    expect(screen.getByRole('button', { name: /Compose & Send/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /Templates/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /Delivery History/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /Diagnostics/i })).toBeDefined()
-    expect(screen.getByRole('button', { name: /Automations & Queues/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Broadcast Composer/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Message Templates/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Dispatch Logs/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Gateway Diagnostics/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Reminder Queues/i })).toBeDefined()
 
     await waitFor(() => {
       expect(communicationApi.getTemplates).toHaveBeenCalled()
@@ -198,7 +211,7 @@ describe('Communication Center Workspace', () => {
   })
 
   it('inserts placeholder tokens into the compose message textarea', async () => {
-    render(<Communication />)
+    renderWithRoute('/communication/broadcasts')
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText(/Type message text or select a template above/i)).toBeDefined()
@@ -212,9 +225,9 @@ describe('Communication Center Workspace', () => {
   })
 
   it('switches to Message Templates tab and renders pre-seeded templates', async () => {
-    render(<Communication />)
+    renderWithRoute('/communication/overview')
 
-    const templatesTab = screen.getByRole('button', { name: /Templates/i })
+    const templatesTab = screen.getByRole('button', { name: /Message Templates/i })
     fireEvent.click(templatesTab)
 
     await waitFor(() => {
@@ -224,9 +237,9 @@ describe('Communication Center Workspace', () => {
   })
 
   it('switches to Delivery History & Queue tab and displays logs', async () => {
-    render(<Communication />)
+    renderWithRoute('/communication/overview')
 
-    const historyTab = screen.getByRole('button', { name: /Delivery History/i })
+    const historyTab = screen.getByRole('button', { name: /Dispatch Logs/i })
     fireEvent.click(historyTab)
 
     await waitFor(() => {
@@ -237,9 +250,9 @@ describe('Communication Center Workspace', () => {
   })
 
   it('switches to Channels & Diagnostics tab and shows channel status cards', async () => {
-    render(<Communication />)
+    renderWithRoute('/communication/overview')
 
-    const diagTab = screen.getByRole('button', { name: /Diagnostics/i })
+    const diagTab = screen.getByRole('button', { name: /Gateway Diagnostics/i })
     fireEvent.click(diagTab)
 
     await waitFor(() => {
@@ -250,9 +263,9 @@ describe('Communication Center Workspace', () => {
   })
 
   it('switches to Automations & Queues tab and displays automation rules and pending reminders queue', async () => {
-    render(<Communication />)
+    renderWithRoute('/communication/overview')
 
-    const automationTab = screen.getByRole('button', { name: /Automations & Queues/i })
+    const automationTab = screen.getByRole('button', { name: /Reminder Queues/i })
     fireEvent.click(automationTab)
 
     await waitFor(() => {
@@ -267,10 +280,12 @@ describe('Communication Center Workspace', () => {
   })
 
   it('allows batch dispatching fee reminders from the automated queue', async () => {
-    render(<Communication />)
+    useEditModeStore.setState({
+      scopes: { 'communication:broadcasts': true },
+      dirty: {},
+    })
 
-    const automationTab = screen.getByRole('button', { name: /Automations & Queues/i })
-    fireEvent.click(automationTab)
+    renderWithRoute('/communication/automations')
 
     await waitFor(() => {
       expect(screen.getByText('Rohan Sharma')).toBeDefined()
@@ -281,7 +296,7 @@ describe('Communication Center Workspace', () => {
     // Select the second checkbox (first is header select all, second is item)
     fireEvent.click(checkboxes[checkboxes.length - 1])
 
-    const dispatchBtn = screen.getByRole('button', { name: /Dispatch Reminders/i })
+    const dispatchBtn = await screen.findByRole('button', { name: /Dispatch Reminders/i })
     fireEvent.click(dispatchBtn)
 
     await waitFor(() => {

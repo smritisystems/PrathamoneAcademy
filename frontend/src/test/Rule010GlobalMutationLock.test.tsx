@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-10
  *
  * @description Comprehensive test suite proving Rule 010 Global Mutation Control locking in View Mode, scope isolation, WorkforceHeroCard protection, and DeleteConfirmationModal integration.
  */
@@ -353,7 +353,7 @@ describe('Rule 010 Global Mutation Controls Locking Suite', () => {
     // Modal renders Edit Mode Required warning
     expect(screen.getByText(/Edit Mode Required:/i)).toBeDefined()
     expect(
-      screen.getByText(/You cannot perform deletions while the workspace is in View Mode/i)
+      screen.getByText(/You cannot perform deletions.*while.*is in View Mode/i)
     ).toBeDefined()
 
     // Confirm button is disabled

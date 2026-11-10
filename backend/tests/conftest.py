@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description Pytest configuration fixtures providing test database session, test client, and auth helpers.
 #  */
@@ -21,6 +21,7 @@ import asyncio
 from decimal import Decimal
 from datetime import date
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from app.main import app
@@ -75,6 +76,14 @@ async def db_setup():
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
+        # Seed default institution in test database
+        await conn.execute(text("""
+            INSERT INTO institutions (id, name, code, is_active, created_at, updated_at)
+            VALUES (1, 'Prashant Academy', 'PA01', true, NOW(), NOW())
+            ON CONFLICT (id) DO NOTHING;
+        """))
+        await conn.execute(text("SELECT setval('institutions_id_seq', (SELECT GREATEST(MAX(id), 1) FROM institutions));"))
+
         # Seed standard roles in test database
         await conn.execute(text("""
             INSERT INTO roles (name, description, created_at) VALUES
@@ -102,6 +111,17 @@ async def db_setup():
             ("sysadmin", "payments", "refund_process"),
             ("sysadmin", "payments", "refund_approve"),
             ("sysadmin", "payments", "view_audit"),
+
+            ("superadmin", "*", "*"),
+            ("superadmin", "fees", "view"),
+            ("superadmin", "payments", "view"),
+            ("superadmin", "payments", "draft"),
+            ("superadmin", "payments", "edit_submitted"),
+            ("superadmin", "payments", "edit_posted"),
+            ("superadmin", "fee_workflow", "configure"),
+            ("superadmin", "payments", "refund_process"),
+            ("superadmin", "payments", "refund_approve"),
+            ("superadmin", "payments", "view_audit"),
 
             ("admin", "fees", "view"),
             ("admin", "payments", "view"),
@@ -162,7 +182,7 @@ async def admin_user(db):
     from app.models.user import Role
     suffix = random.randint(100000, 999999)
     username = f"admin_{suffix}"
-    role_res = await db.execute(select(Role).where(Role.name == "admin"))
+    role_res = await db.execute(select(Role).where(Role.name == "superadmin"))
     admin_role = role_res.scalar_one_or_none()
     role_id = admin_role.id if admin_role else None
 
@@ -172,8 +192,9 @@ async def admin_user(db):
         hashed_password=get_password_hash("testpassword"),
         first_name="Test",
         last_name="Admin",
-        role="admin",
+        role="superadmin",
         role_id=role_id,
+        institution_id=None,
     )
     db.add(user)
     await db.commit()
@@ -197,7 +218,7 @@ async def test_institution(db):
     import uuid
     code = f"TA{uuid.uuid4().hex[:8]}"
     institution = Institution(
-        name="Test Academy", code=code, city="Test City"
+        name=f"Test Academy {code}", code=code, city="Test City"
     )
     db.add(institution)
     await db.commit()
@@ -244,6 +265,10 @@ async def test_fee_invoice(db, test_student, test_institution, test_academic_yea
     """Setup: ₹24,000 invoice with 1 installment"""
     import uuid
     suffix = uuid.uuid4().hex[:8]
+
+    admin_user.institution_id = test_institution.id
+    await db.commit()
+    await db.refresh(admin_user)
 
     category = FeeCategory(institution_id=test_institution.id, name=f"Tuition-{suffix}")
     db.add(category)

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description REST API router managing academic study materials, question banks, and syllabus documents.
 #  */
@@ -32,7 +32,7 @@ from app.models.division import Division
 
 router = APIRouter()
 
-ALLOWED_MANAGE_ROLES = {"admin", "sysadmin", "teacher", "academic_coordinator", "staff"}
+ALLOWED_MANAGE_ROLES = {"superadmin", "super_admin", "admin", "sysadmin", "teacher", "academic_coordinator", "staff"}
 
 
 class StudyMaterialCreate(BaseModel):
@@ -293,7 +293,7 @@ async def delete_study_material(
     """
     Delete a study material document. Requires admin or sysadmin role.
     """
-    if current_user.role not in {"admin", "sysadmin"}:
+    if current_user.role not in {"superadmin", "super_admin", "admin", "sysadmin"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only institute administrators can delete study materials.",

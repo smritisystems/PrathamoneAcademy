@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-10
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -1390,8 +1390,7 @@ async def fee_defaulters_aging_report(
     today = date.today()
 
     query = (
-        select(FeeInstallment, FeeInvoice, Student, StudentEnrollment, Standard, Division)
-        .join(FeeInvoice, FeeInstallment.invoice_id == FeeInvoice.id)
+        select(FeeInvoice, Student, StudentEnrollment, Standard, Division)
         .join(Student, FeeInvoice.student_id == Student.id)
         .outerjoin(
             StudentEnrollment,
@@ -1405,8 +1404,8 @@ async def fee_defaulters_aging_report(
         .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
         .outerjoin(Division, StudentEnrollment.division_id == Division.id)
         .where(
-            FeeInstallment.status.in_(["unpaid", "overdue", "partially_paid"]),
-            FeeInstallment.due_date < today,
+            FeeInvoice.status.in_(["unpaid", "overdue", "partially_paid", "partial"]),
+            FeeInvoice.due_date < today,
         )
     )
 
@@ -1420,27 +1419,28 @@ async def fee_defaulters_aging_report(
     if division_id:
         query = query.where(Division.id == division_id)
 
-    res = await db.execute(query.order_by(FeeInstallment.due_date))
+    res = await db.execute(query.order_by(FeeInvoice.due_date))
     rows = res.all()
 
     records = []
-    for inst, inv, s, enr, std, div in rows:
-        days = (today - inst.due_date).days if inst.due_date else 0
+    for inv, s, enr, std, div in rows:
+        days = (today - inv.due_date).days if inv.due_date else 0
         if days < min_days_overdue:
             continue
 
         records.append({
-            "installment_id": inst.id,
+            "installment_id": inv.id,
             "invoice_id": inv.id,
+            "student_id": s.id,
             "admission_number": s.admission_number,
             "student_name": f"{s.first_name} {s.last_name}",
             "standard_name": std.name if std else "N/A",
             "division_name": div.name if div else "N/A",
             "guardian_phone": s.phone or "N/A",
-            "installment_name": inst.description or f"Installment #{inst.installment_number}",
-            "due_date": inst.due_date.isoformat() if inst.due_date else None,
+            "installment_name": f"Invoice {inv.invoice_number}",
+            "due_date": inv.due_date.isoformat() if inv.due_date else None,
             "days_overdue": days,
-            "overdue_amount": float(inst.amount - (inst.paid_amount or 0)),
+            "overdue_amount": float(inv.outstanding_amount),
             "total_outstanding": float(inv.outstanding_amount),
             "status": "Severely Overdue" if days > 60 else ("Overdue" if days > 30 else "Grace Period"),
         })

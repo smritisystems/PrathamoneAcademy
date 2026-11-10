@@ -11,16 +11,17 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Vitest specifications validating centralized forms workspace, prefilled & blank modes, Aadhaar masking, DPDP consent, and print triggers.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import FormsDocuments from '../pages/FormsDocuments'
 import FormTemplateEngine from '../components/forms/FormTemplateEngine'
+import { useEditModeStore } from '../store/editModeStore'
 import type { RenderedFormPayload } from '../types/forms'
 
 // Mock API modules
@@ -227,56 +228,55 @@ describe('Print Forms & KYC System Specification', () => {
     window.print = vi.fn()
   })
 
-  it('renders centralized workspace header, mode controls, and catalogue', async () => {
-    render(
-      <BrowserRouter>
-        <FormsDocuments />
-      </BrowserRouter>
+  const renderWithRouter = (initialPath = '/forms/admissions') => {
+    return render(
+      <MemoryRouter initialEntries={[initialPath]}>
+        <Routes>
+          <Route path="/forms" element={<FormsDocuments />} />
+          <Route path="/forms/overview" element={<FormsDocuments />} />
+          <Route path="/forms/admissions" element={<FormsDocuments />} />
+          <Route path="/forms/id-cards" element={<FormsDocuments />} />
+          <Route path="/forms/financial" element={<FormsDocuments />} />
+          <Route path="/forms/academic" element={<FormsDocuments />} />
+          <Route path="/forms/certificates" element={<FormsDocuments />} />
+          <Route path="/forms/bulk-print" element={<FormsDocuments />} />
+          <Route path="/forms/audit-logs" element={<FormsDocuments />} />
+        </Routes>
+      </MemoryRouter>
     )
+  }
 
-    expect(screen.getByText(/Centralized Printable Forms & KYC Workspace/i)).toBeDefined()
-    expect(screen.getByText(/Form Generation Mode/i)).toBeDefined()
-    expect(screen.getByText(/Prefilled Record/i)).toBeDefined()
-    expect(screen.getByText(/Blank Form/i)).toBeDefined()
+  it('renders centralized workspace header, mode controls, and catalogue', async () => {
+    renderWithRouter('/forms/admissions')
+
+    expect(screen.getByText(/Print Forms Studio & KYC/i)).toBeDefined()
+    expect(await screen.findByText(/Student Admission & Application Form/i)).toBeDefined()
+    expect(screen.getByText(/Data Mode/i)).toBeDefined()
+    expect(screen.getByText(/Prefilled Data/i)).toBeDefined()
+    expect(screen.getByText(/Blank Pen & Paper/i)).toBeDefined()
     expect(screen.getByText(/Single Record/i)).toBeDefined()
-    expect(screen.getByText(/Bulk Batch Print/i)).toBeDefined()
-
-    await waitFor(() => {
-      expect(screen.getByText(/Student Admission & Application Form/i)).toBeDefined()
-    })
+    expect(screen.getByText(/Batch Print/i)).toBeDefined()
   })
 
   it('switches between prefilled and blank form mode', async () => {
-    render(
-      <BrowserRouter>
-        <FormsDocuments />
-      </BrowserRouter>
-    )
+    renderWithRouter('/forms/admissions')
 
-    await waitFor(() => {
-      expect(screen.getByText(/Student Admission & Application Form/i)).toBeDefined()
-    })
+    expect(await screen.findByText(/Student Admission & Application Form/i)).toBeDefined()
 
-    const blankBtn = screen.getByText(/Blank Form/i)
+    const blankBtn = screen.getByText(/Blank Pen & Paper/i)
     fireEvent.click(blankBtn)
 
     await waitFor(() => {
-      expect(blankBtn.className).toContain('text-primary-900')
+      expect(blankBtn.className).toContain('text-emerald-900')
     })
   })
 
   it('switches to bulk batch print mode and displays class and batch selectors', async () => {
-    render(
-      <BrowserRouter>
-        <FormsDocuments />
-      </BrowserRouter>
-    )
+    renderWithRouter('/forms/admissions')
 
-    await waitFor(() => {
-      expect(screen.getByText(/Student Admission & Application Form/i)).toBeDefined()
-    })
+    expect(await screen.findByText(/Student Admission & Application Form/i)).toBeDefined()
 
-    const bulkBtn = screen.getByText(/Bulk Batch Print/i)
+    const bulkBtn = screen.getByText(/Batch Print/i)
     fireEvent.click(bulkBtn)
 
     await waitFor(() => {
@@ -368,17 +368,13 @@ describe('Print Forms & KYC System Specification', () => {
   })
 
   it('triggers browser window.print() when Print Form is clicked', async () => {
-    render(
-      <BrowserRouter>
-        <FormsDocuments />
-      </BrowserRouter>
-    )
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Print Form\(s\)/i })).toBeDefined()
+    useEditModeStore.setState({
+      scopes: { 'academic:forms_documents': true },
     })
 
-    const printBtn = screen.getByRole('button', { name: /Print Form\(s\)/i })
+    renderWithRouter('/forms/admissions')
+
+    const printBtn = await screen.findByRole('button', { name: /Print Document/i })
     fireEvent.click(printBtn)
 
     expect(window.print).toHaveBeenCalled()

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-08
+ * @updated     2026-11-10
  *
  * @description Canonical document branding header, statutory compliance notices, and authorized signatory layout for printable documents.
  */
@@ -333,6 +333,7 @@ export function PrintBrandingFooter({
   showSoftwareBranding = true,
   showPagination,
   showDocumentId,
+  layoutMode,
 }: PrintBrandingFooterProps) {
   // If document metadata is provided or two-row layout is active, render canonical PrintFooter
   if (documentId || classification) {
@@ -348,6 +349,7 @@ export function PrintBrandingFooter({
         showSoftwareBranding={showSoftwareBranding}
         showPagination={showPagination}
         showDocumentId={showDocumentId}
+        layoutMode={layoutMode}
         className={className}
       />
     )
