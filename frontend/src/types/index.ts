@@ -1331,6 +1331,9 @@ export interface StudentAdminProfile {
     }
     fee_summary: {
       total_fees: number
+      gross_fees?: number
+      total_concessions?: number
+      net_fees?: number
       total_paid: number
       outstanding: number
       collection_rate: number
@@ -1387,11 +1390,29 @@ export interface StudentAdminProfile {
   fees: {
     summary: {
       total_fees: number
+      gross_fees?: number
+      total_concessions?: number
+      net_fees?: number
       total_paid: number
       outstanding: number
       collection_rate: number
     }
     invoices: FeeInvoice[]
+    concessions?: {
+      id: number
+      application_number: string
+      concession_type_code: string
+      concession_name: string
+      category: string
+      requested_amount: number
+      approved_amount: number
+      applied_amount: number
+      status: string
+      funding_source: string
+      approved_at?: string | null
+      approval_remarks?: string | null
+      invoice_id?: number | null
+    }[]
     payments: Payment[]
   }
   documents: StudentDocumentItem[]

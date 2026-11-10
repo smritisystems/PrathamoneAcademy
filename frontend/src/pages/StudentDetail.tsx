@@ -28,7 +28,7 @@ import {
   ClipboardCheck, Award, Activity, Upload, Trash2, Eye, QrCode,
   CheckCircle, PlusCircle, Calendar, Phone, Mail, MapPin, ExternalLink,
   Edit3, AlertTriangle, X, Check, Save, Shield, Users, Printer, Share2,
-  UserMinus, UserCheck, History, GraduationCap
+  UserMinus, UserCheck, History, GraduationCap, Percent
 } from 'lucide-react'
 import ShareModal from '../components/ShareModal'
 import { studentsApi, standardsApi, divisionsApi, feesApi } from '../api/endpoints'
@@ -689,6 +689,11 @@ export default function StudentDetailPage() {
         <div className="card text-center">
           <p className="text-xs text-gray-500 mb-1">Total Fee Obligation</p>
           <p className="text-xl font-bold text-gray-800">{fmt(totalFees)}</p>
+          {overview.fee_summary?.total_concessions && overview.fee_summary.total_concessions > 0 ? (
+            <p className="text-[10px] font-semibold text-emerald-700 mt-1">
+              Gross {fmt(overview.fee_summary.gross_fees || (totalFees + overview.fee_summary.total_concessions))} • -{fmt(overview.fee_summary.total_concessions)} Concession
+            </p>
+          ) : null}
         </div>
         <div className="card text-center">
           <p className="text-xs text-gray-500 mb-1">Total Paid Amount</p>
@@ -990,6 +995,8 @@ export default function StudentDetailPage() {
                       <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
                         <th className="py-2 px-3">Invoice No</th>
                         <th className="py-2 px-3">Date</th>
+                        <th className="py-2 px-3">Gross Fee</th>
+                        <th className="py-2 px-3">Concession</th>
                         <th className="py-2 px-3">Total Net</th>
                         <th className="py-2 px-3">Paid</th>
                         <th className="py-2 px-3">Outstanding</th>
@@ -1002,6 +1009,16 @@ export default function StudentDetailPage() {
                         <tr key={inv.id} className="hover:bg-gray-50">
                           <td className="py-2 px-3 font-mono font-semibold text-primary-700">{inv.invoice_number}</td>
                           <td className="py-2 px-3 text-gray-600">{inv.issue_date}</td>
+                          <td className="py-2 px-3 text-gray-700 font-medium">{fmt(inv.total_amount ?? inv.net_amount)}</td>
+                          <td className="py-2 px-3 text-emerald-600 font-semibold">
+                            {inv.discount_amount && inv.discount_amount > 0 ? (
+                              <span className="inline-flex items-center gap-0.5 text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200/80">
+                                -{fmt(inv.discount_amount)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
                           <td className="py-2 px-3 font-bold text-gray-900">{fmt(inv.net_amount)}</td>
                           <td className="py-2 px-3 text-green-600 font-semibold">{fmt(inv.paid_amount)}</td>
                           <td className="py-2 px-3 text-red-600 font-semibold">{fmt(inv.outstanding_amount)}</td>
@@ -1026,6 +1043,53 @@ export default function StudentDetailPage() {
                   </table>
                 </div>
               </div>
+
+              {/* Applied Concessions & Scholarships */}
+              {fees.concessions && fees.concessions.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                      <Percent className="w-4 h-4 text-emerald-600" />
+                      <span>Applied Concessions & Scholarships</span>
+                    </h4>
+                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                      Total Waived: {fmt(fees.summary?.total_concessions || 0)}
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                          <th className="py-2 px-3">Application No</th>
+                          <th className="py-2 px-3">Scheme / Title</th>
+                          <th className="py-2 px-3">Category</th>
+                          <th className="py-2 px-3">Waived Amount</th>
+                          <th className="py-2 px-3">Funding Source</th>
+                          <th className="py-2 px-3">Status</th>
+                          <th className="py-2 px-3">Resolution Details</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {fees.concessions.map((c: any) => (
+                          <tr key={c.id} className="hover:bg-gray-50">
+                            <td className="py-2 px-3 font-mono font-semibold text-primary-700">{c.application_number}</td>
+                            <td className="py-2 px-3 font-medium text-gray-900">{c.concession_name}</td>
+                            <td className="py-2 px-3 capitalize text-gray-600">{c.category}</td>
+                            <td className="py-2 px-3 font-bold text-emerald-700">{fmt(c.applied_amount || c.approved_amount)}</td>
+                            <td className="py-2 px-3 capitalize text-gray-600">{c.funding_source}</td>
+                            <td className="py-2 px-3">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                                {c.status}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-xs text-gray-500">{c.approval_remarks || 'Approved'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {/* Payments */}
               <div className="space-y-3 pt-4 border-t border-gray-100">

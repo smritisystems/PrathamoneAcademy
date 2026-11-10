@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-09
+#  * @updated     2026-11-10
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -33,7 +33,14 @@ from app.core.deps import (
 from app.services.settings_service import get_institution_setting
 from app.models.student import Student, Guardian, StudentLifecycleLog
 from app.models.enrollment import StudentEnrollment
-from app.models.fee import FeeInvoice, FeeInstallment, FeeInvoiceItem
+from app.models.fee import (
+    FeeInvoice,
+    FeeInstallment,
+    FeeInvoiceItem,
+    FeeConcessionType,
+    StudentConcessionApplication,
+    FeeConcessionAllocation,
+)
 from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
 from app.models.standard import Standard
 from app.models.division import Division
@@ -900,12 +907,42 @@ async def get_student_admin_profile(
     )
     payments = (await db.execute(pmt_stmt)).scalars().all()
 
+    gross_fees = sum(float(i.total_amount) for i in invoices)
+    total_concessions = sum(float(i.discount_amount) for i in invoices)
     total_fees = sum(float(i.net_amount) for i in invoices)
     total_paid = sum(float(p.amount) for p in payments if p.status in ("completed", "posted"))
     outstanding = max(0.0, total_fees - total_paid)
 
+    # Concessions & Scholarships for this student
+    conc_stmt = (
+        select(StudentConcessionApplication, FeeConcessionType)
+        .join(FeeConcessionType, StudentConcessionApplication.concession_type_id == FeeConcessionType.id)
+        .where(StudentConcessionApplication.student_id == student_id)
+        .order_by(desc(StudentConcessionApplication.id))
+    )
+    concessions_list = []
+    for c_app, c_type in (await db.execute(conc_stmt)).all():
+        concessions_list.append({
+            "id": c_app.id,
+            "application_number": c_app.application_number,
+            "concession_type_code": c_type.code,
+            "concession_name": c_type.name,
+            "category": c_type.category,
+            "requested_amount": float(c_app.requested_amount),
+            "approved_amount": float(c_app.approved_amount),
+            "applied_amount": float(c_app.applied_amount),
+            "status": c_app.status,
+            "funding_source": c_app.funding_source,
+            "approved_at": c_app.approved_at.isoformat() if c_app.approved_at else None,
+            "approval_remarks": c_app.approval_remarks,
+            "invoice_id": c_app.invoice_id,
+        })
+
     fee_details = {
         "summary": {
+            "gross_fees": gross_fees,
+            "total_concessions": total_concessions,
+            "net_fees": total_fees,
             "total_fees": total_fees,
             "total_paid": total_paid,
             "outstanding": outstanding,
@@ -917,11 +954,23 @@ async def get_student_admin_profile(
                 "invoice_number": inv.invoice_number,
                 "issue_date": str(inv.issue_date),
                 "due_date": str(inv.due_date) if inv.due_date else None,
+                "total_amount": float(inv.total_amount),
+                "discount_amount": float(inv.discount_amount),
                 "net_amount": float(inv.net_amount),
                 "paid_amount": float(inv.paid_amount),
                 "outstanding_amount": float(inv.outstanding_amount),
                 "status": inv.status,
-                "items": [{"id": it.id, "description": it.description, "amount": float(it.amount)} for it in inv.items],
+                "notes": inv.notes,
+                "items": [
+                    {
+                        "id": it.id,
+                        "description": it.description,
+                        "amount": float(it.amount),
+                        "discount_amount": float(it.discount_amount or (inv.discount_amount if len(inv.items) == 1 else 0.0)),
+                        "net_amount": float(it.net_amount if (it.discount_amount and it.discount_amount > 0) else max(0.0, float(it.amount) - float(inv.discount_amount if len(inv.items) == 1 else 0.0))),
+                    }
+                    for it in inv.items
+                ],
                 "installments": [
                     {
                         "id": inst.id,
@@ -936,6 +985,7 @@ async def get_student_admin_profile(
             }
             for inv in invoices
         ],
+        "concessions": concessions_list,
         "payments": [
             {
                 "id": p.id,

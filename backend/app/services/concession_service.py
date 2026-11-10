@@ -31,6 +31,7 @@ from app.models.fee import (
     FeeConcessionAllocation,
     StudentFeeAssignment,
     FeeInvoice,
+    FeeInvoiceItem,
     FeeStructure,
 )
 from app.models.student import Student, Guardian
@@ -666,6 +667,26 @@ class ConcessionWorkflowService:
         invoice.outstanding_amount = new_outstanding
         invoice.status = new_status
         invoice.notes = (invoice.notes or "") + f" | Concession #{app.application_number} applied (-₹{alloc_amt:,.2f})"
+
+        # Reconcile invoice line items to reflect the concession discount
+        items_res = await db.execute(select(FeeInvoiceItem).where(FeeInvoiceItem.invoice_id == invoice.id))
+        items = items_res.scalars().all()
+        if items:
+            if len(items) == 1:
+                items[0].discount_amount = new_discount
+                items[0].net_amount = max(Decimal("0.00"), items[0].amount - new_discount)
+            else:
+                total_item_amount = sum(it.amount for it in items)
+                if total_item_amount > 0:
+                    allocated_so_far = Decimal("0.00")
+                    for idx, it in enumerate(items):
+                        if idx == len(items) - 1:
+                            it_disc = new_discount - allocated_so_far
+                        else:
+                            it_disc = round(new_discount * (it.amount / total_item_amount), 2)
+                            allocated_so_far += it_disc
+                        it.discount_amount = it_disc
+                        it.net_amount = max(Decimal("0.00"), it.amount - it_disc)
 
         # Also update StudentFeeAssignment concession_amount
         assign_stmt = select(StudentFeeAssignment).where(
