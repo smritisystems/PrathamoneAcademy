@@ -2049,8 +2049,8 @@ export const homeworkApi = {
   getTeacherDashboard: (params?: { teacher_id?: number | string }) =>
     apiClient.get<TeacherHomeworkDashboard>('/homework/dashboards/teacher', { params }),
 
-  getStudentActivityRegister: (studentId: number | string) =>
-    apiClient.get<{ student_id: number; activities: AcademicActivityRegisterItem[]; total: number }>(`/homework/reports/activity-register/${studentId}`),
+  getStudentActivityRegister: (studentId: number | string, params?: { activity_type?: string }) =>
+    apiClient.get<{ student_id: number; activities: AcademicActivityRegisterItem[]; items?: AcademicActivityRegisterItem[]; total: number }>(`/homework/reports/activity-register/${studentId}`, { params }),
 
   getDailyRegisterReport: (params?: { target_date?: string; division_id?: number | string; standard_id?: number | string }) =>
     apiClient.get<DailyHomeworkRegisterReport>('/homework/reports/daily-register', { params }),

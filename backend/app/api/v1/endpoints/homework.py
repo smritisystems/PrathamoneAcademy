@@ -755,7 +755,12 @@ async def get_student_academic_activity_endpoint(
     Phase 8: Chronological unified student academic activity register.
     """
     activities = await HomeworkService.get_unified_academic_activity_register(db, student_id)
-    return {"student_id": student_id, "activities": activities, "total": len(activities)}
+    return {
+        "student_id": student_id,
+        "activities": activities,
+        "items": activities,
+        "total": len(activities),
+    }
 
 
 @router.get("/reports/daily-register")

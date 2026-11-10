@@ -108,3 +108,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fee structures, installment schedules, multi-mode collections, and sequential receipts.
 - Class-wise attendance marking and absence notifications.
 - OAuth2 Password Bearer authentication with JWT and RBAC.
+

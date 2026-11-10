@@ -3870,17 +3870,23 @@ export interface StudentPortalHomeworkItem {
 }
 
 export interface AcademicActivityRegisterItem {
-  type: 'HOMEWORK' | 'EXAMINATION' | 'ATTENDANCE'
+  id?: number | string
+  type: string
+  activity_type?: string
   timestamp: string
   date: string
+  time?: string | null
   title: string
   subject: string
+  subject_name?: string
+  teacher_name?: string | null
   status: string
-  review_status: string
+  review_status?: string
   marks_obtained?: number | null
   max_marks?: number | null
+  score?: string | number | null
   remarks?: string | null
-  badge_color: string
+  badge_color?: string
 }
 
 export interface TeacherHomeworkDashboard {

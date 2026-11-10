@@ -312,7 +312,7 @@ export default function StudentDetailPage() {
       }).then((r) => r.data),
     enabled: activeTab === 'Academic Register' && !!studentId,
   })
-  const activityItems: AcademicActivityRegisterItem[] = activityRegisterData?.items || []
+  const activityItems: AcademicActivityRegisterItem[] = activityRegisterData?.activities || activityRegisterData?.items || []
 
   // Standards and Divisions queries for editing
   const { data: standardsList } = useQuery({
@@ -952,10 +952,11 @@ export default function StudentDetailPage() {
               ) : (
                 <div className="space-y-3">
                   {activityItems.map((item, idx) => {
-                    const isSession = item.activity_type === 'teaching_session'
-                    const isHomework = item.activity_type === 'homework'
-                    const isExam = item.activity_type === 'exam'
-                    const isAttendance = item.activity_type === 'attendance'
+                    const actType = (item.activity_type || item.type || '').toLowerCase()
+                    const isSession = actType === 'teaching_session' || actType === 'session'
+                    const isHomework = actType === 'homework'
+                    const isExam = actType === 'exam' || actType === 'examination'
+                    const isAttendance = actType === 'attendance'
 
                     const borderAccent = isSession
                       ? 'border-l-blue-500'
@@ -973,6 +974,13 @@ export default function StudentDetailPage() {
                           ? 'bg-purple-100 text-purple-800'
                           : 'bg-emerald-100 text-emerald-800'
 
+                    const subjName = item.subject_name || item.subject
+                    const scoreDisplay =
+                      item.score ||
+                      (item.marks_obtained !== undefined && item.marks_obtained !== null
+                        ? `${item.marks_obtained}${item.max_marks ? `/${item.max_marks}` : ''}`
+                        : null)
+
                     return (
                       <div
                         key={item.id || idx}
@@ -988,11 +996,13 @@ export default function StudentDetailPage() {
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
-                                {item.activity_type.replace('_', ' ')}
+                                {actType.replace('_', ' ')}
                               </span>
-                              <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
-                                {item.subject_name}
-                              </span>
+                              {subjName && (
+                                <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
+                                  {subjName}
+                                </span>
+                              )}
                               <span className="text-xs text-gray-400 flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
                                 {item.date} {item.time && `• ${item.time}`}
@@ -1023,9 +1033,9 @@ export default function StudentDetailPage() {
                           >
                             {item.status.replace('_', ' ')}
                           </span>
-                          {item.score && (
+                          {scoreDisplay && (
                             <span className="font-bold text-xs text-primary-700 font-mono">
-                              Score: {item.score}
+                              Score: {scoreDisplay}
                             </span>
                           )}
                         </div>

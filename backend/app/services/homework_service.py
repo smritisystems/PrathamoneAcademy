@@ -636,16 +636,22 @@ class HomeworkService:
         )
         hw_res = await db.execute(hw_stmt)
         for r, title, code, subj, due_dt, max_m in hw_res.all():
+            score_str = f"{float(r.marks_obtained):.1f}/{float(max_m):.1f}" if r.marks_obtained is not None and max_m else (str(r.marks_obtained) if r.marks_obtained is not None else None)
             activities.append({
+                "id": f"hw-{r.id}",
                 "type": "HOMEWORK",
+                "activity_type": "homework",
                 "timestamp": r.reviewed_at or r.submission_time or r.created_at,
                 "date": str(due_dt),
+                "time": r.individual_due_time or "",
                 "title": f"Homework: {title} ({code})",
                 "subject": subj,
+                "subject_name": subj,
                 "status": r.status,
                 "review_status": r.review_status,
                 "marks_obtained": float(r.marks_obtained) if r.marks_obtained is not None else None,
                 "max_marks": float(max_m) if max_m is not None else None,
+                "score": score_str,
                 "remarks": r.teacher_remarks,
                 "badge_color": "emerald" if r.status == "completed" else "amber" if r.status == "assigned" else "red",
             })
@@ -666,16 +672,22 @@ class HomeworkService:
         )
         exam_res = await db.execute(exam_stmt)
         for mark, exam_name, exam_type, subj, max_m in exam_res.all():
+            score_str = f"{float(mark.marks_obtained):.1f}/{float(max_m):.1f}" if mark.marks_obtained is not None and max_m else (str(mark.marks_obtained) if mark.marks_obtained is not None else None)
             activities.append({
+                "id": f"exam-{mark.id}",
                 "type": "EXAMINATION",
+                "activity_type": "exam",
                 "timestamp": mark.created_at,
                 "date": str(mark.created_at.date() if mark.created_at else date.today()),
+                "time": mark.created_at.strftime("%I:%M %p") if mark.created_at else "",
                 "title": f"{exam_name} ({exam_type})",
                 "subject": subj,
+                "subject_name": subj,
                 "status": "Absent" if mark.is_absent else f"Grade {mark.grade or 'N/A'}",
                 "review_status": "Graded",
                 "marks_obtained": float(mark.marks_obtained) if mark.marks_obtained is not None else None,
                 "max_marks": float(max_m) if max_m is not None else None,
+                "score": score_str,
                 "remarks": mark.remarks,
                 "badge_color": "indigo",
             })
@@ -690,15 +702,20 @@ class HomeworkService:
         att_res = await db.execute(att_stmt)
         for att in att_res.scalars().all():
             activities.append({
+                "id": f"att-{att.id}",
                 "type": "ATTENDANCE",
+                "activity_type": "attendance",
                 "timestamp": att.created_at,
                 "date": str(att.date),
+                "time": "",
                 "title": f"Daily Attendance — {att.status.capitalize()}",
                 "subject": "General Presence",
+                "subject_name": "General Presence",
                 "status": att.status,
                 "review_status": "Recorded",
                 "marks_obtained": None,
                 "max_marks": None,
+                "score": None,
                 "remarks": att.remarks,
                 "badge_color": "emerald" if att.status == "present" else "red" if att.status == "absent" else "amber",
             })
