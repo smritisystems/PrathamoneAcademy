@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-10
 #  *
 #  * @description API endpoints for canonical subject master catalogue, curriculum syllabus mappings, and legacy subject compatibility.
 #  */
@@ -31,6 +31,7 @@ from app.models.subject import Subject, CanonicalSubject, SubjectMapping
 from app.models.standard import Standard
 from app.models.board import Board
 from app.models.academic_year import AcademicYear
+from app.services.safe_delete_service import SafeDeleteService
 
 router = APIRouter()
 
@@ -391,17 +392,18 @@ async def update_canonical_subject(
 @router.delete("/canonical/{canonical_id}")
 async def delete_canonical_subject(
     canonical_id: int,
+    permanent: bool = Query(False, description="If true, permanently delete record if eligible; otherwise safely deactivate"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
-    res = await db.execute(select(CanonicalSubject).where(CanonicalSubject.id == canonical_id))
-    cs = res.scalar_one_or_none()
-    if not cs:
-        raise HTTPException(status_code=404, detail="Canonical subject not found")
+    if permanent:
+        return await SafeDeleteService.execute_safe_delete(
+            db=db, entity_type="canonical_subject", entity_id=canonical_id, current_user=current_user
+        )
+    return await SafeDeleteService.execute_safe_deactivate(
+        db=db, entity_type="canonical_subject", entity_id=canonical_id, current_user=current_user
+    )
 
-    cs.is_active = False
-    await db.commit()
-    return {"id": cs.id, "message": f"Canonical subject '{cs.name}' deactivated successfully"}
 
 
 # ---------------------------------------------------------------------------
@@ -630,23 +632,18 @@ async def update_subject_mapping(
 @router.delete("/mappings/{mapping_id}")
 async def delete_subject_mapping(
     mapping_id: int,
+    permanent: bool = Query(False, description="If true, permanently delete record if eligible; otherwise safely deactivate"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
-    res = await db.execute(select(SubjectMapping).where(SubjectMapping.id == mapping_id))
-    sm = res.scalar_one_or_none()
-    if not sm:
-        raise HTTPException(status_code=404, detail="Subject mapping not found")
+    if permanent:
+        return await SafeDeleteService.execute_safe_delete(
+            db=db, entity_type="subject_mapping", entity_id=mapping_id, current_user=current_user
+        )
+    return await SafeDeleteService.execute_safe_deactivate(
+        db=db, entity_type="subject_mapping", entity_id=mapping_id, current_user=current_user
+    )
 
-    sm.is_active = False
-    if sm.legacy_subject_id:
-        legacy_res = await db.execute(select(Subject).where(Subject.id == sm.legacy_subject_id))
-        legacy = legacy_res.scalar_one_or_none()
-        if legacy:
-            legacy.is_active = False
-
-    await db.commit()
-    return {"id": sm.id, "message": "Subject mapping deactivated successfully"}
 
 
 # ---------------------------------------------------------------------------
@@ -868,22 +865,15 @@ async def update_subject(
 @router.delete("/{subject_id}")
 async def delete_subject(
     subject_id: int,
+    permanent: bool = Query(False, description="If true, permanently delete record if eligible; otherwise safely deactivate"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
-    result = await db.execute(select(Subject).where(Subject.id == subject_id))
-    subject = result.scalar_one_or_none()
-    if not subject:
-        raise HTTPException(status_code=404, detail="Subject not found")
-
-    subject.is_active = False
-
-    mapping_res = await db.execute(
-        select(SubjectMapping).where(SubjectMapping.legacy_subject_id == subject.id)
+    if permanent:
+        return await SafeDeleteService.execute_safe_delete(
+            db=db, entity_type="subject", entity_id=subject_id, current_user=current_user
+        )
+    return await SafeDeleteService.execute_safe_deactivate(
+        db=db, entity_type="subject", entity_id=subject_id, current_user=current_user
     )
-    sm = mapping_res.scalar_one_or_none()
-    if sm:
-        sm.is_active = False
 
-    await db.commit()
-    return {"id": subject.id, "message": f"Subject '{subject.name}' deactivated successfully"}

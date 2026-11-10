@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-10
 #  *
 #  * @description API endpoints for standards/classes management, board associations, and settings.
 #  */
@@ -30,6 +30,7 @@ from app.models.student import Student
 from app.models.portal import TimetableEntry
 from app.models.subject import Subject
 from app.models.settings import InstitutionSetting
+from app.services.safe_delete_service import SafeDeleteService
 import json
 from pathlib import Path
 from pydantic import BaseModel
@@ -442,14 +443,15 @@ async def update_standard(
 @router.delete("/{standard_id}")
 async def delete_standard(
     standard_id: int,
+    permanent: bool = Query(False, description="If true, permanently delete record if eligible; otherwise deactivate safely"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
-    result = await db.execute(select(Standard).where(Standard.id == standard_id))
-    standard = result.scalar_one_or_none()
-    if not standard:
-        raise HTTPException(status_code=404, detail="Standard not found")
+    if permanent:
+        return await SafeDeleteService.execute_safe_delete(
+            db=db, entity_type="standard", entity_id=standard_id, current_user=current_user
+        )
+    return await SafeDeleteService.execute_safe_deactivate(
+        db=db, entity_type="standard", entity_id=standard_id, current_user=current_user
+    )
 
-    standard.is_active = False
-    await db.commit()
-    return {"id": standard.id, "message": f"Class '{standard.name}' deactivated successfully"}

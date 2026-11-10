@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-10
 #  *
 #  * @description API endpoints for batch/division management, teacher allocation, capacity, and scheduling.
 #  */
@@ -26,6 +26,7 @@ from datetime import datetime
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role
 from app.services.settings_service import get_institution_setting
+from app.services.safe_delete_service import SafeDeleteService
 from app.models.division import Division
 from app.models.standard import Standard
 from app.models.board import Board
@@ -323,26 +324,26 @@ async def archive_division(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("superadmin", "admin", "principal")),
 ):
-    division = (
-        await db.execute(select(Division).where(Division.id == division_id))
-    ).scalar_one_or_none()
-    if not division:
-        raise HTTPException(status_code=404, detail="Batch not found")
-
-    division.status = "archived"
-    division.is_active = False
-
-    audit = AuditLog(
-        user_id=current_user.id,
-        action="archive",
-        resource_type="division",
-        resource_id=division.id,
-        new_data=f"Batch '{division.name}' archived",
+    return await SafeDeleteService.execute_safe_archive(
+        db=db, entity_type="division", entity_id=division_id, current_user=current_user
     )
-    db.add(audit)
-    await db.commit()
 
-    return {"id": division.id, "status": "archived", "message": f"Batch '{division.name}' successfully archived."}
+
+@router.delete("/{division_id}")
+async def delete_division(
+    division_id: int,
+    permanent: bool = Query(False, description="If true, permanently delete record if eligible; otherwise archive safely"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("superadmin", "admin", "principal")),
+):
+    if permanent:
+        return await SafeDeleteService.execute_safe_delete(
+            db=db, entity_type="division", entity_id=division_id, current_user=current_user
+        )
+    return await SafeDeleteService.execute_safe_archive(
+        db=db, entity_type="division", entity_id=division_id, current_user=current_user
+    )
+
 
 
 @router.get("/{division_id}/roster")

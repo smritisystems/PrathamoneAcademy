@@ -1760,3 +1760,49 @@ export const navigationApi = {
     }),
 }
 
+// ─── Safe Delete & Data Integrity Governance ─────────────────────────────────
+
+export interface DeletionEligibilityReport {
+  entity_type: string
+  entity_id: number | string
+  entity_name: string
+  is_eligible: boolean
+  block_category?: 'linked_records' | 'transaction_history' | 'configuration_dependency' | 'system_protected' | null
+  block_reason?: string | null
+  dependent_counts: Record<string, number>
+  dependent_details: string[]
+  can_deactivate: boolean
+  can_archive: boolean
+  recommended_action: 'delete' | 'deactivate' | 'archive' | 'reversal'
+  reversal_guidance?: string | null
+}
+
+export const governanceApi = {
+  checkSafeDelete: (entity_type: string, entity_id: number | string) =>
+    apiClient.get<DeletionEligibilityReport>('/governance/safe-delete/check', {
+      params: { entity_type, entity_id },
+    }),
+
+  executeSafeDelete: (entity_type: string, entity_id: number | string, reason?: string) =>
+    apiClient.post<{ success: boolean; message: string; entity_type: string; entity_id: number | string }>(
+      '/governance/safe-delete/execute',
+      { entity_type, entity_id, reason }
+    ),
+
+  executeSafeDeactivate: (entity_type: string, entity_id: number | string, reason?: string) =>
+    apiClient.post<{ success: boolean; message: string; entity_type: string; entity_id: number | string; is_active: boolean }>(
+      '/governance/safe-delete/deactivate',
+      { entity_type, entity_id, reason }
+    ),
+
+  executeSafeArchive: (entity_type: string, entity_id: number | string, reason?: string) =>
+    apiClient.post<{ success: boolean; message: string; entity_type: string; entity_id: number | string; status: string }>(
+      '/governance/safe-delete/archive',
+      { entity_type, entity_id, reason }
+    ),
+
+  getSafeDeleteAuditLogs: (params?: { resource_type?: string; limit?: number }) =>
+    apiClient.get<any[]>('/governance/safe-delete/audit-logs', { params }),
+}
+
+

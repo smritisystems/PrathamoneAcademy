@@ -50,6 +50,7 @@ from app.api.v1.endpoints import (
     training,
     study_materials,
     navigation,
+    governance,
 )
 
 api_router = APIRouter()
@@ -105,3 +106,5 @@ api_router.include_router(leads.router, prefix="/leads", tags=["leads"])
 api_router.include_router(training.router, prefix="/training", tags=["training"])
 api_router.include_router(study_materials.router, prefix="/study-materials", tags=["study-materials"])
 api_router.include_router(navigation.router, prefix="/navigation", tags=["navigation"])
+api_router.include_router(governance.router, prefix="/governance", tags=["governance"])
+
