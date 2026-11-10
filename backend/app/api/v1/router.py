@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Central v1 API router registering all domain endpoint routers.
 #  */
@@ -52,6 +52,8 @@ from app.api.v1.endpoints import (
     navigation,
     governance,
     concessions,
+    homework,
+    report_intelligence,
 )
 
 api_router = APIRouter()
@@ -79,6 +81,9 @@ api_router.include_router(
 api_router.include_router(fees.router, prefix="/fees", tags=["fees"])
 api_router.include_router(concessions.router, prefix="/fees/concessions", tags=["fee-concessions"])
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
+api_router.include_router(
+    report_intelligence.router, prefix="/reports/intelligence", tags=["report-intelligence"]
+)
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 api_router.include_router(
     examinations.router, prefix="/examinations", tags=["examinations"]
@@ -109,4 +114,5 @@ api_router.include_router(training.router, prefix="/training", tags=["training"]
 api_router.include_router(study_materials.router, prefix="/study-materials", tags=["study-materials"])
 api_router.include_router(navigation.router, prefix="/navigation", tags=["navigation"])
 api_router.include_router(governance.router, prefix="/governance", tags=["governance"])
+api_router.include_router(homework.router, prefix="/homework", tags=["homework"])
 

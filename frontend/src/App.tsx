@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -71,6 +71,7 @@ const CampaignsPage = lazyWithRetry(() => import('./pages/crm/CampaignsPage'), '
 const CrmReportsPage = lazyWithRetry(() => import('./pages/crm/CrmReportsPage'), 'CrmReportsPage')
 const CrmSettingsPage = lazyWithRetry(() => import('./pages/crm/CrmSettingsPage'), 'CrmSettingsPage')
 const TrainingManagementPage = lazyWithRetry(() => import('./pages/TrainingManagement'), 'TrainingManagement')
+const HomeworkWorkspacePage = lazyWithRetry(() => import('./pages/HomeworkWorkspace'), 'HomeworkWorkspace')
 
 function PageLoader() {
   return (
@@ -242,6 +243,14 @@ export default function App() {
           <Route path="examinations/report-cards" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           <Route path="examinations/papers" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           <Route path="examinations/settings" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
+          {/* Homework & Assignment Dedicated Workspaces */}
+          <Route path="homework" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
+          <Route path="homework/overview" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
+          <Route path="homework/create" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
+          <Route path="homework/checking" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
+          <Route path="homework/submissions" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
+          <Route path="homework/templates" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
+          <Route path="homework/reports" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           {/* Fees & Payments Dedicated Workspaces */}
           <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
           <Route path="fees/overview" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />

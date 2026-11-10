@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -22,12 +22,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Home, BookOpen, Calendar, ClipboardCheck, Award, CreditCard,
   FileText, User, Bell, Clock, MapPin, Phone, Mail, CheckCircle,
-  AlertCircle, Download, ChevronRight, Save, RefreshCw, ShieldAlert
+  AlertCircle, Download, ChevronRight, Save, RefreshCw, ShieldAlert,
+  FileCheck, Upload, MessageSquare, Paperclip, AlertTriangle, CheckCircle2,
+  XCircle, Send, Sparkles
 } from 'lucide-react'
-import { studentPortalApi, studentsApi } from '../api/endpoints'
+import toast from 'react-hot-toast'
+import { studentPortalApi, studentsApi, homeworkApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { StatusBadge } from '../components/Badge'
-import type { TimetableSlot, StudyMaterialItem } from '../types'
+import type { TimetableSlot, StudyMaterialItem, StudentPortalHomeworkItem } from '../types'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
@@ -36,6 +39,7 @@ const PORTAL_TABS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'classes', label: 'My Classes', icon: BookOpen },
   { id: 'timetable', label: 'Timetable', icon: Calendar },
+  { id: 'homework', label: 'My Homework', icon: FileCheck },
   { id: 'attendance', label: 'Attendance', icon: ClipboardCheck },
   { id: 'tests', label: 'Tests & Results', icon: Award },
   { id: 'fees', label: 'Fees', icon: CreditCard },
@@ -129,6 +133,43 @@ export default function StudentDashboardPage() {
     queryKey: ['student-portal-profile', effectiveId],
     queryFn: () => studentPortalApi.getProfile(effectiveId).then((r) => r.data),
     enabled: activeTab === 'profile',
+  })
+
+  // 10. Fetch Homework
+  const [homeworkFilter, setHomeworkFilter] = useState<string>('all')
+  const [selectedHwForSubmission, setSelectedHwForSubmission] = useState<StudentPortalHomeworkItem | null>(null)
+  const [submitText, setSubmitText] = useState('')
+  const [submitFileUrl, setSubmitFileUrl] = useState('')
+  const [submitFileName, setSubmitFileName] = useState('')
+
+  const { data: homeworkData, isLoading: isLoadingHomework, refetch: refetchHomework } = useQuery({
+    queryKey: ['student-portal-homework', effectiveId, homeworkFilter],
+    queryFn: () => homeworkApi.getMyHomework({
+      student_id: effectiveId,
+      status: homeworkFilter !== 'all' ? homeworkFilter : undefined,
+    }).then((r) => r.data),
+    enabled: !!effectiveId,
+  })
+
+  const homeworkItems: StudentPortalHomeworkItem[] = homeworkData?.items || []
+  const pendingHomeworkCount = homeworkItems.filter((h) =>
+    ['assigned', 'in_progress', 'pending', 'resubmit_required', 'overdue'].includes(h.status)
+  ).length
+
+  const submitHomeworkMutation = useMutation({
+    mutationFn: ({ recordId, data }: { recordId: number; data: any }) =>
+      homeworkApi.submitHomework(recordId, data),
+    onSuccess: () => {
+      toast.success('Homework solution submitted successfully!')
+      setSelectedHwForSubmission(null)
+      setSubmitText('')
+      setSubmitFileUrl('')
+      setSubmitFileName('')
+      refetchHomework()
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.detail || 'Failed to submit homework.')
+    },
   })
 
   // Profile Form state
@@ -279,6 +320,11 @@ export default function StudentDashboardPage() {
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
                 <span>{tab.label}</span>
+                {tab.id === 'homework' && pendingHomeworkCount > 0 && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700 font-bold'}`}>
+                    {pendingHomeworkCount}
+                  </span>
+                )}
                 {tab.id === 'materials' && stats.study_materials_count > 0 && (
                   <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-white/20 text-white' : 'bg-primary-100 text-primary-700 font-bold'}`}>
                     {stats.study_materials_count}
@@ -566,6 +612,261 @@ export default function StudentDashboardPage() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT: MY HOMEWORK */}
+      {activeTab === 'homework' && (
+        <div className="space-y-6">
+          {/* Header & Metrics */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">My Homework & Assignments</h2>
+              <p className="text-xs text-gray-500">Track assigned coursework, evaluate teacher feedback, and submit solutions.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => refetchHomework()}
+                className="btn-secondary text-xs flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="card text-center border-l-4 border-l-primary-500">
+              <p className="text-xs text-gray-500 font-medium">Total Assigned</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{homeworkItems.length}</p>
+            </div>
+            <div className="card text-center border-l-4 border-l-amber-500">
+              <p className="text-xs text-gray-500 font-medium">Pending Work</p>
+              <p className="text-2xl font-bold text-amber-600 mt-1">
+                {homeworkItems.filter((h) => ['assigned', 'in_progress', 'pending'].includes(h.status)).length}
+              </p>
+            </div>
+            <div className="card text-center border-l-4 border-l-purple-500">
+              <p className="text-xs text-gray-500 font-medium">Submitted / Review</p>
+              <p className="text-2xl font-bold text-purple-600 mt-1">
+                {homeworkItems.filter((h) => ['submitted', 'late_submitted'].includes(h.status)).length}
+              </p>
+            </div>
+            <div className="card text-center border-l-4 border-l-emerald-500">
+              <p className="text-xs text-gray-500 font-medium">Checked & Graded</p>
+              <p className="text-2xl font-bold text-emerald-600 mt-1">
+                {homeworkItems.filter((h) => ['checked', 'completed'].includes(h.status)).length}
+              </p>
+            </div>
+          </div>
+
+          {/* Filter Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {[
+              { id: 'all', label: 'All Assignments' },
+              { id: 'pending', label: 'Pending & Incomplete' },
+              { id: 'submitted', label: 'Submitted' },
+              { id: 'checked', label: 'Checked & Graded' },
+              { id: 'overdue', label: 'Overdue' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setHomeworkFilter(f.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                  homeworkFilter === f.id
+                    ? 'bg-primary-700 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Assignments List */}
+          {isLoadingHomework ? (
+            <div className="card text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700 mx-auto" />
+              <p className="mt-3 text-xs text-gray-500">Loading assignments...</p>
+            </div>
+          ) : homeworkItems.length === 0 ? (
+            <div className="card text-center py-12">
+              <FileCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-gray-800">No Homework Found</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {homeworkFilter === 'all'
+                  ? 'No homework assignments have been issued to your batch yet.'
+                  : `No assignments matching filter "${homeworkFilter}".`}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {homeworkItems.map((hw) => {
+                const isOverdue =
+                  hw.status === 'overdue' ||
+                  (new Date(`${hw.due_date}T${hw.due_time || '23:59'}`) < new Date() &&
+                    !['submitted', 'late_submitted', 'checked', 'completed', 'excused'].includes(hw.status))
+                const isPhysical = hw.submission_method === 'physical_notebook' || hw.submission_method === 'in_class'
+                const canSubmit = !isPhysical && ['assigned', 'in_progress', 'pending', 'resubmit_required', 'overdue'].includes(hw.status)
+
+                return (
+                  <div
+                    key={hw.record_id}
+                    className="card flex flex-col justify-between border-slate-200 hover:shadow-md transition-shadow"
+                  >
+                    <div className="space-y-3">
+                      {/* Top Header */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary-100 text-primary-800">
+                            {hw.subject_name}
+                          </span>
+                          <span className="font-mono text-xs font-semibold text-gray-600">
+                            {hw.assignment_code}
+                          </span>
+                        </div>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                            hw.status === 'checked' || hw.status === 'completed'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : hw.status === 'submitted' || hw.status === 'late_submitted'
+                              ? 'bg-purple-100 text-purple-800'
+                              : hw.status === 'resubmit_required'
+                              ? 'bg-amber-100 text-amber-800'
+                              : isOverdue
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {hw.status.replace('_', ' ')}
+                        </span>
+                      </div>
+
+                      {/* Title & Topic */}
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-base">{hw.title}</h3>
+                        {(hw.chapter || hw.topic) && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {hw.chapter && <span>Chapter: {hw.chapter}</span>}
+                            {hw.chapter && hw.topic && <span> &bull; </span>}
+                            {hw.topic && <span>Topic: {hw.topic}</span>}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Description & Instructions */}
+                      {hw.instructions && (
+                        <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs text-gray-700">
+                          <p className="font-semibold text-gray-900 mb-0.5">Instructions:</p>
+                          <p className="whitespace-pre-line">{hw.instructions}</p>
+                        </div>
+                      )}
+
+                      {/* Submission Method Banner */}
+                      <div className="text-xs">
+                        {isPhysical ? (
+                          <div className="p-2 rounded-lg bg-amber-50/80 border border-amber-200 text-amber-800 flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 shrink-0 text-amber-600" />
+                            <span>Physical Notebook: Show complete homework to teacher in class.</span>
+                          </div>
+                        ) : (
+                          <div className="p-2 rounded-lg bg-indigo-50/80 border border-indigo-200 text-indigo-800 flex items-center gap-2">
+                            <Upload className="w-4 h-4 shrink-0 text-indigo-600" />
+                            <span>Digital Submission: Upload files or enter written response.</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Metadata Details */}
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 pt-1">
+                        <div>
+                          <span className="text-gray-400 block text-[10px] uppercase font-bold">Teacher</span>
+                          <span className="font-medium text-gray-800">{hw.teacher_name}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 block text-[10px] uppercase font-bold">Max Marks</span>
+                          <span className="font-medium text-gray-800">{hw.max_marks ? `${hw.max_marks} Marks` : 'Ungraded'}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-gray-400 block text-[10px] uppercase font-bold">Due Date & Time</span>
+                          <span className={`font-semibold ${isOverdue ? 'text-rose-600 font-bold' : 'text-gray-800'}`}>
+                            {hw.due_date} at {hw.due_time || '23:59'}
+                            {isOverdue && ' (Overdue)'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Feedback & Grading Section */}
+                      {(hw.review_status === 'checked' || hw.marks_obtained !== null || hw.teacher_remarks) && (
+                        <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-emerald-900">Teacher Evaluation</span>
+                            {hw.marks_obtained !== null && hw.max_marks && (
+                              <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white">
+                                {hw.marks_obtained} / {hw.max_marks} Marks
+                              </span>
+                            )}
+                          </div>
+                          {hw.teacher_remarks && (
+                            <p className="text-xs text-emerald-800 italic">
+                              &ldquo;{hw.teacher_remarks}&rdquo;
+                            </p>
+                          )}
+                          {hw.resubmission_count > 0 && (
+                            <p className="text-[10px] text-emerald-700">Resubmissions: {hw.resubmission_count}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Student's Submitted Content (if digital and already submitted) */}
+                      {hw.submission_status === 'submitted' && (hw.submission_text || (hw.submission_files && hw.submission_files.length > 0)) && (
+                        <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-gray-800">Your Submitted Work:</span>
+                            {hw.submission_time && (
+                              <span className="text-[10px] text-gray-400">{new Date(hw.submission_time).toLocaleDateString()}</span>
+                            )}
+                          </div>
+                          {hw.submission_text && (
+                            <p className="text-gray-700 bg-white p-2 rounded border border-gray-100">{hw.submission_text}</p>
+                          )}
+                          {hw.submission_files?.map((f, i) => (
+                            <div key={i} className="flex items-center gap-1.5 text-primary-700 font-medium">
+                              <Paperclip className="w-3.5 h-3.5" />
+                              <a href={f.file_url} target="_blank" rel="noreferrer" className="underline hover:text-primary-900">
+                                {f.file_name || `Attachment ${i + 1}`}
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Footer Actions */}
+                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-3">
+                      <span className="text-[11px] text-gray-400">
+                        {hw.submission_time ? `Submitted ${new Date(hw.submission_time).toLocaleDateString()}` : 'Not submitted yet'}
+                      </span>
+                      {canSubmit && (
+                        <button
+                          onClick={() => {
+                            setSelectedHwForSubmission(hw)
+                            setSubmitText(hw.submission_text || '')
+                            setSubmitFileName(hw.submission_files?.[0]?.file_name || '')
+                            setSubmitFileUrl(hw.submission_files?.[0]?.file_url || '')
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-primary-700 hover:bg-primary-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          {hw.status === 'resubmit_required' ? 'Resubmit Homework' : 'Submit Solution'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -989,6 +1290,100 @@ export default function StudentDashboardPage() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* DIGITAL HOMEWORK SUBMISSION MODAL */}
+      {selectedHwForSubmission && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Submit Homework Solution</h3>
+                <p className="text-xs text-gray-500">
+                  {selectedHwForSubmission.assignment_code} &bull; {selectedHwForSubmission.title}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedHwForSubmission(null)}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">
+                  Written Response / Solution
+                </label>
+                <textarea
+                  rows={4}
+                  value={submitText}
+                  onChange={(e) => setSubmitText(e.target.value)}
+                  placeholder="Enter your answers, explanations, or solution text here..."
+                  className="w-full text-xs p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    Attachment / Document Name
+                  </label>
+                  <input
+                    type="text"
+                    value={submitFileName}
+                    onChange={(e) => setSubmitFileName(e.target.value)}
+                    placeholder="e.g. math_homework_ch3.pdf"
+                    className="w-full text-xs p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 block mb-1">
+                    Document File Link / URL
+                  </label>
+                  <input
+                    type="text"
+                    value={submitFileUrl}
+                    onChange={(e) => setSubmitFileUrl(e.target.value)}
+                    placeholder="https://drive.google.com/... or cloud url"
+                    className="w-full text-xs p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setSelectedHwForSubmission(null)}
+                className="px-4 py-2 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={submitHomeworkMutation.isPending || (!submitText.trim() && !submitFileUrl.trim())}
+                onClick={() => {
+                  const files = submitFileUrl.trim()
+                    ? [{ file_url: submitFileUrl.trim(), file_name: submitFileName.trim() || 'homework_solution' }]
+                    : []
+                  submitHomeworkMutation.mutate({
+                    recordId: selectedHwForSubmission.record_id,
+                    data: {
+                      submission_text: submitText.trim() || undefined,
+                      submission_files: files,
+                    },
+                  })
+                }}
+                className="btn-primary text-xs flex items-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" />
+                {submitHomeworkMutation.isPending ? 'Submitting...' : 'Confirm Submission'}
+              </button>
+            </div>
           </div>
         </div>
       )}

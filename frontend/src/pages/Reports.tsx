@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
@@ -29,11 +29,14 @@ import {
   standardsApi,
   divisionsApi,
   academicYearsApi,
+  homeworkApi,
+  leadsApi,
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { InvoiceStatusBadge } from '../components/Badge'
 import { useBranding } from '../config/branding'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
+import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import {
   Users,
   GraduationCap,
@@ -124,6 +127,15 @@ const REPORT_CATALOG: ReportMeta[] = [
     badge: 'Executive KPI',
     icon: BarChart3,
   },
+  {
+    id: 'crm-enquiries',
+    name: 'Enquiry Pipeline & CRM Conversion',
+    category: 'students',
+    categoryLabel: 'Students & Admissions',
+    description: 'Lead generation pipeline, conversion rates, source effectiveness, and admission drop-off analysis.',
+    badge: 'CRM Analytics',
+    icon: Users,
+  },
 
   // 2. Academics & Batches
   {
@@ -161,6 +173,15 @@ const REPORT_CATALOG: ReportMeta[] = [
     description: 'Weekly schedule occupancy analysis showing classroom room utilization, weekday spread, and instructional coverage.',
     badge: 'Scheduling',
     icon: Calendar,
+  },
+  {
+    id: 'homework-register',
+    name: 'Daily Homework Checking Register',
+    category: 'academics',
+    categoryLabel: 'Academics & Batches',
+    description: 'Cohort homework assignments, submission turnaround, teacher review velocity, and non-completion defaulters.',
+    badge: 'Curriculum Ops',
+    icon: FileSpreadsheet,
   },
 
   // 3. Fees & Financials
@@ -348,8 +369,8 @@ const REPORT_CATALOG: ReportMeta[] = [
 ]
 
 const CATEGORIES: { key: ReportCategoryKey; label: string; icon: any; count: number }[] = [
-  { key: 'students', label: 'Students & Admissions', icon: Users, count: 4 },
-  { key: 'academics', label: 'Academics & Batches', icon: GraduationCap, count: 4 },
+  { key: 'students', label: 'Students & Admissions', icon: Users, count: 5 },
+  { key: 'academics', label: 'Academics & Batches', icon: GraduationCap, count: 5 },
   { key: 'fees', label: 'Fees & Financials', icon: DollarSign, count: 6 },
   { key: 'workforce', label: 'Teachers & Payroll', icon: Briefcase, count: 7 },
   { key: 'examinations', label: 'Examinations & Merit', icon: Award, count: 2 },
@@ -654,6 +675,24 @@ export default function Reports() {
     enabled: activeReportId === 'import-history',
   })
 
+  // 22. Academics: Daily Homework Register
+  const { data: homeworkRegisterData, isLoading: loadingHomeworkRegister, refetch: refetchHomeworkRegister } = useQuery({
+    queryKey: ['report-homework-register', selectedStandardId, selectedDivisionId],
+    queryFn: () =>
+      homeworkApi.getDailyRegisterReport({
+        standard_id: selectedStandardId || undefined,
+        division_id: selectedDivisionId || undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'homework-register',
+  })
+
+  // 23. Students: CRM Enquiries & Conversion Pipeline
+  const { data: crmReportsData, isLoading: loadingCrmReports, refetch: refetchCrmReports } = useQuery({
+    queryKey: ['report-crm-enquiries', selectedAcademicYearId],
+    queryFn: () => leadsApi.getReportsAnalytics().then((r: any) => r.data),
+    enabled: activeReportId === 'crm-enquiries',
+  })
+
   // Master Refetch Trigger
   const handleRefetch = () => {
     if (activeReportId === 'student-master') refetchMaster()
@@ -677,6 +716,8 @@ export default function Reports() {
     else if (activeReportId === 'audit-logs') refetchAuditLogs()
     else if (activeReportId === 'comm-logs') refetchCommLogs()
     else if (activeReportId === 'import-history') refetchImportHistory()
+    else if (activeReportId === 'homework-register') refetchHomeworkRegister()
+    else if (activeReportId === 'crm-enquiries') refetchCrmReports()
     toast.success('Report data refreshed')
   }
 
@@ -792,7 +833,7 @@ export default function Reports() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Reporting & Analytics Centre</h1>
             <span className="px-2.5 py-0.5 bg-primary-100 text-primary-800 border border-indigo-200 rounded-full font-bold text-xs uppercase">
-              24 Enterprise Reports
+              26 Enterprise Reports
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
@@ -805,7 +846,7 @@ export default function Reports() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search all 24 reports..."
+            placeholder="Search all 26 reports..."
             value={globalSearch}
             onChange={(e) => setGlobalSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-xs"
@@ -1072,7 +1113,22 @@ export default function Reports() {
         </div>
       ) : (
         /* ── Report Body Container ─────────────────────────────────────────── */
-        <div>
+        <div className="space-y-6">
+          {/* Universal Calculation & Decision Intelligence Engine */}
+          <ReportIntelligenceBanner
+            reportId={activeReportId}
+            filters={{
+              academic_year_id: selectedAcademicYearId || undefined,
+              standard_id: selectedStandardId || undefined,
+              division_id: selectedDivisionId || undefined,
+              board_id: selectedBoardId || undefined,
+              exam_id: selectedExamId || undefined,
+              start_date: startDate || undefined,
+              end_date: endDate || undefined,
+              status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
+            }}
+          />
+
           {/* 1. Student Master Directory */}
           {activeReportId === 'student-master' && (
             <ExcelReportGrid
@@ -1628,6 +1684,54 @@ export default function Reports() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* 22. Academics: Daily Homework Register */}
+          {activeReportId === 'homework-register' && (
+            <ExcelReportGrid
+              title="Daily Homework Checking Register"
+              subtitle="Daily assignment issuance, submission turnaround, checking status, and completion rate"
+              columns={[
+                { id: 'assignment_code', header: 'Code', accessorKey: 'assignment_code', type: 'text', width: 110, render: (val) => <span className="font-mono font-bold text-slate-800">{val}</span> },
+                { id: 'title', header: 'Assignment Title', accessorKey: 'title', type: 'text', width: 180, sortable: true },
+                { id: 'standard', header: 'Standard', accessorKey: 'standard', type: 'text', width: 120 },
+                { id: 'batch', header: 'Batch', accessorKey: 'batch', type: 'text', width: 120 },
+                { id: 'subject', header: 'Subject', accessorKey: 'subject', type: 'text', width: 130 },
+                { id: 'teacher', header: 'Teacher', accessorKey: 'teacher', type: 'text', width: 150 },
+                { id: 'due_date', header: 'Due Date', accessorKey: 'due_date', type: 'date', width: 110 },
+                { id: 'total_students', header: 'Assigned', accessorKey: 'total_students', type: 'number', width: 90, align: 'right' },
+                { id: 'completed', header: 'Done', accessorKey: 'completed', type: 'number', width: 80, align: 'right', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
+                { id: 'pending', header: 'Pending', accessorKey: 'pending', type: 'number', width: 80, align: 'right', render: (val) => <span className="font-bold text-amber-700">{val}</span> },
+                { id: 'completion_rate', header: 'Completion %', accessorKey: 'completion_rate', type: 'text', width: 110, align: 'right', render: (val) => <span className="font-extrabold text-indigo-700">{val}</span> },
+              ]}
+              data={homeworkRegisterData?.items || []}
+              loading={loadingHomeworkRegister}
+              exportFilename="homework_daily_register"
+              sheetName="Homework"
+              showSummaryRow={true}
+            />
+          )}
+
+          {/* 23. Students: CRM Enquiries & Pipeline */}
+          {activeReportId === 'crm-enquiries' && (
+            <div className="space-y-6">
+              <ExcelReportGrid
+                title="Counsellor Conversion Matrix"
+                subtitle="Counsellor lead allocation, follow-ups logged, admissions secured, and conversion percentages"
+                columns={[
+                  { id: 'name', header: 'Counsellor / Staff', accessorKey: 'name', type: 'text', width: 160 },
+                  { id: 'assigned_leads', header: 'Assigned Leads', accessorKey: 'assigned_leads', type: 'number', width: 120, align: 'right' },
+                  { id: 'follow_ups_logged', header: 'Follow-ups', accessorKey: 'follow_ups_logged', type: 'number', width: 110, align: 'right' },
+                  { id: 'conversions', header: 'Enrolled', accessorKey: 'conversions', type: 'number', width: 110, align: 'right', render: (val: any) => <span className="font-bold text-emerald-700">{val}</span> },
+                  { id: 'conversion_rate', header: 'Conversion %', accessorKey: 'conversion_rate', type: 'text', width: 120, align: 'right', render: (val: any) => <span className="font-extrabold text-indigo-700">{val}%</span> },
+                ]}
+                data={crmReportsData?.counsellors_matrix || []}
+                loading={loadingCrmReports}
+                exportFilename="crm_counsellor_conversions"
+                sheetName="Counsellors"
+                showSummaryRow={true}
+              />
             </div>
           )}
         </div>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-05
+ * @updated     2026-11-11
  *
  * @description Universal client-side export utility supporting Excel (.xlsx), CSV (.csv), and JSON (.json) with formula injection protection.
  */
@@ -35,6 +35,7 @@ export interface ExportDataOptions<T = any> {
   columns: ExportColumn<T>[]
   data: T[]
   format: 'xlsx' | 'csv' | 'json'
+  calculationNotes?: string[]
 }
 
 /**
@@ -100,6 +101,7 @@ export function exportToExcel<T>({
   sheetName = 'Report',
   columns,
   data,
+  calculationNotes,
 }: Omit<ExportDataOptions<T>, 'format'>): void {
   const safeFilename = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`
 
@@ -119,8 +121,18 @@ export function exportToExcel<T>({
     })
   })
 
-  // 3. Assemble worksheet with understated trailing branding row
-  const aoa = [headers, ...rows, [], [PRINT_SHARE_BRANDING.text]]
+  // 3. Assemble worksheet with optional calculation notes and trailing branding row
+  const notesRows =
+    calculationNotes && calculationNotes.length > 0
+      ? [
+          [],
+          ['--- CALCULATION PROVENANCE & INSTITUTIONAL BENCHMARKS ---'],
+          ...calculationNotes.map((n) => [n]),
+          [],
+        ]
+      : []
+
+  const aoa = [headers, ...rows, ...notesRows, [], [PRINT_SHARE_BRANDING.text]]
   const ws = XLSX.utils.aoa_to_sheet(aoa);
 
   // Configure print page footer in Excel workbook
@@ -158,6 +170,7 @@ export function exportToCsv<T>({
   filename,
   columns,
   data,
+  calculationNotes,
 }: Omit<ExportDataOptions<T>, 'format'>): void {
   const safeFilename = filename.endsWith('.csv') ? filename : `${filename}.csv`
 
@@ -166,10 +179,15 @@ export function exportToCsv<T>({
     return columns.map((col) => sanitizeCsvValue(getRawCellValue(row, col))).join(',')
   })
 
+  const notesLines =
+    calculationNotes && calculationNotes.length > 0
+      ? ['', '# CALCULATION PROVENANCE & INSTITUTIONAL BENCHMARKS', ...calculationNotes.map((n) => `# ${sanitizeCsvValue(n)}`)]
+      : []
+
   const footerLine = sanitizeCsvValue(PRINT_SHARE_BRANDING.text)
 
   // Prepend UTF-8 BOM so Microsoft Excel handles rupee signs and UTF-8 characters seamlessly
-  const csvContent = '\uFEFF' + [headerLine, ...rowLines, '', footerLine].join('\r\n')
+  const csvContent = '\uFEFF' + [headerLine, ...rowLines, ...notesLines, '', footerLine].join('\r\n')
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   downloadBlob(blob, safeFilename)
 }

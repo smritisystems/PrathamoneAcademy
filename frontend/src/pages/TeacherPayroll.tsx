@@ -11,18 +11,20 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Complete Teacher Payroll & Payment Management workspace:
  */
 
 import React, { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, Calendar, Clock, CheckCircle2, XCircle, AlertCircle,
   Search, Filter, Printer, Download, Plus, ChevronRight, Eye, Edit3,
   Shield, Layers, BookOpen, AlertTriangle, RefreshCw, FileText,
-  UserCheck, UserX, ArrowUpRight, Lock, Unlock, CreditCard, ChevronDown
+  UserCheck, UserX, ArrowUpRight, Lock, Unlock, CreditCard, ChevronDown,
+  FileCheck
 } from 'lucide-react'
 import { teacherPayrollApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
@@ -1023,6 +1025,15 @@ export default function TeacherPayroll() {
                                   tone="primary"
                                 />
                               )}
+
+                              {/* Assign Homework for Session */}
+                              <Link
+                                to={`/homework/new?session_id=${s.id}&division_id=${s.division_id || s.batch_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic_covered || '')}&teacher_id=${s.teacher_user_id || ''}`}
+                                className="p-1.5 text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded-lg transition-colors border border-primary-200"
+                                title="Assign Homework for this Teaching Session"
+                              >
+                                <FileCheck className="w-3.5 h-3.5" />
+                              </Link>
                             </div>
                           </td>
                         </tr>

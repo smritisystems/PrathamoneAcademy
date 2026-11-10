@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -28,14 +28,14 @@ import {
   ClipboardCheck, Award, Activity, Upload, Trash2, Eye, QrCode,
   CheckCircle, PlusCircle, Calendar, Phone, Mail, MapPin, ExternalLink,
   Edit3, AlertTriangle, X, Check, Save, Shield, Users, Printer, Share2,
-  UserMinus, UserCheck, History, GraduationCap, Percent
+  UserMinus, UserCheck, History, GraduationCap, Percent, FileCheck, Filter, Clock
 } from 'lucide-react'
 import ShareModal from '../components/ShareModal'
-import { studentsApi, standardsApi, divisionsApi, feesApi } from '../api/endpoints'
+import { studentsApi, standardsApi, divisionsApi, feesApi, homeworkApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { StatusBadge } from '../components/Badge'
-import type { StudentDocumentItem } from '../types'
+import type { StudentDocumentItem, AcademicActivityRegisterItem } from '../types'
 import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, LockedLinkButton } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
 
@@ -46,6 +46,7 @@ const ADMIN_TABS = [
   'Overview',
   'Enrollment',
   'Classes',
+  'Academic Register',
   'Attendance',
   'Tests',
   'Fees',
@@ -159,12 +160,12 @@ export default function StudentDetailPage() {
         data.custom_package_amount !== null && data.custom_package_amount !== undefined
           ? String(data.custom_package_amount)
           : (data as any).custom_amount !== null && (data as any).custom_amount !== undefined
-          ? String((data as any).custom_amount)
-          : data.current_structure
-          ? String(data.current_structure.amount)
-          : (data as any).assigned_structure
-          ? String((data as any).assigned_structure.base_amount)
-          : '0'
+            ? String((data as any).custom_amount)
+            : data.current_structure
+              ? String(data.current_structure.amount)
+              : (data as any).assigned_structure
+                ? String((data as any).assigned_structure.base_amount)
+                : '0'
       const currentConcession =
         data.concession_amount !== null && data.concession_amount !== undefined
           ? String(data.concession_amount)
@@ -300,6 +301,18 @@ export default function StudentDetailPage() {
     queryFn: () => studentsApi.getProfile(studentId).then((r) => r.data),
     enabled: !!studentId,
   })
+
+  // ── Unified Academic Activity Register Query ──
+  const [registerFilter, setRegisterFilter] = useState<string>('all')
+  const { data: activityRegisterData, isLoading: isLoadingRegister, refetch: refetchRegister } = useQuery({
+    queryKey: ['student-academic-register', studentId, registerFilter],
+    queryFn: () =>
+      homeworkApi.getStudentActivityRegister(studentId, {
+        activity_type: registerFilter !== 'all' ? registerFilter : undefined,
+      }).then((r) => r.data),
+    enabled: activeTab === 'Academic Register' && !!studentId,
+  })
+  const activityItems: AcademicActivityRegisterItem[] = activityRegisterData?.items || []
 
   // Standards and Divisions queries for editing
   const { data: standardsList } = useQuery({
@@ -596,11 +609,10 @@ export default function StudentDetailPage() {
                   type="button"
                   disabled={!isEditMode}
                   onClick={() => setShowExitModal(true)}
-                  className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${
-                    isEditMode
-                      ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
-                      : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed opacity-60'
-                  }`}
+                  className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${isEditMode
+                    ? 'border-red-300 bg-red-50 text-red-700 hover:bg-red-100'
+                    : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed opacity-60'
+                    }`}
                   title={isEditMode ? "Withdraw / Exit student from institute" : "Locked in View Mode: Enable Edit Mode to withdraw student"}
                 >
                   <UserMinus className="w-4 h-4" /> Exit / Withdraw
@@ -610,11 +622,10 @@ export default function StudentDetailPage() {
                   type="button"
                   disabled={!isEditMode}
                   onClick={() => setShowReactivateModal(true)}
-                  className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${
-                    isEditMode
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                      : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed opacity-60'
-                  }`}
+                  className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${isEditMode
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    : 'border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed opacity-60'
+                    }`}
                   title={isEditMode ? "Reactivate student into active batch" : "Locked in View Mode: Enable Edit Mode to reactivate student"}
                 >
                   <UserCheck className="w-4 h-4" /> Reactivate Student
@@ -631,11 +642,10 @@ export default function StudentDetailPage() {
                 }
                 openEditModal()
               }}
-              className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${
-                isEditMode
-                  ? 'border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                  : 'border-slate-200 bg-slate-50 text-slate-400'
-              }`}
+              className={`px-3.5 py-2 rounded-lg border text-sm font-semibold flex items-center gap-1.5 shadow-sm transition ${isEditMode
+                ? 'border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                : 'border-slate-200 bg-slate-50 text-slate-400'
+                }`}
               title={isEditMode ? "Edit student profile, guardians, and batch assignment" : "Locked in View Mode: Enable Edit Mode above to modify records"}
             >
               <Edit3 className="w-4 h-4" /> {isEditMode ? 'Edit Profile' : 'Edit Locked'}
@@ -720,11 +730,10 @@ export default function StudentDetailPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3.5 text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === tab
-                  ? 'text-primary-700 border-b-2 border-primary-700 bg-white font-bold'
-                  : 'text-gray-500 hover:text-gray-800'
-              }`}
+              className={`px-5 py-3.5 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab
+                ? 'text-primary-700 border-b-2 border-primary-700 bg-white font-bold'
+                : 'text-gray-500 hover:text-gray-800'
+                }`}
             >
               {tab}
             </button>
@@ -884,6 +893,150 @@ export default function StudentDetailPage() {
             </div>
           )}
 
+          {/* TAB: UNIFIED ACADEMIC ACTIVITY REGISTER */}
+          {activeTab === 'Academic Register' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base">Unified Academic Activity Register</h3>
+                  <p className="text-xs text-gray-500">
+                    Single chronological timeline uniting Teaching Sessions, Homework Assignments, Exam Records, and Attendance.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => refetchRegister()}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700 flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <History className="w-3.5 h-3.5" /> Refresh Timeline
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {[
+                  { id: 'all', label: 'All Activities' },
+                  { id: 'teaching_session', label: 'Teaching Sessions' },
+                  { id: 'homework', label: 'Homework & Assignments' },
+                  { id: 'exam', label: 'Exams & Tests' },
+                  { id: 'attendance', label: 'Attendance Roll Calls' },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setRegisterFilter(f.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${registerFilter === f.id
+                      ? 'bg-primary-700 text-white shadow-2xs'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Activity Timeline List */}
+              {isLoadingRegister ? (
+                <div className="card text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700 mx-auto" />
+                  <p className="mt-3 text-xs text-gray-500">Loading academic activity records...</p>
+                </div>
+              ) : activityItems.length === 0 ? (
+                <div className="card text-center py-12">
+                  <FileCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-gray-800">No Academic Activities Recorded</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    No teaching sessions, homework records, tests, or attendance logs found matching the filter.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activityItems.map((item, idx) => {
+                    const isSession = item.activity_type === 'teaching_session'
+                    const isHomework = item.activity_type === 'homework'
+                    const isExam = item.activity_type === 'exam'
+                    const isAttendance = item.activity_type === 'attendance'
+
+                    const borderAccent = isSession
+                      ? 'border-l-blue-500'
+                      : isHomework
+                        ? 'border-l-indigo-500'
+                        : isExam
+                          ? 'border-l-purple-500'
+                          : 'border-l-emerald-500'
+
+                    const badgeStyle = isSession
+                      ? 'bg-blue-100 text-blue-800'
+                      : isHomework
+                        ? 'bg-indigo-100 text-indigo-800'
+                        : isExam
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-emerald-100 text-emerald-800'
+
+                    return (
+                      <div
+                        key={item.id || idx}
+                        className={`card border-l-4 ${borderAccent} p-4 hover:shadow-xs transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-4`}
+                      >
+                        <div className="flex items-start gap-3.5">
+                          <div className={`p-2 rounded-xl mt-0.5 ${badgeStyle}`}>
+                            {isSession && <BookOpen className="w-4 h-4" />}
+                            {isHomework && <FileCheck className="w-4 h-4" />}
+                            {isExam && <Award className="w-4 h-4" />}
+                            {isAttendance && <ClipboardCheck className="w-4 h-4" />}
+                          </div>
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeStyle}`}>
+                                {item.activity_type.replace('_', ' ')}
+                              </span>
+                              <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
+                                {item.subject_name}
+                              </span>
+                              <span className="text-xs text-gray-400 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {item.date} {item.time && `• ${item.time}`}
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-gray-900 text-sm mt-1">{item.title}</h4>
+                            {item.teacher_name && (
+                              <p className="text-xs text-gray-500 mt-0.5">Faculty: <span className="font-medium text-gray-700">{item.teacher_name}</span></p>
+                            )}
+                            {item.remarks && (
+                              <p className="text-xs text-gray-600 italic mt-1 bg-gray-50 p-1.5 rounded border border-gray-100">
+                                &ldquo;{item.remarks}&rdquo;
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-row md:flex-col items-end justify-between md:justify-center gap-2 text-right">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${item.status === 'checked' || item.status === 'completed' || item.status === 'present'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : item.status === 'absent' || item.status === 'not_done'
+                                ? 'bg-rose-100 text-rose-800'
+                                : item.status === 'incomplete' || item.status === 'pending'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                          >
+                            {item.status.replace('_', ' ')}
+                          </span>
+                          {item.score && (
+                            <span className="font-bold text-xs text-primary-700 font-mono">
+                              Score: {item.score}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* TAB 4: ATTENDANCE */}
           {activeTab === 'Attendance' && (
             <div className="space-y-4">
@@ -905,10 +1058,9 @@ export default function StudentDetailPage() {
                       <tr key={r.id} className="hover:bg-gray-50">
                         <td className="py-2 px-3 font-medium text-gray-900">{r.date}</td>
                         <td className="py-2 px-3">
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
-                            r.status === 'present' ? 'bg-green-100 text-green-800' :
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${r.status === 'present' ? 'bg-green-100 text-green-800' :
                             r.status === 'absent' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                          }`}>
+                            }`}>
                             {r.status}
                           </span>
                         </td>
@@ -1194,9 +1346,8 @@ export default function StudentDetailPage() {
                             }
                             setDocToDelete({ id: doc.id, title: doc.title })
                           }}
-                          className={`p-1 rounded transition-colors ${
-                            isEditMode ? 'text-red-500 hover:bg-red-50' : 'text-slate-300 cursor-not-allowed'
-                          }`}
+                          className={`p-1 rounded transition-colors ${isEditMode ? 'text-red-500 hover:bg-red-50' : 'text-slate-300 cursor-not-allowed'
+                            }`}
                           title={isEditMode ? "Delete Document" : "Locked in View Mode: Enable Edit Mode to delete"}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1317,13 +1468,12 @@ export default function StudentDetailPage() {
               <div className="space-y-3">
                 {activity.map((act) => (
                   <div key={act.id} className="p-3.5 rounded-xl border border-gray-200 bg-gray-50 flex items-start gap-3">
-                    <div className={`p-1.5 rounded-lg mt-0.5 ${
-                      act.type === 'communication'
-                        ? 'bg-primary-100 text-primary-700'
-                        : act.type === 'payment'
+                    <div className={`p-1.5 rounded-lg mt-0.5 ${act.type === 'communication'
+                      ? 'bg-primary-100 text-primary-700'
+                      : act.type === 'payment'
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-primary-100 text-primary-700'
-                    }`}>
+                      }`}>
                       {act.type === 'communication' ? (
                         <Mail className="w-4 h-4" />
                       ) : act.type === 'payment' ? (
@@ -1486,13 +1636,12 @@ export default function StudentDetailPage() {
                           <td className="p-3 font-mono">{enr.enrollment_date}</td>
                           <td className="p-3">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                                enr.status === 'active'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : enr.status === 'withdrawn'
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${enr.status === 'active'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : enr.status === 'withdrawn'
                                   ? 'bg-red-100 text-red-800'
                                   : 'bg-gray-100 text-gray-700'
-                              }`}
+                                }`}
                             >
                               {enr.status}
                             </span>
@@ -1601,44 +1750,40 @@ export default function StudentDetailPage() {
               <button
                 type="button"
                 onClick={() => setEditTab('personal')}
-                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
-                  editTab === 'personal'
-                    ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${editTab === 'personal'
+                  ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <User className="w-4 h-4" /> Personal & Identity
               </button>
               <button
                 type="button"
                 onClick={() => setEditTab('contact')}
-                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
-                  editTab === 'contact'
-                    ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${editTab === 'contact'
+                  ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <Phone className="w-4 h-4" /> Contact & Address
               </button>
               <button
                 type="button"
                 onClick={() => setEditTab('guardians')}
-                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
-                  editTab === 'guardians'
-                    ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${editTab === 'guardians'
+                  ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <Shield className="w-4 h-4" /> Parents & Guardians ({profileForm.guardians.length})
               </button>
               <button
                 type="button"
                 onClick={() => setEditTab('academic')}
-                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${
-                  editTab === 'academic'
-                    ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
+                className={`py-3 px-4 text-xs font-semibold flex items-center gap-2 border-b-2 transition ${editTab === 'academic'
+                  ? 'border-primary-700 text-primary-700 bg-white rounded-t-lg font-bold'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <BookOpen className="w-4 h-4" /> Academic & Batch Assignment
                 {isBatchTransferAttempted && (

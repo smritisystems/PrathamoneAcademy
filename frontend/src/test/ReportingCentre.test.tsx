@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-11
  *
  * @description Comprehensive unit and integration test suite validating Central Reporting & Analytics Centre, 6-category navigation, search filter, favorite pins, and ExcelReportGrid rendering.
  */
@@ -21,7 +21,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Reports from '../pages/Reports'
-import { reportsApi, academicReportsApi, examinationsApi, boardsApi, standardsApi, divisionsApi, academicYearsApi } from '../api/endpoints'
+import { reportsApi, academicReportsApi, examinationsApi, boardsApi, standardsApi, divisionsApi, academicYearsApi, reportIntelligenceApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 
 describe('Central Reporting & Analytics Centre Suite', () => {
@@ -120,6 +120,16 @@ describe('Central Reporting & Analytics Centre Suite', () => {
     vi.spyOn(examinationsApi, 'list').mockResolvedValue({ data: [] } as any)
 
     // Mock report APIs
+    vi.spyOn(reportIntelligenceApi, 'getMetrics').mockResolvedValue({
+      data: {
+        report_id: 'student-master',
+        generated_at: '2026-11-11T00:00:00Z',
+        institution_id: 1,
+        filters_applied: {},
+        kpis: [],
+        insights: [],
+      },
+    } as any)
     vi.spyOn(reportsApi, 'studentMasterDirectory').mockResolvedValue({
       data: mockStudentsMaster,
     } as any)
@@ -138,7 +148,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
     )
 
     expect(screen.getByText('Reporting & Analytics Centre')).toBeDefined()
-    expect(screen.getByText(/24 Enterprise Reports/i)).toBeDefined()
+    expect(screen.getByText(/26 Enterprise Reports/i)).toBeDefined()
 
     // 6 Canonical category switcher tabs
     expect(screen.getByRole('button', { name: /Students & Admissions/i })).toBeDefined()
@@ -179,7 +189,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
       </QueryClientProvider>
     )
 
-    const searchInput = screen.getByPlaceholderText(/Search all 24 reports.../i)
+    const searchInput = screen.getByPlaceholderText(/Search all 26 reports.../i)
     fireEvent.change(searchInput, { target: { value: 'Defaulters' } })
 
     // Matching overlay should show matching count

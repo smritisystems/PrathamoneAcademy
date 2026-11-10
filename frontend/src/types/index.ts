@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -3756,5 +3756,239 @@ export interface RecentVisitItem {
   label: string
   last_accessed?: string | null
 }
+
+// ─── Homework & Assignment System (SSOT) ──────────────────────────────────────
+
+export interface HomeworkAttachment {
+  title: string
+  file_url: string
+  file_type?: string
+  file_size_bytes?: number
+}
+
+export interface HomeworkSummary {
+  total_recipients: number
+  completed_count: number
+  submitted_count: number
+  pending_check_count: number
+  checked_count: number
+  overdue_count: number
+  excused_count: number
+  completion_percentage: number
+}
+
+export interface HomeworkAssignmentItem {
+  id: number
+  assignment_code: string
+  title: string
+  description?: string | null
+  instructions?: string | null
+  chapter?: string | null
+  topic?: string | null
+  standard_id: number
+  standard_name: string
+  subject_id: number
+  subject_name: string
+  division_id?: number | null
+  division_name: string
+  teaching_session_id?: number | null
+  teacher_user_id: number
+  teacher_name: string
+  assigned_date: string
+  due_date: string
+  due_time: string
+  max_marks?: number | null
+  difficulty_level: 'easy' | 'medium' | 'hard'
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  submission_method:
+    | 'physical_notebook'
+    | 'photo_upload'
+    | 'pdf_document'
+    | 'online_text'
+    | 'online_quiz'
+    | 'in_class'
+    | 'no_submission'
+  recipient_type: 'batch' | 'multi_batch' | 'selected_students' | 'individual_student' | 'student_group'
+  status: 'draft' | 'published' | 'scheduled' | 'archived'
+  is_template?: boolean
+  template_name?: string | null
+  attachments: HomeworkAttachment[]
+  summary: HomeworkSummary
+}
+
+export interface CheckingRegisterStudent {
+  record_id: number
+  student_id: number
+  student_name: string
+  admission_number: string
+  roll_number: string
+  photo_url?: string | null
+  division_name?: string | null
+  status: string
+  submission_status: 'pending' | 'submitted' | 'late' | 'not_submitted' | 'excused'
+  submission_time?: string | null
+  submission_text?: string | null
+  submission_files: Array<{ file_url: string; file_name?: string; file_type?: string }>
+  review_status: 'pending' | 'done' | 'incomplete' | 'not_done' | 'absent_not_checked' | 'excused' | 'checked'
+  marks_obtained?: number | null
+  teacher_remarks?: string | null
+  reviewed_at?: string | null
+  individual_due_date?: string | null
+  exemption_reason?: string | null
+  resubmission_count: number
+}
+
+export interface StudentPortalHomeworkItem {
+  record_id: number
+  assignment_id: number
+  assignment_code: string
+  title: string
+  description?: string | null
+  instructions?: string | null
+  chapter?: string | null
+  topic?: string | null
+  subject_name: string
+  standard_name: string
+  teacher_name: string
+  submission_method: string
+  max_marks?: number | null
+  due_date: string
+  due_time: string
+  status: string
+  submission_status: string
+  submission_time?: string | null
+  submission_text?: string | null
+  submission_files: Array<{ file_url: string; file_name?: string; file_type?: string }>
+  review_status: string
+  marks_obtained?: number | null
+  teacher_remarks?: string | null
+  exemption_reason?: string | null
+  resubmission_count: number
+  resubmission_history?: any[]
+  attachments: HomeworkAttachment[]
+  allow_late_submissions: boolean
+}
+
+export interface AcademicActivityRegisterItem {
+  type: 'HOMEWORK' | 'EXAMINATION' | 'ATTENDANCE'
+  timestamp: string
+  date: string
+  title: string
+  subject: string
+  status: string
+  review_status: string
+  marks_obtained?: number | null
+  max_marks?: number | null
+  remarks?: string | null
+  badge_color: string
+}
+
+export interface TeacherHomeworkDashboard {
+  total_assigned: number
+  assigned_today: number
+  active_assignments: number
+  awaiting_check: number
+  overdue_count: number
+}
+
+export interface DailyHomeworkRegisterReport {
+  date: string
+  total_assignments: number
+  items: Array<{
+    assignment_code: string
+    title: string
+    standard: string
+    batch: string
+    subject: string
+    teacher: string
+    topic: string
+    due_date: string
+    submission_method: string
+    total_students: number
+    completed: number
+    pending: number
+    completion_rate: string
+  }>
+}
+
+// ─── Universal Report Intelligence & Calculation Engine Types ────────────────
+
+export interface ReportKPIExplanation {
+  formula: string
+  latex_formula?: string
+  numerator_name: string
+  numerator_value: number
+  denominator_name?: string | null
+  denominator_value?: number | null
+  multiplier?: number
+  included_count?: number
+  excluded_count?: number
+  rounding_rule: string
+  filter_context: string
+  plain_english_breakdown: string
+}
+
+export interface ReportKPIItem {
+  id: string
+  name: string
+  value: number | string
+  formatted_value: string
+  unit: string
+  status: 'critical' | 'warning' | 'positive' | 'neutral'
+  badge_label?: string
+  target?: number | null
+  variance?: number | null
+  trend?: 'up' | 'down' | 'neutral'
+  explanation: ReportKPIExplanation
+}
+
+export interface ReportInsightItem {
+  id: string
+  title: string
+  severity: 'critical' | 'warning' | 'positive' | 'info'
+  what_happened: string
+  why_it_matters: string
+  action_required: string
+  action_url?: string
+  action_label?: string
+  metric_key?: string
+}
+
+export interface ReportComparisonItem {
+  benchmark_name: string
+  target: number
+  actual: number
+  variance: number
+}
+
+export interface ReportIntelligencePayload {
+  report_id: string
+  generated_at: string
+  institution_id: number
+  filters_applied: Record<string, any>
+  kpis: ReportKPIItem[]
+  insights: ReportInsightItem[]
+  comparisons?: ReportComparisonItem | null
+}
+
+export interface CalculationDefinitionItem {
+  id: string
+  name: string
+  category: string
+  data_source: string
+  formula: string
+  latex_formula: string
+  numerator: string
+  denominator: string | null
+  multiplier: number
+  target_threshold: number
+  warning_threshold: number
+  inclusion_rules: string[]
+  exclusion_rules: string[]
+  rounding_rules: string
+  plain_english_template: string
+  actionable_guidance: string
+}
+
 
 

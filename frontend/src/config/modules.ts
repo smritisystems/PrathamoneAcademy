@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -28,6 +28,7 @@ import {
   ClipboardList,
   Award,
   BookOpen,
+  FileCheck,
   BarChart2,
   Printer,
   MessageSquare,
@@ -232,6 +233,21 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
     ],
   },
   {
+    id: 'homework',
+    label: 'Homework & Assignments',
+    category: 'academic',
+    defaultPath: '/homework',
+    icon: FileCheck,
+    iconName: 'FileCheck',
+    description: 'Homework assignment creation, physical notebook checking register, digital submissions, and progress.',
+    subItems: [
+      { id: 'homework_overview', label: 'Overview & List', to: '/homework' },
+      { id: 'homework_create', label: 'Assign Homework', to: '/homework/create' },
+      { id: 'homework_checking', label: 'Checking Register', to: '/homework/checking' },
+      { id: 'homework_reports', label: 'Daily Register Report', to: '/homework/reports' },
+    ],
+  },
+  {
     id: 'courses',
     label: 'Study Materials',
     category: 'learning',
@@ -383,6 +399,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   ClipboardList,
   Award,
   BookOpen,
+  FileCheck,
   BarChart2,
   Printer,
   MessageSquare,

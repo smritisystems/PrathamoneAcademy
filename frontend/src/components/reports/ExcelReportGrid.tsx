@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Production-grade spreadsheet-style report data grid with sorting, column resizing/reordering, visibility toggle, column filters, and multi-format exports.
  */
@@ -68,6 +68,7 @@ export interface ExcelReportGridProps<T = any> {
   showSummaryRow?: boolean
   summaryCalculations?: Record<string, (data: T[]) => React.ReactNode>
   extraActions?: React.ReactNode
+  calculationNotes?: string[]
 }
 
 export default function ExcelReportGrid<T extends Record<string, any>>({
@@ -85,6 +86,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
   showSummaryRow = false,
   summaryCalculations,
   extraActions,
+  calculationNotes,
 }: ExcelReportGridProps<T>) {
   // ─── 1. State: Columns, Sizing, Ordering, Visibility ────────────────────────
   const [columnOrder, setColumnOrder] = useState<string[]>(() =>
@@ -324,6 +326,7 @@ export default function ExcelReportGrid<T extends Record<string, any>>({
       columns: visibleColumns,
       data: exportDataset,
       format,
+      calculationNotes,
     })
 
     setShowExportMenu(false)

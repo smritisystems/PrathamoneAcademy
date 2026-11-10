@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -23,7 +23,7 @@ import {
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
   Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical,
-  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus
+  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -131,6 +131,13 @@ const staffSubItems = [
   { to: '/staff/settings', label: 'HR Policies' },
 ]
 
+const homeworkSubItems = [
+  { to: '/homework', label: 'Overview & List' },
+  { to: '/homework/create', label: 'Assign Homework' },
+  { to: '/homework/checking', label: 'Checking Register' },
+  { to: '/homework/reports', label: 'Daily Register Report' },
+]
+
 const coursesSubItems = [
   { to: '/courses/overview', label: 'Materials Overview' },
   { to: '/courses/repository', label: 'Master Library' },
@@ -171,6 +178,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/attendance', label: 'Attendance', icon: ClipboardList },
   { to: '/examinations', label: 'Tests & Results', icon: Award },
   { to: '/fees', label: 'Fees & Payments', icon: CreditCard },
+  { to: '/homework', label: 'Homework & Assignments', icon: FileCheck },
   { to: '/courses', label: 'Study Materials', icon: BookOpen },
   { to: '/reports', label: 'Reports', icon: BarChart2 },
   { to: '/forms', label: 'Print Forms & KYC', icon: Printer },

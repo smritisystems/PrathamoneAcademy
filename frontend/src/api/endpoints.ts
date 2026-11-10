@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -55,6 +55,9 @@ import type {
   FollowUpQueueItem, FollowUpQueueResponse, DemoClassQueueItem, DemoClassQueueResponse,
   LeadSourceSummaryItem, LeadSourcesResponse, CampaignSummaryItem, CampaignsResponse,
   CrmReportsAnalytics, CrmConfigSettings,
+  HomeworkAssignmentItem, CheckingRegisterStudent, StudentPortalHomeworkItem,
+  AcademicActivityRegisterItem, TeacherHomeworkDashboard, DailyHomeworkRegisterReport,
+  ReportKPIItem, ReportInsightItem, ReportIntelligencePayload, CalculationDefinitionItem,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -1993,5 +1996,82 @@ export const governanceApi = {
   getSafeDeleteAuditLogs: (params?: { resource_type?: string; limit?: number }) =>
     apiClient.get<any[]>('/governance/safe-delete/audit-logs', { params }),
 }
+
+// ─── Homework & Assignment System (SSOT) ──────────────────────────────────────
+
+export const homeworkApi = {
+  listAssignments: (params?: {
+    division_id?: number | string
+    standard_id?: number | string
+    subject_id?: number | string
+    teacher_id?: number | string
+    status?: string
+    submission_method?: string
+    is_template?: boolean
+    search?: string
+    page?: number
+    limit?: number
+  }) => apiClient.get<{ items: HomeworkAssignmentItem[]; total: number; page: number; limit: number }>('/homework/assignments', { params }),
+
+  createAssignment: (payload: any) =>
+    apiClient.post<{ success: boolean; message: string; id: number; assignment_code: string }>('/homework/assignments', payload),
+
+  getAssignment: (id: number | string) =>
+    apiClient.get<HomeworkAssignmentItem>(`/homework/assignments/${id}`),
+
+  updateAssignment: (id: number | string, payload: any) =>
+    apiClient.put<{ success: boolean; message: string }>(`/homework/assignments/${id}`, payload),
+
+  deleteAssignment: (id: number | string) =>
+    apiClient.delete<{ success: boolean; message: string }>(`/homework/assignments/${id}`),
+
+  getCheckingRegister: (assignmentId: number | string, params?: { search?: string; review_status?: string }) =>
+    apiClient.get<{ assignment_id: number; students: CheckingRegisterStudent[]; total: number }>(`/homework/assignments/${assignmentId}/register`, { params }),
+
+  checkRegister: (assignmentId: number | string, payload: { items: any[] }) =>
+    apiClient.post<{ success: boolean; updated_count: number }>(`/homework/assignments/${assignmentId}/check`, payload),
+
+  requestResubmission: (recordId: number | string, payload: { remarks: string; extended_due_date?: string }) =>
+    apiClient.post<{ success: boolean; message: string; record_id: number }>(`/homework/records/${recordId}/resubmit`, payload),
+
+  extendDueDate: (recordId: number | string, payload: { new_due_date: string; reason?: string }) =>
+    apiClient.post<{ success: boolean; message: string; new_due_date: string }>(`/homework/records/${recordId}/extend`, payload),
+
+  exemptStudent: (recordId: number | string, payload: { reason: string }) =>
+    apiClient.post<{ success: boolean; message: string; record_id: number }>(`/homework/records/${recordId}/exempt`, payload),
+
+  getMyHomework: (params?: { student_id?: number | string; status?: string }) =>
+    apiClient.get<{ student_id: number; items: StudentPortalHomeworkItem[]; total: number }>('/homework/student/my-homework', { params }),
+
+  submitHomework: (recordId: number | string, payload: { submission_text?: string; submission_files?: any[] }) =>
+    apiClient.post<{ success: boolean; message: string; record_id: number; submission_status: string }>(`/homework/student/${recordId}/submit`, payload),
+
+  getTeacherDashboard: (params?: { teacher_id?: number | string }) =>
+    apiClient.get<TeacherHomeworkDashboard>('/homework/dashboards/teacher', { params }),
+
+  getStudentActivityRegister: (studentId: number | string) =>
+    apiClient.get<{ student_id: number; activities: AcademicActivityRegisterItem[]; total: number }>(`/homework/reports/activity-register/${studentId}`),
+
+  getDailyRegisterReport: (params?: { target_date?: string; division_id?: number | string; standard_id?: number | string }) =>
+    apiClient.get<DailyHomeworkRegisterReport>('/homework/reports/daily-register', { params }),
+
+  listTemplates: (params?: { standard_id?: number | string; subject_id?: number | string }) =>
+    apiClient.get<{ templates: any[] }>('/homework/templates', { params }),
+}
+
+export const reportIntelligenceApi = {
+  getDefinitions: () =>
+    apiClient.get<{ total: number; items: CalculationDefinitionItem[] }>('/reports/intelligence/definitions'),
+
+  getMetrics: (reportId: string, params?: Record<string, any>) =>
+    apiClient.get<ReportIntelligencePayload>(`/reports/intelligence/metrics/${reportId}`, { params }),
+
+  getThresholds: () =>
+    apiClient.get<{ institution_id: number; thresholds: Record<string, number> }>('/reports/intelligence/thresholds'),
+
+  updateThresholds: (payload: Record<string, number>) =>
+    apiClient.put<{ message: string; thresholds: Record<string, number> }>('/reports/intelligence/thresholds', payload),
+}
+
 
 

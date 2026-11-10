@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Dedicated Teachers & Faculty Management Centre with 8 first-class workspaces:
  */
@@ -1722,12 +1722,13 @@ function TeacherManagementContent() {
                     <th className="px-4 py-3">Students</th>
                     <th className="px-4 py-3">Earnings</th>
                     <th className="px-4 py-3">Approval Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {recentSessions.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-400">
+                      <td colSpan={10} className="p-8 text-center text-slate-400">
                         No teaching sessions recorded matching this filter.
                       </td>
                     </tr>
@@ -1755,6 +1756,19 @@ function TeacherManagementContent() {
                           }`}>
                             {s.approval_status || 'Approved'}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigate(`/homework/create?teaching_session_id=${s.id}&division_id=${s.division_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic || s.topic_taught || '')}`)
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-2xs font-bold bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg transition-colors"
+                            title="Assign Homework from this session"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Homework</span>
+                          </button>
                         </td>
                       </tr>
                     ))

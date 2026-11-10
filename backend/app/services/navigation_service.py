@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Domain service for user-defined menus, role-based navigation defaults, usage telemetry, and intelligent recommendations.
 #  */
@@ -203,6 +203,23 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
         ],
     },
     {
+        "id": "homework",
+        "label": "Homework & Assignments",
+        "category": "academic",
+        "default_path": "/homework",
+        "icon": "FileCheck",
+        "required_permission": None,
+        "sysadmin_only": False,
+        "sub_items": [
+            {"id": "homework_overview", "label": "Overview & List", "to": "/homework"},
+            {"id": "homework_create", "label": "Assign Homework", "to": "/homework/create"},
+            {"id": "homework_checking", "label": "Checking Register", "to": "/homework/checking"},
+            {"id": "homework_submissions", "label": "Digital Submissions", "to": "/homework/submissions"},
+            {"id": "homework_templates", "label": "Homework Templates", "to": "/homework/templates"},
+            {"id": "homework_reports", "label": "Daily Register Report", "to": "/homework/reports"},
+        ],
+    },
+    {
         "id": "courses",
         "label": "Study Materials",
         "category": "learning",
@@ -334,15 +351,15 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
 # Baseline Role-Based Navigation Defaults (SSOT)
 ROLE_DEFAULT_MENUS: Dict[str, List[str]] = {
     "sysadmin": [
-        "dashboard", "academic", "crm", "students", "fees", "attendance",
+        "dashboard", "academic", "homework", "crm", "students", "fees", "attendance",
         "examinations", "teachers", "staff", "reports", "users", "settings", "sysadmin"
     ],
     "admin": [
-        "dashboard", "fees", "students", "crm", "academic", "teachers",
+        "dashboard", "fees", "students", "crm", "academic", "homework", "teachers",
         "attendance", "reports", "forms", "users", "settings"
     ],
     "principal": [
-        "dashboard", "fees", "students", "teachers", "academic",
+        "dashboard", "fees", "students", "teachers", "academic", "homework",
         "attendance", "examinations", "reports", "settings"
     ],
     "accountant": [
@@ -350,7 +367,7 @@ ROLE_DEFAULT_MENUS: Dict[str, List[str]] = {
         "fees_defaulters", "fees_reports", "reports"
     ],
     "teacher": [
-        "dashboard", "students", "attendance", "attendance_daily",
+        "dashboard", "students", "homework", "attendance", "attendance_daily",
         "examinations", "exam_marks", "courses", "reports"
     ],
     "counselor": [
