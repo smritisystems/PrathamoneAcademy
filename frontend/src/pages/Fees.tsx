@@ -304,6 +304,7 @@ function FeesContent() {
   const [eligibilityResult, setEligibilityResult] = useState<ConcessionEligibilityResult | null>(null)
   const [isEvaluatingEligibility, setIsEvaluatingEligibility] = useState(false)
   const [isSubmittingConcession, setIsSubmittingConcession] = useState(false)
+  const [singleAutoApprove, setSingleAutoApprove] = useState(false)
 
   // Bulk student form
   const [bulkStandardId, setBulkStandardId] = useState<number | ''>('')
@@ -507,7 +508,12 @@ function FeesContent() {
           requested_percentage: concessionPercentageValue ? Number(concessionPercentageValue) : undefined,
           remarks: concessionRemarks.trim() || undefined,
         })
-        toast.success(res.data.message || 'Concession application submitted successfully!')
+        if (singleAutoApprove && res.data.id) {
+          await concessionsApi.approveApplication(res.data.id, { auto_apply: true })
+          toast.success('Concession approved and applied directly to active invoice!')
+        } else {
+          toast.success(res.data.message || 'Concession application submitted for approval!')
+        }
         refetchConcessions()
         refetchConcessionAnalytics()
         setIsNewConcessionModalOpen(false)
@@ -5198,7 +5204,7 @@ function FeesContent() {
             setStudentConcessionSearch('')
             setEligibilityResult(null)
           }}
-          title="Grant Fee Concession or Scholarship"
+          title="Fee Concession & Scholarship Application"
           size="lg"
         >
           <form onSubmit={handleCreateConcessionSubmit} className="space-y-4">
@@ -5396,6 +5402,19 @@ function FeesContent() {
                     )}
                   </div>
                 )}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="single-auto-approve"
+                    checked={singleAutoApprove}
+                    onChange={(e) => setSingleAutoApprove(e.target.checked)}
+                    className="rounded text-primary-600 focus:ring-primary-500"
+                  />
+                  <label htmlFor="single-auto-approve" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                    Immediately approve & apply to invoice (Admin Fast-Track)
+                  </label>
+                </div>
               </>
             ) : (
               /* Bulk / Batch Mode */
@@ -5556,7 +5575,13 @@ function FeesContent() {
                   <Check className="w-3.5 h-3.5" />
                 )}
                 <span>
-                  {concessionApplicationMode === 'single' ? 'Grant Fee Concession' : `Apply to ${bulkSelectedStudentIds.length} Students`}
+                  {concessionApplicationMode === 'single'
+                    ? singleAutoApprove
+                      ? 'Approve & Apply Concession'
+                      : 'Submit for Approval'
+                    : bulkAutoApprove
+                    ? `Approve & Apply (${bulkSelectedStudentIds.length} Students)`
+                    : `Submit ${bulkSelectedStudentIds.length} for Approval`}
                 </span>
               </button>
             </div>
