@@ -29,13 +29,23 @@ Set-Location $projectRoot
 
 Write-Host "`n[1/4] Checking local Git working tree..." -ForegroundColor Cyan
 if (Test-Path (Join-Path $projectRoot ".git")) {
-    Write-Host "Pulling latest changes from remote repository..." -ForegroundColor Yellow
-    git pull
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "[WARN] Git pull encountered conflicts or warnings. Continuing with local codebase..." -ForegroundColor Yellow
-    } else {
-        Write-Host "[OK] Codebase updated to latest commit." -ForegroundColor Green
+    Write-Host "Fetching latest changes from origin..." -ForegroundColor Yellow
+    git fetch origin master --tags
+    $status = git status --porcelain
+    if ($status) {
+        Write-Host "[WARN] Detected uncommitted local changes on server:" -ForegroundColor Yellow
+        git status --short
+        Write-Host "Auto-stashing local modifications before updating..." -ForegroundColor Yellow
+        git stash
     }
+    Write-Host "Pulling latest commit from origin/master..." -ForegroundColor Yellow
+    git pull origin master
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[WARN] Git pull encountered an issue. Synchronizing hard to origin/master..." -ForegroundColor Yellow
+        git reset --hard origin/master
+    }
+    $headCommit = git rev-parse --short HEAD
+    Write-Host "[OK] Codebase updated to latest commit: $headCommit" -ForegroundColor Green
 } else {
     Write-Host "[INFO] Not a git checkout. Proceeding with container rebuild." -ForegroundColor Gray
 }
@@ -76,7 +86,7 @@ if ($isHealthy) {
         docker compose exec -T backend python scripts/init_staff_module.py
         docker compose exec -T backend python scripts/bootstrap_sysadmin.py
         docker compose exec -T backend python scripts/sync_release_baseline.py
-        Write-Host "[OK] Academic years, staff module, SysAdmin superuser, and Release v1.52.1 synchronized successfully." -ForegroundColor Green
+        Write-Host "[OK] Academic years, staff module, SysAdmin superuser, and Release baseline synchronized successfully." -ForegroundColor Green
     } catch {
         Write-Host "[WARN] Schema normalization encountered an error: $_" -ForegroundColor Yellow
     }
