@@ -85,3 +85,4 @@ This report documents the forensic root-cause analysis, container-host decouplin
    - Captured `live_releases_history.png`: History reflects published `v1.72.1` GA release.
 5. **Attribution & Header Verification:**
    - `python scripts/manage_headers.py check` -> 509 files checked, 100% compliant.
+
