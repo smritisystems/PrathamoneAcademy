@@ -27,7 +27,7 @@ import {
   ChevronRight, ChevronDown, Coins, Bell, Percent, Award, Trash2,
   ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap, Sliders,
   Edit3, Lock, QrCode, Send, Smartphone, Share2, CheckCheck, BadgePercent,
-  Copy, ArrowUpRight, Check, Sparkles, CheckSquare, Square
+  Copy, ArrowUpRight, Check, Sparkles, CheckSquare, Square, Power, SlidersHorizontal
 } from 'lucide-react'
 import { shareOrDownloadReceiptPdf, triggerBlobDownload, sanitizeReceiptFilename, ShareNotification } from '../utils/receiptShare'
 import { useEnvironmentStore } from '../store/environmentStore'
@@ -315,6 +315,38 @@ function FeesContent() {
   const { data: concessionTypes = [] } = useQuery({
     queryKey: ['concession-types'],
     queryFn: () => concessionsApi.getTypes().then((r) => r.data),
+  })
+
+  // Sub-tab navigation for Concessions workspace: 'applications' vs 'schemes'
+  const [concessionSubTab, setConcessionSubTab] = useState<'applications' | 'schemes'>('applications')
+
+  // Concession Scheme Settings state
+  const [schemeSearchQuery, setSchemeSearchQuery] = useState('')
+  const [schemeCategoryFilter, setSchemeCategoryFilter] = useState('all')
+  const [schemeStatusFilter, setSchemeStatusFilter] = useState('all')
+  const [isSchemeModalOpen, setIsSchemeModalOpen] = useState(false)
+  const [editingScheme, setEditingScheme] = useState<ConcessionType | null>(null)
+  const [isSubmittingScheme, setIsSubmittingScheme] = useState(false)
+
+  const [schemeForm, setSchemeForm] = useState({
+    code: '',
+    name: '',
+    category: 'merit',
+    description: '',
+    calculation_type: 'percentage' as 'percentage' | 'fixed_amount' | 'full_waiver',
+    default_value: 20 as number | '',
+    max_discount_amount: '' as number | '',
+    funding_source: 'institute',
+    approval_level: 'Principal',
+    requires_documents: false,
+    is_stackable: true,
+    is_active: true,
+    applicable_standards: [] as string[],
+    academic_year: 'all',
+    min_merit_percentage: '' as number | '',
+    min_attendance_percentage: '' as number | '',
+    start_date: '',
+    end_date: '',
   })
 
   const {
@@ -614,6 +646,191 @@ function FeesContent() {
       toast.error(err?.response?.data?.detail || 'Failed to apply concession.')
     }
   }
+
+  // Scheme Settings Handlers
+  const handleOpenAddScheme = () => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please activate Edit Mode above to create new concession schemes.')
+      return
+    }
+    setEditingScheme(null)
+    setSchemeForm({
+      code: '',
+      name: '',
+      category: 'merit',
+      description: '',
+      calculation_type: 'percentage',
+      default_value: 20,
+      max_discount_amount: '',
+      funding_source: 'institute',
+      approval_level: 'Principal',
+      requires_documents: false,
+      is_stackable: true,
+      is_active: true,
+      applicable_standards: [],
+      academic_year: 'all',
+      min_merit_percentage: '',
+      min_attendance_percentage: '',
+      start_date: '',
+      end_date: '',
+    })
+    setIsSchemeModalOpen(true)
+  }
+
+  const handleOpenEditScheme = (scheme: ConcessionType) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please activate Edit Mode above to modify concession schemes.')
+      return
+    }
+    let parsedRules: any = {}
+    if (scheme.eligibility_rules) {
+      try {
+        parsedRules = JSON.parse(scheme.eligibility_rules)
+      } catch (e) {
+        parsedRules = {}
+      }
+    }
+    setEditingScheme(scheme)
+    setSchemeForm({
+      code: scheme.code,
+      name: scheme.name,
+      category: scheme.category,
+      description: scheme.description || '',
+      calculation_type: scheme.calculation_type,
+      default_value: scheme.default_value,
+      max_discount_amount: scheme.max_discount_amount ?? '',
+      funding_source: scheme.funding_source || 'institute',
+      approval_level: parsedRules.approval_level || 'Principal',
+      requires_documents: scheme.requires_documents,
+      is_stackable: scheme.is_stackable,
+      is_active: scheme.is_active,
+      applicable_standards: Array.isArray(parsedRules.applicable_standards) ? parsedRules.applicable_standards : [],
+      academic_year: parsedRules.academic_year || 'all',
+      min_merit_percentage: parsedRules.min_merit_percentage ?? '',
+      min_attendance_percentage: parsedRules.min_attendance_percentage ?? '',
+      start_date: parsedRules.start_date || '',
+      end_date: parsedRules.end_date || '',
+    })
+    setIsSchemeModalOpen(true)
+  }
+
+  const handleSaveScheme = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!schemeForm.name.trim()) {
+      toast.error('Please enter a scheme name.')
+      return
+    }
+    if (!editingScheme && !schemeForm.code.trim()) {
+      toast.error('Please enter a unique scheme code.')
+      return
+    }
+
+    setIsSubmittingScheme(true)
+    try {
+      const rules = {
+        applicable_standards: schemeForm.applicable_standards,
+        academic_year: schemeForm.academic_year,
+        approval_level: schemeForm.approval_level,
+        min_merit_percentage: schemeForm.min_merit_percentage !== '' ? Number(schemeForm.min_merit_percentage) : null,
+        min_attendance_percentage: schemeForm.min_attendance_percentage !== '' ? Number(schemeForm.min_attendance_percentage) : null,
+        start_date: schemeForm.start_date || null,
+        end_date: schemeForm.end_date || null,
+      }
+
+      if (editingScheme) {
+        await concessionsApi.updateType(editingScheme.id, {
+          name: schemeForm.name.trim(),
+          category: schemeForm.category,
+          description: schemeForm.description.trim() || undefined,
+          calculation_type: schemeForm.calculation_type,
+          default_value: Number(schemeForm.default_value) || 0,
+          max_discount_amount: schemeForm.max_discount_amount !== '' ? Number(schemeForm.max_discount_amount) : null,
+          funding_source: schemeForm.funding_source,
+          requires_documents: schemeForm.requires_documents,
+          is_stackable: schemeForm.is_stackable,
+          is_active: schemeForm.is_active,
+          eligibility_rules: JSON.stringify(rules),
+        })
+        toast.success(`Scheme '${schemeForm.name}' updated successfully!`)
+      } else {
+        await concessionsApi.createType({
+          code: schemeForm.code.trim().toUpperCase(),
+          name: schemeForm.name.trim(),
+          category: schemeForm.category,
+          description: schemeForm.description.trim() || undefined,
+          calculation_type: schemeForm.calculation_type,
+          default_value: Number(schemeForm.default_value) || 0,
+          max_discount_amount: schemeForm.max_discount_amount !== '' ? Number(schemeForm.max_discount_amount) : null,
+          funding_source: schemeForm.funding_source,
+          requires_documents: schemeForm.requires_documents,
+          is_stackable: schemeForm.is_stackable,
+          is_active: schemeForm.is_active,
+          eligibility_rules: JSON.stringify(rules),
+        })
+        toast.success(`Scheme '${schemeForm.name}' created successfully!`)
+      }
+      queryClient.invalidateQueries({ queryKey: ['concession-types'] })
+      setIsSchemeModalOpen(false)
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to save concession scheme.')
+    } finally {
+      setIsSubmittingScheme(false)
+    }
+  }
+
+  const handleToggleSchemeStatus = async (scheme: ConcessionType) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please activate Edit Mode above to toggle scheme status.')
+      return
+    }
+    try {
+      const res = await concessionsApi.toggleTypeStatus(scheme.id)
+      toast.success(res.data.message)
+      queryClient.invalidateQueries({ queryKey: ['concession-types'] })
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to toggle scheme status.')
+    }
+  }
+
+  const handleDeleteScheme = async (scheme: ConcessionType) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please activate Edit Mode above to delete or retire schemes.')
+      return
+    }
+    if ((scheme.applications_count || 0) > 0) {
+      toast.error(`Policy Immutability Protection: Scheme '${scheme.name}' has ${scheme.applications_count} historical student application(s) and cannot be deleted. Deactivate it instead to retire it from new applications while preserving historical ledgers.`)
+      return
+    }
+    if (!window.confirm(`Are you sure you want to delete concession scheme '${scheme.name}'? This action cannot be undone.`)) {
+      return
+    }
+    try {
+      const res = await concessionsApi.deleteType(scheme.id)
+      toast.success(res.data.message)
+      queryClient.invalidateQueries({ queryKey: ['concession-types'] })
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to delete scheme.')
+    }
+  }
+
+  const filteredConcessionTypes = useMemo(() => {
+    return concessionTypes.filter((t) => {
+      if (schemeCategoryFilter !== 'all' && t.category.toLowerCase() !== schemeCategoryFilter.toLowerCase()) {
+        return false
+      }
+      if (schemeStatusFilter === 'active' && !t.is_active) return false
+      if (schemeStatusFilter === 'inactive' && t.is_active) return false
+      if (schemeSearchQuery.trim()) {
+        const q = schemeSearchQuery.toLowerCase()
+        const matchesName = t.name.toLowerCase().includes(q)
+        const matchesCode = t.code.toLowerCase().includes(q)
+        const matchesDesc = (t.description || '').toLowerCase().includes(q)
+        const matchesCat = t.category.toLowerCase().includes(q)
+        if (!matchesName && !matchesCode && !matchesDesc && !matchesCat) return false
+      }
+      return true
+    })
+  }, [concessionTypes, schemeCategoryFilter, schemeStatusFilter, schemeSearchQuery])
 
   const handleGenerateQr = () => {
     toast.success(`Dynamic UPI BharatQR refreshed for ${onlineQrStudentName} (₹${onlineQrAmount.toLocaleString('en-IN')})`)
@@ -4549,42 +4766,94 @@ function FeesContent() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'concessions' && (
         <div className="space-y-5" data-testid="workspace-concessions">
-          {/* Concession KPI Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Concessions Awarded</span>
-                <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-600">
-                  <BadgePercent className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-xl font-extrabold text-slate-900">{fmt(concessionAnalytics?.total_concessions_awarded ?? 0)}</div>
-              <p className="text-[11px] text-purple-700 font-semibold mt-1">
-                {concessionApplications.length} Application{concessionApplications.length === 1 ? '' : 's'} Logged
-              </p>
+          {/* Sub-Navigation: Applications vs Scheme Policies */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200/90 shadow-xs">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setConcessionSubTab('applications')}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  concessionSubTab === 'applications'
+                    ? 'bg-primary-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-800'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Student Concession Applications</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  concessionSubTab === 'applications' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                }`}>
+                  {concessionApplications.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setConcessionSubTab('schemes')}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  concessionSubTab === 'schemes'
+                    ? 'bg-primary-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70 hover:text-slate-800'
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                <span>Concession Scheme Settings</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  concessionSubTab === 'schemes' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                }`}>
+                  {concessionTypes.length}
+                </span>
+              </button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Applied to Invoices</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
-                  <CheckCircle className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-xl font-extrabold text-slate-900">{fmt(concessionAnalytics?.total_concessions_applied ?? 0)}</div>
-              <p className="text-[11px] text-emerald-700 font-semibold mt-1">Directly reduced invoice obligations</p>
+            <div className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-slate-400" />
+              <span>Concession Governance: Multi-stage review, ledger immutability & stacking controls</span>
             </div>
+          </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Policy Schemes</span>
-                <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600">
-                  <Award className="w-4 h-4" />
+          {concessionSubTab === 'applications' && (
+            <div className="space-y-5">
+              {/* Concession KPI Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Concessions Awarded</span>
+                    <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-600">
+                      <BadgePercent className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-extrabold text-slate-900">{fmt(concessionAnalytics?.total_concessions_awarded ?? 0)}</div>
+                  <p className="text-[11px] text-purple-700 font-semibold mt-1">
+                    {concessionApplications.length} Application{concessionApplications.length === 1 ? '' : 's'} Logged
+                  </p>
                 </div>
-              </div>
-              <div className="text-xl font-extrabold text-slate-900">{concessionTypes.filter(t => t.is_active).length} Schemes</div>
-              <p className="text-[11px] text-blue-700 font-semibold mt-1">Merit, Sibling, Staff, Need-Based</p>
-            </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Applied to Invoices</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                      <CheckCircle className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-extrabold text-slate-900">{fmt(concessionAnalytics?.total_concessions_applied ?? 0)}</div>
+                  <p className="text-[11px] text-emerald-700 font-semibold mt-1">Directly reduced invoice obligations</p>
+                </div>
+
+                <div
+                  onClick={() => setConcessionSubTab('schemes')}
+                  className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs cursor-pointer hover:border-blue-400 hover:shadow-sm transition-all"
+                  title="Click to view and configure Concession Scheme Settings"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Policy Schemes</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600">
+                      <Award className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-extrabold text-slate-900">{concessionTypes.filter(t => t.is_active).length} Schemes</div>
+                  <p className="text-[11px] text-blue-700 font-semibold mt-1">Configure & Add Schemes →</p>
+                </div>
 
             <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
               <div className="flex items-center justify-between mb-2">
@@ -4787,7 +5056,687 @@ function FeesContent() {
               </table>
             </div>
           </div>
+          </div>
+          )}
+
+          {concessionSubTab === 'schemes' && (
+            <div className="space-y-5" data-testid="view-concession-schemes">
+              {/* Scheme KPI Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Policy Schemes</span>
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600">
+                      <Award className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-extrabold text-slate-900">{concessionTypes.length} Schemes</div>
+                  <p className="text-[11px] text-blue-700 font-semibold mt-1">Configured institute scholarship catalogue</p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Policy Schemes</span>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                      <CheckCircle className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-extrabold text-slate-900">{concessionTypes.filter(t => t.is_active).length} Active</div>
+                  <p className="text-[11px] text-emerald-700 font-semibold mt-1">Live & selectable for student applications</p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Combinable (Stackable)</span>
+                    <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-600">
+                      <Layers className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-extrabold text-slate-900">{concessionTypes.filter(t => t.is_stackable && t.is_active).length} Schemes</div>
+                  <p className="text-[11px] text-purple-700 font-semibold mt-1">Can combine up to 100% of obligation</p>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Evidence Verification</span>
+                    <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className="text-xl font-extrabold text-slate-900">{concessionTypes.filter(t => t.requires_documents).length} Schemes</div>
+                  <p className="text-[11px] text-amber-700 font-semibold mt-1">Require documentary evidence upload</p>
+                </div>
+              </div>
+
+              {/* Scheme Filter & Action Bar */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={schemeSearchQuery}
+                      onChange={(e) => setSchemeSearchQuery(e.target.value)}
+                      placeholder="Search schemes by name, code, category..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+
+                  <select
+                    value={schemeCategoryFilter}
+                    onChange={(e) => setSchemeCategoryFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="merit">Merit Scholarship</option>
+                    <option value="sibling">Sibling Concession</option>
+                    <option value="need_based">Need-Based / Hardship</option>
+                    <option value="staff_child">Faculty & Staff Child</option>
+                    <option value="special_management">Special Management</option>
+                    <option value="early_payment">Early Payment</option>
+                    <option value="admission">Early Admission</option>
+                    <option value="promotional">Olympiad & Promotional</option>
+                    <option value="fee_waiver">Fee Waiver</option>
+                    <option value="external_sponsor">External Sponsor</option>
+                  </select>
+
+                  <select
+                    value={schemeStatusFilter}
+                    onChange={(e) => setSchemeStatusFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Inactive Only</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenAddScheme}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all ${
+                      isEditMode
+                        ? 'bg-primary-600 hover:bg-primary-700 text-white active:scale-95'
+                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                    }`}
+                    title={isEditMode ? 'Create new concession policy scheme' : 'Locked in View Mode: Enable Edit Mode to add scheme'}
+                  >
+                    {!isEditMode && <Lock className="w-3.5 h-3.5 text-slate-400" />}
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Scheme</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Schemes Table */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-primary-600" />
+                    <h3 className="font-extrabold text-sm text-slate-800">Concession Scheme Policies</h3>
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      ({filteredConcessionTypes.length} configured scheme{filteredConcessionTypes.length === 1 ? '' : 's'})
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    Historical scheme terms immutable • Soft-deactivation preserves ledger integrity
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-200/80">
+                        <th className="py-3 px-4">Scheme Code & Name</th>
+                        <th className="py-3 px-3">Category</th>
+                        <th className="py-3 px-3">Benefit Type & Default</th>
+                        <th className="py-3 px-3">Eligibility & Scope</th>
+                        <th className="py-3 px-3">Funding & Evidence</th>
+                        <th className="py-3 px-3">Stacking</th>
+                        <th className="py-3 px-3 text-center">Applications</th>
+                        <th className="py-3 px-3">Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredConcessionTypes.map((scheme) => {
+                        let parsedRules: any = {}
+                        if (scheme.eligibility_rules) {
+                          try {
+                            parsedRules = JSON.parse(scheme.eligibility_rules)
+                          } catch (e) {
+                            parsedRules = {}
+                          }
+                        }
+                        return (
+                          <tr key={scheme.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="flex flex-col">
+                                <span className="font-mono font-bold text-primary-700 text-[11px]">{scheme.code}</span>
+                                <span className="font-bold text-slate-900 text-xs mt-0.5">{scheme.name}</span>
+                                {scheme.description && (
+                                  <span className="text-[11px] text-slate-500 line-clamp-1 mt-0.5 max-w-xs">{scheme.description}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200/80 capitalize">
+                                {scheme.category.replace(/_/g, ' ')}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="font-bold text-slate-900">
+                                {scheme.calculation_type === 'percentage'
+                                  ? `${scheme.default_value}%`
+                                  : scheme.calculation_type === 'fixed_amount'
+                                  ? fmt(scheme.default_value)
+                                  : '100% Full Waiver'}
+                              </div>
+                              <span className="text-[10px] text-slate-500 block">
+                                {scheme.calculation_type === 'percentage'
+                                  ? scheme.max_discount_amount
+                                    ? `Cap: ${fmt(scheme.max_discount_amount)}`
+                                    : 'Percentage (No cap)'
+                                  : scheme.calculation_type === 'fixed_amount'
+                                  ? 'Fixed Amount'
+                                  : 'Full Fee Waiver'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="space-y-1">
+                                <div className="text-[11px] font-semibold text-slate-800">
+                                  {parsedRules.applicable_standards && parsedRules.applicable_standards.length > 0
+                                    ? parsedRules.applicable_standards.join(', ')
+                                    : 'All Standards'}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1">
+                                  {parsedRules.min_merit_percentage && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">
+                                      Merit ≥ {parsedRules.min_merit_percentage}%
+                                    </span>
+                                  )}
+                                  {parsedRules.min_attendance_percentage && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                      Attn ≥ {parsedRules.min_attendance_percentage}%
+                                    </span>
+                                  )}
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                                    {parsedRules.approval_level || 'Principal'} Approval
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="space-y-0.5">
+                                <span className="text-[11px] font-bold text-slate-700 capitalize block">
+                                  {scheme.funding_source.replace(/_/g, ' ')}
+                                </span>
+                                {scheme.requires_documents ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700">
+                                    <FileText className="w-3 h-3 text-amber-600" />
+                                    <span>Docs Required</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 font-medium">Self-Certified</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3">
+                              {scheme.is_stackable ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                  <Check className="w-3 h-3" />
+                                  <span>Stackable</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+                                  <Shield className="w-3 h-3" />
+                                  <span>Exclusive Only</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-700">
+                                {scheme.applications_count || 0}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">
+                              {scheme.is_active ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                                  Active
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                  Inactive
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditScheme(scheme)}
+                                  className={`p-1.5 rounded-lg border transition-all ${
+                                    isEditMode
+                                      ? 'border-slate-200 hover:border-primary-400 hover:bg-primary-50 text-slate-700 hover:text-primary-700'
+                                      : 'border-slate-100 text-slate-300 cursor-not-allowed'
+                                  }`}
+                                  title={isEditMode ? 'Edit scheme configuration' : 'Locked in View Mode'}
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleSchemeStatus(scheme)}
+                                  className={`p-1.5 rounded-lg border transition-all ${
+                                    isEditMode
+                                      ? scheme.is_active
+                                        ? 'border-amber-200 hover:bg-amber-50 text-amber-600'
+                                        : 'border-emerald-200 hover:bg-emerald-50 text-emerald-600'
+                                      : 'border-slate-100 text-slate-300 cursor-not-allowed'
+                                  }`}
+                                  title={
+                                    isEditMode
+                                      ? scheme.is_active
+                                        ? 'Deactivate scheme'
+                                        : 'Activate scheme'
+                                      : 'Locked in View Mode'
+                                  }
+                                >
+                                  <Power className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteScheme(scheme)}
+                                  className={`p-1.5 rounded-lg border transition-all ${
+                                    isEditMode
+                                      ? (scheme.applications_count || 0) > 0
+                                        ? 'border-slate-100 text-slate-300 hover:bg-slate-50 cursor-help'
+                                        : 'border-red-200 hover:bg-red-50 text-red-600'
+                                      : 'border-slate-100 text-slate-300 cursor-not-allowed'
+                                  }`}
+                                  title={
+                                    (scheme.applications_count || 0) > 0
+                                      ? 'Protected Policy: Historical applications exist. Scheme can be deactivated but not deleted.'
+                                      : isEditMode
+                                      ? 'Delete unused scheme'
+                                      : 'Locked in View Mode'
+                                  }
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      {filteredConcessionTypes.length === 0 && (
+                        <tr>
+                          <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
+                            No concession schemes match your current search and filter criteria.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL: ADD / EDIT CONCESSION SCHEME                                        */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {isSchemeModalOpen && (
+        <Modal
+          isOpen={isSchemeModalOpen}
+          onClose={() => setIsSchemeModalOpen(false)}
+          title={editingScheme ? `Edit Concession Scheme — ${editingScheme.code}` : 'Add New Concession Scheme Policy'}
+          size="xl"
+        >
+          <form onSubmit={handleSaveScheme} className="space-y-4">
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs text-slate-600">
+              <span className="flex items-center gap-1.5 font-semibold text-slate-700">
+                <Shield className="w-4 h-4 text-primary-600" />
+                <span>Single Source of Truth (SSOT) Policy Governance</span>
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Schemes retain contractual terms for audit ledgers
+              </span>
+            </div>
+
+            {/* Basic Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Scheme Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={schemeForm.name}
+                  onChange={(e) => setSchemeForm({ ...schemeForm, name: e.target.value })}
+                  placeholder="e.g. Merit Excellence Scholarship"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Scheme Code <span className="text-red-500">*</span>
+                  {editingScheme && <span className="text-slate-400 text-[10px] ml-1">(Code cannot be changed)</span>}
+                </label>
+                <input
+                  type="text"
+                  required
+                  disabled={!!editingScheme}
+                  value={schemeForm.code}
+                  onChange={(e) => setSchemeForm({ ...schemeForm, code: e.target.value.toUpperCase() })}
+                  placeholder="e.g. MERIT_2026"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 uppercase disabled:bg-slate-100 disabled:text-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={schemeForm.category}
+                  onChange={(e) => setSchemeForm({ ...schemeForm, category: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="merit">Merit Scholarship / Academic Excellence</option>
+                  <option value="sibling">Sibling Concession</option>
+                  <option value="need_based">Need-Based / Financial Hardship</option>
+                  <option value="staff_child">Faculty & Staff Child Concession</option>
+                  <option value="special_management">Special Management Discretion</option>
+                  <option value="early_payment">Full Lump-Sum Early Payment</option>
+                  <option value="admission">Early Admission Campaign Discount</option>
+                  <option value="promotional">Academic Olympiad & Promotional</option>
+                  <option value="fee_waiver">Full / Partial Emergency Fee Waiver</option>
+                  <option value="external_sponsor">Externally Sponsored Scholarship</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Funding Source <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={schemeForm.funding_source}
+                  onChange={(e) => setSchemeForm({ ...schemeForm, funding_source: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="institute">Institute Operational Funds</option>
+                  <option value="trust">Trust / Foundation Corpus</option>
+                  <option value="government">Government DBT / Welfare Grant</option>
+                  <option value="sponsor">External Corporate / Philanthropic Sponsor</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Description / Policy Terms</label>
+              <textarea
+                rows={2}
+                value={schemeForm.description}
+                onChange={(e) => setSchemeForm({ ...schemeForm, description: e.target.value })}
+                placeholder="State the terms, objective, and renewal requirements for this scheme..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            {/* Benefit Configuration */}
+            <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-200/60 space-y-3">
+              <div className="font-bold text-xs text-purple-900 flex items-center gap-1.5">
+                <BadgePercent className="w-4 h-4 text-purple-600" />
+                <span>Benefit Calculation Settings</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Calculation Type</label>
+                  <select
+                    value={schemeForm.calculation_type}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, calculation_type: e.target.value as any })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="percentage">Percentage Discount (%)</option>
+                    <option value="fixed_amount">Fixed Rupee Discount (₹)</option>
+                    <option value="full_waiver">Full 100% Fee Waiver</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Default Benefit Value {schemeForm.calculation_type === 'percentage' ? '(%)' : '(₹)'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    disabled={schemeForm.calculation_type === 'full_waiver'}
+                    value={schemeForm.calculation_type === 'full_waiver' ? 100 : schemeForm.default_value}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, default_value: e.target.value === '' ? '' : Number(e.target.value) })}
+                    placeholder={schemeForm.calculation_type === 'percentage' ? 'e.g. 25' : 'e.g. 15000'}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-slate-100 disabled:text-slate-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Max Ceiling (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    disabled={schemeForm.calculation_type !== 'percentage'}
+                    value={schemeForm.max_discount_amount}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, max_discount_amount: e.target.value === '' ? '' : Number(e.target.value) })}
+                    placeholder="Optional upper limit"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-slate-100 disabled:text-slate-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Eligibility & Scope */}
+            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-200/60 space-y-3">
+              <div className="font-bold text-xs text-blue-900 flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4 text-blue-600" />
+                <span>Eligibility Rules & Academic Scope</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Applicable Academic Year</label>
+                  <select
+                    value={schemeForm.academic_year}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, academic_year: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Academic Years</option>
+                    {academicYears.map((ay) => (
+                      <option key={ay.id} value={ay.name}>
+                        {ay.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Approval Authority Level</label>
+                  <select
+                    value={schemeForm.approval_level}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, approval_level: e.target.value })}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Principal">Principal / Head of Institute</option>
+                    <option value="Director">Managing Director / Board</option>
+                    <option value="Management">Management Committee</option>
+                    <option value="Accountant">Senior Accounts Officer</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Min Merit Benchmark (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={schemeForm.min_merit_percentage}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, min_merit_percentage: e.target.value === '' ? '' : Number(e.target.value) })}
+                    placeholder="e.g. 85 (% marks)"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Min Attendance Benchmark (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={schemeForm.min_attendance_percentage}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, min_attendance_percentage: e.target.value === '' ? '' : Number(e.target.value) })}
+                    placeholder="e.g. 75 (% attendance)"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Applicable Standards Selection */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-bold text-slate-700">
+                    Applicable Classes / Standards ({schemeForm.applicable_standards.length === 0 ? 'All Classes' : `${schemeForm.applicable_standards.length} Selected`})
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setSchemeForm({ ...schemeForm, applicable_standards: [] })}
+                    className="text-[10px] text-blue-600 font-bold hover:underline"
+                  >
+                    Reset to All Classes
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 bg-white border border-slate-200 rounded-xl">
+                  {standards.map((s) => {
+                    const isSelected = schemeForm.applicable_standards.includes(s.name)
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          const next = isSelected
+                            ? schemeForm.applicable_standards.filter((n) => n !== s.name)
+                            : [...schemeForm.applicable_standards, s.name]
+                          setSchemeForm({ ...schemeForm, applicable_standards: next })
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        {s.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Validity, Documents & Stacking */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Valid From (Optional)</label>
+                <input
+                  type="date"
+                  value={schemeForm.start_date}
+                  onChange={(e) => setSchemeForm({ ...schemeForm, start_date: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Valid Until (Optional)</label>
+                <input
+                  type="date"
+                  value={schemeForm.end_date}
+                  onChange={(e) => setSchemeForm({ ...schemeForm, end_date: e.target.value })}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2 space-y-2 pt-1 border-t border-slate-200/60">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={schemeForm.requires_documents}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, requires_documents: e.target.checked })}
+                    className="mt-0.5 rounded text-primary-600 focus:ring-primary-500"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-slate-800">Requires Document Verification</span>
+                    <p className="text-[11px] text-slate-500">Applicant must upload supporting certificates or income proof before approval.</p>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={schemeForm.is_stackable}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, is_stackable: e.target.checked })}
+                    className="mt-0.5 rounded text-purple-600 focus:ring-purple-500"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-slate-800">Allow Stacking (Can Combine with Other Concessions)</span>
+                    <p className="text-[11px] text-slate-500">
+                      When checked, students can combine this benefit with other stackable concessions. If unchecked, this scheme is mutually exclusive.
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={schemeForm.is_active}
+                    onChange={(e) => setSchemeForm({ ...schemeForm, is_active: e.target.checked })}
+                    className="mt-0.5 rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-slate-800">Active Scheme Status</span>
+                    <p className="text-[11px] text-slate-500">Active schemes appear in the staff concession application dropdown.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsSchemeModalOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingScheme}
+                className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {isSubmittingScheme ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+                <span>{editingScheme ? 'Update Scheme Policy' : 'Save Scheme Policy'}</span>
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* ────────────────────────────────────────────────────────────────────────── */}

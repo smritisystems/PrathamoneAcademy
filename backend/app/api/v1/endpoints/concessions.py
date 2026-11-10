@@ -68,6 +68,7 @@ class ConcessionTypeCreate(BaseModel):
 
 
 class ConcessionTypeUpdate(BaseModel):
+    code: Optional[str] = None
     name: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None
@@ -149,6 +150,15 @@ async def list_concession_types(
     res = await db.execute(query)
     types = res.scalars().all()
 
+    # Count linked student applications per concession type
+    counts_res = await db.execute(
+        select(
+            StudentConcessionApplication.concession_type_id,
+            func.count(StudentConcessionApplication.id),
+        ).group_by(StudentConcessionApplication.concession_type_id)
+    )
+    app_counts = dict(counts_res.all())
+
     return [
         {
             "id": t.id,
@@ -163,7 +173,9 @@ async def list_concession_types(
             "max_discount_amount": float(t.max_discount_amount) if t.max_discount_amount else None,
             "is_stackable": t.is_stackable,
             "requires_documents": t.requires_documents,
+            "eligibility_rules": t.eligibility_rules,
             "is_active": t.is_active,
+            "applications_count": app_counts.get(t.id, 0),
             "created_at": t.created_at.isoformat() if t.created_at else None,
         }
         for t in types
@@ -224,13 +236,83 @@ async def update_concession_type(
     if not ctype:
         raise HTTPException(status_code=404, detail="Concession type not found")
 
-    for key, val in payload.dict(exclude_unset=True).items():
+    update_dict = payload.dict(exclude_unset=True)
+    if "code" in update_dict and update_dict["code"]:
+        code_clean = update_dict["code"].strip().upper()
+        if code_clean != ctype.code:
+            existing = (await db.execute(
+                select(FeeConcessionType).where(
+                    FeeConcessionType.institution_id == ctype.institution_id,
+                    FeeConcessionType.code == code_clean,
+                    FeeConcessionType.id != type_id,
+                )
+            )).scalar_one_or_none()
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Concession code '{code_clean}' already exists for this institution.",
+                )
+            ctype.code = code_clean
+        del update_dict["code"]
+
+    for key, val in update_dict.items():
         if val is not None:
+            if key == "category" and isinstance(val, str):
+                val = val.strip().lower()
             setattr(ctype, key, val)
 
     await db.commit()
     await db.refresh(ctype)
     return {"message": "Concession type updated successfully", "id": ctype.id}
+
+
+@router.patch("/types/{type_id}/toggle-status")
+async def toggle_concession_type_status(
+    type_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("superadmin", "admin", "accountant", "principal")),
+):
+    ctype = await db.get(FeeConcessionType, type_id)
+    if not ctype:
+        raise HTTPException(status_code=404, detail="Concession type not found")
+    ctype.is_active = not ctype.is_active
+    await db.commit()
+    await db.refresh(ctype)
+    status_label = "active" if ctype.is_active else "inactive"
+    return {
+        "message": f"Concession scheme '{ctype.name}' is now {status_label}.",
+        "id": ctype.id,
+        "is_active": ctype.is_active,
+    }
+
+
+@router.delete("/types/{type_id}")
+async def delete_concession_type(
+    type_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("superadmin", "admin", "accountant", "principal")),
+):
+    ctype = await db.get(FeeConcessionType, type_id)
+    if not ctype:
+        raise HTTPException(status_code=404, detail="Concession type not found")
+
+    # Anti-De-Linking & Ledger Immutability Rule:
+    # Existing schemes should be deactivated or revised, not deleted,
+    # so historical concession records retain their original terms.
+    app_count = await db.scalar(
+        select(func.count(StudentConcessionApplication.id)).where(
+            StudentConcessionApplication.concession_type_id == type_id
+        )
+    )
+    if app_count and app_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Concession scheme '{ctype.name}' cannot be deleted because {app_count} historical student application(s) reference it. In accordance with audit immutability governance, please deactivate or revise the scheme instead.",
+        )
+
+    await db.delete(ctype)
+    await db.commit()
+    return {"message": f"Concession scheme '{ctype.name}' deleted successfully."}
 
 
 # ─── 2. ELIGIBILITY EVALUATION ENDPOINT ───────────────────────────────────────

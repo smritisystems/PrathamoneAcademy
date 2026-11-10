@@ -328,6 +328,25 @@ class ConcessionCalculationService:
         if exclude_application_id:
             stmt = stmt.where(StudentConcessionApplication.id != exclude_application_id)
 
+        # 1. Anti-Duplication Rule: Check duplicate active/pending application for the same concession scheme
+        same_scheme_stmt = (
+            select(StudentConcessionApplication)
+            .where(
+                StudentConcessionApplication.student_id == student_id,
+                StudentConcessionApplication.academic_year_id == academic_year_id,
+                StudentConcessionApplication.concession_type_id == new_concession_type.id,
+                StudentConcessionApplication.status.in_([
+                    "draft", "submitted", "under_verification", "pending_approval", "approved", "applied", "partially_applied"
+                ]),
+            )
+        )
+        if exclude_application_id:
+            same_scheme_stmt = same_scheme_stmt.where(StudentConcessionApplication.id != exclude_application_id)
+
+        existing_duplicate = (await db.execute(same_scheme_stmt)).scalars().first()
+        if existing_duplicate:
+            return False, f"Duplicate application prohibited: Student already has an active or pending '{new_concession_type.name}' application (#{existing_duplicate.application_number}, status: {existing_duplicate.status}). Multiple applications of the same scheme to the same student are not permitted."
+
         active_apps = (await db.execute(stmt)).scalars().all()
 
         if not active_apps:

@@ -526,8 +526,25 @@ export interface ConcessionType {
   max_discount_amount?: number
   is_stackable: boolean
   requires_documents: boolean
+  eligibility_rules?: string
   is_active: boolean
+  applications_count?: number
   created_at?: string
+}
+
+export interface ConcessionTypePayload {
+  code: string
+  name: string
+  category: string
+  description?: string
+  funding_source?: string
+  calculation_type?: 'percentage' | 'fixed_amount' | 'full_waiver'
+  default_value?: number
+  max_discount_amount?: number | null
+  is_stackable?: boolean
+  requires_documents?: boolean
+  eligibility_rules?: string
+  is_active?: boolean
 }
 
 export interface ConcessionApplication {
@@ -588,6 +605,18 @@ export interface ConcessionEligibilityResult {
 export const concessionsApi = {
   getTypes: (params?: { category?: string; is_active?: boolean }) =>
     apiClient.get<ConcessionType[]>('/fees/concessions/types', { params }),
+
+  createType: (data: ConcessionTypePayload) =>
+    apiClient.post<{ message: string; id: number; code: string }>('/fees/concessions/types', data),
+
+  updateType: (id: number, data: Partial<ConcessionTypePayload>) =>
+    apiClient.put<{ message: string; id: number }>(`/fees/concessions/types/${id}`, data),
+
+  toggleTypeStatus: (id: number) =>
+    apiClient.patch<{ message: string; id: number; is_active: boolean }>(`/fees/concessions/types/${id}/toggle-status`),
+
+  deleteType: (id: number) =>
+    apiClient.delete<{ message: string }>(`/fees/concessions/types/${id}`),
 
   getApplications: (params?: {
     student_id?: number
