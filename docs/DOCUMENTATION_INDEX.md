@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-10 14:51:04  
-**Total Indexed Items:** 382  
+**Last Reindexed:** 2026-11-10 15:15:00  
+**Total Indexed Items:** 383  
 
 ---
 
@@ -23,7 +23,7 @@
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
 | `07` | [07_ATTENDANCE](#07_attendance) | **6** | Attendance Register & Tracking |
 | `08` | [08_EXAMINATION](#08_examination) | **7** | Examinations, Tests & Grading |
-| `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **44** | Fee Structures, Payments & Receipts |
+| `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **45** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **0** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **7** | Reports, Analytics & Data Grids |
 | `12` | [12_RBAC_SECURITY](#12_rbac_security) | **13** | RBAC, Security & Permissions |
@@ -189,6 +189,7 @@
 | **Dashboard Financial Accuracy & Student Status-Wise Outstanding Audit** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md](09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_DASHBOARD-FINANCIAL-ACCURACY-AUDIT_V1.md) | 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS |
 | **Existing Table and Field Reuse Matrix** | `MATRIX` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_FEES-PAYMENTS_DATA-DICTIONARY_TABLE-AND-FIELD-REUSE-MATRIX_V1.md](09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_DATA-DICTIONARY_TABLE-AND-FIELD-REUSE-MATRIX_V1.md) | 10_FINANCE_ACCOUNTING, 16_DATABASE_API |
 | **Fee Concession & Scholarship Management Engine — Implementation Plan & SSOT Audit Mapping** | `PLAN` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-PLAN_FEE-CONCESSION-AND-SCHOLARSHIP-ENGINE_V1.md](09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-PLAN_FEE-CONCESSION-AND-SCHOLARSHIP-ENGINE_V1.md) | 04_STUDENT_MANAGEMENT, 10_FINANCE_ACCOUNTING, 12_RBAC_SECURITY, 16_DATABASE_API |
+| **Fee Concession Application and Payment Reconciliation User Guide** | `MANUAL` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_FEES-PAYMENTS_USER-GUIDE_FEE-CONCESSIONS-AND-PAYMENT-RECONCILIATION_V1.md](09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_USER-GUIDE_FEE-CONCESSIONS-AND-PAYMENT-RECONCILIATION_V1.md) | 04_STUDENT_MANAGEMENT, 10_FINANCE_ACCOUNTING |
 | **Fee Policy and Accounting Standard** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_FEES_PAYMENTS_POLICY-FRAMEWORK_FEE-POLICY-AND-ACCOUNTING_V1.md](09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_POLICY-FRAMEWORK_FEE-POLICY-AND-ACCOUNTING_V1.md) | - |
 | **Fee Receipt Field Completeness & Canonical Mapping Matrix** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_FEES-PAYMENTS_MATRIX_RECEIPT-FIELD-COMPLETENESS_V1.md](09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_MATRIX_RECEIPT-FIELD-COMPLETENESS_V1.md) | 16_DATABASE_API, 14_PRINTING_DOCUMENTS |
 | **Fee Receipt PDF Architecture & Forensic Audit Report** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_FEE-RECEIPT-PDF-AUDIT_V1.md](09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_AUDIT-REPORT_FEE-RECEIPT-PDF-AUDIT_V1.md) | 14_PRINTING_DOCUMENTS, 18_TESTING_QA, 04_STUDENT_MANAGEMENT |
