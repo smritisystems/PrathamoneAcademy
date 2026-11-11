@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Academic Subject Management with Canonical Master Catalogue, Standard/Board Applicability Mappings, and Duplicate Prevention.
  */
@@ -449,6 +449,19 @@ export default function SubjectsPage() {
                           {cs.aliases && (
                             <p className="text-xs text-gray-400 mt-0.5 pl-6">
                               Aliases: {cs.aliases}
+                            </p>
+                          )}
+                          {cs.alternate_codes && (
+                            <p className="text-[11px] text-amber-700 mt-0.5 pl-6 flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold text-gray-500">Legacy Codes:</span>
+                              {cs.alternate_codes.split(',').map((code) => (
+                                <span
+                                  key={code.trim()}
+                                  className="font-mono bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200 text-[10px]"
+                                >
+                                  {code.trim()}
+                                </span>
+                              ))}
                             </p>
                           )}
                         </td>

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-11
 #  *
 #  * @description SQLAlchemy models defining canonical academic subject catalogue, standard/board mappings, and legacy subject associations.
 #  */
@@ -38,6 +38,13 @@ class CanonicalSubject(Base):
             unique=True,
             postgresql_where=text("is_active = true"),
         ),
+        Index(
+            "uq_canonical_subjects_normalized_name",
+            "institution_id",
+            text("lower(trim(name))"),
+            unique=True,
+            postgresql_where=text("is_active = true"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -49,6 +56,7 @@ class CanonicalSubject(Base):
     category: Mapped[str] = mapped_column(String(50), nullable=False, default="General")
     description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     aliases: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    alternate_codes: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -64,6 +72,38 @@ class CanonicalSubject(Base):
     legacy_subjects: Mapped[List["Subject"]] = relationship(
         "Subject", back_populates="canonical_subject"
     )
+    legacy_mappings: Mapped[List["SubjectLegacyMapping"]] = relationship(
+        "SubjectLegacyMapping", back_populates="canonical_subject", cascade="all, delete-orphan"
+    )
+
+
+class SubjectLegacyMapping(Base):
+    """
+    Reversible compatibility mapping linking historical/legacy subject IDs and codes
+    to authoritative canonical subjects.
+    """
+    __tablename__ = "subject_legacy_mappings"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    legacy_subject_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False, index=True)
+    canonical_subject_id: Mapped[int] = mapped_column(
+        ForeignKey("canonical_subjects.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    standard_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("standards.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    legacy_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    canonical_code: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    legacy_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    canonical_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    canonical_subject: Mapped["CanonicalSubject"] = relationship(
+        "CanonicalSubject", back_populates="legacy_mappings"
+    )
+    standard: Mapped[Optional["Standard"]] = relationship("Standard")
 
 
 class SubjectMapping(Base):

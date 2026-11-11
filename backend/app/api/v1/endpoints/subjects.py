@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints for canonical subject master catalogue, curriculum syllabus mappings, and legacy subject compatibility.
 #  */
@@ -27,7 +27,7 @@ from datetime import datetime
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role
 from app.models.institution import Institution
-from app.models.subject import Subject, CanonicalSubject, SubjectMapping
+from app.models.subject import Subject, CanonicalSubject, SubjectMapping, SubjectLegacyMapping
 from app.models.standard import Standard
 from app.models.board import Board
 from app.models.academic_year import AcademicYear
@@ -46,6 +46,7 @@ class CanonicalSubjectCreate(BaseModel):
     category: str = "General"
     description: Optional[str] = None
     aliases: Optional[str] = None
+    alternate_codes: Optional[str] = None
     institution_id: int = 1
 
 
@@ -55,6 +56,7 @@ class CanonicalSubjectUpdate(BaseModel):
     category: Optional[str] = None
     description: Optional[str] = None
     aliases: Optional[str] = None
+    alternate_codes: Optional[str] = None
     is_active: Optional[bool] = None
 
 
@@ -115,9 +117,9 @@ async def check_duplicate_subject(
 ):
     clean_name = name.strip()
 
-    # Exact name match (case-insensitive)
+    # Exact name match (case-insensitive and trimmed)
     exact_q = select(CanonicalSubject).where(
-        func.lower(CanonicalSubject.name) == clean_name.lower(),
+        func.lower(func.trim(CanonicalSubject.name)) == clean_name.lower(),
         CanonicalSubject.is_active == True,
     )
     if institution_id:
@@ -125,13 +127,36 @@ async def check_duplicate_subject(
     exact_res = await db.execute(exact_q)
     exact = exact_res.scalars().first()
 
-    # Similar matches by substring or aliases
+    # Check if input matches legacy mapping code/name
+    legacy_match = None
+    if not exact:
+        slm_res = await db.execute(
+            select(SubjectLegacyMapping).where(
+                or_(
+                    func.lower(SubjectLegacyMapping.legacy_code) == clean_name.lower(),
+                    func.lower(SubjectLegacyMapping.legacy_name) == clean_name.lower(),
+                )
+            )
+        )
+        slm = slm_res.scalars().first()
+        if slm:
+            exact = (await db.execute(
+                select(CanonicalSubject).where(
+                    CanonicalSubject.id == slm.canonical_subject_id,
+                    CanonicalSubject.is_active == True,
+                )
+            )).scalar_one_or_none()
+            if exact:
+                legacy_match = f"Mapped from historical code '{slm.legacy_code}' ({slm.legacy_name})"
+
+    # Similar matches by substring, aliases, alternate_codes, or code
     pattern = f"%{clean_name}%"
     sim_q = select(CanonicalSubject).where(
         CanonicalSubject.is_active == True,
         or_(
             CanonicalSubject.name.ilike(pattern),
             CanonicalSubject.aliases.ilike(pattern),
+            CanonicalSubject.alternate_codes.ilike(pattern),
             CanonicalSubject.code.ilike(pattern),
         ),
     )
@@ -149,6 +174,8 @@ async def check_duplicate_subject(
             "category": exact.category,
             "description": exact.description,
             "aliases": exact.aliases,
+            "alternate_codes": exact.alternate_codes,
+            "match_source": legacy_match or "Canonical Name",
         } if exact else None,
         "similar_matches": [
             {
@@ -158,11 +185,12 @@ async def check_duplicate_subject(
                 "category": s.category,
                 "description": s.description,
                 "aliases": s.aliases,
+                "alternate_codes": s.alternate_codes,
             }
             for s in similar if not exact or s.id != exact.id
         ],
         "message": (
-            f"An existing canonical subject '{exact.name}' ({exact.code}) was found. Reusing it will link this curriculum mapping without duplicating master identities."
+            f"An existing canonical subject '{exact.name}' ({exact.code}) was found ({legacy_match or 'canonical match'}). Reusing it will link this curriculum mapping without duplicating master identities."
             if exact
             else (
                 f"Found {len(similar)} similar subject(s) in master catalog. Please verify if one of these should be reused."
@@ -191,6 +219,7 @@ async def list_canonical_subjects(
         .options(
             selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
             selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.board),
+            selectinload(CanonicalSubject.legacy_mappings),
         )
     )
     if institution_id:
@@ -201,11 +230,25 @@ async def list_canonical_subjects(
         query = query.where(CanonicalSubject.category.ilike(category.strip()))
     if search and search.strip():
         s = f"%{search.strip()}%"
+        # Search canonical fields and legacy mappings
+        matching_cs_ids = (
+            await db.execute(
+                select(SubjectLegacyMapping.canonical_subject_id).where(
+                    or_(
+                        SubjectLegacyMapping.legacy_code.ilike(s),
+                        SubjectLegacyMapping.legacy_name.ilike(s),
+                    )
+                )
+            )
+        ).scalars().all()
+
         query = query.where(
             or_(
                 CanonicalSubject.name.ilike(s),
                 CanonicalSubject.code.ilike(s),
                 CanonicalSubject.aliases.ilike(s),
+                CanonicalSubject.alternate_codes.ilike(s),
+                CanonicalSubject.id.in_(matching_cs_ids) if matching_cs_ids else False,
             )
         )
 
@@ -227,12 +270,14 @@ async def list_canonical_subjects(
             "category": cs.category,
             "description": cs.description,
             "aliases": cs.aliases,
+            "alternate_codes": cs.alternate_codes,
             "is_active": cs.is_active,
             "mappings_count": len(active_maps),
             "standards_count": len(unique_stds),
             "boards_count": len(unique_boards),
             "standards_summary": standards_names,
             "boards_summary": boards_codes,
+            "legacy_mappings_count": len(cs.legacy_mappings),
             "created_at": cs.created_at.isoformat() if cs.created_at else None,
         })
     return output
@@ -253,12 +298,15 @@ async def create_canonical_subject(
         if first_inst:
             inst_id = first_inst.id
 
+    clean_name = data.name.strip()
+    clean_code = data.code.strip().upper()
+
     # Check code uniqueness
     existing_code = (
         await db.execute(
             select(CanonicalSubject).where(
                 CanonicalSubject.institution_id == inst_id,
-                CanonicalSubject.code.ilike(data.code.strip()),
+                CanonicalSubject.code.ilike(clean_code),
                 CanonicalSubject.is_active == True,
             )
         )
@@ -266,16 +314,16 @@ async def create_canonical_subject(
     if existing_code:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Canonical subject with permanent code '{data.code}' already exists ({existing_code.name})",
+            detail=f"Canonical subject with permanent code '{clean_code}' already exists ({existing_code.name})",
         )
 
-    # Check duplicate name
+    # Check duplicate normalized name
     if not force:
         existing_name = (
             await db.execute(
                 select(CanonicalSubject).where(
                     CanonicalSubject.institution_id == inst_id,
-                    func.lower(CanonicalSubject.name) == data.name.strip().lower(),
+                    func.lower(func.trim(CanonicalSubject.name)) == clean_name.lower(),
                     CanonicalSubject.is_active == True,
                 )
             )
@@ -283,16 +331,17 @@ async def create_canonical_subject(
         if existing_name:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Canonical subject '{data.name}' already exists with code '{existing_name.code}'. Reuse this subject or supply ?force=true to create an additional identity.",
+                detail=f"Canonical subject '{clean_name}' already exists with code '{existing_name.code}'. Reuse this subject or supply ?force=true to create an additional identity.",
             )
 
     subject = CanonicalSubject(
         institution_id=inst_id,
-        name=data.name.strip(),
-        code=data.code.strip().upper(),
+        name=clean_name,
+        code=clean_code,
         category=data.category.strip(),
         description=data.description.strip() if data.description else None,
         aliases=data.aliases.strip() if data.aliases else None,
+        alternate_codes=data.alternate_codes.strip() if data.alternate_codes else None,
         is_active=True,
     )
     db.add(subject)
@@ -303,6 +352,7 @@ async def create_canonical_subject(
         "name": subject.name,
         "code": subject.code,
         "category": subject.category,
+        "alternate_codes": subject.alternate_codes,
         "message": f"Canonical subject '{subject.name}' registered successfully",
     }
 
@@ -319,6 +369,7 @@ async def get_canonical_subject(
             selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
             selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.board),
             selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.academic_year),
+            selectinload(CanonicalSubject.legacy_mappings),
         )
         .where(CanonicalSubject.id == canonical_id)
     )
@@ -348,6 +399,19 @@ async def get_canonical_subject(
         for m in cs.mappings if m.is_active
     ]
 
+    legacy_maps_data = [
+        {
+            "id": lm.id,
+            "legacy_subject_id": lm.legacy_subject_id,
+            "standard_id": lm.standard_id,
+            "legacy_code": lm.legacy_code,
+            "canonical_code": lm.canonical_code,
+            "legacy_name": lm.legacy_name,
+            "canonical_name": lm.canonical_name,
+        }
+        for lm in cs.legacy_mappings
+    ]
+
     return {
         "id": cs.id,
         "name": cs.name,
@@ -355,9 +419,11 @@ async def get_canonical_subject(
         "category": cs.category,
         "description": cs.description,
         "aliases": cs.aliases,
+        "alternate_codes": cs.alternate_codes,
         "is_active": cs.is_active,
         "created_at": cs.created_at.isoformat() if cs.created_at else None,
         "mappings": mappings_data,
+        "legacy_mappings": legacy_maps_data,
     }
 
 
@@ -374,9 +440,27 @@ async def update_canonical_subject(
         raise HTTPException(status_code=404, detail="Canonical subject not found")
 
     update_dict = data.model_dump(exclude_unset=True)
+    if "name" in update_dict and update_dict["name"]:
+        new_name = update_dict["name"].strip()
+        # Check normalized name collision
+        coll = (await db.execute(
+            select(CanonicalSubject).where(
+                CanonicalSubject.institution_id == cs.institution_id,
+                CanonicalSubject.id != cs.id,
+                func.lower(func.trim(CanonicalSubject.name)) == new_name.lower(),
+                CanonicalSubject.is_active == True,
+            )
+        )).scalar_one_or_none()
+        if coll:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Canonical subject '{new_name}' already exists with code '{coll.code}'",
+            )
+        cs.name = new_name
+
     for k, v in update_dict.items():
-        if hasattr(cs, k) and v is not None:
-            setattr(cs, k, v)
+        if k != "name" and hasattr(cs, k) and v is not None:
+            setattr(cs, k, v.strip() if isinstance(v, str) else v)
 
     await db.commit()
     await db.refresh(cs)
@@ -385,6 +469,7 @@ async def update_canonical_subject(
         "name": cs.name,
         "code": cs.code,
         "category": cs.category,
+        "alternate_codes": cs.alternate_codes,
         "message": f"Canonical subject '{cs.name}' updated successfully",
     }
 
@@ -647,44 +732,353 @@ async def delete_subject_mapping(
 
 
 # ---------------------------------------------------------------------------
-# Legacy Compatibility Endpoints (/api/v1/subjects)
+# Reversible Mapping & Subject Resolution Endpoints
+# ---------------------------------------------------------------------------
+
+@router.get("/legacy-mappings")
+async def list_legacy_mappings(
+    canonical_subject_id: Optional[int] = Query(None),
+    standard_id: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Returns reversible legacy subject mapping records linking original subject IDs
+    and curriculum codes to canonical subject identities.
+    """
+    query = (
+        select(
+            SubjectLegacyMapping,
+            CanonicalSubject.name.label("canonical_subject_name"),
+            CanonicalSubject.code.label("canonical_subject_code"),
+            Standard.name.label("standard_name"),
+        )
+        .join(CanonicalSubject, SubjectLegacyMapping.canonical_subject_id == CanonicalSubject.id)
+        .outerjoin(Standard, SubjectLegacyMapping.standard_id == Standard.id)
+    )
+    if canonical_subject_id:
+        query = query.where(SubjectLegacyMapping.canonical_subject_id == canonical_subject_id)
+    if standard_id:
+        query = query.where(SubjectLegacyMapping.standard_id == standard_id)
+    if search and search.strip():
+        s = f"%{search.strip()}%"
+        query = query.where(
+            or_(
+                SubjectLegacyMapping.legacy_code.ilike(s),
+                SubjectLegacyMapping.canonical_code.ilike(s),
+                SubjectLegacyMapping.legacy_name.ilike(s),
+                SubjectLegacyMapping.canonical_name.ilike(s),
+            )
+        )
+
+    result = await db.execute(query.order_by(SubjectLegacyMapping.legacy_subject_id))
+    rows = result.all()
+    return [
+        {
+            "id": slm.id,
+            "legacy_subject_id": slm.legacy_subject_id,
+            "canonical_subject_id": slm.canonical_subject_id,
+            "canonical_subject_name": c_name,
+            "canonical_subject_code": c_code,
+            "standard_id": slm.standard_id,
+            "standard_name": std_name,
+            "legacy_code": slm.legacy_code,
+            "canonical_code": slm.canonical_code,
+            "legacy_name": slm.legacy_name,
+            "canonical_name": slm.canonical_name,
+            "created_at": slm.created_at.isoformat() if slm.created_at else None,
+        }
+        for slm, c_name, c_code, std_name in rows
+    ]
+
+
+@router.get("/resolve/{identifier}")
+async def resolve_subject(
+    identifier: str,
+    standard_id: Optional[int] = Query(None),
+    id_type: Optional[str] = Query(None, description="'legacy', 'canonical', or 'auto'"),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Resolves any subject identifier (canonical ID, legacy subject ID, canonical code,
+    legacy code, or alias) into its canonical subject identity and curriculum mappings.
+    """
+    clean_id = identifier.strip()
+    cs: Optional[CanonicalSubject] = None
+    resolved_via: str = "unknown"
+
+    # 1. Numeric ID resolution (canonical ID or legacy ID)
+    if clean_id.isdigit():
+        num_id = int(clean_id)
+
+        if id_type == "legacy":
+            # Explicit legacy ID resolution
+            slm = (await db.execute(
+                select(SubjectLegacyMapping).where(SubjectLegacyMapping.legacy_subject_id == num_id)
+            )).scalar_one_or_none()
+            if slm:
+                cs = (await db.execute(
+                    select(CanonicalSubject)
+                    .options(
+                        selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
+                        selectinload(CanonicalSubject.legacy_mappings),
+                    )
+                    .where(CanonicalSubject.id == slm.canonical_subject_id, CanonicalSubject.is_active == True)
+                )).scalar_one_or_none()
+                resolved_via = f"legacy_subject_id #{num_id} ({slm.legacy_name})"
+        elif id_type == "canonical":
+            # Explicit canonical ID resolution
+            cs = (await db.execute(
+                select(CanonicalSubject)
+                .options(
+                    selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
+                    selectinload(CanonicalSubject.legacy_mappings),
+                )
+                .where(CanonicalSubject.id == num_id, CanonicalSubject.is_active == True)
+            )).scalar_one_or_none()
+            resolved_via = f"canonical_id #{num_id}"
+        else:
+            # Auto: check canonical ID first, fallback to legacy ID
+            cs = (await db.execute(
+                select(CanonicalSubject)
+                .options(
+                    selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
+                    selectinload(CanonicalSubject.legacy_mappings),
+                )
+                .where(CanonicalSubject.id == num_id, CanonicalSubject.is_active == True)
+            )).scalar_one_or_none()
+            if cs:
+                resolved_via = f"canonical_id #{num_id}"
+            else:
+                slm = (await db.execute(
+                    select(SubjectLegacyMapping).where(SubjectLegacyMapping.legacy_subject_id == num_id)
+                )).scalar_one_or_none()
+                if slm:
+                    cs = (await db.execute(
+                        select(CanonicalSubject)
+                        .options(
+                            selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
+                            selectinload(CanonicalSubject.legacy_mappings),
+                        )
+                        .where(CanonicalSubject.id == slm.canonical_subject_id, CanonicalSubject.is_active == True)
+                    )).scalar_one_or_none()
+                    resolved_via = f"legacy_subject_id #{num_id} ({slm.legacy_name})"
+
+    # 2. String resolution: legacy code in subject_legacy_mappings
+    if not cs:
+        slm = (await db.execute(
+            select(SubjectLegacyMapping).where(
+                func.lower(SubjectLegacyMapping.legacy_code) == clean_id.lower()
+            )
+        )).scalars().first()
+        if slm:
+            cs = (await db.execute(
+                select(CanonicalSubject)
+                .options(
+                    selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
+                    selectinload(CanonicalSubject.legacy_mappings),
+                )
+                .where(CanonicalSubject.id == slm.canonical_subject_id, CanonicalSubject.is_active == True)
+            )).scalar_one_or_none()
+            resolved_via = f"legacy_code '{slm.legacy_code}'"
+
+    # 3. String resolution: canonical code, name, alternate_codes, or aliases
+    if not cs:
+        cs = (await db.execute(
+            select(CanonicalSubject)
+            .options(
+                selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
+                selectinload(CanonicalSubject.legacy_mappings),
+            )
+            .where(
+                CanonicalSubject.is_active == True,
+                or_(
+                    func.lower(CanonicalSubject.code) == clean_id.lower(),
+                    func.lower(CanonicalSubject.name) == clean_id.lower(),
+                    CanonicalSubject.alternate_codes.ilike(f"%{clean_id}%"),
+                    CanonicalSubject.aliases.ilike(f"%{clean_id}%"),
+                )
+            )
+        )).scalars().first()
+        if cs:
+            resolved_via = f"canonical_record ({cs.name})"
+
+    if not cs:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Subject identifier '{identifier}' could not be resolved to any canonical subject record.",
+        )
+
+    # Standard-specific mapping if requested
+    target_mapping = None
+    if standard_id:
+        target_mapping = next(
+            (
+                {
+                    "id": m.id,
+                    "standard_id": m.standard_id,
+                    "standard_name": m.standard.name if m.standard else None,
+                    "curriculum_code": m.curriculum_code,
+                    "display_name": m.display_name or cs.name,
+                    "legacy_subject_id": m.legacy_subject_id,
+                }
+                for m in cs.mappings
+                if m.is_active and m.standard_id == standard_id
+            ),
+            None,
+        )
+
+    return {
+        "canonical_subject_id": cs.id,
+        "name": cs.name,
+        "code": cs.code,
+        "category": cs.category,
+        "description": cs.description,
+        "aliases": cs.aliases,
+        "alternate_codes": cs.alternate_codes,
+        "is_active": cs.is_active,
+        "matched_input": identifier,
+        "target_standard_mapping": target_mapping,
+        "all_mappings": [
+            {
+                "id": m.id,
+                "standard_id": m.standard_id,
+                "standard_name": m.standard.name if m.standard else None,
+                "curriculum_code": m.curriculum_code,
+                "display_name": m.display_name or cs.name,
+                "legacy_subject_id": m.legacy_subject_id,
+            }
+            for m in cs.mappings if m.is_active
+        ],
+        "legacy_codes": [lm.legacy_code for lm in cs.legacy_mappings if lm.legacy_code],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Consolidated Subjects Endpoint (/api/v1/subjects)
 # ---------------------------------------------------------------------------
 
 @router.get("/")
 async def list_subjects(
     standard_id: Optional[int] = Query(None),
     search: Optional[str] = Query(None),
+    raw: bool = Query(False, description="Return raw unconsolidated standard-specific records if true"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    """
+    Returns subjects for academic workflows.
+    - If standard_id is provided or raw=True: returns standard-specific subjects.
+    - If standard_id is omitted (general dropdowns): returns consolidated canonical subjects
+      without duplicate identities, supporting lookup by old subject codes and aliases.
+    """
+    if standard_id is not None or raw:
+        query = (
+            select(Subject, Standard.name.label("standard_name"))
+            .join(Standard, Subject.standard_id == Standard.id)
+            .where(Subject.is_active == True)
+        )
+        if standard_id:
+            query = query.where(Subject.standard_id == standard_id)
+        if search and search.strip():
+            s = f"%{search.strip()}%"
+            query = (
+                query.outerjoin(CanonicalSubject, Subject.canonical_subject_id == CanonicalSubject.id)
+                .where(
+                    or_(
+                        Subject.name.ilike(s),
+                        Subject.code.ilike(s),
+                        CanonicalSubject.name.ilike(s),
+                        CanonicalSubject.code.ilike(s),
+                        CanonicalSubject.aliases.ilike(s),
+                        CanonicalSubject.alternate_codes.ilike(s),
+                    )
+                )
+            )
+
+        result = await db.execute(query.order_by(Standard.level, Subject.name))
+        rows = result.all()
+        return [
+            {
+                "id": sub.id,
+                "name": sub.name,
+                "code": sub.code,
+                "standard_id": sub.standard_id,
+                "standard_name": std_name,
+                "canonical_subject_id": sub.canonical_subject_id,
+                "max_marks": sub.max_marks,
+                "pass_marks": sub.pass_marks,
+                "is_optional": sub.is_optional,
+                "is_active": sub.is_active,
+            }
+            for sub, std_name in rows
+        ]
+
+    # Consolidated Canonical View for general dropdowns when standard_id is omitted
     query = (
-        select(Subject, Standard.name.label("standard_name"))
-        .join(Standard, Subject.standard_id == Standard.id)
-        .where(Subject.is_active == True)
+        select(CanonicalSubject)
+        .options(
+            selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
+            selectinload(CanonicalSubject.legacy_subjects),
+            selectinload(CanonicalSubject.legacy_mappings),
+        )
+        .where(CanonicalSubject.is_active == True)
     )
-    if standard_id:
-        query = query.where(Subject.standard_id == standard_id)
     if search and search.strip():
         s = f"%{search.strip()}%"
-        query = query.where(or_(Subject.name.ilike(s), Subject.code.ilike(s)))
+        # Search canonical fields and legacy mappings
+        matching_cs_ids = (
+            await db.execute(
+                select(SubjectLegacyMapping.canonical_subject_id).where(
+                    or_(
+                        SubjectLegacyMapping.legacy_code.ilike(s),
+                        SubjectLegacyMapping.legacy_name.ilike(s),
+                    )
+                )
+            )
+        ).scalars().all()
 
-    result = await db.execute(query.order_by(Standard.level, Subject.name))
-    rows = result.all()
-    return [
-        {
-            "id": sub.id,
-            "name": sub.name,
-            "code": sub.code,
-            "standard_id": sub.standard_id,
-            "standard_name": std_name,
-            "canonical_subject_id": sub.canonical_subject_id,
-            "max_marks": sub.max_marks,
-            "pass_marks": sub.pass_marks,
-            "is_optional": sub.is_optional,
-            "is_active": sub.is_active,
-        }
-        for sub, std_name in rows
-    ]
+        query = query.where(
+            or_(
+                CanonicalSubject.name.ilike(s),
+                CanonicalSubject.code.ilike(s),
+                CanonicalSubject.aliases.ilike(s),
+                CanonicalSubject.alternate_codes.ilike(s),
+                CanonicalSubject.id.in_(matching_cs_ids) if matching_cs_ids else False,
+            )
+        )
+
+    result = await db.execute(query.order_by(CanonicalSubject.name))
+    canonical_list = result.scalars().all()
+
+    output = []
+    for cs in canonical_list:
+        active_maps = [m for m in cs.mappings if m.is_active]
+        standards_names = sorted(list({m.standard.name for m in active_maps if m.standard}))
+        
+        # Select authoritative primary legacy subject id
+        primary_legacy_id = cs.legacy_subjects[0].id if cs.legacy_subjects else cs.id
+
+        output.append({
+            "id": primary_legacy_id,
+            "name": cs.name,
+            "code": cs.code,
+            "category": cs.category,
+            "standard_id": None,
+            "standard_name": ", ".join(standards_names) if standards_names else "All Standards",
+            "canonical_subject_id": cs.id,
+            "alternate_codes": cs.alternate_codes,
+            "aliases": cs.aliases,
+            "standards_count": len(standards_names),
+            "standards_summary": standards_names,
+            "max_marks": 100,
+            "pass_marks": 35,
+            "is_optional": False,
+            "is_active": cs.is_active,
+        })
+    return output
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
@@ -711,22 +1105,42 @@ async def create_subject(
 
     # Find or auto-link canonical subject
     clean_name = data.name.strip()
+    clean_code = data.code.strip().upper() if data.code else None
     std_rec = (await db.execute(select(Standard).where(Standard.id == data.standard_id))).scalar_one_or_none()
     inst_id = std_rec.institution_id if std_rec else 1
+
+    # Check by normalized name, code, alternate codes, or aliases
+    match_conditions = [func.lower(func.trim(CanonicalSubject.name)) == clean_name.lower()]
+    if clean_code:
+        match_conditions.append(func.upper(CanonicalSubject.code) == clean_code)
+        match_conditions.append(CanonicalSubject.alternate_codes.ilike(f"%{clean_code}%"))
+    match_conditions.append(CanonicalSubject.aliases.ilike(f"%{clean_name}%"))
 
     canon = (
         await db.execute(
             select(CanonicalSubject).where(
                 CanonicalSubject.institution_id == inst_id,
-                func.lower(CanonicalSubject.name) == clean_name.lower(),
                 CanonicalSubject.is_active == True,
+                or_(*match_conditions),
             )
         )
-    ).scalar_one_or_none()
+    ).scalars().first()
 
     if not canon:
-        # Create canonical subject
-        canon_code = data.code.strip().upper() if data.code else f"SUB_{clean_name[:4].upper()}"
+        # Generate unique code if clean_code is already taken
+        base_code = clean_code if clean_code else f"SUB_{clean_name[:4].upper()}"
+        canon_code = base_code
+        code_exists = (
+            await db.execute(
+                select(CanonicalSubject).where(
+                    CanonicalSubject.institution_id == inst_id,
+                    func.upper(CanonicalSubject.code) == canon_code,
+                )
+            )
+        ).scalar_one_or_none()
+        if code_exists:
+            canon_code = f"{base_code}_{data.standard_id}"
+
         canon = CanonicalSubject(
             institution_id=inst_id,
             name=clean_name,

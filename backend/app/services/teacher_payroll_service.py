@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Complete business logic and calculation engine for Teacher Payroll,
 #  */
@@ -330,13 +330,28 @@ async def log_teaching_session(
 
     session_code = await generate_next_session_code(db, sess_date)
 
-    sm_id = (
+    sub_id = int(data["subject_id"])
+    div_id = int(data["division_id"])
+    div_rec = (await db.execute(select(Division).where(Division.id == div_id))).scalar_one_or_none()
+    std_id = div_rec.standard_id if div_rec else None
+
+    sm = (
         await db.execute(
-            select(SubjectMapping.id).where(
-                SubjectMapping.legacy_subject_id == int(data["subject_id"])
+            select(SubjectMapping).where(
+                or_(
+                    SubjectMapping.legacy_subject_id == sub_id,
+                    and_(
+                        SubjectMapping.canonical_subject_id == sub_id,
+                        SubjectMapping.standard_id == std_id,
+                    ),
+                ),
+                SubjectMapping.is_active == True,
             )
         )
-    ).scalar_one_or_none()
+    ).scalars().first()
+
+    sm_id = sm.id if sm else None
+    effective_sub_id = sm.legacy_subject_id if (sm and sm.legacy_subject_id) else sub_id
 
     session = TeachingSession(
         session_code=session_code,
@@ -344,9 +359,9 @@ async def log_teaching_session(
         academic_year_id=ay_id,
         teacher_user_id=teacher_id,
         substitute_teacher_id=sub_teacher_id,
-        subject_id=int(data["subject_id"]),
+        subject_id=effective_sub_id,
         subject_mapping_id=sm_id,
-        division_id=int(data["division_id"]),
+        division_id=div_id,
         timetable_entry_id=int(data["timetable_entry_id"]) if data.get("timetable_entry_id") else None,
         session_date=sess_date,
         scheduled_start_time=sched_start,

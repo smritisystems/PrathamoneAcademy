@@ -1753,6 +1753,22 @@ export interface AcademicSubject {
   passing_marks: number
   is_core: boolean
   is_active: boolean
+  canonical_subject_id?: number | null
+  alternate_codes?: string | null
+  aliases?: string | null
+}
+
+export interface SubjectLegacyMapping {
+  id: number
+  institution_id: number
+  legacy_subject_id: number
+  legacy_name: string
+  legacy_code: string
+  canonical_subject_id: number
+  canonical_name: string
+  canonical_code: string
+  notes?: string | null
+  created_at?: string
 }
 
 export interface CanonicalSubject {
@@ -1762,6 +1778,7 @@ export interface CanonicalSubject {
   category: string
   description?: string | null
   aliases?: string | null
+  alternate_codes?: string | null
   is_active: boolean
   mappings_count?: number
   standards_count?: number
@@ -1770,6 +1787,7 @@ export interface CanonicalSubject {
   boards_summary?: string[]
   created_at?: string
   mappings?: SubjectMappingItem[]
+  legacy_mappings?: SubjectLegacyMapping[]
 }
 
 export interface SubjectMappingItem {

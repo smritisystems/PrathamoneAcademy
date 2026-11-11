@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Enterprise Study Materials & Digital Content management hub comprising 8 dedicated workspaces, live database persistence, and Rule 010 View-First governance.
  */
@@ -269,10 +269,16 @@ function CoursesContent() {
     queryFn: async () => (await divisionsApi.list(selectedInstitutionId ?? undefined)).data,
   })
 
+  const { data: formStandardSubjects = [] } = useQuery({
+    queryKey: ['subjects-by-standard', formStandardId],
+    queryFn: async () => formStandardId ? (await subjectsApi.list({ standard_id: formStandardId })).data : [],
+    enabled: Boolean(formStandardId),
+  })
+
   const filteredFormSubjects = useMemo(() => {
     if (!formStandardId) return subjects
-    return subjects.filter((s: Subject) => s.standard_id === formStandardId)
-  }, [subjects, formStandardId])
+    return formStandardSubjects.length > 0 ? formStandardSubjects : subjects
+  }, [subjects, formStandardId, formStandardSubjects])
 
   const filteredFormDivisions = useMemo(() => {
     if (!formStandardId) return divisions

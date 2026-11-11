@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Source component for Teacherassignbatchmodal in the src.components.workforce module.
  */
@@ -96,10 +96,16 @@ export default function TeacherAssignBatchModal({
   })
 
   const { data: subjects = [] } = useQuery({
-    queryKey: ['subjects-dropdown'],
-    queryFn: () => subjectsApi.list().then((r) => r.data),
+    queryKey: ['subjects-dropdown', form.standard_id],
+    queryFn: () => subjectsApi.list({ standard_id: form.standard_id }).then((r) => r.data),
     enabled: isOpen,
   })
+
+  useEffect(() => {
+    if (subjects.length > 0 && !subjects.some((s: any) => s.id === form.subject_id)) {
+      setForm((prev) => ({ ...prev, subject_id: subjects[0].id }))
+    }
+  }, [subjects])
 
   const createAssignmentMutation = useMutation({
     mutationFn: (payload: any) => staffApi.createAssignment(payload),

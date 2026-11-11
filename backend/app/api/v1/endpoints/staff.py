@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-09
+#  * @updated     2026-11-11
 #  *
 #  * @description Comprehensive API endpoints for Teacher & Staff Management, assignments, attendance, leaves, and documents.
 #  */
@@ -1387,12 +1387,34 @@ async def create_teacher_assignment(
     """
     Creates a new teacher assignment with schedule conflict and duplicate checking.
     """
+    # Look up SubjectMapping by legacy_subject_id or by (canonical_subject_id, standard_id)
+    sm = (
+        await db.execute(
+            select(SubjectMapping).where(
+                or_(
+                    SubjectMapping.legacy_subject_id == data.subject_id,
+                    and_(
+                        SubjectMapping.canonical_subject_id == data.subject_id,
+                        SubjectMapping.standard_id == data.standard_id,
+                    ),
+                ),
+                SubjectMapping.is_active == True,
+            )
+        )
+    ).scalars().first()
+
+    sm_id = sm.id if sm else None
+    effective_subject_id = sm.legacy_subject_id if (sm and sm.legacy_subject_id) else data.subject_id
+
     # Check duplicate assignment
     dup = (
         await db.execute(
             select(TeacherAssignment).where(
                 TeacherAssignment.division_id == data.division_id,
-                TeacherAssignment.subject_id == data.subject_id,
+                or_(
+                    TeacherAssignment.subject_id == effective_subject_id,
+                    TeacherAssignment.subject_id == data.subject_id,
+                ),
                 TeacherAssignment.academic_year_id == data.academic_year_id,
                 TeacherAssignment.is_active == True,
             )
@@ -1404,21 +1426,13 @@ async def create_teacher_assignment(
             detail="A teacher is already actively assigned to this subject and batch for the current academic session."
         )
 
-    sm_id = (
-        await db.execute(
-            select(SubjectMapping.id).where(
-                SubjectMapping.legacy_subject_id == data.subject_id
-            )
-        )
-    ).scalar_one_or_none()
-
     assignment = TeacherAssignment(
         teacher_user_id=data.teacher_user_id,
         academic_year_id=data.academic_year_id,
         board_id=data.board_id,
         standard_id=data.standard_id,
         division_id=data.division_id,
-        subject_id=data.subject_id,
+        subject_id=effective_subject_id,
         subject_mapping_id=sm_id,
         weekly_hours=data.weekly_hours or 4.0,
         is_class_teacher=data.is_class_teacher or False,

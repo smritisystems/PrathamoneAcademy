@@ -33,7 +33,7 @@ import type {
   ImportHistoryDetail, ExportFilterParams,
   UserManagementStats, UserListItem, UserListResponse, UserProfileWorkspaceData,
   UserCreatePayload, UserUpdatePayload,
-  AcademicSubject, CanonicalSubject, SubjectMappingItem, SubjectDuplicateCheckResult, AcademicTimetableEntry, EnrollmentRecord, EnrollmentStats,
+  AcademicSubject, CanonicalSubject, SubjectLegacyMapping, SubjectMappingItem, SubjectDuplicateCheckResult, AcademicTimetableEntry, EnrollmentRecord, EnrollmentStats,
   UnassignedStudent, BatchCapacityReportRow, AcademicDistributionReportRow, FacultyLoadReportRow,
   StaffMember, StaffProfileDetail, TeacherAssignmentItem, StaffAttendanceItem,
   StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
@@ -253,6 +253,12 @@ export const subjectsApi = {
   // Live duplicate detection
   checkDuplicate: (name: string) =>
     apiClient.get<SubjectDuplicateCheckResult>('/subjects/duplicate-check', { params: { name } }),
+
+  // Resolution and Legacy mappings
+  resolve: (identifier: string | number, params?: { standard_id?: number | string; id_type?: 'legacy' | 'canonical' | 'auto' }) =>
+    apiClient.get<any>(`/subjects/resolve/${identifier}`, { params }),
+  listLegacyMappings: () =>
+    apiClient.get<SubjectLegacyMapping[]>('/subjects/legacy-mappings'),
 }
 
 // ─── Timetable ────────────────────────────────────────────────────────────────
