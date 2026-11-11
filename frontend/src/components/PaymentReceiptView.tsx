@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -761,12 +761,35 @@ export default function PaymentReceiptView({
           <div className="border border-slate-200 rounded-b-xl rounded-tr-xl bg-white p-3 grid grid-cols-12 gap-3 items-center shadow-2xs">
             {/* Left Ledger Rows (7 cols) */}
             <div className="col-span-7 space-y-1">
-              <div className="flex justify-between items-center py-0.5 text-[10.5px] text-slate-700 border-b border-slate-100 font-medium">
-                <span><span>Total Fee</span> <span className="text-[9px] text-slate-400 font-normal">(Current AY)</span></span>
-                <span className="font-bold text-slate-900">
-                  {fmt(feeSummary.total_fee_amount)}
-                </span>
-              </div>
+              {(receipt.concession_amount && receipt.concession_amount > 0) || (receipt.gross_fee && receipt.gross_fee > feeSummary.total_fee_amount) ? (
+                <>
+                  <div className="flex justify-between items-center py-0.5 text-[10px] text-slate-500 border-b border-slate-100">
+                    <span>Gross Assessed Fee</span>
+                    <span className="font-semibold text-slate-700">
+                      {fmt(receipt.gross_fee ?? (feeSummary.total_fee_amount + (receipt.concession_amount ?? 0)))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-0.5 text-[10px] text-emerald-700 border-b border-slate-100">
+                    <span>Concessions / Scholarships / Waivers</span>
+                    <span className="font-bold">
+                      -{fmt(receipt.concession_amount ?? Math.max(0, (receipt.gross_fee ?? 0) - feeSummary.total_fee_amount))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-0.5 text-[10.5px] text-slate-700 border-b border-slate-100 font-medium">
+                    <span><span>Net Fee Payable</span> <span className="text-[9px] text-slate-400 font-normal">(Current AY)</span></span>
+                    <span className="font-bold text-slate-900">
+                      {fmt(feeSummary.total_fee_amount)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between items-center py-0.5 text-[10.5px] text-slate-700 border-b border-slate-100 font-medium">
+                  <span><span>Total Fee</span> <span className="text-[9px] text-slate-400 font-normal">(Current AY)</span></span>
+                  <span className="font-bold text-slate-900">
+                    {fmt(feeSummary.total_fee_amount)}
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-between items-center py-0.5 text-[10.5px] text-slate-700 border-b border-slate-100 font-medium">
                 <span><span>Previous Paid</span> <span className="text-[9px] text-slate-400 font-normal">({historicalPayments.length})</span></span>

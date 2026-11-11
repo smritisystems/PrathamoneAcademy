@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Central export index for shared common components including View-First Edit Mode governance tools.
  */
@@ -42,3 +42,5 @@ export type { SortableHeaderProps } from './SortableHeader'
 
 export { default as TableSortSelect } from './TableSortSelect'
 export type { TableSortSelectProps, TableSortOption } from './TableSortSelect'
+
+export { ConcessionTraceModal } from './ConcessionTraceModal'

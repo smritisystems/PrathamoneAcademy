@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -43,7 +43,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ConcessionTraceModal } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import PaymentReceiptView from '../components/PaymentReceiptView'
@@ -186,111 +186,72 @@ function FeesContent() {
   const [isBulkReminderModalOpen, setIsBulkReminderModalOpen] = useState(false)
   const [reminderTemplate, setReminderTemplate] = useState('Dear Guardian, this is a gentle fee reminder from Prashant Academy for pending dues. Please clear at your earliest convenience.')
 
-  const [defaultersList, setDefaultersList] = useState([
-    {
-      id: 1,
-      student_id: 101,
-      student_name: 'Aarav Sharma',
-      roll_number: '10-A-01',
-      admission_number: 'ADM-2025-0101',
-      standard: 'Standard 10',
-      division: 'Division A',
-      guardian_name: 'Rajesh Sharma',
-      guardian_phone: '+91 98230 11223',
-      total_fee: 75000,
-      paid_amount: 35000,
-      overdue_amount: 40000,
-      overdue_days: 68,
-      last_payment_date: '2026-08-15',
+  // Live Fee Defaulters from canonical backend reports ledger
+  const { data: rawDefaulters = [] } = useQuery<any[]>({
+    queryKey: ['fees-defaulters-live', selectedAcademicYearId],
+    queryFn: async () => {
+      const res = await reportsApi.feeDefaulters({
+        academic_year_id: selectedAcademicYearId ?? undefined,
+      })
+      return Array.isArray(res.data) ? res.data : []
     },
-    {
-      id: 2,
-      student_id: 102,
-      student_name: 'Diya Patel',
-      roll_number: '10-A-04',
-      admission_number: 'ADM-2025-0104',
-      standard: 'Standard 10',
-      division: 'Division A',
-      guardian_name: 'Ketan Patel',
-      guardian_phone: '+91 98221 44556',
-      total_fee: 75000,
-      paid_amount: 50000,
-      overdue_amount: 25000,
-      overdue_days: 42,
-      last_payment_date: '2026-09-10',
-    },
-    {
-      id: 3,
-      student_id: 103,
-      student_name: 'Rohan Gupta',
-      roll_number: '12-SCI-12',
-      admission_number: 'ADM-2025-0212',
-      standard: 'Standard 12 Science',
-      division: 'Division A',
-      guardian_name: 'Suresh Gupta',
-      guardian_phone: '+91 98233 77889',
-      total_fee: 95000,
-      paid_amount: 45000,
-      overdue_amount: 50000,
-      overdue_days: 75,
-      last_payment_date: '2026-08-01',
-    },
-    {
-      id: 4,
-      student_id: 104,
-      student_name: 'Ananya Deshmukh',
-      roll_number: '9-B-08',
-      admission_number: 'ADM-2025-0088',
-      standard: 'Standard 9',
-      division: 'Division B',
-      guardian_name: 'Anil Deshmukh',
-      guardian_phone: '+91 98244 11334',
-      total_fee: 65000,
-      paid_amount: 45000,
-      overdue_amount: 20000,
-      overdue_days: 22,
-      last_payment_date: '2026-10-05',
-    },
-    {
-      id: 5,
-      student_id: 105,
-      student_name: 'Kabir Verma',
-      roll_number: '11-SCI-05',
-      admission_number: 'ADM-2025-0305',
-      standard: 'Standard 11 Science',
-      division: 'Division B',
-      guardian_name: 'Vikas Verma',
-      guardian_phone: '+91 98255 66778',
-      total_fee: 90000,
-      paid_amount: 60000,
-      overdue_amount: 30000,
-      overdue_days: 18,
-      last_payment_date: '2026-10-12',
-    },
-    {
-      id: 6,
-      student_id: 106,
-      student_name: 'Meera Iyer',
-      roll_number: '12-COM-15',
-      admission_number: 'ADM-2025-0415',
-      standard: 'Standard 12 Commerce',
-      division: 'Division A',
-      guardian_name: 'Ramanathan Iyer',
-      guardian_phone: '+91 98266 88990',
-      total_fee: 80000,
-      paid_amount: 40000,
-      overdue_amount: 40000,
-      overdue_days: 52,
-      last_payment_date: '2026-09-02',
-    },
-  ])
+  })
+
+  const defaultersList = useMemo(() => {
+    return rawDefaulters.map((d: any, idx: number) => ({
+      id: d.invoice_id || d.installment_id || idx + 1,
+      student_id: d.student_id,
+      student_name: d.student_name || 'Student',
+      roll_number: d.admission_number || `INV-${d.invoice_id || idx + 1}`,
+      admission_number: d.admission_number || '—',
+      standard: d.standard_name || 'General',
+      division: d.division_name || 'General',
+      guardian_name: 'Guardian / Parent',
+      guardian_phone: d.guardian_phone || 'N/A',
+      total_fee: Number(d.total_outstanding ?? d.overdue_amount ?? 0),
+      paid_amount: 0,
+      overdue_amount: Number(d.overdue_amount ?? 0),
+      overdue_days: Number(d.days_overdue ?? 0),
+      last_payment_date: d.due_date || '—',
+    }))
+  }, [rawDefaulters])
+
+  const defaulterAgingMetrics = useMemo(() => {
+    const mild = defaultersList.filter((d) => d.overdue_days >= 1 && d.overdue_days <= 30)
+    const moderate = defaultersList.filter((d) => d.overdue_days > 30 && d.overdue_days <= 60)
+    const critical = defaultersList.filter((d) => d.overdue_days > 60)
+    return {
+      mildAmount: mild.reduce((acc, d) => acc + d.overdue_amount, 0),
+      mildCount: mild.length,
+      moderateAmount: moderate.reduce((acc, d) => acc + d.overdue_amount, 0),
+      moderateCount: moderate.length,
+      criticalAmount: critical.reduce((acc, d) => acc + d.overdue_amount, 0),
+      criticalCount: critical.length,
+      totalAmount: defaultersList.reduce((acc, d) => acc + d.overdue_amount, 0),
+      totalCount: defaultersList.length,
+    }
+  }, [defaultersList])
 
   // ─────────────────────────────────────────────────────────────────────────────
   // WORKSPACE 6: CONCESSIONS & WAIVERS STATE
   // ─────────────────────────────────────────────────────────────────────────────
   const [concessionFilterType, setConcessionFilterType] = useState<string>('all')
   const [concessionFilterStatus, setConcessionFilterStatus] = useState<string>('all')
+  const [concessionFilterBenefit, setConcessionFilterBenefit] = useState<string>('all')
   const [concessionSearchQuery, setConcessionSearchQuery] = useState('')
+  const [concessionValidUntil, setConcessionValidUntil] = useState('')
+  const [traceTarget, setTraceTarget] = useState<{
+    type: 'application' | 'allocation' | 'invoice' | 'student'
+    id: number
+  } | null>(null)
+  const [sponsorSettlementTarget, setSponsorSettlementTarget] = useState<ConcessionApplication | null>(null)
+  const [settlementForm, setSettlementForm] = useState({
+    amount: 0,
+    received_date: new Date().toISOString().split('T')[0],
+    payment_method: 'bank_transfer',
+    reference_number: '',
+    remarks: '',
+  })
   const [isNewConcessionModalOpen, setIsNewConcessionModalOpen] = useState(false)
   const [concessionApplicationMode, setConcessionApplicationMode] = useState<'single' | 'bulk'>('single')
 
@@ -538,6 +499,8 @@ function FeesContent() {
           academic_year_id: selectedAcademicYearId ?? undefined,
           requested_amount: concessionAmountValue ? Number(concessionAmountValue) : undefined,
           requested_percentage: concessionPercentageValue ? Number(concessionPercentageValue) : undefined,
+          valid_until: concessionValidUntil || undefined,
+          idempotency_key: `single-${selectedStudentForConcession.id}-${selectedConcessionTypeId}-${Date.now()}`,
           remarks: concessionRemarks.trim() || undefined,
         })
         if (singleAutoApprove && res.data.id) {
@@ -554,6 +517,7 @@ function FeesContent() {
         setSelectedConcessionTypeId('')
         setConcessionAmountValue('')
         setConcessionPercentageValue('')
+        setConcessionValidUntil('')
         setConcessionRemarks('')
         setEligibilityResult(null)
       } catch (err: any) {
@@ -580,14 +544,17 @@ function FeesContent() {
           academic_year_id: selectedAcademicYearId ?? undefined,
           requested_amount: concessionAmountValue ? Number(concessionAmountValue) : undefined,
           requested_percentage: concessionPercentageValue ? Number(concessionPercentageValue) : undefined,
+          valid_until: concessionValidUntil || undefined,
           remarks: concessionRemarks.trim() || undefined,
           auto_approve: bulkAutoApprove,
+          auto_apply: bulkAutoApprove,
         })
         toast.success(res.data.message)
         refetchConcessions()
         refetchConcessionAnalytics()
         setIsNewConcessionModalOpen(false)
         setBulkSelectedStudentIds([])
+        setConcessionValidUntil('')
         setConcessionRemarks('')
       } catch (err: any) {
         toast.error(err?.response?.data?.detail || 'Failed to apply bulk concessions.')
@@ -597,14 +564,14 @@ function FeesContent() {
     }
   }
 
-  const handleApproveConcession = async (id: number) => {
+  const handleApproveConcession = async (id: number, autoApply = false) => {
     if (!isEditMode) {
       toast.error('Locked in View Mode: Activate Edit Mode above to approve concessions.')
       return
     }
     try {
-      const res = await concessionsApi.approveApplication(id, { auto_apply: true })
-      toast.success(res.data.message || 'Concession approved and applied to invoice!')
+      const res = await concessionsApi.approveApplication(id, { auto_apply: autoApply })
+      toast.success(res.data.message || (autoApply ? 'Concession approved and applied to invoice!' : 'Concession approved (pending invoice posting).'))
       refetchConcessions()
       refetchConcessionAnalytics()
     } catch (err: any) {
@@ -632,18 +599,113 @@ function FeesContent() {
     }
   }
 
-  const handleApplyConcession = async (id: number) => {
+  const handleApplyConcession = async (id: number, partialAmount?: number) => {
     if (!isEditMode) {
       toast.error('Locked in View Mode: Activate Edit Mode above to apply concessions.')
       return
     }
     try {
-      const res = await concessionsApi.applyApplication(id)
+      const res = await concessionsApi.applyApplication(
+        id,
+        partialAmount && partialAmount > 0 ? { allocation_amount: partialAmount } : undefined
+      )
       toast.success(res.data.message || 'Concession allocated to fee invoice!')
       refetchConcessions()
       refetchConcessionAnalytics()
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || 'Failed to apply concession.')
+    }
+  }
+
+  const handleReverseConcession = async (id: number) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to reverse posted concessions.')
+      return
+    }
+    const reason = window.prompt('Enter mandatory audit reason for reversing posted concession/waiver:')
+    if (!reason || !reason.trim()) {
+      toast.error('An audit reversal reason is required.')
+      return
+    }
+    try {
+      const res = await concessionsApi.reverseApplication(id, { reversal_reason: reason.trim() })
+      toast.success(res.data.message || 'Concession posting reversed immutably.')
+      refetchConcessions()
+      refetchConcessionAnalytics()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to reverse concession.')
+    }
+  }
+
+  const handleCancelConcession = async (id: number) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to cancel concession applications.')
+      return
+    }
+    const reason = window.prompt('Enter mandatory audit cancellation reason:')
+    if (!reason || !reason.trim()) {
+      toast.error('A cancellation reason is required.')
+      return
+    }
+    try {
+      const res = await concessionsApi.cancelApplication(id, { cancellation_reason: reason.trim() })
+      toast.success(res.data.message || 'Concession application cancelled.')
+      refetchConcessions()
+      refetchConcessionAnalytics()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to cancel concession.')
+    }
+  }
+
+  const handleExpireStaleConcessions = async () => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to run benefit expiration scan.')
+      return
+    }
+    try {
+      const res = await concessionsApi.expireStaleApplications()
+      toast.success(res.data.message)
+      refetchConcessions()
+      refetchConcessionAnalytics()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to expire stale benefits.')
+    }
+  }
+
+  const handleOpenSponsorSettlement = (app: ConcessionApplication) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Activate Edit Mode above to record sponsor settlements.')
+      return
+    }
+    const sanctioned = Number(app.sponsor_sanctioned_amount || app.approved_amount || 0)
+    const remaining = Math.max(0, sanctioned - Number(app.sponsor_received_amount || 0))
+    setSponsorSettlementTarget(app)
+    setSettlementForm({
+      amount: remaining,
+      received_date: new Date().toISOString().split('T')[0],
+      payment_method: 'bank_transfer',
+      reference_number: '',
+      remarks: '',
+    })
+  }
+
+  const handleSubmitSponsorSettlement = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!sponsorSettlementTarget) return
+    try {
+      const res = await concessionsApi.recordSponsorSettlement(sponsorSettlementTarget.id, {
+        amount: Number(settlementForm.amount),
+        received_date: settlementForm.received_date,
+        payment_method: settlementForm.payment_method,
+        reference_number: settlementForm.reference_number.trim() || undefined,
+        remarks: settlementForm.remarks.trim() || undefined,
+      })
+      toast.success(res.data.message)
+      setSponsorSettlementTarget(null)
+      refetchConcessions()
+      refetchConcessionAnalytics()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to record sponsor settlement.')
     }
   }
 
@@ -3349,6 +3411,135 @@ function FeesContent() {
                   )}
                 </div>
               </div>
+
+              {/* Phase 4B: Fee Management Concession, Waiver & Scholarship Breakdown */}
+              {(overviewData.governance || overviewData.concession_breakdown) && (() => {
+                const fin = overviewData.governance?.financials
+                const cb = overviewData.concession_breakdown
+                return (
+                  <div className="lg:col-span-12 space-y-4">
+                    <div className="bg-white rounded-2xl border border-indigo-200/80 p-5 shadow-xs space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <BadgePercent className="w-4 h-4 text-indigo-600" />
+                          <h3 className="text-sm font-bold text-slate-900">
+                            Governed Concessions, Fee Waivers &amp; Scholarships Breakdown
+                          </h3>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setTab('concessions')}
+                          className="text-xs font-bold text-indigo-600 hover:underline"
+                        >
+                          Manage Benefit Lifecycle →
+                        </button>
+                      </div>
+
+                      {fin && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                            <p className="text-[10px] font-bold uppercase text-slate-500">Gross Assessed</p>
+                            <p className="text-sm font-extrabold text-slate-900 mt-0.5">{fmt(fin.gross_fee_assessed)}</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200">
+                            <p className="text-[10px] font-bold uppercase text-blue-700">Approved Benefits</p>
+                            <p className="text-sm font-extrabold text-blue-900 mt-0.5">{fmt(fin.approved_concessions_total)}</p>
+                            <p className="text-[10px] text-amber-700 font-semibold">Remaining: {fmt(fin.approved_unapplied)}</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                            <p className="text-[10px] font-bold uppercase text-emerald-700">Posted Concessions</p>
+                            <p className="text-sm font-extrabold text-emerald-900 mt-0.5">{fmt(fin.posted_fee_concessions + fin.manual_fee_adjustments)}</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-purple-50/70 border border-purple-200">
+                            <p className="text-[10px] font-bold uppercase text-purple-700">Fee Waivers</p>
+                            <p className="text-sm font-extrabold text-purple-900 mt-0.5">{fmt(fin.posted_fee_waivers)}</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200">
+                            <p className="text-[10px] font-bold uppercase text-indigo-700">Scholarships</p>
+                            <p className="text-sm font-extrabold text-indigo-900 mt-0.5">{fmt(fin.scholarships_awarded)}</p>
+                          </div>
+                          <div className="p-3 rounded-xl bg-slate-900 text-white">
+                            <p className="text-[10px] font-bold uppercase text-slate-300">Net Collectible</p>
+                            <p className="text-sm font-extrabold mt-0.5">{fmt(fin.net_fee_due)}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {cb && (
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                          {/* Fee-Head-Wise Benefits */}
+                          <div className="lg:col-span-4 border border-slate-200 rounded-xl p-3 bg-slate-50/60">
+                            <h4 className="text-xs font-bold text-slate-800 mb-2">Fee-Head-Wise Benefits</h4>
+                            {cb.fee_head_wise.length === 0 ? (
+                              <p className="text-xs text-slate-400">No posted fee-head benefits recorded.</p>
+                            ) : (
+                              <div className="space-y-1.5 text-xs">
+                                {cb.fee_head_wise.map((fh) => (
+                                  <div key={fh.fee_category} className="flex items-center justify-between py-1 border-b border-slate-200/70 last:border-0">
+                                    <span className="font-semibold text-slate-700">{fh.fee_category} ({fh.applications_count})</span>
+                                    <span className="font-bold text-emerald-700">{fmt(fh.posted_amount)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Student-Wise Concessions & Remaining Benefits */}
+                          <div className="lg:col-span-8 border border-slate-200 rounded-xl p-3 overflow-x-auto">
+                            <h4 className="text-xs font-bold text-slate-800 mb-2">
+                              Student-Wise Concession &amp; Benefit Utilization ({cb.student_wise.length})
+                            </h4>
+                            {cb.student_wise.length === 0 ? (
+                              <p className="text-xs text-slate-400">No student concessions recorded for current filter.</p>
+                            ) : (
+                              <table className="w-full text-left text-[11px]">
+                                <thead className="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
+                                  <tr>
+                                    <th className="py-1.5 px-2">Student</th>
+                                    <th className="py-1.5 px-2">Benefit</th>
+                                    <th className="py-1.5 px-2 text-right">Approved</th>
+                                    <th className="py-1.5 px-2 text-right">Posted</th>
+                                    <th className="py-1.5 px-2 text-right">Remaining</th>
+                                    <th className="py-1.5 px-2 text-right">Outstanding</th>
+                                    <th className="py-1.5 px-2 text-center">Trace</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {cb.student_wise.slice(0, 8).map((sw) => (
+                                    <tr key={sw.application_id} className="hover:bg-slate-50">
+                                      <td className="py-1.5 px-2 font-semibold text-slate-900">
+                                        {sw.student_name}
+                                        <span className="block text-[10px] text-slate-400 font-mono">{sw.application_number}</span>
+                                      </td>
+                                      <td className="py-1.5 px-2">
+                                        <span className="font-semibold text-slate-800">{sw.concession_name}</span>
+                                        <span className="block text-[10px] uppercase text-indigo-600">{sw.benefit_type.replace(/_/g, ' ')}</span>
+                                      </td>
+                                      <td className="py-1.5 px-2 text-right font-semibold">{fmt(sw.approved_amount)}</td>
+                                      <td className="py-1.5 px-2 text-right font-bold text-emerald-700">{fmt(sw.posted_amount)}</td>
+                                      <td className="py-1.5 px-2 text-right text-amber-700">{fmt(sw.remaining_benefit)}</td>
+                                      <td className="py-1.5 px-2 text-right font-semibold">{fmt(sw.outstanding)}</td>
+                                      <td className="py-1.5 px-2 text-center">
+                                        <button
+                                          type="button"
+                                          onClick={() => setTraceTarget({ type: 'application', id: sw.application_id })}
+                                          className="text-[10px] font-bold text-indigo-600 hover:underline"
+                                        >
+                                          Trace
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           ) : null}
         </div>
@@ -4567,8 +4758,8 @@ function FeesContent() {
                   <Clock className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-extrabold text-slate-900">{fmt(50000)}</div>
-              <p className="text-[11px] text-amber-700 font-semibold mt-1">2 Students in grace window</p>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(defaulterAgingMetrics.mildAmount)}</div>
+              <p className="text-[11px] text-amber-700 font-semibold mt-1">{defaulterAgingMetrics.mildCount} Student(s) in grace window</p>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
@@ -4578,8 +4769,8 @@ function FeesContent() {
                   <AlertTriangle className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-extrabold text-slate-900">{fmt(65000)}</div>
-              <p className="text-[11px] text-orange-700 font-semibold mt-1">2 Students reminder escalated</p>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(defaulterAgingMetrics.moderateAmount)}</div>
+              <p className="text-[11px] text-orange-700 font-semibold mt-1">{defaulterAgingMetrics.moderateCount} Student(s) reminder escalated</p>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs">
@@ -4589,8 +4780,8 @@ function FeesContent() {
                   <AlertCircle className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-extrabold text-slate-900">{fmt(90000)}</div>
-              <p className="text-[11px] text-rose-700 font-semibold mt-1">2 Students urgent recovery</p>
+              <div className="text-xl font-extrabold text-slate-900">{fmt(defaulterAgingMetrics.criticalAmount)}</div>
+              <p className="text-[11px] text-rose-700 font-semibold mt-1">{defaulterAgingMetrics.criticalCount} Student(s) urgent recovery</p>
             </div>
 
             <div className="bg-gradient-to-tr from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-xs">
@@ -4600,8 +4791,8 @@ function FeesContent() {
                   <Coins className="w-4 h-4" />
                 </div>
               </div>
-              <div className="text-xl font-extrabold text-white">{fmt(205000)}</div>
-              <p className="text-[11px] text-emerald-400 font-medium mt-1">6 Active Defaulters Filtered</p>
+              <div className="text-xl font-extrabold text-white">{fmt(defaulterAgingMetrics.totalAmount)}</div>
+              <p className="text-[11px] text-emerald-400 font-medium mt-1">{defaulterAgingMetrics.totalCount} Overdue Invoice(s) Live</p>
             </div>
           </div>
 
@@ -4903,15 +5094,45 @@ function FeesContent() {
               >
                 <option value="all">All Approval Statuses</option>
                 <option value="applied">Applied to Invoice</option>
-                <option value="approved">Approved (Pending Allocation)</option>
+                <option value="partially_applied">Partially Applied</option>
+                <option value="approved">Approved (Pending Posting)</option>
                 <option value="pending_approval">Pending Approval</option>
                 <option value="under_verification">Under Verification</option>
+                <option value="expired">Expired</option>
+                <option value="reversed">Reversed</option>
+                <option value="cancelled">Cancelled</option>
                 <option value="rejected">Rejected</option>
                 <option value="withdrawn">Withdrawn</option>
+              </select>
+
+              <select
+                value={concessionFilterBenefit}
+                onChange={(e) => setConcessionFilterBenefit(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="all">All Benefit Classifications</option>
+                <option value="fee_concession">Fee Concessions</option>
+                <option value="fee_waiver">Fee Waivers</option>
+                <option value="scholarship">Academy Scholarships</option>
+                <option value="sponsor_funding">Sponsor / Govt Funded</option>
               </select>
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleExpireStaleConcessions}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                  isEditMode
+                    ? 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
+                    : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+                title="Scan and expire unposted approved benefits past their valid_until expiry date"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Expire Stale</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -4941,113 +5162,183 @@ function FeesContent() {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-4">Student & Admission</th>
+                    <th className="py-3 px-4">Student &amp; Application</th>
                     <th className="py-3 px-4">Class</th>
-                    <th className="py-3 px-4">Scheme / Title</th>
-                    <th className="py-3 px-4">Category</th>
-                    <th className="py-3 px-4 text-center">Discount %</th>
-                    <th className="py-3 px-4 text-right">Amount Waived</th>
-                    <th className="py-3 px-4">Funding Source</th>
+                    <th className="py-3 px-4">Scheme / Classification</th>
+                    <th className="py-3 px-4 text-right">Approved</th>
+                    <th className="py-3 px-4 text-right">Posted / Reversed</th>
+                    <th className="py-3 px-4">Funding / Sponsor</th>
                     <th className="py-3 px-4 text-center">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4 text-right">Actions &amp; Trace</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredConcessions.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{c.student_name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          {c.admission_number} • <span className="text-primary-600">{c.application_number}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-slate-800">{c.standard || '—'}</td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{c.concession_name}</div>
-                        {c.approval_remarks && <div className="text-[10px] text-slate-500 italic mt-0.5">{c.approval_remarks}</div>}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="capitalize font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[10px]">
-                          {c.category.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center font-mono font-bold text-slate-800">
-                        {c.requested_percentage ? `${c.requested_percentage}%` : '—'}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-purple-700">
-                        {fmt(c.applied_amount > 0 ? c.applied_amount : (c.approved_amount > 0 ? c.approved_amount : c.requested_amount))}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-800">
-                          {c.funding_source === 'external_sponsor' ? (c.sponsor_name || 'External Sponsor') : 'Institute Fund'}
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          {c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : '—'}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          c.status === 'applied'
-                            ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                            : c.status === 'approved'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                            : c.status === 'pending_approval' || c.status === 'under_verification'
-                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                            : 'bg-rose-100 text-rose-800 border border-rose-200'
-                        }`}>
-                          {c.status.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        {c.status === 'pending_approval' || c.status === 'under_verification' ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleApproveConcession(c.id)}
-                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
-                                isEditMode
-                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                              }`}
-                              title={isEditMode ? 'Approve & Apply to Invoice' : 'Locked in View Mode'}
-                            >
-                              Approve
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRejectConcession(c.id)}
-                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
-                                isEditMode
-                                  ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
-                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                              }`}
-                              title={isEditMode ? 'Reject Application' : 'Locked in View Mode'}
-                            >
-                              Reject
-                            </button>
-                          </div>
-                        ) : c.status === 'approved' ? (
-                          <button
-                            type="button"
-                            onClick={() => handleApplyConcession(c.id)}
-                            className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
-                              isEditMode
-                                ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-xs'
-                                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                            }`}
-                            title={isEditMode ? 'Apply to Student Invoice' : 'Locked in View Mode'}
-                          >
-                            Apply to Invoice
-                          </button>
-                        ) : (
-                          <span className="text-[10px] text-slate-400 font-semibold capitalize">{c.status}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredConcessions
+                    .filter((c) => concessionFilterBenefit === 'all' || (c.benefit_type || 'fee_concession') === concessionFilterBenefit)
+                    .map((c) => {
+                      const remainingApprove = Math.max(0, Number(c.approved_amount || 0) - Number(c.applied_amount || 0))
+                      return (
+                        <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900">{c.student_name}</div>
+                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              {c.admission_number} • <span className="text-primary-600">{c.application_number}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 font-semibold text-slate-800">{c.standard || '—'}</td>
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900">{c.concession_name}</div>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="capitalize font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded text-[10px]">
+                                {(c.benefit_type || 'fee_concession').replace(/_/g, ' ')}
+                              </span>
+                              {c.waiver_scope && (
+                                <span className="uppercase font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded text-[10px]">
+                                  {c.waiver_scope}
+                                </span>
+                              )}
+                            </div>
+                            {c.valid_until && (
+                              <div className="text-[10px] text-amber-700 mt-0.5">Expires: {c.valid_until}</div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono">
+                            <span className="font-bold text-slate-900">{fmt(c.approved_amount || c.requested_amount)}</span>
+                            {remainingApprove > 0 && c.status === 'approved' && (
+                              <span className="block text-[10px] text-amber-700 font-semibold">Pending post</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono">
+                            <span className="font-bold text-emerald-700">{fmt(c.applied_amount)}</span>
+                            {(c.reversed_amount ?? 0) > 0 && (
+                              <span className="block text-[10px] text-rose-600 font-semibold">
+                                Rev: -{fmt(c.reversed_amount)}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-slate-800">
+                              {c.funding_source === 'external_sponsor' || c.funding_source === 'government'
+                                ? (c.sponsor_name || 'External Sponsor')
+                                : 'Institute Fund'}
+                            </div>
+                            {(c.funding_source === 'external_sponsor' || c.funding_source === 'government') && (
+                              <div className="text-[10px] text-amber-700 font-semibold mt-0.5">
+                                Recv: {fmt(c.sponsor_received_amount)} / {fmt(c.sponsor_sanctioned_amount || c.approved_amount)} ({c.sponsor_settlement_status || 'pending'})
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              c.status === 'applied'
+                                ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                                : c.status === 'approved' || c.status === 'partially_applied'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                : c.status === 'pending_approval' || c.status === 'under_verification' || c.status === 'submitted'
+                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                : 'bg-rose-100 text-rose-800 border border-rose-200'
+                            }`}>
+                              {c.status.replace(/_/g, ' ').toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1 flex-wrap">
+                              {(c.status === 'pending_approval' || c.status === 'under_verification' || c.status === 'submitted') && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApproveConcession(c.id, false)}
+                                    className={`px-2 py-1 rounded-lg text-[11px] font-bold ${
+                                      isEditMode ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    }`}
+                                    title="Approve without posting to invoice yet"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApproveConcession(c.id, true)}
+                                    className={`px-2 py-1 rounded-lg text-[11px] font-bold ${
+                                      isEditMode ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    }`}
+                                    title="Approve and post directly to student invoice"
+                                  >
+                                    Approve &amp; Post
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRejectConcession(c.id)}
+                                    className={`px-2 py-1 rounded-lg text-[11px] font-bold ${
+                                      isEditMode ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              {(c.status === 'approved' || c.status === 'partially_applied') && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApplyConcession(c.id)}
+                                    className={`px-2 py-1 rounded-lg text-[11px] font-bold ${
+                                      isEditMode ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    Post to Invoice
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCancelConcession(c.id)}
+                                    className={`px-2 py-1 rounded-lg text-[11px] font-bold ${
+                                      isEditMode ? 'bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              )}
+                              {c.status === 'applied' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleReverseConcession(c.id)}
+                                  className={`px-2 py-1 rounded-lg text-[11px] font-bold ${
+                                    isEditMode ? 'bg-rose-100 text-rose-800 hover:bg-rose-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                  }`}
+                                  title="Immutably reverse posted concession and restore invoice balance"
+                                >
+                                  Reverse
+                                </button>
+                              )}
+                              {(c.funding_source === 'external_sponsor' || c.funding_source === 'government') &&
+                                ['approved', 'partially_applied', 'applied'].includes(c.status) &&
+                                c.sponsor_settlement_status !== 'settled' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenSponsorSettlement(c)}
+                                    className={`px-2 py-1 rounded-lg text-[11px] font-bold ${
+                                      isEditMode ? 'bg-amber-100 text-amber-900 hover:bg-amber-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    Settle
+                                  </button>
+                                )}
+                              <button
+                                type="button"
+                                onClick={() => setTraceTarget({ type: 'application', id: c.id })}
+                                className="px-2 py-1 rounded-lg text-[11px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                                title="Open full transaction traceability chain"
+                              >
+                                Trace
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   {filteredConcessions.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400 text-xs">
+                      <td colSpan={8} className="py-12 text-center text-slate-400 text-xs">
                         No concession records match current criteria.
                       </td>
                     </tr>
@@ -6486,19 +6777,32 @@ function FeesContent() {
               </>
             )}
 
-            {/* Justification / Notes */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Justification / Resolution Notes <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                required
-                value={concessionRemarks}
-                onChange={(e) => setConcessionRemarks(e.target.value)}
-                rows={2}
-                placeholder="Audit reason (e.g. Sibling discount approved as per management policy, admission campaign)..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+            {/* Optional Validity Expiry & Justification Notes */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Valid Until <span className="text-slate-400 font-normal">(Optional Expiry)</span>
+                </label>
+                <input
+                  type="date"
+                  value={concessionValidUntil}
+                  onChange={(e) => setConcessionValidUntil(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Justification / Resolution Notes <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  value={concessionRemarks}
+                  onChange={(e) => setConcessionRemarks(e.target.value)}
+                  rows={2}
+                  placeholder="Audit reason (e.g. Sibling discount approved as per management policy, admission campaign)..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
@@ -7119,6 +7423,108 @@ function FeesContent() {
           )}
         </Modal>
       )}
+
+      {/* Sponsor / Government Settlement Recovery Modal */}
+      {sponsorSettlementTarget && (
+        <Modal
+          isOpen={Boolean(sponsorSettlementTarget)}
+          onClose={() => setSponsorSettlementTarget(null)}
+          title={`Record Sponsor Settlement — ${sponsorSettlementTarget.application_number}`}
+          size="md"
+        >
+          <form onSubmit={handleSubmitSponsorSettlement} className="space-y-4">
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+              <p className="font-bold">{sponsorSettlementTarget.sponsor_name || 'External Sponsor / Govt Scheme'}</p>
+              <p className="mt-0.5">
+                Student: <strong>{sponsorSettlementTarget.student_name}</strong> · Sanctioned:{' '}
+                <strong>{fmt(sponsorSettlementTarget.sponsor_sanctioned_amount || sponsorSettlementTarget.approved_amount)}</strong>{' '}
+                · Received: <strong>{fmt(sponsorSettlementTarget.sponsor_received_amount)}</strong>
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Received Amount (₹)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  required
+                  value={settlementForm.amount}
+                  onChange={(e) => setSettlementForm((p) => ({ ...p, amount: Number(e.target.value) }))}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Received Date</label>
+                <input
+                  type="date"
+                  required
+                  value={settlementForm.received_date}
+                  onChange={(e) => setSettlementForm((p) => ({ ...p, received_date: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Payment Mode</label>
+                <select
+                  value={settlementForm.payment_method}
+                  onChange={(e) => setSettlementForm((p) => ({ ...p, payment_method: e.target.value }))}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 bg-white"
+                >
+                  <option value="bank_transfer">Bank Transfer (NEFT/RTGS)</option>
+                  <option value="cheque">Cheque / DD</option>
+                  <option value="upi">UPI</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">UTR / Grant Reference #</label>
+                <input
+                  type="text"
+                  value={settlementForm.reference_number}
+                  onChange={(e) => setSettlementForm((p) => ({ ...p, reference_number: e.target.value }))}
+                  placeholder="UTR / Cheque / Sanctions Ref"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2"
+                />
+              </div>
+            </div>
+            <div className="text-xs">
+              <label className="block font-bold text-slate-700 mb-1">Remarks</label>
+              <input
+                type="text"
+                value={settlementForm.remarks}
+                onChange={(e) => setSettlementForm((p) => ({ ...p, remarks: e.target.value }))}
+                placeholder="Tranche notes or donor remarks"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSponsorSettlementTarget(null)}
+                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold"
+              >
+                Record Sponsor Funds
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Drill-Down Financial Traceability Modal */}
+      <ConcessionTraceModal
+        entityType={traceTarget?.type ?? null}
+        entityId={traceTarget?.id ?? null}
+        onClose={() => setTraceTarget(null)}
+        onNavigateStudent={(sid) => navigate(`/students/${sid}`)}
+      />
     </div>
   )
 }

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Service managing payment lifecycle states, ERP approval rules, audited modifications, receipt versioning, and refunds.
 #  */
@@ -168,10 +168,12 @@ async def execute_refund_disbursement(
     refund.processed_by_id = current_user_id
     refund.updated_at = now
 
-    # Synchronize FeeInvoice ledger
+    # Synchronize FeeInvoice ledger with row-level lock
     invoice = None
     if refund.invoice_id:
-        inv_res = await db.execute(select(FeeInvoice).where(FeeInvoice.id == refund.invoice_id))
+        inv_res = await db.execute(
+            select(FeeInvoice).where(FeeInvoice.id == refund.invoice_id).with_for_update(of=FeeInvoice)
+        )
         invoice = inv_res.scalar_one_or_none()
     elif refund.payment_id:
         alloc_res = await db.execute(
@@ -179,7 +181,9 @@ async def execute_refund_disbursement(
         )
         alloc = alloc_res.scalars().first()
         if alloc:
-            inv_res = await db.execute(select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id))
+            inv_res = await db.execute(
+                select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id).with_for_update(of=FeeInvoice)
+            )
             invoice = inv_res.scalar_one_or_none()
 
     if invoice:
@@ -256,10 +260,10 @@ async def execute_payment_posting(
     )
     allocations = alloc_res.scalars().all()
 
-    # Apply allocations to invoices & installments
+    # Apply allocations to invoices & installments with row-level lock
     for alloc in allocations:
         inv_res = await db.execute(
-            select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id)
+            select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id).with_for_update(of=FeeInvoice)
         )
         invoice = inv_res.scalar_one_or_none()
         if not invoice:

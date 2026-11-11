@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-09
+#  * @updated     2026-11-11
 #  *
 #  * @description SQLAlchemy models defining financial transactions, ERP payment workflow lifecycle, receipt versioning, and refunds.
 #  */
@@ -226,6 +226,7 @@ class Refund(Base):
     reason: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="completed", index=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     
     requested_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
     approved_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)

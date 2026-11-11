@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -119,6 +119,7 @@ class RefundRequest(BaseModel):
     reference_number: Optional[str] = None
     notes: Optional[str] = None
     process_now: Optional[bool] = False
+    idempotency_key: Optional[str] = None
 
 
 class RefundRejectRequest(BaseModel):
@@ -944,8 +945,30 @@ async def create_payment_refund(
     Creates a refund request linked directly to an existing posted payment.
     Enforces that refund cannot exceed remaining refundable collection balance.
     """
+    # 0. Idempotency check
+    if data.idempotency_key:
+        idem_res = await db.execute(
+            select(Refund).where(
+                Refund.payment_id == payment_id,
+                Refund.idempotency_key == data.idempotency_key,
+            )
+        )
+        existing_refund = idem_res.scalar_one_or_none()
+        if existing_refund:
+            return {
+                "refund_id": existing_refund.id,
+                "payment_id": existing_refund.payment_id,
+                "reference_number": existing_refund.reference_number,
+                "amount": float(existing_refund.amount),
+                "status": existing_refund.status,
+                "message": "Idempotent duplicate refund request returned safely",
+            }
+
     pay_res = await db.execute(
-        select(Payment).options(selectinload(Payment.allocations), selectinload(Payment.student)).where(Payment.id == payment_id)
+        select(Payment)
+        .options(selectinload(Payment.allocations), selectinload(Payment.student))
+        .where(Payment.id == payment_id)
+        .with_for_update(of=Payment)
     )
     payment = pay_res.scalar_one_or_none()
     if not payment:
@@ -1001,6 +1024,7 @@ async def create_payment_refund(
         reason=data.reason,
         notes=data.notes,
         status=initial_status,
+        idempotency_key=data.idempotency_key,
         requested_by_id=current_user.id,
         processed_by_id=current_user.id if initial_status == "completed" else None,
         approved_by_id=current_user.id if initial_status == "completed" else None,
@@ -1048,7 +1072,7 @@ async def approve_refund(
             detail="Insufficient permissions: requires 'payments:refund_approve' privilege.",
         )
     """Approves a requested refund with Segregation of Duties."""
-    result = await db.execute(select(Refund).where(Refund.id == refund_id))
+    result = await db.execute(select(Refund).where(Refund.id == refund_id).with_for_update(of=Refund))
     refund = result.scalar_one_or_none()
     if not refund:
         raise HTTPException(status_code=404, detail="Refund record not found")
@@ -1095,7 +1119,7 @@ async def process_refund(
             detail="Insufficient permissions: requires 'payments:refund_process' privilege.",
         )
     """Processes disbursement for an approved refund."""
-    result = await db.execute(select(Refund).where(Refund.id == refund_id))
+    result = await db.execute(select(Refund).where(Refund.id == refund_id).with_for_update(of=Refund))
     refund = result.scalar_one_or_none()
     if not refund:
         raise HTTPException(status_code=404, detail="Refund record not found")
@@ -1106,6 +1130,44 @@ async def process_refund(
     await execute_refund_disbursement(db, refund, current_user.id)
     await db.commit()
     return {"message": "Refund disbursed and completed successfully", "refund_id": refund.id, "status": "completed"}
+
+
+@router.post("/refunds/{refund_id}/reject")
+async def reject_refund(
+    refund_id: int,
+    data: RefundRejectRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    can_approve = await has_permission(db, current_user, "payments", "refund_approve")
+    if not can_approve:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'payments:refund_approve' privilege.",
+        )
+    result = await db.execute(select(Refund).where(Refund.id == refund_id).with_for_update(of=Refund))
+    refund = result.scalar_one_or_none()
+    if not refund:
+        raise HTTPException(status_code=404, detail="Refund record not found")
+    check_institution_access(refund.institution_id, current_user)
+    if refund.status not in ("requested", "approved"):
+        raise HTTPException(status_code=400, detail=f"Cannot reject refund in '{refund.status}' state")
+
+    old_status = refund.status
+    refund.status = "rejected"
+    refund.notes = f"{refund.notes + ' | ' if refund.notes else ''}Rejected: {data.reason}"
+    await log_payment_audit(
+        db,
+        user_id=current_user.id,
+        action="refund_rejected",
+        payment_id=refund.payment_id or 0,
+        old_data={"status": old_status},
+        new_data={"status": "rejected", "refund_id": refund.id},
+        reason=data.reason,
+        severity="warning",
+    )
+    await db.commit()
+    return {"message": "Refund request rejected", "refund_id": refund.id, "status": "rejected"}
 
 
 @router.get("/refunds/")
@@ -1559,6 +1621,7 @@ async def reverse_payment(
         select(Payment)
         .options(selectinload(Payment.allocations), selectinload(Payment.receipts), selectinload(Payment.student))
         .where(Payment.id == payment_id)
+        .with_for_update(of=Payment)
     )
     payment = result.scalar_one_or_none()
     if not payment:
@@ -1572,7 +1635,7 @@ async def reverse_payment(
     if payment.status in ("posted", "completed"):
         for alloc in payment.allocations:
             inv_result = await db.execute(
-                select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id)
+                select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id).with_for_update(of=FeeInvoice)
             )
             invoice = inv_result.scalar_one_or_none()
             if invoice:
@@ -1589,7 +1652,7 @@ async def reverse_payment(
                 inst_result = await db.execute(
                     select(FeeInstallment).where(
                         FeeInstallment.id == alloc.installment_id
-                    )
+                    ).with_for_update(of=FeeInstallment)
                 )
                 installment = inst_result.scalar_one_or_none()
                 if installment:
@@ -1686,6 +1749,8 @@ async def build_receipt_response(
     invoice = None
     historical_payments = []
     previous_payments_total = Decimal("0.00")
+    gross_fee_amount = Decimal(str(receipt_data.get("gross_fee") or receipt_data.get("total_fees") or payment.amount))
+    concession_amt = Decimal(str(receipt_data.get("concession_amount") or "0.00"))
     total_fee_amount = Decimal(str(receipt_data.get("total_fees") or payment.amount))
 
     if target_invoice_id:
@@ -1694,7 +1759,13 @@ async def build_receipt_response(
         )
         invoice = inv_res.scalar_one_or_none()
         if invoice:
-            total_fee_amount = invoice.total_amount
+            gross_fee_amount = Decimal(str(invoice.total_amount or 0))
+            concession_amt = Decimal(str(invoice.discount_amount or 0))
+            total_fee_amount = (
+                Decimal(str(invoice.net_amount))
+                if invoice.net_amount is not None
+                else max(Decimal("0.00"), gross_fee_amount - concession_amt)
+            )
 
         # Query all completed previous payments allocated to this same invoice
         hist_stmt = (
@@ -1955,7 +2026,9 @@ async def build_receipt_response(
         "reprint_count": receipt.reprint_count,
         "is_duplicate": receipt.reprint_count > 0,
         "amendments": receipt_data.get("amendments", []),
-        # Backward compatibility aliases
+        # Backward compatibility & SSOT Concession Breakdown
+        "gross_fee": float(gross_fee_amount),
+        "concession_amount": float(concession_amt),
         "total_fees": float(total_fee_amount),
         "total_paid": float(total_paid_to_date),
         "outstanding_after": float(outstanding_balance),
@@ -1969,7 +2042,7 @@ async def build_receipt_response(
             institution_id=user_inst,
             user=current_user,
             data=res_payload,
-            numeric_fields=["amount", "total_fees", "total_paid", "outstanding_after", "previous_paid"],
+            numeric_fields=["amount", "gross_fee", "concession_amount", "total_fees", "total_paid", "outstanding_after", "previous_paid"],
             module="fees",
         )
         if "fee_summary" in res_payload and isinstance(res_payload["fee_summary"], dict):

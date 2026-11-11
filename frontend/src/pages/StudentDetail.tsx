@@ -36,7 +36,7 @@ import { useAuthStore, isUserAdmin } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { StatusBadge } from '../components/Badge'
 import type { StudentDocumentItem, AcademicActivityRegisterItem } from '../types'
-import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, LockedLinkButton } from '../components/common'
+import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, LockedLinkButton, ConcessionTraceModal } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
 
 const fmt = (n: number) =>
@@ -70,6 +70,10 @@ export default function StudentDetailPage() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [showIdCardModal, setShowIdCardModal] = useState(false)
   const [selectedOnlineInvoice, setSelectedOnlineInvoice] = useState<any | null>(null)
+  const [traceTarget, setTraceTarget] = useState<{
+    type: 'application' | 'allocation' | 'invoice' | 'student'
+    id: number
+  } | null>(null)
 
   // Student Lifecycle Modals State
   const [showExitModal, setShowExitModal] = useState(false)
@@ -1125,27 +1129,80 @@ export default function StudentDetailPage() {
           {/* TAB 6: FEES */}
           {activeTab === 'Fees' && (
             <div className="space-y-6">
+              {/* Phase 4D Governed Student Financial & Benefit Statement */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <p className="text-[10px] font-bold uppercase text-slate-500">Original / Gross Fee</p>
+                  <p className="text-sm font-extrabold text-slate-900 mt-0.5">
+                    {fmt(fees.summary?.gross_fees ?? ((fees.summary?.total_fees || 0) + (fees.summary?.total_concessions || 0)))}
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200">
+                  <p className="text-[10px] font-bold uppercase text-blue-700">Approved Benefits</p>
+                  <p className="text-sm font-extrabold text-blue-900 mt-0.5">{fmt(fees.summary?.approved_benefits ?? fees.summary?.total_concessions ?? 0)}</p>
+                  {(fees.summary?.approved_unapplied ?? 0) > 0 && (
+                    <p className="text-[10px] text-amber-700 font-semibold">Pending post: {fmt(fees.summary?.approved_unapplied ?? 0)}</p>
+                  )}
+                </div>
+                <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                  <p className="text-[10px] font-bold uppercase text-emerald-700">Applied Concessions</p>
+                  <p className="text-sm font-extrabold text-emerald-900 mt-0.5">{fmt(fees.summary?.applied_concessions ?? fees.summary?.total_concessions ?? 0)}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-purple-50/70 border border-purple-200">
+                  <p className="text-[10px] font-bold uppercase text-purple-700">Fee Waivers</p>
+                  <p className="text-sm font-extrabold text-purple-900 mt-0.5">{fmt(fees.summary?.fee_waivers ?? 0)}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-200">
+                  <p className="text-[10px] font-bold uppercase text-indigo-700">Scholarships</p>
+                  <p className="text-sm font-extrabold text-indigo-900 mt-0.5">{fmt(fees.summary?.scholarships ?? 0)}</p>
+                  {(fees.summary?.sponsor_funding ?? 0) > 0 && (
+                    <p className="text-[10px] text-amber-700 font-semibold">Sponsor: {fmt(fees.summary?.sponsor_funding ?? 0)}</p>
+                  )}
+                </div>
+                <div className="p-3 rounded-xl bg-emerald-900 text-white">
+                  <p className="text-[10px] font-bold uppercase text-emerald-200">Net Paid</p>
+                  <p className="text-sm font-extrabold mt-0.5">{fmt(fees.summary?.total_paid || 0)}</p>
+                  {(fees.summary?.refunds_completed ?? 0) > 0 && (
+                    <p className="text-[10px] text-rose-200">Refunds: -{fmt(fees.summary?.refunds_completed ?? 0)}</p>
+                  )}
+                </div>
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+                  <p className="text-[10px] font-bold uppercase text-amber-800">Net Payable / Due</p>
+                  <p className="text-sm font-extrabold text-rose-700 mt-0.5">{fmt(fees.summary?.outstanding || 0)}</p>
+                  <p className="text-[10px] text-slate-600">Net Fee: {fmt(fees.summary?.net_fees ?? fees.summary?.total_fees ?? 0)}</p>
+                </div>
+              </div>
+
               {/* Fee Commitment Action Banner */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200/80 rounded-2xl p-5 shadow-xs">
                 <div>
                   <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-primary-600" />
-                    <span>Student Fee Commitment & Ledger</span>
+                    <span>Student Fee Commitment &amp; Ledger</span>
                   </h3>
                   <p className="text-xs text-gray-600 mt-1">
                     Manage agreed student package amount, scholarships/discounts, active fee structure, and invoices.
                   </p>
                 </div>
-                {canEdit && (
-                  <LockedButton
-                    isEditMode={isEditMode}
-                    onClick={handleOpenAdjustFees}
-                    icon={Edit3}
-                    size="sm"
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTraceTarget({ type: 'student', id: studentId })}
+                    className="px-3 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-xs font-bold"
                   >
-                    Adjust Student Fees
-                  </LockedButton>
-                )}
+                    Full Traceability Chain
+                  </button>
+                  {canEdit && (
+                    <LockedButton
+                      isEditMode={isEditMode}
+                      onClick={handleOpenAdjustFees}
+                      icon={Edit3}
+                      size="sm"
+                    >
+                      Adjust Student Fees
+                    </LockedButton>
+                  )}
+                </div>
               </div>
 
               {/* Invoices */}
@@ -1163,7 +1220,7 @@ export default function StudentDetailPage() {
                         <th className="py-2 px-3">Paid</th>
                         <th className="py-2 px-3">Outstanding</th>
                         <th className="py-2 px-3">Status</th>
-                        <th className="py-2 px-3 text-right">Online Pay</th>
+                        <th className="py-2 px-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -1187,7 +1244,14 @@ export default function StudentDetailPage() {
                           <td className="py-2 px-3">
                             <StatusBadge status={inv.status} />
                           </td>
-                          <td className="py-2 px-3 text-right">
+                          <td className="py-2 px-3 text-right whitespace-nowrap space-x-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setTraceTarget({ type: 'invoice', id: inv.id })}
+                              className="inline-flex items-center px-2 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
+                            >
+                              Trace
+                            </button>
                             {inv.outstanding_amount > 0 && (
                               <button
                                 type="button"
@@ -1206,45 +1270,73 @@ export default function StudentDetailPage() {
                 </div>
               </div>
 
-              {/* Applied Concessions & Scholarships */}
+              {/* Applied Concessions, Waivers & Scholarships */}
               {fees.concessions && fees.concessions.length > 0 && (
                 <div className="space-y-3 pt-4 border-t border-gray-100">
                   <div className="flex items-center justify-between">
                     <h4 className="font-bold text-gray-900 text-sm flex items-center gap-2">
                       <Percent className="w-4 h-4 text-emerald-600" />
-                      <span>Applied Concessions & Scholarships</span>
+                      <span>Concessions, Waivers &amp; Scholarship Ledger ({fees.concessions.length})</span>
                     </h4>
                     <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                      Total Waived: {fmt(fees.summary?.total_concessions || 0)}
+                      Posted Reductions: {fmt(fees.summary?.applied_concessions ?? fees.summary?.total_concessions ?? 0)}
                     </span>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                    <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                        <tr className="border-b border-gray-200 text-gray-500 uppercase font-semibold">
                           <th className="py-2 px-3">Application No</th>
-                          <th className="py-2 px-3">Scheme / Title</th>
-                          <th className="py-2 px-3">Category</th>
-                          <th className="py-2 px-3">Waived Amount</th>
+                          <th className="py-2 px-3">Scheme &amp; Type</th>
+                          <th className="py-2 px-3 text-right">Approved</th>
+                          <th className="py-2 px-3 text-right">Posted / Reversed</th>
                           <th className="py-2 px-3">Funding Source</th>
                           <th className="py-2 px-3">Status</th>
-                          <th className="py-2 px-3">Resolution Details</th>
+                          <th className="py-2 px-3">Remarks / Audit</th>
+                          <th className="py-2 px-3 text-right">Trace</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {fees.concessions.map((c: any) => (
                           <tr key={c.id} className="hover:bg-gray-50">
                             <td className="py-2 px-3 font-mono font-semibold text-primary-700">{c.application_number}</td>
-                            <td className="py-2 px-3 font-medium text-gray-900">{c.concession_name}</td>
-                            <td className="py-2 px-3 capitalize text-gray-600">{c.category}</td>
-                            <td className="py-2 px-3 font-bold text-emerald-700">{fmt(c.applied_amount || c.approved_amount)}</td>
-                            <td className="py-2 px-3 capitalize text-gray-600">{c.funding_source}</td>
                             <td className="py-2 px-3">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                              <span className="font-semibold text-gray-900 block">{c.concession_name}</span>
+                              <span className="text-[10px] uppercase text-indigo-600 font-semibold">
+                                {(c.benefit_type || c.category || 'fee_concession').replace(/_/g, ' ')}
+                                {c.waiver_scope ? ` (${c.waiver_scope})` : ''}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-right font-semibold">{fmt(c.approved_amount || c.requested_amount)}</td>
+                            <td className="py-2 px-3 text-right">
+                              <span className="font-bold text-emerald-700">{fmt(c.applied_amount)}</span>
+                              {(c.reversed_amount ?? 0) > 0 && (
+                                <span className="block text-[10px] text-rose-600">Rev: -{fmt(c.reversed_amount)}</span>
+                              )}
+                            </td>
+                            <td className="py-2 px-3 capitalize text-gray-600">
+                              {c.sponsor_name || c.funding_source}
+                              {c.sponsor_settlement_status && c.funding_source !== 'institute' && (
+                                <span className="block text-[10px] text-amber-700">Settlement: {c.sponsor_settlement_status}</span>
+                              )}
+                            </td>
+                            <td className="py-2 px-3">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
                                 {c.status}
                               </span>
                             </td>
-                            <td className="py-2 px-3 text-xs text-gray-500">{c.approval_remarks || 'Approved'}</td>
+                            <td className="py-2 px-3 text-gray-500">
+                              {c.cancellation_reason || c.rejection_reason || c.approval_remarks || '—'}
+                            </td>
+                            <td className="py-2 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => setTraceTarget({ type: 'application', id: c.id })}
+                                className="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold hover:bg-indigo-100"
+                              >
+                                Trace
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2636,6 +2728,13 @@ export default function StudentDetailPage() {
             })
           }
         }}
+      />
+
+      {/* Financial Transaction Traceability Modal */}
+      <ConcessionTraceModal
+        entityType={traceTarget?.type ?? null}
+        entityId={traceTarget?.id ?? null}
+        onClose={() => setTraceTarget(null)}
       />
     </div>
   )

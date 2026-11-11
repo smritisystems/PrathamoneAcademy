@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Complete Lead Management & CRM workspace featuring KPI metrics, Kanban pipeline,
  */
@@ -30,7 +30,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-import { leadsApi, standardsApi, boardsApi, usersApi, academicYearsApi } from '../api/endpoints'
+import { leadsApi, standardsApi, boardsApi, usersApi, academicYearsApi, feeStructuresApi, concessionsApi } from '../api/endpoints'
 import type {
   LeadItem, LeadDossierResponse, LeadMetricsSummary,
   LeadKanbanResponse, Standard, Board, User, AcademicYear
@@ -2028,7 +2028,38 @@ function ConvertToAdmissionModal({
   const [admissionNumber, setAdmissionNumber] = useState('')
   const [standardId, setStandardId] = useState<number>(lead.standard_id || standards[0]?.id || 1)
   const [academicYearId, setAcademicYearId] = useState<number>(lead.academic_year_id || academicYears[0]?.id || 1)
+  const [feeStructureId, setFeeStructureId] = useState<number | ''>('')
+  const [concessionTypeId, setConcessionTypeId] = useState<number | ''>('')
+  const [concessionAmount, setConcessionAmount] = useState<string>('')
+  const [concessionPercentage, setConcessionPercentage] = useState<string>('')
+  const [concessionRemarks, setConcessionRemarks] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const { data: feeStructures = [] } = useQuery({
+    queryKey: ['lead-convert-fee-structures', academicYearId, standardId],
+    queryFn: async () => {
+      try {
+        const res = await feeStructuresApi.list({ academic_year_id: academicYearId, standard_id: standardId })
+        return res.data || []
+      } catch {
+        return []
+      }
+    },
+    enabled: isOpen,
+  })
+
+  const { data: concessionTypes = [] } = useQuery({
+    queryKey: ['lead-convert-concession-types'],
+    queryFn: async () => {
+      try {
+        const res = await concessionsApi.getTypes({ is_active: true })
+        return res.data || []
+      } catch {
+        return []
+      }
+    },
+    enabled: isOpen,
+  })
 
   const duplicates = lead.potential_duplicate_students || []
 
@@ -2060,6 +2091,11 @@ function ConvertToAdmissionModal({
         guardian_phone: lead.guardian_phone || lead.phone,
         guardian_relation: lead.guardian_relation || 'Parent',
         remarks: `Converted from Lead ${lead.lead_number}`,
+        fee_structure_id: feeStructureId ? Number(feeStructureId) : undefined,
+        concession_type_id: concessionTypeId ? Number(concessionTypeId) : undefined,
+        concession_amount: concessionAmount ? Number(concessionAmount) : undefined,
+        concession_percentage: concessionPercentage ? Number(concessionPercentage) : undefined,
+        concession_remarks: concessionRemarks.trim() || undefined,
       })
       toast.success(res.data.message)
       onSuccess(res.data)
@@ -2184,6 +2220,70 @@ function ConvertToAdmissionModal({
               className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs"
             />
           </div>
+        </div>
+
+        {/* Fee Plan & Admission Offer / Concession Nomination (Optional) */}
+        <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200/80 space-y-2.5 text-xs">
+          <p className="font-bold text-emerald-900">
+            Fee Structure &amp; Admission Concession / Scholarship Offer (Optional)
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Assign Fee Plan / Structure</label>
+              <select
+                value={feeStructureId}
+                onChange={(e) => setFeeStructureId(e.target.value ? Number(e.target.value) : '')}
+                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white"
+              >
+                <option value="">Assign later in Fees</option>
+                {feeStructures.map((fs: any) => (
+                  <option key={fs.id} value={fs.id}>
+                    {fs.name} (₹{Number(fs.amount || 0).toLocaleString('en-IN')})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Admission Concession / Offer</label>
+              <select
+                value={concessionTypeId}
+                onChange={(e) => setConcessionTypeId(e.target.value ? Number(e.target.value) : '')}
+                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white"
+              >
+                <option value="">No admission benefit</option>
+                {concessionTypes.map((ct: any) => (
+                  <option key={ct.id} value={ct.id}>
+                    {ct.name} ({ct.calculation_type === 'percentage' ? `${ct.default_value}%` : ct.calculation_type === 'full_waiver' ? '100% Waiver' : `₹${ct.default_value}`})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {concessionTypeId && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                type="number"
+                placeholder="Requested Amount (₹)"
+                value={concessionAmount}
+                onChange={(e) => setConcessionAmount(e.target.value)}
+                className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white"
+              />
+              <input
+                type="number"
+                placeholder="Or % Discount"
+                value={concessionPercentage}
+                onChange={(e) => setConcessionPercentage(e.target.value)}
+                className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white"
+              />
+              <input
+                type="text"
+                placeholder="Offer notes / coupon..."
+                value={concessionRemarks}
+                onChange={(e) => setConcessionRemarks(e.target.value)}
+                className="px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white"
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-2 pt-3 border-t">

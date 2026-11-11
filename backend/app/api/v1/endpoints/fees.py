@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -22,7 +22,7 @@ from sqlalchemy import select, func, and_, or_, desc, asc, case
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, is_sysadmin
+from app.core.deps import get_current_active_user, require_role, is_sysadmin, get_data_environment
 import uuid
 import json
 from app.models.user import AuditLog
@@ -43,6 +43,12 @@ from app.models.academic_year import AcademicYear
 from app.models.payment import Payment, PaymentReceipt
 from app.services.codex_service import CodeXService
 from app.services.sequence import generate_next_invoice_number
+from app.services.concession_service import ConcessionWorkflowService
+from app.services.financial_governance_service import (
+    FinancialGovernanceService,
+    FinancialFilter,
+    _latest_enrollment_sq,
+)
 from app.services.student_metrics import (
     get_authoritative_student_count,
     get_authoritative_student_counts_by_board,
@@ -538,6 +544,7 @@ async def adjust_student_fees(
         invoice.total_amount = package_amt
         invoice.discount_amount = disc_amt
         invoice.net_amount = net_amt
+        overpayment_credit = max(Decimal("0"), invoice.paid_amount - net_amt)
         invoice.outstanding_amount = max(Decimal("0"), net_amt - invoice.paid_amount)
         if invoice.outstanding_amount == Decimal("0"):
             invoice.status = "paid"
@@ -545,47 +552,29 @@ async def adjust_student_fees(
             invoice.status = "partial"
         else:
             invoice.status = "unpaid"
-        invoice.notes = (invoice.notes or "") + f" | Adjusted by {current_user.username}: {reason}"
+        credit_note = f" [Credit Surplus ₹{overpayment_credit:,.2f}]" if overpayment_credit > 0 else ""
+        invoice.notes = (invoice.notes or "") + f" | Adjusted by {current_user.username}: {reason}{credit_note}"
 
-    # Synchronize invoice line items
+    # Synchronize invoice line items proportionally including discount_amount
+    await ConcessionWorkflowService._reconcile_invoice_items_discount(db, invoice, disc_amt)
     items_res = await db.execute(select(FeeInvoiceItem).where(FeeInvoiceItem.invoice_id == invoice.id))
     inv_items = items_res.scalars().all()
     if inv_items:
-        primary_item = inv_items[0]
-        primary_item.amount = package_amt
-        primary_item.net_amount = net_amt
-        primary_item.description = f"Annual Academic & Coaching Tuition Fee (Adjusted: {reason})"
+        if len(inv_items) == 1:
+            inv_items[0].amount = package_amt
+            inv_items[0].discount_amount = disc_amt
+            inv_items[0].net_amount = net_amt
+            inv_items[0].description = f"Annual Academic & Coaching Tuition Fee (Adjusted: {reason})"
     else:
         new_item = FeeInvoiceItem(
             invoice_id=invoice.id,
+            fee_structure_id=assignment.fee_structure_id,
             amount=package_amt,
+            discount_amount=disc_amt,
             net_amount=net_amt,
             description=f"Annual Academic & Coaching Tuition Fee (Adjusted: {reason})",
         )
         db.add(new_item)
-
-    # Recalculate installments if present
-    inst_res = await db.execute(
-        select(FeeInstallment)
-        .where(FeeInstallment.invoice_id == invoice.id)
-        .order_by(FeeInstallment.installment_number)
-    )
-    insts = inst_res.scalars().all()
-    if insts:
-        rem_net = net_amt
-        per_inst = round(net_amt / len(insts), 2)
-        for idx, inst in enumerate(insts):
-            if idx == len(insts) - 1:
-                inst.amount = rem_net
-            else:
-                inst.amount = per_inst
-                rem_net -= per_inst
-            if inst.paid_amount >= inst.amount - Decimal("0.01"):
-                inst.status = "paid"
-            elif inst.paid_amount > Decimal("0.00"):
-                inst.status = "partial"
-            else:
-                inst.status = "unpaid"
 
     # Log audit entry
     audit = AuditLog(
@@ -1013,25 +1002,30 @@ async def get_fees_overview(
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
     institution_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     """
     Consolidated fees overview metrics with cascading filters:
     - Summary figures (obligation, collected, outstanding, rate, student count)
-    - Board & Batch breakdowns
-    - Monthly collection trend
+    - Board & Batch breakdowns (using deduplicated latest enrollment)
+    - Monthly collection trend & governed concession/waiver/scholarship breakdowns
     - Recent payments
     """
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
     effective_inst_id = institution_id
     if institution_id:
         inst_has_students = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
         if inst_has_students == 0:
             effective_inst_id = None
 
+    latest_enr = _latest_enrollment_sq()
+
     # Base invoice query with student receivables breakdown
     inv_query = (
         select(
+            func.coalesce(func.sum(FeeInvoice.total_amount), 0).label("gross_obligation"),
             func.coalesce(func.sum(FeeInvoice.net_amount), 0).label("total_obligation"),
             func.coalesce(func.sum(FeeInvoice.paid_amount), 0).label("total_collected"),
             func.coalesce(
@@ -1057,14 +1051,16 @@ async def get_fees_overview(
         )
         .join(Student, FeeInvoice.student_id == Student.id)
         .outerjoin(
-            StudentEnrollment,
-            (FeeInvoice.student_id == StudentEnrollment.student_id)
-            & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
+            latest_enr,
+            (FeeInvoice.student_id == latest_enr.c.student_id)
+            & (FeeInvoice.academic_year_id == latest_enr.c.academic_year_id),
         )
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Division, latest_enr.c.division_id == Division.id)
         .where(FeeInvoice.status != "cancelled")
     )
 
+    if is_demo_filter is not None:
+        inv_query = inv_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         inv_query = inv_query.where(FeeInvoice.academic_year_id == academic_year_id)
     if effective_inst_id:
@@ -1072,11 +1068,12 @@ async def get_fees_overview(
     if board_id:
         inv_query = inv_query.where(Division.board_id == board_id)
     if standard_id:
-        inv_query = inv_query.where(StudentEnrollment.standard_id == standard_id)
+        inv_query = inv_query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
-        inv_query = inv_query.where(StudentEnrollment.division_id == division_id)
+        inv_query = inv_query.where(latest_enr.c.division_id == division_id)
 
     stats = (await db.execute(inv_query)).one()
+    gross_obligation = float(stats.gross_obligation)
     total_obligation = float(stats.total_obligation)
     total_collected = float(stats.total_collected)
     active_students_outstanding = float(stats.active_students_outstanding)
@@ -1115,14 +1112,16 @@ async def get_fees_overview(
         )
         .join(Student, FeeInvoice.student_id == Student.id)
         .outerjoin(
-            StudentEnrollment,
-            (FeeInvoice.student_id == StudentEnrollment.student_id)
-            & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
+            latest_enr,
+            (FeeInvoice.student_id == latest_enr.c.student_id)
+            & (FeeInvoice.academic_year_id == latest_enr.c.academic_year_id),
         )
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Division, latest_enr.c.division_id == Division.id)
         .outerjoin(Board, Division.board_id == Board.id)
         .where(FeeInvoice.status != "cancelled")
     )
+    if is_demo_filter is not None:
+        board_query = board_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         board_query = board_query.where(FeeInvoice.academic_year_id == academic_year_id)
     if effective_inst_id:
@@ -1130,9 +1129,9 @@ async def get_fees_overview(
     if board_id:
         board_query = board_query.where(Division.board_id == board_id)
     if standard_id:
-        board_query = board_query.where(StudentEnrollment.standard_id == standard_id)
+        board_query = board_query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
-        board_query = board_query.where(StudentEnrollment.division_id == division_id)
+        board_query = board_query.where(latest_enr.c.division_id == division_id)
 
     board_query = board_query.group_by(Board.name).order_by(desc("total_fees"))
     board_rows = (await db.execute(board_query)).all()
@@ -1175,15 +1174,17 @@ async def get_fees_overview(
         )
         .join(Student, FeeInvoice.student_id == Student.id)
         .outerjoin(
-            StudentEnrollment,
-            (FeeInvoice.student_id == StudentEnrollment.student_id)
-            & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
+            latest_enr,
+            (FeeInvoice.student_id == latest_enr.c.student_id)
+            & (FeeInvoice.academic_year_id == latest_enr.c.academic_year_id),
         )
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
-        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, latest_enr.c.division_id == Division.id)
+        .outerjoin(Standard, latest_enr.c.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
         .where(FeeInvoice.status != "cancelled")
     )
+    if is_demo_filter is not None:
+        batch_query = batch_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         batch_query = batch_query.where(FeeInvoice.academic_year_id == academic_year_id)
     if effective_inst_id:
@@ -1191,9 +1192,9 @@ async def get_fees_overview(
     if board_id:
         batch_query = batch_query.where(Division.board_id == board_id)
     if standard_id:
-        batch_query = batch_query.where(StudentEnrollment.standard_id == standard_id)
+        batch_query = batch_query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
-        batch_query = batch_query.where(StudentEnrollment.division_id == division_id)
+        batch_query = batch_query.where(latest_enr.c.division_id == division_id)
 
     batch_query = batch_query.group_by(Division.name, Standard.name, Board.name).order_by(desc("total_fees"))
     batch_rows = (await db.execute(batch_query)).all()
@@ -1238,13 +1239,15 @@ async def get_fees_overview(
         )
         .join(Student, Payment.student_id == Student.id)
         .outerjoin(
-            StudentEnrollment,
-            (Payment.student_id == StudentEnrollment.student_id)
-            & (Payment.academic_year_id == StudentEnrollment.academic_year_id),
+            latest_enr,
+            (Payment.student_id == latest_enr.c.student_id)
+            & (Payment.academic_year_id == latest_enr.c.academic_year_id),
         )
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Division, latest_enr.c.division_id == Division.id)
         .where(Payment.status.in_(["posted", "completed"]))
     )
+    if is_demo_filter is not None:
+        trend_query = trend_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         trend_query = trend_query.where(Payment.academic_year_id == academic_year_id)
     if effective_inst_id:
@@ -1252,9 +1255,9 @@ async def get_fees_overview(
     if board_id:
         trend_query = trend_query.where(Division.board_id == board_id)
     if standard_id:
-        trend_query = trend_query.where(StudentEnrollment.standard_id == standard_id)
+        trend_query = trend_query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
-        trend_query = trend_query.where(StudentEnrollment.division_id == division_id)
+        trend_query = trend_query.where(latest_enr.c.division_id == division_id)
 
     trend_query = trend_query.group_by(month_key, month_label).order_by(month_key.asc())
     trend_rows = (await db.execute(trend_query)).all()
@@ -1278,13 +1281,15 @@ async def get_fees_overview(
         )
         .join(Student, Payment.student_id == Student.id)
         .outerjoin(
-            StudentEnrollment,
-            (Payment.student_id == StudentEnrollment.student_id)
-            & (Payment.academic_year_id == StudentEnrollment.academic_year_id),
+            latest_enr,
+            (Payment.student_id == latest_enr.c.student_id)
+            & (Payment.academic_year_id == latest_enr.c.academic_year_id),
         )
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Division, latest_enr.c.division_id == Division.id)
         .where(Payment.status.in_(["posted", "completed"]))
     )
+    if is_demo_filter is not None:
+        method_query = method_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         method_query = method_query.where(Payment.academic_year_id == academic_year_id)
     if effective_inst_id:
@@ -1292,9 +1297,9 @@ async def get_fees_overview(
     if board_id:
         method_query = method_query.where(Division.board_id == board_id)
     if standard_id:
-        method_query = method_query.where(StudentEnrollment.standard_id == standard_id)
+        method_query = method_query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
-        method_query = method_query.where(StudentEnrollment.division_id == division_id)
+        method_query = method_query.where(latest_enr.c.division_id == division_id)
 
     method_query = method_query.group_by(Payment.payment_method).order_by(desc("amount"))
     method_rows = (await db.execute(method_query)).all()
@@ -1332,16 +1337,18 @@ async def get_fees_overview(
         )
         .join(Student, FeeInvoice.student_id == Student.id)
         .outerjoin(
-            StudentEnrollment,
-            (FeeInvoice.student_id == StudentEnrollment.student_id)
-            & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
+            latest_enr,
+            (FeeInvoice.student_id == latest_enr.c.student_id)
+            & (FeeInvoice.academic_year_id == latest_enr.c.academic_year_id),
         )
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
-        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, latest_enr.c.division_id == Division.id)
+        .outerjoin(Standard, latest_enr.c.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
         .where(FeeInvoice.status != "cancelled")
         .where(FeeInvoice.outstanding_amount > 0)
     )
+    if is_demo_filter is not None:
+        overdue_query = overdue_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         overdue_query = overdue_query.where(FeeInvoice.academic_year_id == academic_year_id)
     if effective_inst_id:
@@ -1349,9 +1356,9 @@ async def get_fees_overview(
     if board_id:
         overdue_query = overdue_query.where(Division.board_id == board_id)
     if standard_id:
-        overdue_query = overdue_query.where(StudentEnrollment.standard_id == standard_id)
+        overdue_query = overdue_query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
-        overdue_query = overdue_query.where(StudentEnrollment.division_id == division_id)
+        overdue_query = overdue_query.where(latest_enr.c.division_id == division_id)
 
     overdue_query = overdue_query.order_by(desc(FeeInvoice.outstanding_amount), asc(FeeInvoice.due_date)).limit(10)
     overdue_rows = (await db.execute(overdue_query)).all()
@@ -1386,15 +1393,17 @@ async def get_fees_overview(
         .join(Student, Payment.student_id == Student.id)
         .outerjoin(PaymentReceipt, Payment.id == PaymentReceipt.payment_id)
         .outerjoin(
-            StudentEnrollment,
-            (Payment.student_id == StudentEnrollment.student_id)
-            & (Payment.academic_year_id == StudentEnrollment.academic_year_id),
+            latest_enr,
+            (Payment.student_id == latest_enr.c.student_id)
+            & (Payment.academic_year_id == latest_enr.c.academic_year_id),
         )
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
-        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, latest_enr.c.division_id == Division.id)
+        .outerjoin(Standard, latest_enr.c.standard_id == Standard.id)
         .outerjoin(Board, Division.board_id == Board.id)
         .where(Payment.status.in_(["posted", "completed"]))
     )
+    if is_demo_filter is not None:
+        rec_query = rec_query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         rec_query = rec_query.where(Payment.academic_year_id == academic_year_id)
     if effective_inst_id:
@@ -1402,9 +1411,9 @@ async def get_fees_overview(
     if board_id:
         rec_query = rec_query.where(Division.board_id == board_id)
     if standard_id:
-        rec_query = rec_query.where(StudentEnrollment.standard_id == standard_id)
+        rec_query = rec_query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
-        rec_query = rec_query.where(StudentEnrollment.division_id == division_id)
+        rec_query = rec_query.where(latest_enr.c.division_id == division_id)
 
     rec_query = rec_query.order_by(desc(Payment.payment_date), desc(Payment.created_at)).limit(8)
     recent_rows = (await db.execute(rec_query)).all()
@@ -1427,7 +1436,20 @@ async def get_fees_overview(
     ]
 
     user_inst_id = effective_inst_id or getattr(current_user, "institution_id", None) or 1
+    gov_flt = FinancialFilter(
+        institution_id=user_inst_id,
+        academic_year_id=academic_year_id,
+        standard_id=standard_id,
+        division_id=division_id,
+        board_id=board_id,
+        is_demo=is_demo_filter,
+    )
+    gov_summary = await FinancialGovernanceService.get_governed_summary(db, gov_flt)
+    concession_breakdown = await FinancialGovernanceService.get_fee_management_concession_breakdown(db, gov_flt)
+    academic_concessions = await FinancialGovernanceService.get_academic_concession_distribution(db, gov_flt)
+
     summary_dict = {
+        "gross_obligation": gross_obligation,
         "total_obligation": total_obligation,
         "total_collected": total_collected,
         "total_outstanding": total_outstanding,
@@ -1437,6 +1459,8 @@ async def get_fees_overview(
         "total_recoverable_outstanding": total_recoverable_outstanding,
         "overdue_outstanding": overdue_outstanding,
         "waived_amount": waived_amount,
+        "approved_concessions": gov_summary["financials"]["approved_concessions_total"],
+        "posted_concessions": gov_summary["financials"]["posted_concessions_total"],
         "written_off_amount": written_off_amount,
         "collection_rate": collection_rate,
         "student_count": student_count,
@@ -1447,6 +1471,7 @@ async def get_fees_overview(
         user=current_user,
         data=summary_dict,
         numeric_fields=[
+            "gross_obligation",
             "total_obligation",
             "total_collected",
             "total_outstanding",
@@ -1456,6 +1481,8 @@ async def get_fees_overview(
             "total_recoverable_outstanding",
             "overdue_outstanding",
             "waived_amount",
+            "approved_concessions",
+            "posted_concessions",
             "written_off_amount",
         ],
         module="fees",
@@ -1517,6 +1544,9 @@ async def get_fees_overview(
         "payment_methods": payment_methods,
         "top_overdue": top_overdue,
         "recent_payments": recent_payments,
+        "governance": gov_summary,
+        "concession_breakdown": concession_breakdown,
+        "academic_concessions": academic_concessions,
     }
 
 
@@ -1529,14 +1559,17 @@ async def get_fee_register(
     status: Optional[str] = None,
     student_status: Optional[str] = None,
     search: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     """
     Consolidated student fee register records with cascading filters:
     Student obligations, payment totals, balance, installment schedule, and recent payment date.
-    Supports filtering by student status: all, active, former/discontinued, transferred, inactive.
+    Uses deduplicated latest_enr to avoid duplicate rows on transferred enrollments.
     """
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
+    latest_enr = _latest_enrollment_sq()
     query = (
         select(
             FeeInvoice,
@@ -1552,12 +1585,12 @@ async def get_fee_register(
         .join(Student, FeeInvoice.student_id == Student.id)
         .join(AcademicYear, FeeInvoice.academic_year_id == AcademicYear.id)
         .outerjoin(
-            StudentEnrollment,
-            (FeeInvoice.student_id == StudentEnrollment.student_id)
-            & (FeeInvoice.academic_year_id == StudentEnrollment.academic_year_id),
+            latest_enr,
+            (FeeInvoice.student_id == latest_enr.c.student_id)
+            & (FeeInvoice.academic_year_id == latest_enr.c.academic_year_id),
         )
-        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
-        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Standard, latest_enr.c.standard_id == Standard.id)
+        .outerjoin(Division, latest_enr.c.division_id == Division.id)
         .outerjoin(Board, Division.board_id == Board.id)
         .outerjoin(
             Payment,
@@ -1568,14 +1601,16 @@ async def get_fee_register(
         .where(FeeInvoice.status != "cancelled")
     )
 
+    if is_demo_filter is not None:
+        query = query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
         query = query.where(FeeInvoice.academic_year_id == academic_year_id)
     if board_id:
         query = query.where(Division.board_id == board_id)
     if standard_id:
-        query = query.where(StudentEnrollment.standard_id == standard_id)
+        query = query.where(latest_enr.c.standard_id == standard_id)
     if division_id:
-        query = query.where(StudentEnrollment.division_id == division_id)
+        query = query.where(latest_enr.c.division_id == division_id)
     if status:
         query = query.where(FeeInvoice.status == status)
     if student_status:
@@ -1585,7 +1620,7 @@ async def get_fee_register(
         elif st_lower in ("former", "discontinued", "withdrawn"):
             query = query.where(Student.is_active.is_(False))
         elif st_lower == "transferred":
-            query = query.where(StudentEnrollment.status == "transferred")
+            query = query.where(latest_enr.c.status == "transferred")
         elif st_lower == "inactive":
             query = query.where(Student.is_active.is_(False), Student.exit_date.is_(None))
     if search:

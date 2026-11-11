@@ -40,6 +40,11 @@ from app.models import (
     InstitutionSetting,
     Lead,
 )
+from app.services.financial_governance_service import (
+    FinancialGovernanceService,
+    FinancialFilter,
+    CONCESSION_REPORT_DEFINITIONS,
+)
 
 
 class SafeMath:
@@ -290,6 +295,12 @@ class ReportIntelligenceService:
                 db, institution_id, academic_year_id, thresholds
             )
 
+        # ── 8. Concessions, Waivers & Scholarships (20 Phase 5 Reports) ──
+        elif report_id in CONCESSION_REPORT_DEFINITIONS:
+            return await cls._compute_concession_intelligence(
+                db, institution_id, report_id, academic_year_id, standard_id, division_id, thresholds
+            )
+
         # Generic Fallback
         return cls._generic_intelligence(report_id)
 
@@ -433,6 +444,8 @@ class ReportIntelligenceService:
             select(
                 func.count(FeeInvoice.id).label("total_invoices"),
                 func.sum(FeeInvoice.total_amount).label("gross_invoiced"),
+                func.sum(FeeInvoice.discount_amount).label("discount_invoiced"),
+                func.sum(FeeInvoice.net_amount).label("net_invoiced"),
                 func.sum(FeeInvoice.paid_amount).label("realized_paid"),
                 func.sum(FeeInvoice.outstanding_amount).label("outstanding"),
             )
@@ -449,10 +462,12 @@ class ReportIntelligenceService:
 
         total_invoices = row.total_invoices or 0 if row else 0
         gross = float(row.gross_invoiced or 0.0) if row else 0.0
+        discount = float(row.discount_invoiced or 0.0) if row else 0.0
+        net_invoiced = float(row.net_invoiced or 0.0) if row else 0.0
         paid = float(row.realized_paid or 0.0) if row else 0.0
         outstanding = float(row.outstanding or 0.0) if row else 0.0
 
-        realization_rate = SafeMath.divide(paid, gross, multiplier=100.0)
+        realization_rate = SafeMath.divide(paid, net_invoiced, multiplier=100.0)
         target = thresholds["fee_collection_target"]
         var = SafeMath.variance(realization_rate, target)
 
@@ -469,10 +484,10 @@ class ReportIntelligenceService:
                 "explanation": {
                     "formula": "Realized Inflows / Net Invoiced Dues × 100",
                     "numerator": {"label": "Realized Collections", "value": round(paid, 2)},
-                    "denominator": {"label": "Net Invoiced Obligation", "value": round(gross, 2)},
+                    "denominator": {"label": "Net Invoiced Obligation", "value": round(net_invoiced, 2)},
                     "included_count": total_invoices,
                     "excluded_count": 0,
-                    "plain_text": f"₹{paid:,.0f} has been realized against ₹{gross:,.0f} total invoiced billings across {total_invoices} student invoices.",
+                    "plain_text": f"₹{paid:,.0f} realized against ₹{net_invoiced:,.0f} net dues (Gross ₹{gross:,.0f} minus ₹{discount:,.0f} posted benefits) across {total_invoices} student invoices.",
                 },
             },
             {
@@ -483,12 +498,12 @@ class ReportIntelligenceService:
                 "unit": "₹",
                 "status": "critical" if outstanding > 100000 else "warning" if outstanding > 0 else "positive",
                 "explanation": {
-                    "formula": "Gross Invoiced - Realized Banking Collections",
+                    "formula": "Net Invoiced Dues - Realized Collections",
                     "numerator": {"label": "Outstanding Deficit", "value": round(outstanding, 2)},
-                    "denominator": {"label": "Total Invoiced", "value": round(gross, 2)},
+                    "denominator": {"label": "Net Invoiced Obligation", "value": round(net_invoiced, 2)},
                     "included_count": total_invoices,
                     "excluded_count": 0,
-                    "plain_text": f"₹{outstanding:,.0f} remains uncollected, representing {SafeMath.divide(outstanding, gross, 100.0):.1f}% of total receivables.",
+                    "plain_text": f"₹{outstanding:,.0f} remains uncollected, representing {SafeMath.divide(outstanding, net_invoiced, 100.0):.1f}% of net receivables.",
                 },
             },
         ]
@@ -970,6 +985,141 @@ class ReportIntelligenceService:
                 "target": target,
                 "actual": attrition_rate,
                 "variance": SafeMath.variance(attrition_rate, target),
+            },
+        }
+
+    @classmethod
+    async def _compute_concession_intelligence(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        report_id: str,
+        academic_year_id: Optional[int],
+        standard_id: Optional[int],
+        division_id: Optional[int],
+        thresholds: Dict[str, float],
+    ) -> Dict[str, Any]:
+        flt = FinancialFilter(
+            institution_id=institution_id,
+            academic_year_id=academic_year_id,
+            standard_id=standard_id,
+            division_id=division_id,
+        )
+        gov = await FinancialGovernanceService.get_governed_summary(db, flt)
+        fin = gov["financials"]
+        cnt = gov["counts"]
+        spon = gov["sponsors"]
+        sym = gov["currency"]["symbol"]
+
+        gross = fin["gross_fee_assessed"]
+        posted = fin["total_posted_reductions"]
+        approved = fin["approved_concessions_total"]
+        unapplied = fin["approved_unapplied"]
+        net_due = fin["net_fee_due"]
+        concession_pct = SafeMath.divide(posted, gross, multiplier=100.0)
+
+        kpis = [
+            {
+                "id": "posted_benefits_total",
+                "label": "Posted Benefits & Reductions",
+                "value": f"{sym}{posted:,.0f}",
+                "raw_value": posted,
+                "unit": sym,
+                "status": "positive",
+                "explanation": {
+                    "formula": "Posted Concessions + Waivers + Scholarships + Sponsor + Manual Adjustments",
+                    "numerator": {"label": "Posted Benefits", "value": posted},
+                    "denominator": {"label": "Gross Fee Assessed", "value": gross},
+                    "included_count": cnt["beneficiary_students"],
+                    "excluded_count": 0,
+                    "plain_text": f"{sym}{posted:,.0f} ({concession_pct}% of gross fee) posted across {cnt['beneficiary_students']} beneficiary students.",
+                },
+            },
+            {
+                "id": "approved_vs_posted_variance",
+                "label": "Approved Unapplied Benefits",
+                "value": f"{sym}{unapplied:,.0f}",
+                "raw_value": unapplied,
+                "unit": sym,
+                "status": "warning" if unapplied > 0 else "positive",
+                "explanation": {
+                    "formula": "Total Approved Benefits - Total Posted Allocations",
+                    "numerator": {"label": "Unapplied Approved", "value": unapplied},
+                    "denominator": {"label": "Total Approved", "value": approved},
+                    "included_count": cnt["beneficiary_students"],
+                    "excluded_count": 0,
+                    "plain_text": f"Approval alone never reduces balances: {sym}{unapplied:,.0f} approved remains unposted to student invoices.",
+                },
+            },
+            {
+                "id": "net_fee_collectible",
+                "label": "Net Fee Payable (After Benefits)",
+                "value": f"{sym}{net_due:,.0f}",
+                "raw_value": net_due,
+                "unit": sym,
+                "status": "neutral",
+                "explanation": {
+                    "formula": "Gross Assessed - Posted Benefits & Adjustments",
+                    "numerator": {"label": "Net Fee Due", "value": net_due},
+                    "denominator": {"label": "Gross Fee Assessed", "value": gross},
+                    "included_count": cnt["invoices"],
+                    "excluded_count": 0,
+                    "plain_text": f"Net collectible obligation across {cnt['invoices']} active invoices after applying posted reductions.",
+                },
+            },
+        ]
+
+        insights = []
+        if unapplied > 0:
+            insights.append({
+                "id": "unapplied_benefits_alert",
+                "title": "Approved Benefits Awaiting Invoice Posting",
+                "severity": "warning",
+                "message": f"{sym}{unapplied:,.0f} of approved benefits has not yet been posted onto student invoices.",
+                "impact": "Student outstanding continues to reflect unreduced liability until posted.",
+                "action_label": "Open Concession Approvals",
+                "action_route": "/fees?tab=concessions",
+            })
+        if cnt["pending_approvals"] > 0:
+            insights.append({
+                "id": "pending_approvals_alert",
+                "title": f"{cnt['pending_approvals']} Pending Concession/Scholarship Approval(s)",
+                "severity": "info",
+                "message": "Review and approve or reject queued student benefit nominations.",
+                "impact": "Pending items do not adjust invoices until approved and posted.",
+                "action_label": "Review Queue",
+                "action_route": "/fees?tab=concessions",
+            })
+        if spon["outstanding_sponsor_funding"] > 0:
+            insights.append({
+                "id": "sponsor_receivable_alert",
+                "title": "Outstanding External Sponsor Settlement",
+                "severity": "warning",
+                "message": f"{sym}{spon['outstanding_sponsor_funding']:,.0f} sanctioned by external sponsors awaits disbursement receipt.",
+                "impact": "Tracks academy bridge financing separately from internal fee waivers.",
+                "action_label": "Reconcile Sponsor Settlements",
+                "action_route": "/fees?tab=concessions",
+            })
+        if not insights:
+            insights.append({
+                "id": "concession_governed_clean",
+                "title": "Concession Ledger Synchronized",
+                "severity": "positive",
+                "message": "All approved concessions, waivers, and scholarships match posted ledger entries.",
+                "impact": "Zero unapplied benefit discrepancy across dashboards and reports.",
+                "action_label": "View Reconciliation",
+                "action_route": "/dashboard",
+            })
+
+        return {
+            "report_id": report_id,
+            "kpis": kpis,
+            "insights": insights,
+            "comparisons": {
+                "benchmark_name": "Posted Benefit Ratio (% of Gross Fee)",
+                "target": 15.0,
+                "actual": concession_pct,
+                "variance": SafeMath.variance(concession_pct, 15.0),
             },
         }
 

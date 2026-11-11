@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -42,6 +42,7 @@ from app.models.fee import (
     FeeConcessionAllocation,
 )
 from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
+from app.services.financial_governance_service import FinancialGovernanceService, FinancialFilter
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.board import Board
@@ -894,7 +895,7 @@ async def get_student_admin_profile(
     inv_stmt = (
         select(FeeInvoice)
         .options(selectinload(FeeInvoice.items))
-        .where(FeeInvoice.student_id == student_id)
+        .where(FeeInvoice.student_id == student_id, FeeInvoice.status != "cancelled")
         .order_by(desc(FeeInvoice.id))
     )
     invoices = (await db.execute(inv_stmt)).scalars().all()
@@ -907,47 +908,113 @@ async def get_student_admin_profile(
     )
     payments = (await db.execute(pmt_stmt)).scalars().all()
 
+    ref_stmt = select(func.coalesce(func.sum(Refund.amount), 0)).where(
+        Refund.student_id == student_id,
+        Refund.status == "completed",
+    )
+    refunds_completed = float((await db.execute(ref_stmt)).scalar() or 0.0)
+
     gross_fees = sum(float(i.total_amount) for i in invoices)
     total_concessions = sum(float(i.discount_amount) for i in invoices)
     total_fees = sum(float(i.net_amount) for i in invoices)
-    total_paid = sum(float(p.amount) for p in payments if p.status in ("completed", "posted"))
-    outstanding = max(0.0, total_fees - total_paid)
+    gross_paid = sum(float(p.amount) for p in payments if p.status in ("completed", "posted"))
+    total_paid = max(0.0, gross_paid - refunds_completed)
+    outstanding = sum(float(i.outstanding_amount) for i in invoices if i.status != "written_off")
 
-    # Concessions & Scholarships for this student
+    # Concessions, Waivers & Scholarships for this student
     conc_stmt = (
         select(StudentConcessionApplication, FeeConcessionType)
         .join(FeeConcessionType, StudentConcessionApplication.concession_type_id == FeeConcessionType.id)
+        .options(selectinload(StudentConcessionApplication.allocations))
         .where(StudentConcessionApplication.student_id == student_id)
         .order_by(desc(StudentConcessionApplication.id))
     )
     concessions_list = []
+    waiver_history = []
+    approval_history = []
     for c_app, c_type in (await db.execute(conc_stmt)).all():
-        concessions_list.append({
+        entry = {
             "id": c_app.id,
             "application_number": c_app.application_number,
             "concession_type_code": c_type.code,
             "concession_name": c_type.name,
             "category": c_type.category,
+            "benefit_type": c_app.benefit_type or getattr(c_type, "benefit_type", "fee_concession"),
+            "waiver_scope": c_app.waiver_scope,
             "requested_amount": float(c_app.requested_amount),
             "approved_amount": float(c_app.approved_amount),
             "applied_amount": float(c_app.applied_amount),
+            "reversed_amount": float(getattr(c_app, "reversed_amount", 0) or 0),
             "status": c_app.status,
             "funding_source": c_app.funding_source,
+            "sponsor_name": c_app.sponsor_name,
+            "sponsor_settlement_status": c_app.sponsor_settlement_status,
+            "valid_until": c_app.valid_until.isoformat() if getattr(c_app, "valid_until", None) else None,
             "approved_at": c_app.approved_at.isoformat() if c_app.approved_at else None,
             "approval_remarks": c_app.approval_remarks,
+            "rejection_reason": c_app.rejection_reason,
+            "cancellation_reason": getattr(c_app, "cancellation_reason", None),
             "invoice_id": c_app.invoice_id,
+            "allocations": [
+                {
+                    "id": al.id,
+                    "transaction_ref": getattr(al, "transaction_ref", None),
+                    "transaction_type": getattr(al, "transaction_type", None),
+                    "posting_status": getattr(al, "posting_status", "posted"),
+                    "allocated_amount": float(al.allocated_amount),
+                    "credit_adjustment_amount": float(al.credit_adjustment_amount),
+                    "effective_date": al.effective_date.isoformat() if getattr(al, "effective_date", None) else None,
+                }
+                for al in (c_app.allocations or [])
+            ],
+        }
+        concessions_list.append(entry)
+        if entry["benefit_type"] == "fee_waiver":
+            waiver_history.append(entry)
+        approval_history.append({
+            "application_id": c_app.id,
+            "application_number": c_app.application_number,
+            "benefit_name": c_type.name,
+            "benefit_type": entry["benefit_type"],
+            "status": c_app.status,
+            "requested_amount": entry["requested_amount"],
+            "approved_amount": entry["approved_amount"],
+            "applied_amount": entry["applied_amount"],
+            "approved_at": entry["approved_at"],
+            "remarks": c_app.approval_remarks or c_app.rejection_reason or c_app.withdrawal_reason or c_app.cancellation_reason,
         })
+
+    stu_gov = await FinancialGovernanceService.get_governed_summary(
+        db,
+        FinancialFilter(
+            institution_id=student.institution_id,
+            student_id=student_id,
+            is_demo=None,
+        ),
+    )
+    stu_fin = stu_gov["financials"]
 
     fee_details = {
         "summary": {
             "gross_fees": gross_fees,
             "total_concessions": total_concessions,
+            "approved_benefits": stu_fin["approved_concessions_total"],
+            "approved_unapplied": stu_fin["approved_unapplied"],
+            "applied_concessions": stu_fin["posted_concessions_total"],
+            "fee_waivers": stu_fin["posted_fee_waivers"],
+            "scholarships": stu_fin["scholarships_awarded"],
+            "sponsor_funding": stu_fin["sponsor_funded_scholarships"],
             "net_fees": total_fees,
             "total_fees": total_fees,
+            "gross_paid": gross_paid,
+            "refunds_completed": refunds_completed,
             "total_paid": total_paid,
             "outstanding": outstanding,
             "collection_rate": round((total_paid / total_fees) * 100, 1) if total_fees > 0 else 100.0,
         },
+        "governance": stu_gov,
+        "waiver_history": waiver_history,
+        "approval_history": approval_history,
         "invoices": [
             {
                 "id": inv.id,

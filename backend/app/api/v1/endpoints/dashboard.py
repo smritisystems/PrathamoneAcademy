@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints for administrative executive dashboard, financial accuracy, status-wise outstanding breakdown, aging recovery, multi-tab analytics, and operational intelligence.
 #  */
@@ -44,6 +44,7 @@ from app.models.attendance import Attendance
 from app.models.exam import Examination, ExamMark
 from app.models.subject import Subject
 from app.services.settings_service import get_institution_setting
+from app.services.financial_governance_service import FinancialGovernanceService, FinancialFilter
 from app.services.student_metrics import (
     get_authoritative_student_count,
     get_student_reconciliation_diagnostic,
@@ -639,6 +640,17 @@ async def get_dashboard_stats(
         for p, s, rec_num, b_name, std_name, cat_name in recent_rows
     ]
 
+    gov_flt = FinancialFilter(
+        institution_id=effective_inst_id or user_inst_id,
+        academic_year_id=academic_year_id,
+        standard_id=standard_id,
+        division_id=division_id,
+        board_id=board_id,
+        student_status=effective_status if effective_status != "all" else None,
+        is_demo=is_demo_filter,
+    )
+    concession_governance = await FinancialGovernanceService.get_governed_summary(db, gov_flt)
+
     stats_payload = {
         "total_students": total_students,
         "total_fees": total_fees,
@@ -660,6 +672,7 @@ async def get_dashboard_stats(
         "recent_payments": recent_payments,
         "status_filter": effective_status,
         "configured_visibility": configured_visibility,
+        "concession_governance": concession_governance,
     }
 
     # Apply backend CodeX access control and bijective presentation masking
@@ -846,6 +859,22 @@ async def get_dashboard_analytics(
         for r in daily_rows
     ]
 
+    gov_flt = FinancialFilter(
+        institution_id=effective_inst_id or user_inst_id,
+        academic_year_id=academic_year_id,
+        standard_id=standard_id,
+        division_id=division_id,
+        board_id=board_id,
+        is_demo=is_demo_filter,
+    )
+    gov_summary = await FinancialGovernanceService.get_governed_summary(db, gov_flt)
+    academic_conc_dist = await FinancialGovernanceService.get_academic_concession_distribution(db, gov_flt)
+    rec_audit = await FinancialGovernanceService.reconcile_financial_ledgers(db, gov_flt)
+    gov_fin = gov_summary["financials"]
+    monthly_target_share = round(
+        gov_fin["net_fee_due"] / max(len(pay_rows), 1), 2
+    ) if gov_fin["net_fee_due"] > 0 else 0.0
+
     fee_collection_tab = {
         "monthly_trends": [
             {
@@ -853,7 +882,7 @@ async def get_dashboard_analytics(
                 "month_key": r.month_key,
                 "collected": float(r.collected),
                 "transaction_count": int(r.transaction_count),
-                "target": round(float(r.collected) * 1.15, 2),  # Target projection
+                "target": monthly_target_share,
                 "net_collection": float(r.collected),
                 "is_current_month": (r.month_key == current_month_key),
             }
@@ -863,8 +892,15 @@ async def get_dashboard_analytics(
         "fee_heads": fee_heads_data,
         "daily_pulse": daily_pulse_data,
         "total_collected": total_collected_all,
-        "net_collection": total_collected_all,
-        "reversals_amount": 0.0,
+        "gross_collected": gov_fin["gross_payment_receipts"],
+        "refunds_amount": gov_fin["refunds_completed"],
+        "net_collection": gov_fin["net_collections"],
+        "reversals_amount": gov_fin["reversed_payments_amount"],
+        "concessions_reversed": gov_fin["reversed_concessions_amount"],
+        "gross_fee_assessed": gov_fin["gross_fee_assessed"],
+        "posted_concessions": gov_fin["posted_concessions_total"],
+        "net_fee_due": gov_fin["net_fee_due"],
+        "total_outstanding": gov_fin["total_outstanding"],
     }
 
     # -------------------------------------------------------------
@@ -1379,6 +1415,8 @@ async def get_dashboard_analytics(
 
     total_exams_count = int((await db.execute(select(func.count(Examination.id)))).scalar() or 0)
 
+    admissions_crm_tab["admission_concessions"] = gov_summary["admission_breakdown"]
+
     academic_analysis_tab = {
         "inventory": {
             "standards_count": std_cnt,
@@ -1395,6 +1433,7 @@ async def get_dashboard_analytics(
             "max_score": max_score,
             "grade_distribution": grade_distribution,
         },
+        "concession_distribution": academic_conc_dist,
     }
 
     # -------------------------------------------------------------
@@ -1473,7 +1512,26 @@ async def get_dashboard_analytics(
             "completed_count": succ_ref_count,
             "completed_amount": succ_ref_amount,
         },
+        "reversals": {
+            "reversed_payments_amount": gov_fin["reversed_payments_amount"],
+            "reversed_concessions_amount": gov_fin["reversed_concessions_amount"],
+            "total_reversals": gov_fin["reversals_total"],
+        },
+        "benefits_breakdown": {
+            "fee_concessions": gov_fin["posted_fee_concessions"],
+            "fee_waivers": gov_fin["posted_fee_waivers"],
+            "full_fee_waivers": gov_fin["full_fee_waivers"],
+            "partial_fee_waivers": gov_fin["partial_fee_waivers"],
+            "scholarships": gov_fin["academy_scholarships"],
+            "sponsor_funded": gov_fin["sponsor_funded_scholarships"],
+            "manual_adjustments": gov_fin["manual_fee_adjustments"],
+            "credit_adjustments": gov_fin["credit_adjustments"],
+            "approved_unapplied": gov_fin["approved_unapplied"],
+        },
+        "sponsors": gov_summary["sponsors"],
+        "lifecycle": gov_summary["lifecycle"],
         "ledger_audit": {
+            **rec_audit["ledger_audit"],
             "total_invoiced": total_invoiced_all,
             "total_collected": total_collected_hist,
             "total_outstanding": total_outstanding_all,
@@ -1544,6 +1602,8 @@ async def get_dashboard_analytics(
         "academic_analysis": academic_analysis_tab,
         "transactions_reconciliation": transactions_reconciliation_tab,
         "operations": operations_tab,
+        "concession_governance": gov_summary,
+        "reconciliation_audit": rec_audit,
     }
 
     return await CodeXService.apply_financial_masking(

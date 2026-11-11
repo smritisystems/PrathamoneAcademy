@@ -37,6 +37,7 @@ import { InvoiceStatusBadge } from '../components/Badge'
 import { useBranding } from '../config/branding'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
+import { ConcessionTraceModal } from '../components/common'
 import {
   Users,
   GraduationCap,
@@ -75,7 +76,7 @@ import toast from 'react-hot-toast'
 
 // ── Types & Metadata ──────────────────────────────────────────────────────────
 
-type ReportCategoryKey = 'students' | 'academics' | 'fees' | 'workforce' | 'examinations' | 'system'
+type ReportCategoryKey = 'students' | 'academics' | 'fees' | 'concessions' | 'workforce' | 'examinations' | 'system'
 
 interface ReportMeta {
   id: string
@@ -366,12 +367,215 @@ const REPORT_CATALOG: ReportMeta[] = [
     badge: 'Data Exchange',
     icon: FileSpreadsheet,
   },
+
+  // 7. Concessions, Waivers & Scholarships Governance (20 Phase 5 Reports)
+  {
+    id: 'complete-concession-register',
+    name: 'Complete Concession Register',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Full line-by-line governed register of fee concessions across schemes, funding sources, and invoice postings.',
+    badge: 'Register',
+    icon: Award,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'complete-fee-waiver-register',
+    name: 'Complete Fee Waiver Register',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Governed register of all full and partial fee waivers with approval references and posting state.',
+    badge: 'Waivers',
+    icon: Award,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'student-concession-statement',
+    name: 'Student-wise Concession Statement',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Student ledger statement comparing Original Fee, Approved Benefits, Applied Benefits, Net Fee, Paid, and Balance.',
+    badge: 'Student Ledger',
+    icon: Users,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'class-wise-concession',
+    name: 'Class-wise Concession Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Class-level rollups of gross assessment, beneficiary counts, concessions, waivers, scholarships, and net dues.',
+    badge: 'Class Rollup',
+    icon: GraduationCap,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'division-wise-concession',
+    name: 'Division-wise Concession Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Batch/division distribution of beneficiaries, waivers, scholarships, average benefit, and net collectible fees.',
+    badge: 'Batch Rollup',
+    icon: GraduationCap,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'scheme-wise-scholarship',
+    name: 'Scheme-wise Scholarship Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Scholarship & scheme utilization matrix separating institute-funded merit awards from external sponsor grants.',
+    badge: 'Schemes',
+    icon: Award,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'approved-vs-applied',
+    name: 'Approved vs Applied Concession Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Reconciliation report tracking approved sanctions against posted invoice allocations to highlight unapplied liability.',
+    badge: 'Control Audit',
+    icon: CheckCircle2,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'pending-approval',
+    name: 'Pending Approval Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Action queue of nominated or verified concession and scholarship requests awaiting executive approval.',
+    badge: 'Queue',
+    icon: AlertTriangle,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'full-fee-waiver',
+    name: 'Full Fee Waiver Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: '100% tuition/fee waiver beneficiaries and full revenue relief impact audit.',
+    badge: '100% Waiver',
+    icon: Award,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'partial-fee-waiver',
+    name: 'Partial Fee Waiver Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Partial fee waiver cases detailing waived share vs remaining payable tuition obligation.',
+    badge: 'Partial Waiver',
+    icon: Award,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'sponsor-funded-scholarship',
+    name: 'Sponsor-funded Scholarship Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Receivables & settlement reconciliation for external trusts, NGOs, and government scholarship grants.',
+    badge: 'Sponsors',
+    icon: DollarSign,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'expired-benefits',
+    name: 'Expired Benefits Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Approved or pending benefits that lapsed past valid_until before invoice posting (zero balance reduction).',
+    badge: 'Expired',
+    icon: AlertTriangle,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'cancelled-benefits',
+    name: 'Cancelled Benefits Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Cancelled benefits audit showing restored invoice balances and mandatory executive cancellation justifications.',
+    badge: 'Cancelled',
+    icon: AlertTriangle,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'reversal-adjustment',
+    name: 'Reversal and Adjustment Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Immutable ledger of negative reversal postings, credit overpayment adjustments, and manual fee modifications.',
+    badge: 'Reversals',
+    icon: BarChart3,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'installment-wise-concession',
+    name: 'Installment-wise Concession Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Installment schedule impact tracing adjusted installment dues after concession/waiver application.',
+    badge: 'Installments',
+    icon: Calendar,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'fee-collection-vs-concession',
+    name: 'Fee Collection vs Concession Reconciliation',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'System-wide single-source-of-truth balance sheet proof linking Gross, Benefits, Net, Paid, Refunds, and Dues.',
+    badge: 'SSOT Proof',
+    icon: ShieldCheck,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'academic-year-comparison',
+    name: 'Academic Year Comparison',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Multi-year comparison of gross fees, concessions, waivers, scholarships, collections, and benefit ratio.',
+    badge: 'YoY Trend',
+    icon: BarChart3,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'user-wise-approval-audit',
+    name: 'User-wise Approval Audit Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Segregation-of-duties governance report grouping sanctioned and verified benefits by approving officer.',
+    badge: 'SoD Audit',
+    icon: ShieldCheck,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'concession-eligibility-utilization',
+    name: 'Concession Eligibility and Utilization Report',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Scheme catalog capacity vs actual utilization rate, average award, and active beneficiary reach.',
+    badge: 'Utilization',
+    icon: BarChart3,
+    requiresFinancialRole: true,
+  },
+  {
+    id: 'complete-student-benefit-register',
+    name: 'Complete Student Benefit Register',
+    category: 'concessions',
+    categoryLabel: 'Concessions & Scholarships',
+    description: 'Unified student master benefit register combining concessions, waivers, scholarships, sponsors, and status.',
+    badge: 'Unified Ledger',
+    icon: FileSpreadsheet,
+    requiresFinancialRole: true,
+  },
 ]
 
 const CATEGORIES: { key: ReportCategoryKey; label: string; icon: any; count: number }[] = [
   { key: 'students', label: 'Students & Admissions', icon: Users, count: 5 },
   { key: 'academics', label: 'Academics & Batches', icon: GraduationCap, count: 5 },
   { key: 'fees', label: 'Fees & Financials', icon: DollarSign, count: 6 },
+  { key: 'concessions', label: 'Concessions & Scholarships', icon: Award, count: 20 },
   { key: 'workforce', label: 'Teachers & Payroll', icon: Briefcase, count: 7 },
   { key: 'examinations', label: 'Examinations & Merit', icon: Award, count: 2 },
   { key: 'system', label: 'System & Audit', icon: ShieldCheck, count: 3 },
@@ -400,6 +604,13 @@ export default function Reports() {
   const [selectedBoardId, setSelectedBoardId] = useState<string>('')
   const [selectedExamId, setSelectedExamId] = useState<string>('')
   const [reportStatusFilter, setReportStatusFilter] = useState<'default' | 'all' | 'active' | 'withdrawn' | 'completed' | 'graduated' | 'inactive'>('default')
+  const [concessionStudentSearch, setConcessionStudentSearch] = useState<string>('')
+  const [concessionStatusFilter, setConcessionStatusFilter] = useState<string>('all')
+  const [concessionFundingFilter, setConcessionFundingFilter] = useState<string>('all')
+  const [traceTarget, setTraceTarget] = useState<{
+    type: 'application' | 'allocation' | 'invoice' | 'student'
+    id: number
+  } | null>(null)
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date()
     return `${d.getFullYear()}-01-01`
@@ -442,8 +653,8 @@ export default function Reports() {
   const hasAccess = useMemo(() => {
     if (!user) return false
     const role = user.role?.toLowerCase() || ''
-    const isFinancialAuthorized = ['admin', 'accountant', 'principal', 'sysadmin'].includes(role)
-    const isSysAdminAuthorized = role === 'sysadmin' || role === 'admin'
+    const isFinancialAuthorized = ['superadmin', 'super_admin', 'admin', 'accountant', 'principal', 'sysadmin'].includes(role)
+    const isSysAdminAuthorized = ['superadmin', 'super_admin', 'sysadmin', 'admin'].includes(role)
 
     if (activeReport.requiresSysAdminRole && !isSysAdminAuthorized) return false
     if (activeReport.requiresFinancialRole && !isFinancialAuthorized) return false
@@ -693,9 +904,74 @@ export default function Reports() {
     enabled: activeReportId === 'crm-enquiries',
   })
 
+  // 24. Concessions, Waivers & Scholarships (20 Phase 5 Governed Reports)
+  const isConcessionReportActive = activeReport.category === 'concessions'
+  const { data: concessionReportData, isLoading: loadingConcessionReport, refetch: refetchConcessionReport } = useQuery({
+    queryKey: [
+      'report-concession-governance',
+      activeReportId,
+      selectedAcademicYearId,
+      selectedStandardId,
+      selectedDivisionId,
+      startDate,
+      endDate,
+      concessionStatusFilter,
+      concessionFundingFilter,
+      concessionStudentSearch,
+    ],
+    queryFn: () =>
+      reportsApi
+        .concessionReport(activeReportId, {
+          academic_year_id: selectedAcademicYearId || undefined,
+          standard_id: selectedStandardId || undefined,
+          division_id: selectedDivisionId || undefined,
+          start_date: startDate || undefined,
+          end_date: endDate || undefined,
+          status: concessionStatusFilter !== 'all' ? concessionStatusFilter : undefined,
+          funding_source: concessionFundingFilter !== 'all' ? concessionFundingFilter : undefined,
+          search: concessionStudentSearch.trim() || undefined,
+        })
+        .then((r) => r.data),
+    enabled: isConcessionReportActive && hasAccess,
+  })
+
+  const handleDownloadConcessionExport = async (format: 'csv' | 'xlsx') => {
+    try {
+      const res = await reportsApi.exportConcessionReport(activeReportId, {
+        format,
+        academic_year_id: selectedAcademicYearId || undefined,
+        standard_id: selectedStandardId || undefined,
+        division_id: selectedDivisionId || undefined,
+        start_date: startDate || undefined,
+        end_date: endDate || undefined,
+        status: concessionStatusFilter !== 'all' ? concessionStatusFilter : undefined,
+        funding_source: concessionFundingFilter !== 'all' ? concessionFundingFilter : undefined,
+        search: concessionStudentSearch.trim() || undefined,
+      })
+      const blob = new Blob([res.data], {
+        type:
+          format === 'csv'
+            ? 'text/csv;charset=utf-8;'
+            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `${activeReportId}_${new Date().toISOString().slice(0, 10)}.${format}`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success(`Exported ${activeReport.name} as ${format.toUpperCase()}`)
+    } catch {
+      toast.error(`Failed to export ${format.toUpperCase()} file.`)
+    }
+  }
+
   // Master Refetch Trigger
   const handleRefetch = () => {
-    if (activeReportId === 'student-master') refetchMaster()
+    if (isConcessionReportActive) refetchConcessionReport()
+    else if (activeReportId === 'student-master') refetchMaster()
     else if (activeReportId === 'student-attendance') refetchAttendance()
     else if (activeReportId === 'withdrawals') refetchWithdrawals()
     else if (activeReportId === 'withdrawal-analytics') refetchAnalytics()
@@ -833,7 +1109,7 @@ export default function Reports() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Reporting & Analytics Centre</h1>
             <span className="px-2.5 py-0.5 bg-primary-100 text-primary-800 border border-indigo-200 rounded-full font-bold text-xs uppercase">
-              26 Enterprise Reports
+              {REPORT_CATALOG.length} Enterprise Reports
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
@@ -846,7 +1122,7 @@ export default function Reports() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search all 26 reports..."
+            placeholder={`Search all ${REPORT_CATALOG.length} reports...`}
             value={globalSearch}
             onChange={(e) => setGlobalSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-xs"
@@ -977,7 +1253,8 @@ export default function Reports() {
         {/* Granular Context Filters */}
         <div className="flex flex-wrap items-center gap-3 text-xs">
           {/* Standard Selector */}
-          {(activeReportId === 'student-master' ||
+          {(isConcessionReportActive ||
+            activeReportId === 'student-master' ||
             activeReportId === 'student-attendance' ||
             activeReportId === 'withdrawals' ||
             activeReportId === 'batch-capacity' ||
@@ -1004,7 +1281,8 @@ export default function Reports() {
           )}
 
           {/* Division / Batch Selector */}
-          {(activeReportId === 'student-master' ||
+          {(isConcessionReportActive ||
+            activeReportId === 'student-master' ||
             activeReportId === 'student-attendance' ||
             activeReportId === 'withdrawals' ||
             activeReportId === 'timetable-utilization' ||
@@ -1026,6 +1304,43 @@ export default function Reports() {
             </div>
           )}
 
+          {/* Concession Governance Filters */}
+          {isConcessionReportActive && (
+            <>
+              <input
+                type="text"
+                value={concessionStudentSearch}
+                onChange={(e) => setConcessionStudentSearch(e.target.value)}
+                placeholder="Search student / app # / sponsor..."
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium min-w-[190px]"
+              />
+              <select
+                value={concessionStatusFilter}
+                onChange={(e) => setConcessionStatusFilter(e.target.value)}
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium"
+              >
+                <option value="all">All Statuses</option>
+                <option value="applied">Applied / Posted</option>
+                <option value="approved">Approved (Unapplied)</option>
+                <option value="pending_approval">Pending Approval</option>
+                <option value="expired">Expired</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="reversed">Reversed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <select
+                value={concessionFundingFilter}
+                onChange={(e) => setConcessionFundingFilter(e.target.value)}
+                className="px-2.5 py-1 bg-slate-50 border border-slate-300 rounded-lg text-slate-800 font-medium"
+              >
+                <option value="all">All Funding Sources</option>
+                <option value="institute">Institute / Academy</option>
+                <option value="external_sponsor">External Sponsor</option>
+                <option value="government">Government Grant</option>
+              </select>
+            </>
+          )}
+
           {/* Exam Selector */}
           {(activeReportId === 'exam-merit' || activeReportId === 'exam-analytics') && (
             <div className="flex items-center gap-1.5">
@@ -1045,7 +1360,8 @@ export default function Reports() {
           )}
 
           {/* Date Range Pickers */}
-          {(activeReportId === 'student-attendance' ||
+          {(isConcessionReportActive ||
+            activeReportId === 'student-attendance' ||
             activeReportId === 'daily-collection' ||
             activeReportId.startsWith('payroll-') ||
             activeReportId === 'audit-logs') && (
@@ -1716,7 +2032,7 @@ export default function Reports() {
           {/* 23. Students: CRM Enquiries & Pipeline */}
           {activeReportId === 'crm-enquiries' && (
             <div className="space-y-6">
-              <ExcelReportGrid
+                <ExcelReportGrid
                 title="Counsellor Conversion Matrix"
                 subtitle="Counsellor lead allocation, follow-ups logged, admissions secured, and conversion percentages"
                 columns={[
@@ -1734,8 +2050,159 @@ export default function Reports() {
               />
             </div>
           )}
+
+          {/* 24. All 20 Governed Concession, Waiver & Scholarship Reports (Phase 5) */}
+          {isConcessionReportActive && (
+            <div className="space-y-4">
+              {/* Server Export & Print Action Strip */}
+              <div className="bg-white border border-indigo-200/80 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {concessionReportData?.title || activeReport.name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Generated {concessionReportData?.generated_at ? new Date(concessionReportData.generated_at).toLocaleString('en-IN') : 'Live SSOT'}
+                    {' · '}Currency: {concessionReportData?.currency?.code || 'INR'} ({concessionReportData?.currency?.symbol || '₹'})
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadConcessionExport('xlsx')}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-1.5"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    <span>Export Server XLSX</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadConcessionExport('csv')}
+                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold inline-flex items-center gap-1.5"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    <span>Export Server CSV</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold"
+                  >
+                    Print / PDF
+                  </button>
+                </div>
+              </div>
+
+              {/* Report Summary Cards */}
+              {concessionReportData?.summary && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                  {Object.entries(concessionReportData.summary).map(([key, val]) => {
+                    const isCurrency = !key.includes('count') && !key.includes('students') && !key.includes('percentage') && !key.includes('rate')
+                    return (
+                      <div key={key} className="bg-white border border-slate-200 rounded-xl p-3">
+                        <p className="text-[10px] font-bold uppercase text-slate-500">
+                          {key.replace(/_/g, ' ')}
+                        </p>
+                        <p className="text-sm font-extrabold text-slate-900 mt-0.5">
+                          {isCurrency
+                            ? `${concessionReportData.currency?.symbol || '₹'}${Number(val || 0).toLocaleString('en-IN')}`
+                            : Number(val || 0).toLocaleString('en-IN')}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Governed Report Grid with Trace Drill-Down */}
+              <ExcelReportGrid
+                title={concessionReportData?.title || activeReport.name}
+                subtitle={activeReport.description}
+                columns={[
+                  ...(concessionReportData?.columns || []).map((col): ColumnConfig<any> => ({
+                    id: col.key,
+                    header: col.label,
+                    accessorKey: col.key,
+                    type: col.type === 'currency' ? 'currency' : col.type === 'number' || col.type === 'percent' ? 'number' : 'text',
+                    width: col.key.includes('name') || col.key.includes('remark') || col.key.includes('scheme') ? 170 : 125,
+                    align: col.type === 'currency' || col.type === 'number' || col.type === 'percent' ? 'right' : 'left',
+                    sortable: true,
+                    filterable: true,
+                    render: (val: any) => {
+                      if (col.type === 'currency') {
+                        return (
+                          <span className={`font-bold ${Number(val) < 0 ? 'text-rose-700' : 'text-slate-900'}`}>
+                            {concessionReportData?.currency?.symbol || '₹'}{Number(val || 0).toLocaleString('en-IN')}
+                          </span>
+                        )
+                      }
+                      if (col.type === 'percent') {
+                        return <span className="font-bold text-indigo-700">{Number(val || 0).toFixed(1)}%</span>
+                      }
+                      return val ?? '—'
+                    },
+                  })),
+                  {
+                    id: '_trace',
+                    header: 'Traceability',
+                    accessorKey: 'application_id',
+                    type: 'text',
+                    width: 100,
+                    align: 'center',
+                    render: (_val: any, row: any) => {
+                      if (row?.application_id) {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => setTraceTarget({ type: 'application', id: row.application_id })}
+                            className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[11px] hover:bg-indigo-100"
+                          >
+                            Trace
+                          </button>
+                        )
+                      }
+                      if (row?.invoice_id) {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => setTraceTarget({ type: 'invoice', id: row.invoice_id })}
+                            className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[11px] hover:bg-indigo-100"
+                          >
+                            Trace Inv
+                          </button>
+                        )
+                      }
+                      if (row?.student_id) {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => setTraceTarget({ type: 'student', id: row.student_id })}
+                            className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[11px] hover:bg-indigo-100"
+                          >
+                            Trace Stu
+                          </button>
+                        )
+                      }
+                      return <span className="text-slate-300">—</span>
+                    },
+                  },
+                ]}
+                data={concessionReportData?.rows || []}
+                loading={loadingConcessionReport}
+                exportFilename={activeReportId}
+                sheetName="Concessions"
+                showSummaryRow={true}
+              />
+            </div>
+          )}
         </div>
       )}
+
+      {/* Drill-Down Financial Traceability Modal */}
+      <ConcessionTraceModal
+        entityType={traceTarget?.type ?? null}
+        entityId={traceTarget?.id ?? null}
+        onClose={() => setTraceTarget(null)}
+      />
     </div>
   )
 }

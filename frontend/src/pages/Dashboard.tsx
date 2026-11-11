@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Executive management & financial analytics dashboard featuring 8 multi-tab workspaces: Overview, Fee Collection, Outstanding Analysis, Student Analysis, Admissions & CRM, Academic Analysis, Transactions & Reconciliation, and Operations.
  */
@@ -42,6 +42,7 @@ import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { encodeCodexNumber } from '../utils/codexFormatter'
 import QuickDecoderModal from '../components/codex/QuickDecoderModal'
+import { ConcessionTraceModal } from '../components/common'
 import type { OutstandingDrilldownRecord, DashboardAnalyticsData } from '../types'
 
 const fmt = (n: number | null | undefined) =>
@@ -162,8 +163,12 @@ export default function DashboardPage() {
 
   const collectionRate = stats?.collection_rate ?? 0
 
-  // Quick Decoder modal state
+  // Quick Decoder & Financial Traceability modal state
   const [decoderCode, setDecoderCode] = useState<string | null>(null)
+  const [traceTarget, setTraceTarget] = useState<{
+    type: 'application' | 'allocation' | 'invoice' | 'student'
+    id: number
+  } | null>(null)
 
   // Query CodeX user status
   const { data: codexStatus } = useQuery({
@@ -607,6 +612,87 @@ export default function DashboardPage() {
               />
             </div>
           </div>
+
+          {/* Governed Concession, Waiver & Scholarship Executive Summary (SSOT) */}
+          {stats?.concession_governance && (() => {
+            const gov = stats.concession_governance
+            const fin = gov.financials
+            const spon = gov.sponsors
+            const cnt = gov.counts
+            return (
+              <div className="bg-white border border-indigo-200/80 rounded-xl p-4 shadow-2xs space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-indigo-600" />
+                    <h2 className="text-sm font-bold text-gray-900">
+                      Financial Benefit &amp; Concession Governance (SSOT)
+                    </h2>
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {cnt.beneficiary_students} Beneficiaries
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs">
+                    {cnt.pending_approvals > 0 && (
+                      <Link
+                        to="/fees?tab=concessions"
+                        className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-semibold hover:bg-amber-100"
+                      >
+                        {cnt.pending_approvals} Pending Approval(s) →
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/reports')}
+                      className="text-indigo-700 hover:underline font-semibold"
+                    >
+                      Open 20 Governance Reports →
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 text-xs">
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <p className="text-[10px] font-semibold uppercase text-slate-500">Gross Assessed</p>
+                    <p className="text-sm font-bold text-slate-900 mt-0.5">{fmt(fin.gross_fee_assessed)}</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200">
+                    <p className="text-[10px] font-semibold uppercase text-blue-700">Approved Benefits</p>
+                    <p className="text-sm font-bold text-blue-900 mt-0.5">{fmt(fin.approved_concessions_total)}</p>
+                    {fin.approved_unapplied > 0 && (
+                      <p className="text-[10px] text-amber-700 font-semibold">{fmt(fin.approved_unapplied)} unapplied</p>
+                    )}
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                    <p className="text-[10px] font-semibold uppercase text-emerald-700">Posted Concessions</p>
+                    <p className="text-sm font-bold text-emerald-900 mt-0.5">{fmt(fin.posted_fee_concessions + fin.manual_fee_adjustments)}</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-purple-50/70 border border-purple-200">
+                    <p className="text-[10px] font-semibold uppercase text-purple-700">Fee Waivers</p>
+                    <p className="text-sm font-bold text-purple-900 mt-0.5">{fmt(fin.posted_fee_waivers)}</p>
+                    <p className="text-[10px] text-purple-600">
+                      Full: {fmt(fin.full_fee_waivers)} · Part: {fmt(fin.partial_fee_waivers)}
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-indigo-50/70 border border-indigo-200">
+                    <p className="text-[10px] font-semibold uppercase text-indigo-700">Scholarships</p>
+                    <p className="text-sm font-bold text-indigo-900 mt-0.5">{fmt(fin.scholarships_awarded)}</p>
+                    <p className="text-[10px] text-indigo-600">
+                      Acad: {fmt(fin.academy_scholarships)} · Spon: {fmt(fin.sponsor_funded_scholarships)}
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200">
+                    <p className="text-[10px] font-semibold uppercase text-amber-700">Sponsor Receivable</p>
+                    <p className="text-sm font-bold text-amber-900 mt-0.5">{fmt(spon.outstanding_sponsor_funding)}</p>
+                    <p className="text-[10px] text-amber-700">{spon.settlement_rate}% settled</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-900 text-white">
+                    <p className="text-[10px] font-semibold uppercase text-slate-300">Net Collectible</p>
+                    <p className="text-sm font-bold mt-0.5">{fmt(fin.net_fee_due)}</p>
+                    <p className="text-[10px] text-emerald-300">Paid: {fmt(fin.total_collections)}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Secondary Financial Indicators Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -1291,18 +1377,18 @@ export default function DashboardPage() {
           {/* Top Inflow KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Total Fees Invoiced"
-              value={fmt(analytics?.outstanding_analysis?.status_wise?.total_historical?.invoiced ?? stats?.total_fees)}
+              title="Net Fees Invoiced"
+              value={fmt(analytics?.fee_collection?.net_fee_due ?? analytics?.outstanding_analysis?.status_wise?.total_historical?.invoiced ?? stats?.total_fees)}
               icon={Receipt}
               color="blue"
-              subtitle="Consolidated billing across all standards"
+              subtitle={`Gross ${fmt(analytics?.fee_collection?.gross_fee_assessed ?? stats?.concession_governance?.financials?.gross_fee_assessed)} less ${fmt(analytics?.fee_collection?.posted_concessions ?? stats?.concession_governance?.financials?.posted_concessions_total)} benefits`}
             />
             <StatCard
               title="Net Fee Collections"
-              value={fmt(analytics?.fee_collection?.total_collected ?? stats?.total_collected)}
+              value={fmt(analytics?.fee_collection?.net_collection ?? analytics?.fee_collection?.total_collected ?? stats?.total_collected)}
               icon={DollarSign}
               color="green"
-              subtitle="Total successful collections to date"
+              subtitle={`Gross receipts ${fmt(analytics?.fee_collection?.gross_collected ?? analytics?.fee_collection?.total_collected ?? stats?.total_collected)} less refunds ${fmt(analytics?.fee_collection?.refunds_amount)}`}
             />
             <StatCard
               title="Target Achievement"
@@ -1312,13 +1398,54 @@ export default function DashboardPage() {
               subtitle="Overall collection conversion efficiency"
             />
             <StatCard
-              title="Reversals & Write-Offs"
-              value={fmt(analytics?.fee_collection?.reversals_amount ?? 0)}
-              icon={CheckCircle2}
+              title="Reversals & Refunds"
+              value={fmt((analytics?.fee_collection?.reversals_amount ?? 0) + (analytics?.fee_collection?.concessions_reversed ?? 0) + (analytics?.fee_collection?.refunds_amount ?? 0))}
+              icon={AlertCircle}
               color="purple"
-              subtitle="Zero unauthorized waivers recorded"
+              subtitle={`Payments reversed: ${fmt(analytics?.fee_collection?.reversals_amount)} · Refunds: ${fmt(analytics?.fee_collection?.refunds_amount)}`}
             />
           </div>
+
+          {/* Phase 4C Governed Collection vs Concessions & Refunds Breakdown */}
+          {(analytics?.concession_governance || stats?.concession_governance) && (() => {
+            const cGov = analytics?.concession_governance || stats?.concession_governance!
+            const fin = cGov.financials
+            const spon = cGov.sponsors
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-2xs">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase">Posted Concessions</p>
+                  <p className="text-base font-bold text-emerald-700 mt-1">{fmt(fin.posted_fee_concessions)}</p>
+                  <p className="text-[10px] text-gray-400">Approved: {fmt(fin.approved_concessions_total)}</p>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-2xs">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase">Fee Waivers</p>
+                  <p className="text-base font-bold text-purple-700 mt-1">{fmt(fin.posted_fee_waivers)}</p>
+                  <p className="text-[10px] text-gray-400">Full {fmt(fin.full_fee_waivers)} · Part {fmt(fin.partial_fee_waivers)}</p>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-2xs">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase">Scholarships</p>
+                  <p className="text-base font-bold text-indigo-700 mt-1">{fmt(fin.scholarships_awarded)}</p>
+                  <p className="text-[10px] text-gray-400">Unapplied: {fmt(fin.approved_unapplied)}</p>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-2xs">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase">Sponsor Settlements</p>
+                  <p className="text-base font-bold text-amber-700 mt-1">{fmt(spon.total_received)}</p>
+                  <p className="text-[10px] text-gray-400">Pending: {fmt(spon.outstanding_sponsor_funding)}</p>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-2xs">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase">Pending Verifications</p>
+                  <p className="text-base font-bold text-orange-700 mt-1">{fmt(fin.pending_payments_amount)}</p>
+                  <p className="text-[10px] text-gray-400">{cGov.counts.pending_payments} payment(s) in queue</p>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-2xs">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase">Credit Adjustments</p>
+                  <p className="text-base font-bold text-slate-800 mt-1">{fmt(fin.credit_adjustments)}</p>
+                  <p className="text-[10px] text-gray-400">Overpayment surpluses</p>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Charts Row 1: Monthly Trend & Target Comparison */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1645,33 +1772,74 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Total CRM Inquiries"
-              value={analytics?.admissions_crm?.total_leads ?? 22}
+              value={analytics?.admissions_crm?.total_leads ?? 0}
               icon={Target}
               color="primary"
               subtitle="Registered leads in pipeline"
             />
             <StatCard
               title="Enquiry-to-Admission"
-              value={`${analytics?.admissions_crm?.conversion_rate ?? 13.6}%`}
+              value={`${analytics?.admissions_crm?.conversion_rate ?? 0}%`}
               icon={TrendingUp}
               color="green"
-              subtitle={`${analytics?.admissions_crm?.converted_count ?? 3} admissions confirmed`}
+              subtitle={`${analytics?.admissions_crm?.converted_count ?? 0} admissions confirmed`}
             />
             <StatCard
               title="Follow-Up Completion"
-              value={`${analytics?.admissions_crm?.follow_ups?.completion_rate ?? 100}%`}
+              value={`${analytics?.admissions_crm?.follow_ups?.completion_rate ?? 0}%`}
               icon={CheckCircle2}
               color="blue"
-              subtitle={`${analytics?.admissions_crm?.follow_ups?.completed ?? 27} / 27 calls logged`}
+              subtitle={`${analytics?.admissions_crm?.follow_ups?.completed ?? 0} / ${analytics?.admissions_crm?.follow_ups?.total ?? 0} calls logged`}
             />
             <StatCard
               title="Demo Trials Scheduled"
-              value={analytics?.admissions_crm?.demo_classes?.scheduled ?? 3}
+              value={analytics?.admissions_crm?.demo_classes?.scheduled ?? 0}
               icon={Video}
               color="purple"
-              subtitle="Interactive sessions booked"
+              subtitle={`${analytics?.admissions_crm?.demo_classes?.completed ?? 0} demo sessions completed`}
             />
           </div>
+
+          {/* Phase 4F Admission Concessions, Promotional Offers & Scholarships */}
+          {analytics?.admissions_crm?.admission_concessions && (
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-2xs">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <Award className="w-4 h-4 text-emerald-600" />
+                  <span>Admission Concessions, Promotional Offers &amp; Scholarships (SSOT)</span>
+                </h2>
+                <Link to="/leads" className="text-xs font-semibold text-primary-600 hover:underline">
+                  Manage Admissions CRM →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                  <p className="text-[10px] font-semibold uppercase text-emerald-700">Admission Concessions</p>
+                  <p className="text-base font-bold text-emerald-900 mt-0.5">
+                    {fmt(analytics.admissions_crm.admission_concessions.admission_concessions)}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-purple-50/70 border border-purple-200">
+                  <p className="text-[10px] font-semibold uppercase text-purple-700">Promotional Offers</p>
+                  <p className="text-base font-bold text-purple-900 mt-0.5">
+                    {fmt(analytics.admissions_crm.admission_concessions.promotional_offers)}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-200">
+                  <p className="text-[10px] font-semibold uppercase text-blue-700">Sibling / Family Discounts</p>
+                  <p className="text-base font-bold text-blue-900 mt-0.5">
+                    {fmt(analytics.admissions_crm.admission_concessions.sibling_discounts)}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-indigo-50/70 border border-indigo-200">
+                  <p className="text-[10px] font-semibold uppercase text-indigo-700">New Admission Scholarships</p>
+                  <p className="text-base font-bold text-indigo-900 mt-0.5">
+                    {fmt(analytics.admissions_crm.admission_concessions.new_admission_scholarships)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Lead Funnel & Sources Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1727,31 +1895,31 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Attendance Rate"
-              value={`${analytics?.academic_analysis?.attendance?.present_percentage ?? 92.8}%`}
+              value={`${analytics?.academic_analysis?.attendance?.present_percentage ?? 0}%`}
               icon={CheckCircle2}
               color="green"
-              subtitle="1,266 / 1,365 sessions present"
+              subtitle={`${analytics?.academic_analysis?.attendance?.present_count ?? 0} / ${analytics?.academic_analysis?.attendance?.total_records ?? 0} sessions present`}
             />
             <StatCard
               title="Exam Pass Rate"
-              value={`${analytics?.academic_analysis?.examinations?.pass_percentage ?? 91.7}%`}
+              value={`${analytics?.academic_analysis?.examinations?.pass_percentage ?? 0}%`}
               icon={Award}
               color="primary"
-              subtitle="286 / 312 exam entries passed"
+              subtitle={`${analytics?.academic_analysis?.examinations?.passed_count ?? 0} / ${analytics?.academic_analysis?.examinations?.total_marks_recorded ?? 0} exam entries passed`}
             />
             <StatCard
               title="Average Exam Score"
-              value={`${analytics?.academic_analysis?.examinations?.average_score ?? 59.8}%`}
+              value={`${analytics?.academic_analysis?.examinations?.average_score ?? 0}%`}
               icon={TrendingUp}
               color="blue"
-              subtitle="Highest score: 95.0%"
+              subtitle={`Highest score: ${analytics?.academic_analysis?.examinations?.max_score ?? 0}%`}
             />
             <StatCard
               title="Canonical Subjects"
-              value={analytics?.academic_analysis?.inventory?.subjects_count ?? 62}
+              value={analytics?.academic_analysis?.inventory?.subjects_count ?? 0}
               icon={BookOpen}
               color="purple"
-              subtitle="Mapped across 17 standards"
+              subtitle={`Mapped across ${analytics?.academic_analysis?.inventory?.standards_count ?? 0} standards & ${analytics?.academic_analysis?.inventory?.divisions_count ?? 0} divisions`}
             />
           </div>
 
@@ -1763,7 +1931,9 @@ export default function DashboardPage() {
                 <Award className="w-4 h-4 text-primary-600" />
                 <span>Examination Grade Distribution</span>
               </h2>
-              <p className="text-xs text-gray-500 mb-4">Official grades awarded across 312 student score sheets</p>
+              <p className="text-xs text-gray-500 mb-4">
+                Official grades awarded across {analytics?.academic_analysis?.examinations?.total_marks_recorded ?? 0} student score sheets
+              </p>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.academic_analysis?.examinations?.grade_distribution || []}>
@@ -1783,40 +1953,94 @@ export default function DashboardPage() {
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <span>Student Attendance Breakdown</span>
               </h2>
-              <p className="text-xs text-gray-500 mb-4">1,365 total attendance events audited</p>
+              <p className="text-xs text-gray-500 mb-4">
+                {analytics?.academic_analysis?.attendance?.total_records ?? 0} total attendance events audited
+              </p>
               <div className="space-y-4 pt-2">
                 <div>
                   <div className="flex justify-between text-xs font-semibold text-emerald-800 mb-1">
                     <span>Present (On Time)</span>
-                    <span>{analytics?.academic_analysis?.attendance?.present_count ?? 1266} ({analytics?.academic_analysis?.attendance?.present_percentage ?? 92.8}%)</span>
+                    <span>{analytics?.academic_analysis?.attendance?.present_count ?? 0} ({analytics?.academic_analysis?.attendance?.present_percentage ?? 0}%)</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-emerald-600 h-3 rounded-full" style={{ width: `${analytics?.academic_analysis?.attendance?.present_percentage ?? 92.8}%` }} />
+                    <div className="bg-emerald-600 h-3 rounded-full" style={{ width: `${analytics?.academic_analysis?.attendance?.present_percentage ?? 0}%` }} />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between text-xs font-semibold text-red-800 mb-1">
                     <span>Absent (Unexcused)</span>
-                    <span>{analytics?.academic_analysis?.attendance?.absent_count ?? 78} ({analytics?.academic_analysis?.attendance?.absent_percentage ?? 5.7}%)</span>
+                    <span>{analytics?.academic_analysis?.attendance?.absent_count ?? 0} ({analytics?.academic_analysis?.attendance?.absent_percentage ?? 0}%)</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-red-500 h-3 rounded-full" style={{ width: `${analytics?.academic_analysis?.attendance?.absent_percentage ?? 5.7}%` }} />
+                    <div className="bg-red-500 h-3 rounded-full" style={{ width: `${analytics?.academic_analysis?.attendance?.absent_percentage ?? 0}%` }} />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between text-xs font-semibold text-amber-800 mb-1">
                     <span>Late Arrival</span>
-                    <span>{analytics?.academic_analysis?.attendance?.late_count ?? 21} ({analytics?.academic_analysis?.attendance?.late_percentage ?? 1.5}%)</span>
+                    <span>{analytics?.academic_analysis?.attendance?.late_count ?? 0} ({analytics?.academic_analysis?.attendance?.late_percentage ?? 0}%)</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div className="bg-amber-500 h-3 rounded-full" style={{ width: `${analytics?.academic_analysis?.attendance?.late_percentage ?? 1.5}%` }} />
+                    <div className="bg-amber-500 h-3 rounded-full" style={{ width: `${analytics?.academic_analysis?.attendance?.late_percentage ?? 0}%` }} />
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Phase 4E: Class-wise & Division-wise Concessions & Scholarships */}
+          {analytics?.academic_analysis?.concession_distribution && (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-2xs p-4 sm:p-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-indigo-600" />
+                    <span>Class-Wise Concession, Waiver &amp; Scholarship Distribution</span>
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    Gross assessment, beneficiaries, average benefit, waivers, scholarships, and net revenue per class/division
+                  </p>
+                </div>
+                <Link to="/reports" className="text-xs font-semibold text-indigo-600 hover:underline">
+                  Export Class-Wise Report →
+                </Link>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-gray-50 text-gray-500 uppercase font-semibold border-y border-gray-200">
+                    <tr>
+                      <th className="px-3 py-2">Class / Standard</th>
+                      <th className="px-3 py-2 text-right">Students</th>
+                      <th className="px-3 py-2 text-right">Beneficiaries</th>
+                      <th className="px-3 py-2 text-right">Gross Fee</th>
+                      <th className="px-3 py-2 text-right">Concessions</th>
+                      <th className="px-3 py-2 text-right">Waivers</th>
+                      <th className="px-3 py-2 text-right">Scholarships</th>
+                      <th className="px-3 py-2 text-right">Avg Benefit</th>
+                      <th className="px-3 py-2 text-right">Net Fee Due</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(analytics.academic_analysis.concession_distribution.class_wise || []).map((row) => (
+                      <tr key={row.class_name} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-semibold text-gray-900">{row.class_name}</td>
+                        <td className="px-3 py-2 text-right">{row.total_students}</td>
+                        <td className="px-3 py-2 text-right font-semibold text-indigo-700">{row.beneficiary_students}</td>
+                        <td className="px-3 py-2 text-right">{fmt(row.gross_fee)}</td>
+                        <td className="px-3 py-2 text-right text-emerald-700 font-semibold">{fmt(row.total_concessions)}</td>
+                        <td className="px-3 py-2 text-right text-purple-700">{fmt(row.fee_waivers)}</td>
+                        <td className="px-3 py-2 text-right text-indigo-700">{fmt(row.scholarships)}</td>
+                        <td className="px-3 py-2 text-right text-gray-600">{fmt(row.avg_concession)}</td>
+                        <td className="px-3 py-2 text-right font-bold text-gray-900">{fmt(row.net_fee)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1826,72 +2050,131 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Total Transactions"
-              value={analytics?.transactions_reconciliation?.total_transactions ?? 171}
+              value={analytics?.transactions_reconciliation?.total_transactions ?? 0}
               icon={Receipt}
               color="primary"
-              subtitle="All verified payment receipts"
+              subtitle="All recorded payment receipts"
             />
             <StatCard
-              title="Total Inflow Volume"
-              value={fmt(analytics?.transactions_reconciliation?.total_volume ?? 1794300)}
+              title="Net Collections Cleared"
+              value={fmt(analytics?.concession_governance?.financials?.net_collections ?? analytics?.transactions_reconciliation?.total_volume ?? 0)}
               icon={DollarSign}
               color="green"
-              subtitle="Directly cleared in accounts"
+              subtitle={`Gross ${fmt(analytics?.transactions_reconciliation?.total_volume ?? 0)} less ${fmt(analytics?.transactions_reconciliation?.refunds?.completed_amount ?? 0)} refunds`}
             />
             <StatCard
               title="Audit Sanity Variance"
               value={fmt(analytics?.transactions_reconciliation?.ledger_audit?.variance ?? 0)}
               icon={ShieldCheck}
-              color="blue"
-              subtitle="100% Mathematically Reconciled"
+              color={analytics?.transactions_reconciliation?.ledger_audit?.is_reconciled ? 'blue' : 'orange'}
+              subtitle={analytics?.transactions_reconciliation?.ledger_audit?.is_reconciled ? '100% Mathematically Reconciled' : 'Variance Detected — Inspect Audit'}
             />
             <StatCard
               title="Pending Refunds"
               value={analytics?.transactions_reconciliation?.refunds?.pending_count ?? 0}
               icon={AlertCircle}
               color="purple"
-              subtitle="Zero refund liability backlog"
+              subtitle={`Pending liability: ${fmt(analytics?.transactions_reconciliation?.refunds?.pending_amount ?? 0)}`}
             />
           </div>
 
           {/* Official Financial Sanity Audit Ledger Box */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-2xs p-5">
-            <h2 className="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-              <span>Double-Entry Financial Ledger Audit Balance Sheet</span>
-            </h2>
-            <p className="text-xs text-gray-500 mb-4">
-              Mathematical proof of zero variance between invoiced receivables, verified collections, and active ledger balances
-            </p>
+          <div className="bg-white border border-gray-200 rounded-xl shadow-2xs p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span>Double-Entry Financial Ledger &amp; Concession Audit Balance Sheet</span>
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Live database proof reconciling Gross Fee Assessment, Concessions, Waivers, Scholarships, Net Collectible, Realized Collections, Refunds &amp; Reversals
+                </p>
+              </div>
+              <Link
+                to="/fees?tab=concessions"
+                className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100"
+              >
+                Open Benefit &amp; Traceability Ledger →
+              </Link>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 border border-gray-200 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 rounded-xl bg-slate-50 border border-gray-200 text-center">
               <div>
-                <p className="text-xs text-gray-500 uppercase font-medium">Total Invoiced (Debits)</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">
-                  {fmt(analytics?.transactions_reconciliation?.ledger_audit?.total_invoiced ?? 2894000)}
+                <p className="text-[11px] text-gray-500 uppercase font-medium">Gross Assessed</p>
+                <p className="text-lg font-bold text-gray-900 mt-1">
+                  {fmt(analytics?.transactions_reconciliation?.ledger_audit?.gross_fee_assessed ?? analytics?.transactions_reconciliation?.ledger_audit?.total_invoiced ?? 0)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase font-medium">Total Collected (Credits)</p>
-                <p className="text-xl font-bold text-emerald-700 mt-1">
-                  {fmt(analytics?.transactions_reconciliation?.ledger_audit?.total_collected ?? 1794300)}
+                <p className="text-[11px] text-gray-500 uppercase font-medium">Posted Reductions</p>
+                <p className="text-lg font-bold text-indigo-700 mt-1">
+                  -{fmt(analytics?.transactions_reconciliation?.ledger_audit?.total_posted_reductions ?? 0)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 uppercase font-medium">Ledger Outstanding (Balance)</p>
-                <p className="text-xl font-bold text-amber-700 mt-1">
-                  {fmt(analytics?.transactions_reconciliation?.ledger_audit?.total_outstanding ?? 1094700)}
+                <p className="text-[11px] text-gray-500 uppercase font-medium">Net Invoiced Due</p>
+                <p className="text-lg font-bold text-gray-900 mt-1">
+                  {fmt(analytics?.transactions_reconciliation?.ledger_audit?.total_invoiced ?? 0)}
                 </p>
               </div>
-              <div className="border-l border-gray-200 pl-4">
-                <p className="text-xs text-gray-500 uppercase font-medium">Reconciliation Status</p>
-                <p className="text-base font-bold text-emerald-600 mt-1 flex items-center justify-center gap-1">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>100% Balanced</span>
+              <div>
+                <p className="text-[11px] text-gray-500 uppercase font-medium">Invoice Paid (Credits)</p>
+                <p className="text-lg font-bold text-emerald-700 mt-1">
+                  {fmt(analytics?.transactions_reconciliation?.ledger_audit?.total_collected ?? 0)}
                 </p>
-                <p className="text-[10px] text-gray-400 mt-0.5">Variance: ₹0.00</p>
+              </div>
+              <div className="md:border-l border-gray-200 md:pl-3">
+                <p className="text-[11px] text-gray-500 uppercase font-medium">Outstanding &amp; Status</p>
+                <p className="text-lg font-bold text-amber-700 mt-1">
+                  {fmt(analytics?.transactions_reconciliation?.ledger_audit?.total_outstanding ?? 0)}
+                </p>
+                <p className={`text-[11px] font-bold mt-0.5 flex items-center justify-center gap-1 ${
+                  analytics?.transactions_reconciliation?.ledger_audit?.is_reconciled ? 'text-emerald-600' : 'text-red-600'
+                }`}>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>
+                    {analytics?.transactions_reconciliation?.ledger_audit?.is_reconciled
+                      ? '100% Balanced'
+                      : `Variance: ${fmt(analytics?.transactions_reconciliation?.ledger_audit?.variance ?? 0)}`}
+                  </span>
+                </p>
               </div>
             </div>
+
+            {analytics?.transactions_reconciliation?.benefits_breakdown && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 text-xs">
+                <div className="p-2.5 rounded-lg border border-gray-200">
+                  <span className="text-[10px] text-gray-500 uppercase block">Fee Concessions</span>
+                  <span className="font-bold text-emerald-700">{fmt(analytics.transactions_reconciliation.benefits_breakdown.fee_concessions)}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border border-gray-200">
+                  <span className="text-[10px] text-gray-500 uppercase block">Fee Waivers</span>
+                  <span className="font-bold text-purple-700">{fmt(analytics.transactions_reconciliation.benefits_breakdown.fee_waivers)}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border border-gray-200">
+                  <span className="text-[10px] text-gray-500 uppercase block">Academy Scholarships</span>
+                  <span className="font-bold text-indigo-700">{fmt(analytics.transactions_reconciliation.benefits_breakdown.scholarships)}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border border-gray-200">
+                  <span className="text-[10px] text-gray-500 uppercase block">Sponsor Scholarships</span>
+                  <span className="font-bold text-amber-700">{fmt(analytics.transactions_reconciliation.benefits_breakdown.sponsor_funded)}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border border-gray-200">
+                  <span className="text-[10px] text-gray-500 uppercase block">Approved Unapplied</span>
+                  <span className="font-bold text-orange-700">{fmt(analytics.transactions_reconciliation.benefits_breakdown.approved_unapplied)}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border border-gray-200">
+                  <span className="text-[10px] text-gray-500 uppercase block">Reversed Benefit Postings</span>
+                  <span className="font-bold text-rose-700">{fmt(analytics.transactions_reconciliation.reversals?.reversed_concessions_amount ?? 0)}</span>
+                </div>
+                <div className="p-2.5 rounded-lg border border-gray-200">
+                  <span className="text-[10px] text-gray-500 uppercase block">Broken Invoice Rows</span>
+                  <span className="font-bold text-slate-900">
+                    {analytics.transactions_reconciliation.ledger_audit.broken_invoices_count ?? 0}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2146,7 +2429,17 @@ export default function DashboardPage() {
                         </td>
 
                         <td className="py-2.5 text-right font-bold text-red-700">
-                          {fmt(r.outstanding_amount)}
+                          <div className="inline-flex items-center gap-2 justify-end">
+                            <span>{fmt(r.outstanding_amount)}</span>
+                            <button
+                              type="button"
+                              onClick={() => setTraceTarget({ type: 'invoice', id: r.invoice_id })}
+                              className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 underline"
+                              title="Trace invoice, concessions, payments and audit history"
+                            >
+                              Trace
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -2178,6 +2471,14 @@ export default function DashboardPage() {
           initialCode={decoderCode}
         />
       )}
+
+      {/* Drill-Down Financial Traceability Modal */}
+      <ConcessionTraceModal
+        entityType={traceTarget?.type ?? null}
+        entityId={traceTarget?.id ?? null}
+        onClose={() => setTraceTarget(null)}
+        onNavigateStudent={(sid) => navigate(`/students/${sid}`)}
+      />
     </div>
   )
 }

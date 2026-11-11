@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Pytest configuration fixtures providing test database session, test client, and auth helpers.
 #  */
@@ -132,6 +132,22 @@ async def db_setup():
             ("admin", "payments", "refund_process"),
             ("admin", "payments", "refund_approve"),
             ("admin", "payments", "view_audit"),
+            ("admin", "concessions", "view"),
+            ("admin", "concessions", "nominate"),
+            ("admin", "concessions", "verify"),
+            ("admin", "concessions", "approve"),
+            ("admin", "concessions", "apply"),
+            ("admin", "concessions", "reverse"),
+            ("admin", "concessions", "cancel"),
+            ("admin", "concessions", "reports"),
+            ("admin", "concessions", "sponsor_settle"),
+
+            ("principal", "concessions", "view"),
+            ("principal", "concessions", "nominate"),
+            ("principal", "concessions", "verify"),
+            ("principal", "concessions", "approve"),
+            ("principal", "concessions", "apply"),
+            ("principal", "concessions", "reports"),
 
             ("accountant", "fees", "view"),
             ("accountant", "payments", "view"),
@@ -139,6 +155,19 @@ async def db_setup():
             ("accountant", "payments", "edit_submitted"),
             ("accountant", "payments", "refund_process"),
             ("accountant", "payments", "view_audit"),
+            ("accountant", "concessions", "view"),
+            ("accountant", "concessions", "nominate"),
+            ("accountant", "concessions", "verify"),
+            ("accountant", "concessions", "apply"),
+            ("accountant", "concessions", "reverse"),
+            ("accountant", "concessions", "reports"),
+            ("accountant", "concessions", "sponsor_settle"),
+
+            ("teacher", "concessions", "view"),
+            ("teacher", "concessions", "nominate"),
+
+            ("staff", "concessions", "view"),
+            ("staff", "concessions", "nominate"),
         ]
 
         for rname, res, act in perms_to_seed:

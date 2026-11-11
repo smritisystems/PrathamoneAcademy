@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
@@ -209,6 +209,15 @@ export default function Payments() {
     initialType: 'date',
   })
 
+  // Query: Refunds queue
+  const { data: refundsList = [] } = useQuery({
+    queryKey: ['payments-refunds-queue'],
+    queryFn: async () => {
+      const res = await paymentsApi.listRefunds({ limit: 50 })
+      return res.data
+    },
+  })
+
   // Query: Audit Trail for selected payment
   const { data: auditTrail = [], isLoading: isAuditLoading } = useQuery({
     queryKey: ['payment-audit-trail', auditedPayment?.id],
@@ -223,6 +232,7 @@ export default function Payments() {
   const invalidatePaymentQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['payments-page'] })
     queryClient.invalidateQueries({ queryKey: ['payments-list'] })
+    queryClient.invalidateQueries({ queryKey: ['payments-refunds-queue'] })
     queryClient.invalidateQueries({ queryKey: ['fees-overview'] })
     queryClient.invalidateQueries({ queryKey: ['fee-register'] })
     queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
@@ -231,6 +241,34 @@ export default function Payments() {
     queryClient.invalidateQueries({ queryKey: ['student-fees'] })
     queryClient.invalidateQueries({ queryKey: ['student-invoices'] })
   }
+
+  const approveRefundMutation = useMutation({
+    mutationFn: (refundId: number) => paymentsApi.approveRefund(refundId),
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Refund approved')
+      invalidatePaymentQueries()
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to approve refund'),
+  })
+
+  const processRefundMutation = useMutation({
+    mutationFn: (refundId: number) => paymentsApi.processRefund(refundId),
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Refund disbursed cleanly')
+      invalidatePaymentQueries()
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to process refund'),
+  })
+
+  const rejectRefundMutation = useMutation({
+    mutationFn: ({ refundId, reason }: { refundId: number; reason: string }) =>
+      paymentsApi.rejectRefund(refundId, { reason }),
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Refund rejected')
+      invalidatePaymentQueries()
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to reject refund'),
+  })
 
   // Mutation: Reverse
   const reverseMutation = useMutation({
@@ -450,7 +488,9 @@ export default function Payments() {
         amount: Number(refundForm.amount),
         refund_method: refundForm.refund_method,
         reason: refundForm.reason.trim(),
-        reference_note: refundForm.reference_note.trim() || undefined,
+        reference_number: refundForm.reference_note.trim() || undefined,
+        notes: refundForm.reference_note.trim() || undefined,
+        idempotency_key: `refund-${refundingPayment.id}-${Math.round(Number(refundForm.amount) * 100)}-${Date.now()}`,
       },
     })
   }
@@ -1060,6 +1100,100 @@ export default function Payments() {
                     </tr>
                   )
                 })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Refunds Approval & Disbursement Ledger */}
+      <div className="card bg-white border border-gray-200 shadow-sm overflow-hidden p-0">
+        <div className="px-4 py-3 bg-slate-50 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-gray-900">Refund Requests &amp; Disbursement Ledger ({refundsList.length})</h2>
+            <p className="text-xs text-gray-500">Segregation-of-duties approval and invoice balance synchronization for refunds</p>
+          </div>
+        </div>
+        {refundsList.length === 0 ? (
+          <div className="py-8 text-center text-xs text-gray-400">No fee refund requests recorded.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50 text-gray-500 uppercase font-semibold border-b border-gray-200">
+                <tr>
+                  <th className="py-2.5 px-3">Ref #</th>
+                  <th className="py-2.5 px-3">Student</th>
+                  <th className="py-2.5 px-3">Date</th>
+                  <th className="py-2.5 px-3">Method</th>
+                  <th className="py-2.5 px-3 text-right">Amount</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3">Reason</th>
+                  <th className="py-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {refundsList.map((rf: any) => (
+                  <tr key={rf.id} className="hover:bg-gray-50">
+                    <td className="py-2 px-3 font-mono font-semibold text-primary-700">{rf.reference_number || `REF-${rf.id}`}</td>
+                    <td className="py-2 px-3 font-semibold text-gray-900">{rf.student_name || `Student #${rf.student_id}`}</td>
+                    <td className="py-2 px-3 text-gray-600">{rf.refund_date}</td>
+                    <td className="py-2 px-3 uppercase">{rf.refund_method}</td>
+                    <td className="py-2 px-3 text-right font-bold text-rose-700">{fmt(rf.amount)}</td>
+                    <td className="py-2 px-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                        rf.status === 'completed'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : rf.status === 'approved'
+                          ? 'bg-blue-100 text-blue-700'
+                          : rf.status === 'rejected'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {rf.status}
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 text-gray-600 max-w-xs truncate">{rf.reason}</td>
+                    <td className="py-2 px-3 text-right space-x-1 whitespace-nowrap">
+                      {rf.status === 'requested' && canApprove && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isEditMode) return toast.error('Activate Edit Mode above to approve refunds.')
+                            approveRefundMutation.mutate(rf.id)
+                          }}
+                          className="px-2 py-1 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {(rf.status === 'requested' || rf.status === 'approved') && canRefund && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isEditMode) return toast.error('Activate Edit Mode above to disburse refunds.')
+                            processRefundMutation.mutate(rf.id)
+                          }}
+                          className="px-2 py-1 rounded bg-emerald-600 text-white font-semibold hover:bg-emerald-700"
+                        >
+                          Disburse
+                        </button>
+                      )}
+                      {(rf.status === 'requested' || rf.status === 'approved') && canApprove && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isEditMode) return toast.error('Activate Edit Mode above to reject refunds.')
+                            const reason = window.prompt('Enter rejection reason:')
+                            if (reason && reason.trim()) rejectRefundMutation.mutate({ refundId: rf.id, reason: reason.trim() })
+                          }}
+                          className="px-2 py-1 rounded bg-rose-100 text-rose-700 font-semibold hover:bg-rose-200"
+                        >
+                          Reject
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

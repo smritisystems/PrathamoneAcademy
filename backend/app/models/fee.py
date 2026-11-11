@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description SQLAlchemy models defining fee structures, fee categories, invoices, installments, and fee concessions.
 #  */
@@ -271,6 +271,9 @@ class FeeConcessionType(Base):
     code: Mapped[str] = mapped_column(String(50), nullable=False)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
+    benefit_type: Mapped[str] = mapped_column(
+        String(30), default="fee_concession"
+    )  # fee_concession | fee_waiver | scholarship | sponsor_funding
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     funding_source: Mapped[str] = mapped_column(String(30), default="institute")
     calculation_type: Mapped[str] = mapped_column(String(30), default="percentage")
@@ -321,11 +324,19 @@ class StudentConcessionApplication(Base):
     requested_percentage: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2), nullable=True)
     approved_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
     applied_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
+    reversed_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
+    benefit_type: Mapped[str] = mapped_column(String(30), default="fee_concession", index=True)
+    waiver_scope: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)  # full_waiver | partial_waiver
+    fee_category_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("fee_categories.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     funding_source: Mapped[str] = mapped_column(String(30), default="institute")
     sponsor_name: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     sponsor_reference: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     sponsor_sanctioned_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     sponsor_received_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
+    sponsor_settlement_status: Mapped[str] = mapped_column(String(30), default="not_applicable")
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(30), default="draft", index=True)
     applicant_type: Mapped[str] = mapped_column(String(30), default="staff_nomination")
     nominator_id: Mapped[Optional[int]] = mapped_column(
@@ -343,6 +354,12 @@ class StudentConcessionApplication(Base):
     approval_remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     withdrawal_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    cancelled_by_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancellation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    expired_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     valid_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     supporting_document_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     eligibility_snapshot: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -365,8 +382,12 @@ class StudentConcessionApplication(Base):
     assignment: Mapped[Optional["StudentFeeAssignment"]] = relationship(
         "StudentFeeAssignment", back_populates="concession_applications"
     )
+    fee_category: Mapped[Optional["FeeCategory"]] = relationship("FeeCategory")
     allocations: Mapped[list["FeeConcessionAllocation"]] = relationship(
         "FeeConcessionAllocation", back_populates="application"
+    )
+    sponsor_settlements: Mapped[list["SponsorSettlement"]] = relationship(
+        "SponsorSettlement", back_populates="application"
     )
 
 
@@ -374,12 +395,28 @@ class FeeConcessionAllocation(Base):
     __tablename__ = "fee_concession_allocations"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    transaction_ref: Mapped[Optional[str]] = mapped_column(
+        String(60), unique=True, nullable=True, index=True
+    )
     application_id: Mapped[int] = mapped_column(
         ForeignKey("fee_concession_applications.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     invoice_id: Mapped[int] = mapped_column(
         ForeignKey("fee_invoices.id", ondelete="RESTRICT"), nullable=False, index=True
     )
+    fee_category_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("fee_categories.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    invoice_item_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("fee_invoice_items.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    transaction_type: Mapped[str] = mapped_column(
+        String(40), default="fee_concession", index=True
+    )  # fee_concession | fee_waiver | scholarship | sponsor_funding | fee_adjustment | credit_adjustment | reversal | cancellation
+    posting_status: Mapped[str] = mapped_column(
+        String(20), default="posted", index=True
+    )  # posted | reversed | cancelled
+    effective_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     allocated_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     allocated_by_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
@@ -394,12 +431,56 @@ class FeeConcessionAllocation(Base):
     refund_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("refunds.id", ondelete="SET NULL"), nullable=True
     )
+    reversed_by_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reversed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    reversal_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reversal_of_allocation_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("fee_concession_allocations.id", ondelete="SET NULL"), nullable=True
+    )
 
     application: Mapped["StudentConcessionApplication"] = relationship(
         "StudentConcessionApplication", back_populates="allocations"
     )
     invoice: Mapped["FeeInvoice"] = relationship(
         "FeeInvoice", back_populates="concession_allocations"
+    )
+
+
+class SponsorSettlement(Base):
+    """
+    Immutable transaction ledger tracking funds recovered/received from external sponsors
+    or government agencies against sanctioned StudentConcessionApplication awards.
+    """
+    __tablename__ = "sponsor_settlements"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    institution_id: Mapped[int] = mapped_column(
+        ForeignKey("institutions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    application_id: Mapped[int] = mapped_column(
+        ForeignKey("fee_concession_applications.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    settlement_ref: Mapped[str] = mapped_column(String(60), unique=True, nullable=False, index=True)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    received_date: Mapped[date] = mapped_column(Date, nullable=False)
+    payment_method: Mapped[str] = mapped_column(String(30), default="bank_transfer")
+    reference_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    recorded_by_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(20), default="completed", index=True)  # completed | reversed
+    reversed_by_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    reversed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    reversal_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    application: Mapped["StudentConcessionApplication"] = relationship(
+        "StudentConcessionApplication", back_populates="sponsor_settlements"
     )
 
 

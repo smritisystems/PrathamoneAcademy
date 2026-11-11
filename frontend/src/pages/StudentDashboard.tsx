@@ -999,20 +999,85 @@ export default function StudentDashboardPage() {
       {/* TAB CONTENT 6: FEES */}
       {activeTab === 'fees' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="card text-center">
-              <p className="text-xs text-gray-500">Total Fee Plan</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{fmt(feesData?.summary?.total_fees || 0)}</p>
+              <p className="text-xs text-gray-500">Original Assessed Fee</p>
+              <p className="text-lg font-bold text-gray-900 mt-1">
+                {fmt((feesData?.summary as any)?.original_fee ?? feesData?.summary?.total_fees ?? 0)}
+              </p>
             </div>
             <div className="card text-center">
-              <p className="text-xs text-gray-500">Collected Amount</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">{fmt(feesData?.summary?.paid_amount || 0)}</p>
+              <p className="text-xs text-gray-500">Approved Benefits</p>
+              <p className="text-lg font-bold text-indigo-700 mt-1">
+                {fmt((feesData?.summary as any)?.approved_benefits ?? 0)}
+              </p>
+              {((feesData?.summary as any)?.approved_unapplied ?? 0) > 0 && (
+                <p className="text-[10px] text-amber-700 font-semibold mt-0.5">
+                  Unapplied: {fmt((feesData?.summary as any)?.approved_unapplied)}
+                </p>
+              )}
+            </div>
+            <div className="card text-center">
+              <p className="text-xs text-gray-500">Applied Concessions &amp; Scholarships</p>
+              <p className="text-lg font-bold text-emerald-700 mt-1">
+                {fmt((feesData?.summary as any)?.applied_concessions ?? 0)}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                Waivers: {fmt((feesData?.summary as any)?.fee_waivers ?? 0)} · Sch: {fmt((feesData?.summary as any)?.scholarships ?? 0)}
+              </p>
+            </div>
+            <div className="card text-center">
+              <p className="text-xs text-gray-500">Net Paid</p>
+              <p className="text-lg font-bold text-green-600 mt-1">{fmt(feesData?.summary?.paid_amount || 0)}</p>
+              {((feesData?.summary as any)?.refunds_completed ?? 0) > 0 && (
+                <p className="text-[10px] text-rose-600 mt-0.5">
+                  Refunded: {fmt((feesData?.summary as any)?.refunds_completed)}
+                </p>
+              )}
             </div>
             <div className="card text-center">
               <p className="text-xs text-gray-500">Outstanding Balance</p>
-              <p className="text-2xl font-bold text-red-600 mt-1">{fmt(feesData?.summary?.outstanding_balance || 0)}</p>
+              <p className="text-lg font-bold text-red-600 mt-1">{fmt(feesData?.summary?.outstanding_balance || 0)}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Net Fee: {fmt(feesData?.summary?.total_fees || 0)}</p>
             </div>
           </div>
+
+          {/* Student Benefits, Waivers & Approval History */}
+          {Array.isArray((feesData as any)?.benefits) && (feesData as any).benefits.length > 0 && (
+            <div className="card space-y-3">
+              <h3 className="font-bold text-gray-900">Concessions, Fee Waivers &amp; Scholarship Statement</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-gray-500 uppercase font-semibold">
+                      <th className="py-2 px-3">Ref #</th>
+                      <th className="py-2 px-3">Scheme / Title</th>
+                      <th className="py-2 px-3">Classification</th>
+                      <th className="py-2 px-3 text-right">Approved</th>
+                      <th className="py-2 px-3 text-right">Applied</th>
+                      <th className="py-2 px-3">Status</th>
+                      <th className="py-2 px-3">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {(feesData as any).benefits.map((b: any) => (
+                      <tr key={b.id} className="hover:bg-gray-50">
+                        <td className="py-2 px-3 font-mono font-semibold text-primary-700">{b.application_number}</td>
+                        <td className="py-2 px-3 font-semibold text-gray-900">{b.concession_name}</td>
+                        <td className="py-2 px-3 capitalize text-gray-600">{String(b.benefit_type || 'fee_concession').replace(/_/g, ' ')}</td>
+                        <td className="py-2 px-3 text-right font-semibold">{fmt(b.approved_amount)}</td>
+                        <td className="py-2 px-3 text-right font-bold text-emerald-700">{fmt(b.applied_amount)}</td>
+                        <td className="py-2 px-3">
+                          <StatusBadge status={b.status} />
+                        </td>
+                        <td className="py-2 px-3 text-gray-500">{b.remarks || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Fee Invoices */}
           <div className="card space-y-4">

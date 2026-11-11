@@ -11,12 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
 
-from fastapi import APIRouter, Depends, Response, Query
+from fastapi import APIRouter, Depends, HTTPException, Response, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_, desc
 from typing import Optional, List, Dict, Any
@@ -32,7 +33,13 @@ from app.core.deps import (
     enforce_institution_access,
     check_institution_access,
     get_data_environment,
+    has_permission,
     TRAINING_INSTITUTION_CODE,
+)
+from app.services.financial_governance_service import (
+    FinancialGovernanceService,
+    FinancialFilter,
+    CONCESSION_REPORT_DEFINITIONS,
 )
 
 async def resolve_report_institution_id(db: AsyncSession, current_user, data_env: str) -> int:
@@ -1567,6 +1574,133 @@ async def system_audit_summary_report(
         }
         for a, u in rows
     ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CONCESSION, FEE WAIVER & SCHOLARSHIP GOVERNANCE REPORTS (20 REPORTS)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/concessions/catalog")
+async def get_concession_reports_catalog(
+    current_user: User = Depends(get_current_active_user),
+):
+    """Returns metadata catalog of all 20 governed concession, waiver, and scholarship reports."""
+    return [
+        {"id": key, "title": meta["title"], "category": meta["category"]}
+        for key, meta in CONCESSION_REPORT_DEFINITIONS.items()
+    ]
+
+
+@router.get("/concessions/{report_id}")
+async def get_concession_governance_report(
+    report_id: str,
+    academic_year_id: Optional[int] = None,
+    institution_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    student_id: Optional[int] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    status_filter: Optional[str] = Query(None, alias="status"),
+    funding_source: Optional[str] = None,
+    benefit_type: Optional[str] = None,
+    search: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    can_rep = await has_permission(db, current_user, "concessions", "reports")
+    if not can_rep and current_user.role not in ("superadmin", "admin", "accountant", "principal"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'concessions:reports' privilege.",
+        )
+    if report_id not in CONCESSION_REPORT_DEFINITIONS:
+        raise HTTPException(status_code=404, detail=f"Unknown concession report '{report_id}'")
+
+    inst_id = institution_id or await resolve_report_institution_id(db, current_user, data_env)
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
+
+    flt = FinancialFilter(
+        institution_id=inst_id,
+        academic_year_id=academic_year_id,
+        standard_id=standard_id,
+        division_id=division_id,
+        student_id=student_id,
+        start_date=start_date,
+        end_date=end_date,
+        search=search,
+        status=status_filter if status_filter != "all" else None,
+        funding_source=funding_source if funding_source != "all" else None,
+        benefit_type=benefit_type if benefit_type != "all" else None,
+        is_demo=is_demo_filter,
+    )
+    return await FinancialGovernanceService.generate_concession_report(db, report_id, flt)
+
+
+@router.get("/concessions/{report_id}/export")
+async def export_concession_governance_report(
+    report_id: str,
+    format: str = Query("xlsx", regex="^(csv|xlsx)$"),
+    academic_year_id: Optional[int] = None,
+    institution_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    student_id: Optional[int] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    status_filter: Optional[str] = Query(None, alias="status"),
+    funding_source: Optional[str] = None,
+    benefit_type: Optional[str] = None,
+    search: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    can_rep = await has_permission(db, current_user, "concessions", "reports")
+    if not can_rep and current_user.role not in ("superadmin", "admin", "accountant", "principal"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions: requires 'concessions:reports' privilege.",
+        )
+    if report_id not in CONCESSION_REPORT_DEFINITIONS:
+        raise HTTPException(status_code=404, detail=f"Unknown concession report '{report_id}'")
+
+    inst_id = institution_id or await resolve_report_institution_id(db, current_user, data_env)
+    is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
+
+    flt = FinancialFilter(
+        institution_id=inst_id,
+        academic_year_id=academic_year_id,
+        standard_id=standard_id,
+        division_id=division_id,
+        student_id=student_id,
+        start_date=start_date,
+        end_date=end_date,
+        search=search,
+        status=status_filter if status_filter != "all" else None,
+        funding_source=funding_source if funding_source != "all" else None,
+        benefit_type=benefit_type if benefit_type != "all" else None,
+        is_demo=is_demo_filter,
+    )
+    report_data = await FinancialGovernanceService.generate_concession_report(db, report_id, flt)
+    ts = datetime.now().strftime("%Y%m%d")
+
+    if format == "csv":
+        content = FinancialGovernanceService.export_report_csv(report_data)
+        return StreamingResponse(
+            io.BytesIO(content),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{report_id}_{ts}.csv"'},
+        )
+
+    xlsx_bytes = FinancialGovernanceService.export_report_xlsx(report_data)
+    return StreamingResponse(
+        io.BytesIO(xlsx_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{report_id}_{ts}.xlsx"'},
+    )
+
 
 
 

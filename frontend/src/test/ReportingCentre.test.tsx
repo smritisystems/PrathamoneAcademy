@@ -138,7 +138,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
     } as any)
   })
 
-  it('renders Central Reporting & Analytics Centre with primary 6 canonical categories', async () => {
+  it('renders Central Reporting & Analytics Centre with all 7 canonical categories including 20 Concession Reports', async () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter>
@@ -148,18 +148,39 @@ describe('Central Reporting & Analytics Centre Suite', () => {
     )
 
     expect(screen.getByText('Reporting & Analytics Centre')).toBeDefined()
-    expect(screen.getByText(/26 Enterprise Reports/i)).toBeDefined()
+    expect(screen.getByText(/48 Enterprise Reports/i)).toBeDefined()
 
-    // 6 Canonical category switcher tabs
+    // 7 Canonical category switcher tabs
     expect(screen.getByRole('button', { name: /Students & Admissions/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /Academics & Batches/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /Fees & Financials/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /Concessions & Scholarships/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /Teachers & Payroll/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /Examinations & Merit/i })).toBeDefined()
     expect(screen.getByRole('button', { name: /System & Audit/i })).toBeDefined()
   })
 
-  it('switches between categories and updates sub-report pill selectors', async () => {
+  it('switches between categories and displays all 20 Concession Governance reports', async () => {
+    vi.spyOn(reportsApi, 'concessionReport').mockResolvedValue({
+      data: {
+        report_id: 'complete-concession-register',
+        title: 'Complete Concession Register',
+        category: 'Concessions & Scholarships',
+        generated_at: '2026-11-11T00:00:00Z',
+        reporting_period: { start_date: null, end_date: null },
+        currency: { code: 'INR', symbol: '₹', precision: 2 },
+        summary: { records_count: 1, total_posted: 15000 },
+        columns: [
+          { key: 'application_number', label: 'App No', type: 'text' },
+          { key: 'student_name', label: 'Student', type: 'text' },
+          { key: 'applied_amount', label: 'Posted', type: 'currency' },
+        ],
+        rows: [
+          { application_id: 1, application_number: 'SCH-2026-0001', student_name: 'Aadya Sharma', applied_amount: 15000 },
+        ],
+      },
+    } as any)
+
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter>
@@ -170,6 +191,17 @@ describe('Central Reporting & Analytics Centre Suite', () => {
 
     // Default category is students: check student reports
     expect(screen.getAllByText(/Student Master Directory & Demographic Roster/i).length).toBeGreaterThan(0)
+
+    // Switch to Concessions & Scholarships
+    const concessionsBtn = screen.getByRole('button', { name: /Concessions & Scholarships/i })
+    fireEvent.click(concessionsBtn)
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/Complete Concession Register/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Approved vs Applied Concession Report/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Fee Collection vs Concession Reconciliation/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/Complete Student Benefit Register/i).length).toBeGreaterThan(0)
+    })
 
     // Switch to Academics & Batches
     const academicsBtn = screen.getByRole('button', { name: /Academics & Batches/i })
@@ -189,7 +221,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
       </QueryClientProvider>
     )
 
-    const searchInput = screen.getByPlaceholderText(/Search all 26 reports.../i)
+    const searchInput = screen.getByPlaceholderText(/Search all 48 reports.../i)
     fireEvent.change(searchInput, { target: { value: 'Defaulters' } })
 
     // Matching overlay should show matching count

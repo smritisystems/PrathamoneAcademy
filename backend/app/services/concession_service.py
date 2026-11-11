@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Authoritative business logic engine for fee concessions, merit scholarships, eligibility evaluation, stacking rules, and ledger synchronization.
 #  */
@@ -29,6 +29,7 @@ from app.models.fee import (
     FeeConcessionType,
     StudentConcessionApplication,
     FeeConcessionAllocation,
+    SponsorSettlement,
     StudentFeeAssignment,
     FeeInvoice,
     FeeInvoiceItem,
@@ -39,7 +40,12 @@ from app.models.user import User, AuditLog
 from app.models.academic_year import AcademicYear
 from app.models.exam import ExamMark, Examination
 from app.models.attendance import Attendance
-from app.services.sequence import generate_next_concession_number
+from app.services.sequence import (
+    generate_next_concession_number,
+    generate_next_concession_txn_ref,
+    generate_next_sponsor_settlement_ref,
+)
+from app.services.financial_governance_service import FinancialGovernanceService
 
 
 class ConcessionEligibilityService:
@@ -394,7 +400,26 @@ class ConcessionWorkflowService:
         sponsor_sanctioned_amount: Optional[Decimal] = None,
         supporting_document_url: Optional[str] = None,
         remarks: Optional[str] = None,
+        fee_category_id: Optional[int] = None,
+        valid_until: Optional[date] = None,
+        idempotency_key: Optional[str] = None,
     ) -> StudentConcessionApplication:
+        # Idempotency check to prevent duplicate submissions on network retries
+        if idempotency_key and idempotency_key.strip():
+            existing_idem = (
+                await db.execute(
+                    select(StudentConcessionApplication).where(
+                        StudentConcessionApplication.institution_id == institution_id,
+                        StudentConcessionApplication.idempotency_key == idempotency_key.strip(),
+                    )
+                )
+            ).scalar_one_or_none()
+            if existing_idem:
+                return existing_idem
+
+        if valid_until and valid_until < date.today():
+            raise ValueError("Concession validity expiry date cannot be in the past.")
+
         # Load student, concession type, and active invoice
         student_res = await db.execute(select(Student).where(Student.id == student_id))
         student = student_res.scalar_one_or_none()
@@ -410,6 +435,7 @@ class ConcessionWorkflowService:
             select(FeeInvoice).where(
                 FeeInvoice.student_id == student_id,
                 FeeInvoice.academic_year_id == academic_year_id,
+                FeeInvoice.status != "cancelled",
             ).order_by(desc(FeeInvoice.id)).limit(1)
         )
         invoice = inv_res.scalar_one_or_none()
@@ -438,6 +464,13 @@ class ConcessionWorkflowService:
         initial_status = "under_verification" if ctype.requires_documents and not supporting_document_url else "pending_approval"
 
         funding_src = ctype.funding_source
+        btype, waiver_scope = FinancialGovernanceService.resolve_benefit_classification(
+            ctype.category, funding_src, ctype.calculation_type, getattr(ctype, "benefit_type", None)
+        )
+        if btype == "fee_waiver" and invoice and calc_amt < invoice.total_amount:
+            waiver_scope = "partial_waiver"
+        sponsor_status = "pending" if funding_src in ("external_sponsor", "government") else "not_applicable"
+
         app = StudentConcessionApplication(
             institution_id=institution_id,
             application_number=app_number,
@@ -446,15 +479,22 @@ class ConcessionWorkflowService:
             concession_type_id=concession_type_id,
             invoice_id=invoice.id if invoice else None,
             assignment_id=invoice.assignment_id if invoice else None,
+            fee_category_id=fee_category_id,
             requested_amount=calc_amt,
             requested_percentage=calc_pct,
             approved_amount=Decimal("0.00"),
             applied_amount=Decimal("0.00"),
+            reversed_amount=Decimal("0.00"),
+            benefit_type=btype,
+            waiver_scope=waiver_scope,
             funding_source=funding_src,
-            sponsor_name=sponsor_name or (ctype.name if funding_src == "external_sponsor" else None),
+            sponsor_name=sponsor_name or (ctype.name if funding_src in ("external_sponsor", "government") else None),
             sponsor_reference=sponsor_reference,
-            sponsor_sanctioned_amount=sponsor_sanctioned_amount or (calc_amt if funding_src == "external_sponsor" else None),
+            sponsor_sanctioned_amount=sponsor_sanctioned_amount or (calc_amt if funding_src in ("external_sponsor", "government") else None),
             sponsor_received_amount=Decimal("0.00"),
+            sponsor_settlement_status=sponsor_status,
+            idempotency_key=idempotency_key.strip() if idempotency_key else None,
+            valid_until=valid_until,
             status=initial_status,
             applicant_type=applicant_type,
             nominator_id=nominator.id,
@@ -475,6 +515,8 @@ class ConcessionWorkflowService:
                 "application_number": app_number,
                 "student_id": student_id,
                 "concession_type": ctype.name,
+                "benefit_type": btype,
+                "funding_source": funding_src,
                 "requested_amount": float(calc_amt),
                 "status": initial_status,
             }),
@@ -527,6 +569,36 @@ class ConcessionWorkflowService:
         await db.refresh(app)
         return app
 
+    @staticmethod
+    async def _reconcile_invoice_items_discount(
+        db: AsyncSession, invoice: FeeInvoice, new_discount: Decimal, precision: int = 2
+    ) -> None:
+        """Distributes total invoice discount proportionally across invoice line items."""
+        items_res = await db.execute(select(FeeInvoiceItem).where(FeeInvoiceItem.invoice_id == invoice.id))
+        items = items_res.scalars().all()
+        if not items:
+            return
+        if len(items) == 1:
+            items[0].discount_amount = new_discount
+            items[0].net_amount = max(Decimal("0.00"), items[0].amount - new_discount)
+            return
+
+        total_item_amount = sum(Decimal(str(it.amount or 0)) for it in items)
+        if total_item_amount <= 0:
+            return
+        allocated_so_far = Decimal("0.00")
+        q_fmt = Decimal("1" if precision <= 0 else f"0.{'0' * precision}")
+        for idx, it in enumerate(items):
+            if idx == len(items) - 1:
+                it_disc = max(Decimal("0.00"), new_discount - allocated_so_far)
+            else:
+                it_disc = (new_discount * (Decimal(str(it.amount)) / total_item_amount)).quantize(
+                    q_fmt, rounding=ROUND_HALF_UP
+                )
+                allocated_so_far += it_disc
+            it.discount_amount = it_disc
+            it.net_amount = max(Decimal("0.00"), it.amount - it_disc)
+
     @classmethod
     async def approve_application(
         cls,
@@ -544,6 +616,7 @@ class ConcessionWorkflowService:
                 selectinload(StudentConcessionApplication.student),
             )
             .where(StudentConcessionApplication.id == application_id)
+            .with_for_update(of=StudentConcessionApplication)
         )
         app = app_res.scalar_one_or_none()
         if not app:
@@ -552,16 +625,35 @@ class ConcessionWorkflowService:
         if app.status not in ["pending_approval", "under_verification"]:
             raise ValueError(f"Application #{app.application_number} is already in '{app.status}' status")
 
-        # Segregation of duties: prevent unauthorized self-approval if nominator is approver, unless superadmin/admin
+        if app.valid_until and app.valid_until < date.today():
+            app.status = "expired"
+            app.expired_at = datetime.now(timezone.utc)
+            db.add(AuditLog(
+                user_id=approver.id,
+                action="CONCESSION_APPLICATION_EXPIRED",
+                resource_type="concession_application",
+                resource_id=app.id,
+                details=f"Concession #{app.application_number} expired on {app.valid_until} before approval.",
+                severity="WARNING",
+            ))
+            await db.commit()
+            raise ValueError(f"Concession #{app.application_number} expired on {app.valid_until} and cannot be approved.")
+
+        # Segregation of duties: prevent unauthorized self-approval unless superadmin/admin
         if app.nominator_id == approver.id and approver.role not in ["superadmin", "admin"]:
             raise ValueError("Segregation of duties: You cannot approve your own nominated concession application.")
 
         final_amt = approved_amount if approved_amount is not None and approved_amount > 0 else app.requested_amount
+        if app.concession_type and app.concession_type.max_discount_amount and final_amt > app.concession_type.max_discount_amount:
+            final_amt = app.concession_type.max_discount_amount
+
         app.approved_amount = final_amt
         app.approver_id = approver.id
         app.approved_at = datetime.now(timezone.utc)
         app.approval_remarks = remarks or "Approved per executive administrative committee resolution"
         app.status = "approved"
+        if app.funding_source in ("external_sponsor", "government") and not app.sponsor_sanctioned_amount:
+            app.sponsor_sanctioned_amount = final_amt
 
         audit = AuditLog(
             user_id=approver.id,
@@ -592,12 +684,16 @@ class ConcessionWorkflowService:
         if not (rejection_reason or "").strip():
             raise ValueError("A clear, auditable rejection reason is strictly required.")
 
-        app_res = await db.execute(select(StudentConcessionApplication).where(StudentConcessionApplication.id == application_id))
+        app_res = await db.execute(
+            select(StudentConcessionApplication)
+            .where(StudentConcessionApplication.id == application_id)
+            .with_for_update(of=StudentConcessionApplication)
+        )
         app = app_res.scalar_one_or_none()
         if not app:
             raise ValueError("Application not found")
 
-        if app.status in ["approved", "applied", "cancelled"]:
+        if app.status in ["approved", "partially_applied", "applied", "posted", "cancelled", "reversed"]:
             raise ValueError(f"Cannot reject application in '{app.status}' status")
 
         app.status = "rejected"
@@ -624,11 +720,13 @@ class ConcessionWorkflowService:
         db: AsyncSession,
         application_id: int,
         user: User,
+        allocation_amount: Optional[Decimal] = None,
+        invoice_item_id: Optional[int] = None,
     ) -> FeeConcessionAllocation:
         """
-        Applies an approved concession to the student's active FeeInvoice.
-        Reconciles discount_amount, net_amount, and outstanding_amount.
-        If invoice is already paid, calculates credit balance without modifying receipts!
+        Atomically posts an approved (or partially_applied) concession/waiver/scholarship to the student's FeeInvoice.
+        Enforces row-level locks, validity expiration checks, anti-double-posting guards,
+        immutable transaction referencing, line-item sync, and over-payment credit calculation.
         """
         app_res = await db.execute(
             select(StudentConcessionApplication)
@@ -637,38 +735,73 @@ class ConcessionWorkflowService:
                 selectinload(StudentConcessionApplication.student),
             )
             .where(StudentConcessionApplication.id == application_id)
+            .with_for_update(of=StudentConcessionApplication)
         )
         app = app_res.scalar_one_or_none()
         if not app:
             raise ValueError("Application not found")
 
-        if app.status != "approved":
+        if app.status not in ("approved", "partially_applied"):
             raise ValueError(f"Cannot apply concession in '{app.status}' status. Application must be approved first.")
 
-        # Find target FeeInvoice
-        inv_stmt = select(FeeInvoice).where(
-            FeeInvoice.student_id == app.student_id,
-            FeeInvoice.academic_year_id == app.academic_year_id,
-        ).order_by(desc(FeeInvoice.id)).limit(1)
-        invoice = (await db.execute(inv_stmt)).scalar_one_or_none()
+        if app.valid_until and app.valid_until < date.today():
+            app.status = "expired"
+            app.expired_at = datetime.now(timezone.utc)
+            db.add(AuditLog(
+                user_id=user.id,
+                action="CONCESSION_APPLICATION_EXPIRED",
+                resource_type="concession_application",
+                resource_id=app.id,
+                details=f"Concession #{app.application_number} expired on {app.valid_until} before invoice posting.",
+                severity="WARNING",
+            ))
+            await db.flush()
+            raise ValueError(f"Concession #{app.application_number} expired on {app.valid_until} and cannot be applied.")
 
+        remaining_to_apply = max(Decimal("0.00"), Decimal(str(app.approved_amount or 0)) - Decimal(str(app.applied_amount or 0)))
+        if remaining_to_apply <= Decimal("0.00"):
+            raise ValueError(f"Concession #{app.application_number} has already been fully allocated.")
+
+        alloc_amt = remaining_to_apply if allocation_amount is None else Decimal(str(allocation_amount))
+        if alloc_amt <= Decimal("0.00") or alloc_amt > remaining_to_apply:
+            raise ValueError(
+                f"Allocation amount (₹{alloc_amt:,.2f}) must be between ₹0.01 and remaining approved balance ₹{remaining_to_apply:,.2f}."
+            )
+
+        # Find & lock target FeeInvoice
+        inv_stmt = (
+            select(FeeInvoice)
+            .where(
+                FeeInvoice.student_id == app.student_id,
+                FeeInvoice.academic_year_id == app.academic_year_id,
+                FeeInvoice.status != "cancelled",
+            )
+            .order_by(desc(FeeInvoice.id))
+            .limit(1)
+            .with_for_update(of=FeeInvoice)
+        )
+        invoice = (await db.execute(inv_stmt)).scalar_one_or_none()
         if not invoice:
             raise ValueError(f"No active fee invoice found for Student #{app.student_id}")
 
-        alloc_amt = app.approved_amount
+        # Prevent duplicate full allocation on same invoice while active posted row already covers it
+        if allocation_amount is None:
+            existing_alloc = (
+                await db.execute(
+                    select(FeeConcessionAllocation).where(
+                        FeeConcessionAllocation.application_id == app.id,
+                        FeeConcessionAllocation.invoice_id == invoice.id,
+                        FeeConcessionAllocation.posting_status == "posted",
+                    )
+                )
+            ).scalars().first()
+            if existing_alloc and app.status == "applied":
+                raise ValueError(f"Concession #{app.application_number} has already been allocated to Invoice #{invoice.invoice_number}")
 
-        # Check existing allocations to avoid double application
-        existing_alloc = (await db.execute(
-            select(FeeConcessionAllocation).where(
-                FeeConcessionAllocation.application_id == app.id,
-                FeeConcessionAllocation.invoice_id == invoice.id,
-            )
-        )).scalar_one_or_none()
+        max_invoice_headroom = max(Decimal("0.00"), invoice.total_amount - invoice.discount_amount)
+        if alloc_amt > max_invoice_headroom:
+            alloc_amt = max_invoice_headroom
 
-        if existing_alloc:
-            raise ValueError(f"Concession #{app.application_number} has already been allocated to Invoice #{invoice.invoice_number}")
-
-        # Compute new invoice amounts
         new_discount = invoice.discount_amount + alloc_amt
         new_net = max(Decimal("0.00"), invoice.total_amount - new_discount)
 
@@ -687,47 +820,47 @@ class ConcessionWorkflowService:
         invoice.status = new_status
         invoice.notes = (invoice.notes or "") + f" | Concession #{app.application_number} applied (-₹{alloc_amt:,.2f})"
 
-        # Reconcile invoice line items to reflect the concession discount
-        items_res = await db.execute(select(FeeInvoiceItem).where(FeeInvoiceItem.invoice_id == invoice.id))
-        items = items_res.scalars().all()
-        if items:
-            if len(items) == 1:
-                items[0].discount_amount = new_discount
-                items[0].net_amount = max(Decimal("0.00"), items[0].amount - new_discount)
-            else:
-                total_item_amount = sum(it.amount for it in items)
-                if total_item_amount > 0:
-                    allocated_so_far = Decimal("0.00")
-                    for idx, it in enumerate(items):
-                        if idx == len(items) - 1:
-                            it_disc = new_discount - allocated_so_far
-                        else:
-                            it_disc = round(new_discount * (it.amount / total_item_amount), 2)
-                            allocated_so_far += it_disc
-                        it.discount_amount = it_disc
-                        it.net_amount = max(Decimal("0.00"), it.amount - it_disc)
+        await cls._reconcile_invoice_items_discount(db, invoice, new_discount)
 
-        # Also update StudentFeeAssignment concession_amount
-        assign_stmt = select(StudentFeeAssignment).where(
-            StudentFeeAssignment.student_id == app.student_id,
-            StudentFeeAssignment.academic_year_id == app.academic_year_id,
-        ).order_by(desc(StudentFeeAssignment.id)).limit(1)
+        # Synchronize StudentFeeAssignment concession_amount
+        assign_stmt = (
+            select(StudentFeeAssignment)
+            .where(
+                StudentFeeAssignment.student_id == app.student_id,
+                StudentFeeAssignment.academic_year_id == app.academic_year_id,
+            )
+            .order_by(desc(StudentFeeAssignment.id))
+            .limit(1)
+        )
         assignment = (await db.execute(assign_stmt)).scalar_one_or_none()
         if assignment:
-            assignment.concession_amount = assignment.concession_amount + alloc_amt
+            assignment.concession_amount = Decimal(str(assignment.concession_amount or 0)) + alloc_amt
+
+        txn_ref = await generate_next_concession_txn_ref(db, app.institution_id, app.academic_year_id)
+        txn_type = app.benefit_type or "fee_concession"
+        if credit_surplus > 0 and invoice.paid_amount > new_net:
+            # Main allocation records benefit type and tracks credit_adjustment_amount explicitly
+            pass
 
         allocation = FeeConcessionAllocation(
+            transaction_ref=txn_ref,
             application_id=app.id,
             invoice_id=invoice.id,
+            fee_category_id=app.fee_category_id,
+            invoice_item_id=invoice_item_id,
+            transaction_type=txn_type,
+            posting_status="posted",
+            effective_date=date.today(),
             allocated_amount=alloc_amt,
             allocated_by_id=user.id,
-            notes=f"Allocated from approved application #{app.application_number} ({app.concession_type.name if app.concession_type else 'Concession'})",
+            notes=f"[{txn_ref}] Allocated from approved application #{app.application_number} ({app.concession_type.name if app.concession_type else 'Concession'})",
             credit_adjustment_amount=credit_surplus,
         )
         db.add(allocation)
 
-        app.applied_amount = alloc_amt
-        app.status = "applied"
+        new_applied_total = Decimal(str(app.applied_amount or 0)) + alloc_amt
+        app.applied_amount = new_applied_total
+        app.status = "applied" if new_applied_total >= app.approved_amount else "partially_applied"
         app.invoice_id = invoice.id
 
         audit = AuditLog(
@@ -737,18 +870,108 @@ class ConcessionWorkflowService:
             resource_id=app.id,
             old_data=json.dumps({"invoice_id": invoice.id, "old_discount": float(invoice.discount_amount - alloc_amt)}),
             new_data=json.dumps({
+                "transaction_ref": txn_ref,
                 "invoice_number": invoice.invoice_number,
                 "concession_allocated": float(alloc_amt),
+                "total_applied": float(new_applied_total),
                 "new_net": float(new_net),
                 "new_outstanding": float(new_outstanding),
                 "credit_surplus": float(credit_surplus),
             }),
-            details=f"Concession #{app.application_number} applied to Invoice #{invoice.invoice_number}: -₹{alloc_amt:,.2f}. Credit surplus: ₹{credit_surplus:,.2f}",
+            details=f"Concession #{app.application_number} ({txn_ref}) posted to Invoice #{invoice.invoice_number}: -₹{alloc_amt:,.2f}. Credit surplus: ₹{credit_surplus:,.2f}",
             severity="INFO",
         )
         db.add(audit)
         await db.flush()
         return allocation
+
+    @classmethod
+    async def _reverse_posted_allocations(
+        cls,
+        db: AsyncSession,
+        app: StudentConcessionApplication,
+        user: User,
+        reason: str,
+        target_status: str,
+    ) -> Decimal:
+        """
+        Immutable reversal helper: marks active posted allocations as 'reversed',
+        appends negative reversal ledger rows referencing original allocations,
+        restores FeeInvoice, FeeInvoiceItem, and StudentFeeAssignment balances.
+        NEVER physically deletes financial ledger rows.
+        """
+        restored_total = Decimal("0.00")
+        now = datetime.now(timezone.utc)
+        active_allocs = [
+            al for al in (app.allocations or [])
+            if getattr(al, "posting_status", "posted") == "posted" and getattr(al, "transaction_type", "") != "reversal"
+        ]
+
+        for alloc in active_allocs:
+            inv_res = await db.execute(
+                select(FeeInvoice)
+                .where(FeeInvoice.id == alloc.invoice_id)
+                .with_for_update(of=FeeInvoice)
+            )
+            invoice = inv_res.scalar_one_or_none()
+            amt = Decimal(str(alloc.allocated_amount or 0))
+            if invoice and amt > 0:
+                reverted_discount = max(Decimal("0.00"), invoice.discount_amount - amt)
+                reverted_net = max(Decimal("0.00"), invoice.total_amount - reverted_discount)
+                reverted_outstanding = max(Decimal("0.00"), reverted_net - invoice.paid_amount)
+                invoice.discount_amount = reverted_discount
+                invoice.net_amount = reverted_net
+                invoice.outstanding_amount = reverted_outstanding
+                invoice.status = (
+                    "paid"
+                    if reverted_outstanding <= Decimal("0.01") and invoice.net_amount > 0
+                    else ("partial" if invoice.paid_amount > 0 else "unpaid")
+                )
+                invoice.notes = (invoice.notes or "") + f" | Concession #{app.application_number} {target_status} (+₹{amt:,.2f})"
+                await cls._reconcile_invoice_items_discount(db, invoice, reverted_discount)
+
+            assign_res = await db.execute(
+                select(StudentFeeAssignment).where(
+                    StudentFeeAssignment.student_id == app.student_id,
+                    StudentFeeAssignment.academic_year_id == app.academic_year_id,
+                )
+            )
+            assign = assign_res.scalar_one_or_none()
+            if assign:
+                assign.concession_amount = max(Decimal("0.00"), assign.concession_amount - amt)
+
+            # Mark original allocation immutable as reversed
+            alloc.posting_status = "reversed"
+            alloc.reversed_by_id = user.id
+            alloc.reversed_at = now
+            alloc.reversal_reason = reason
+
+            # Insert immutable paired reversal ledger entry (negative offset)
+            rev_ref = await generate_next_concession_txn_ref(db, app.institution_id, app.academic_year_id)
+            rev_entry = FeeConcessionAllocation(
+                transaction_ref=rev_ref,
+                application_id=app.id,
+                invoice_id=alloc.invoice_id,
+                fee_category_id=alloc.fee_category_id,
+                invoice_item_id=alloc.invoice_item_id,
+                transaction_type="reversal",
+                posting_status="reversed",
+                effective_date=date.today(),
+                allocated_amount=-amt,
+                allocated_by_id=user.id,
+                reversed_by_id=user.id,
+                reversed_at=now,
+                reversal_reason=reason,
+                reversal_of_allocation_id=alloc.id,
+                notes=f"[{rev_ref}] Immutable reversal of {alloc.transaction_ref or f'CTXN-{alloc.id:04d}'}: {reason}",
+                credit_adjustment_amount=Decimal("0.00"),
+            )
+            db.add(rev_entry)
+            restored_total += amt
+
+        app.reversed_amount = Decimal(str(app.reversed_amount or 0)) + restored_total
+        app.applied_amount = max(Decimal("0.00"), Decimal(str(app.applied_amount or 0)) - restored_total)
+        return restored_total
 
     @classmethod
     async def withdraw_application(
@@ -768,53 +991,233 @@ class ConcessionWorkflowService:
                 selectinload(StudentConcessionApplication.invoice),
             )
             .where(StudentConcessionApplication.id == application_id)
+            .with_for_update(of=StudentConcessionApplication)
         )
         app = app_res.scalar_one_or_none()
         if not app:
             raise ValueError("Application not found")
 
-        # If already applied, reverse the allocation from FeeInvoice
-        if app.status == "applied" and app.allocations:
-            for alloc in app.allocations:
-                inv_res = await db.execute(select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id))
-                invoice = inv_res.scalar_one_or_none()
-                if invoice:
-                    reverted_discount = max(Decimal("0.00"), invoice.discount_amount - alloc.allocated_amount)
-                    reverted_net = invoice.total_amount - reverted_discount
-                    reverted_outstanding = max(Decimal("0.00"), reverted_net - invoice.paid_amount)
-                    invoice.discount_amount = reverted_discount
-                    invoice.net_amount = reverted_net
-                    invoice.outstanding_amount = reverted_outstanding
-                    invoice.status = "paid" if reverted_outstanding == Decimal("0.00") else ("partial" if invoice.paid_amount > 0 else "unpaid")
-                    invoice.notes = (invoice.notes or "") + f" | Concession #{app.application_number} withdrawn (+₹{alloc.allocated_amount:,.2f})"
+        if app.status in ("withdrawn", "cancelled", "reversed"):
+            raise ValueError(f"Application #{app.application_number} is already in '{app.status}' status.")
 
-                # Also adjust StudentFeeAssignment
-                assign_res = await db.execute(
-                    select(StudentFeeAssignment).where(
-                        StudentFeeAssignment.student_id == app.student_id,
-                        StudentFeeAssignment.academic_year_id == app.academic_year_id,
-                    )
-                )
-                assign = assign_res.scalar_one_or_none()
-                if assign:
-                    assign.concession_amount = max(Decimal("0.00"), assign.concession_amount - alloc.allocated_amount)
-
-                # Delete allocation record
-                await db.delete(alloc)
-
-        app.status = "withdrawn"
+        restored = await cls._reverse_posted_allocations(
+            db, app, user, withdrawal_reason.strip(), "withdrawn"
+        )
+        app.status = "reversed" if restored > 0 else "withdrawn"
         app.withdrawal_reason = withdrawal_reason.strip()
 
-        audit = AuditLog(
+        db.add(AuditLog(
             user_id=user.id,
-            action="CONCESSION_APPLICATION_WITHDRAWN",
+            action="CONCESSION_APPLICATION_WITHDRAWN" if restored == 0 else "CONCESSION_POSTING_REVERSED",
             resource_type="concession_application",
             resource_id=app.id,
-            details=f"Concession #{app.application_number} withdrawn by {user.username}: {withdrawal_reason}",
+            new_data=json.dumps({"restored_balance": float(restored), "status": app.status}),
+            details=f"Concession #{app.application_number} {app.status} by {user.username} (restored ₹{restored:,.2f}): {withdrawal_reason}",
             severity="WARNING",
-        )
-        db.add(audit)
+        ))
         await db.commit()
         await db.refresh(app)
         return app
+
+    @classmethod
+    async def reverse_concession(
+        cls,
+        db: AsyncSession,
+        application_id: int,
+        user: User,
+        reversal_reason: str,
+    ) -> StudentConcessionApplication:
+        """Explicitly reverses a posted concession allocation, restoring invoice & net fee balances immutably."""
+        if not (reversal_reason or "").strip():
+            raise ValueError("A clear audit reversal reason is required.")
+
+        app = (
+            await db.execute(
+                select(StudentConcessionApplication)
+                .options(selectinload(StudentConcessionApplication.allocations))
+                .where(StudentConcessionApplication.id == application_id)
+                .with_for_update(of=StudentConcessionApplication)
+            )
+        ).scalar_one_or_none()
+        if not app:
+            raise ValueError("Application not found")
+        if app.status not in ("applied", "posted", "partially_applied"):
+            raise ValueError(f"Only posted/applied concessions can be reversed (current status: '{app.status}').")
+
+        restored = await cls._reverse_posted_allocations(
+            db, app, user, reversal_reason.strip(), "reversed"
+        )
+        app.status = "reversed"
+        app.withdrawal_reason = reversal_reason.strip()
+
+        db.add(AuditLog(
+            user_id=user.id,
+            action="CONCESSION_POSTING_REVERSED",
+            resource_type="concession_application",
+            resource_id=app.id,
+            new_data=json.dumps({"restored_balance": float(restored), "status": "reversed"}),
+            details=f"Concession #{app.application_number} reversed by {user.username} (+₹{restored:,.2f} invoice balance restored): {reversal_reason}",
+            severity="WARNING",
+        ))
+        await db.commit()
+        await db.refresh(app)
+        return app
+
+    @classmethod
+    async def cancel_application(
+        cls,
+        db: AsyncSession,
+        application_id: int,
+        user: User,
+        cancellation_reason: str,
+    ) -> StudentConcessionApplication:
+        """Cancels an application; if posted, immutably reverses allocations first so cancelled items never stay active."""
+        if not (cancellation_reason or "").strip():
+            raise ValueError("A clear cancellation reason is strictly required.")
+
+        app = (
+            await db.execute(
+                select(StudentConcessionApplication)
+                .options(selectinload(StudentConcessionApplication.allocations))
+                .where(StudentConcessionApplication.id == application_id)
+                .with_for_update(of=StudentConcessionApplication)
+            )
+        ).scalar_one_or_none()
+        if not app:
+            raise ValueError("Application not found")
+        if app.status == "cancelled":
+            raise ValueError(f"Application #{app.application_number} is already cancelled.")
+
+        restored = await cls._reverse_posted_allocations(
+            db, app, user, cancellation_reason.strip(), "cancelled"
+        )
+        now = datetime.now(timezone.utc)
+        app.status = "cancelled"
+        app.cancelled_by_id = user.id
+        app.cancelled_at = now
+        app.cancellation_reason = cancellation_reason.strip()
+
+        db.add(AuditLog(
+            user_id=user.id,
+            action="CONCESSION_APPLICATION_CANCELLED",
+            resource_type="concession_application",
+            resource_id=app.id,
+            new_data=json.dumps({"restored_balance": float(restored), "status": "cancelled"}),
+            details=f"Concession #{app.application_number} cancelled by {user.username} (restored ₹{restored:,.2f}): {cancellation_reason}",
+            severity="WARNING",
+        ))
+        await db.commit()
+        await db.refresh(app)
+        return app
+
+    @classmethod
+    async def expire_stale_applications(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        user: Optional[User] = None,
+    ) -> int:
+        """Transitions all unposted applications past valid_until into immutable 'expired' state."""
+        today = date.today()
+        now = datetime.now(timezone.utc)
+        res = await db.execute(
+            select(StudentConcessionApplication).where(
+                StudentConcessionApplication.institution_id == institution_id,
+                StudentConcessionApplication.status.in_(["draft", "submitted", "under_verification", "pending_approval", "approved"]),
+                StudentConcessionApplication.valid_until.isnot(None),
+                StudentConcessionApplication.valid_until < today,
+            )
+        )
+        apps = res.scalars().all()
+        for app in apps:
+            app.status = "expired"
+            app.expired_at = now
+            db.add(AuditLog(
+                user_id=user.id if user else None,
+                action="CONCESSION_APPLICATION_EXPIRED",
+                resource_type="concession_application",
+                resource_id=app.id,
+                details=f"Concession #{app.application_number} automatically expired after valid_until {app.valid_until}.",
+                severity="INFO",
+                is_system_audit=(user is None),
+            ))
+        if apps:
+            await db.commit()
+        return len(apps)
+
+    @classmethod
+    async def record_sponsor_settlement(
+        cls,
+        db: AsyncSession,
+        application_id: int,
+        user: User,
+        amount: Decimal,
+        received_date: date,
+        payment_method: str = "bank_transfer",
+        reference_number: Optional[str] = None,
+        remarks: Optional[str] = None,
+    ) -> SponsorSettlement:
+        """Records external sponsor/government fund recovery against sanctioned scholarship."""
+        if amount <= Decimal("0.00"):
+            raise ValueError("Settlement amount must be strictly positive.")
+
+        app = (
+            await db.execute(
+                select(StudentConcessionApplication)
+                .where(StudentConcessionApplication.id == application_id)
+                .with_for_update(of=StudentConcessionApplication)
+            )
+        ).scalar_one_or_none()
+        if not app:
+            raise ValueError("Concession / Scholarship application not found.")
+        if app.funding_source not in ("external_sponsor", "government"):
+            raise ValueError("Only external sponsor or government-funded applications accept sponsor settlements.")
+        if app.status not in ("approved", "partially_applied", "applied", "posted"):
+            raise ValueError(f"Cannot record sponsor settlement in '{app.status}' status.")
+
+        sanctioned = Decimal(str(app.sponsor_sanctioned_amount or app.approved_amount or 0))
+        already_received = Decimal(str(app.sponsor_received_amount or 0))
+        if already_received + amount > sanctioned + Decimal("0.01"):
+            raise ValueError(
+                f"Settlement ₹{amount:,.2f} exceeds pending sponsor receivable ₹{max(Decimal('0.00'), sanctioned - already_received):,.2f}."
+            )
+
+        s_ref = await generate_next_sponsor_settlement_ref(db, app.institution_id, app.academic_year_id)
+        settlement = SponsorSettlement(
+            institution_id=app.institution_id,
+            application_id=app.id,
+            settlement_ref=s_ref,
+            amount=amount,
+            received_date=received_date,
+            payment_method=payment_method,
+            reference_number=reference_number,
+            remarks=remarks,
+            recorded_by_id=user.id,
+            status="completed",
+        )
+        db.add(settlement)
+
+        new_received = already_received + amount
+        app.sponsor_received_amount = new_received
+        app.sponsor_settlement_status = (
+            "settled" if new_received >= sanctioned - Decimal("0.01") else "partial"
+        )
+
+        db.add(AuditLog(
+            user_id=user.id,
+            action="SPONSOR_SETTLEMENT_RECORDED",
+            resource_type="sponsor_settlement",
+            resource_id=app.id,
+            new_data=json.dumps({
+                "settlement_ref": s_ref,
+                "amount": float(amount),
+                "total_received": float(new_received),
+                "settlement_status": app.sponsor_settlement_status,
+            }),
+            details=f"Sponsor settlement {s_ref} recorded for #{app.application_number} ({app.sponsor_name or 'Sponsor'}): ₹{amount:,.2f}",
+            severity="INFO",
+        ))
+        await db.commit()
+        await db.refresh(settlement)
+        return settlement
 

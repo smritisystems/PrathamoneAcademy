@@ -31,7 +31,8 @@ import {
 } from 'lucide-react'
 import {
   standardsApi, divisionsApi, boardsApi, academicYearsApi, usersApi,
-  subjectsApi, timetableApi, enrollmentsApi, academicReportsApi, settingsApi
+  subjectsApi, timetableApi, enrollmentsApi, academicReportsApi, settingsApi,
+  concessionsApi
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
@@ -296,6 +297,22 @@ export default function AcademicWorkspace() {
   const { data: overviewData, isLoading: isOverviewLoading } = useQuery({
     queryKey: ['academic-overview', selectedInstitutionId, selectedAcademicYearId],
     queryFn: () => standardsApi.getOverview().then((r) => r.data),
+  })
+
+  // Phase 4E: Class-wise & Division-wise Concession & Scholarship Distribution (SSOT)
+  const { data: academicConcessionGov } = useQuery({
+    queryKey: ['academic-concession-governance', selectedAcademicYearId],
+    queryFn: async () => {
+      try {
+        const res = await concessionsApi.getGovernanceSummary({
+          academic_year_id: selectedAcademicYearId ?? undefined,
+          include_breakdowns: true,
+        })
+        return res.data
+      } catch {
+        return null
+      }
+    },
   })
 
   // 2. Boards with live counts
@@ -2345,6 +2362,79 @@ export default function AcademicWorkspace() {
               </div>
             </div>
           </div>
+
+          {/* Phase 4E: Class-Wise & Division-Wise Concessions, Waivers & Scholarships (SSOT) */}
+          {academicConcessionGov?.academic_distribution && (
+            <div className="bg-white rounded-2xl shadow-sm border border-indigo-200/80 p-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-indigo-600" />
+                    <span>Class-Wise &amp; Division-Wise Concessions, Waivers &amp; Scholarships (SSOT)</span>
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Governed Gross Fees, Beneficiary Students, Average Concession, Waivers, Scholarships, and Net Obligation per Class &amp; Division
+                  </p>
+                </div>
+                <Link
+                  to="/reports"
+                  className="text-xs font-bold text-indigo-600 hover:underline inline-flex items-center gap-1"
+                >
+                  Open Class/Division Reports <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-200">
+                      <tr>
+                        <th className="px-3 py-2">Class</th>
+                        <th className="px-2 py-2 text-right">Benef.</th>
+                        <th className="px-3 py-2 text-right">Concessions</th>
+                        <th className="px-3 py-2 text-right">Avg Benefit</th>
+                        <th className="px-3 py-2 text-right">Net Fee</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {(academicConcessionGov.academic_distribution.class_wise || []).map((c) => (
+                        <tr key={c.class_name} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 font-semibold text-gray-900">{c.class_name}</td>
+                          <td className="px-2 py-2 text-right font-bold text-indigo-700">{c.beneficiary_students}/{c.total_students}</td>
+                          <td className="px-3 py-2 text-right font-semibold text-emerald-700">₹{Number(c.total_concessions || 0).toLocaleString('en-IN')}</td>
+                          <td className="px-3 py-2 text-right text-gray-600">₹{Number(c.avg_concession || 0).toLocaleString('en-IN')}</td>
+                          <td className="px-3 py-2 text-right font-bold text-gray-900">₹{Number(c.net_fee || 0).toLocaleString('en-IN')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-200">
+                      <tr>
+                        <th className="px-3 py-2">Division / Batch</th>
+                        <th className="px-2 py-2 text-right">Benef.</th>
+                        <th className="px-3 py-2 text-right">Waivers</th>
+                        <th className="px-3 py-2 text-right">Scholarships</th>
+                        <th className="px-3 py-2 text-right">Net Fee</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {(academicConcessionGov.academic_distribution.division_wise || []).map((d) => (
+                        <tr key={`${d.class_name}-${d.division_name}`} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 font-semibold text-gray-900">{d.class_name} · {d.division_name}</td>
+                          <td className="px-2 py-2 text-right font-bold text-indigo-700">{d.beneficiary_students}/{d.total_students}</td>
+                          <td className="px-3 py-2 text-right text-purple-700">₹{Number(d.fee_waivers || 0).toLocaleString('en-IN')}</td>
+                          <td className="px-3 py-2 text-right text-indigo-700">₹{Number(d.scholarships || 0).toLocaleString('en-IN')}</td>
+                          <td className="px-3 py-2 text-right font-bold text-gray-900">₹{Number(d.net_fee || 0).toLocaleString('en-IN')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

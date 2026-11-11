@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-11
  *
  * @description Comprehensive unit test suite for Lead Management & CRM workspace verifying KPI metric cards, Kanban pipeline, Lead Dossier, bottom table tabs, and Rule 010 View-First safety lock enforcement.
  */
@@ -55,6 +55,13 @@ vi.mock('../api/endpoints', () => ({
   academicYearsApi: {
     getAll: vi.fn().mockResolvedValue({ data: [] }),
     list: vi.fn().mockResolvedValue({ data: [] }),
+  },
+  feeStructuresApi: {
+    list: vi.fn().mockResolvedValue({ data: [] }),
+    getAll: vi.fn().mockResolvedValue({ data: [] }),
+  },
+  concessionsApi: {
+    getTypes: vi.fn().mockResolvedValue({ data: [] }),
   },
 }))
 

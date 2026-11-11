@@ -537,6 +537,7 @@ export interface ConcessionType {
   code: string
   name: string
   category: string
+  benefit_type?: string
   description?: string
   funding_source: string
   calculation_type: 'percentage' | 'fixed_amount' | 'full_waiver'
@@ -554,6 +555,7 @@ export interface ConcessionTypePayload {
   code: string
   name: string
   category: string
+  benefit_type?: string
   description?: string
   funding_source?: string
   calculation_type?: 'percentage' | 'fixed_amount' | 'full_waiver'
@@ -575,21 +577,28 @@ export interface ConcessionApplication {
   concession_type_id: number
   concession_name: string
   category: string
+  benefit_type?: string
+  waiver_scope?: string | null
+  fee_category_id?: number | null
   requested_amount: number
   requested_percentage?: number
   approved_amount: number
   applied_amount: number
+  reversed_amount?: number
   funding_source: string
   sponsor_name?: string
   sponsor_sanctioned_amount?: number
   sponsor_received_amount: number
-  status: 'draft' | 'under_verification' | 'pending_approval' | 'approved' | 'applied' | 'rejected' | 'withdrawn' | 'cancelled'
+  sponsor_settlement_status?: string
+  status: 'draft' | 'submitted' | 'under_verification' | 'pending_approval' | 'approved' | 'partially_applied' | 'applied' | 'rejected' | 'withdrawn' | 'cancelled' | 'expired' | 'reversed'
   applicant_type: string
   invoice_id?: number
   invoice_number?: string
+  valid_until?: string | null
   approval_remarks?: string
   rejection_reason?: string
   withdrawal_reason?: string
+  cancellation_reason?: string | null
   supporting_document_url?: string
   created_at?: string
   approved_at?: string
@@ -597,12 +606,23 @@ export interface ConcessionApplication {
 
 export interface ConcessionAnalytics {
   academic_year_id: number
-  academic_year_name: string
-  total_applications: number
+  academic_year_name?: string
+  total_applications?: number
   total_concessions_awarded: number
   total_concessions_applied: number
-  by_category: Record<string, { count: number; awarded: number }>
-  by_status: Record<string, number>
+  total_requested_amount?: number
+  pending_applications_count?: number
+  approved_applications_count?: number
+  rejected_applications_count?: number
+  total_beneficiary_students?: number
+  external_sponsors?: {
+    total_sanctioned: number
+    total_received: number
+    pending_receivable: number
+  }
+  governance?: import('../types').FinancialGovernanceSummary
+  by_category?: Record<string, { count: number; awarded: number }>
+  by_status?: Record<string, number>
 }
 
 export interface ConcessionEligibilityResult {
@@ -640,19 +660,24 @@ export const concessionsApi = {
     student_id?: number
     status?: string
     concession_type_id?: number
+    academic_year_id?: number
     funding_source?: string
+    benefit_type?: string
+    standard_id?: number
+    division_id?: number
     search?: string
     limit?: number
     offset?: number
   }) => apiClient.get<ConcessionApplication[]>('/fees/concessions/applications', { params }),
 
   getApplicationDetail: (id: number) =>
-    apiClient.get<ConcessionApplication & { eligibility_evaluation?: ConcessionEligibilityResult }>(`/fees/concessions/applications/${id}`),
+    apiClient.get<ConcessionApplication & { eligibility_evaluation?: ConcessionEligibilityResult; allocations?: any[] }>(`/fees/concessions/applications/${id}`),
 
   createApplication: (data: {
     student_id: number
     concession_type_id: number
     academic_year_id?: number
+    fee_category_id?: number
     requested_amount?: number
     requested_percentage?: number
     applicant_type?: string
@@ -660,20 +685,25 @@ export const concessionsApi = {
     sponsor_reference?: string
     sponsor_sanctioned_amount?: number
     supporting_document_url?: string
+    valid_until?: string
+    idempotency_key?: string
     remarks?: string
-  }) => apiClient.post<{ message: string; id: number; application_number: string; status: string }>('/fees/concessions/applications', data),
+  }) => apiClient.post<{ message: string; id: number; application_number: string; status: string; benefit_type?: string }>('/fees/concessions/applications', data),
 
   createBulkApplications: (data: {
     student_ids: number[]
     concession_type_id: number
     academic_year_id?: number
+    fee_category_id?: number
     requested_amount?: number
     requested_percentage?: number
     applicant_type?: string
     sponsor_name?: string
     sponsor_reference?: string
+    valid_until?: string
     remarks?: string
     auto_approve?: boolean
+    auto_apply?: boolean
   }) => apiClient.post<{
     message: string
     successful_count: number
@@ -691,21 +721,66 @@ export const concessionsApi = {
     apiClient.post<{ message: string; status: string }>(`/fees/concessions/applications/${id}/verify`, data),
 
   approveApplication: (id: number, data: { approved_amount?: number; remarks?: string; auto_apply?: boolean }) =>
-    apiClient.post<{ message: string; id: number; status: string; approved_amount: number; applied: boolean }>(`/fees/concessions/applications/${id}/approve`, data),
+    apiClient.post<{ message: string; status: string; approved_amount: number; applied_amount: number }>(`/fees/concessions/applications/${id}/approve`, data),
 
   rejectApplication: (id: number, data: { rejection_reason: string }) =>
-    apiClient.post<{ message: string; id: number; status: string }>(`/fees/concessions/applications/${id}/reject`, data),
+    apiClient.post<{ message: string; status: string }>(`/fees/concessions/applications/${id}/reject`, data),
 
-  applyApplication: (id: number) =>
-    apiClient.post<{ message: string; allocation_id: number; allocated_amount: number; invoice_id: number }>(`/fees/concessions/applications/${id}/apply`),
+  applyApplication: (id: number, data?: { allocation_amount?: number; invoice_item_id?: number }) =>
+    apiClient.post<{ message: string; allocation_id: number; transaction_ref?: string; allocated_amount: number; credit_adjustment_amount: number }>(`/fees/concessions/applications/${id}/apply`, data),
 
   withdrawApplication: (id: number, data: { withdrawal_reason: string }) =>
-    apiClient.post<{ message: string; id: number; status: string }>(`/fees/concessions/applications/${id}/withdraw`, data),
+    apiClient.post<{ message: string; status: string; reversed_amount?: number }>(`/fees/concessions/applications/${id}/withdraw`, data),
+
+  reverseApplication: (id: number, data: { reversal_reason: string }) =>
+    apiClient.post<{ message: string; status: string; reversed_amount: number }>(`/fees/concessions/applications/${id}/reverse`, data),
+
+  cancelApplication: (id: number, data: { cancellation_reason: string }) =>
+    apiClient.post<{ message: string; status: string; reversed_amount: number }>(`/fees/concessions/applications/${id}/cancel`, data),
+
+  expireStaleApplications: (institutionId?: number) =>
+    apiClient.post<{ message: string; expired_count: number }>('/fees/concessions/expire-stale', null, {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  recordSponsorSettlement: (id: number, data: {
+    amount: number
+    received_date?: string
+    payment_method?: string
+    reference_number?: string
+    remarks?: string
+  }) => apiClient.post<{ message: string; id: number; settlement_ref: string; amount: number; received_date: string; status: string }>(
+    `/fees/concessions/applications/${id}/sponsor-settlement`,
+    data
+  ),
 
   getAnalytics: (academicYearId?: number) =>
     apiClient.get<ConcessionAnalytics>('/fees/concessions/analytics', {
       params: academicYearId ? { academic_year_id: academicYearId } : undefined,
     }),
+
+  getGovernanceSummary: (params?: {
+    academic_year_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+    student_id?: number | string
+    start_date?: string
+    end_date?: string
+    funding_source?: string
+    benefit_type?: string
+    status?: string
+    search?: string
+    include_breakdowns?: boolean
+  }) => apiClient.get<import('../types').FinancialGovernanceSummary>('/fees/concessions/governance-summary', { params }),
+
+  getReconciliation: (params?: {
+    academic_year_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+  }) => apiClient.get<import('../types').ReconciliationAuditResponse>('/fees/concessions/reconciliation', { params }),
+
+  traceTransaction: (entityType: 'application' | 'allocation' | 'invoice' | 'student', entityId: number) =>
+    apiClient.get<import('../types').TransactionTraceResponse>(`/fees/concessions/trace/${entityType}/${entityId}`),
 }
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
@@ -795,9 +870,13 @@ export const paymentsApi = {
     amount: number
     reason: string
     refund_method?: string
+    reference_number?: string
     reference_note?: string
+    notes?: string
+    process_now?: boolean
     requires_approval?: boolean
-  }) => apiClient.post<{ message: string; refund_id: number; status: string }>(`/payments/${paymentId}/refunds`, data),
+    idempotency_key?: string
+  }) => apiClient.post<{ message: string; refund_id: number; reference_number?: string; amount?: number; status: string }>(`/payments/${paymentId}/refunds`, data),
   listRefunds: (params?: { student_id?: number | string; status?: string; limit?: number }) =>
     apiClient.get<RefundRecord[]>('/payments/refunds/', { params }),
   approveRefund: (refundId: number | string, data?: { notes?: string }) =>
@@ -927,6 +1006,41 @@ export const reportsApi = {
     end_date?: string
     limit?: number
   }) => apiClient.get<any[]>('/reports/system/audit-summary', { params }),
+  concessionCatalog: () =>
+    apiClient.get<import('../types').ConcessionReportItemMeta[]>('/reports/concessions/catalog'),
+  concessionReport: (
+    reportId: string,
+    params?: {
+      academic_year_id?: number | string
+      institution_id?: number | string
+      standard_id?: number | string
+      division_id?: number | string
+      student_id?: number | string
+      start_date?: string
+      end_date?: string
+      status?: string
+      funding_source?: string
+      benefit_type?: string
+      search?: string
+    }
+  ) => apiClient.get<import('../types').ConcessionReportResponse>(`/reports/concessions/${reportId}`, { params }),
+  exportConcessionReport: (
+    reportId: string,
+    params?: {
+      format?: 'csv' | 'xlsx'
+      academic_year_id?: number | string
+      institution_id?: number | string
+      standard_id?: number | string
+      division_id?: number | string
+      student_id?: number | string
+      start_date?: string
+      end_date?: string
+      status?: string
+      funding_source?: string
+      benefit_type?: string
+      search?: string
+    }
+  ) => apiClient.get(`/reports/concessions/${reportId}/export`, { params, responseType: 'blob' }),
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -1846,8 +1960,23 @@ export const leadsApi = {
   updateCrmConfig: (data: Partial<CrmConfigSettings>) =>
     apiClient.put<{ success: boolean; message: string; config: CrmConfigSettings }>('/leads/settings/config', data),
 
-  convertToAdmission: (id: number | string, data: any) =>
-    apiClient.post<{ success: boolean; message: string; student_id: number; admission_number: string; student_name: string }>(`/leads/${id}/convert`, data),
+  convertToAdmission: (id: number | string, data: {
+    fee_structure_id?: number
+    concession_type_id?: number
+    concession_amount?: number
+    concession_percentage?: number
+    concession_remarks?: string
+    [key: string]: any
+  }) =>
+    apiClient.post<{
+      success: boolean
+      message: string
+      student_id: number
+      admission_number: string
+      student_name: string
+      invoice_number?: string | null
+      concession_application_number?: string | null
+    }>(`/leads/${id}/convert`, data),
 
   logCommunication: (id: number | string, data: { channel: string; content: string; subject?: string; recipient_name?: string; recipient_destination?: string }) =>
     apiClient.post<{ success: boolean; message: string; communication_id: number }>(`/leads/${id}/communications`, data),

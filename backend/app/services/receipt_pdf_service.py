@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description High-fidelity PDF generation engine and bulk export service for fee receipts strictly matching executive UI card layout with vector donut charts, metadata pills, and historical payment registers.
 #  */
@@ -460,7 +460,12 @@ class ReceiptPdfService:
         prev_count = len(historical_payments)
 
         # Left Side Rows
-        page.insert_text(fitz.Point(26, 246), "Total Fee (Current AY)", fontname="helv", fontsize=7.0, color=cls.C_TEXT_GRAY)
+        conc_val = float(receipt_data.get("concession_amount") or 0.0)
+        gross_val = float(receipt_data.get("gross_fee") or (tot_fee + conc_val))
+        if conc_val > 0 and gross_val > tot_fee:
+            page.insert_text(fitz.Point(26, 246), f"Net Payable (Gross Rs.{int(round(gross_val)):,} - Benefit Rs.{int(round(conc_val)):,})", fontname="helv", fontsize=6.2, color=cls.C_TEXT_GRAY)
+        else:
+            page.insert_text(fitz.Point(26, 246), "Total Fee (Current AY)", fontname="helv", fontsize=7.0, color=cls.C_TEXT_GRAY)
         insert_amount_with_rupee(page, fitz.Point(232, 246), tot_fee, fontsize=7.2, color=cls.C_TEXT_DARK, right_align=True)
 
         page.insert_text(fitz.Point(26, 260), f"Previous Paid ({prev_count})", fontname="helv", fontsize=7.0, color=cls.C_TEXT_GRAY)

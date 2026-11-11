@@ -11,12 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-09
+#  * @updated     2026-11-11
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
 
 from datetime import datetime, date, timezone, timedelta
+from decimal import Decimal
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 import json
@@ -44,9 +45,12 @@ from app.models.board import Board
 from app.models.division import Division
 from app.models.subject import Subject, SubjectMapping
 from app.models.academic_year import AcademicYear
+from app.models.fee import FeeStructure, StudentFeeAssignment, FeeInvoice, FeeInvoiceItem
 from app.models.communication import CommunicationLog
 from app.models.institution import Institution
 from app.models.settings import InstitutionSetting
+from app.services.sequence import generate_next_invoice_number
+from app.services.concession_service import ConcessionWorkflowService
 
 router = APIRouter()
 
@@ -230,6 +234,11 @@ class ConvertToAdmissionRequest(BaseModel):
     guardian_occupation: Optional[str] = None
     remarks: Optional[str] = "Converted from Lead"
     send_welcome_sms: bool = False
+    fee_structure_id: Optional[int] = None
+    concession_type_id: Optional[int] = None
+    concession_amount: Optional[Decimal] = None
+    concession_percentage: Optional[Decimal] = None
+    concession_remarks: Optional[str] = None
 
 
 class DemoClassUpdateRequest(BaseModel):
@@ -2148,6 +2157,87 @@ async def convert_lead_to_admission(
             )
             db.add(enrollment)
 
+    created_invoice_number = None
+    created_concession_number = None
+
+    # Optional Fee Structure Assignment & Initial Invoice Creation during Admission Conversion
+    eff_ay_id = ay_id
+    if not eff_ay_id:
+        ay_row = (
+            await db.execute(
+                select(AcademicYear)
+                .where(AcademicYear.institution_id == effective_inst_id, AcademicYear.is_active == True)
+                .order_by(desc(AcademicYear.id))
+            )
+        ).scalars().first()
+        eff_ay_id = ay_row.id if ay_row else None
+
+    target_fs = None
+    if data.fee_structure_id:
+        target_fs = await db.get(FeeStructure, data.fee_structure_id)
+    elif data.concession_type_id and std_id and eff_ay_id:
+        target_fs = (
+            await db.execute(
+                select(FeeStructure).where(
+                    FeeStructure.institution_id == effective_inst_id,
+                    FeeStructure.academic_year_id == eff_ay_id,
+                    FeeStructure.standard_id == std_id,
+                    FeeStructure.is_active == True,
+                )
+            )
+        ).scalars().first()
+
+    if target_fs and eff_ay_id:
+        existing_assign = (
+            await db.execute(
+                select(StudentFeeAssignment).where(
+                    StudentFeeAssignment.student_id == student.id,
+                    StudentFeeAssignment.academic_year_id == eff_ay_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if not existing_assign:
+            existing_assign = StudentFeeAssignment(
+                student_id=student.id,
+                fee_structure_id=target_fs.id,
+                academic_year_id=eff_ay_id,
+                custom_amount=target_fs.amount,
+                concession_amount=Decimal("0.00"),
+                remarks=f"Assigned during Lead #{lead.lead_number} admission conversion",
+            )
+            db.add(existing_assign)
+            await db.flush()
+
+            inv_num = await generate_next_invoice_number(db, effective_inst_id, eff_ay_id)
+            inv_obj = FeeInvoice(
+                invoice_number=inv_num,
+                student_id=student.id,
+                assignment_id=existing_assign.id,
+                academic_year_id=eff_ay_id,
+                total_amount=target_fs.amount,
+                discount_amount=Decimal("0.00"),
+                net_amount=target_fs.amount,
+                paid_amount=Decimal("0.00"),
+                outstanding_amount=target_fs.amount,
+                status="unpaid",
+                issue_date=data.admission_date or date.today(),
+                due_date=(data.admission_date or date.today()) + timedelta(days=30),
+                notes=f"Admission Fee Invoice via Lead {lead.lead_number}",
+            )
+            db.add(inv_obj)
+            await db.flush()
+            db.add(
+                FeeInvoiceItem(
+                    invoice_id=inv_obj.id,
+                    fee_structure_id=target_fs.id,
+                    description=target_fs.name,
+                    amount=target_fs.amount,
+                    discount_amount=Decimal("0.00"),
+                    net_amount=target_fs.amount,
+                )
+            )
+            created_invoice_number = inv_num
+
     # Update Lead status
     lead.stage = "converted"
     lead.converted_student_id = student.id
@@ -2176,10 +2266,31 @@ async def convert_lead_to_admission(
             action="LEAD_CONVERTED_TO_ADMISSION",
             resource_type="LEAD",
             resource_id=lead.id,
-            details=json.dumps({"student_id": student.id, "admission_number": student.admission_number, "lead_number": lead.lead_number}),
+            details=json.dumps({
+                "student_id": student.id,
+                "admission_number": student.admission_number,
+                "lead_number": lead.lead_number,
+                "invoice_number": created_invoice_number,
+            }),
         )
     )
     await db.commit()
+
+    # If an admission-time concession / promotional offer / scholarship was nominated, submit through canonical approval workflow
+    if data.concession_type_id and eff_ay_id:
+        c_app = await ConcessionWorkflowService.submit_application(
+            db=db,
+            institution_id=effective_inst_id,
+            student_id=student.id,
+            concession_type_id=data.concession_type_id,
+            academic_year_id=eff_ay_id,
+            nominator=current_user,
+            requested_amount=data.concession_amount,
+            requested_percentage=data.concession_percentage,
+            applicant_type="admission_offer",
+            remarks=data.concession_remarks or f"Admission Offer / Discount nominated via Lead #{lead.lead_number}",
+        )
+        created_concession_number = c_app.application_number
 
     return {
         "success": True,
@@ -2188,6 +2299,8 @@ async def convert_lead_to_admission(
         "student_id": student.id,
         "admission_number": student.admission_number,
         "student_name": f"{student.first_name} {student.last_name}",
+        "invoice_number": created_invoice_number,
+        "concession_application_number": created_concession_number,
     }
 
 

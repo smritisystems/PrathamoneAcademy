@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Authoritative sequential document numbering engine enforcing immutable numbers, PostgreSQL concurrency locking, zero collision, and gap audit tracking.
 #  */
@@ -371,64 +371,76 @@ async def generate_next_refund_number(
 
 # ─── 5B. SCHOLARSHIP & CONCESSION APPLICATION NUMBER GENERATOR ─────────────────
 
+async def _generate_prefixed_year_sequence(
+    db: AsyncSession,
+    model_column,
+    prefix: str,
+    institution_id: int = 1,
+    academic_year_id: Optional[int] = None,
+) -> str:
+    """Shared sequential document/transaction number generator ({PREFIX}-{YYYY}-{SEQ:04d})."""
+    await acquire_sequence_lock(db, institution_id)
+    year_str = await _resolve_academic_year_str(db, academic_year_id)
+    pattern = f"{prefix}-{year_str}-%"
+
+    existing_vals = (
+        await db.execute(select(model_column).where(model_column.like(pattern)))
+    ).scalars().all()
+
+    max_seq = 0
+    for val in existing_vals:
+        if val:
+            parts = str(val).split("-")
+            if parts and parts[-1].isdigit():
+                max_seq = max(max_seq, int(parts[-1]))
+
+    next_seq = max_seq + 1
+    formatted = f"{prefix}-{year_str}-{next_seq:04d}"
+
+    while (await db.execute(select(model_column).where(model_column == formatted))).scalar_one_or_none():
+        next_seq += 1
+        formatted = f"{prefix}-{year_str}-{next_seq:04d}"
+
+    return formatted
+
+
 async def generate_next_concession_number(
     db: AsyncSession,
     institution_id: int = 1,
     academic_year_id: Optional[int] = None,
 ) -> str:
-    """
-    Generates next sequential concession application number (e.g. SCH-2026-0001).
-    Scans all existing concession application records to ensure no duplicates.
-    """
-    await acquire_sequence_lock(db, institution_id)
-
-    prefix = "SCH"
-    year_str = await _resolve_academic_year_str(db, academic_year_id)
-    pattern = f"{prefix}-{year_str}-%"
-
+    """Generates next sequential concession application number (e.g. SCH-2026-0001)."""
     from app.models.fee import StudentConcessionApplication
 
-    res = await db.execute(
-        select(StudentConcessionApplication.application_number).where(
-            StudentConcessionApplication.application_number.like(pattern)
-        )
+    return await _generate_prefixed_year_sequence(
+        db, StudentConcessionApplication.application_number, "SCH", institution_id, academic_year_id
     )
-    app_numbers = res.scalars().all()
 
-    max_seq = 0
-    for a_num in app_numbers:
-        if a_num:
-            parts = a_num.split("-")
-            if parts:
-                last_part = parts[-1]
-                if last_part.isdigit():
-                    val = int(last_part)
-                    if val > max_seq:
-                        max_seq = val
 
-    next_seq = max_seq + 1
-    formatted = f"{prefix}-{year_str}-{next_seq:04d}"
+async def generate_next_concession_txn_ref(
+    db: AsyncSession,
+    institution_id: int = 1,
+    academic_year_id: Optional[int] = None,
+) -> str:
+    """Generates next sequential immutable concession ledger transaction reference (e.g. CTXN-2026-0001)."""
+    from app.models.fee import FeeConcessionAllocation
 
-    existing = (
-        await db.execute(
-            select(StudentConcessionApplication.id).where(
-                StudentConcessionApplication.application_number == formatted
-            )
-        )
-    ).scalar_one_or_none()
+    return await _generate_prefixed_year_sequence(
+        db, FeeConcessionAllocation.transaction_ref, "CTXN", institution_id, academic_year_id
+    )
 
-    while existing:
-        next_seq += 1
-        formatted = f"{prefix}-{year_str}-{next_seq:04d}"
-        existing = (
-            await db.execute(
-                select(StudentConcessionApplication.id).where(
-                    StudentConcessionApplication.application_number == formatted
-                )
-            )
-        ).scalar_one_or_none()
 
-    return formatted
+async def generate_next_sponsor_settlement_ref(
+    db: AsyncSession,
+    institution_id: int = 1,
+    academic_year_id: Optional[int] = None,
+) -> str:
+    """Generates next sequential sponsor recovery settlement reference (e.g. SPN-2026-0001)."""
+    from app.models.fee import SponsorSettlement
+
+    return await _generate_prefixed_year_sequence(
+        db, SponsorSettlement.settlement_ref, "SPN", institution_id, academic_year_id
+    )
 
 
 # ─── 6. AUDITABLE NUMBERING GAP TRACKER ───────────────────────────────────────

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-09
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints dedicated to authenticated student dashboard views, timetables, and grades.
 #  */
@@ -36,8 +36,17 @@ from app.models.subject import Subject
 from app.models.academic_year import AcademicYear
 from app.models.attendance import Attendance
 from app.models.exam import Examination, ExamMark
-from app.models.fee import FeeInvoice, FeeInvoiceItem, FeeInstallment, StudentFeeAssignment
-from app.models.payment import Payment, PaymentAllocation, PaymentReceipt
+from app.models.fee import (
+    FeeInvoice,
+    FeeInvoiceItem,
+    FeeInstallment,
+    StudentFeeAssignment,
+    FeeConcessionType,
+    StudentConcessionApplication,
+    FeeConcessionAllocation,
+)
+from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
+from app.services.financial_governance_service import FinancialGovernanceService, FinancialFilter
 from app.models.portal import TimetableEntry, StudyMaterial, Announcement, StudentDocument
 
 router = APIRouter()
@@ -620,13 +629,13 @@ async def get_student_fees(
 ):
     student = await get_effective_student(db, current_user, student_id)
 
-    # Invoices
+    # Invoices (excluding cancelled)
     inv_stmt = (
         select(FeeInvoice)
         .options(
             selectinload(FeeInvoice.items),
         )
-        .where(FeeInvoice.student_id == student.id)
+        .where(FeeInvoice.student_id == student.id, FeeInvoice.status != "cancelled")
         .order_by(desc(FeeInvoice.id))
     )
     invoices = (await db.execute(inv_stmt)).scalars().all()
@@ -643,21 +652,108 @@ async def get_student_fees(
     )
     payments = (await db.execute(pmt_stmt)).scalars().all()
 
+    refunds_completed = float(
+        (
+            await db.execute(
+                select(func.coalesce(func.sum(Refund.amount), 0)).where(
+                    Refund.student_id == student.id,
+                    Refund.status == "completed",
+                )
+            )
+        ).scalar()
+        or 0.0
+    )
+
+    original_fee = sum(float(inv.total_amount) for inv in invoices)
     total_fees = sum(float(inv.net_amount) for inv in invoices)
-    total_paid = sum(float(p.amount) for p in payments if p.status in ("completed", "posted"))
-    outstanding = max(0.0, total_fees - total_paid)
+    gross_paid = sum(float(p.amount) for p in payments if p.status in ("completed", "posted"))
+    total_paid = max(0.0, gross_paid - refunds_completed)
+    outstanding = sum(float(inv.outstanding_amount) for inv in invoices if inv.status != "written_off")
+
+    conc_rows = (
+        await db.execute(
+            select(StudentConcessionApplication, FeeConcessionType)
+            .join(FeeConcessionType, StudentConcessionApplication.concession_type_id == FeeConcessionType.id)
+            .options(selectinload(StudentConcessionApplication.allocations))
+            .where(StudentConcessionApplication.student_id == student.id)
+            .order_by(desc(StudentConcessionApplication.id))
+        )
+    ).all()
+
+    benefits = []
+    waiver_history = []
+    approval_history = []
+    for c_app, c_type in conc_rows:
+        item = {
+            "id": c_app.id,
+            "application_number": c_app.application_number,
+            "concession_name": c_type.name,
+            "concession_type_code": c_type.code,
+            "category": c_type.category,
+            "benefit_type": c_app.benefit_type or getattr(c_type, "benefit_type", "fee_concession"),
+            "waiver_scope": c_app.waiver_scope,
+            "funding_source": c_app.funding_source,
+            "sponsor_name": c_app.sponsor_name,
+            "requested_amount": float(c_app.requested_amount),
+            "approved_amount": float(c_app.approved_amount),
+            "applied_amount": float(c_app.applied_amount),
+            "reversed_amount": float(getattr(c_app, "reversed_amount", 0) or 0),
+            "status": c_app.status,
+            "valid_until": c_app.valid_until.isoformat() if getattr(c_app, "valid_until", None) else None,
+            "approved_at": c_app.approved_at.isoformat() if c_app.approved_at else None,
+            "remarks": c_app.approval_remarks or c_app.rejection_reason or c_app.withdrawal_reason or c_app.cancellation_reason,
+            "allocations": [
+                {
+                    "id": al.id,
+                    "transaction_ref": getattr(al, "transaction_ref", None),
+                    "transaction_type": getattr(al, "transaction_type", None),
+                    "posting_status": getattr(al, "posting_status", "posted"),
+                    "allocated_amount": float(al.allocated_amount),
+                    "effective_date": al.effective_date.isoformat() if getattr(al, "effective_date", None) else None,
+                }
+                for al in (c_app.allocations or [])
+            ],
+        }
+        benefits.append(item)
+        if item["benefit_type"] == "fee_waiver":
+            waiver_history.append(item)
+        approval_history.append(item)
+
+    stu_gov = await FinancialGovernanceService.get_governed_summary(
+        db,
+        FinancialFilter(
+            institution_id=student.institution_id,
+            student_id=student.id,
+            is_demo=None,
+        ),
+    )
+    stu_fin = stu_gov["financials"]
 
     status_str = "Paid" if outstanding <= 0 and total_fees > 0 else "Partially Paid" if total_paid > 0 else "Unpaid"
 
     return {
         "student_id": student.id,
         "summary": {
+            "original_fee": original_fee,
+            "approved_benefits": stu_fin["approved_concessions_total"],
+            "approved_unapplied": stu_fin["approved_unapplied"],
+            "applied_concessions": stu_fin["posted_concessions_total"],
+            "fee_waivers": stu_fin["posted_fee_waivers"],
+            "scholarships": stu_fin["scholarships_awarded"],
+            "sponsor_funding": stu_fin["sponsor_funded_scholarships"],
+            "net_fee_payable": total_fees,
             "total_fees": total_fees,
+            "gross_paid": gross_paid,
+            "refunds_completed": refunds_completed,
             "paid_amount": total_paid,
             "outstanding_balance": outstanding,
             "status": status_str,
             "collection_percentage": round((total_paid / total_fees) * 100, 1) if total_fees > 0 else 100.0,
         },
+        "governance": stu_gov,
+        "benefits": benefits,
+        "waiver_history": waiver_history,
+        "approval_history": approval_history,
         "invoices": [
             {
                 "id": inv.id,

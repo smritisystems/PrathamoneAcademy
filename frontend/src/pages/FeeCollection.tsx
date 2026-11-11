@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Student fee collection terminal for recording payments against outstanding installments.
  */
@@ -259,7 +259,15 @@ export default function FeeCollection() {
                           {inv.invoice_number}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          Total: ₹{parseFloat(String(inv.total_amount)).toLocaleString('en-IN')}
+                          Gross: ₹{parseFloat(String(inv.total_amount)).toLocaleString('en-IN')}
+                          {Number(inv.discount_amount || 0) > 0 && (
+                            <span className="text-emerald-700 font-semibold">
+                              {' '}• Benefit -₹{parseFloat(String(inv.discount_amount)).toLocaleString('en-IN')}
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs font-semibold text-gray-800">
+                          Net Payable: ₹{parseFloat(String(inv.net_amount ?? inv.total_amount)).toLocaleString('en-IN')}
                         </p>
                       </div>
                       <span
@@ -300,8 +308,22 @@ export default function FeeCollection() {
               <h3 className="text-sm font-semibold text-primary-900 mb-3">Fee Summary</h3>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-primary-700">Total Billed</span>
+                  <span className="text-primary-700">Gross Assessed</span>
                   <span className="font-medium">
+                    ₹{invoices.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+                {invoices.reduce((sum, inv) => sum + Number(inv.discount_amount || 0), 0) > 0 && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>Posted Concessions / Waivers</span>
+                    <span className="font-semibold">
+                      -₹{invoices.reduce((sum, inv) => sum + Number(inv.discount_amount || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-primary-700">Net Fee Payable</span>
+                  <span className="font-semibold text-gray-900">
                     ₹{parseFloat(String(totalBilled)).toLocaleString('en-IN')}
                   </span>
                 </div>

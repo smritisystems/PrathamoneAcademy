@@ -485,6 +485,7 @@ export interface TopOverdueAccount {
 
 export interface FeeOverviewData {
   summary: {
+    gross_obligation?: number
     total_obligation: number
     total_collected: number
     total_outstanding: number
@@ -496,6 +497,8 @@ export interface FeeOverviewData {
     total_recoverable_outstanding?: number
     overdue_outstanding?: number
     waived_amount?: number
+    approved_concessions?: number
+    posted_concessions?: number
     written_off_amount?: number
   }
   board_breakdown: BoardBreakdown[]
@@ -504,6 +507,9 @@ export interface FeeOverviewData {
   recent_payments: RecentPayment[]
   payment_methods?: PaymentMethodDistribution[]
   top_overdue?: TopOverdueAccount[]
+  governance?: FinancialGovernanceSummary
+  concession_breakdown?: FeeManagementConcessionBreakdown
+  academic_concessions?: AcademicConcessionDistribution
 }
 
 export interface FeeRegisterInstallment {
@@ -631,6 +637,8 @@ export interface DetailedPaymentReceipt {
   }>
   collected_by?: string
   generated_at?: string
+  gross_fee?: number
+  concession_amount?: number
   total_fees?: number
   total_paid?: number
   outstanding_after?: number
@@ -779,6 +787,7 @@ export interface DashboardStats {
   recent_payments: RecentPayment[]
   status_filter?: string
   configured_visibility?: string
+  concession_governance?: FinancialGovernanceSummary
 }
 
 // ─── Analytics Workspace Interfaces ──────────────────────────────────────────
@@ -913,8 +922,15 @@ export interface DashboardAnalyticsData {
     fee_heads: AnalyticsFeeHead[]
     daily_pulse: AnalyticsDailyPulse[]
     total_collected: number
+    gross_collected?: number
+    refunds_amount?: number
     net_collection: number
     reversals_amount: number
+    concessions_reversed?: number
+    gross_fee_assessed?: number
+    posted_concessions?: number
+    net_fee_due?: number
+    total_outstanding?: number
   }
   outstanding_analysis: {
     status_wise: StatusWiseOutstanding
@@ -952,6 +968,7 @@ export interface DashboardAnalyticsData {
       scheduled: number
       completed: number
     }
+    admission_concessions?: FinancialGovernanceSummary['admission_breakdown']
   }
   academic_analysis: {
     inventory: {
@@ -977,6 +994,7 @@ export interface DashboardAnalyticsData {
       max_score: number
       grade_distribution: { grade: string; count: number; percentage: number }[]
     }
+    concession_distribution?: AcademicConcessionDistribution
   }
   transactions_reconciliation: {
     total_transactions: number
@@ -989,6 +1007,24 @@ export interface DashboardAnalyticsData {
       completed_count: number
       completed_amount: number
     }
+    reversals?: {
+      reversed_payments_amount: number
+      reversed_concessions_amount: number
+      total_reversals: number
+    }
+    benefits_breakdown?: {
+      fee_concessions: number
+      fee_waivers: number
+      full_fee_waivers: number
+      partial_fee_waivers: number
+      scholarships: number
+      sponsor_funded: number
+      manual_adjustments: number
+      credit_adjustments: number
+      approved_unapplied: number
+    }
+    sponsors?: FinancialGovernanceSummary['sponsors']
+    lifecycle?: FinancialGovernanceSummary['lifecycle']
     ledger_audit: {
       total_invoiced: number
       total_collected: number
@@ -996,12 +1032,22 @@ export interface DashboardAnalyticsData {
       calculated_balance: number
       variance: number
       is_reconciled: boolean
+      gross_fee_assessed?: number
+      total_posted_reductions?: number
+      net_fee_due?: number
+      refunds_completed?: number
+      reversed_payments_amount?: number
+      reversed_concessions_amount?: number
+      credit_adjustments?: number
+      broken_invoices_count?: number
     }
   }
   operations: {
     daily_summary: DailyOperationsSummary
     recent_activities: AnalyticsActivityItem[]
   }
+  concession_governance?: FinancialGovernanceSummary
+  reconciliation_audit?: ReconciliationAuditResponse
 }
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
@@ -1392,11 +1438,22 @@ export interface StudentAdminProfile {
       total_fees: number
       gross_fees?: number
       total_concessions?: number
+      approved_benefits?: number
+      approved_unapplied?: number
+      applied_concessions?: number
+      fee_waivers?: number
+      scholarships?: number
+      sponsor_funding?: number
       net_fees?: number
+      gross_paid?: number
+      refunds_completed?: number
       total_paid: number
       outstanding: number
       collection_rate: number
     }
+    governance?: FinancialGovernanceSummary
+    waiver_history?: any[]
+    approval_history?: any[]
     invoices: FeeInvoice[]
     concessions?: {
       id: number
@@ -1404,14 +1461,23 @@ export interface StudentAdminProfile {
       concession_type_code: string
       concession_name: string
       category: string
+      benefit_type?: string
+      waiver_scope?: string | null
       requested_amount: number
       approved_amount: number
       applied_amount: number
+      reversed_amount?: number
       status: string
       funding_source: string
+      sponsor_name?: string | null
+      sponsor_settlement_status?: string | null
+      valid_until?: string | null
       approved_at?: string | null
       approval_remarks?: string | null
+      rejection_reason?: string | null
+      cancellation_reason?: string | null
       invoice_id?: number | null
+      allocations?: any[]
     }[]
     payments: Payment[]
   }
@@ -4013,6 +4079,263 @@ export interface CalculationDefinitionItem {
   plain_english_template: string
   actionable_guidance: string
 }
+
+// ─── Concession, Waiver & Scholarship Financial Governance (SSOT) ─────────────
+
+export interface GovernedFinancials {
+  gross_fee_assessed: number
+  approved_concessions_total: number
+  approved_unapplied: number
+  posted_concessions_total: number
+  posted_fee_concessions: number
+  posted_fee_waivers: number
+  full_fee_waivers: number
+  partial_fee_waivers: number
+  scholarships_awarded: number
+  academy_scholarships: number
+  sponsor_funded_scholarships: number
+  manual_fee_adjustments: number
+  total_posted_reductions: number
+  net_fee_due: number
+  total_collections: number
+  gross_payment_receipts: number
+  refunds_completed: number
+  refunds_pending: number
+  net_collections: number
+  total_outstanding: number
+  written_off_amount: number
+  collection_percentage: number
+  credit_adjustments: number
+  reversals_total: number
+  reversed_payments_amount: number
+  reversed_concessions_amount: number
+  pending_payments_amount: number
+}
+
+export interface FinancialGovernanceSummary {
+  currency: { code: string; symbol: string; precision: number }
+  counts: {
+    invoices: number
+    billed_students: number
+    beneficiary_students: number
+    valid_payments: number
+    pending_payments: number
+    reversed_payments: number
+    pending_approvals: number
+    rejected_applications: number
+    expired_benefits: number
+    cancelled_benefits: number
+    reversed_benefits: number
+    completed_refunds: number
+    pending_refunds: number
+  }
+  financials: GovernedFinancials
+  lifecycle: {
+    requested: number
+    pending_approval: number
+    approved: number
+    posted: number
+    utilized: number
+    remaining_approved: number
+    rejected: number
+    expired: number
+    reversed: number
+    cancelled: number
+  }
+  sponsors: {
+    total_sanctioned: number
+    total_posted: number
+    total_received: number
+    outstanding_sponsor_funding: number
+    settlement_rate: number
+  }
+  admission_breakdown: {
+    admission_concessions: number
+    promotional_offers: number
+    sibling_discounts: number
+    new_admission_scholarships: number
+  }
+  fee_management_breakdown?: FeeManagementConcessionBreakdown
+  academic_distribution?: AcademicConcessionDistribution
+}
+
+export interface FeeManagementConcessionBreakdown {
+  currency: { code: string; symbol: string; precision: number }
+  student_wise: Array<{
+    application_id: number
+    application_number: string
+    student_id: number
+    student_name: string
+    admission_number: string
+    concession_name: string
+    benefit_type: string
+    waiver_scope?: string | null
+    funding_source: string
+    sponsor_name?: string | null
+    status: string
+    gross_fee: number
+    approved_amount: number
+    posted_amount: number
+    remaining_benefit: number
+    reversed_amount: number
+    net_fee_due: number
+    paid_amount: number
+    outstanding: number
+    valid_until?: string | null
+  }>
+  fee_head_wise: Array<{ fee_category: string; applications_count: number; posted_amount: number }>
+  installment_wise: Array<{
+    installment_id: number
+    installment_number: number
+    description: string
+    invoice_number: string
+    student_name: string
+    amount: number
+    paid_amount: number
+    status: string
+    due_date: string
+  }>
+}
+
+export interface AcademicConcessionDistribution {
+  currency: { code: string; symbol: string; precision: number }
+  class_wise: Array<{
+    standard_id: number | null
+    class_name: string
+    total_students: number
+    beneficiary_students: number
+    gross_fee: number
+    total_concessions: number
+    scholarships: number
+    fee_waivers: number
+    avg_concession: number
+    net_fee: number
+  }>
+  division_wise: Array<{
+    division_id: number | null
+    division_name: string
+    class_name: string
+    total_students: number
+    beneficiary_students: number
+    gross_fee: number
+    total_concessions: number
+    scholarships: number
+    fee_waivers: number
+    avg_concession: number
+    net_fee: number
+  }>
+}
+
+export interface ReconciliationAuditResponse {
+  currency: { code: string; symbol: string; precision: number }
+  is_reconciled: boolean
+  ledger_audit: {
+    gross_fee_assessed: number
+    approved_concessions_total: number
+    approved_unapplied: number
+    posted_fee_concessions: number
+    posted_fee_waivers: number
+    scholarships_awarded: number
+    sponsor_funded_scholarships: number
+    manual_fee_adjustments: number
+    total_posted_reductions: number
+    net_fee_due: number
+    invoice_paid: number
+    valid_payment_receipts: number
+    payment_allocations_sum: number
+    reversed_allocations_excluded: number
+    refunds_completed: number
+    net_collections: number
+    reversed_payments_amount: number
+    reversed_concessions_amount: number
+    credit_adjustments: number
+    outstanding_due: number
+    expected_net_fee_due: number
+    expected_outstanding: number
+    net_formula_variance: number
+    outstanding_formula_variance: number
+    collection_allocation_variance: number
+    broken_invoices_count: number
+    is_reconciled: boolean
+  }
+  broken_invoices: Array<{ invoice_id: number; invoice_number: string; issue: string }>
+  sponsors: FinancialGovernanceSummary['sponsors']
+  summary: FinancialGovernanceSummary['financials']
+  lifecycle: FinancialGovernanceSummary['lifecycle']
+}
+
+export interface TransactionTraceResponse {
+  entity_type: 'application' | 'allocation' | 'invoice' | 'student'
+  entity_id: number
+  student?: { id: number; admission_number: string; name: string }
+  invoice?: {
+    id: number
+    invoice_number: string
+    gross_fee: number
+    discount_amount: number
+    net_amount: number
+    paid_amount: number
+    outstanding_amount: number
+    status: string
+  } | null
+  applications?: Array<{
+    id: number
+    application_number: string
+    benefit_type: string
+    waiver_scope?: string | null
+    funding_source: string
+    sponsor_name?: string | null
+    sponsor_settlement_status?: string | null
+    requested_amount: number
+    approved_amount: number
+    applied_amount: number
+    reversed_amount: number
+    status: string
+    valid_until?: string | null
+    approved_at?: string | null
+    approval_remarks?: string | null
+    cancellation_reason?: string | null
+  }>
+  allocations?: Array<{
+    id: number
+    transaction_ref?: string | null
+    transaction_type: string
+    posting_status: string
+    allocated_amount: number
+    credit_adjustment_amount: number
+    effective_date?: string | null
+    reversal_of_allocation_id?: number | null
+    reversal_reason?: string | null
+    notes?: string | null
+  }>
+  audit_history: Array<{
+    id: number
+    action: string
+    actor: string
+    details?: string | null
+    severity: string
+    created_at: string | null
+  }>
+}
+
+export interface ConcessionReportItemMeta {
+  id: string
+  title: string
+  category: string
+}
+
+export interface ConcessionReportResponse {
+  report_id: string
+  title: string
+  category: string
+  generated_at: string
+  reporting_period: { start_date: string | null; end_date: string | null }
+  currency: { code: string; symbol: string; precision: number }
+  summary: Record<string, number>
+  columns: Array<{ key: string; label: string; type?: 'currency' | 'number' | 'percent' | 'text' | 'trace' }>
+  rows: Array<Record<string, any>>
+}
+
 
 
 
