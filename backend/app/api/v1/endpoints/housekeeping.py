@@ -46,7 +46,7 @@ async def _require_housekeeping_access(
 
 class CreateBackupRequest(BaseModel):
     label: str = Field(default="manual", max_length=40)
-    backup_format: str = Field(default="custom")  # custom | plain_sql
+    backup_format: str = Field(default="edu")  # edu | edu_sql | custom | plain_sql
     notes: Optional[str] = Field(default=None, max_length=500)
     mirror_dir: Optional[str] = None
 
@@ -115,8 +115,8 @@ async def create_database_backup(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    if payload.backup_format not in ("custom", "plain_sql"):
-        raise HTTPException(status_code=400, detail="backup_format must be 'custom' or 'plain_sql'")
+    if payload.backup_format not in ("edu", "edu_sql", "custom", "plain_sql"):
+        raise HTTPException(status_code=400, detail="backup_format must be 'edu', 'edu_sql', 'custom', or 'plain_sql'")
     inst_id = institution_id or current_user.institution_id or 1
     try:
         policy = await HousekeepingService.get_housekeeping_policy(db, inst_id)

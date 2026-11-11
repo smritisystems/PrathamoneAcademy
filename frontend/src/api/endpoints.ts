@@ -1644,7 +1644,7 @@ export const housekeepingApi = {
 
   createBackup: (data: {
     label?: string
-    backup_format?: 'custom' | 'plain_sql'
+    backup_format?: 'edu' | 'edu_sql' | 'custom' | 'plain_sql'
     notes?: string
     mirror_dir?: string
   }) => apiClient.post<HousekeepingCreateBackupResponse>('/housekeeping/backups', data),

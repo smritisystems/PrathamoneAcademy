@@ -24,6 +24,8 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -86,31 +88,113 @@ def _resolve_input_file(file_arg: str) -> Path:
     return candidate
 
 
+def _extract_edu_payload(edu_path: Path, dest_dir: Path) -> Tuple[Path, bool, Dict]:
+    if not zipfile.is_zipfile(edu_path):
+        raise ValueError(f"'{edu_path.name}' is not a valid compressed .edu backup package.")
+    with zipfile.ZipFile(edu_path, "r") as zf:
+        total_uncompressed = sum(max(0, i.file_size) for i in zf.infolist())
+        if total_uncompressed > 2 * 1024 * 1024 * 1024:
+            raise ValueError("Archive exceeds safe uncompressed limit (2 GiB).")
+        members: Dict[str, zipfile.ZipInfo] = {}
+        for info in zf.infolist():
+            if info.is_dir():
+                continue
+            norm = info.filename.replace("\\", "/")
+            if norm.startswith("/") or ".." in Path(norm).parts:
+                raise ValueError(f"Unsafe zip member rejected: {info.filename}")
+            members[Path(norm).name] = info
+        p_info = members.get("database.dump") or members.get("database.sql")
+        if p_info is None:
+            for base, info in members.items():
+                if base.endswith(".dump") or base.endswith(".sql"):
+                    p_info = info
+                    break
+        if p_info is None:
+            raise ValueError("Invalid .edu archive: missing database.dump or database.sql.")
+        payload_out = (dest_dir / Path(p_info.filename.replace("\\", "/")).name).resolve()
+        with zf.open(p_info, "r") as src, payload_out.open("wb") as dst:
+            shutil.copyfileobj(src, dst, length=1024 * 1024)
+        manifest: Dict = {}
+        if "manifest.json" in members:
+            try:
+                manifest = json.loads(zf.read(members["manifest.json"]).decode("utf-8", errors="replace"))
+            except Exception:
+                manifest = {}
+        inner_sha_ok = True
+        if "checksum.sha256" in members:
+            rec = zf.read(members["checksum.sha256"]).decode("utf-8", errors="replace").strip().split()[0]
+            inner_sha_ok = rec.lower() == _sha256(payload_out).lower()
+        return payload_out, inner_sha_ok, manifest
+
+
 def cmd_backup(args: argparse.Namespace) -> int:
     BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
     db_name = args.database
     label = re.sub(r"[^a-zA-Z0-9_-]+", "_", args.label).strip("_") or "scheduled"
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    ext = "sql" if args.format == "plain_sql" else "dump"
-    filename = f"{db_name}_{label}_{ts}.{ext}"
-    target = BACKUPS_DIR / filename
+    is_edu_zip = args.format in ("edu", "edu_sql")
+    use_plain_sql = args.format in ("plain_sql", "edu_sql")
 
-    dump_cmd = ["pg_dump", "-U", args.user, "-Fp" if args.format == "plain_sql" else "-Fc"]
-    if args.format != "plain_sql":
+    if is_edu_zip:
+        filename = f"POeduOS_{ts}.edu"
+        target = BACKUPS_DIR / filename
+        seq = 1
+        while target.exists():
+            filename = f"POeduOS_{ts}_{seq:02d}.edu"
+            target = BACKUPS_DIR / filename
+            seq += 1
+    else:
+        ext = "sql" if use_plain_sql else "dump"
+        filename = f"{db_name}_{label}_{ts}.{ext}"
+        target = BACKUPS_DIR / filename
+
+    dump_cmd = ["pg_dump", "-U", args.user, "-Fp" if use_plain_sql else "-Fc"]
+    if not use_plain_sql:
         dump_cmd.extend(["-Z", "6"])
     dump_cmd.append(db_name)
 
+    now_iso = datetime.now(timezone.utc).isoformat()
     print(f"[HOUSEKEEPING] Creating {args.format} backup -> {target}")
-    _docker_exec(dump_cmd, stdout_path=target, check=True)
+
+    if is_edu_zip:
+        inner_name = "database.sql" if use_plain_sql else "database.dump"
+        with tempfile.TemporaryDirectory(prefix="poedu_cli_") as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            inner_file = tmp_path / inner_name
+            _docker_exec(dump_cmd, stdout_path=inner_file, check=True)
+            inner_sha = _sha256(inner_file)
+            manifest = {
+                "product": "PrathamOne EduOS",
+                "package_format": "edu_zip",
+                "payload_file": inner_name,
+                "payload_format": "plain_sql" if use_plain_sql else "custom_dump",
+                "payload_size_bytes": inner_file.stat().st_size,
+                "payload_sha256": inner_sha,
+                "database": db_name,
+                "label": label,
+                "created_by": f"cli:{os.getenv('USERNAME') or os.getenv('USER') or 'scheduler'}",
+                "created_at": now_iso,
+                "notes": args.notes or "Automated Housekeeping CLI backup",
+            }
+            tmp_zip = tmp_path / filename
+            with zipfile.ZipFile(tmp_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+                zf.write(inner_file, arcname=inner_name)
+                zf.writestr("checksum.sha256", f"{inner_sha}  {inner_name}\n")
+                zf.writestr("manifest.json", json.dumps(manifest, indent=2))
+            shutil.move(str(tmp_zip), str(target))
+    else:
+        _docker_exec(dump_cmd, stdout_path=target, check=True)
+
     sha = _sha256(target)
     Path(str(target) + ".sha256").write_text(f"{sha}  {filename}\n", encoding="utf-8")
 
-    now_iso = datetime.now(timezone.utc).isoformat()
+    recorded_fmt = "edu_zip" if is_edu_zip else ("plain_sql" if use_plain_sql else "custom_dump")
     meta_path = Path(str(target) + ".meta.json")
     meta_path.write_text(json.dumps({
         "filename": filename,
         "label": label,
-        "format": "plain_sql" if args.format == "plain_sql" else "custom_dump",
+        "format": recorded_fmt,
+        "payload_format": "plain_sql" if use_plain_sql else "custom_dump",
         "database": db_name,
         "created_by": f"cli:{os.getenv('USERNAME') or os.getenv('USER') or 'scheduler'}",
         "created_at": now_iso,
@@ -145,6 +229,17 @@ def cmd_backup(args: argparse.Namespace) -> int:
     return 0
 
 
+def _verify_raw_payload(payload_path: Path) -> Tuple[bool, int]:
+    if payload_path.suffix == ".dump":
+        res = _docker_exec(["pg_restore", "--list"], stdin_path=payload_path, check=False)
+        fmt_ok = res.returncode == 0
+        toc_entries = len([ln for ln in (res.stdout or b"").decode("utf-8", errors="replace").splitlines() if ln.strip() and not ln.strip().startswith(";")])
+        return fmt_ok, toc_entries
+    txt = payload_path.read_text(encoding="utf-8", errors="replace")
+    fmt_ok = "PostgreSQL database dump" in txt[:2048] or "CREATE TABLE" in txt[:4096]
+    return fmt_ok, txt.count("CREATE TABLE ")
+
+
 def verify_file(target: Path) -> bool:
     computed = _sha256(target)
     sha_file = Path(str(target) + ".sha256")
@@ -155,14 +250,17 @@ def verify_file(target: Path) -> bool:
     else:
         sha_file.write_text(f"{computed}  {target.name}\n", encoding="utf-8")
 
-    if target.suffix == ".dump":
-        res = _docker_exec(["pg_restore", "--list"], stdin_path=target, check=False)
-        fmt_ok = res.returncode == 0
-        toc_entries = len([ln for ln in (res.stdout or b"").decode("utf-8", errors="replace").splitlines() if ln.strip() and not ln.strip().startswith(";")])
+    toc_entries = 0
+    if target.suffix == ".edu":
+        with tempfile.TemporaryDirectory(prefix="poedu_ver_") as tmp_dir:
+            try:
+                payload, inner_ok, _ = _extract_edu_payload(target, Path(tmp_dir))
+                raw_ok, toc_entries = _verify_raw_payload(payload)
+                fmt_ok = inner_ok and raw_ok
+            except Exception:
+                fmt_ok = False
     else:
-        txt = target.read_text(encoding="utf-8", errors="replace")
-        fmt_ok = "PostgreSQL database dump" in txt[:2048] or "CREATE TABLE" in txt[:4096]
-        toc_entries = txt.count("CREATE TABLE ")
+        fmt_ok, toc_entries = _verify_raw_payload(target)
 
     verified = sha_match and fmt_ok
     meta_path = Path(str(target) + ".meta.json")
@@ -195,7 +293,7 @@ def cmd_list(_args: argparse.Namespace) -> int:
         if not directory.exists():
             print("  (empty)")
             continue
-        files = sorted([p for p in directory.iterdir() if p.is_file() and p.suffix in (".dump", ".sql")], key=lambda p: p.stat().st_mtime, reverse=True)
+        files = sorted([p for p in directory.iterdir() if p.is_file() and p.suffix in (".edu", ".dump", ".sql")], key=lambda p: p.stat().st_mtime, reverse=True)
         for f in files:
             meta_p = Path(str(f) + ".meta.json")
             verified = "?"
@@ -211,7 +309,7 @@ def cmd_list(_args: argparse.Namespace) -> int:
 def prune_backups(retain_daily: int, retain_weekly: int, retain_monthly: int) -> Tuple[int, int]:
     if not BACKUPS_DIR.exists():
         return 0, 0
-    files = sorted([p for p in BACKUPS_DIR.iterdir() if p.is_file() and p.suffix in (".dump", ".sql")], key=lambda p: p.stat().st_mtime, reverse=True)
+    files = sorted([p for p in BACKUPS_DIR.iterdir() if p.is_file() and p.suffix in (".edu", ".dump", ".sql")], key=lambda p: p.stat().st_mtime, reverse=True)
     if len(files) <= 1:
         return 0, len(files)
     now = datetime.now(timezone.utc)
@@ -221,7 +319,14 @@ def prune_backups(retain_daily: int, retain_weekly: int, retain_monthly: int) ->
     months = set()
     for p in files:
         mt = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
-        if "pre_restore_" in p.name and (now - mt) < timedelta(hours=48):
+        meta_lbl = ""
+        mp = Path(str(p) + ".meta.json")
+        if mp.exists():
+            try:
+                meta_lbl = str(json.loads(mp.read_text(encoding="utf-8")).get("label") or "")
+            except Exception:
+                meta_lbl = ""
+        if ("pre_restore_" in p.name or meta_lbl == "pre_restore") and (now - mt) < timedelta(hours=48):
             keep.add(p)
             continue
         if daily < retain_daily:
@@ -259,7 +364,16 @@ def _restore_into_db(target_path: Path, user: str, dbname: str) -> None:
     _docker_exec(["psql", "-U", user, "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", term_sql])
     _docker_exec(["psql", "-U", user, "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", f'DROP DATABASE IF EXISTS "{dbname}";'])
     _docker_exec(["psql", "-U", user, "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", f'CREATE DATABASE "{dbname}" OWNER "{user}";'])
-    if target_path.suffix == ".dump":
+    if target_path.suffix == ".edu":
+        with tempfile.TemporaryDirectory(prefix="poedu_cli_res_") as tmp_dir:
+            payload, inner_ok, _ = _extract_edu_payload(target_path, Path(tmp_dir))
+            if not inner_ok:
+                raise RuntimeError(f"Embedded checksum mismatch inside {target_path.name}")
+            if payload.suffix == ".dump":
+                _docker_exec(["pg_restore", "-U", user, "-d", dbname, "--no-owner", "--no-privileges", "--single-transaction"], stdin_path=payload)
+            else:
+                _docker_exec(["psql", "-U", user, "-d", dbname, "-v", "ON_ERROR_STOP=1"], stdin_path=payload)
+    elif target_path.suffix == ".dump":
         _docker_exec(["pg_restore", "-U", user, "-d", dbname, "--no-owner", "--no-privileges", "--single-transaction"], stdin_path=target_path)
     else:
         _docker_exec(["psql", "-U", user, "-d", dbname, "-v", "ON_ERROR_STOP=1"], stdin_path=target_path)
@@ -270,14 +384,19 @@ def cmd_drill(args: argparse.Namespace) -> int:
     if not verify_file(target):
         raise RuntimeError(f"Drill aborted: integrity verification failed for {target.name}")
     sandbox_db = args.sandbox_db
-    if sandbox_db == "prashant_academy":
-        raise ValueError("Sandbox drill cannot target live production DB 'prashant_academy'.")
+    if sandbox_db in ("prashant_academy", "prashant_academy_test"):
+        raise ValueError("Sandbox drill cannot target live production DB or pytest test DB.")
     print(f"[DRILL] Running non-destructive sandbox restore of {target.name} -> {sandbox_db}...")
-    _restore_into_db(target, args.user, sandbox_db)
-    res = _docker_exec(["psql", "-U", args.user, "-d", sandbox_db, "-tAc", "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';"])
-    tbls = (res.stdout or b"").decode("utf-8", errors="replace").strip()
-    _append_history({"action": "CLI_RESTORE_DRILL", "status": "success", "filename": target.name, "sandbox_db": sandbox_db, "tables": tbls})
-    print(f"[PASS] Sandbox restore drill succeeded on '{sandbox_db}' ({tbls} tables restored).")
+    try:
+        _restore_into_db(target, args.user, sandbox_db)
+        res = _docker_exec(["psql", "-U", args.user, "-d", sandbox_db, "-tAc", "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';"])
+        tbls = (res.stdout or b"").decode("utf-8", errors="replace").strip()
+        _append_history({"action": "CLI_RESTORE_DRILL", "status": "success", "filename": target.name, "sandbox_db": sandbox_db, "tables": tbls})
+        print(f"[PASS] Sandbox restore drill succeeded on '{sandbox_db}' ({tbls} tables restored).")
+    finally:
+        term_sql = f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{sandbox_db}' AND pid <> pg_backend_pid();"
+        _docker_exec(["psql", "-U", args.user, "-d", "postgres", "-c", term_sql], check=False)
+        _docker_exec(["psql", "-U", args.user, "-d", "postgres", "-c", f'DROP DATABASE IF EXISTS "{sandbox_db}";'], check=False)
     return 0
 
 
@@ -293,7 +412,7 @@ def cmd_restore(args: argparse.Namespace) -> int:
 
     # Mandatory Pre-Restore Safety Snapshot
     pre_args = argparse.Namespace(
-        database=args.database, user=args.user, label="pre_restore", format="custom",
+        database=args.database, user=args.user, label="pre_restore", format="edu",
         notes=f"Pre-restore CLI safety snapshot before {target.name}", mirror_dir=None,
         prune=False, retain_daily=7, retain_weekly=4, retain_monthly=6,
     )
@@ -347,7 +466,7 @@ def main() -> int:
     p_bk.add_argument("--database", default="prashant_academy")
     p_bk.add_argument("--user", default="postgres")
     p_bk.add_argument("--label", default="scheduled")
-    p_bk.add_argument("--format", choices=["custom", "plain_sql"], default="custom")
+    p_bk.add_argument("--format", choices=["edu", "edu_sql", "custom", "plain_sql"], default="edu")
     p_bk.add_argument("--notes", default=None)
     p_bk.add_argument("--mirror-dir", default=None)
     p_bk.add_argument("--prune", action="store_true")
@@ -372,7 +491,7 @@ def main() -> int:
     p_dr = sub.add_parser("drill", help="Run non-destructive sandbox restore verification")
     p_dr.add_argument("--file", required=True)
     p_dr.add_argument("--user", default="postgres")
-    p_dr.add_argument("--sandbox-db", default="prashant_academy_test")
+    p_dr.add_argument("--sandbox-db", default="prashant_academy_drill")
     p_dr.set_defaults(func=cmd_drill)
 
     p_rs = sub.add_parser("restore", help="Restore production database with pre-restore safety backup")

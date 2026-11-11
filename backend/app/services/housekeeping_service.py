@@ -22,6 +22,8 @@ import json
 import os
 import re
 import shutil
+import tempfile
+import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -37,13 +39,14 @@ from app.models.settings import InstitutionSetting, SettingAuditLog
 from app.models.user import AuditLog, User
 from app.services.financial_governance_service import FinancialGovernanceService, FinancialFilter
 
-VALID_FILENAME_RE = re.compile(r"^[A-Za-z0-9._-]+\.(dump|sql)$")
+VALID_FILENAME_RE = re.compile(r"^[A-Za-z0-9._-]+\.(edu|dump|sql)$")
 RESTORE_CONFIRMATION_PHRASE = "RESTORE PRASHANT_ACADEMY"
+MAX_EDU_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024  # 2 GiB safety limit against malformed zip bombs
 
 DEFAULT_HOUSEKEEPING_POLICY: Dict[str, Any] = {
     "backup_frequency": "daily",
     "backup_time": "02:00",
-    "backup_format": "custom",
+    "backup_format": "edu",
     "backup_destination": "Local & Mirror",
     "offsite_mirror_path": "",
     "retain_daily": 7,
@@ -100,6 +103,61 @@ def compute_sha256(file_path: Path) -> str:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _extract_edu_payload(edu_path: Path, dest_dir: Path) -> Tuple[Path, bool, Dict[str, Any]]:
+    """
+    Safely validate and extract a PrathamOne .edu auto-zipped backup package.
+    Protects against Zip-Slip traversal and Zip-Bombs, verifies embedded checksum.sha256
+    when present, and returns (extracted_payload_path, internal_sha_ok, manifest_dict).
+    """
+    if not zipfile.is_zipfile(edu_path):
+        raise ValueError(f"'{edu_path.name}' is not a valid compressed .edu backup package.")
+
+    with zipfile.ZipFile(edu_path, "r") as zf:
+        infos = zf.infolist()
+        total_uncompressed = sum(max(0, info.file_size) for info in infos)
+        if total_uncompressed > MAX_EDU_UNCOMPRESSED_BYTES:
+            raise ValueError("Archive exceeds maximum safe uncompressed size limit.")
+
+        safe_members: Dict[str, zipfile.ZipInfo] = {}
+        for info in infos:
+            if info.is_dir():
+                continue
+            member_name = info.filename.replace("\\", "/")
+            if member_name.startswith("/") or ".." in Path(member_name).parts:
+                raise ValueError(f"Unsafe path entry inside .edu archive rejected: {info.filename}")
+            base = Path(member_name).name
+            safe_members[base] = info
+
+        payload_info = safe_members.get("database.dump") or safe_members.get("database.sql")
+        if payload_info is None:
+            for base, info in safe_members.items():
+                if base.endswith(".dump") or base.endswith(".sql"):
+                    payload_info = info
+                    break
+        if payload_info is None:
+            raise ValueError("Invalid .edu package: missing database.dump or database.sql payload.")
+
+        payload_name = Path(payload_info.filename.replace("\\", "/")).name
+        extracted_payload = (dest_dir / payload_name).resolve()
+        with zf.open(payload_info, "r") as src, extracted_payload.open("wb") as dst:
+            shutil.copyfileobj(src, dst, length=1024 * 1024)
+
+        manifest: Dict[str, Any] = {}
+        if "manifest.json" in safe_members:
+            try:
+                manifest = json.loads(zf.read(safe_members["manifest.json"]).decode("utf-8", errors="replace"))
+            except Exception:
+                manifest = {}
+
+        internal_sha_ok = True
+        if "checksum.sha256" in safe_members:
+            recorded = zf.read(safe_members["checksum.sha256"]).decode("utf-8", errors="replace").strip().split()[0]
+            computed_inner = compute_sha256(extracted_payload)
+            internal_sha_ok = recorded.lower() == computed_inner.lower()
+
+        return extracted_payload, internal_sha_ok, manifest
 
 
 async def _run_subprocess(cmd: List[str], env_extra: Optional[Dict[str, str]] = None, timeout: int = 300) -> Tuple[int, str, str]:
@@ -164,7 +222,7 @@ class HousekeepingService:
     @classmethod
     def resolve_safe_path(cls, filename: str, source: str = "backups") -> Path:
         if not VALID_FILENAME_RE.match(filename or ""):
-            raise ValueError("Invalid backup filename. Allowed format: alphanumeric, '.', '_', '-' ending in .dump or .sql")
+            raise ValueError("Invalid backup filename. Allowed format: alphanumeric, '.', '_', '-' ending in .edu, .dump or .sql")
         base_dir = resolve_legacy_backups_dir() if source == "legacy_data" else resolve_backups_dir()
         candidate = (base_dir / filename).resolve()
         if not candidate.is_relative_to(base_dir.resolve()):
@@ -295,7 +353,7 @@ class HousekeepingService:
             if not directory.exists():
                 continue
             for entry in sorted(directory.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
-                if not entry.is_file() or entry.suffix not in (".dump", ".sql"):
+                if not entry.is_file() or entry.suffix not in (".edu", ".dump", ".sql"):
                     continue
                 stat = entry.stat()
                 sha_path = Path(str(entry) + ".sha256")
@@ -312,10 +370,15 @@ class HousekeepingService:
                 elif meta_data.get("sha256"):
                     stored_sha = meta_data.get("sha256")
 
+                fmt_label = (
+                    "edu_zip"
+                    if entry.suffix == ".edu"
+                    else ("custom_dump" if entry.suffix == ".dump" else "plain_sql")
+                )
                 results.append({
                     "filename": entry.name,
                     "source": source,
-                    "format": "custom_dump" if entry.suffix == ".dump" else "plain_sql",
+                    "format": fmt_label,
                     "size_bytes": stat.st_size,
                     "size_human": f"{stat.st_size / (1024 * 1024):.2f} MB" if stat.st_size >= 1024 * 1024 else f"{stat.st_size / 1024:.1f} KB",
                     "created_at": meta_data.get("created_at") or datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
@@ -329,6 +392,25 @@ class HousekeepingService:
                     "notes": meta_data.get("notes"),
                 })
         return results
+
+    @classmethod
+    async def _verify_raw_payload(cls, payload_path: Path, pg: Dict[str, str]) -> Tuple[bool, int, str]:
+        if payload_path.suffix == ".dump":
+            rc, out, err = await _run_subprocess(
+                ["pg_restore", "--list", str(payload_path)],
+                env_extra={"PGPASSWORD": pg["password"]},
+                timeout=120,
+            )
+            format_valid = rc == 0
+            toc_entries = len([ln for ln in out.splitlines() if ln.strip() and not ln.strip().startswith(";")])
+            detail_msg = f"Archive TOC verified ({toc_entries} database objects)" if format_valid else err.strip()
+            return format_valid, toc_entries, detail_msg
+
+        head = payload_path.read_text(encoding="utf-8", errors="replace")[:2048]
+        format_valid = ("PostgreSQL database dump" in head) or ("CREATE TABLE" in head)
+        toc_entries = payload_path.read_text(encoding="utf-8", errors="replace").count("CREATE TABLE ")
+        detail_msg = f"Plain SQL header verified ({toc_entries} CREATE TABLE statements)" if format_valid else "Invalid SQL dump header"
+        return format_valid, toc_entries, detail_msg
 
     @classmethod
     async def verify_backup(cls, filename: str, source: str = "backups", user: Optional[User] = None) -> Dict[str, Any]:
@@ -351,20 +433,24 @@ class HousekeepingService:
         toc_entries = 0
         format_valid = False
         detail_msg = ""
-        if target.suffix == ".dump":
-            rc, out, err = await _run_subprocess(
-                ["pg_restore", "--list", str(target)],
-                env_extra={"PGPASSWORD": pg["password"]},
-                timeout=120,
-            )
-            format_valid = rc == 0
-            toc_entries = len([ln for ln in out.splitlines() if ln.strip() and not ln.strip().startswith(";")])
-            detail_msg = f"Archive TOC verified ({toc_entries} database objects)" if format_valid else err.strip()
+        embedded_manifest: Dict[str, Any] = {}
+
+        if target.suffix == ".edu":
+            with tempfile.TemporaryDirectory(prefix="poedu_verify_") as tmp_dir:
+                try:
+                    extracted_payload, inner_sha_ok, embedded_manifest = _extract_edu_payload(target, Path(tmp_dir))
+                    payload_ok, toc_entries, inner_detail = await cls._verify_raw_payload(extracted_payload, pg)
+                    format_valid = inner_sha_ok and payload_ok
+                    detail_msg = (
+                        f"Auto-zipped .edu package verified · {inner_detail}"
+                        if format_valid
+                        else (inner_detail if inner_sha_ok else "Embedded payload SHA-256 mismatch inside .edu package")
+                    )
+                except ValueError as exc:
+                    format_valid = False
+                    detail_msg = str(exc)
         else:
-            head = target.read_text(encoding="utf-8", errors="replace")[:2048]
-            format_valid = ("PostgreSQL database dump" in head) or ("CREATE TABLE" in head)
-            toc_entries = target.read_text(encoding="utf-8", errors="replace").count("CREATE TABLE ")
-            detail_msg = f"Plain SQL header verified ({toc_entries} CREATE TABLE statements)" if format_valid else "Invalid SQL dump header"
+            format_valid, toc_entries, detail_msg = await cls._verify_raw_payload(target, pg)
 
         verified = sha_match and format_valid
         now_iso = datetime.now(timezone.utc).isoformat()
@@ -375,6 +461,10 @@ class HousekeepingService:
                 meta = json.loads(meta_path.read_text(encoding="utf-8"))
             except Exception:
                 meta = {}
+        if embedded_manifest:
+            meta.setdefault("label", embedded_manifest.get("label"))
+            meta.setdefault("database", embedded_manifest.get("database"))
+            meta.setdefault("payload_format", embedded_manifest.get("payload_format"))
         meta.update({
             "sha256": computed_sha,
             "verified": verified,
@@ -410,7 +500,7 @@ class HousekeepingService:
         db: AsyncSession,
         user: User,
         label: str = "manual",
-        backup_format: str = "custom",
+        backup_format: str = "edu",
         notes: Optional[str] = None,
         mirror_dir: Optional[str] = None,
         institution_id: int = 1,
@@ -419,37 +509,93 @@ class HousekeepingService:
         backups_dir = resolve_backups_dir()
         safe_label = re.sub(r"[^a-zA-Z0-9_-]+", "_", (label or "manual")).strip("_") or "manual"
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        ext = "sql" if backup_format == "plain_sql" else "dump"
-        fmt_flag = "-Fp" if backup_format == "plain_sql" else "-Fc"
-        filename = f"{pg['dbname']}_{safe_label}_{ts}.{ext}"
-        target = backups_dir / filename
+        is_edu_zip = backup_format in ("edu", "edu_sql")
+        use_plain_sql = backup_format in ("plain_sql", "edu_sql")
 
-        cmd = [
-            "pg_dump",
-            "-h", pg["host"],
-            "-p", pg["port"],
-            "-U", pg["user"],
-            fmt_flag,
-        ]
-        if backup_format != "plain_sql":
-            cmd.extend(["-Z", "6"])
-        cmd.extend(["-f", str(target), pg["dbname"]])
+        if is_edu_zip:
+            filename = f"POeduOS_{ts}.edu"
+            target = backups_dir / filename
+            seq = 1
+            while target.exists():
+                filename = f"POeduOS_{ts}_{seq:02d}.edu"
+                target = backups_dir / filename
+                seq += 1
+        else:
+            ext = "sql" if use_plain_sql else "dump"
+            filename = f"{pg['dbname']}_{safe_label}_{ts}.{ext}"
+            target = backups_dir / filename
 
-        rc, _, err = await _run_subprocess(cmd, env_extra={"PGPASSWORD": pg["password"]}, timeout=300)
-        if rc != 0 or not target.exists() or target.stat().st_size == 0:
-            if target.exists():
-                target.unlink(missing_ok=True)
-            raise RuntimeError(f"PostgreSQL backup failed: {err.strip() or 'Empty output produced'}")
+        now_iso = datetime.now(timezone.utc).isoformat()
+        fmt_flag = "-Fp" if use_plain_sql else "-Fc"
+
+        def _build_pg_dump_cmd(out_file: Path) -> List[str]:
+            cmd = [
+                "pg_dump",
+                "-h", pg["host"],
+                "-p", pg["port"],
+                "-U", pg["user"],
+                fmt_flag,
+            ]
+            if not use_plain_sql:
+                cmd.extend(["-Z", "6"])
+            cmd.extend(["-f", str(out_file), pg["dbname"]])
+            return cmd
+
+        if is_edu_zip:
+            inner_name = "database.sql" if use_plain_sql else "database.dump"
+            with tempfile.TemporaryDirectory(prefix="poedu_pack_") as tmp_dir:
+                tmp_path = Path(tmp_dir)
+                inner_file = tmp_path / inner_name
+                rc, _, err = await _run_subprocess(
+                    _build_pg_dump_cmd(inner_file),
+                    env_extra={"PGPASSWORD": pg["password"]},
+                    timeout=300,
+                )
+                if rc != 0 or not inner_file.exists() or inner_file.stat().st_size == 0:
+                    raise RuntimeError(f"PostgreSQL backup failed: {err.strip() or 'Empty output produced'}")
+
+                inner_sha = compute_sha256(inner_file)
+                inner_size = inner_file.stat().st_size
+                manifest = {
+                    "product": "PrathamOne EduOS",
+                    "package_format": "edu_zip",
+                    "payload_file": inner_name,
+                    "payload_format": "plain_sql" if use_plain_sql else "custom_dump",
+                    "payload_size_bytes": inner_size,
+                    "payload_sha256": inner_sha,
+                    "database": pg["dbname"],
+                    "label": safe_label,
+                    "created_by": user.username,
+                    "created_at": now_iso,
+                    "notes": notes,
+                }
+                tmp_zip = tmp_path / filename
+                with zipfile.ZipFile(tmp_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+                    zf.write(inner_file, arcname=inner_name)
+                    zf.writestr("checksum.sha256", f"{inner_sha}  {inner_name}\n")
+                    zf.writestr("manifest.json", json.dumps(manifest, indent=2))
+                shutil.move(str(tmp_zip), str(target))
+        else:
+            rc, _, err = await _run_subprocess(
+                _build_pg_dump_cmd(target),
+                env_extra={"PGPASSWORD": pg["password"]},
+                timeout=300,
+            )
+            if rc != 0 or not target.exists() or target.stat().st_size == 0:
+                if target.exists():
+                    target.unlink(missing_ok=True)
+                raise RuntimeError(f"PostgreSQL backup failed: {err.strip() or 'Empty output produced'}")
 
         sha = compute_sha256(target)
         Path(str(target) + ".sha256").write_text(f"{sha}  {filename}\n", encoding="utf-8")
 
-        now_iso = datetime.now(timezone.utc).isoformat()
+        recorded_format = "edu_zip" if is_edu_zip else ("plain_sql" if use_plain_sql else "custom_dump")
         meta_path = Path(str(target) + ".meta.json")
         meta_path.write_text(json.dumps({
             "filename": filename,
             "label": safe_label,
-            "format": "plain_sql" if backup_format == "plain_sql" else "custom_dump",
+            "format": recorded_format,
+            "payload_format": "plain_sql" if use_plain_sql else "custom_dump",
             "database": pg["dbname"],
             "created_by": user.username,
             "created_at": now_iso,
@@ -496,7 +642,7 @@ class HousekeepingService:
         return {
             "filename": filename,
             "source": "backups",
-            "format": "plain_sql" if backup_format == "plain_sql" else "custom_dump",
+            "format": recorded_format,
             "size_bytes": target.stat().st_size,
             "sha256": sha,
             "verified": verify_res["verified"],
@@ -512,9 +658,9 @@ class HousekeepingService:
         raw_bytes: bytes,
         user: User,
     ) -> Dict[str, Any]:
-        safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(filename or "uploaded.dump").name)
+        safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(filename or "uploaded.edu").name)
         if not VALID_FILENAME_RE.match(safe_name):
-            raise ValueError("Uploaded file must end in .dump or .sql with alphanumeric characters.")
+            raise ValueError("Uploaded file must end in .edu, .dump, or .sql with alphanumeric characters.")
         if not raw_bytes:
             raise ValueError("Uploaded backup file is empty.")
 
@@ -527,10 +673,11 @@ class HousekeepingService:
         target.write_bytes(raw_bytes)
         sha = compute_sha256(target)
         Path(str(target) + ".sha256").write_text(f"{sha}  {target.name}\n", encoding="utf-8")
+        fmt_val = "edu_zip" if target.suffix == ".edu" else ("custom_dump" if target.suffix == ".dump" else "plain_sql")
         Path(str(target) + ".meta.json").write_text(json.dumps({
             "filename": target.name,
             "label": "uploaded",
-            "format": "custom_dump" if target.suffix == ".dump" else "plain_sql",
+            "format": fmt_val,
             "database": "prashant_academy",
             "created_by": user.username,
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -567,7 +714,7 @@ class HousekeepingService:
         """GFS retention pruning strictly limited to backups/ directory; preserves legacy data/backups/, newest snapshot, and recent pre-restore guards."""
         backups_dir = resolve_backups_dir()
         candidates = sorted(
-            [p for p in backups_dir.iterdir() if p.is_file() and p.suffix in (".dump", ".sql")],
+            [p for p in backups_dir.iterdir() if p.is_file() and p.suffix in (".edu", ".dump", ".sql")],
             key=lambda p: p.stat().st_mtime,
             reverse=True,
         )
@@ -582,7 +729,14 @@ class HousekeepingService:
 
         for p in candidates:
             mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
-            if "pre_restore_" in p.name and (now - mtime) < timedelta(hours=48):
+            meta_label = ""
+            meta_file = Path(str(p) + ".meta.json")
+            if meta_file.exists():
+                try:
+                    meta_label = str(json.loads(meta_file.read_text(encoding="utf-8")).get("label") or "")
+                except Exception:
+                    meta_label = ""
+            if ("pre_restore_" in p.name or meta_label == "pre_restore") and (now - mtime) < timedelta(hours=48):
                 keep_paths.add(p)
                 continue
             if daily_kept < retain_daily:
@@ -656,7 +810,24 @@ class HousekeepingService:
             if rc != 0:
                 raise RuntimeError(f"Failed preparing target database '{target_db}': {err.strip()}")
 
-        if backup_path.suffix == ".dump":
+        if backup_path.suffix == ".edu":
+            with tempfile.TemporaryDirectory(prefix="poedu_restore_") as tmp_dir:
+                extracted_payload, inner_sha_ok, _ = _extract_edu_payload(backup_path, Path(tmp_dir))
+                if not inner_sha_ok:
+                    raise RuntimeError(f"Embedded checksum mismatch inside .edu package '{backup_path.name}'.")
+                await cls._restore_raw_payload(pg, target_db, extracted_payload, env)
+        else:
+            await cls._restore_raw_payload(pg, target_db, backup_path, env)
+
+    @classmethod
+    async def _restore_raw_payload(
+        cls,
+        pg: Dict[str, str],
+        target_db: str,
+        payload_path: Path,
+        env: Dict[str, str],
+    ) -> None:
+        if payload_path.suffix == ".dump":
             rc, _, err = await _run_subprocess(
                 [
                     "pg_restore",
@@ -667,7 +838,7 @@ class HousekeepingService:
                     "--no-owner",
                     "--no-privileges",
                     "--single-transaction",
-                    str(backup_path),
+                    str(payload_path),
                 ],
                 env_extra=env,
                 timeout=600,
@@ -683,7 +854,7 @@ class HousekeepingService:
                     "-U", pg["user"],
                     "-d", target_db,
                     "-v", "ON_ERROR_STOP=1",
-                    "-f", str(backup_path),
+                    "-f", str(payload_path),
                 ],
                 env_extra=env,
                 timeout=600,
@@ -693,9 +864,9 @@ class HousekeepingService:
 
     @classmethod
     async def run_restore_drill(cls, filename: str, source: str, user: User) -> Dict[str, Any]:
-        """Non-destructive sandbox verification restore into prashant_academy_test."""
+        """Non-destructive sandbox verification restore into dedicated ephemeral prashant_academy_drill database."""
         pg = parse_pg_connection()
-        sandbox_db = os.getenv("HOUSEKEEPING_DRILL_DB", f"{pg['dbname']}_test")
+        sandbox_db = os.getenv("HOUSEKEEPING_DRILL_DB", f"{pg['dbname']}_drill")
         if sandbox_db == pg["dbname"]:
             raise ValueError("Sandbox drill database must differ from live production database.")
 
@@ -704,32 +875,47 @@ class HousekeepingService:
             raise ValueError(f"Backup verification failed before drill: {verify_res['detail']}")
 
         backup_path = cls.resolve_safe_path(filename, source)
-        await cls._recreate_and_restore_pg_db(pg, sandbox_db, backup_path)
-
-        # Verify Alembic + Ledger Reconciliation on Sandbox DB
-        sandbox_url = f"postgresql+asyncpg://{pg['user']}:{pg['password']}@{pg['host']}:{pg['port']}/{sandbox_db}"
-        alembic_cwd = "/app" if Path("/app/alembic.ini").exists() else str(Path(__file__).resolve().parents[2])
-        rc_alb, out_alb, err_alb = await _run_subprocess(
-            ["alembic", "upgrade", "head"],
-            env_extra={"DATABASE_URL": sandbox_url},
-            timeout=180,
-        ) if alembic_cwd == "/app" else (0, "Host drill skipped alembic cwd", "")
-        if rc_alb != 0:
-            raise RuntimeError(f"Sandbox alembic upgrade check failed: {err_alb.strip()}")
-
-        sb_engine = create_async_engine(sandbox_url, echo=False, poolclass=NullPool)
-        sb_session_factory = async_sessionmaker(sb_engine, expire_on_commit=False, class_=AsyncSession)
+        env = {"PGPASSWORD": pg["password"]}
         try:
-            async with sb_session_factory() as sdb:
-                tbl_count = (await sdb.execute(
-                    text("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'")
-                )).scalar() or 0
-                stu_count = (await sdb.execute(text("SELECT COUNT(*) FROM students"))).scalar() or 0
-                rec = await FinancialGovernanceService.reconcile_financial_ledgers(
-                    sdb, FinancialFilter(institution_id=1, is_demo=False)
-                )
+            await cls._recreate_and_restore_pg_db(pg, sandbox_db, backup_path)
+
+            # Verify Alembic + Ledger Reconciliation on Sandbox DB
+            sandbox_url = f"postgresql+asyncpg://{pg['user']}:{pg['password']}@{pg['host']}:{pg['port']}/{sandbox_db}"
+            alembic_cwd = "/app" if Path("/app/alembic.ini").exists() else str(Path(__file__).resolve().parents[2])
+            rc_alb, out_alb, err_alb = await _run_subprocess(
+                ["alembic", "upgrade", "head"],
+                env_extra={"DATABASE_URL": sandbox_url},
+                timeout=180,
+            ) if alembic_cwd == "/app" else (0, "Host drill skipped alembic cwd", "")
+            if rc_alb != 0:
+                raise RuntimeError(f"Sandbox alembic upgrade check failed: {err_alb.strip()}")
+
+            sb_engine = create_async_engine(sandbox_url, echo=False, poolclass=NullPool)
+            sb_session_factory = async_sessionmaker(sb_engine, expire_on_commit=False, class_=AsyncSession)
+            try:
+                async with sb_session_factory() as sdb:
+                    tbl_count = (await sdb.execute(
+                        text("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'")
+                    )).scalar() or 0
+                    stu_count = (await sdb.execute(text("SELECT COUNT(*) FROM students"))).scalar() or 0
+                    rec = await FinancialGovernanceService.reconcile_financial_ledgers(
+                        sdb, FinancialFilter(institution_id=1, is_demo=False)
+                    )
+            finally:
+                await sb_engine.dispose()
         finally:
-            await sb_engine.dispose()
+            await _run_subprocess(
+                ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-c",
+                 f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{sandbox_db}' AND pid <> pg_backend_pid();"],
+                env_extra=env,
+                timeout=30,
+            )
+            await _run_subprocess(
+                ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-c",
+                 f'DROP DATABASE IF EXISTS "{sandbox_db}";'],
+                env_extra=env,
+                timeout=30,
+            )
 
         _append_history_event({
             "action": "RESTORE_DRILL_PASSED",
@@ -777,7 +963,7 @@ class HousekeepingService:
             db,
             user=user,
             label="pre_restore",
-            backup_format="custom",
+            backup_format="edu",
             notes=f"Auto safety snapshot before restoring {filename} ({source}): {reason.strip()}",
         )
 

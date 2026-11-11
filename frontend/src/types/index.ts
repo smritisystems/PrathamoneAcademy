@@ -4341,7 +4341,7 @@ export interface ConcessionReportResponse {
 export interface HousekeepingBackupItem {
   filename: string
   source: 'backups' | 'legacy_data'
-  format: 'custom_dump' | 'plain_sql'
+  format: 'edu_zip' | 'custom_dump' | 'plain_sql'
   size_bytes: number
   size_human: string
   created_at: string
@@ -4358,7 +4358,7 @@ export interface HousekeepingBackupItem {
 export interface HousekeepingPolicy {
   backup_frequency: 'hourly' | 'daily' | 'weekly' | 'monthly' | string
   backup_time: string
-  backup_format: 'custom' | 'plain_sql' | string
+  backup_format: 'edu' | 'edu_sql' | 'custom' | 'plain_sql' | string
   backup_destination: string
   offsite_mirror_path: string
   retain_daily: number

@@ -127,7 +127,7 @@ export default function Housekeeping() {
 
   // Create Backup form state
   const [backupLabel, setBackupLabel] = useState('manual')
-  const [backupFormat, setBackupFormat] = useState<'custom' | 'plain_sql'>('custom')
+  const [backupFormat, setBackupFormat] = useState<'edu' | 'edu_sql' | 'custom' | 'plain_sql'>('edu')
   const [backupNotes, setBackupNotes] = useState('')
   const [mirrorDirOverride, setMirrorDirOverride] = useState('')
   const [creatingBackup, setCreatingBackup] = useState(false)
@@ -161,7 +161,7 @@ export default function Housekeeping() {
   const [policyForm, setPolicyForm] = useState<HousekeepingPolicy>({
     backup_frequency: 'daily',
     backup_time: '02:00',
-    backup_format: 'custom',
+    backup_format: 'edu',
     backup_destination: 'Local & Mirror',
     offsite_mirror_path: '',
     retain_daily: 7,
@@ -708,12 +708,14 @@ export default function Housekeeping() {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Archive Format</label>
                   <select
                     value={backupFormat}
-                    onChange={(e) => setBackupFormat(e.target.value as 'custom' | 'plain_sql')}
+                    onChange={(e) => setBackupFormat(e.target.value as 'edu' | 'edu_sql' | 'custom' | 'plain_sql')}
                     disabled={!isEditMode}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="custom">Compressed PostgreSQL Custom (.dump · -Fc -Z 6)</option>
-                    <option value="plain_sql">Portable Plain SQL (.sql · -Fp)</option>
+                    <option value="edu">Auto-Zipped EduOS Package (POeduOS_Date_Time.edu · Recommended)</option>
+                    <option value="edu_sql">Auto-Zipped EduOS Plain SQL (POeduOS_Date_Time.edu · Max Zip Ratio)</option>
+                    <option value="custom">Raw PostgreSQL Custom Archive (.dump · -Fc -Z 6)</option>
+                    <option value="plain_sql">Raw Portable Plain SQL (.sql · -Fp)</option>
                   </select>
                 </div>
                 <div>
@@ -771,14 +773,15 @@ export default function Housekeeping() {
                   <span>Import & Retention Control</span>
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Upload an external <code className="font-mono">.dump</code> or <code className="font-mono">.sql</code>{' '}
-                  archive (auto-verified before acceptance), or run GFS retention pruning.
+                  Upload an external <code className="font-mono">.edu</code>, <code className="font-mono">.dump</code>,
+                  or <code className="font-mono">.sql</code> archive (auto-verified before acceptance), or run GFS
+                  retention pruning.
                 </p>
 
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".dump,.sql"
+                  accept=".edu,.dump,.sql"
                   onChange={handleUploadFileChange}
                   className="hidden"
                 />
@@ -792,7 +795,7 @@ export default function Housekeeping() {
                   size="sm"
                   className="w-full justify-center"
                 >
-                  {uploading ? 'Validating Upload...' : 'Upload .dump / .sql Backup'}
+                  {uploading ? 'Validating Upload...' : 'Upload .edu / .dump / .sql Backup'}
                 </LockedButton>
               </div>
 
@@ -916,7 +919,11 @@ export default function Housekeeping() {
                               </span>
                             </div>
                             <div className="text-[11px] text-slate-500">
-                              {b.format === 'custom_dump' ? 'PostgreSQL Custom (-Fc)' : 'Plain SQL (-Fp)'}
+                              {b.format === 'edu_zip'
+                                ? 'EduOS Auto-Zipped Package (.edu)'
+                                : b.format === 'custom_dump'
+                                ? 'PostgreSQL Custom (-Fc)'
+                                : 'Plain SQL (-Fp)'}
                             </div>
                           </td>
                           <td className="px-4 py-2.5 text-right font-mono text-slate-700">{b.size_human}</td>
@@ -1032,10 +1039,10 @@ export default function Housekeeping() {
                 </div>
                 <h2 className="text-base font-bold text-slate-900">1. Sandbox Restore Verification Drill</h2>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Restores the selected archive into an isolated sandbox database (
-                  <code className="font-mono">prashant_academy_test</code>), runs{' '}
+                  Restores the selected archive into an isolated ephemeral sandbox database (
+                  <code className="font-mono">prashant_academy_drill</code>), runs{' '}
                   <code className="font-mono">alembic upgrade head</code>, verifies table & student counts, and runs the
-                  SSOT financial ledger reconciliation audit — without modifying production data.
+                  SSOT financial ledger reconciliation audit — without modifying production or pytest data.
                 </p>
               </div>
 
@@ -1352,8 +1359,10 @@ export default function Housekeeping() {
                   disabled={!isEditMode}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50"
                 >
-                  <option value="custom">Custom Compressed (.dump)</option>
-                  <option value="plain_sql">Plain SQL (.sql)</option>
+                  <option value="edu">Auto-Zipped EduOS Package (.edu)</option>
+                  <option value="edu_sql">Auto-Zipped EduOS Plain SQL (.edu)</option>
+                  <option value="custom">Raw Custom Compressed (.dump)</option>
+                  <option value="plain_sql">Raw Plain SQL (.sql)</option>
                 </select>
               </div>
               <div>
@@ -1515,7 +1524,7 @@ export default function Housekeeping() {
                 <div className="bg-slate-950 border border-slate-800 rounded-xl p-3">
                   <div className="text-slate-400 font-semibold mb-1.5">Common Host CLI Operations</div>
                   <pre className="font-mono text-[11px] text-slate-300 whitespace-pre-wrap">
-                    {`python scripts/db_backup.py backup --label nightly --prune\npython scripts/db_backup.py verify --file <archive.dump>\npython scripts/db_backup.py drill --file <archive.dump>\npython scripts/db_backup.py restore --file <archive.dump> --yes`}
+                    {`python scripts/db_backup.py backup --label nightly --prune\npython scripts/db_backup.py verify --file <POeduOS_Date_Time.edu>\npython scripts/db_backup.py drill --file <POeduOS_Date_Time.edu>\npython scripts/db_backup.py restore --file <POeduOS_Date_Time.edu> --yes`}
                   </pre>
                 </div>
               </div>

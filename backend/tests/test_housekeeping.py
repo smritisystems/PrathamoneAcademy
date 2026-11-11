@@ -17,8 +17,11 @@
 #  */
 
 import os
+import io
+import json
 import time
 import random
+import zipfile
 from pathlib import Path
 import pytest
 from sqlalchemy import select
@@ -172,8 +175,29 @@ async def test_housekeeping_backup_verify_download_upload_and_gfs_prune(client, 
         mtime = now - (idx * 60 * 60 * 24 * 45)
         os.utime(p, (mtime, mtime))
 
-    guard = backups_dir / "prashant_academy_pre_restore_20261111_120000.sql"
-    guard.write_text("-- PostgreSQL database dump\nCREATE TABLE g (id int);\n", encoding="utf-8")
+    guard = backups_dir / "POeduOS_20261111_120000.edu"
+    with zipfile.ZipFile(guard, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("database.sql", "-- PostgreSQL database dump\nCREATE TABLE g (id int);\n")
+    Path(str(guard) + ".meta.json").write_text(json.dumps({"label": "pre_restore"}), encoding="utf-8")
+
+    # Reject corrupted / non-zip .edu upload cleanly
+    bad_edu = await client.post(
+        "/api/v1/housekeeping/backups/upload",
+        files={"file": ("POeduOS_corrupt.edu", b"NOT_A_ZIP_PAYLOAD", "application/octet-stream")},
+        headers=auth_headers,
+    )
+    assert bad_edu.status_code == 400
+
+    # Reject Zip-Slip path traversal entry inside uploaded .edu archive
+    slip_buf = io.BytesIO()
+    with zipfile.ZipFile(slip_buf, "w") as zf:
+        zf.writestr("../../evil.sql", "-- PostgreSQL database dump\nCREATE TABLE x (id int);\n")
+    slip_res = await client.post(
+        "/api/v1/housekeeping/backups/upload",
+        files={"file": ("POeduOS_slip.edu", slip_buf.getvalue(), "application/octet-stream")},
+        headers=auth_headers,
+    )
+    assert slip_res.status_code == 400
 
     prune_res = await client.post(
         "/api/v1/housekeeping/backups/prune",
@@ -198,24 +222,50 @@ async def test_housekeeping_create_backup_real_pg_dump(client, auth_headers, mon
     monkeypatch.setenv("HOUSEKEEPING_BACKUPS_DIR", str(backups_dir))
     monkeypatch.setenv("HOUSEKEEPING_LEGACY_BACKUPS_DIR", str(legacy_dir))
 
+    # Default format ('edu') creates POeduOS_Date_Time.edu auto-zipped package
     res = await client.post(
         "/api/v1/housekeeping/backups",
         json={
-            "label": "pytest_real",
-            "backup_format": "custom",
-            "notes": "Container pg_dump verification",
+            "label": "pytest_edu",
+            "backup_format": "edu",
+            "notes": "Container pg_dump auto-zip .edu verification",
             "mirror_dir": str(mirror_dir),
         },
         headers=auth_headers,
     )
     assert res.status_code == 201, res.text
     data = res.json()
+    assert data["filename"].startswith("POeduOS_") and data["filename"].endswith(".edu")
+    assert data["format"] == "edu_zip"
     assert data["verified"] is True
     assert data["size_bytes"] > 0
     assert data["toc_entries"] > 0
-    assert (backups_dir / data["filename"]).exists()
+    edu_file = backups_dir / data["filename"]
+    assert edu_file.exists()
     assert (backups_dir / f"{data['filename']}.sha256").exists()
     assert (mirror_dir / data["filename"]).exists()
+    assert zipfile.is_zipfile(edu_file)
+    with zipfile.ZipFile(edu_file, "r") as zf:
+        names = set(zf.namelist())
+        assert {"database.dump", "checksum.sha256", "manifest.json"}.issubset(names)
+        manifest = json.loads(zf.read("manifest.json").decode("utf-8"))
+        assert manifest["product"] == "PrathamOne EduOS"
+        assert manifest["label"] == "pytest_edu"
+
+    # Re-verify + download generated .edu package
+    ver_edu = await client.post(f"/api/v1/housekeeping/backups/{data['filename']}/verify", headers=auth_headers)
+    assert ver_edu.status_code == 200
+    assert ver_edu.json()["verified"] is True
+
+    # Also test edu_sql high-compression format
+    res_sql = await client.post(
+        "/api/v1/housekeeping/backups",
+        json={"label": "pytest_edu_sql", "backup_format": "edu_sql"},
+        headers=auth_headers,
+    )
+    assert res_sql.status_code == 201, res_sql.text
+    assert res_sql.json()["filename"].endswith(".edu")
+    assert res_sql.json()["verified"] is True
 
 
 @pytest.mark.asyncio
@@ -262,7 +312,7 @@ async def test_housekeeping_restore_guards_and_drill_mocked(client, auth_headers
     async def fake_drill(filename, source, user):
         called["drill"] = True
         return {
-            "sandbox_db": "prashant_academy_test",
+            "sandbox_db": "prashant_academy_drill",
             "filename": filename,
             "tables_restored": 42,
             "students_restored": 5,

@@ -121,9 +121,9 @@ const mockOverview = {
 
 const mockBackups = [
   {
-    filename: 'prashant_academy_nightly_20261111_020000.dump',
+    filename: 'POeduOS_20261111_020000.edu',
     source: 'backups' as const,
-    format: 'custom_dump' as const,
+    format: 'edu_zip' as const,
     size_bytes: 2097152,
     size_human: '2.00 MB',
     created_at: '2026-11-11T02:00:00Z',
@@ -185,9 +185,9 @@ describe('Housekeeping Workspace & Module Governance', () => {
   it('unlocks backup creation in Edit Mode and invokes API cleanly', async () => {
     vi.mocked(housekeepingApi.createBackup).mockResolvedValue({
       data: {
-        filename: 'prashant_academy_manual_20261111_120000.dump',
+        filename: 'POeduOS_20261111_120000.edu',
         source: 'backups',
-        format: 'custom_dump',
+        format: 'edu_zip',
         size_bytes: 1048576,
         sha256: 'deadbeef12345678',
         verified: true,
@@ -201,6 +201,7 @@ describe('Housekeeping Workspace & Module Governance', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Create On-Demand Verified Backup')).toBeDefined()
+      expect(screen.getByText('EduOS Auto-Zipped Package (.edu)')).toBeDefined()
     })
 
     // Switch to Edit Mode
@@ -210,16 +211,21 @@ describe('Housekeeping Workspace & Module Governance', () => {
     fireEvent.click(screen.getByRole('button', { name: /Create Verified Backup/i }))
 
     await waitFor(() => {
-      expect(housekeepingApi.createBackup).toHaveBeenCalledTimes(1)
+      expect(housekeepingApi.createBackup).toHaveBeenCalledWith(
+        expect.objectContaining({
+          backup_format: 'edu',
+          label: 'manual',
+        })
+      )
     })
   })
 
   it('requires exact RESTORE PRASHANT_ACADEMY confirmation phrase and audit reason before live restore', async () => {
     vi.mocked(housekeepingApi.executeLiveRestore).mockResolvedValue({
       data: {
-        restored_from: 'prashant_academy_nightly_20261111_020000.dump',
+        restored_from: 'POeduOS_20261111_020000.edu',
         source: 'backups',
-        safety_snapshot: 'prashant_academy_pre_restore_20261111_120100.dump',
+        safety_snapshot: 'POeduOS_20261111_120100.edu',
         is_reconciled: true,
         variance: 0,
         broken_invoices: 0,
@@ -251,7 +257,7 @@ describe('Housekeeping Workspace & Module Governance', () => {
 
     await waitFor(() => {
       expect(housekeepingApi.executeLiveRestore).toHaveBeenCalledWith({
-        filename: 'prashant_academy_nightly_20261111_020000.dump',
+        filename: 'POeduOS_20261111_020000.edu',
         source: 'backups',
         confirmation_phrase: 'RESTORE PRASHANT_ACADEMY',
         reason: 'Planned rollback verification with safety snapshot',
