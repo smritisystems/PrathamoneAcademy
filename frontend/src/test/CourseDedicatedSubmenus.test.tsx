@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-09
+ * @updated     2026-11-11
  *
  * @description Vitest test suite validating dedicated functional workspaces for Study Materials & Digital Content across all 8 submenus, URL synchronization, and Rule 010 View-First governance.
  */
@@ -140,7 +140,7 @@ describe('Study Materials & Digital Content Dedicated Workspaces Suite', () => {
       user: {
         id: 1,
         username: 'admin',
-        email: 'admin@prashantacademy.edu.in',
+        email: 'admin@example.com',
         role: 'superadmin',
         first_name: 'Jawahar',
         last_name: 'Mallah',

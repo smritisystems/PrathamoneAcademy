@@ -75,7 +75,7 @@ graph TD
 
 ### Tier 4: Client & Tenant Institution — Prashant Academy
 - **Canonical Identifier:** `Prashant Academy` (Tenant Code `PA001`).
-- **Domain:** `prashantacademy.edu.in`
+- **Domain:** `example.com`
 - **Role:** The operating client institution utilizing the software.
 - **Tenant Autonomy:** Maintains full autonomy over its institution name, logo, branch locations, fee receipt series, student identity cards, and student portal customization.
 

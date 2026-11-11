@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-11
 #  *
 #  * @description Initial database schema migration creating core tables for students, users, courses, and fees.
 #  */
@@ -439,6 +439,16 @@ def upgrade() -> None:
         sa.Column("action", sa.String(20), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
+
+    # Seed baseline institution if none exists
+    op.execute("""
+        INSERT INTO institutions (id, name, code, address, city, state, pincode, phone, email, website, is_active, created_at, updated_at)
+        SELECT 1, 'Prashant Academy', 'PA001', '123 Education Lane, School District', 'Mumbai', 'Maharashtra', '400001', '+91-22-12345678', 'info@example.com', 'https://example.com', true, NOW(), NOW()
+        WHERE NOT EXISTS (SELECT 1 FROM institutions WHERE id = 1)
+    """)
+    op.execute("""
+        SELECT setval('institutions_id_seq', (SELECT GREATEST(MAX(id), 1) FROM institutions), true)
+    """)
 
 
 def downgrade() -> None:

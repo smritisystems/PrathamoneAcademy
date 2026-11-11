@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-11
 #  *
 #  * @description Secure bootstrap and provisioning script for System Administrator (SysAdmin) superuser.
 #  */
@@ -48,7 +48,7 @@ async def bootstrap_sysadmin():
     print("=" * 80)
 
     username = os.environ.get("SYSADMIN_USERNAME", "sysadmin").strip().lower()
-    email = os.environ.get("SYSADMIN_EMAIL", "sysadmin@prashantacademy.edu.in").strip().lower()
+    email = os.environ.get("SYSADMIN_EMAIL", "sysadmin@example.com").strip().lower()
     provided_password = os.environ.get("SYSADMIN_PASSWORD", "").strip()
 
     generated = False

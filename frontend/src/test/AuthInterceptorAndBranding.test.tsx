@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-11
  *
  * @description Vitest test suite validating authentication interceptors, 401 redirect loop prevention, and unauthenticated branding fallback.
  */
@@ -53,7 +53,7 @@ describe('Authentication Interceptor & Redirect Loop Prevention Specifications',
     useAuthStore.getState().login('test-jwt-token-12345', {
       id: 1,
       username: 'admin',
-      email: 'admin@prashantacademy.edu.in',
+      email: 'admin@example.com',
       first_name: 'Admin',
       last_name: 'User',
       role: 'admin',

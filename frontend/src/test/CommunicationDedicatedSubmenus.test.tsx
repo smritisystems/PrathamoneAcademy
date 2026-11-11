@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-09
+ * @updated     2026-11-11
  *
  * @description Comprehensive Vitest test suite validating all 8 dedicated submenus of the Communication Center, URL synchronization, Rule 010 View-First lock enforcement, and Training Mode isolation.
  */
@@ -189,7 +189,7 @@ describe('Communication Center Dedicated Submenus & Workspaces Suite', () => {
       user: {
         id: 1,
         username: 'admin',
-        email: 'admin@prashantacademy.edu.in',
+        email: 'admin@example.com',
         role: 'superadmin',
         first_name: 'Jawahar',
         last_name: 'Mallah',

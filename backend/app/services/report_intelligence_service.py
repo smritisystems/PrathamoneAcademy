@@ -309,21 +309,31 @@ class ReportIntelligenceService:
         end_date: Optional[str],
         thresholds: Dict[str, float],
     ) -> Dict[str, Any]:
-        conditions = [Attendance.institution_id == institution_id]
-        if division_id:
-            conditions.append(Attendance.division_id == division_id)
+        stmt = (
+            select(
+                func.count(Attendance.id).label("total_records"),
+                func.sum(case((Attendance.status.in_(["present", "late"]), 1), else_=0)).label("present_days"),
+                func.sum(case((Attendance.status == "absent", 1), else_=0)).label("absent_days"),
+                func.sum(case((Attendance.status == "excused", 1), else_=0)).label("excused_days"),
+            )
+            .select_from(Attendance)
+            .join(Student, Attendance.student_id == Student.id)
+        )
+        conditions = [Student.institution_id == institution_id]
+        if division_id or standard_id or academic_year_id:
+            stmt = stmt.join(StudentEnrollment, Attendance.enrollment_id == StudentEnrollment.id)
+            if division_id:
+                conditions.append(StudentEnrollment.division_id == division_id)
+            if standard_id:
+                conditions.append(StudentEnrollment.standard_id == standard_id)
+            if academic_year_id:
+                conditions.append(StudentEnrollment.academic_year_id == academic_year_id)
         if start_date:
             conditions.append(Attendance.date >= datetime.strptime(start_date, "%Y-%m-%d").date())
         if end_date:
             conditions.append(Attendance.date <= datetime.strptime(end_date, "%Y-%m-%d").date())
 
-        # Aggregate counts
-        stmt = select(
-            func.count(Attendance.id).label("total_records"),
-            func.sum(case((Attendance.status.in_(["present", "late"]), 1), else_=0)).label("present_days"),
-            func.sum(case((Attendance.status == "absent", 1), else_=0)).label("absent_days"),
-            func.sum(case((Attendance.status == "excused", 1), else_=0)).label("excused_days"),
-        ).where(and_(*conditions))
+        stmt = stmt.where(and_(*conditions))
         res = await db.execute(stmt)
         row = res.one_or_none()
 
@@ -419,23 +429,28 @@ class ReportIntelligenceService:
         division_id: Optional[int],
         thresholds: Dict[str, float],
     ) -> Dict[str, Any]:
-        cond = [FeeInvoice.institution_id == institution_id, FeeInvoice.status != "cancelled"]
+        stmt = (
+            select(
+                func.count(FeeInvoice.id).label("total_invoices"),
+                func.sum(FeeInvoice.total_amount).label("gross_invoiced"),
+                func.sum(FeeInvoice.paid_amount).label("realized_paid"),
+                func.sum(FeeInvoice.outstanding_amount).label("outstanding"),
+            )
+            .select_from(FeeInvoice)
+            .join(Student, FeeInvoice.student_id == Student.id)
+        )
+        cond = [Student.institution_id == institution_id, FeeInvoice.status != "cancelled"]
         if academic_year_id:
             cond.append(FeeInvoice.academic_year_id == academic_year_id)
 
-        stmt = select(
-            func.count(FeeInvoice.id).label("total_invoices"),
-            func.sum(FeeInvoice.total_amount).label("gross_invoiced"),
-            func.sum(FeeInvoice.paid_amount).label("realized_paid"),
-            func.sum(FeeInvoice.outstanding_balance).label("outstanding"),
-        ).where(and_(*cond))
+        stmt = stmt.where(and_(*cond))
         res = await db.execute(stmt)
         row = res.one_or_none()
 
         total_invoices = row.total_invoices or 0 if row else 0
         gross = float(row.gross_invoiced or 0.0) if row else 0.0
         paid = float(row.realized_paid or 0.0) if row else 0.0
-        outstanding = float(row.outstanding_balance or 0.0) if row else 0.0
+        outstanding = float(row.outstanding or 0.0) if row else 0.0
 
         realization_rate = SafeMath.divide(paid, gross, multiplier=100.0)
         target = thresholds["fee_collection_target"]
@@ -520,7 +535,7 @@ class ReportIntelligenceService:
         division_id: Optional[int],
         thresholds: Dict[str, float],
     ) -> Dict[str, Any]:
-        cond = [StudentHomeworkRecord.institution_id == institution_id, StudentHomeworkRecord.is_exempted == False]
+        cond = [StudentHomeworkRecord.institution_id == institution_id, StudentHomeworkRecord.status != "excused"]
         if division_id:
             cond.append(StudentHomeworkRecord.division_id == division_id)
 

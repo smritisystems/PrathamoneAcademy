@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-11
 #  *
 #  * @description Alembic migration creating the v_unified_audit_logs view uniting
 #  */
@@ -114,6 +114,16 @@ FROM student_lifecycle_logs;
 
 
 def upgrade():
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    cols = {c["name"] for c in inspector.get_columns("audit_logs")}
+    if "is_system_audit" not in cols:
+        op.add_column("audit_logs", sa.Column("is_system_audit", sa.Boolean(), nullable=False, server_default="false"))
+    if "severity" not in cols:
+        op.add_column("audit_logs", sa.Column("severity", sa.String(20), nullable=False, server_default="info"))
+    if "details" not in cols:
+        op.add_column("audit_logs", sa.Column("details", sa.Text(), nullable=True))
+
     op.execute(VIEW_SQL)
 
 

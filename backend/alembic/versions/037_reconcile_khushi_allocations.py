@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Forensic data reconciliation resolving Khushi (PA-2024-000019) fee commitment,
 #  */
@@ -61,26 +61,28 @@ def upgrade() -> None:
     op.execute("""
         DO $$
         BEGIN
-            IF EXISTS (SELECT 1 FROM payment_receipts WHERE receipt_number = 'RCP-2026-0180') THEN
-                UPDATE payment_receipts
-                SET payment_id = 69,
-                    student_id = 147,
-                    amount = 20000.00,
-                    status = 'valid',
-                    version = 2
-                WHERE receipt_number = 'RCP-2026-0180';
-            ELSE
-                INSERT INTO payment_receipts (
-                    receipt_number, payment_id, student_id, amount, payment_date,
-                    payment_method, receipt_data, version, status, reprint_count,
-                    is_demo, data_environment, generated_at
-                ) VALUES (
-                    'RCP-2026-0180', 69, 147, 20000.00, '2026-06-18',
-                    'bank_transfer',
-                    '{"batch": "Batch A (Morning)", "notes": "Installment 1 for Khushi", "amount": 20000.0, "raw_date": "18-Jun-2026", "standard": "Class IX", "payment_date": "18-Jun-2026", "student_name": "Khushi", "invoice_number": "INV-2026-0147", "payment_method": "bank_transfer", "receipt_number": "RCP-2026-0180", "admission_number": "PA-2024-000019", "transaction_reference": "TXN-2026-0069"}',
-                    2, 'valid', 0,
-                    FALSE, 'PRODUCTION', NOW()
-                );
+            IF EXISTS (SELECT 1 FROM payments WHERE id = 69) THEN
+                IF EXISTS (SELECT 1 FROM payment_receipts WHERE receipt_number = 'RCP-2026-0180') THEN
+                    UPDATE payment_receipts
+                    SET payment_id = 69,
+                        student_id = 147,
+                        amount = 20000.00,
+                        status = 'valid',
+                        version = 2
+                    WHERE receipt_number = 'RCP-2026-0180';
+                ELSE
+                    INSERT INTO payment_receipts (
+                        receipt_number, payment_id, student_id, amount, payment_date,
+                        payment_method, receipt_data, version, status, reprint_count,
+                        is_demo, data_environment, generated_at
+                    ) VALUES (
+                        'RCP-2026-0180', 69, 147, 20000.00, '2026-06-18',
+                        'bank_transfer',
+                        '{"batch": "Batch A (Morning)", "notes": "Installment 1 for Khushi", "amount": 20000.0, "raw_date": "18-Jun-2026", "standard": "Class IX", "payment_date": "18-Jun-2026", "student_name": "Khushi", "invoice_number": "INV-2026-0147", "payment_method": "bank_transfer", "receipt_number": "RCP-2026-0180", "admission_number": "PA-2024-000019", "transaction_reference": "TXN-2026-0069"}',
+                        2, 'valid', 0,
+                        FALSE, 'PRODUCTION', NOW()
+                    );
+                END IF;
             END IF;
         END $$;
     """)
@@ -117,26 +119,28 @@ def upgrade() -> None:
     op.execute("""
         DO $$
         BEGIN
-            IF EXISTS (SELECT 1 FROM payment_receipts WHERE receipt_number = 'RCP-2026-0181') THEN
-                UPDATE payment_receipts
-                SET payment_id = 83,
-                    student_id = 147,
-                    amount = 17000.00,
-                    status = 'valid',
-                    version = 2
-                WHERE receipt_number = 'RCP-2026-0181';
-            ELSE
-                INSERT INTO payment_receipts (
-                    receipt_number, payment_id, student_id, amount, payment_date,
-                    payment_method, receipt_data, version, status, reprint_count,
-                    is_demo, data_environment, generated_at
-                ) VALUES (
-                    'RCP-2026-0181', 83, 147, 17000.00, '2026-07-08',
-                    'bank_transfer',
-                    '{"batch": "Batch A (Morning)", "notes": "Installment 2 for Khushi", "amount": 17000.0, "raw_date": "08-Jul-2026", "standard": "Class IX", "payment_date": "08-Jul-2026", "student_name": "Khushi", "invoice_number": "INV-2026-0147", "payment_method": "bank_transfer", "receipt_number": "RCP-2026-0181", "admission_number": "PA-2024-000019", "transaction_reference": "TXN-2026-0083"}',
-                    2, 'valid', 0,
-                    FALSE, 'PRODUCTION', NOW()
-                );
+            IF EXISTS (SELECT 1 FROM payments WHERE id = 83) THEN
+                IF EXISTS (SELECT 1 FROM payment_receipts WHERE receipt_number = 'RCP-2026-0181') THEN
+                    UPDATE payment_receipts
+                    SET payment_id = 83,
+                        student_id = 147,
+                        amount = 17000.00,
+                        status = 'valid',
+                        version = 2
+                    WHERE receipt_number = 'RCP-2026-0181';
+                ELSE
+                    INSERT INTO payment_receipts (
+                        receipt_number, payment_id, student_id, amount, payment_date,
+                        payment_method, receipt_data, version, status, reprint_count,
+                        is_demo, data_environment, generated_at
+                    ) VALUES (
+                        'RCP-2026-0181', 83, 147, 17000.00, '2026-07-08',
+                        'bank_transfer',
+                        '{"batch": "Batch A (Morning)", "notes": "Installment 2 for Khushi", "amount": 17000.0, "raw_date": "08-Jul-2026", "standard": "Class IX", "payment_date": "08-Jul-2026", "student_name": "Khushi", "invoice_number": "INV-2026-0147", "payment_method": "bank_transfer", "receipt_number": "RCP-2026-0181", "admission_number": "PA-2024-000019", "transaction_reference": "TXN-2026-0083"}',
+                        2, 'valid', 0,
+                        FALSE, 'PRODUCTION', NOW()
+                    );
+                END IF;
             END IF;
         END $$;
     """)
@@ -187,13 +191,15 @@ def upgrade() -> None:
         INSERT INTO audit_logs (
             user_id, action, resource_type, resource_id,
             old_data, new_data, details, severity, is_system_audit, created_at
-        ) VALUES (
-            1, 'RECONCILE_STUDENT_FEES_AND_ALLOCATIONS', 'fee_invoice', 29,
+        )
+        SELECT 
+            (SELECT id FROM users ORDER BY id ASC LIMIT 1),
+            'RECONCILE_STUDENT_FEES_AND_ALLOCATIONS', 'fee_invoice', 29,
             '{"student_id": 147, "invoice_paid": 24900.00, "invoice_outstanding": 60100.00, "alloc_69": 16400.00, "alloc_83": 8500.00}',
             '{"student_id": 147, "invoice_paid": 37000.00, "invoice_outstanding": 48000.00, "alloc_69": 20000.00, "alloc_83": 17000.00, "receipt_1": "RCP-2026-0180", "receipt_2": "RCP-2026-0181"}',
             'Forensic reconciliation of Khushi (PA-2024-000019): Reallocated RCP-2026-0180 (Rs 20,000) and RCP-2026-0181 (Rs 17,000) against INV-2026-0147. Zero discrepancy achieved.',
             'info', FALSE, NOW()
-        )
+        WHERE EXISTS (SELECT 1 FROM students WHERE id = 147);
     """)
 
 

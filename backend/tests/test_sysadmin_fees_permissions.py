@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-06
+#  * @updated     2026-11-11
 #  *
 #  * @description Test suite verifying Sysadmin role & permissions for Fees & Payments, explicit gate for posted payment edits, mandatory reasons, immutable audit logging, receipt integrity, and separate linked refunds.
 #  */
@@ -40,7 +40,7 @@ async def sysadmin_test_user(db):
     uid = uuid.uuid4().hex[:8]
     user = User(
         username=f"sysadmin_{uid}",
-        email=f"sysadmin_{uid}@prashantacademy.edu.in",
+        email=f"sysadmin_{uid}@example.com",
         hashed_password=get_password_hash("TestSysAdmin@2026!"),
         first_name="Test",
         last_name="SysAdmin",

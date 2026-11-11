@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-11
 #  *
 #  * @description Regression test suite proving multi-tenant data isolation, HTTP 403 cross-tenant enforcement,
 #  */
@@ -103,7 +103,7 @@ async def sysadmin_user(db: AsyncSession, institution_a: Institution) -> User:
     user = User(
         institution_id=institution_a.id,
         username=f"sysadmin_{suffix}",
-        email=f"sysadmin_{suffix}@prashantacademy.edu.in",
+        email=f"sysadmin_{suffix}@example.com",
         hashed_password=get_password_hash("SysAdminPass123!"),
         first_name="Super",
         last_name="SysAdmin",

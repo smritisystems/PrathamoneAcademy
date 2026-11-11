@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-11
 #  *
 #  * @description Alembic migration adding workforce lifecycle fields to staff_profiles and creating staff_employment_histories.
 #  */
@@ -33,20 +33,34 @@ depends_on = None
 
 
 def upgrade():
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_tables = set(inspector.get_table_names())
+
     # 1. Add lifecycle columns to staff_profiles
-    op.add_column("staff_profiles", sa.Column("contract_start_date", sa.Date(), nullable=True))
-    op.add_column("staff_profiles", sa.Column("contract_end_date", sa.Date(), nullable=True))
-    op.add_column("staff_profiles", sa.Column("status_effective_date", sa.Date(), nullable=True))
-    op.add_column("staff_profiles", sa.Column("exit_date", sa.Date(), nullable=True))
-    op.add_column("staff_profiles", sa.Column("exit_reason", sa.String(255), nullable=True))
-    op.add_column("staff_profiles", sa.Column("rehire_eligible", sa.Boolean(), nullable=False, server_default="true"))
-    op.add_column(
-        "staff_profiles",
-        sa.Column("approved_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
-    )
+    if "staff_profiles" in existing_tables:
+        existing_cols = {c["name"] for c in inspector.get_columns("staff_profiles")}
+        if "contract_start_date" not in existing_cols:
+            op.add_column("staff_profiles", sa.Column("contract_start_date", sa.Date(), nullable=True))
+        if "contract_end_date" not in existing_cols:
+            op.add_column("staff_profiles", sa.Column("contract_end_date", sa.Date(), nullable=True))
+        if "status_effective_date" not in existing_cols:
+            op.add_column("staff_profiles", sa.Column("status_effective_date", sa.Date(), nullable=True))
+        if "exit_date" not in existing_cols:
+            op.add_column("staff_profiles", sa.Column("exit_date", sa.Date(), nullable=True))
+        if "exit_reason" not in existing_cols:
+            op.add_column("staff_profiles", sa.Column("exit_reason", sa.String(255), nullable=True))
+        if "rehire_eligible" not in existing_cols:
+            op.add_column("staff_profiles", sa.Column("rehire_eligible", sa.Boolean(), nullable=False, server_default="true"))
+        if "approved_by_id" not in existing_cols:
+            op.add_column(
+                "staff_profiles",
+                sa.Column("approved_by_id", sa.Integer(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+            )
 
     # 2. Create staff_employment_histories table
-    op.create_table(
+    if "staff_employment_histories" not in existing_tables:
+        op.create_table(
         "staff_employment_histories",
         sa.Column("id", sa.Integer(), primary_key=True, index=True),
         sa.Column(

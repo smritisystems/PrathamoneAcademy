@@ -59,8 +59,8 @@ docker compose up -d --build
 | **Web Application** | [http://localhost](http://localhost) (or `:5173`) | Production Single Page Application |
 | **Backend REST API** | [http://localhost:8000](http://localhost:8000) | FastAPI Core API Engine |
 | **Interactive API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Swagger OpenAPI Specification |
-| **Superadmin Account** | `admin@prashantacademy.edu.in` | Password: `admin123` |
-| **Accountant Account** | `accountant@prashantacademy.edu.in` | Password: `account123` |
+| **Superadmin Account** | `admin@example.com` | Password: `admin123` |
+| **Accountant Account** | `accountant@example.com` | Password: `account123` |
 | **PostgreSQL Database** | `localhost:5432` | User: `postgres`, Pass: `postgres`, DB: `prashant_academy` |
 
 ---

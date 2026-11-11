@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-11
  *
  * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, versioning, and AITDL parent branding.
  */
@@ -39,7 +39,7 @@ describe('Application Footer Specifications', () => {
       user: {
         id: 42,
         username: 'staff.admin',
-        email: 'staff.admin@prashantacademy.edu.in',
+        email: 'staff.admin@example.com',
         first_name: 'Priya',
         last_name: 'Sharma',
         role: 'admin',
@@ -190,7 +190,7 @@ describe('Application Footer Specifications', () => {
       user: {
         id: 88,
         username: 'accountant.rahul',
-        email: 'rahul@prashantacademy.edu.in',
+        email: 'rahul@example.com',
         first_name: 'Rahul',
         last_name: 'Verma',
         role: 'accountant',

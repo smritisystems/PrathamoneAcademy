@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Playwright automation to capture visual verification for Concession Scheme Settings and the Add Scheme Modal.
 #  */
@@ -31,7 +31,7 @@ def run():
         print("Navigating to login...")
         page.goto("http://localhost:80/login", wait_until="networkidle")
         page.wait_for_selector('input[name="username"]', timeout=15000)
-        page.fill('input[name="username"]', "admin@prashantacademy.edu.in")
+        page.fill('input[name="username"]', "admin@example.com")
         page.fill('input[name="password"]', "admin123")
         page.click('button[type="submit"]')
         page.wait_for_timeout(3000)

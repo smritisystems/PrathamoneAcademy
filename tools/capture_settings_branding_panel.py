@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-08
-#  * @updated     2026-11-08
+#  * @updated     2026-11-11
 #  *
 #  * @description Visual evidence capture tool for Settings Branding & Canvas Engine Controls.
 #  */
@@ -31,7 +31,7 @@ def main():
         page = context.new_page()
 
         page.goto(f"{FRONTEND_URL}/login")
-        page.fill('input[name="username"]', "admin@prashantacademy.edu.in")
+        page.fill('input[name="username"]', "admin@example.com")
         page.fill('input[name="password"]', "admin123")
         page.click('button[type="submit"]')
         page.wait_for_timeout(3500)

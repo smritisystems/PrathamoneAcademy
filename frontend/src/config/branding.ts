@@ -179,12 +179,12 @@ export const BRANDING_CONFIG = {
   support: {
     email: 'support@prathamone.com' as string,
     alternateEmail: 'prathamone@outlook.com' as string,
-    academyEmail: 'info@prashantacademy.edu.in' as string,
+    academyEmail: 'info@example.com' as string,
     phone: '+91-22-12345678' as string,
     website: 'https://prathamone.com' as string,
     websiteDisplay: 'prathamone.com' as string,
-    academyWebsite: 'https://prashantacademy.edu.in' as string,
-    academyWebsiteDisplay: 'www.prashantacademy.edu.in' as string,
+    academyWebsite: 'https://example.com' as string,
+    academyWebsiteDisplay: 'www.example.com' as string,
     address: '123 Education Lane, School District, Dadar West, Mumbai, Maharashtra 400028' as string,
   },
 }

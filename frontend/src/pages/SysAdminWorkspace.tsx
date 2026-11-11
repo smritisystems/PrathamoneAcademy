@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Source component for Sysadminworkspace in the src.pages module.
  */
@@ -119,7 +119,7 @@ export default function SysAdminWorkspace() {
   // System Settings State
   const [settingsForm, setSettingsForm] = useState({
     site_name: 'Prashant Academy',
-    contact_email: 'admin@prashantacademy.edu.in',
+    contact_email: 'admin@example.com',
     contact_phone: '+91 98765 43210',
     session_timeout_minutes: 60,
     maintenance_mode: false,

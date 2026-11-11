@@ -156,7 +156,7 @@ SELECT id, username, email, role, role_id, is_active, institution_id FROM users 
 ```
 - **ID:** `128`
 - **Username:** `sysadmin`
-- **Email:** `sysadmin@prashantacademy.edu.in`
+- **Email:** `sysadmin@example.com`
 - **Role:** `sysadmin`
 - **Role ID:** `18`
 - **Active:** `True`

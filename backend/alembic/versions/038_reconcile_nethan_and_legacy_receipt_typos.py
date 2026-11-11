@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Forensic data reconciliation correcting legacy receipt typos imported from Padata.xlsx:
 #  */
@@ -161,13 +161,15 @@ def upgrade() -> None:
         INSERT INTO audit_logs (
             user_id, action, resource_type, resource_id,
             old_data, new_data, details, severity, is_system_audit, created_at
-        ) VALUES (
-            1, 'RECONCILE_RECEIPT_LEGACY_TYPOS', 'payment_receipt', 131,
+        )
+        SELECT
+            (SELECT id FROM users ORDER BY id ASC LIMIT 1),
+            'RECONCILE_RECEIPT_LEGACY_TYPOS', 'payment_receipt', 131,
             '{"target": "Nethan", "old_receipt_name": "Netham"}',
             '{"target": "Nethan", "new_receipt_name": "Nethan", "also_fixed": ["Rajveer", "Sarvesh", "Roudrita", "Satyam", "Samad", "Shravya"]}',
             'Corrected legacy typos in receipt_data JSON imported from Padata.xlsx for Nethan and 6 other students. Cleaned trailing dummy hyphens.',
             'info', FALSE, NOW()
-        );
+        WHERE EXISTS (SELECT 1 FROM students WHERE id = 131);
     """)
 
 

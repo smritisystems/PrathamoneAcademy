@@ -65,6 +65,8 @@ echo "Waiting for backend API healthcheck..."
 for i in {1..20}; do
     if curl -s -f http://localhost:8000/health > /dev/null 2>&1; then
         echo -e "\n[OK] Backend API is operational and verified healthy."
+        echo "Ensuring all schema migrations are up to date..."
+        docker compose exec -T backend alembic upgrade head > /dev/null || true
         break
     fi
     echo -n "."
@@ -76,6 +78,6 @@ echo "             39 STUDENTS ADDED & VERIFIED SUCCESSFULLY                "
 echo "======================================================================"
 docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c "SELECT 'Students: ' || count(*) FROM students UNION ALL SELECT 'Active Enrollments: ' || count(*) FROM student_enrollments WHERE status = 'active' UNION ALL SELECT 'Batches: ' || count(*) FROM divisions UNION ALL SELECT 'Invoices: ' || count(*) FROM fee_invoices UNION ALL SELECT 'Payments: ' || count(*) FROM payments;"
 echo -e "\nWeb Application: http://localhost:80"
-echo "Login:           admin@prashantacademy.edu.in / admin123"
+echo "Login:           admin@example.com / admin123"
 echo "======================================================================"
 

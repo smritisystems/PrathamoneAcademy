@@ -98,6 +98,6 @@ foreach ($line in $counts) {
 }
 Write-Host "----------------------------------------------------------------------" -ForegroundColor Gray
 Write-Host "Web Application: http://localhost:80" -ForegroundColor Cyan
-Write-Host "Default Login:   admin@prashantacademy.edu.in / admin123" -ForegroundColor Yellow
+Write-Host "Default Login:   admin@example.com / admin123" -ForegroundColor Yellow
 Write-Host "======================================================================`n" -ForegroundColor Blue
 

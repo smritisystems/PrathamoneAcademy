@@ -342,11 +342,11 @@ async def initialize_staff_module():
             doc_count = (await session.execute(text("SELECT count(*) FROM staff_documents WHERE staff_profile_id = :p_id;"), {"p_id": p_id})).scalar()
             if doc_count == 0:
                 standard_docs = [
-                    ("Degree Certificate", f"{cfg['qual'].split(',')[0]} Degree Certificate", "https://prashantacademy.edu.in/docs/sample_degree.pdf"),
-                    ("Employment Agreement", f"Prashant Academy Employment Contract ({cfg['emp_id']})", "https://prashantacademy.edu.in/docs/sample_contract.pdf"),
-                    ("PAN Card Copy", f"Income Tax Permanent Account Number ({cfg['pan']})", "https://prashantacademy.edu.in/docs/sample_pan.pdf"),
-                    ("Identity Proof", "Government Issued Photo ID Card (Masked Aadhaar)", "https://prashantacademy.edu.in/docs/sample_id.pdf"),
-                    ("Cancelled Cheque", f"{cfg['bank']} Bank Account Verification Cheque", "https://prashantacademy.edu.in/docs/sample_cheque.pdf"),
+                    ("Degree Certificate", f"{cfg['qual'].split(',')[0]} Degree Certificate", "https://example.com/docs/sample_degree.pdf"),
+                    ("Employment Agreement", f"Prashant Academy Employment Contract ({cfg['emp_id']})", "https://example.com/docs/sample_contract.pdf"),
+                    ("PAN Card Copy", f"Income Tax Permanent Account Number ({cfg['pan']})", "https://example.com/docs/sample_pan.pdf"),
+                    ("Identity Proof", "Government Issued Photo ID Card (Masked Aadhaar)", "https://example.com/docs/sample_id.pdf"),
+                    ("Cancelled Cheque", f"{cfg['bank']} Bank Account Verification Cheque", "https://example.com/docs/sample_cheque.pdf"),
                 ]
                 for d_type, d_title, d_url in standard_docs:
                     await session.execute(text("""

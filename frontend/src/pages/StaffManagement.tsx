@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-09
+ * @updated     2026-11-11
  *
  * @description Dedicated multi-workspace hub for Staff & HR Directory comprising HR Analytics, Staff Register, Onboarding, Roles & Duties, Daily Attendance, Leave Requests, HR Documents Studio, and HR Policies.
  */
@@ -936,7 +936,7 @@ function StaffManagementContent() {
                     value={newStaff.email}
                     onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
                     className="input text-xs"
-                    placeholder="name@prashantacademy.edu.in"
+                    placeholder="name@example.com"
                     required
                   />
                 </div>

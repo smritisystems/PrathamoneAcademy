@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-11
 #  *
 #  * @description Idempotent Alembic data migration resolving operational fee discrepancies and student lifecycle states.
 #  */
@@ -77,31 +77,34 @@ def upgrade() -> None:
             from_status, to_status, effective_date, reason, notes,
             performed_by_id, created_at
         )
-        SELECT 1, 142, 142, 'exit', 'active', 'withdrawn', '2026-11-05',
+        SELECT (SELECT id FROM institutions ORDER BY id ASC LIMIT 1), 142, 142, 'exit', 'active', 'withdrawn', '2026-11-05',
                'Discontinued', 'Discontinued per administrative notification', 1, NOW()
         WHERE NOT EXISTS (
             SELECT 1 FROM student_lifecycle_logs WHERE student_id = 142 AND action = 'exit'
-        )
+        ) AND EXISTS (SELECT 1 FROM students WHERE id = 142);
     """)
 
     # 3. Missing students on Fees Register: Shaurya (160), Sushmya (166), Aaradhya (167)
     # Shaurya (Class VIII: 75,000)
     op.execute("""
         INSERT INTO fee_structures (institution_id, academic_year_id, standard_id, category_id, name, amount, frequency, installments_count, due_day, late_fee_amount, late_fee_days, is_active, created_at)
-        SELECT 1, 1, 8, 1, 'Annual Tuition Fee - Shaurya', 75000.00, 'annually', 1, 10, 0.00, 0, TRUE, NOW()
+        SELECT (SELECT id FROM institutions ORDER BY id ASC LIMIT 1), 1, 8, 1, 'Annual Tuition Fee - Shaurya', 75000.00, 'annually', 1, 10, 0.00, 0, TRUE, NOW()
         WHERE NOT EXISTS (SELECT 1 FROM fee_structures WHERE name = 'Annual Tuition Fee - Shaurya')
+        AND EXISTS (SELECT 1 FROM students WHERE id = 160);
     """)
     op.execute("""
         INSERT INTO student_fee_assignments (student_id, fee_structure_id, academic_year_id, custom_amount, concession_amount, remarks, created_at)
         SELECT 160, fs.id, 1, 75000.00, 0.00, 'Authoritative fee assignment for Shaurya added per administrative reconciliation', NOW()
         FROM fee_structures fs WHERE fs.name = 'Annual Tuition Fee - Shaurya'
         AND NOT EXISTS (SELECT 1 FROM student_fee_assignments WHERE student_id = 160 AND academic_year_id = 1)
+        AND EXISTS (SELECT 1 FROM students WHERE id = 160);
     """)
     op.execute("""
         INSERT INTO fee_invoices (invoice_number, student_id, assignment_id, academic_year_id, total_amount, discount_amount, net_amount, paid_amount, outstanding_amount, status, issue_date, due_date, notes, created_at, updated_at)
         SELECT 'INV-2026-0160', 160, sfa.id, 1, 75000.00, 0.00, 75000.00, 0.00, 75000.00, 'unpaid', '2026-04-01', '2027-03-31', 'Authoritative fee invoice for Shaurya generated per administrative reconciliation', NOW(), NOW()
         FROM student_fee_assignments sfa WHERE sfa.student_id = 160 AND sfa.academic_year_id = 1
         AND NOT EXISTS (SELECT 1 FROM fee_invoices WHERE invoice_number = 'INV-2026-0160')
+        AND EXISTS (SELECT 1 FROM students WHERE id = 160);
     """)
     op.execute("""
         INSERT INTO fee_invoice_items (invoice_id, fee_structure_id, description, amount, discount_amount, net_amount, created_at)
@@ -109,25 +112,29 @@ def upgrade() -> None:
         FROM fee_invoices fi, fee_structures fs
         WHERE fi.invoice_number = 'INV-2026-0160' AND fs.name = 'Annual Tuition Fee - Shaurya'
         AND NOT EXISTS (SELECT 1 FROM fee_invoice_items WHERE invoice_id = fi.id)
+        AND EXISTS (SELECT 1 FROM students WHERE id = 160);
     """)
 
     # Sushmya (Class IX: 50,000)
     op.execute("""
         INSERT INTO fee_structures (institution_id, academic_year_id, standard_id, category_id, name, amount, frequency, installments_count, due_day, late_fee_amount, late_fee_days, is_active, created_at)
-        SELECT 1, 1, 9, 1, 'Annual Tuition Fee - Sushmya', 50000.00, 'annually', 1, 10, 0.00, 0, TRUE, NOW()
+        SELECT (SELECT id FROM institutions ORDER BY id ASC LIMIT 1), 1, 9, 1, 'Annual Tuition Fee - Sushmya', 50000.00, 'annually', 1, 10, 0.00, 0, TRUE, NOW()
         WHERE NOT EXISTS (SELECT 1 FROM fee_structures WHERE name = 'Annual Tuition Fee - Sushmya')
+        AND EXISTS (SELECT 1 FROM students WHERE id = 166);
     """)
     op.execute("""
         INSERT INTO student_fee_assignments (student_id, fee_structure_id, academic_year_id, custom_amount, concession_amount, remarks, created_at)
         SELECT 166, fs.id, 1, 50000.00, 0.00, 'Authoritative fee assignment for Sushmya added per administrative reconciliation', NOW()
         FROM fee_structures fs WHERE fs.name = 'Annual Tuition Fee - Sushmya'
         AND NOT EXISTS (SELECT 1 FROM student_fee_assignments WHERE student_id = 166 AND academic_year_id = 1)
+        AND EXISTS (SELECT 1 FROM students WHERE id = 166);
     """)
     op.execute("""
         INSERT INTO fee_invoices (invoice_number, student_id, assignment_id, academic_year_id, total_amount, discount_amount, net_amount, paid_amount, outstanding_amount, status, issue_date, due_date, notes, created_at, updated_at)
         SELECT 'INV-2026-0166', 166, sfa.id, 1, 50000.00, 0.00, 50000.00, 0.00, 50000.00, 'unpaid', '2026-04-01', '2027-03-31', 'Authoritative fee invoice for Sushmya generated per administrative reconciliation', NOW(), NOW()
         FROM student_fee_assignments sfa WHERE sfa.student_id = 166 AND sfa.academic_year_id = 1
         AND NOT EXISTS (SELECT 1 FROM fee_invoices WHERE invoice_number = 'INV-2026-0166')
+        AND EXISTS (SELECT 1 FROM students WHERE id = 166);
     """)
     op.execute("""
         INSERT INTO fee_invoice_items (invoice_id, fee_structure_id, description, amount, discount_amount, net_amount, created_at)
@@ -135,25 +142,29 @@ def upgrade() -> None:
         FROM fee_invoices fi, fee_structures fs
         WHERE fi.invoice_number = 'INV-2026-0166' AND fs.name = 'Annual Tuition Fee - Sushmya'
         AND NOT EXISTS (SELECT 1 FROM fee_invoice_items WHERE invoice_id = fi.id)
+        AND EXISTS (SELECT 1 FROM students WHERE id = 166);
     """)
 
     # Aaradhya (Class IX: 50,000)
     op.execute("""
         INSERT INTO fee_structures (institution_id, academic_year_id, standard_id, category_id, name, amount, frequency, installments_count, due_day, late_fee_amount, late_fee_days, is_active, created_at)
-        SELECT 1, 1, 9, 1, 'Annual Tuition Fee - Aaradhya', 50000.00, 'annually', 1, 10, 0.00, 0, TRUE, NOW()
+        SELECT (SELECT id FROM institutions ORDER BY id ASC LIMIT 1), 1, 9, 1, 'Annual Tuition Fee - Aaradhya', 50000.00, 'annually', 1, 10, 0.00, 0, TRUE, NOW()
         WHERE NOT EXISTS (SELECT 1 FROM fee_structures WHERE name = 'Annual Tuition Fee - Aaradhya')
+        AND EXISTS (SELECT 1 FROM students WHERE id = 167);
     """)
     op.execute("""
         INSERT INTO student_fee_assignments (student_id, fee_structure_id, academic_year_id, custom_amount, concession_amount, remarks, created_at)
         SELECT 167, fs.id, 1, 50000.00, 0.00, 'Authoritative fee assignment for Aaradhya added per administrative reconciliation', NOW()
         FROM fee_structures fs WHERE fs.name = 'Annual Tuition Fee - Aaradhya'
         AND NOT EXISTS (SELECT 1 FROM student_fee_assignments WHERE student_id = 167 AND academic_year_id = 1)
+        AND EXISTS (SELECT 1 FROM students WHERE id = 167);
     """)
     op.execute("""
         INSERT INTO fee_invoices (invoice_number, student_id, assignment_id, academic_year_id, total_amount, discount_amount, net_amount, paid_amount, outstanding_amount, status, issue_date, due_date, notes, created_at, updated_at)
         SELECT 'INV-2026-0167', 167, sfa.id, 1, 50000.00, 0.00, 50000.00, 0.00, 50000.00, 'unpaid', '2026-04-01', '2027-03-31', 'Authoritative fee invoice for Aaradhya generated per administrative reconciliation', NOW(), NOW()
         FROM student_fee_assignments sfa WHERE sfa.student_id = 167 AND sfa.academic_year_id = 1
         AND NOT EXISTS (SELECT 1 FROM fee_invoices WHERE invoice_number = 'INV-2026-0167')
+        AND EXISTS (SELECT 1 FROM students WHERE id = 167);
     """)
     op.execute("""
         INSERT INTO fee_invoice_items (invoice_id, fee_structure_id, description, amount, discount_amount, net_amount, created_at)
@@ -161,6 +172,7 @@ def upgrade() -> None:
         FROM fee_invoices fi, fee_structures fs
         WHERE fi.invoice_number = 'INV-2026-0167' AND fs.name = 'Annual Tuition Fee - Aaradhya'
         AND NOT EXISTS (SELECT 1 FROM fee_invoice_items WHERE invoice_id = fi.id)
+        AND EXISTS (SELECT 1 FROM students WHERE id = 167);
     """)
 
     # 4. Ashwin Tambe (ID 140): Reverse excess payments totaling 20,200
@@ -218,32 +230,34 @@ def upgrade() -> None:
             v_pid INT;
             v_rcp_data TEXT;
         BEGIN
-            IF NOT EXISTS (SELECT 1 FROM payments WHERE student_id = 143 AND transaction_reference = 'TXN-2026-0171') THEN
-                INSERT INTO payments (
-                    student_id, academic_year_id, amount, payment_date,
-                    payment_method, transaction_reference, notes, status,
-                    collected_by_id, posted_at, created_at
-                ) VALUES (
-                    143, 1, 5000.00, '2026-10-28',
-                    'bank_transfer', 'TXN-2026-0171',
-                    'Reconciled installment payment of Rs 5,000 per staff fee register audit',
-                    'completed', 1, NOW(), NOW()
-                ) RETURNING id INTO v_pid;
+            IF EXISTS (SELECT 1 FROM students WHERE id = 143) AND EXISTS (SELECT 1 FROM fee_invoices WHERE id = 25) THEN
+                IF NOT EXISTS (SELECT 1 FROM payments WHERE student_id = 143 AND transaction_reference = 'TXN-2026-0171') THEN
+                    INSERT INTO payments (
+                        student_id, academic_year_id, amount, payment_date,
+                        payment_method, transaction_reference, notes, status,
+                        collected_by_id, posted_at, created_at
+                    ) VALUES (
+                        143, 1, 5000.00, '2026-10-28',
+                        'bank_transfer', 'TXN-2026-0171',
+                        'Reconciled installment payment of Rs 5,000 per staff fee register audit',
+                        'completed', 1, NOW(), NOW()
+                    ) RETURNING id INTO v_pid;
 
-                INSERT INTO payment_allocations (payment_id, invoice_id, allocated_amount, created_at)
-                VALUES (v_pid, 25, 5000.00, NOW());
+                    INSERT INTO payment_allocations (payment_id, invoice_id, allocated_amount, created_at)
+                    VALUES (v_pid, 25, 5000.00, NOW());
 
-                v_rcp_data := '{"receipt_number": "RCP-2026-0171", "student_name": "Samud Kapoor", "admission_number": "PA-2024-000015", "standard": "Class IV", "batch": "Batch A (Morning)", "payment_date": "28-Oct-2026", "raw_date": "28-Oct-2026", "payment_method": "bank_transfer", "transaction_reference": "TXN-2026-0171", "amount": 5000.0, "invoice_number": "INV-2026-0143", "notes": "Reconciled installment payment of Rs 5,000 per staff fee register audit"}';
+                    v_rcp_data := '{"receipt_number": "RCP-2026-0171", "student_name": "Samud Kapoor", "admission_number": "PA-2024-000015", "standard": "Class IV", "batch": "Batch A (Morning)", "payment_date": "28-Oct-2026", "raw_date": "28-Oct-2026", "payment_method": "bank_transfer", "transaction_reference": "TXN-2026-0171", "amount": 5000.0, "invoice_number": "INV-2026-0143", "notes": "Reconciled installment payment of Rs 5,000 per staff fee register audit"}';
 
-                INSERT INTO payment_receipts (
-                    receipt_number, payment_id, student_id, amount,
-                    payment_date, payment_method, receipt_data, version,
-                    status, generated_at
-                ) VALUES (
-                    'RCP-2026-0171', v_pid, 143, 5000.00,
-                    '2026-10-28', 'bank_transfer', v_rcp_data, 1,
-                    'valid', NOW()
-                );
+                    INSERT INTO payment_receipts (
+                        receipt_number, payment_id, student_id, amount,
+                        payment_date, payment_method, receipt_data, version,
+                        status, generated_at
+                    ) VALUES (
+                        'RCP-2026-0171', v_pid, 143, 5000.00,
+                        '2026-10-28', 'bank_transfer', v_rcp_data, 1,
+                        'valid', NOW()
+                    );
+                END IF;
             END IF;
         END $$;
     """)

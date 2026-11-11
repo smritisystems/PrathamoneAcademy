@@ -100,6 +100,8 @@ Write-Host ""
 
 if ($isHealthy) {
     Write-Host "[OK] Backend API is operational and verified healthy." -ForegroundColor Green
+    Write-Host "Ensuring all schema migrations are up to date..." -ForegroundColor Gray
+    docker compose exec -T backend alembic upgrade head | Out-Null
 } else {
     Write-Host "[WARN] Application started; please check 'docker compose ps' for status." -ForegroundColor Yellow
 }
@@ -116,5 +118,5 @@ foreach ($line in $counts) {
     }
 }
 Write-Host "`nWeb Application: http://localhost:80" -ForegroundColor Cyan
-Write-Host "Login:           admin@prashantacademy.edu.in / admin123" -ForegroundColor Cyan
+Write-Host "Login:           admin@example.com / admin123" -ForegroundColor Cyan
 Write-Host "======================================================================`n" -ForegroundColor Blue

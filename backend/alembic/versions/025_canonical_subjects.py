@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-11
 #  *
 #  * @description Alembic migration establishing canonical subjects catalogue, standard/board applicability mappings, and back-linking legacy subjects.
 #  */
@@ -142,52 +142,56 @@ def upgrade():
             postgresql_nulls_not_distinct=True,
         )
 
-    # 4. Seed Canonical Subjects Master
-    seed_canonical = [
-        ("Mathematics", "MATH001", "Mathematics", "Core academic mathematics curriculum", "Math, Maths, Pure Mathematics"),
-        ("Physics", "PHYS001", "Science", "Classical and modern physical sciences", "PHY"),
-        ("Chemistry", "CHEM001", "Science", "Inorganic, organic, and physical chemistry", "CHEM"),
-        ("Biology", "BIO001", "Science", "Biological sciences, anatomy, and life sciences", "BIO, Life Sciences"),
-        ("Science", "SCI001", "Science", "Integrated general science for middle and primary standards", "General Science, Basic Science"),
-        ("English", "ENG001", "Languages", "English language, literature, and communication studies", "English Language, English Literature, ENG"),
-        ("Social Science", "SST001", "Social Sciences", "Social sciences including history, civics, and geography", "Social Studies, SST, History, Geography, Civics"),
-        ("Hindi", "HIN001", "Languages", "Hindi language, grammar, and literature", "HIN"),
-        ("Computer Science", "COMP001", "Computer Science", "Information technology, computer science, and programming", "CS, IT, Computers"),
-    ]
+    # 4. Seed Canonical Subjects Master (if institution exists)
+    inst_res = conn.execute(sa.text("SELECT id FROM institutions ORDER BY id ASC LIMIT 1")).fetchone()
+    inst_id = inst_res[0] if inst_res else None
 
-    for name, code, cat, desc, aliases in seed_canonical:
-        conn.execute(
-            sa.text("""
-                INSERT INTO canonical_subjects (institution_id, name, code, category, description, aliases, is_active)
-                VALUES (1, :name, :code, :cat, :desc, :aliases, true)
-                ON CONFLICT (institution_id, code) WHERE is_active = true DO NOTHING;
-            """),
-            {"name": name, "code": code, "cat": cat, "desc": desc, "aliases": aliases},
-        )
+    if inst_id is not None:
+        seed_canonical = [
+            ("Mathematics", "MATH001", "Mathematics", "Core academic mathematics curriculum", "Math, Maths, Pure Mathematics"),
+            ("Physics", "PHYS001", "Science", "Classical and modern physical sciences", "PHY"),
+            ("Chemistry", "CHEM001", "Science", "Inorganic, organic, and physical chemistry", "CHEM"),
+            ("Biology", "BIO001", "Science", "Biological sciences, anatomy, and life sciences", "BIO, Life Sciences"),
+            ("Science", "SCI001", "Science", "Integrated general science for middle and primary standards", "General Science, Basic Science"),
+            ("English", "ENG001", "Languages", "English language, literature, and communication studies", "English Language, English Literature, ENG"),
+            ("Social Science", "SST001", "Social Sciences", "Social sciences including history, civics, and geography", "Social Studies, SST, History, Geography, Civics"),
+            ("Hindi", "HIN001", "Languages", "Hindi language, grammar, and literature", "HIN"),
+            ("Computer Science", "COMP001", "Computer Science", "Information technology, computer science, and programming", "CS, IT, Computers"),
+        ]
 
-    # 5. Link Legacy Subjects to Canonical Subjects
-    name_to_code = {
-        "Mathematics": "MATH001",
-        "Physics": "PHYS001",
-        "Chemistry": "CHEM001",
-        "Biology": "BIO001",
-        "Science": "SCI001",
-        "English": "ENG001",
-        "English Language": "ENG001",
-        "English Language & Lit": "ENG001",
-        "Social Science": "SST001",
-        "Social Studies": "SST001",
-    }
+        for name, code, cat, desc, aliases in seed_canonical:
+            conn.execute(
+                sa.text("""
+                    INSERT INTO canonical_subjects (institution_id, name, code, category, description, aliases, is_active)
+                    VALUES (:inst_id, :name, :code, :cat, :desc, :aliases, true)
+                    ON CONFLICT (institution_id, code) WHERE is_active = true DO NOTHING;
+                """),
+                {"inst_id": inst_id, "name": name, "code": code, "cat": cat, "desc": desc, "aliases": aliases},
+            )
 
-    for sub_name, canon_code in name_to_code.items():
-        conn.execute(
-            sa.text("""
-                UPDATE subjects
-                SET canonical_subject_id = (SELECT id FROM canonical_subjects WHERE institution_id = 1 AND code = CAST(:code AS VARCHAR) LIMIT 1)
-                WHERE name = CAST(:name AS VARCHAR) AND (canonical_subject_id IS NULL OR canonical_subject_id = 0);
-            """),
-            {"name": sub_name, "code": canon_code},
-        )
+        # 5. Link Legacy Subjects to Canonical Subjects
+        name_to_code = {
+            "Mathematics": "MATH001",
+            "Physics": "PHYS001",
+            "Chemistry": "CHEM001",
+            "Biology": "BIO001",
+            "Science": "SCI001",
+            "English": "ENG001",
+            "English Language": "ENG001",
+            "English Language & Lit": "ENG001",
+            "Social Science": "SST001",
+            "Social Studies": "SST001",
+        }
+
+        for sub_name, canon_code in name_to_code.items():
+            conn.execute(
+                sa.text("""
+                    UPDATE subjects
+                    SET canonical_subject_id = (SELECT id FROM canonical_subjects WHERE institution_id = :inst_id AND code = CAST(:code AS VARCHAR) LIMIT 1)
+                    WHERE name = CAST(:name AS VARCHAR) AND (canonical_subject_id IS NULL OR canonical_subject_id = 0);
+                """),
+                {"inst_id": inst_id, "name": sub_name, "code": canon_code},
+            )
 
     # 6. Backfill Subject Mappings for all active legacy subjects
     # Determine board_id from divisions where available, or fallback according to standards

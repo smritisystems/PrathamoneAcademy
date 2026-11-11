@@ -278,8 +278,8 @@ Write-Host "====================================================================
 Write-Host "Web Application:     $frontendUrl  (or http://localhost:5173)" -ForegroundColor White
 Write-Host "Backend API:         http://localhost:8000" -ForegroundColor White
 Write-Host "API Documentation:   http://localhost:8000/docs" -ForegroundColor White
-Write-Host "Default Superadmin:  admin@prashantacademy.edu.in / admin123" -ForegroundColor Yellow
-Write-Host "Default Accountant:  accountant@prashantacademy.edu.in / account123" -ForegroundColor Yellow
+Write-Host "Default Superadmin:  admin@example.com / admin123" -ForegroundColor Yellow
+Write-Host "Default Accountant:  accountant@example.com / account123" -ForegroundColor Yellow
 Write-Host "----------------------------------------------------------------------" -ForegroundColor Gray
 Write-Host "Useful Operational Commands:" -ForegroundColor Cyan
 Write-Host "  View live logs:      docker compose logs -f" -ForegroundColor White

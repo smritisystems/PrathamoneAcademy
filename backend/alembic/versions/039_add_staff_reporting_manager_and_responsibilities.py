@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description Schema reconciliation adding missing reporting_manager_id and responsibilities columns to staff_profiles table.
 #  */
@@ -35,25 +35,33 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # 1. Add reporting_manager_id column and foreign key constraint
-    op.add_column(
-        'staff_profiles',
-        sa.Column('reporting_manager_id', sa.Integer(), nullable=True)
-    )
-    op.create_foreign_key(
-        'fk_staff_profiles_reporting_manager_id',
-        'staff_profiles',
-        'users',
-        ['reporting_manager_id'],
-        ['id'],
-        ondelete='SET NULL'
-    )
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_tables = set(inspector.get_table_names())
 
-    # 2. Add responsibilities column
-    op.add_column(
-        'staff_profiles',
-        sa.Column('responsibilities', sa.Text(), nullable=True)
-    )
+    if "staff_profiles" in existing_tables:
+        existing_cols = {c["name"] for c in inspector.get_columns("staff_profiles")}
+        # 1. Add reporting_manager_id column and foreign key constraint
+        if 'reporting_manager_id' not in existing_cols:
+            op.add_column(
+                'staff_profiles',
+                sa.Column('reporting_manager_id', sa.Integer(), nullable=True)
+            )
+            op.create_foreign_key(
+                'fk_staff_profiles_reporting_manager_id',
+                'staff_profiles',
+                'users',
+                ['reporting_manager_id'],
+                ['id'],
+                ondelete='SET NULL'
+            )
+
+        # 2. Add responsibilities column
+        if 'responsibilities' not in existing_cols:
+            op.add_column(
+                'staff_profiles',
+                sa.Column('responsibilities', sa.Text(), nullable=True)
+            )
 
 
 def downgrade() -> None:

@@ -39,7 +39,7 @@ docker compose logs -f backend
 2. **CORS Origins**:
    Restrict `ALLOWED_ORIGINS` to the exact institutional domain:
    ```env
-   ALLOWED_ORIGINS=https://app.prashantacademy.edu.in
+   ALLOWED_ORIGINS=https://app.example.com
    ```
 3. **SSL / TLS Termination**:
    Place an SSL certificate (Let's Encrypt / Cloudflare) in front of the Nginx container, or map ports `443:443` with mounted certificates in `frontend/nginx.conf`.

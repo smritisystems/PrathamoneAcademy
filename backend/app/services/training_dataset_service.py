@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-11
 #  *
 #  * @description Service managing the Central Training Dataset (CRM-STAFF-TRAINING-V1), isolated demo tenant seeding, and dependency-aware training reset engine with strict production safety locks.
 #  */
@@ -318,7 +318,7 @@ async def seed_training_dataset(
             "gender": "male",
             "dob": date(2010, 5, 14),
             "phone": "+91 98201 77880",
-            "email": "advait.pendse@demo.prashantacademy.edu.in",
+            "email": "advait.pendse@demo.example.com",
             "standard": standards["Std. 10"],
             "parent": "Suresh Pendse",
             "parent_phone": "+91 98201 77881",
@@ -330,7 +330,7 @@ async def seed_training_dataset(
             "gender": "female",
             "dob": date(2009, 8, 22),
             "phone": "+91 99306 44882",
-            "email": "neha.karnik@demo.prashantacademy.edu.in",
+            "email": "neha.karnik@demo.example.com",
             "standard": standards["Std. 11 Science"],
             "parent": "Rajesh Karnik",
             "parent_phone": "+91 99306 44883",
@@ -342,7 +342,7 @@ async def seed_training_dataset(
             "gender": "male",
             "dob": date(2010, 3, 10),
             "phone": "+91 98204 11223",
-            "email": "tanay.deshmukh@demo.prashantacademy.edu.in",
+            "email": "tanay.deshmukh@demo.example.com",
             "standard": standards["Std. 10"],
             "parent": "Vikram Deshmukh",
             "parent_phone": "+91 98204 11224",
@@ -354,7 +354,7 @@ async def seed_training_dataset(
             "gender": "female",
             "dob": date(2011, 11, 5),
             "phone": "+91 98199 55441",
-            "email": "shreya.kadam@demo.prashantacademy.edu.in",
+            "email": "shreya.kadam@demo.example.com",
             "standard": standards["Std. 9"],
             "parent": "Anand Kadam",
             "parent_phone": "+91 98199 55442",
@@ -366,7 +366,7 @@ async def seed_training_dataset(
             "gender": "male",
             "dob": date(2012, 7, 19),
             "phone": "+91 98202 66778",
-            "email": "yash.patil@demo.prashantacademy.edu.in",
+            "email": "yash.patil@demo.example.com",
             "standard": standards["Std. 8"],
             "parent": "Ganesh Patil",
             "parent_phone": "+91 98202 66779",
@@ -409,7 +409,7 @@ async def seed_training_dataset(
                 last_name=s_data["parent"].split()[1] if len(s_data["parent"].split()) > 1 else "",
                 relation="Father",
                 phone=s_data["parent_phone"],
-                email=f"parent.{st_obj.first_name.lower()}@demo.prashantacademy.edu.in",
+                email=f"parent.{st_obj.first_name.lower()}@demo.example.com",
                 is_primary=True,
                 is_demo=True,
                 data_environment="TRAINING",
@@ -577,7 +577,7 @@ async def seed_training_dataset(
         # Stage 6: converted (2 leads - linked to demo students!)
         {
             "num": "DEMO-LD-0017", "first": "Advait", "last": "Pendse", "gender": "male",
-            "phone": "+91 98201 77880", "email": "advait.pendse@demo.prashantacademy.edu.in",
+            "phone": "+91 98201 77880", "email": "advait.pendse@demo.example.com",
             "std": standards["Std. 10"], "board": boards["CBSE"], "course": "Std. 10 CBSE — JEE Foundation",
             "stage": "converted", "priority": "hot", "source": "Website",
             "g_name": "Suresh Pendse", "g_phone": "+91 98201 77881", "g_rel": "Father",
@@ -586,7 +586,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0018", "first": "Neha", "last": "Karnik", "gender": "female",
-            "phone": "+91 99306 44882", "email": "neha.karnik@demo.prashantacademy.edu.in",
+            "phone": "+91 99306 44882", "email": "neha.karnik@demo.example.com",
             "std": standards["Std. 11 Science"], "board": boards["STATE"], "course": "Std. 11 Science — NEET Booster",
             "stage": "converted", "priority": "hot", "source": "Referral",
             "g_name": "Rajesh Karnik", "g_phone": "+91 99306 44883", "g_rel": "Father",

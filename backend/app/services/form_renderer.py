@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-07
+#  * @updated     2026-11-11
 #  *
 #  * @description Service engine resolving real database records, masking Aadhaar, generating blank/prefilled schemas, and logging DPDP audit trails.
 #  */
@@ -106,8 +106,8 @@ async def get_institution_header(db: AsyncSession) -> Dict[str, Any]:
             "code": "PA001",
             "address": "Dadar West, Near Shivaji Park, Mumbai, Maharashtra 400028",
             "phone": "+91-22-12345678",
-            "email": "info@prashantacademy.edu.in",
-            "website": "www.prashantacademy.edu.in",
+            "email": "info@example.com",
+            "website": "www.example.com",
             "logo_url": "/logo.svg",
         }
     return {
@@ -116,8 +116,8 @@ async def get_institution_header(db: AsyncSession) -> Dict[str, Any]:
         "code": inst.code,
         "address": f"{inst.address or 'Dadar West'}, {inst.city or 'Mumbai'}, {inst.state or 'Maharashtra'} - {inst.pincode or '400028'}",
         "phone": inst.phone or "+91-22-12345678",
-        "email": inst.email or "info@prashantacademy.edu.in",
-        "website": inst.website or "www.prashantacademy.edu.in",
+        "email": inst.email or "info@example.com",
+        "website": inst.website or "www.example.com",
         "logo_url": inst.logo_url or "/logo.svg",
     }
 

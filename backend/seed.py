@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-09
+#  * @updated     2026-11-11
 #  *
 #  * @description Database master seeder initializing superadmin account, demo batches, and curriculum subjects.
 #  */
@@ -61,29 +61,34 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session() as session:
-        # Check if already seeded
+        # Check if already seeded with admin user
         from sqlalchemy import select
-        existing = await session.execute(
-            select(Institution).where(Institution.code == "PA001")
+        admin_check = await session.execute(
+            select(User).where(User.username == "admin")
         )
-        if existing.scalar_one_or_none():
+        if admin_check.scalar_one_or_none():
             print("[INFO] Database already seeded. Skipping seed.")
             return
 
-        # --- Institution ---
-        institution = Institution(
-            name="Prashant Academy",
-            code="PA001",
-            address="123 Education Lane, School District",
-            city="Mumbai",
-            state="Maharashtra",
-            pincode="400001",
-            phone="+91-22-12345678",
-            email="info@prashantacademy.edu.in",
-            website="https://prashantacademy.edu.in",
+        # Check existing institution or create
+        existing_inst = await session.execute(
+            select(Institution).where(Institution.code == "PA001")
         )
-        session.add(institution)
-        await session.flush()
+        institution = existing_inst.scalar_one_or_none()
+        if not institution:
+            institution = Institution(
+                name="Prashant Academy",
+                code="PA001",
+                address="123 Education Lane, School District",
+                city="Mumbai",
+                state="Maharashtra",
+                pincode="400001",
+                phone="+91-22-12345678",
+                email="info@example.com",
+                website="https://example.com",
+            )
+            session.add(institution)
+            await session.flush()
 
         # --- Roles ---
         roles_data = [
@@ -96,16 +101,20 @@ async def seed():
         ]
         roles = {}
         for r in roles_data:
-            role = Role(**r)
-            session.add(role)
-            await session.flush()
-            roles[r["name"]] = role
+            existing_role = (await session.execute(select(Role).where(Role.name == r["name"]))).scalar_one_or_none()
+            if not existing_role:
+                role = Role(**r)
+                session.add(role)
+                await session.flush()
+                roles[r["name"]] = role
+            else:
+                roles[r["name"]] = existing_role
 
         # --- Users ---
         admin_user = User(
             institution_id=institution.id,
             username="admin",
-            email="admin@prashantacademy.edu.in",
+            email="admin@example.com",
             hashed_password=get_password_hash("admin123"),
             first_name="Admin",
             last_name="User",
@@ -117,7 +126,7 @@ async def seed():
         accountant_user = User(
             institution_id=institution.id,
             username="accountant",
-            email="accountant@prashantacademy.edu.in",
+            email="accountant@example.com",
             hashed_password=get_password_hash("account123"),
             first_name="Rajesh",
             last_name="Sharma",
@@ -326,7 +335,7 @@ async def seed():
 
         session.add(PaymentAllocation(
             payment_id=payment1.id, invoice_id=invoice.id,
-            installment_id=installment.id, allocated_amount=Decimal("5000.00"),
+            allocated_amount=Decimal("5000.00"),
         ))
         session.add(PaymentReceipt(
             receipt_number=f"RCP-{academic_year.id}-000001",
@@ -357,7 +366,7 @@ async def seed():
 
         session.add(PaymentAllocation(
             payment_id=payment2.id, invoice_id=invoice.id,
-            installment_id=installment.id, allocated_amount=Decimal("7000.00"),
+            allocated_amount=Decimal("7000.00"),
         ))
         session.add(PaymentReceipt(
             receipt_number=f"RCP-{academic_year.id}-000002",
@@ -389,7 +398,7 @@ async def seed():
 
         session.add(PaymentAllocation(
             payment_id=payment3.id, invoice_id=invoice.id,
-            installment_id=installment.id, allocated_amount=Decimal("4000.00"),
+            allocated_amount=Decimal("4000.00"),
         ))
         session.add(PaymentReceipt(
             receipt_number=f"RCP-{academic_year.id}-000003",

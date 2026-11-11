@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-11
 #  *
 #  * @description Database seeding utility creating test student accounts, credentials, and academic history.
 #  */
@@ -336,7 +336,7 @@ async def seed_data():
                         institution_id=inst.id,
                         student_id=s_id,
                         username=u_name,
-                        email=f"{u_name}@prashantacademy.edu.in",
+                        email=f"{u_name}@example.com",
                         hashed_password=get_password_hash("student123"),
                         first_name=st_obj.first_name if st_obj else u_name.title(),
                         last_name="",

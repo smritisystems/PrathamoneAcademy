@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-08
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -73,8 +73,8 @@ async def list_institutions(
             state="Maharashtra",
             pincode="400028",
             phone="+91-22-12345678",
-            email="info@prashantacademy.edu.in",
-            website="https://prashantacademy.edu.in",
+            email="info@example.com",
+            website="https://example.com",
             is_active=True,
         )
         db.add(pa)

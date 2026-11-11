@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Vitest specifications validating centralized forms workspace, prefilled & blank modes, Aadhaar masking, DPDP consent, and print triggers.
  */
@@ -108,8 +108,8 @@ vi.mock('../api/endpoints', () => ({
           code: 'PA001',
           address: 'Dadar West, Near Shivaji Park, Mumbai - 400028',
           phone: '+91-22-12345678',
-          email: 'info@prashantacademy.edu.in',
-          website: 'www.prashantacademy.edu.in',
+          email: 'info@example.com',
+          website: 'www.example.com',
           logo_url: '/logo.svg',
         },
         active_sections: ['header', 'personal', 'guardians', 'documents', 'dpdp_notice'],
@@ -280,8 +280,8 @@ describe('Print Forms & KYC System Specification', () => {
     fireEvent.click(bulkBtn)
 
     await waitFor(() => {
-      expect(screen.getByText(/Select Class \/ Standard/i)).toBeDefined()
-      expect(screen.getByText(/Select Batch \/ Division/i)).toBeDefined()
+      expect(screen.getByText(/Standard \/ Class/i)).toBeDefined()
+      expect(screen.getByText(/Division \/ Section/i)).toBeDefined()
     })
   })
 
@@ -305,8 +305,8 @@ describe('Print Forms & KYC System Specification', () => {
         code: 'PA001',
         address: 'Dadar West, Mumbai - 400028',
         phone: '+91-22-12345678',
-        email: 'info@prashantacademy.edu.in',
-        website: 'www.prashantacademy.edu.in',
+        email: 'info@example.com',
+        website: 'www.example.com',
         logo_url: '/logo.svg',
       },
       active_sections: ['header', 'personal', 'guardians', 'documents', 'dpdp_notice'],

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-09
+#  * @updated     2026-11-11
 #  *
 #  * @description SysAdmin superuser API endpoints for security audits, universal records editing, and system governance.
 #  */
@@ -417,7 +417,7 @@ async def get_system_settings(
         "institution_name": inst.name if inst else "Prashant Academy",
         "institution_code": inst.code if inst else "PAC-001",
         "contact_phone": inst.phone if inst else "+91 98765 43210",
-        "contact_email": inst.email if inst else "admin@prashantacademy.edu.in",
+        "contact_email": inst.email if inst else "admin@example.com",
         "maintenance_mode": False,
         "session_timeout_minutes": 60,
         "enable_mfa_requirement": False,
