@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -37,7 +37,7 @@ import {
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton } from '../components/common'
+import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
 import Modal from '../components/Modal'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import toast from 'react-hot-toast'
@@ -1550,30 +1550,38 @@ export default function AcademicWorkspace() {
           </div>
         </div>
 
-        {/* Action Button */}
-        {currentMeta.actionLabel && currentMeta.onAction && (
-          <div className="flex items-center gap-2">
-            {isEditMode ? (
-              <button
-                onClick={currentMeta.onAction}
-                className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Plus className="w-4 h-4" />
-                {currentMeta.actionLabel}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => toast.error(`Locked in View Mode: Please enable Edit Mode above to perform ${(currentMeta.actionLabel || 'action').toLowerCase()}.`)}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                title={`Locked in View Mode: Enable Edit Mode above to perform ${(currentMeta.actionLabel || 'action').toLowerCase()}`}
-              >
-                <Lock className="w-4 h-4 text-slate-400" />
-                <span>{currentMeta.actionLabel} (Locked)</span>
-              </button>
-            )}
-          </div>
-        )}
+        {/* Action Button & Contextual Help */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <ContextualHelpButton
+            moduleKey={activeTab === 'timetable' ? 'timetable' : undefined}
+            routePath={activeTab === 'timetable' ? '/academic/timetable' : '/academic'}
+            variant="pill"
+            label={activeTab === 'timetable' ? 'Timetable Help' : 'Academic Help'}
+          />
+          {currentMeta.actionLabel && currentMeta.onAction && (
+            <div className="flex items-center gap-2">
+              {isEditMode ? (
+                <button
+                  onClick={currentMeta.onAction}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Plus className="w-4 h-4" />
+                  {currentMeta.actionLabel}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => toast.error(`Locked in View Mode: Please enable Edit Mode above to perform ${(currentMeta.actionLabel || 'action').toLowerCase()}.`)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                  title={`Locked in View Mode: Enable Edit Mode above to perform ${(currentMeta.actionLabel || 'action').toLowerCase()}`}
+                >
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  <span>{currentMeta.actionLabel} (Locked)</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── 2. Top Navigation Tabs Bar ── */}

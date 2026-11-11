@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
@@ -37,7 +37,7 @@ import { InvoiceStatusBadge } from '../components/Badge'
 import { useBranding } from '../config/branding'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
-import { ConcessionTraceModal } from '../components/common'
+import { ConcessionTraceModal, ContextualHelpButton } from '../components/common'
 import {
   Users,
   GraduationCap,
@@ -1117,16 +1117,19 @@ export default function Reports() {
           </p>
         </div>
 
-        {/* Global Search Bar */}
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
-          <input
-            type="text"
-            placeholder={`Search all ${REPORT_CATALOG.length} reports...`}
-            value={globalSearch}
-            onChange={(e) => setGlobalSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-xs"
-          />
+        {/* Global Search Bar & Contextual Help */}
+        <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
+          <ContextualHelpButton moduleKey="reports" variant="pill" label="Reports Help" />
+          <div className="relative flex-1 md:w-80">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+            <input
+              type="text"
+              placeholder={`Search all ${REPORT_CATALOG.length} reports...`}
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-xs"
+            />
+          </div>
         </div>
       </div>
 

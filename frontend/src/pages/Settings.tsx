@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -34,7 +34,7 @@ import type {
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
 import { useBranding, applyGlobalBrandTheme, BRANDING_STORAGE_KEY } from '../config/branding'
 import OrganizationBranding from '../components/OrganizationBranding'
 
@@ -593,12 +593,11 @@ export default function Settings() {
             <Bell className="w-4 h-4" />
             <span className="w-1.5 h-1.5 rounded-full bg-primary-600 absolute top-1.5 right-1.5" />
           </button>
-          <button
-            title="Help & Documentation"
-            className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-colors"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
+          <ContextualHelpButton
+            moduleKey="settings"
+            variant="icon"
+            title="Administration & Settings Help Guide"
+          />
           <div
             title={user?.username || 'Current User'}
             className="w-8 h-8 rounded-full bg-blue-900 text-white font-semibold text-xs flex items-center justify-center shadow-xs cursor-default"

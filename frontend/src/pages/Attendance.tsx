@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Attendance management workspace transforming daily batch roll call, QR terminals, registers, and absenteeism into dedicated functional views.
  */
@@ -61,7 +61,7 @@ import { standardsApi, divisionsApi, studentsApi, attendanceApi } from '../api/e
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import toast from 'react-hot-toast'
 
@@ -529,7 +529,8 @@ function AttendanceContent() {
           </div>
 
           {/* Contextual Action Buttons */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <ContextualHelpButton moduleKey="attendance" variant="pill" label="Attendance Help" />
             {/* Modal Terminal Toggle Button preserved for backward compatibility */}
             <button
               type="button"

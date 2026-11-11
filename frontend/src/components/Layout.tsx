@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -38,6 +38,7 @@ import { useState } from 'react'
 import { useEnvironmentStore, DataEnvironment } from '../store/environmentStore'
 import TrainingModeBanner from './common/TrainingModeBanner'
 import EnvironmentSwitchModal from './common/EnvironmentSwitchModal'
+import ContextualHelpButton from './common/ContextualHelpButton'
 import { FlaskConical, ShieldCheck } from 'lucide-react'
 
 // Fallback authoritative academic sessions ensuring zero blank dropdown states
@@ -275,6 +276,8 @@ export default function Layout() {
           </button>
 
           <div className="flex-1" />
+
+          <ContextualHelpButton variant="pill" label="Help" />
 
           {!isInstalled && (
             <Link

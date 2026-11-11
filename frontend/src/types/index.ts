@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -4613,6 +4613,264 @@ export interface HousekeepingAlertNotifyResponse {
   health_status: string
   alert_count: number
 }
+
+// ─── Help & About Centre Types ────────────────────────────────────────────────
+
+export type HelpSectionKey =
+  | 'getting_started'
+  | 'module_guide'
+  | 'tutorial'
+  | 'faq'
+  | 'legal'
+
+export interface HelpCategory {
+  id: number
+  slug: string
+  name: string
+  section: HelpSectionKey
+  description?: string | null
+  icon?: string | null
+  sort_order: number
+  is_active: boolean
+  article_count?: number | null
+}
+
+export interface HelpArticleSummary {
+  id: number
+  slug: string
+  category_id?: number | null
+  category_slug?: string | null
+  category_name?: string | null
+  section: HelpSectionKey
+  module_key?: string | null
+  title: string
+  summary?: string | null
+  tags: string[]
+  required_permissions: string[]
+  related_routes: string[]
+  related_slugs: string[]
+  doc_version: string
+  status: 'draft' | 'pending_approval' | 'published' | 'unpublished'
+  approval_status: 'approved' | 'pending_approval'
+  approved_at?: string | null
+  published_at?: string | null
+  is_system: boolean
+  sort_order: number
+  updated_at?: string | null
+}
+
+export interface HelpArticleDetail extends HelpArticleSummary {
+  content_markdown: string
+  related_articles?: HelpArticleSummary[]
+}
+
+export interface HelpArticleRevision {
+  id: number
+  article_id: number
+  doc_version: string
+  title: string
+  summary?: string | null
+  status: string
+  approval_status: string
+  change_note?: string | null
+  changed_by_name?: string | null
+  created_at?: string | null
+}
+
+export interface HelpSearchResultItem {
+  type: 'article' | 'portal'
+  slug: string
+  section: string
+  title: string
+  summary?: string | null
+  route: string
+  tags: string[]
+  category_name?: string | null
+  approval_status?: string
+  status?: string
+}
+
+export interface HelpSearchResponse {
+  query: string
+  total: number
+  results: HelpSearchResultItem[]
+  suggestions: string[]
+}
+
+export interface ContextualHelpResolution {
+  route_path: string
+  module_key: string
+  article: HelpArticleDetail | null
+  help_route: string
+}
+
+export interface HelpModuleSummary {
+  key: string
+  name: string
+  guide_slug: string
+  route: string
+}
+
+export interface HelpProductAndVersionResponse {
+  about_product: {
+    product_name: string
+    product_category: string
+    edition: string
+    introduction: string
+    vision: string
+    mission: string
+    vision_mission_status: string
+    philosophy: string[]
+    core_capabilities: string[]
+    available_modules: HelpModuleSummary[]
+    target_institutions: string[]
+    supported_deployment_models: string[]
+    editions: Array<{ name: string; status: string; description: string }>
+  }
+  about_company: {
+    developer_owner_label: string
+    smriti_systems: {
+      company_name: string
+      introduction: string
+      technology_profile: string
+      official_website?: string | null
+      registered_office?: string | null
+      leadership_note?: string | null
+      verification_status: string
+    }
+    aitdl: {
+      company_name: string
+      product_architect: string
+      introduction: string
+      official_website: string
+      product_website: string
+      support_phones: string[]
+      support_email: string
+      general_email: string
+      copyright_notice: string
+      product_portfolio: Array<{
+        name: string
+        tagline: string
+        website: string
+        description: string
+      }>
+    }
+    subscribing_institution: {
+      name: string
+      code?: string | null
+      identity_separation_notice: string
+    }
+  }
+  version_info: {
+    product_name: string
+    product_edition: string
+    version_number: string
+    build_number: string
+    release_date: string
+    release_channel: string
+    release_status: string
+    license_status: string
+    license_validity?: string | null
+    license_verification_status: string
+    deployment_type: string
+    available_modules_count: number
+    available_modules: HelpModuleSummary[]
+    latest_update: {
+      version: string
+      title: string
+      published_at: string
+      notes_markdown: string
+    }
+  }
+}
+
+export interface HelpSystemInfoResponse {
+  checked_at: string
+  application_health: {
+    status: string
+    api_service: string
+    security_governance: string
+  }
+  database_connectivity: {
+    status: string
+    engine: string
+    latency_ms?: number | null
+  }
+  module_availability: Array<{
+    module_key: string
+    name: string
+    status: string
+    guide_slug: string
+  }>
+  integration_status: Array<{
+    name: string
+    provider: string
+    status: string
+  }>
+  last_successful_backup: {
+    status: string
+    last_backup_at?: string | null
+    verified: boolean
+    total_snapshots: number
+    frequency: string
+  }
+  latest_update_information: {
+    version: string
+    title: string
+    published_at: string
+    notes_markdown: string
+  }
+  deployment_information: {
+    product_name: string
+    edition: string
+    version: string
+    build_number: string
+    release_channel: string
+    deployment_type: string
+  }
+}
+
+export type SupportRequestType = 'support_request' | 'bug_report' | 'feature_request' | 'feedback'
+export type SupportRequestStatus = 'open' | 'in_progress' | 'waiting_on_customer' | 'resolved' | 'closed'
+
+export interface SupportRequestComment {
+  id: number
+  request_id: number
+  author_id?: number | null
+  author_name: string
+  author_role: string
+  message: string
+  is_internal_note: boolean
+  created_at?: string | null
+}
+
+export interface SupportRequestItem {
+  id: number
+  ticket_number: string
+  institution_id: number
+  user_id: number
+  requester_name?: string | null
+  requester_role?: string | null
+  request_type: SupportRequestType
+  category: string
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  subject: string
+  description: string
+  module_key?: string | null
+  page_route?: string | null
+  error_reference_id?: string | null
+  contact_email?: string | null
+  contact_phone?: string | null
+  status: SupportRequestStatus
+  resolution_notes?: string | null
+  assigned_to_id?: number | null
+  assigned_to_name?: string | null
+  resolved_at?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  comments: SupportRequestComment[]
+}
+
 
 
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -65,6 +65,9 @@ import type {
   HousekeepingStorageTelemetry, HousekeepingCleanOrphansResponse,
   HousekeepingLogCleanupPreview, HousekeepingLogCleanupExecuteResponse,
   HousekeepingAlertsSummary, HousekeepingAlertNotifyResponse,
+  HelpCategory, HelpArticleSummary, HelpArticleDetail, HelpArticleRevision,
+  HelpSearchResponse, ContextualHelpResolution, HelpProductAndVersionResponse,
+  HelpSystemInfoResponse, SupportRequestItem,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -2330,6 +2333,138 @@ export const reportIntelligenceApi = {
   updateThresholds: (payload: Record<string, number>) =>
     apiClient.put<{ message: string; thresholds: Record<string, number> }>('/reports/intelligence/thresholds', payload),
 }
+
+// ─── Help & About Centre API ──────────────────────────────────────────────────
+
+export const helpApi = {
+  getCategories: (includeInactive = false) =>
+    apiClient.get<{ items: HelpCategory[] }>('/help/categories', {
+      params: includeInactive ? { include_inactive: true } : undefined,
+    }),
+
+  upsertCategory: (payload: {
+    slug: string
+    name: string
+    section: string
+    description?: string | null
+    icon?: string | null
+    sort_order?: number
+    is_active?: boolean
+  }) => apiClient.post<HelpCategory>('/help/categories', payload),
+
+  getArticles: (params?: {
+    section?: string
+    category_slug?: string
+    module_key?: string
+    include_unpublished?: boolean
+  }) => apiClient.get<{ items: HelpArticleSummary[]; total: number }>('/help/articles', { params }),
+
+  getArticle: (slug: string, includeUnpublished = false) =>
+    apiClient.get<HelpArticleDetail>(`/help/articles/${encodeURIComponent(slug)}`, {
+      params: includeUnpublished ? { include_unpublished: true } : undefined,
+    }),
+
+  createArticle: (payload: {
+    slug: string
+    category_id?: number | null
+    category_slug?: string | null
+    section: string
+    module_key?: string | null
+    title: string
+    summary?: string | null
+    content_markdown: string
+    tags?: string[]
+    required_permissions?: string[]
+    related_routes?: string[]
+    related_slugs?: string[]
+    doc_version?: string
+    status?: string
+    approval_status?: string
+    sort_order?: number
+    change_note?: string
+  }) => apiClient.post<HelpArticleDetail>('/help/articles', payload),
+
+  updateArticle: (
+    articleId: number,
+    payload: Partial<{
+      category_id: number | null
+      category_slug: string | null
+      module_key: string | null
+      title: string
+      summary: string | null
+      content_markdown: string
+      tags: string[]
+      required_permissions: string[]
+      related_routes: string[]
+      related_slugs: string[]
+      doc_version: string
+      status: string
+      approval_status: string
+      sort_order: number
+      change_note: string
+    }>,
+  ) => apiClient.put<HelpArticleDetail>(`/help/articles/${articleId}`, payload),
+
+  publishArticle: (articleId: number, publish: boolean, approve?: boolean) =>
+    apiClient.patch<HelpArticleDetail>(`/help/articles/${articleId}/publish`, {
+      publish,
+      ...(approve !== undefined ? { approve } : {}),
+    }),
+
+  getRevisions: (articleId: number) =>
+    apiClient.get<{ items: HelpArticleRevision[] }>(`/help/articles/${articleId}/revisions`),
+
+  search: (
+    q: string,
+    params?: { section?: string; category_slug?: string; include_unpublished?: boolean },
+  ) => apiClient.get<HelpSearchResponse>('/help/search', { params: { q, ...params } }),
+
+  contextual: (params: { route?: string; module_key?: string }) =>
+    apiClient.get<ContextualHelpResolution>('/help/contextual', { params }),
+
+  getProductInfo: () => apiClient.get<HelpProductAndVersionResponse>('/help/product-info'),
+
+  updateProductInfo: (payload: Record<string, string | null | undefined>) =>
+    apiClient.put<HelpProductAndVersionResponse>('/help/product-info', payload),
+
+  getSystemInfo: () => apiClient.get<HelpSystemInfoResponse>('/help/system-info'),
+
+  getSupportRequests: (params?: { status?: string; request_type?: string }) =>
+    apiClient.get<{ items: SupportRequestItem[]; total: number }>('/help/support-requests', { params }),
+
+  createSupportRequest: (payload: {
+    request_type: string
+    category: string
+    priority: string
+    subject: string
+    description: string
+    module_key?: string | null
+    page_route?: string | null
+    error_reference_id?: string | null
+    contact_email?: string | null
+    contact_phone?: string | null
+  }) => apiClient.post<SupportRequestItem>('/help/support-requests', payload),
+
+  getSupportRequest: (requestId: number) =>
+    apiClient.get<SupportRequestItem>(`/help/support-requests/${requestId}`),
+
+  addSupportComment: (requestId: number, message: string, isInternalNote = false) =>
+    apiClient.post<SupportRequestItem>(`/help/support-requests/${requestId}/comments`, {
+      message,
+      is_internal_note: isInternalNote,
+    }),
+
+  updateSupportStatus: (
+    requestId: number,
+    payload: {
+      status?: string
+      resolution_notes?: string
+      assigned_to_id?: number | null
+      priority?: string
+    },
+  ) => apiClient.patch<SupportRequestItem>(`/help/support-requests/${requestId}/status`, payload),
+}
+
 
 
 

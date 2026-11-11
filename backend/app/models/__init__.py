@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -69,6 +69,10 @@ from app.models.navigation import (
 )
 from app.models.homework import (
     HomeworkAssignment, StudentHomeworkRecord, HomeworkAuditLog
+)
+from app.models.help import (
+    HelpCategory, HelpArticle, HelpArticleRevision,
+    SupportRequest, SupportRequestComment
 )
 
 
@@ -151,6 +155,11 @@ __all__ = [
     "HomeworkAssignment",
     "StudentHomeworkRecord",
     "HomeworkAuditLog",
+    "HelpCategory",
+    "HelpArticle",
+    "HelpArticleRevision",
+    "SupportRequest",
+    "SupportRequestComment",
 ]
 
 

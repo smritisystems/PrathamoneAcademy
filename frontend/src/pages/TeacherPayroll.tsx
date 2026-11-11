@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Complete Teacher Payroll & Payment Management workspace:
  */
@@ -29,7 +29,7 @@ import {
 import { teacherPayrollApi, divisionsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import { PrintFooter, useUniversalPrint } from '../components/printing'
 import { PrintDocumentHeader } from '../components/PrintDocumentBranding'
@@ -372,6 +372,7 @@ export default function TeacherPayroll() {
 
         {/* Global Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
+          <ContextualHelpButton moduleKey="staff" variant="pill" label="Payroll Help" />
           <LockedButton
             isEditMode={isEditMode}
             onClick={() => setShowCalculateModal(true)}

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Dedicated multi-workspace hub for Students & Admissions Centre comprising Overview, Master Register, KYC Admissions, Batch Allocations, ID Cards, Activity History, Reactivation, and Admission Policies.
  */
@@ -55,7 +55,7 @@ import { studentsApi, standardsApi, divisionsApi, enrollmentsApi, settingsApi } 
 import { useAuthStore, isUserAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import Pagination from '../components/Pagination'
 import StudentExitModal from '../components/StudentExitModal'
@@ -521,6 +521,7 @@ function StudentsContent() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-shrink-0">
+          <ContextualHelpButton moduleKey="students" variant="pill" label="Students Help" />
           {currentMeta.isLocked ? (
             <button
               type="button"

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Centralized Communication Center workspace comprising 8 dedicated submenus, multichannel broadcasts, WhatsApp direct launcher, template authoring, delivery tracking, gateway diagnostics, and Rule 010 View-First governance.
  */
@@ -34,7 +34,7 @@ import type {
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
 import { useBranding } from '../config/branding'
 
 export type CommunicationTab =
@@ -605,27 +605,30 @@ function CommunicationContent() {
             </div>
           </div>
 
-          {/* Submenu Tabs Navigation */}
-          <div className="flex items-center gap-1 overflow-x-auto bg-slate-100 p-1 rounded-xl scrollbar-none">
-            {COMMUNICATION_TABS.map((tab) => {
-              const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleTabChange(tab.id, tab.route)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                    isActive
-                      ? 'bg-white text-violet-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-violet-600' : 'text-slate-500'}`} />
-                  <span>{tab.label}</span>
-                </button>
-              )
-            })}
+          {/* Submenu Tabs Navigation & Contextual Help */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ContextualHelpButton moduleKey="communication" variant="pill" label="Communication Help" />
+            <div className="flex items-center gap-1 overflow-x-auto bg-slate-100 p-1 rounded-xl scrollbar-none">
+              {COMMUNICATION_TABS.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => handleTabChange(tab.id, tab.route)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                      isActive
+                        ? 'bg-white text-violet-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-violet-600' : 'text-slate-500'}`} />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>

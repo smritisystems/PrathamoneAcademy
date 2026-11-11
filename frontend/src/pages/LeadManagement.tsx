@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Complete Lead Management & CRM workspace featuring KPI metrics, Kanban pipeline,
  */
@@ -37,7 +37,7 @@ import type {
 } from '../types'
 import { useAuthStore, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import { Printer } from 'lucide-react'
@@ -367,6 +367,7 @@ export default function LeadManagement() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <ContextualHelpButton moduleKey="admissions" variant="pill" label="Admissions Help" />
           <LockedButton
             isEditMode={isEditMode}
             onClick={() => setIsNewLeadModalOpen(true)}

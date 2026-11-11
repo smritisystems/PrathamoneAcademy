@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -61,6 +61,7 @@ const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
 const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), 'Communication')
 const ReleasesPage = lazyWithRetry(() => import('./pages/Releases'), 'Releases')
 const CodeXStudioPage = lazyWithRetry(() => import('./pages/CodeXStudio'), 'CodeXStudio')
+const HelpCentrePage = lazyWithRetry(() => import('./pages/HelpCentre'), 'HelpCentre')
 const LeadManagementPage = lazyWithRetry(() => import('./pages/LeadManagement'), 'LeadManagement')
 const CrmOverviewPage = lazyWithRetry(() => import('./pages/crm/CrmOverviewPage'), 'CrmOverviewPage')
 const LeadRegisterPage = lazyWithRetry(() => import('./pages/crm/LeadRegisterPage'), 'LeadRegisterPage')
@@ -336,6 +337,21 @@ export default function App() {
           <Route path="admin/releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
           <Route path="training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />
           <Route path="admin/training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />
+
+          {/* Help & About Centre Workspaces */}
+          <Route path="help" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/article/:slug" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/support" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/about-product" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/about-company" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/version" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/legal" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/legal/:slug" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/system-info" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="help/governance" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="about" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+          <Route path="support" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />
+
           {/* 404 within authenticated shell */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

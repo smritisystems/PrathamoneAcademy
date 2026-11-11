@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description Central v1 API router registering all domain endpoint routers.
 #  */
@@ -55,6 +55,7 @@ from app.api.v1.endpoints import (
     homework,
     report_intelligence,
     housekeeping,
+    help as help_endpoint,
 )
 
 api_router = APIRouter()
@@ -117,4 +118,5 @@ api_router.include_router(navigation.router, prefix="/navigation", tags=["naviga
 api_router.include_router(governance.router, prefix="/governance", tags=["governance"])
 api_router.include_router(homework.router, prefix="/homework", tags=["homework"])
 api_router.include_router(housekeeping.router, prefix="/housekeeping", tags=["housekeeping"])
+api_router.include_router(help_endpoint.router, prefix="/help", tags=["help"])
 

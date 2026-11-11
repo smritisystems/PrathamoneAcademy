@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -40,6 +40,7 @@ import {
   Settings,
   Terminal,
   HardDrive,
+  HelpCircle,
   LucideIcon,
 } from 'lucide-react'
 import type { User, NavigationModule, NavigationSubItem } from '../types'
@@ -394,6 +395,27 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
     subItems: [],
   },
   {
+    id: 'help',
+    label: 'Help & About Centre',
+    category: 'admin',
+    defaultPath: '/help',
+    icon: HelpCircle,
+    iconName: 'HelpCircle',
+    description: 'Customer User Guides, Tutorials, FAQs, Support Centre, Product & Company Information, and Legal Compliance.',
+    subItems: [
+      { id: 'help_getting_started', label: 'Getting Started', to: '/help?section=getting_started' },
+      { id: 'help_guides', label: 'Module Guides', to: '/help?section=module_guide' },
+      { id: 'help_tutorials', label: 'Tutorials & Workflows', to: '/help?section=tutorial' },
+      { id: 'help_faq', label: 'FAQ & Troubleshooting', to: '/help?section=faq' },
+      { id: 'help_support', label: 'Support Centre', to: '/help/support' },
+      { id: 'help_about_product', label: 'About PrathamOne EduOS', to: '/help/about-product' },
+      { id: 'help_about_company', label: 'About SMRITI Systems', to: '/help/about-company' },
+      { id: 'help_version', label: 'Product & Version Info', to: '/help/version' },
+      { id: 'help_legal', label: 'Legal & Compliance', to: '/help/legal' },
+      { id: 'help_system_info', label: 'System Information', to: '/help/system-info' },
+    ],
+  },
+  {
     id: 'sysadmin',
     label: 'SysAdmin Center',
     category: 'admin',
@@ -407,6 +429,7 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
 ]
 
 export const ICON_MAP: Record<string, LucideIcon> = {
+  HelpCircle,
   LayoutDashboard,
   GraduationCap,
   UserPlus,

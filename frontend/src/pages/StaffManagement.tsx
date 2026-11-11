@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Dedicated multi-workspace hub for Staff & HR Directory comprising HR Analytics, Staff Register, Onboarding, Roles & Duties, Daily Attendance, Leave Requests, HR Documents Studio, and HR Policies.
  */
@@ -52,7 +52,7 @@ import { staffApi, settingsApi } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton } from '../components/common'
+import { EditModeBar, LockedButton, ContextualHelpButton } from '../components/common'
 import StaffProfileModal from '../components/StaffProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
 import toast from 'react-hot-toast'
@@ -460,6 +460,7 @@ function StaffManagementContent() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-shrink-0">
+          <ContextualHelpButton moduleKey="staff" variant="pill" label="Staff Help" />
           {currentMeta.isLocked ? (
             <button
               type="button"

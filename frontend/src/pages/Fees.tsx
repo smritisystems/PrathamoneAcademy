@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -43,7 +43,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ConcessionTraceModal } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ConcessionTraceModal, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import PaymentReceiptView from '../components/PaymentReceiptView'
@@ -2646,7 +2646,12 @@ function FeesContent() {
           </div>
 
           {/* Quick Header Search & Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <ContextualHelpButton
+              moduleKey={activeTab === 'concessions' ? 'concessions' : 'fees'}
+              variant="pill"
+              label={activeTab === 'concessions' ? 'Concessions Help' : 'Fees Help'}
+            />
             {/* Primary Contextual Action Button */}
             {currentMeta.actionLabel && currentMeta.onAction && (
               <div>

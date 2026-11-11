@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Examinations flagship workspace featuring 7 dedicated submenus: overview, schedules, marks entry, analytics, report cards, question papers, and settings.
  */
@@ -32,7 +32,7 @@ import { standardsApi, academicYearsApi, examinationsApi, settingsApi } from '..
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import ReportCardModal from '../components/ReportCardModal'
@@ -456,30 +456,37 @@ function ExaminationsContent() {
           </div>
 
           {/* Primary Action Button with View-First Lock */}
-          {currentMeta.actionLabel && currentMeta.onAction && (
-            <div className="flex items-center gap-2">
-              {currentMeta.requiresEditMode && !isEditMode ? (
-                <button
-                  type="button"
-                  onClick={() => toast.error(`Locked in View Mode: Please enable Edit Mode above to ${(currentMeta.actionLabel || 'action').toLowerCase()}.`)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-2xs"
-                  title={`Locked in View Mode: Enable Edit Mode above to ${(currentMeta.actionLabel || 'action').toLowerCase()}`}
-                >
-                  <Lock className="w-4 h-4 text-slate-400" />
-                  <span>{currentMeta.actionLabel} (Locked)</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={currentMeta.onAction}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  {currentMeta.actionIcon && <currentMeta.actionIcon className="w-4 h-4" />}
-                  <span>{currentMeta.actionLabel}</span>
-                </button>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <ContextualHelpButton
+              moduleKey={activeTab === 'analytics' || activeTab === 'report-cards' ? 'results' : 'examinations'}
+              variant="pill"
+              label="Exams Help"
+            />
+            {currentMeta.actionLabel && currentMeta.onAction && (
+              <div className="flex items-center gap-2">
+                {currentMeta.requiresEditMode && !isEditMode ? (
+                  <button
+                    type="button"
+                    onClick={() => toast.error(`Locked in View Mode: Please enable Edit Mode above to ${(currentMeta.actionLabel || 'action').toLowerCase()}.`)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-2xs"
+                    title={`Locked in View Mode: Enable Edit Mode above to ${(currentMeta.actionLabel || 'action').toLowerCase()}`}
+                  >
+                    <Lock className="w-4 h-4 text-slate-400" />
+                    <span>{currentMeta.actionLabel} (Locked)</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={currentMeta.onAction}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {currentMeta.actionIcon && <currentMeta.actionIcon className="w-4 h-4" />}
+                    <span>{currentMeta.actionLabel}</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

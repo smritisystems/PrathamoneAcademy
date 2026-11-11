@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Premium user authentication page featuring abstract educational wave aesthetics, secure credential validation, and role redirection.
  */
@@ -21,7 +21,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { GraduationCap, Eye, EyeOff, Lock, User, ShieldCheck, Sparkles } from 'lucide-react'
+import { GraduationCap, Eye, EyeOff, Lock, User, ShieldCheck, Sparkles, HelpCircle } from 'lucide-react'
 import { authApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
@@ -54,6 +54,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [logoLoadFailed, setLogoLoadFailed] = useState(false)
+  const [showLoginHelp, setShowLoginHelp] = useState(false)
 
   const academyLogo = branding.assets.academyLogoUrl || branding.assets.logoUrl
   const hasValidLogo = !!academyLogo && academyLogo !== '/logo.svg' && !logoLoadFailed
@@ -478,6 +479,29 @@ export default function LoginPage() {
                   <span className="text-[11px] text-slate-500 font-mono">accountant / •••</span>
                 </button>
               </div>
+            </div>
+
+            {/* First-Time Login & Support Help */}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setShowLoginHelp(!showLoginHelp)}
+                className="w-full inline-flex items-center justify-center gap-1.5 text-xs font-medium text-slate-600 hover:text-indigo-700 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
+                <span>First-Time Login &amp; Support Help</span>
+              </button>
+              {showLoginHelp && (
+                <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700 space-y-1.5 text-left">
+                  <div className="font-bold text-slate-900">Signing In for the First Time</div>
+                  <p>
+                    Enter the assigned Username and temporary Password provided by your Institute Administrator. For password resets or inactive accounts, contact your Institute Admin.
+                  </p>
+                  <div className="pt-1 text-slate-600">
+                    <strong>Technical Support:</strong> 9323 023 007 | 9324 117 007 • support@prathamone.com
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Security / Attribution Footer */}

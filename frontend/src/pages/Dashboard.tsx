@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Executive management & financial analytics dashboard featuring 8 multi-tab workspaces: Overview, Fee Collection, Outstanding Analysis, Student Analysis, Admissions & CRM, Academic Analysis, Transactions & Reconciliation, and Operations.
  */
@@ -42,7 +42,7 @@ import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { encodeCodexNumber } from '../utils/codexFormatter'
 import QuickDecoderModal from '../components/codex/QuickDecoderModal'
-import { ConcessionTraceModal } from '../components/common'
+import { ConcessionTraceModal, ContextualHelpButton } from '../components/common'
 import type { OutstandingDrilldownRecord, DashboardAnalyticsData } from '../types'
 
 const fmt = (n: number | null | undefined) =>
@@ -403,6 +403,8 @@ export default function DashboardPage() {
               </button>
             </div>
           )}
+
+          <ContextualHelpButton moduleKey="dashboard" variant="pill" label="Dashboard Help" />
 
           <button
             type="button"

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description Domain service for user-defined menus, role-based navigation defaults, usage telemetry, and intelligent recommendations.
 #  */
@@ -353,6 +353,27 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
         ],
     },
     {
+        "id": "help",
+        "label": "Help & About Centre",
+        "category": "general",
+        "default_path": "/help",
+        "icon": "HelpCircle",
+        "required_permission": None,
+        "sysadmin_only": False,
+        "sub_items": [
+            {"id": "help_getting_started", "label": "Getting Started", "path": "/help?section=getting_started"},
+            {"id": "help_guides", "label": "Module Guides", "path": "/help?section=module_guide"},
+            {"id": "help_tutorials", "label": "Tutorials & Workflows", "path": "/help?section=tutorial"},
+            {"id": "help_faq", "label": "FAQ & Troubleshooting", "path": "/help?section=faq"},
+            {"id": "help_support", "label": "Support Centre", "path": "/help/support"},
+            {"id": "help_about_product", "label": "About PrathamOne EduOS", "path": "/help/about-product"},
+            {"id": "help_about_company", "label": "About SMRITI Systems", "path": "/help/about-company"},
+            {"id": "help_version", "label": "Product & Version Info", "path": "/help/version"},
+            {"id": "help_legal", "label": "Legal & Compliance", "path": "/help/legal"},
+            {"id": "help_system_info", "label": "System Information", "path": "/help/system-info"},
+        ],
+    },
+    {
         "id": "sysadmin",
         "label": "SysAdmin Center",
         "category": "admin",
@@ -368,30 +389,30 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
 ROLE_DEFAULT_MENUS: Dict[str, List[str]] = {
     "sysadmin": [
         "dashboard", "academic", "homework", "crm", "students", "fees", "attendance",
-        "examinations", "teachers", "staff", "reports", "users", "settings", "housekeeping", "sysadmin"
+        "examinations", "teachers", "staff", "reports", "users", "settings", "housekeeping", "help", "sysadmin"
     ],
     "admin": [
         "dashboard", "fees", "students", "crm", "academic", "homework", "teachers",
-        "attendance", "reports", "forms", "users", "settings", "housekeeping"
+        "attendance", "reports", "forms", "users", "settings", "housekeeping", "help"
     ],
     "principal": [
         "dashboard", "fees", "students", "teachers", "academic", "homework",
-        "attendance", "examinations", "reports", "settings"
+        "attendance", "examinations", "reports", "settings", "help"
     ],
     "accountant": [
         "dashboard", "fees", "fees_collection", "fees_invoicing",
-        "fees_defaulters", "fees_reports", "reports"
+        "fees_defaulters", "fees_reports", "reports", "help"
     ],
     "teacher": [
         "dashboard", "students", "homework", "attendance", "attendance_daily",
-        "examinations", "exam_marks", "courses", "reports"
+        "examinations", "exam_marks", "courses", "reports", "help"
     ],
     "counselor": [
         "dashboard", "crm", "crm_pipeline", "crm_followups",
-        "students", "students_admission", "reports"
+        "students", "students_admission", "reports", "help"
     ],
     "staff": [
-        "dashboard", "students", "attendance", "forms", "communication"
+        "dashboard", "students", "attendance", "forms", "communication", "help"
     ],
 }
 
@@ -418,22 +439,22 @@ class NavigationService:
         is_sys = cls.is_user_sysadmin(user)
         user_role = (user.role or "staff").lower()
         perms = getattr(user, "permissions", None) or []
-        
+
         authorized = []
         for mod in CANONICAL_MODULES:
             if mod["sysadmin_only"] and not is_sys:
                 continue
-            
+
             req_perm = mod["required_permission"]
             if req_perm and not is_sys and user_role not in ("admin", "principal"):
                 if req_perm not in perms and "*:*" not in perms:
                     continue
-            
+
             # Sub-items filtering
             sub_items = []
             for sub in mod.get("sub_items", []):
                 sub_items.append(sub)
-                
+
             mod_copy = dict(mod)
             mod_copy["sub_items"] = sub_items
             authorized.append(mod_copy)

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Dedicated Teachers & Faculty Management Centre with 8 first-class workspaces:
  */
@@ -70,7 +70,7 @@ import {
 import { useAuthStore, isUserAdmin, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import TeacherProfileModal from '../components/TeacherProfileModal'
 import StaffLifecycleModal from '../components/StaffLifecycleModal'
@@ -689,6 +689,7 @@ function TeacherManagementContent() {
 
           {/* Contextual Primary Action Button */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            <ContextualHelpButton moduleKey="staff" variant="pill" label="Faculty Help" />
             <select
               value={selectedAcademicYearId || ''}
               onChange={(e) => setSelectedAcademicYearId(e.target.value ? Number(e.target.value) : undefined)}

@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
@@ -29,7 +29,7 @@ import ShareModal from '../components/ShareModal'
 import { paymentsApi } from '../api/endpoints'
 import { useAuthStore, isUserSysAdmin, hasPermission, canUserEditPosted } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import { Lock } from 'lucide-react'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
@@ -610,7 +610,8 @@ export default function Payments() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ContextualHelpButton moduleKey="fees" variant="pill" label="Payments Help" />
           <Link to="/fees?tab=collect" className="btn-primary text-sm flex items-center gap-1.5 shadow-sm">
             <CreditCard className="w-4 h-4" />
             <span>Collect Fee</span>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -23,7 +23,7 @@ import {
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
   Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical,
-  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck, HardDrive
+  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck, HardDrive, HelpCircle
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin, isUserAdmin, hasPermission } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -190,6 +190,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/training', label: 'Training & Demo Lab', icon: FlaskConical },
   { to: '/housekeeping', label: 'Housekeeping', icon: HardDrive },
   { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/help', label: 'Help & About Centre', icon: HelpCircle },
 ]
 
 export default function Sidebar() {
@@ -706,6 +707,26 @@ const isStaffActive = location.pathname.startsWith('/staff')
                   Student Dashboard
                 </div>
               )}
+            </div>
+            {/* Help & About Centre Link for Students */}
+            <div className={`relative group ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to="/help"
+                aria-label="Help & About Centre"
+                style={({ isActive }) => (isActive ? { backgroundColor: branding.colors.primary } : undefined)}
+                className={({ isActive }) =>
+                  `flex items-center ${
+                    isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2.5'
+                  } rounded-xl text-sm font-medium transition-all ${
+                    isActive
+                      ? 'text-white shadow-sm'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`
+                }
+              >
+                <HelpCircle className="w-5 h-5 flex-shrink-0" />
+                {!isCollapsed && <span>Help &amp; About</span>}
+              </NavLink>
             </div>
             {/* SysAdmin Superuser Link (only for sysadmin / superadmin) */}
           {isUserSysAdmin(user) && (

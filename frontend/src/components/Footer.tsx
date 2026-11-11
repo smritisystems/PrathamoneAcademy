@@ -11,7 +11,7 @@
  *
  * @version     1.2.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and AITDL parent branding.
  */
@@ -84,6 +84,13 @@ export function resolvePageTitle(pathname: string, search: string): string {
     '/users': 'Users & Roles',
     '/releases': 'Releases & Changes',
     '/admin/releases': 'Releases & Changes',
+    '/help': 'Help & About Centre',
+    '/help/support': 'Support Centre',
+    '/help/about-product': 'About PrathamOne EduOS',
+    '/help/about-company': 'About SMRITI Systems',
+    '/help/version': 'Product & Version Information',
+    '/help/legal': 'Legal & Compliance',
+    '/help/system-info': 'System Information',
     '/login': 'Sign In',
   }
 
@@ -431,8 +438,38 @@ export default function Footer() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-4 sm:p-5 max-h-[80vh] overflow-y-auto">
+            <div className="p-4 sm:p-5 max-h-[80vh] overflow-y-auto space-y-4">
               <OrganizationBranding variant="card" />
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <Link
+                  to="/help/about-product"
+                  onClick={() => setShowAboutModal(false)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700"
+                >
+                  About PrathamOne EduOS
+                </Link>
+                <Link
+                  to="/help/about-company"
+                  onClick={() => setShowAboutModal(false)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700"
+                >
+                  About SMRITI Systems
+                </Link>
+                <Link
+                  to="/help/legal"
+                  onClick={() => setShowAboutModal(false)}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700"
+                >
+                  Legal &amp; Compliance
+                </Link>
+                <Link
+                  to="/help"
+                  onClick={() => setShowAboutModal(false)}
+                  className="px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-xs font-semibold text-white"
+                >
+                  Open Help &amp; About Centre
+                </Link>
+              </div>
             </div>
           </div>
         </div>
