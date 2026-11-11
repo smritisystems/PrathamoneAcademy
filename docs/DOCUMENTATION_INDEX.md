@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-11 12:54:14  
-**Total Indexed Items:** 406  
+**Last Reindexed:** 2026-11-11 14:18:31  
+**Total Indexed Items:** 407  
 
 ---
 
@@ -17,7 +17,7 @@
 | `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **8** | Product Overview & Vision |
 | `01` | [01_ARCHITECTURE](#01_architecture) | **6** | System Architecture & Workflows |
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **6** | Installation & Deployment |
-| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **16** | Academic Structure & Courses |
+| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **17** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **20** | Student Directory & Admissions |
 | `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **7** | Teacher & Faculty Directory |
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
@@ -97,6 +97,7 @@
 | **Homework & Assignment Management System Implementation Report** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL |
 | **Homework & Assignment Management System — Software Audit & Architectural Blueprint** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION |
 | **Independent End-to-End Acceptance Audit Report: Academic Structure & Batch Management** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md) | - |
+| **Smart Subject Selection Modal — Search-First UX with Canonical Autocomplete & Duplicate Recommendations** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md) | 03_ACADEMIC_MANAGEMENT, 16_DATABASE_API, 17_UI_UX_DESIGN |
 | **Standards & Divisions Developer Manual** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-DEVELOPER-MANUAL_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-DEVELOPER-MANUAL_V1.md) | - |
 | **Standards & Divisions User Manual** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-USER-MANUAL_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-USER-MANUAL_V1.md) | - |
 | **Standards, Classes & Boards Changelog** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-CHANGELOG_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-CHANGELOG_V1.md) | - |

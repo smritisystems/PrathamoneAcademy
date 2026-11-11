@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Comprehensive test suite validating Canonical Subject Master architecture, dual view modes, live duplicate prevention, and View-First Edit Mode governance.
  */
@@ -216,21 +216,21 @@ describe('Canonical Subject Master & Applicability Mappings Suite', () => {
 
     renderComponent()
 
-    // Open Modal
+    // Open Modal (starts at Step 1 · Search)
     const addBtn = screen.getByText(/Add \/ Map Subject/i)
     fireEvent.click(addBtn)
 
-    // Switch to Register New Master Subject
-    const registerTab = screen.getByText(/Register New Master Subject/i)
-    fireEvent.click(registerTab)
+    // Switch to Step 3 · Register New Master Subject
+    const registerBtn = screen.getByText(/Subject not listed\? Register new/i)
+    fireEvent.click(registerBtn)
 
     // Type 'Mathematics'
     const nameInput = screen.getByPlaceholderText(/e\.g\. Mathematics, Sanskrit/i)
     fireEvent.change(nameInput, { target: { value: 'Mathematics' } })
 
     await waitFor(() => {
-      expect(screen.getByText(/Duplicate Subject Warning:/i)).toBeDefined()
-      expect(screen.getByText(/Reuse 'Mathematics' \(MATH001\) Instead/i)).toBeDefined()
+      expect(screen.getByText(/Duplicate Warning:/i)).toBeDefined()
+      expect(screen.getByText(/Use 'Mathematics' \(MATH001\) instead/i)).toBeDefined()
     })
   })
 

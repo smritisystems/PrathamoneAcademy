@@ -90,8 +90,12 @@ class SubjectCreate(BaseModel):
     name: str
     code: Optional[str] = None
     max_marks: int = 100
-    pass_marks: int = 35
-    is_optional: bool = False
+    pass_marks: Optional[int] = None
+    passing_marks: Optional[int] = None
+    is_optional: Optional[bool] = None
+    is_core: Optional[bool] = None
+    category: Optional[str] = "General"
+    aliases: Optional[str] = None
 
 
 class SubjectUpdate(BaseModel):
@@ -100,7 +104,9 @@ class SubjectUpdate(BaseModel):
     standard_id: Optional[int] = None
     max_marks: Optional[int] = None
     pass_marks: Optional[int] = None
+    passing_marks: Optional[int] = None
     is_optional: Optional[bool] = None
+    is_core: Optional[bool] = None
     is_active: Optional[bool] = None
 
 
@@ -964,6 +970,7 @@ async def resolve_subject(
 async def list_subjects(
     standard_id: Optional[int] = Query(None),
     search: Optional[str] = Query(None),
+    institution_id: Optional[int] = Query(None),
     raw: bool = Query(False, description="Return raw unconsolidated standard-specific records if true"),
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
@@ -982,6 +989,8 @@ async def list_subjects(
         )
         if standard_id:
             query = query.where(Subject.standard_id == standard_id)
+        if institution_id is not None:
+            query = query.where(Standard.institution_id == institution_id)
         if search and search.strip():
             s = f"%{search.strip()}%"
             query = (
@@ -1010,13 +1019,20 @@ async def list_subjects(
                 "canonical_subject_id": sub.canonical_subject_id,
                 "max_marks": sub.max_marks,
                 "pass_marks": sub.pass_marks,
+                "passing_marks": sub.pass_marks,
                 "is_optional": sub.is_optional,
+                "is_core": not sub.is_optional,
                 "is_active": sub.is_active,
             }
             for sub, std_name in rows
         ]
 
     # Consolidated Canonical View for general dropdowns when standard_id is omitted
+    effective_inst_id = (
+        institution_id
+        if institution_id is not None
+        else getattr(current_user, "institution_id", None)
+    )
     query = (
         select(CanonicalSubject)
         .options(
@@ -1026,6 +1042,8 @@ async def list_subjects(
         )
         .where(CanonicalSubject.is_active == True)
     )
+    if effective_inst_id is not None:
+        query = query.where(CanonicalSubject.institution_id == effective_inst_id)
     if search and search.strip():
         s = f"%{search.strip()}%"
         # Search canonical fields and legacy mappings
@@ -1050,34 +1068,64 @@ async def list_subjects(
             )
         )
 
-    result = await db.execute(query.order_by(CanonicalSubject.name))
+    result = await db.execute(query.order_by(CanonicalSubject.name, CanonicalSubject.id))
     canonical_list = result.scalars().all()
 
-    output = []
-    for cs in canonical_list:
-        active_maps = [m for m in cs.mappings if m.is_active]
-        standards_names = sorted(list({m.standard.name for m in active_maps if m.standard}))
-        
-        # Select authoritative primary legacy subject id
-        primary_legacy_id = cs.legacy_subjects[0].id if cs.legacy_subjects else cs.id
+    def _split_csv(val: Optional[str]) -> list[str]:
+        if not val:
+            return []
+        return [part.strip() for part in val.split(",") if part.strip()]
 
-        output.append({
-            "id": primary_legacy_id,
-            "name": cs.name,
-            "code": cs.code,
-            "category": cs.category,
-            "standard_id": None,
-            "standard_name": ", ".join(standards_names) if standards_names else "All Standards",
-            "canonical_subject_id": cs.id,
-            "alternate_codes": cs.alternate_codes,
-            "aliases": cs.aliases,
-            "standards_count": len(standards_names),
-            "standards_summary": standards_names,
-            "max_marks": 100,
-            "pass_marks": 35,
-            "is_optional": False,
-            "is_active": cs.is_active,
-        })
+    consolidated: dict[str, dict] = {}
+    for cs in canonical_list:
+        norm_name = cs.name.strip().lower()
+        active_maps = [m for m in cs.mappings if m.is_active]
+        standards_names = sorted({m.standard.name for m in active_maps if m.standard})
+        primary_legacy_id = cs.legacy_subjects[0].id if cs.legacy_subjects else cs.id
+        alt_codes = _split_csv(cs.alternate_codes)
+        alias_list = _split_csv(cs.aliases)
+
+        if norm_name not in consolidated:
+            consolidated[norm_name] = {
+                "id": primary_legacy_id,
+                "name": cs.name,
+                "code": cs.code,
+                "category": cs.category,
+                "standard_id": None,
+                "standard_name": ", ".join(standards_names) if standards_names else "All Standards",
+                "canonical_subject_id": cs.id,
+                "alternate_codes": ", ".join(alt_codes) if alt_codes else None,
+                "aliases": ", ".join(alias_list) if alias_list else None,
+                "standards_count": len(standards_names),
+                "standards_summary": standards_names,
+                "max_marks": 100,
+                "pass_marks": 35,
+                "passing_marks": 35,
+                "is_optional": False,
+                "is_core": True,
+                "is_active": cs.is_active,
+                "_has_legacy": bool(cs.legacy_mappings or alt_codes),
+            }
+        else:
+            existing_entry = consolidated[norm_name]
+            merged_stds = sorted(set(existing_entry["standards_summary"]) | set(standards_names))
+            merged_alts = list(dict.fromkeys(_split_csv(existing_entry["alternate_codes"]) + alt_codes))
+            merged_aliases = list(dict.fromkeys(_split_csv(existing_entry["aliases"]) + alias_list))
+            existing_entry["standards_summary"] = merged_stds
+            existing_entry["standards_count"] = len(merged_stds)
+            existing_entry["standard_name"] = ", ".join(merged_stds) if merged_stds else "All Standards"
+            existing_entry["alternate_codes"] = ", ".join(merged_alts) if merged_alts else None
+            existing_entry["aliases"] = ", ".join(merged_aliases) if merged_aliases else None
+            if (cs.legacy_mappings or alt_codes) and not existing_entry["_has_legacy"]:
+                existing_entry["id"] = primary_legacy_id
+                existing_entry["canonical_subject_id"] = cs.id
+                existing_entry["code"] = cs.code
+                existing_entry["_has_legacy"] = True
+
+    output = []
+    for entry in consolidated.values():
+        entry.pop("_has_legacy", None)
+        output.append(entry)
     return output
 
 
@@ -1145,11 +1193,23 @@ async def create_subject(
             institution_id=inst_id,
             name=clean_name,
             code=canon_code,
-            category="General",
+            category=(data.category or "General").strip(),
+            aliases=data.aliases.strip() if data.aliases else None,
             is_active=True,
         )
         db.add(canon)
         await db.flush()
+
+    effective_pass_marks = (
+        data.passing_marks
+        if data.passing_marks is not None
+        else (data.pass_marks if data.pass_marks is not None else 35)
+    )
+    effective_is_optional = (
+        (not data.is_core)
+        if data.is_core is not None
+        else (data.is_optional if data.is_optional is not None else False)
+    )
 
     subject = Subject(
         standard_id=data.standard_id,
@@ -1157,8 +1217,8 @@ async def create_subject(
         name=data.name,
         code=data.code,
         max_marks=data.max_marks,
-        pass_marks=data.pass_marks,
-        is_optional=data.is_optional,
+        pass_marks=effective_pass_marks,
+        is_optional=effective_is_optional,
         is_active=True,
     )
     db.add(subject)
@@ -1182,8 +1242,8 @@ async def create_subject(
             curriculum_code=data.code,
             display_name=data.name,
             max_marks=data.max_marks,
-            pass_marks=data.pass_marks,
-            is_optional=data.is_optional,
+            pass_marks=effective_pass_marks,
+            is_optional=effective_is_optional,
             legacy_subject_id=subject.id,
             is_active=True,
         )
@@ -1225,7 +1285,9 @@ async def get_subject(
         "canonical_subject_id": sub.canonical_subject_id,
         "max_marks": sub.max_marks,
         "pass_marks": sub.pass_marks,
+        "passing_marks": sub.pass_marks,
         "is_optional": sub.is_optional,
+        "is_core": not sub.is_optional,
         "is_active": sub.is_active,
     }
 
@@ -1243,7 +1305,14 @@ async def update_subject(
         raise HTTPException(status_code=404, detail="Subject not found")
 
     update_dict = data.model_dump(exclude_unset=True)
+    if "passing_marks" in update_dict and update_dict["passing_marks"] is not None:
+        update_dict.setdefault("pass_marks", update_dict["passing_marks"])
+    if "is_core" in update_dict and update_dict["is_core"] is not None:
+        update_dict.setdefault("is_optional", not update_dict["is_core"])
+
     for k, v in update_dict.items():
+        if k in ("passing_marks", "is_core"):
+            continue
         if hasattr(subject, k) and v is not None:
             setattr(subject, k, v)
 
@@ -1259,10 +1328,10 @@ async def update_subject(
             sm.curriculum_code = data.code
         if data.max_marks is not None:
             sm.max_marks = data.max_marks
-        if data.pass_marks is not None:
-            sm.pass_marks = data.pass_marks
-        if data.is_optional is not None:
-            sm.is_optional = data.is_optional
+        if "pass_marks" in update_dict and update_dict["pass_marks"] is not None:
+            sm.pass_marks = update_dict["pass_marks"]
+        if "is_optional" in update_dict and update_dict["is_optional"] is not None:
+            sm.is_optional = update_dict["is_optional"]
         if data.is_active is not None:
             sm.is_active = data.is_active
 

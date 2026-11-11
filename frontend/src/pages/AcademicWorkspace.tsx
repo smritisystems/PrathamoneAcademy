@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -26,7 +26,8 @@ import {
   AlertTriangle, CheckCircle2, UserCheck, BarChart2, Settings as SettingsIcon,
   CalendarDays, ArrowUpRight, School, X, ShieldAlert, Sparkles,
   ExternalLink, User, Download, RefreshCw, ArrowRightLeft, UserPlus,
-  Filter, Check, ShieldCheck, AlertCircle, Trash2, Power, Sliders, Lock
+  Filter, Check, ShieldCheck, AlertCircle, Trash2, Power, Sliders, Lock,
+  ArrowRight, Link as LinkIcon
 } from 'lucide-react'
 import {
   standardsApi, divisionsApi, boardsApi, academicYearsApi, usersApi,
@@ -42,7 +43,8 @@ import toast from 'react-hot-toast'
 import type {
   Division, Board, Standard, BatchRosterStudent, AcademicTreeBoard,
   AcademicSubject, AcademicTimetableEntry, EnrollmentRecord,
-  BatchCapacityReportRow, AcademicDistributionReportRow, FacultyLoadReportRow
+  BatchCapacityReportRow, AcademicDistributionReportRow, FacultyLoadReportRow,
+  CanonicalSubject, SubjectDuplicateCheckResult
 } from '../types'
 
 export default function AcademicWorkspace() {
@@ -156,6 +158,13 @@ export default function AcademicWorkspace() {
     passing_marks: 35,
     is_core: true,
   })
+  const [subjectModalMode, setSubjectModalMode] = useState<'select' | 'create'>('select')
+  const [canonicalSearchQuery, setCanonicalSearchQuery] = useState('')
+  const [selectedCanonicalSubject, setSelectedCanonicalSubject] = useState<CanonicalSubject | null>(null)
+  const [newSubjectCategory, setNewSubjectCategory] = useState('General')
+  const [newSubjectAliases, setNewSubjectAliases] = useState('')
+  const [subjectDupCheck, setSubjectDupCheck] = useState<SubjectDuplicateCheckResult | null>(null)
+  const [isCheckingSubjectDup, setIsCheckingSubjectDup] = useState(false)
 
   // Timetable Modals
   const [showAddSessionModal, setShowAddSessionModal] = useState(false)
@@ -330,6 +339,79 @@ export default function AcademicWorkspace() {
         })
         .then((r) => r.data),
   })
+
+  // Canonical catalog lookup for "Select Existing Subject" when Add Subject modal is open
+  const { data: canonicalCatalog = [], isFetching: isLoadingCanonicalCatalog } = useQuery({
+    queryKey: ['canonical-subjects-picker'],
+    queryFn: () => subjectsApi.listCanonical().then((r) => r.data),
+    enabled: showAddSubjectModal && !showEditSubjectModal,
+    staleTime: 10000,
+  })
+
+  // Filtered canonical subjects + token-based recommendations when no exact substring matches
+  const { filteredCanonicalCatalog, recommendedCanonicalCatalog } = useMemo(() => {
+    const q = canonicalSearchQuery.trim().toLowerCase()
+    if (!q) {
+      return { filteredCanonicalCatalog: canonicalCatalog, recommendedCanonicalCatalog: [] as CanonicalSubject[] }
+    }
+    const exactOrSub = canonicalCatalog.filter((cs) => {
+      const hay = [cs.name, cs.code, cs.category, cs.aliases || '', cs.alternate_codes || ''].join(' ').toLowerCase()
+      return hay.includes(q)
+    })
+    if (exactOrSub.length > 0) {
+      return { filteredCanonicalCatalog: exactOrSub, recommendedCanonicalCatalog: [] as CanonicalSubject[] }
+    }
+    // Partial/prefix token recommendation when exact search finds nothing
+    const tokens = q.split(/\s+/).filter((t) => t.length >= 2)
+    const prefix = q.slice(0, 3)
+    const recs = canonicalCatalog.filter((cs) => {
+      const hay = [cs.name, cs.code, cs.aliases || '', cs.alternate_codes || ''].join(' ').toLowerCase()
+      return (prefix.length >= 2 && hay.includes(prefix)) || tokens.some((t) => hay.includes(t))
+    })
+    return { filteredCanonicalCatalog: [], recommendedCanonicalCatalog: recs.slice(0, 5) }
+  }, [canonicalCatalog, canonicalSearchQuery])
+
+  // Live duplicate / existing-subject recommendation check in Create New Subject mode
+  useEffect(() => {
+    if (!showAddSubjectModal || showEditSubjectModal || subjectModalMode !== 'create') {
+      setSubjectDupCheck(null)
+      return
+    }
+    const q = subjectForm.name.trim()
+    if (q.length < 2) {
+      setSubjectDupCheck(null)
+      return
+    }
+    const timer = setTimeout(async () => {
+      setIsCheckingSubjectDup(true)
+      try {
+        const res = await subjectsApi.checkDuplicate(q)
+        setSubjectDupCheck(res.data)
+      } catch {
+        // Fallback local check against loaded canonicalCatalog
+        const low = q.toLowerCase()
+        const exact = canonicalCatalog.find((c) => c.name.trim().toLowerCase() === low)
+        const similar = canonicalCatalog.filter((c) =>
+          c.id !== exact?.id && [c.name, c.code, c.aliases || ''].join(' ').toLowerCase().includes(low)
+        )
+        if (exact || similar.length > 0) {
+          setSubjectDupCheck({
+            has_exact_match: Boolean(exact),
+            exact_match: exact ?? null,
+            similar_matches: similar,
+            message: exact
+              ? `Existing subject '${exact.name}' (${exact.code}) matches '${q}'.`
+              : `Found ${similar.length} similar existing subject(s).`,
+          })
+        } else {
+          setSubjectDupCheck(null)
+        }
+      } finally {
+        setIsCheckingSubjectDup(false)
+      }
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [subjectForm.name, subjectModalMode, showAddSubjectModal, showEditSubjectModal, canonicalCatalog])
 
   // 7. Timetable Query
   const { data: timetableEntries = [], isLoading: isTimetableLoading } = useQuery({
@@ -955,16 +1037,60 @@ export default function AcademicWorkspace() {
     onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to update class'),
   })
 
+  const resetSubjectModalState = (defaultStandardId?: string) => {
+    setSubjectForm({
+      name: '',
+      code: '',
+      standard_id: defaultStandardId ?? (standards[0]?.id ? String(standards[0].id) : ''),
+      max_marks: 100,
+      passing_marks: 35,
+      is_core: true,
+    })
+    setSubjectModalMode('select')
+    setCanonicalSearchQuery('')
+    setSelectedCanonicalSubject(null)
+    setNewSubjectCategory('General')
+    setNewSubjectAliases('')
+    setSubjectDupCheck(null)
+  }
+
   // Subject Mutations
   const createSubjectMutation = useMutation({
     mutationFn: (data: any) => subjectsApi.create(data),
     onSuccess: () => {
       toast.success('Subject created successfully')
       qc.invalidateQueries({ queryKey: ['subjects'] })
+      qc.invalidateQueries({ queryKey: ['canonical-subjects-picker'] })
+      qc.invalidateQueries({ queryKey: ['canonicalSubjects'] })
+      qc.invalidateQueries({ queryKey: ['subjectMappings'] })
+      qc.invalidateQueries({ queryKey: ['academic-overview'] })
       setShowAddSubjectModal(false)
-      setSubjectForm({ name: '', code: '', standard_id: '', max_marks: 100, passing_marks: 35, is_core: true })
+      resetSubjectModalState()
     },
     onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to create subject'),
+  })
+
+  const mapExistingSubjectMutation = useMutation({
+    mutationFn: (data: {
+      canonical_subject_id: number
+      standard_id: number
+      curriculum_code?: string
+      display_name?: string
+      max_marks?: number
+      pass_marks?: number
+      is_optional?: boolean
+    }) => subjectsApi.createMapping(data),
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Existing subject linked to class successfully')
+      qc.invalidateQueries({ queryKey: ['subjects'] })
+      qc.invalidateQueries({ queryKey: ['canonical-subjects-picker'] })
+      qc.invalidateQueries({ queryKey: ['canonicalSubjects'] })
+      qc.invalidateQueries({ queryKey: ['subjectMappings'] })
+      qc.invalidateQueries({ queryKey: ['academic-overview'] })
+      setShowAddSubjectModal(false)
+      resetSubjectModalState()
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to link existing subject'),
   })
 
   const updateSubjectMutation = useMutation({
@@ -1122,15 +1248,42 @@ export default function AcademicWorkspace() {
     setShowEditStandardModal(true)
   }
 
+  const selectExistingCanonical = (cs: CanonicalSubject, targetStdId?: string) => {
+    const effectiveStdId = targetStdId ?? subjectForm.standard_id
+    const stdObj = standards.find((s) => String(s.id) === String(effectiveStdId))
+    const baseCode = cs.code.replace(/001$/, '')
+    const suggestedCode = stdObj ? `${baseCode}-${stdObj.level}` : `${cs.code}-STD`
+    setSelectedCanonicalSubject(cs)
+    setSubjectModalMode('select')
+    setSubjectDupCheck(null)
+    setSubjectForm((prev) => ({
+      ...prev,
+      name: cs.name,
+      code: suggestedCode,
+      standard_id: effectiveStdId,
+    }))
+  }
+
+  const switchToCreateNewSubject = (initialName?: string) => {
+    const clean = (initialName ?? canonicalSearchQuery).trim()
+    const cleanAlpha = clean.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+    const stdObj = standards.find((s) => String(s.id) === String(subjectForm.standard_id))
+    const suggestedCode = cleanAlpha.length >= 3
+      ? `${cleanAlpha.slice(0, 4)}${stdObj ? stdObj.level : '10'}`
+      : ''
+    setSelectedCanonicalSubject(null)
+    setSubjectModalMode('create')
+    setSubjectForm((prev) => ({
+      ...prev,
+      name: clean,
+      code: prev.code || suggestedCode,
+    }))
+  }
+
   const handleOpenAddSubject = (defaultStandardId?: number) => {
-    setSubjectForm({
-      name: '',
-      code: '',
-      standard_id: defaultStandardId ? String(defaultStandardId) : (standards[0]?.id ? String(standards[0].id) : ''),
-      max_marks: 100,
-      passing_marks: 35,
-      is_core: true,
-    })
+    const stdId = defaultStandardId ? String(defaultStandardId) : (standards[0]?.id ? String(standards[0].id) : '')
+    setSelectedSubjectForEdit(null)
+    resetSubjectModalState(stdId)
     setShowAddSubjectModal(true)
   }
 
@@ -1312,18 +1465,7 @@ export default function AcademicWorkspace() {
       subtitle: 'Manage academic subjects, subject codes, max marks, passing criteria, and core syllabus rules',
       icon: FileText,
       actionLabel: 'Add Subject',
-      onAction: () => {
-        setSubjectForm({
-          name: '',
-          code: '',
-          standard_id: standards[0]?.id ? String(standards[0].id) : '',
-          max_marks: 100,
-          passing_marks: 35,
-          is_core: true,
-        })
-        setSelectedSubjectForEdit(null)
-        setShowAddSubjectModal(true)
-      },
+      onAction: () => handleOpenAddSubject(),
     },
     batches: {
       title: 'Batches & Division Operations',
@@ -3564,6 +3706,7 @@ export default function AcademicWorkspace() {
           setShowAddSubjectModal(false)
           setShowEditSubjectModal(false)
           setSelectedSubjectForEdit(null)
+          resetSubjectModalState()
         }}
         title={showEditSubjectModal ? 'Edit Subject' : 'Add Subject to Curriculum'}
       >
@@ -3582,37 +3725,328 @@ export default function AcademicWorkspace() {
                   is_core: subjectForm.is_core,
                 },
               })
+            } else if (subjectModalMode === 'select') {
+              if (!selectedCanonicalSubject) {
+                toast.error('Please select an existing subject or switch to Create New Subject.')
+                return
+              }
+              mapExistingSubjectMutation.mutate({
+                canonical_subject_id: selectedCanonicalSubject.id,
+                standard_id: Number(subjectForm.standard_id),
+                curriculum_code: subjectForm.code.trim() || undefined,
+                display_name: selectedCanonicalSubject.name,
+                max_marks: Number(subjectForm.max_marks) || 100,
+                pass_marks: Number(subjectForm.passing_marks) || 35,
+                is_optional: !subjectForm.is_core,
+              })
             } else {
               createSubjectMutation.mutate({
-                name: subjectForm.name,
-                code: subjectForm.code,
+                name: subjectForm.name.trim(),
+                code: subjectForm.code.trim(),
                 standard_id: Number(subjectForm.standard_id),
                 max_marks: Number(subjectForm.max_marks),
                 passing_marks: Number(subjectForm.passing_marks),
                 is_core: subjectForm.is_core,
+                category: newSubjectCategory,
+                aliases: newSubjectAliases.trim() || undefined,
               })
             }
           }}
           className="space-y-4 text-xs"
         >
-          <div>
-            <label className="block font-bold text-gray-700 mb-1">Subject Name *</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Chemistry"
-              value={subjectForm.name}
-              onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })}
-              className="w-full border rounded-xl px-3 py-2 text-gray-800"
-            />
-          </div>
+          {/* Mode Switcher in Add Mode */}
+          {!showEditSubjectModal && (
+            <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
+              <button
+                type="button"
+                onClick={() => setSubjectModalMode('select')}
+                className={`flex-1 py-1.5 px-2.5 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  subjectModalMode === 'select'
+                    ? 'bg-white text-primary-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>Select Existing Subject</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchToCreateNewSubject(subjectForm.name || canonicalSearchQuery)}
+                className={`flex-1 py-1.5 px-2.5 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  subjectModalMode === 'create'
+                    ? 'bg-white text-primary-700 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create New Subject</span>
+              </button>
+            </div>
+          )}
+
+          {/* ADD MODE A: SELECT EXISTING CANONICAL SUBJECT */}
+          {!showEditSubjectModal && subjectModalMode === 'select' && (
+            <div className="space-y-3">
+              {!selectedCanonicalSubject ? (
+                <div className="space-y-2">
+                  <label className="block font-bold text-gray-700">
+                    Search Existing Subject *
+                  </label>
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Search existing subject by name, code, or alias (e.g. Chemistry, MATH)..."
+                      value={canonicalSearchQuery}
+                      onChange={(e) => setCanonicalSearchQuery(e.target.value)}
+                      className="w-full border rounded-xl pl-9 pr-8 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                    {canonicalSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setCanonicalSearchQuery('')}
+                        className="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600"
+                        title="Clear search"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Canonical Subject List / Recommendations */}
+                  <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto bg-white">
+                    {isLoadingCanonicalCatalog ? (
+                      <div className="py-6 text-center text-gray-400">Loading subject catalog...</div>
+                    ) : filteredCanonicalCatalog.length > 0 ? (
+                      filteredCanonicalCatalog.map((cs) => (
+                        <button
+                          key={cs.id}
+                          type="button"
+                          onClick={() => selectExistingCanonical(cs)}
+                          className="w-full text-left px-3 py-2.5 hover:bg-primary-50 border-b border-gray-100 last:border-0 transition-colors flex items-center justify-between gap-2 group"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <BookOpen className="w-3.5 h-3.5 text-primary-600 flex-shrink-0" />
+                              <span className="font-bold text-gray-900">{cs.name}</span>
+                              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-primary-50 text-primary-700 border border-primary-100">
+                                {cs.code}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                                {cs.category}
+                              </span>
+                            </div>
+                            {(cs.aliases || (cs.standards_summary && cs.standards_summary.length > 0)) && (
+                              <p className="text-[10px] text-gray-500 mt-0.5 pl-5 truncate">
+                                {cs.aliases ? `Aliases: ${cs.aliases}` : ''}
+                                {cs.aliases && cs.standards_summary?.length ? ' • ' : ''}
+                                {cs.standards_summary?.length ? `Linked: ${cs.standards_summary.join(', ')}` : ''}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-[11px] font-bold text-primary-600 group-hover:text-primary-800 flex items-center gap-0.5 flex-shrink-0">
+                            Select <ArrowRight className="w-3 h-3" />
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center space-y-2.5 bg-gray-50/70">
+                        <div className="flex items-center justify-center gap-1.5 text-amber-700 font-bold">
+                          <Sparkles className="w-4 h-4 text-amber-500" />
+                          <span>
+                            No exact subject found
+                            {canonicalSearchQuery.trim() ? ` for "${canonicalSearchQuery.trim()}"` : ''}
+                          </span>
+                        </div>
+
+                        {recommendedCanonicalCatalog.length > 0 && (
+                          <div className="space-y-1.5 text-left bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                            <p className="text-[11px] font-bold text-amber-800">
+                              Recommended Existing Subjects:
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {recommendedCanonicalCatalog.map((rec) => (
+                                <button
+                                  key={rec.id}
+                                  type="button"
+                                  onClick={() => selectExistingCanonical(rec)}
+                                  className="px-2 py-1 rounded-md bg-white border border-amber-300 text-amber-900 font-semibold hover:bg-amber-100 transition-colors flex items-center gap-1"
+                                >
+                                  <Check className="w-3 h-3 text-amber-600" />
+                                  <span>{rec.name} ({rec.code})</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => switchToCreateNewSubject(canonicalSearchQuery)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white font-bold shadow-xs transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>
+                            Create New Subject
+                            {canonicalSearchQuery.trim() ? ` "${canonicalSearchQuery.trim()}"` : ''}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-0.5">
+                    <span className="text-[11px] text-gray-500">
+                      Reusing master subjects prevents duplicates across classes.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => switchToCreateNewSubject(canonicalSearchQuery)}
+                      className="text-[11px] font-bold text-primary-700 hover:text-primary-900 underline underline-offset-2 flex-shrink-0"
+                    >
+                      Not listed? Create new →
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-primary-50 border border-primary-200 rounded-xl p-3 flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <CheckCircle2 className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-primary-900">{selectedCanonicalSubject.name}</span>
+                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white text-primary-700 border border-primary-200">
+                          {selectedCanonicalSubject.code}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white text-gray-600 border border-gray-200">
+                          {selectedCanonicalSubject.category}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-primary-700 mt-0.5">
+                        Linking existing master subject to the selected class below.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCanonicalSubject(null)}
+                    className="text-[11px] font-bold text-primary-700 hover:text-primary-900 underline flex-shrink-0"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* EDIT MODE OR CREATE NEW MODE: Subject Name + Live Duplicate Recommendations */}
+          {(showEditSubjectModal || subjectModalMode === 'create') && (
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Subject Name *</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Chemistry"
+                  value={subjectForm.name}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setSubjectForm((prev) => ({ ...prev, name: val }))
+                  }}
+                  className="w-full border rounded-xl px-3 py-2 text-gray-800 pr-8"
+                />
+                {isCheckingSubjectDup && (
+                  <div className="absolute right-2.5 top-2.5">
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary-600" />
+                  </div>
+                )}
+              </div>
+
+              {/* Recommendation Banner if matching existing canonical subject(s) exist */}
+              {!showEditSubjectModal &&
+                subjectDupCheck &&
+                (subjectDupCheck.has_exact_match || subjectDupCheck.similar_matches.length > 0) && (
+                  <div className="mt-2 bg-amber-50 border border-amber-300 rounded-xl p-2.5 text-amber-900 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">Existing Subject Recommendation: </span>
+                        <span className="text-[11px]">{subjectDupCheck.message}</span>
+                      </div>
+                    </div>
+
+                    {subjectDupCheck.exact_match && (
+                      <button
+                        type="button"
+                        onClick={() => selectExistingCanonical(subjectDupCheck.exact_match as CanonicalSubject)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-600 hover:bg-amber-700 text-white transition-colors"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>
+                          Use Existing '{subjectDupCheck.exact_match.name}' ({subjectDupCheck.exact_match.code})
+                        </span>
+                      </button>
+                    )}
+
+                    {subjectDupCheck.similar_matches.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-amber-800">Recommended matches:</span>
+                        {subjectDupCheck.similar_matches.slice(0, 4).map((sim) => (
+                          <button
+                            key={sim.id}
+                            type="button"
+                            onClick={() => selectExistingCanonical(sim as CanonicalSubject)}
+                            className="px-2 py-0.5 rounded bg-white border border-amber-300 text-amber-900 text-[11px] font-semibold hover:bg-amber-100 transition-colors"
+                          >
+                            {sim.name} ({sim.code})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+            </div>
+          )}
+
+          {/* Extra canonical metadata in Create New mode */}
+          {!showEditSubjectModal && subjectModalMode === 'create' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Subject Category</label>
+                <select
+                  value={newSubjectCategory}
+                  onChange={(e) => setNewSubjectCategory(e.target.value)}
+                  className="w-full border rounded-xl px-3 py-2 text-gray-800"
+                >
+                  <option value="General">General</option>
+                  <option value="Mathematics">Mathematics</option>
+                  <option value="Science">Science</option>
+                  <option value="Languages">Languages</option>
+                  <option value="Social Sciences">Social Sciences</option>
+                  <option value="Commerce">Commerce</option>
+                  <option value="Computer Science">Computer Science</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-gray-700 mb-1">Aliases (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Chem, Applied Chemistry"
+                  value={newSubjectAliases}
+                  onChange={(e) => setNewSubjectAliases(e.target.value)}
+                  className="w-full border rounded-xl px-3 py-2 text-gray-800"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-gray-700 mb-1">Subject Code *</label>
               <input
                 type="text"
-                required
+                required={showEditSubjectModal || subjectModalMode === 'create' || Boolean(selectedCanonicalSubject)}
                 placeholder="e.g. CHEM10"
                 value={subjectForm.code}
                 onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })}
@@ -3624,7 +4058,14 @@ export default function AcademicWorkspace() {
               <select
                 required
                 value={subjectForm.standard_id}
-                onChange={(e) => setSubjectForm({ ...subjectForm, standard_id: e.target.value })}
+                onChange={(e) => {
+                  const newStdId = e.target.value
+                  if (selectedCanonicalSubject && subjectModalMode === 'select') {
+                    selectExistingCanonical(selectedCanonicalSubject, newStdId)
+                  } else {
+                    setSubjectForm({ ...subjectForm, standard_id: newStdId })
+                  }
+                }}
                 className="w-full border rounded-xl px-3 py-2 text-gray-800"
               >
                 {standards.map((s) => (
@@ -3676,6 +4117,8 @@ export default function AcademicWorkspace() {
               onClick={() => {
                 setShowAddSubjectModal(false)
                 setShowEditSubjectModal(false)
+                setSelectedSubjectForEdit(null)
+                resetSubjectModalState()
               }}
               className="px-4 py-2 border rounded-xl font-semibold text-gray-600 hover:bg-gray-50"
             >
@@ -3683,9 +4126,19 @@ export default function AcademicWorkspace() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-sm"
+              disabled={
+                updateSubjectMutation.isPending ||
+                createSubjectMutation.isPending ||
+                mapExistingSubjectMutation.isPending ||
+                (!showEditSubjectModal && subjectModalMode === 'select' && !selectedCanonicalSubject)
+              }
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold shadow-sm"
             >
-              {showEditSubjectModal ? 'Save Subject' : 'Add Subject'}
+              {showEditSubjectModal
+                ? updateSubjectMutation.isPending ? 'Saving...' : 'Save Subject'
+                : subjectModalMode === 'select'
+                ? mapExistingSubjectMutation.isPending ? 'Mapping...' : 'Map Existing Subject'
+                : createSubjectMutation.isPending ? 'Creating...' : 'Create & Add Subject'}
             </button>
           </div>
         </form>

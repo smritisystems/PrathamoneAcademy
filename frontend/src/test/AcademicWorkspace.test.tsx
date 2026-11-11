@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-11
  *
  * @description Vitest test suite verifying Academic Workspace navigation, KPIs, batch cards, and roster modals.
  */
@@ -386,6 +386,99 @@ describe('Academic Structure & Batch Management Workspace Specification', () => 
       expect(screen.getByText('Academic & Batch Operational Settings')).toBeDefined()
       expect(screen.getByText('Default Batch Capacity (Seats)')).toBeDefined()
       expect(screen.getByText('Save Settings')).toBeDefined()
+    })
+  })
+
+  it('allows selecting an existing subject or recommending/creating new in Add Subject modal', async () => {
+    vi.spyOn(endpoints.subjectsApi, 'listCanonical').mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          name: 'Mathematics',
+          code: 'MATH001',
+          category: 'Mathematics',
+          aliases: 'Math, Maths',
+          is_active: true,
+          standards_summary: ['Class X'],
+        },
+        {
+          id: 2,
+          name: 'Chemistry',
+          code: 'CHEM001',
+          category: 'Science',
+          aliases: 'Organic Chemistry',
+          is_active: true,
+          standards_summary: ['Class IX'],
+        },
+      ],
+    } as any)
+
+    vi.spyOn(endpoints.subjectsApi, 'checkDuplicate').mockResolvedValue({
+      data: {
+        has_exact_match: true,
+        exact_match: { id: 2, name: 'Chemistry', code: 'CHEM001', category: 'Science' },
+        similar_matches: [],
+        message: "An existing canonical subject 'Chemistry' (CHEM001) was found.",
+      },
+    } as any)
+
+    const createMappingSpy = vi.spyOn(endpoints.subjectsApi, 'createMapping').mockResolvedValue({
+      data: { id: 99, message: 'Subject mapping created successfully', canonical_name: 'Chemistry', standard_name: 'Class X' },
+    } as any)
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AcademicWorkspace />
+        </BrowserRouter>
+      </QueryClientProvider>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Subjects/i }))
+    await waitFor(() => expect(screen.getByText('Add Subject')).toBeDefined())
+
+    fireEvent.click(screen.getByText('Add Subject'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Add Subject to Curriculum')).toBeDefined()
+      expect(screen.getByText('Select Existing Subject')).toBeDefined()
+      expect(screen.getByText('Create New Subject')).toBeDefined()
+      expect(screen.getByText('Chemistry')).toBeDefined()
+    })
+
+    // Search for an unavailable subject -> prompts Create New Subject CTA
+    const searchInput = screen.getByPlaceholderText(/Search existing subject/i)
+    fireEvent.change(searchInput, { target: { value: 'Astrophysics' } })
+
+    await waitFor(() => {
+      expect(screen.getByText(/No exact subject found for "Astrophysics"/i)).toBeDefined()
+      expect(screen.getByRole('button', { name: /Create New Subject "Astrophysics"/i })).toBeDefined()
+    })
+
+    // Switch to Create New Subject and type an existing name -> triggers existing subject recommendation
+    fireEvent.click(screen.getByRole('button', { name: /Create New Subject "Astrophysics"/i }))
+    const nameInput = screen.getByPlaceholderText('e.g. Chemistry')
+    fireEvent.change(nameInput, { target: { value: 'Chemistry' } })
+
+    await waitFor(() => {
+      expect(screen.getByText(/Existing Subject Recommendation:/i)).toBeDefined()
+      expect(screen.getByText(/Use Existing 'Chemistry' \(CHEM001\)/i)).toBeDefined()
+    })
+
+    // Clicking recommendation switches to Select Existing with Chemistry pre-selected and maps cleanly
+    fireEvent.click(screen.getByText(/Use Existing 'Chemistry' \(CHEM001\)/i))
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Map Existing Subject/i })).toBeDefined()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Map Existing Subject/i }))
+    await waitFor(() => {
+      expect(createMappingSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          canonical_subject_id: 2,
+          display_name: 'Chemistry',
+        })
+      )
     })
   })
 })

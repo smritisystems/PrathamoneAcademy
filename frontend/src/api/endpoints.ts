@@ -204,7 +204,16 @@ export const subjectsApi = {
   list: (params?: { standard_id?: number | string; search?: string }) =>
     apiClient.get<AcademicSubject[]>('/subjects/', { params }),
   get: (id: number | string) => apiClient.get<AcademicSubject>(`/subjects/${id}`),
-  create: (data: { standard_id: number | string; name: string; code?: string; max_marks?: number; passing_marks?: number; is_core?: boolean }) =>
+  create: (data: {
+    standard_id: number | string
+    name: string
+    code?: string
+    max_marks?: number
+    passing_marks?: number
+    is_core?: boolean
+    category?: string
+    aliases?: string
+  }) =>
     apiClient.post<AcademicSubject>('/subjects/', data),
   update: (id: number | string, data: Partial<AcademicSubject>) =>
     apiClient.put<AcademicSubject>(`/subjects/${id}`, data),
