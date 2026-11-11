@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-07
+ * @updated     2026-11-11
  *
  * @description Comprehensive Vitest test suite validating Rule 010 View-First
  */
@@ -57,7 +57,7 @@ describe('Rule 010 Global View-First 100% Software-Wide Coverage Suite', () => {
     permissions: ['portal:view'],
   }
 
-  // All 28 Canonical Mutation-Capable Workspaces Audited Across Modules
+  // All 29 Canonical Mutation-Capable Workspaces Audited Across Modules
   const ALL_SCOPES = [
     // Academic Workspaces
     'academic:workspace',
@@ -92,6 +92,7 @@ describe('Rule 010 Global View-First 100% Software-Wide Coverage Suite', () => {
     'communication:broadcasts',
     'system:releases',
     'system:import_export',
+    'system:housekeeping',
   ]
 
   beforeEach(() => {
@@ -116,7 +117,7 @@ describe('Rule 010 Global View-First 100% Software-Wide Coverage Suite', () => {
   // ──────────────────────────────────────────────────────────────────────────
   // 2. STRICT SCOPED ISOLATION
   // ──────────────────────────────────────────────────────────────────────────
-  it('RULE 010.2: Enabling Edit Mode for any scope isolates that scope and keeps all other 27 scopes in View Mode', () => {
+  it('RULE 010.2: Enabling Edit Mode for any scope isolates that scope and keeps all other 28 scopes in View Mode', () => {
     const store = useEditModeStore.getState()
     const targetScope = 'workforce:payroll'
 

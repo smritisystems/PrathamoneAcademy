@@ -337,6 +337,22 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
         "sub_items": [],
     },
     {
+        "id": "housekeeping",
+        "label": "Housekeeping",
+        "category": "admin",
+        "default_path": "/housekeeping",
+        "icon": "HardDrive",
+        "required_permission": "system:housekeeping",
+        "sysadmin_only": False,
+        "sub_items": [
+            {"id": "housekeeping_overview", "label": "Overview & Health", "to": "/housekeeping"},
+            {"id": "housekeeping_backups", "label": "Database Backups", "to": "/housekeeping/backups"},
+            {"id": "housekeeping_restore", "label": "Restore & Drill", "to": "/housekeeping/restore"},
+            {"id": "housekeeping_maintenance", "label": "Maintenance & Vacuum", "to": "/housekeeping/maintenance"},
+            {"id": "housekeeping_schedules", "label": "Schedules & CLI", "to": "/housekeeping/schedules"},
+        ],
+    },
+    {
         "id": "sysadmin",
         "label": "SysAdmin Center",
         "category": "admin",
@@ -352,11 +368,11 @@ CANONICAL_MODULES: List[Dict[str, Any]] = [
 ROLE_DEFAULT_MENUS: Dict[str, List[str]] = {
     "sysadmin": [
         "dashboard", "academic", "homework", "crm", "students", "fees", "attendance",
-        "examinations", "teachers", "staff", "reports", "users", "settings", "sysadmin"
+        "examinations", "teachers", "staff", "reports", "users", "settings", "housekeeping", "sysadmin"
     ],
     "admin": [
         "dashboard", "fees", "students", "crm", "academic", "homework", "teachers",
-        "attendance", "reports", "forms", "users", "settings"
+        "attendance", "reports", "forms", "users", "settings", "housekeeping"
     ],
     "principal": [
         "dashboard", "fees", "students", "teachers", "academic", "homework",

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-10
+ * @updated     2026-11-11
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -2854,6 +2854,27 @@ export default function Settings() {
                 {/* ─────────────────────────────────────────────────────────── */}
                 {activeCategory === 'maintenance' && (
                   <div className="space-y-6">
+                    {/* Link to Dedicated Housekeeping & Database Operations Module */}
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-bold text-emerald-950 flex items-center gap-2">
+                          <Database className="w-4 h-4 text-emerald-700" />
+                          <span>Housekeeping: Full PostgreSQL Backup & Restore Center</span>
+                        </h4>
+                        <p className="text-xs text-emerald-800">
+                          Run verified PostgreSQL backups, GFS retention pruning, non-destructive sandbox restore drills,
+                          VACUUM ANALYZE, and automated CLI scheduling.
+                        </p>
+                      </div>
+                      <Link
+                        to="/housekeeping"
+                        className="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl inline-flex items-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-auto"
+                      >
+                        <span>Open Housekeeping Module</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+
                     {/* Maintenance Quick Actions */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">

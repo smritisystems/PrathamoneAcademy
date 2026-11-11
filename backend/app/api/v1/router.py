@@ -54,6 +54,7 @@ from app.api.v1.endpoints import (
     concessions,
     homework,
     report_intelligence,
+    housekeeping,
 )
 
 api_router = APIRouter()
@@ -115,4 +116,5 @@ api_router.include_router(study_materials.router, prefix="/study-materials", tag
 api_router.include_router(navigation.router, prefix="/navigation", tags=["navigation"])
 api_router.include_router(governance.router, prefix="/governance", tags=["governance"])
 api_router.include_router(homework.router, prefix="/homework", tags=["homework"])
+api_router.include_router(housekeeping.router, prefix="/housekeeping", tags=["housekeeping"])
 

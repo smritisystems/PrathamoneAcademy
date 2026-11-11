@@ -56,6 +56,7 @@ const TeacherProfilePage = lazyWithRetry(() => import('./pages/TeacherProfilePag
 const StaffProfilePage = lazyWithRetry(() => import('./pages/StaffProfilePage'), 'StaffProfilePage')
 const TeacherPayrollPage = lazyWithRetry(() => import('./pages/TeacherPayroll'), 'TeacherPayroll')
 const SysAdminWorkspacePage = lazyWithRetry(() => import('./pages/SysAdminWorkspace'), 'SysAdminWorkspace')
+const HousekeepingPage = lazyWithRetry(() => import('./pages/Housekeeping'), 'Housekeeping')
 const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
 const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), 'Communication')
 const ReleasesPage = lazyWithRetry(() => import('./pages/Releases'), 'Releases')
@@ -315,6 +316,8 @@ export default function App() {
           <Route path="forms/audit-logs" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="forms-documents" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
+          <Route path="housekeeping" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
+          <Route path="housekeeping/:tab" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
           <Route path="settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
           <Route path="codex" element={<Suspense fallback={<PageLoader />}><CodeXStudioPage /></Suspense>} />
           {/* Communication Center Dedicated Workspaces */}

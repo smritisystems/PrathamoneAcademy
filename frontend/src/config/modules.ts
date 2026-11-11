@@ -39,6 +39,7 @@ import {
   FlaskConical,
   Settings,
   Terminal,
+  HardDrive,
   LucideIcon,
 } from 'lucide-react'
 import type { User, NavigationModule, NavigationSubItem } from '../types'
@@ -366,6 +367,23 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
     subItems: [],
   },
   {
+    id: 'housekeeping',
+    label: 'Housekeeping',
+    category: 'admin',
+    defaultPath: '/housekeeping',
+    icon: HardDrive,
+    iconName: 'HardDrive',
+    description: 'Database backups, SHA-256 verification, GFS retention, sandbox restore drills, VACUUM maintenance, and automated schedules.',
+    requiredPermission: 'system:housekeeping',
+    subItems: [
+      { id: 'housekeeping_overview', label: 'Overview & Health', to: '/housekeeping' },
+      { id: 'housekeeping_backups', label: 'Database Backups', to: '/housekeeping/backups' },
+      { id: 'housekeeping_restore', label: 'Restore & Drill', to: '/housekeeping/restore' },
+      { id: 'housekeeping_maintenance', label: 'Maintenance & Vacuum', to: '/housekeeping/maintenance' },
+      { id: 'housekeeping_schedules', label: 'Schedules & CLI', to: '/housekeeping/schedules' },
+    ],
+  },
+  {
     id: 'settings',
     label: 'Settings',
     category: 'admin',
@@ -410,6 +428,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   FlaskConical,
   Settings,
   Terminal,
+  HardDrive,
 }
 
 export function getAuthorizedModules(user: User | null): ModuleDefinition[] {

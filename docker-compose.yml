@@ -35,6 +35,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - ./backups:/app/backups
+      - ./data/backups:/app/data/backups
     command: >
       sh -c "alembic upgrade head &&
              python seed.py &&

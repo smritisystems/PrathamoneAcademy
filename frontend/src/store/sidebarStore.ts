@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-09
+ * @updated     2026-11-11
  *
  * @description Zustand state store managing responsive sidebar layout state, collapsed rails, and mobile drawer.
  */
@@ -35,6 +35,7 @@ interface SidebarStore {
   coursesOpen: boolean
   communicationOpen: boolean
   formsOpen: boolean
+  housekeepingOpen: boolean
   setDesktopState: (state: DesktopSidebarState) => void
   toggleCollapse: () => void
   toggleHidden: () => void
@@ -64,6 +65,8 @@ interface SidebarStore {
   toggleCommunicationOpen: () => void
   setFormsOpen: (open: boolean | ((prev: boolean) => boolean)) => void
   toggleFormsOpen: () => void
+  setHousekeepingOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  toggleHousekeepingOpen: () => void
 }
 
 const getInitialDesktopState = (): DesktopSidebarState => {
@@ -102,6 +105,7 @@ export const useSidebarStore = create<SidebarStore>()(
       coursesOpen: true,
       communicationOpen: true,
       formsOpen: true,
+      housekeepingOpen: false,
 
       setDesktopState: (desktopState) => set({ desktopState }),
 
@@ -210,6 +214,14 @@ export const useSidebarStore = create<SidebarStore>()(
 
       toggleFormsOpen: () =>
         set((state) => ({ formsOpen: !state.formsOpen })),
+
+      setHousekeepingOpen: (updater) =>
+        set((state) => ({
+          housekeepingOpen: typeof updater === 'function' ? updater(state.housekeepingOpen) : updater,
+        })),
+
+      toggleHousekeepingOpen: () =>
+        set((state) => ({ housekeepingOpen: !state.housekeepingOpen })),
     }),
     {
       name: 'prashant_sidebar_state',
@@ -226,6 +238,7 @@ export const useSidebarStore = create<SidebarStore>()(
         coursesOpen: state.coursesOpen,
         communicationOpen: state.communicationOpen,
         formsOpen: state.formsOpen,
+        housekeepingOpen: state.housekeepingOpen,
       }),
     }
   )

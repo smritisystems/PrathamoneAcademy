@@ -58,6 +58,10 @@ import type {
   HomeworkAssignmentItem, CheckingRegisterStudent, StudentPortalHomeworkItem,
   AcademicActivityRegisterItem, TeacherHomeworkDashboard, DailyHomeworkRegisterReport,
   ReportKPIItem, ReportInsightItem, ReportIntelligencePayload, CalculationDefinitionItem,
+  HousekeepingOverview, HousekeepingBackupItem, HousekeepingPolicy,
+  HousekeepingCreateBackupResponse, HousekeepingVerifyResponse, HousekeepingPruneResponse,
+  HousekeepingDrillResponse, HousekeepingRestoreResponse, HousekeepingVacuumResponse,
+  HousekeepingReconciliationResult, HousekeepingHistoryEvent,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -1626,6 +1630,83 @@ export const sysadminApi = {
       '/sysadmin/system-settings',
       data
     ),
+}
+
+// ─── Housekeeping & Database Operations API ──────────────────────────────────
+export const housekeepingApi = {
+  getOverview: (institutionId?: number) =>
+    apiClient.get<HousekeepingOverview>('/housekeeping/overview', {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  listBackups: () =>
+    apiClient.get<{ backups: HousekeepingBackupItem[] }>('/housekeeping/backups'),
+
+  createBackup: (data: {
+    label?: string
+    backup_format?: 'custom' | 'plain_sql'
+    notes?: string
+    mirror_dir?: string
+  }) => apiClient.post<HousekeepingCreateBackupResponse>('/housekeeping/backups', data),
+
+  verifyBackup: (filename: string, source: 'backups' | 'legacy_data' = 'backups') =>
+    apiClient.post<HousekeepingVerifyResponse>(
+      `/housekeeping/backups/${encodeURIComponent(filename)}/verify`,
+      null,
+      { params: { source } }
+    ),
+
+  downloadBackup: (filename: string, source: 'backups' | 'legacy_data' = 'backups') =>
+    apiClient.get<Blob>(`/housekeeping/backups/${encodeURIComponent(filename)}/download`, {
+      params: { source },
+      responseType: 'blob',
+    }),
+
+  uploadBackup: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post<HousekeepingVerifyResponse>('/housekeeping/backups/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  pruneBackups: (data: { retain_daily: number; retain_weekly: number; retain_monthly: number }) =>
+    apiClient.post<HousekeepingPruneResponse>('/housekeeping/backups/prune', data),
+
+  runRestoreDrill: (data: { filename: string; source: 'backups' | 'legacy_data' }) =>
+    apiClient.post<HousekeepingDrillResponse>('/housekeeping/restore/drill', data),
+
+  executeLiveRestore: (data: {
+    filename: string
+    source: 'backups' | 'legacy_data'
+    confirmation_phrase: string
+    reason: string
+  }) => apiClient.post<HousekeepingRestoreResponse>('/housekeeping/restore', data),
+
+  runVacuum: (tables?: string[]) =>
+    apiClient.post<HousekeepingVacuumResponse>('/housekeeping/maintenance/vacuum', {
+      tables: tables && tables.length > 0 ? tables : undefined,
+    }),
+
+  runReconcile: (params?: { institution_id?: number; is_demo?: boolean }) =>
+    apiClient.post<HousekeepingReconciliationResult>('/housekeeping/maintenance/reconcile', null, {
+      params,
+    }),
+
+  getPolicy: (institutionId?: number) =>
+    apiClient.get<HousekeepingPolicy>('/housekeeping/policy', {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  updatePolicy: (data: Partial<HousekeepingPolicy> & { reason?: string }, institutionId?: number) =>
+    apiClient.put<HousekeepingPolicy>('/housekeeping/policy', data, {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  getHistory: (limit = 50) =>
+    apiClient.get<{ events: HousekeepingHistoryEvent[] }>('/housekeeping/history', {
+      params: { limit },
+    }),
 }
 
 // ─── Institute Settings Workspace & Configuration ───────────────────────────

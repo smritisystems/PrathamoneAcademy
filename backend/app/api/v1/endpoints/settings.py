@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-10
+#  * @updated     2026-11-11
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -408,6 +408,29 @@ async def get_all_settings(
     for cat, custom_keys in stored.items():
         if cat not in merged:
             merged[cat] = custom_keys
+
+    # Dynamically enrich backup/maintenance telemetry from HousekeepingService (SSOT)
+    try:
+        from app.services.housekeeping_service import HousekeepingService
+        hk_backups = HousekeepingService.list_backups()
+        verified_bks = [b for b in hk_backups if b.get("verified")]
+        latest_bk = verified_bks[0] if verified_bks else (hk_backups[0] if hk_backups else None)
+        hk_cfg = stored.get("housekeeping", {})
+        if latest_bk:
+            merged.setdefault("maintenance", {})["last_backup_date"] = latest_bk.get("created_at")
+            merged["maintenance"]["backup_status"] = (
+                "Verified Healthy" if latest_bk.get("verified") else "Unverified Archive Present"
+            )
+            merged["maintenance"]["last_backup_file"] = latest_bk.get("filename")
+        else:
+            merged.setdefault("maintenance", {})["last_backup_date"] = hk_cfg.get("last_backup_date")
+            merged["maintenance"]["backup_status"] = hk_cfg.get("last_backup_status", "No verified backup yet")
+        if hk_cfg.get("backup_destination"):
+            merged.setdefault("integrations", {})["backup_destination"] = hk_cfg["backup_destination"]
+        if hk_cfg.get("backup_frequency"):
+            merged.setdefault("integrations", {})["backup_frequency"] = str(hk_cfg["backup_frequency"]).capitalize()
+    except Exception:
+        pass
 
     return merged
 

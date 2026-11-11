@@ -4336,6 +4336,183 @@ export interface ConcessionReportResponse {
   rows: Array<Record<string, any>>
 }
 
+// ─── Housekeeping & Database Operations Module ──────────────────────────────
+
+export interface HousekeepingBackupItem {
+  filename: string
+  source: 'backups' | 'legacy_data'
+  format: 'custom_dump' | 'plain_sql'
+  size_bytes: number
+  size_human: string
+  created_at: string
+  label: string
+  created_by: string
+  database: string
+  sha256: string | null
+  has_checksum: boolean
+  verified: boolean
+  verified_at: string | null
+  notes: string | null
+}
+
+export interface HousekeepingPolicy {
+  backup_frequency: 'hourly' | 'daily' | 'weekly' | 'monthly' | string
+  backup_time: string
+  backup_format: 'custom' | 'plain_sql' | string
+  backup_destination: string
+  offsite_mirror_path: string
+  retain_daily: number
+  retain_weekly: number
+  retain_monthly: number
+  auto_vacuum_enabled: boolean
+  log_retention_days: number
+  last_backup_date?: string | null
+  last_backup_file?: string | null
+  last_backup_status?: string
+  last_backup_sha256?: string | null
+  last_vacuum_at?: string | null
+}
+
+export interface HousekeepingTableMetric {
+  table_name: string
+  live_rows: number
+  dead_tuples: number
+  total_bytes: number
+  size_pretty: string
+  last_vacuum: string | null
+  last_analyze: string | null
+}
+
+export interface HousekeepingOverview {
+  database: {
+    name: string
+    host: string
+    size_bytes: number
+    size_pretty: string
+    total_connections: number
+    active_connections: number
+    dead_tuples_top15: number
+  }
+  backups_summary: {
+    total_count: number
+    verified_count: number
+    total_size_bytes: number
+    total_size_human: string
+    last_backup_date: string | null
+    last_backup_file: string | null
+    backup_status: string
+  }
+  top_tables: HousekeepingTableMetric[]
+  policy: HousekeepingPolicy
+  scheduler_commands: {
+    windows_task_scheduler: string
+    linux_cron: string
+  }
+}
+
+export interface HousekeepingCreateBackupResponse {
+  filename: string
+  source: string
+  format: string
+  size_bytes: number
+  sha256: string
+  verified: boolean
+  toc_entries: number
+  created_at: string
+  mirror_copied: string | null
+}
+
+export interface HousekeepingVerifyResponse {
+  filename: string
+  source: string
+  verified: boolean
+  checksum_match: boolean
+  format_valid: boolean
+  sha256: string
+  recorded_sha256: string | null
+  toc_entries: number
+  detail: string
+  verified_at: string
+}
+
+export interface HousekeepingPruneResponse {
+  deleted: string[]
+  kept_count: number
+  freed_bytes: number
+}
+
+export interface HousekeepingDrillResponse {
+  sandbox_db: string
+  filename: string
+  tables_restored: number
+  students_restored: number
+  is_reconciled: boolean
+  variance: number
+  verified_at: string
+}
+
+export interface HousekeepingRestoreResponse {
+  restored_from: string
+  source: string
+  safety_snapshot: string
+  is_reconciled: boolean
+  variance: number
+  broken_invoices: number
+  restored_at: string
+}
+
+export interface HousekeepingVacuumResponse {
+  status: string
+  command: string
+  executed_at: string
+}
+
+export interface HousekeepingReconciliationResult {
+  currency: { code: string; symbol: string; precision: number }
+  is_reconciled: boolean
+  ledger_audit: {
+    gross_assessed: number
+    posted_reductions: number
+    tracked_benefits: number
+    manual_adjustments: number
+    total_invoiced: number
+    net_invoiced: number
+    total_collected: number
+    net_payment_cashflow: number
+    total_outstanding: number
+    written_off: number
+    calculated_balance: number
+    variance: number
+    payment_vs_invoice_variance: number
+    reversed_allocation_excluded: number
+    is_reconciled: boolean
+  }
+  broken_invoices: Array<{
+    invoice_id: number
+    invoice_number: string
+    student_id: number
+    student_name: string
+    admission_number: string
+    total_amount: number
+    discount_amount: number
+    net_amount: number
+    paid_amount: number
+    outstanding_amount: number
+  }>
+}
+
+export interface HousekeepingHistoryEvent {
+  timestamp: string
+  action: string
+  status: string
+  actor?: string
+  filename?: string
+  source?: string
+  details?: string
+  [key: string]: any
+}
+
+
 
 
 
