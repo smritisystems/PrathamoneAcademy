@@ -35,6 +35,7 @@ from app.models.fee import (
     FeeConcessionAllocation,
     SponsorSettlement,
 )
+from app.models.institution import Institution
 from app.models.student import Student
 from app.models.user import User, Role
 from app.services.concession_service import ConcessionWorkflowService
@@ -692,3 +693,118 @@ class TestConcessionFinancialGovernance:
         )
         assert rec_final["is_reconciled"] is True
         assert rec_final["ledger_audit"]["variance"] == 0.0
+
+    @pytest.mark.asyncio
+    async def test_additional_phase10_pending_rejected_full_concession_and_multibranch(
+        self, client, db, admin_user, test_institution, test_academic_year
+    ):
+        """
+        Explicitly verifies remaining Phase 10 acceptance items & cross-dashboard consistency:
+        - Pending approval & Rejected applications never alter FeeInvoice balances.
+        - Full 100% fee concession remains classified under fee_concession (distinct from fee_waiver).
+        - Multi-branch (multi-institution) isolation & reconciliation accuracy.
+        - Identical totals across Dashboard Stats, Fees Overview, Concessions Analytics, Reconciliation, and Student Statement.
+        """
+        admin_user.institution_id = test_institution.id
+        await db.commit()
+        headers = await _login_headers(client, {"username": admin_user.username, "password": "testpassword"})
+
+        # 1. Pending approval & Rejected applications must NOT reduce invoice
+        s_pend, inv_pend, _, _ = await _make_student_and_invoice(db, test_institution.id, test_academic_year.id, Decimal("22000.00"))
+        s_rej, inv_rej, _, _ = await _make_student_and_invoice(db, test_institution.id, test_academic_year.id, Decimal("22000.00"))
+        sch_gen = await _make_scheme(db, test_institution.id, category="need_based", benefit_type="fee_concession", default_value=Decimal("4000.00"))
+
+        app_pend = await ConcessionWorkflowService.submit_application(
+            db, test_institution.id, s_pend.id, sch_gen.id, test_academic_year.id, admin_user, requested_amount=Decimal("4000.00")
+        )
+        assert app_pend.status == "pending_approval"
+        await db.refresh(inv_pend)
+        assert inv_pend.discount_amount == Decimal("0.00")
+        assert inv_pend.outstanding_amount == Decimal("22000.00")
+
+        app_rej = await ConcessionWorkflowService.submit_application(
+            db, test_institution.id, s_rej.id, sch_gen.id, test_academic_year.id, admin_user, requested_amount=Decimal("4000.00")
+        )
+        rej_res = await client.post(
+            f"/api/v1/fees/concessions/applications/{app_rej.id}/reject",
+            json={"rejection_reason": "Income certificate verification failed"},
+            headers=headers,
+        )
+        assert rej_res.status_code == 200, rej_res.text
+        await db.refresh(inv_rej)
+        await db.refresh(app_rej)
+        assert app_rej.status == "rejected"
+        assert inv_rej.outstanding_amount == Decimal("22000.00")
+
+        rep_pend = await client.get("/api/v1/reports/concessions/pending-approval", headers=headers)
+        assert rep_pend.status_code == 200
+        assert any(r["application_number"] == app_pend.application_number for r in rep_pend.json()["rows"])
+
+        # 2. Full 100% Fee Concession (distinct from fee_waiver classification)
+        s_fullc, inv_fullc, _, _ = await _make_student_and_invoice(db, test_institution.id, test_academic_year.id, Decimal("14000.00"))
+        sch_fullc = await _make_scheme(db, test_institution.id, category="staff_ward", benefit_type="fee_concession", calculation_type="percentage", default_value=Decimal("100.00"))
+        app_fullc = await ConcessionWorkflowService.submit_application(
+            db, test_institution.id, s_fullc.id, sch_fullc.id, test_academic_year.id, admin_user
+        )
+        await ConcessionWorkflowService.approve_application(db, app_fullc.id, admin_user, auto_apply=True)
+        await db.refresh(inv_fullc)
+        assert inv_fullc.net_amount == Decimal("0.00")
+        assert inv_fullc.outstanding_amount == Decimal("0.00")
+
+        sum_fullc = await FinancialGovernanceService.get_governed_summary(
+            db, FinancialFilter(institution_id=test_institution.id, student_id=s_fullc.id, is_demo=False)
+        )
+        assert sum_fullc["financials"]["posted_fee_concessions"] == 14000.0
+        assert sum_fullc["financials"]["posted_fee_waivers"] == 0.0
+
+        # 3. Multiple Branches (Branch B isolated from Branch A)
+        branch_b = Institution(name="Prashant Academy Branch B", code=f"BRB{uuid.uuid4().hex[:6]}", city="Pune")
+        db.add(branch_b)
+        await db.commit()
+        await db.refresh(branch_b)
+        ay_b = AcademicYear(
+            institution_id=branch_b.id,
+            name="2024-25",
+            start_date=date(2024, 6, 1),
+            end_date=date(2025, 3, 31),
+            is_current=True,
+            is_active=True,
+        )
+        db.add(ay_b)
+        await db.commit()
+        await db.refresh(ay_b)
+
+        branch_b_admin, branch_b_creds = await _make_user_with_role(db, "superadmin", branch_b.id)
+        branch_b_headers = await _login_headers(client, branch_b_creds)
+
+        s_b, inv_b, _, _ = await _make_student_and_invoice(db, branch_b.id, ay_b.id, Decimal("30000.00"))
+        sch_b = await _make_scheme(db, branch_b.id, category="merit", benefit_type="scholarship", default_value=Decimal("7500.00"))
+        app_b = await ConcessionWorkflowService.submit_application(
+            db, branch_b.id, s_b.id, sch_b.id, ay_b.id, branch_b_admin, requested_amount=Decimal("7500.00")
+        )
+        await ConcessionWorkflowService.approve_application(db, app_b.id, branch_b_admin, auto_apply=True)
+
+        sum_a = await FinancialGovernanceService.get_governed_summary(
+            db, FinancialFilter(institution_id=test_institution.id, is_demo=False)
+        )
+        sum_b = await FinancialGovernanceService.get_governed_summary(
+            db, FinancialFilter(institution_id=branch_b.id, is_demo=False)
+        )
+        assert sum_b["financials"]["gross_fee_assessed"] == 30000.0
+        assert sum_b["financials"]["scholarships_awarded"] == 7500.0
+        assert sum_b["financials"]["net_fee_due"] == 22500.0
+        assert sum_a["counts"]["rejected_applications"] >= 1
+        assert sum_b["counts"]["rejected_applications"] == 0
+
+        # 4. Cross-Module SSOT Numeric Parity across Dashboards, Fees Overview, Analytics, and Reconciliation for Branch B
+        d_stats = (await client.get(f"/api/v1/dashboard/stats?institution_id={branch_b.id}", headers=branch_b_headers)).json()
+        f_over = (await client.get(f"/api/v1/fees/overview?institution_id={branch_b.id}", headers=branch_b_headers)).json()
+        c_gov = (await client.get(f"/api/v1/fees/concessions/governance-summary?institution_id={branch_b.id}", headers=branch_b_headers)).json()
+        c_rec = (await client.get(f"/api/v1/fees/concessions/reconciliation?institution_id={branch_b.id}", headers=branch_b_headers)).json()
+
+        assert d_stats["concession_governance"]["financials"]["net_fee_due"] == 22500.0
+        assert f_over["governance"]["financials"]["net_fee_due"] == 22500.0
+        assert c_gov["financials"]["net_fee_due"] == 22500.0
+        assert c_rec["is_reconciled"] is True
+        assert c_rec["ledger_audit"]["variance"] == 0.0
+        assert c_rec["summary"]["scholarships_awarded"] == 7500.0
