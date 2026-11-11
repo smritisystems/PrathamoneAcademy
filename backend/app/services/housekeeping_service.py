@@ -864,9 +864,9 @@ class HousekeepingService:
 
     @classmethod
     async def run_restore_drill(cls, filename: str, source: str, user: User) -> Dict[str, Any]:
-        """Non-destructive sandbox verification restore into dedicated ephemeral prashant_academy_drill database."""
+        """Non-destructive sandbox verification restore into prashant_academy_test."""
         pg = parse_pg_connection()
-        sandbox_db = os.getenv("HOUSEKEEPING_DRILL_DB", f"{pg['dbname']}_drill")
+        sandbox_db = os.getenv("HOUSEKEEPING_DRILL_DB", f"{pg['dbname']}_test")
         if sandbox_db == pg["dbname"]:
             raise ValueError("Sandbox drill database must differ from live production database.")
 
@@ -875,47 +875,32 @@ class HousekeepingService:
             raise ValueError(f"Backup verification failed before drill: {verify_res['detail']}")
 
         backup_path = cls.resolve_safe_path(filename, source)
-        env = {"PGPASSWORD": pg["password"]}
+        await cls._recreate_and_restore_pg_db(pg, sandbox_db, backup_path)
+
+        # Verify Alembic + Ledger Reconciliation on Sandbox DB
+        sandbox_url = f"postgresql+asyncpg://{pg['user']}:{pg['password']}@{pg['host']}:{pg['port']}/{sandbox_db}"
+        alembic_cwd = "/app" if Path("/app/alembic.ini").exists() else str(Path(__file__).resolve().parents[2])
+        rc_alb, out_alb, err_alb = await _run_subprocess(
+            ["alembic", "upgrade", "head"],
+            env_extra={"DATABASE_URL": sandbox_url},
+            timeout=180,
+        ) if alembic_cwd == "/app" else (0, "Host drill skipped alembic cwd", "")
+        if rc_alb != 0:
+            raise RuntimeError(f"Sandbox alembic upgrade check failed: {err_alb.strip()}")
+
+        sb_engine = create_async_engine(sandbox_url, echo=False, poolclass=NullPool)
+        sb_session_factory = async_sessionmaker(sb_engine, expire_on_commit=False, class_=AsyncSession)
         try:
-            await cls._recreate_and_restore_pg_db(pg, sandbox_db, backup_path)
-
-            # Verify Alembic + Ledger Reconciliation on Sandbox DB
-            sandbox_url = f"postgresql+asyncpg://{pg['user']}:{pg['password']}@{pg['host']}:{pg['port']}/{sandbox_db}"
-            alembic_cwd = "/app" if Path("/app/alembic.ini").exists() else str(Path(__file__).resolve().parents[2])
-            rc_alb, out_alb, err_alb = await _run_subprocess(
-                ["alembic", "upgrade", "head"],
-                env_extra={"DATABASE_URL": sandbox_url},
-                timeout=180,
-            ) if alembic_cwd == "/app" else (0, "Host drill skipped alembic cwd", "")
-            if rc_alb != 0:
-                raise RuntimeError(f"Sandbox alembic upgrade check failed: {err_alb.strip()}")
-
-            sb_engine = create_async_engine(sandbox_url, echo=False, poolclass=NullPool)
-            sb_session_factory = async_sessionmaker(sb_engine, expire_on_commit=False, class_=AsyncSession)
-            try:
-                async with sb_session_factory() as sdb:
-                    tbl_count = (await sdb.execute(
-                        text("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'")
-                    )).scalar() or 0
-                    stu_count = (await sdb.execute(text("SELECT COUNT(*) FROM students"))).scalar() or 0
-                    rec = await FinancialGovernanceService.reconcile_financial_ledgers(
-                        sdb, FinancialFilter(institution_id=1, is_demo=False)
-                    )
-            finally:
-                await sb_engine.dispose()
+            async with sb_session_factory() as sdb:
+                tbl_count = (await sdb.execute(
+                    text("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'")
+                )).scalar() or 0
+                stu_count = (await sdb.execute(text("SELECT COUNT(*) FROM students"))).scalar() or 0
+                rec = await FinancialGovernanceService.reconcile_financial_ledgers(
+                    sdb, FinancialFilter(institution_id=1, is_demo=False)
+                )
         finally:
-            await _run_subprocess(
-                ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-c",
-                 f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{sandbox_db}' AND pid <> pg_backend_pid();"],
-                env_extra=env,
-                timeout=30,
-            )
-            await _run_subprocess(
-                ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-c",
-                 f'DROP DATABASE IF EXISTS "{sandbox_db}";'],
-                env_extra=env,
-                timeout=30,
-            )
+            await sb_engine.dispose()
 
         _append_history_event({
             "action": "RESTORE_DRILL_PASSED",
