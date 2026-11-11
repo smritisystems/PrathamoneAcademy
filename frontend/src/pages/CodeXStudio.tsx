@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-08
+ * @updated     2026-11-11
  *
  * @description Comprehensive administrative CodeX Configuration Studio featuring 11 specialized sections, 0-9 bijective mapping, and interactive testing.
  */
@@ -102,34 +102,66 @@ export default function CodeXStudio() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [cfgRes, profRes, scopeRes, auditRes] = await Promise.all([
+      setNotification(null)
+
+      // 1. Fetch core configuration, profiles, and scopes concurrently
+      const [cfgRes, profRes, scopeRes] = await Promise.all([
         codexApi.getConfig(),
         codexApi.getProfiles(),
         codexApi.getScopes(),
-        codexApi.getAuditLogs({ limit: 40 }),
       ])
 
-      setConfig(cfgRes.data.config)
-      setProfiles(profRes.data)
-      setScopes(scopeRes.data)
-      setAuditLogs(auditRes.data)
+      const loadedConfig = cfgRes?.data?.config || null
+      setConfig(loadedConfig)
 
-      const defProf = profRes.data.find(p => p.is_default) || profRes.data[0]
+      const profList = Array.isArray(profRes?.data) ? profRes.data : []
+      setProfiles(profList)
+
+      const scopeList = Array.isArray(scopeRes?.data) ? scopeRes.data : []
+      setScopes(scopeList)
+
+      // 2. Fetch audit logs gracefully if administrative permissions exist
+      if (isAdmin) {
+        try {
+          const auditRes = await codexApi.getAuditLogs({ limit: 40 })
+          setAuditLogs(Array.isArray(auditRes?.data) ? auditRes.data : [])
+        } catch (auditErr: any) {
+          console.warn('CodeX audit logs unavailable or restricted:', auditErr)
+          setAuditLogs([])
+        }
+      } else {
+        setAuditLogs([])
+      }
+
+      // 3. Populate default mapping profile & version history
+      const defProf = profList.find((p) => p.is_default) || profList[0]
       if (defProf) {
         setActiveProfileId(defProf.id)
-        setEditingMap(defProf.digit_map)
-        setMapPrefix(defProf.prefix)
-        setMapSuffix(defProf.suffix)
-        setMapDecimal(defProf.decimal_symbol)
-        setMapNegative(defProf.negative_symbol)
-        // Fetch versions for default profile
-        const verRes = await codexApi.getProfileVersions(defProf.id)
-        setVersions(verRes.data)
+        setEditingMap(typeof defProf.digit_map === 'object' && defProf.digit_map !== null ? defProf.digit_map : {})
+        setMapPrefix(defProf.prefix || 'CX-')
+        setMapSuffix(defProf.suffix || '')
+        setMapDecimal(defProf.decimal_symbol || '.')
+        setMapNegative(defProf.negative_symbol || '-')
+        try {
+          const verRes = await codexApi.getProfileVersions(defProf.id)
+          setVersions(Array.isArray(verRes?.data) ? verRes.data : [])
+        } catch (verErr) {
+          console.warn('Profile version history unavailable:', verErr)
+          setVersions([])
+        }
       }
     } catch (err: any) {
+      const errorMsg =
+        (typeof err?.response?.data?.detail === 'string' ? err.response.data.detail : null) ||
+        (Array.isArray(err?.response?.data?.detail)
+          ? err.response.data.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
+          : null) ||
+        err?.userFriendlyMessage ||
+        err?.message ||
+        'Failed to load CodeX configuration. Please verify service connectivity.'
       setNotification({
         type: 'error',
-        message: err?.response?.data?.detail || 'Failed to load CodeX configuration.',
+        message: errorMsg,
       })
     } finally {
       setLoading(false)
@@ -415,10 +447,81 @@ export default function CodeXStudio() {
     )
   }
 
+  if (!config && !loading) {
+    return (
+      <div className="space-y-6 pb-16">
+        <EditModeBar scope={editScope} title="CodeX Cryptographic Obfuscation Studio" requiredPermission="security:codex" />
+        <div className="bg-white rounded-2xl border border-red-200/80 shadow-sm p-8 text-center max-w-xl mx-auto space-y-4">
+          <div className="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-lg font-bold text-slate-900">Unable to Load CodeX Configuration</h2>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              {notification?.message || 'Could not retrieve institution CodeX configuration from backend.'}
+            </p>
+          </div>
+          {!isAdmin && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-800 space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold text-amber-900">
+                <Shield className="w-4 h-4 text-amber-600" />
+                Administrative Privilege Requirement
+              </div>
+              <p>
+                CodeX administrative settings and cryptographic digit profiles require <strong>Administrator</strong> or <strong>Business Owner</strong> role.
+              </p>
+            </div>
+          )}
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => fetchData()}
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Retry Connection</span>
+            </button>
+            <button
+              onClick={() => setShowQuickDecoder(true)}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors"
+            >
+              <Unlock className="w-4 h-4" />
+              <span>Launch Decoder</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Decoder Modal */}
+        <QuickDecoderModal
+          isOpen={showQuickDecoder}
+          onClose={() => setShowQuickDecoder(false)}
+          initialCode={testCode}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 pb-16">
       {/* Global View-First & Explicit Edit Mode Governance Bar */}
-      <EditModeBar scope={editScope} title="CodeX Cryptographic Obfuscation Studio" />
+      <EditModeBar scope={editScope} title="CodeX Cryptographic Obfuscation Studio" requiredPermission="security:codex" />
+
+      {/* Non-Admin Informational Banner */}
+      {!isAdmin && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <Shield className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Administrative Access Required:</strong> CodeX Studio configuration and audit logs are restricted to Business Owners and Administrators. You are viewing in read-only mode.
+            </span>
+          </div>
+          <button
+            onClick={() => setShowQuickDecoder(true)}
+            className="px-3 py-1.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-semibold shrink-0 transition-colors"
+          >
+            Launch Decoder
+          </button>
+        </div>
+      )}
 
       {/* Top Header & Master Switch Banner */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">

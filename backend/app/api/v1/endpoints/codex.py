@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-07
+#  * @updated     2026-11-11
 #  *
 #  * @description REST API endpoints for CodeX configurable feature activation, digit mapping management, and decoder access.
 #  */
@@ -36,6 +36,17 @@ from app.services.codex_service import (
 )
 
 router = APIRouter()
+
+def safe_json_loads(val: Any, default: Any = None) -> Any:
+    """Safely deserializes a JSON string or returns the value if already parsed."""
+    if val is None:
+        return default
+    if isinstance(val, (dict, list)):
+        return val
+    try:
+        return json.loads(val)
+    except Exception:
+        return default
 
 # Helper authorization checker: admin, sysadmin, superadmin
 def require_business_owner_or_admin(user: User) -> None:
@@ -192,7 +203,7 @@ async def get_codex_config(
             "profile_code": default_profile.profile_code,
             "version": default_profile.version,
             "prefix": default_profile.prefix,
-            "digit_map": json.loads(default_profile.digit_map),
+            "digit_map": safe_json_loads(default_profile.digit_map, {}),
         },
         "stats": {
             "profiles_count": profiles_count,
@@ -276,7 +287,7 @@ async def list_mapping_profiles(
             "name": p.name,
             "description": p.description,
             "version": p.version,
-            "digit_map": json.loads(p.digit_map),
+            "digit_map": safe_json_loads(p.digit_map, {}),
             "decimal_symbol": p.decimal_symbol,
             "negative_symbol": p.negative_symbol,
             "prefix": p.prefix,
@@ -430,7 +441,7 @@ async def get_profile_version_history(
         {
             "id": v.id,
             "version": v.version,
-            "digit_map": json.loads(v.digit_map),
+            "digit_map": safe_json_loads(v.digit_map, {}),
             "decimal_symbol": v.decimal_symbol,
             "negative_symbol": v.negative_symbol,
             "prefix": v.prefix,
@@ -501,7 +512,7 @@ async def list_scope_assignments(
             "scope_type": s.scope_type,
             "scope_target": s.scope_target,
             "visibility_mode": s.visibility_mode,
-            "allowed_modules": json.loads(s.allowed_modules or "[]"),
+            "allowed_modules": safe_json_loads(s.allowed_modules, ["all"]),
             "can_decode": s.can_decode,
             "can_generate_qr": s.can_generate_qr,
             "updated_at": s.updated_at.isoformat() if s.updated_at else None,
@@ -899,7 +910,7 @@ async def get_codex_audit_logs(
             "entity_id": l.entity_id,
             "user_name": l.user_name,
             "status": l.status,
-            "details": json.loads(l.details) if l.details else None,
+            "details": safe_json_loads(l.details, None),
             "ip_address": l.ip_address,
             "created_at": l.created_at.isoformat(),
         }

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-09
+#  * @updated     2026-11-11
 #  *
 #  * @description Comprehensive domain service for CodeX configurable feature activation, digit-to-symbol encoding, and scope precedence resolution.
 #  */
@@ -533,6 +533,26 @@ class CodeXService:
             profile = res_any.scalar_one_or_none()
 
         if not profile:
+            # Verify institution exists before persisting to avoid FK violation
+            from app.models.institution import Institution
+            inst_row = (await db.execute(select(Institution.id).where(Institution.id == institution_id))).scalar_one_or_none()
+            if not inst_row:
+                return CodexMappingProfile(
+                    id=0,
+                    institution_id=institution_id,
+                    profile_code="DEFAULT",
+                    name="Standard AITDL CodeX Alphabet",
+                    description="Default 0-9 bijective alphabet mapping profile for PrathamOne EduOS.",
+                    version=1,
+                    digit_map=json.dumps(DEFAULT_DIGIT_MAP),
+                    decimal_symbol=".",
+                    negative_symbol="-",
+                    prefix="CX-",
+                    suffix="",
+                    is_active=True,
+                    is_default=True,
+                )
+
             # Initialize default baseline profile
             profile = CodexMappingProfile(
                 institution_id=institution_id,
