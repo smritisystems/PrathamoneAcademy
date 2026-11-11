@@ -45,6 +45,13 @@ vi.mock('../api/endpoints', async () => {
       getPolicy: vi.fn(),
       updatePolicy: vi.fn(),
       getHistory: vi.fn(),
+      getStorage: vi.fn(),
+      cleanOrphans: vi.fn(),
+      previewLogCleanup: vi.fn(),
+      executeLogCleanup: vi.fn(),
+      downloadLogArchive: vi.fn(),
+      getAlerts: vi.fn(),
+      dispatchAlertEmail: vi.fn(),
     },
   }
 })
@@ -149,15 +156,65 @@ function renderHousekeeping(initialRoute = '/housekeeping') {
   )
 }
 
+const mockStorage = {
+  disk: {
+    path: '/app/backups',
+    total_bytes: 100 * 1024 ** 3,
+    used_bytes: 25 * 1024 ** 3,
+    free_bytes: 75 * 1024 ** 3,
+    free_percent: 75.0,
+    used_percent: 25.0,
+    total_human: '100.00 GB',
+    free_human: '75.00 GB',
+  },
+  breakdown: {
+    edu_bytes: 133721,
+    edu_count: 1,
+    raw_dump_sql_bytes: 530598,
+    raw_dump_sql_count: 1,
+    legacy_bytes: 2048000,
+    legacy_count: 2,
+    log_archive_bytes: 0,
+    log_archive_count: 0,
+    orphan_bytes: 512,
+    orphan_count: 2,
+  },
+  orphan_files: [
+    { filename: 'old.dump.sha256', size_bytes: 256, kind: 'orphan_sha256' },
+    { filename: 'temp.tmp', size_bytes: 256, kind: 'temp_file' },
+  ],
+  log_archives: [],
+}
+
+const mockAlerts = {
+  health_status: 'warning',
+  critical_count: 0,
+  warning_count: 1,
+  total_alerts: 1,
+  evaluated_at: '2026-11-11T19:00:00Z',
+  items: [
+    {
+      id: 'orphan_sidecars',
+      severity: 'warning',
+      title: '2 Orphan Sidecar/Temp File(s)',
+      detail: 'Dangling sidecar files detected.',
+      recommended_tab: 'maintenance',
+    },
+  ],
+}
+
 describe('Housekeeping Workspace & Module Governance', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useEditModeStore.getState().resetAll()
     useAuthStore.setState({ user: adminUser, token: 'mock-token' })
 
-    vi.mocked(housekeepingApi.getOverview).mockResolvedValue({ data: mockOverview } as any)
+    vi.mocked(housekeepingApi.getOverview).mockResolvedValue({
+      data: { ...mockOverview, storage: mockStorage, alerts_summary: mockAlerts },
+    } as any)
     vi.mocked(housekeepingApi.listBackups).mockResolvedValue({ data: { backups: mockBackups } } as any)
     vi.mocked(housekeepingApi.getHistory).mockResolvedValue({ data: { events: [] } } as any)
+    vi.mocked(housekeepingApi.getStorage).mockResolvedValue({ data: mockStorage } as any)
   })
 
   it('registers housekeeping module strictly for authorized admins/sysadmins and hides from students', () => {
@@ -288,5 +345,73 @@ describe('Housekeeping Workspace & Module Governance', () => {
     fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
     expect(useEditModeStore.getState().isEditMode('system:housekeeping')).toBe(true)
     expect(screen.getByText(/Edit Mode Active/i)).toBeDefined()
+  })
+
+  it('displays proactive health alerts and disk storage on Overview and runs dry-run + confirmed log archival cleanup', async () => {
+    vi.mocked(housekeepingApi.previewLogCleanup).mockResolvedValue({
+      data: {
+        retention_days: 90,
+        cutoff_at: '2026-08-13T19:00:00Z',
+        total_eligible: 240,
+        categories: [
+          { category: 'navigation_activity', label: 'Navigation Telemetry', eligible_count: 200 },
+          { category: 'expired_tokens', label: 'Expired Tokens', eligible_count: 40 },
+        ],
+        protected_guarantee: 'Financial ledgers are permanently exempt.',
+      },
+    } as any)
+    vi.mocked(housekeepingApi.executeLogCleanup).mockResolvedValue({
+      data: {
+        retention_days: 90,
+        cutoff_at: '2026-08-13T19:00:00Z',
+        total_purged: 240,
+        purged_by_category: { navigation_activity: 200, expired_tokens: 40 },
+        archived_files: [
+          { category: 'navigation_activity', filename: 'logs_navigation_activity_20261111.jsonl.gz', row_count: 200, size_bytes: 1200, sha256: 'abc' },
+        ],
+      },
+    } as any)
+    vi.mocked(housekeepingApi.cleanOrphans).mockResolvedValue({
+      data: { deleted: ['old.dump.sha256', 'temp.tmp'], freed_bytes: 512 },
+    } as any)
+
+    renderHousekeeping('/housekeeping')
+    await waitFor(() => {
+      expect(screen.getByText('Proactive Health & Backup Alerts')).toBeDefined()
+      expect(screen.getByText('2 Orphan Sidecar/Temp File(s)')).toBeDefined()
+      expect(screen.getByText('Backup Volume Storage')).toBeDefined()
+    })
+
+    // Navigate to Maintenance & Integrity tab
+    fireEvent.click(screen.getByRole('button', { name: /Maintenance & Integrity/i }))
+    await waitFor(() => {
+      expect(screen.getByText('Storage Breakdown & Orphan File Cleanup')).toBeDefined()
+      expect(screen.getByText('Log Archival & Retention Cleanup')).toBeDefined()
+    })
+
+    // Dry-run preview works cleanly
+    fireEvent.click(screen.getByRole('button', { name: /Dry-Run Preview/i }))
+    await waitFor(() => {
+      expect(housekeepingApi.previewLogCleanup).toHaveBeenCalledTimes(1)
+      expect(screen.getByText(/Dry-Run Preview: 240 row\(s\)/i)).toBeDefined()
+    })
+
+    // Unlock Edit Mode -> clean orphans + confirm archival purge
+    fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Clean Orphan Sidecars & Temp Files/i }))
+    await waitFor(() => {
+      expect(housekeepingApi.cleanOrphans).toHaveBeenCalledTimes(1)
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Archive & Purge Eligible Logs/i }))
+    await waitFor(() => {
+      expect(screen.getByText('Confirm Log Archival & Retention Cleanup')).toBeDefined()
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Confirm Archive & Purge/i }))
+    await waitFor(() => {
+      expect(housekeepingApi.executeLogCleanup).toHaveBeenCalledWith(
+        expect.objectContaining({ confirm: true })
+      )
+    })
   })
 })

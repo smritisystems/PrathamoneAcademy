@@ -13,7 +13,7 @@ author: "Jawahar R Mallah"
 organization: "AITDL — AI Technology & Development Lab"
 status: "Approved"
 tags: ["housekeeping", "database-backup", "restore-drill", "pg-dump", "gfs-retention", "vacuum", "ssot", "rule-010"]
-entities: ["InstitutionSetting", "SettingAuditLog", "AuditLog"]
+entities: ["InstitutionSetting", "SettingAuditLog", "AuditLog", "CommunicationLog", "SharedDocumentToken", "UserNavigationActivity"]
 api_routes:
   [
     "/api/v1/housekeeping/overview",
@@ -28,6 +28,13 @@ api_routes:
     "/api/v1/housekeeping/maintenance/reconcile",
     "/api/v1/housekeeping/policy",
     "/api/v1/housekeeping/history",
+    "/api/v1/housekeeping/storage",
+    "/api/v1/housekeeping/storage/clean-orphans",
+    "/api/v1/housekeeping/cleanup/preview",
+    "/api/v1/housekeeping/cleanup/execute",
+    "/api/v1/housekeeping/cleanup/archives/{filename}/download",
+    "/api/v1/housekeeping/alerts",
+    "/api/v1/housekeeping/alerts/notify",
   ]
 related_modules: ["12_RBAC_SECURITY", "13_SYSADMIN_SETTINGS", "16_DATABASE_API", "10_FINANCE_ACCOUNTING"]
 ---
@@ -74,7 +81,7 @@ Both surfaces read and maintain one shared archive catalog across `backups/` and
 
 ### 3.2 Backend Service & Router
 - `backend/app/services/housekeeping_service.py` — `HousekeepingService`, `VALID_FILENAME_RE` (`.edu|dump|sql`), `_extract_edu_payload` (Zip-Slip & Zip-Bomb protected extractor), `RESTORE_CONFIRMATION_PHRASE`, `DEFAULT_HOUSEKEEPING_POLICY` (`backup_format='edu'`), SHA-256 + TOC verification, GFS retention pruning (preserving newest snapshot, legacy `data/backups/`, and `<48h` `pre_restore` safety snapshots), isolated `prashant_academy_drill` sandbox drill (auto-dropped in `finally:`), guarded live restore, `VACUUM (ANALYZE)`, and `pg_stat_user_tables` telemetry.
-- `backend/app/api/v1/endpoints/housekeeping.py` — 12 route paths / 14 HTTP operations mounted at `/api/v1/housekeeping` in `backend/app/api/v1/router.py`:
+- `backend/app/api/v1/endpoints/housekeeping.py` — 19 route paths / 21 HTTP operations mounted at `/api/v1/housekeeping` in `backend/app/api/v1/router.py`:
   - `GET /api/v1/housekeeping/overview`
   - `GET /api/v1/housekeeping/backups`, `POST /api/v1/housekeeping/backups`
   - `POST /api/v1/housekeeping/backups/{filename}/verify`
@@ -85,12 +92,15 @@ Both surfaces read and maintain one shared archive catalog across `backups/` and
   - `POST /api/v1/housekeeping/maintenance/vacuum`, `POST /api/v1/housekeeping/maintenance/reconcile`
   - `GET /api/v1/housekeeping/policy`, `PUT /api/v1/housekeeping/policy`
   - `GET /api/v1/housekeeping/history`
+  - `GET /api/v1/housekeeping/storage`, `POST /api/v1/housekeeping/storage/clean-orphans`
+  - `GET /api/v1/housekeeping/cleanup/preview`, `POST /api/v1/housekeeping/cleanup/execute`, `GET /api/v1/housekeeping/cleanup/archives/{filename}/download`
+  - `GET /api/v1/housekeeping/alerts`, `POST /api/v1/housekeeping/alerts/notify`
 - `backend/app/services/navigation_service.py` — Registered canonical module `"housekeeping"` (`HardDrive`, `system:housekeeping`, 5 sub-items) in `CANONICAL_MODULES` and default menus for `sysadmin` and `admin`.
 
 ### 3.3 Frontend Workspace & Navigation
 - `frontend/src/types/index.ts` & `frontend/src/api/endpoints.ts` — Strongly typed contracts and `housekeepingApi`.
 - `frontend/src/config/modules.ts`, `frontend/src/store/sidebarStore.ts`, `frontend/src/components/Sidebar.tsx`, `frontend/src/App.tsx` — Added `Housekeeping` menu with 5 collapsible sub-routes (`/housekeeping`, `/housekeeping/backups`, `/housekeeping/restore`, `/housekeeping/maintenance`, `/housekeeping/schedules`), visible exclusively to authorized Admin/SysAdmin/permitted users.
-- `frontend/src/pages/Housekeeping.tsx` — 5-tab interactive Workspace with live KPI telemetry, backup catalog supporting `.edu`, `.dump`, and `.sql` archives, SHA-256 copy & verification, upload & download, GFS pruning, isolated `prashant_academy_drill` sandbox drill card, guarded restore modal, `VACUUM (ANALYZE)` selector, SSOT reconciliation card, operations log, and scheduler command generator.
+- `frontend/src/pages/Housekeeping.tsx` — 5-tab interactive Workspace with live KPI & disk telemetry, proactive health alert panel + digest dispatch, backup catalog supporting `.edu`, `.dump`, and `.sql` archives, SHA-256 verification, GFS pruning, isolated `prashant_academy_drill` sandbox drill card, guarded restore modal, `VACUUM (ANALYZE)`, SSOT reconciliation card, storage/orphan sidecar cleanup, dry-run & `.jsonl.gz` log archival retention cleanup, operations log, and scheduler command generator.
 - `frontend/src/pages/Settings.tsx` — Added direct link banner inside the Maintenance tab opening `/housekeeping`.
 
 ---
@@ -101,14 +111,14 @@ All verification suites, builds, and live smoke checks ran cleanly after final e
 
 | Verification Check | Command / Target | Observed Result |
 |---|---|---|
-| Backend Targeted Pytest (Post-`.edu` Edits) | `docker compose exec -T backend pytest tests/test_housekeeping.py tests/test_navigation_engine.py tests/test_settings.py -v` | **14 passed** (verifies `POeduOS_*.edu` zip bundle creation, `database.dump` + `checksum.sha256` + `manifest.json`, `edu_sql`, Zip-Slip & corrupt `.edu` 400 rejection, `<48h` `pre_restore` `.edu` GFS retention, `VACUUM`, SSOT reconciliation `0.0`, dynamic settings & nav config) |
-| Full Backend Pytest Baseline (Pre-`.edu` Addition) | `docker compose exec -T backend pytest` | **278 passed, 4 skipped** (`388.76s`) |
-| TypeScript Check (Post-`.edu` Edits) | `npx tsc --noEmit` (inside `frontend/`) | **0 errors** (exit code `0`) |
-| Frontend Targeted Vitest (Post-`.edu` Edits) | `npx vitest run src/test/Housekeeping.test.tsx src/test/Sidebar.test.tsx src/test/GlobalViewFirstSoftwareWideCoverage.test.tsx` | **3 files, 25 tests passed** |
-| Full Frontend Vitest Baseline (Pre-`.edu` Addition) | `npx vitest run --poolOptions.threads.minThreads=1 --poolOptions.threads.maxThreads=2 --testTimeout=15000` | **61 test files, 476 tests passed** |
-| Docker Builds & Health | `docker compose build backend`, `docker compose build frontend`, `docker compose up -d` | Both images built cleanly (`Housekeeping-Bykvqj-t.js` bundled; `postgresql-client-17` active); `db`, `backend`, `frontend` running healthy |
+| Backend Targeted Pytest (Post-Extension) | `docker compose exec -T backend pytest tests/test_housekeeping.py tests/test_navigation_engine.py tests/test_settings.py -v` | **16 passed** (`test_housekeeping.py` 8/8 incl. `POeduOS_*.edu`, Zip-Slip/corrupt 400, orphan sidecar cleanup, health alerts & email digest dispatch, dry-run & `.jsonl.gz` log archival preserving recent + `WARNING`/`is_system_audit=True` rows; `test_navigation_engine.py` 4/4; `test_settings.py` 4/4) |
+| Full Backend Pytest Baseline (Initial Module) | `docker compose exec -T backend pytest` | **278 passed, 4 skipped** (`388.76s`) |
+| TypeScript Check (Post-Extension) | `npx tsc --noEmit` (inside `frontend/`) | **0 errors** (exit code `0`) |
+| Frontend Targeted Vitest (Post-Extension) | `npx vitest run src/test/Housekeeping.test.tsx src/test/Sidebar.test.tsx src/test/GlobalViewFirstSoftwareWideCoverage.test.tsx` | **3 files, 26 tests passed** |
+| Full Frontend Vitest Baseline (Pre-Extension) | `npx vitest run --poolOptions.threads.minThreads=1 --poolOptions.threads.maxThreads=2 --testTimeout=15000` | **61 test files, 476 tests passed** |
+| Docker Builds & Health | `docker compose build backend`, `docker compose build frontend`, `docker compose up -d` | Both images built cleanly (`Housekeeping-DeDJ-9Dl.js` bundled; `postgresql-client-17` active); `db`, `backend`, `frontend` running healthy |
 | Live CLI `.edu` Backup & Isolated Drill | `python scripts/db_backup.py backup`, `verify`, `drill` | Created `POeduOS_20261111_192952.edu` (**133,721** bytes; wraps `530,879 B` `database.dump` -> `133,043 B` ZIP, `checksum.sha256`, `manifest.json`; `sha_match=True`, `format_valid=True`, `objects=1120`); isolated drill succeeded on `prashant_academy_drill` (`83` tables restored) and cleaned up `prashant_academy_drill` leaving `prashant_academy_test` untouched |
-| Live End-to-End API & Browser Check | Playwright Chromium (`http://localhost:80`) + live HTTP APIs (`http://localhost:8000`) as `admin@example.com` | Passed against `POeduOS_20261111_192952.edu`: Sidebar 5 sub-items, Settings Data & Maintenance launcher, Rule 010 View Mode lock + navigation auto-reset + `admin` Edit Mode unlock, live `.edu` TOC verification (`1120` objects), Guarded Restore modal phrase gate, live SSOT Reconciliation `PASS — ZERO VARIANCE` (`0` broken invoices), `0` console errors, `0` page errors, `0` `>=400` API errors |
-| Live OpenAPI Discovery | `GET http://localhost:8000/openapi.json` | Confirmed **12** `/api/v1/housekeeping/*` route paths registered live |
+| Live End-to-End API & Browser Check | Playwright Chromium (`http://localhost:80`) + live HTTP APIs (`http://localhost:8000`) as `admin@example.com` | Passed against live stack: `/housekeeping/storage` (`28.10 GB` free / `12.87%`), `/housekeeping/alerts` (`status=warning`, `total=2`), `/housekeeping/cleanup/preview?retention_days=90` (`total_eligible=0`), Sidebar 5 sub-items, Settings launcher, Rule 010 locks + Edit Mode unlock, `.edu` TOC verify (`1120` objects), Guarded Restore modal, SSOT Reconciliation `PASS — ZERO VARIANCE`, UI Alerts/Storage/Dry-Run cards, `0` console errors, `0` page errors, `0` `>=400` API errors |
+| Live OpenAPI Discovery | `GET http://localhost:8000/openapi.json` | Confirmed **19** `/api/v1/housekeeping/*` route paths registered live |
 | Corporate Header Audit | `python scripts/manage_headers.py check` | **538 passed, 0 failed** (`100%` compliance) |
 

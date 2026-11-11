@@ -62,6 +62,9 @@ import type {
   HousekeepingCreateBackupResponse, HousekeepingVerifyResponse, HousekeepingPruneResponse,
   HousekeepingDrillResponse, HousekeepingRestoreResponse, HousekeepingVacuumResponse,
   HousekeepingReconciliationResult, HousekeepingHistoryEvent,
+  HousekeepingStorageTelemetry, HousekeepingCleanOrphansResponse,
+  HousekeepingLogCleanupPreview, HousekeepingLogCleanupExecuteResponse,
+  HousekeepingAlertsSummary, HousekeepingAlertNotifyResponse,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -1706,6 +1709,36 @@ export const housekeepingApi = {
   getHistory: (limit = 50) =>
     apiClient.get<{ events: HousekeepingHistoryEvent[] }>('/housekeeping/history', {
       params: { limit },
+    }),
+
+  getStorage: () =>
+    apiClient.get<HousekeepingStorageTelemetry>('/housekeeping/storage'),
+
+  cleanOrphans: () =>
+    apiClient.post<HousekeepingCleanOrphansResponse>('/housekeeping/storage/clean-orphans'),
+
+  previewLogCleanup: (params?: { retention_days?: number; categories?: string[] }) =>
+    apiClient.get<HousekeepingLogCleanupPreview>('/housekeeping/cleanup/preview', { params }),
+
+  executeLogCleanup: (data: {
+    retention_days?: number
+    categories?: string[]
+    confirm: boolean
+  }) => apiClient.post<HousekeepingLogCleanupExecuteResponse>('/housekeeping/cleanup/execute', data),
+
+  downloadLogArchive: (filename: string) =>
+    apiClient.get<Blob>(`/housekeeping/cleanup/archives/${encodeURIComponent(filename)}/download`, {
+      responseType: 'blob',
+    }),
+
+  getAlerts: (institutionId?: number) =>
+    apiClient.get<HousekeepingAlertsSummary>('/housekeeping/alerts', {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  dispatchAlertEmail: (data?: { recipient_email?: string }, institutionId?: number) =>
+    apiClient.post<HousekeepingAlertNotifyResponse>('/housekeeping/alerts/notify', data || {}, {
+      params: institutionId ? { institution_id: institutionId } : undefined,
     }),
 }
 

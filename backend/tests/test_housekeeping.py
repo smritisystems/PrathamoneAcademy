@@ -18,16 +18,20 @@
 
 import os
 import io
+import gzip
 import json
 import time
 import random
 import zipfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.core.security import get_password_hash
-from app.models.user import Role, User
+from app.models.communication import CommunicationLog, SharedDocumentToken
+from app.models.navigation import UserNavigationActivity
+from app.models.user import AuditLog, Role, User
 from app.services.housekeeping_service import HousekeepingService, RESTORE_CONFIRMATION_PHRASE
 
 
@@ -367,3 +371,143 @@ async def test_housekeeping_vacuum_reconcile_and_navigation(client, auth_headers
     assert nav_student.status_code == 200
     stu_mods = {m["id"] for m in nav_student.json().get("authorized_modules", [])}
     assert "housekeeping" not in stu_mods
+
+
+@pytest.mark.asyncio
+async def test_housekeeping_storage_orphan_cleanup_and_alerts(client, auth_headers, monkeypatch, tmp_path):
+    backups_dir = tmp_path / "backups"
+    legacy_dir = tmp_path / "legacy"
+    backups_dir.mkdir()
+    legacy_dir.mkdir()
+    monkeypatch.setenv("HOUSEKEEPING_BACKUPS_DIR", str(backups_dir))
+    monkeypatch.setenv("HOUSEKEEPING_LEGACY_BACKUPS_DIR", str(legacy_dir))
+
+    # No verified backup -> alerts report critical
+    al_empty = await client.get("/api/v1/housekeeping/alerts", headers=auth_headers)
+    assert al_empty.status_code == 200
+    assert al_empty.json()["health_status"] == "critical"
+    assert any(a["id"] == "no_verified_backup" for a in al_empty.json()["items"])
+
+    # Create valid snapshot + dangling orphan sidecars and temp file
+    valid_sql = backups_dir / "valid_snap.sql"
+    valid_sql.write_text("-- PostgreSQL database dump\nCREATE TABLE ok_t (id int);\n", encoding="utf-8")
+    orphan_sha = backups_dir / "deleted_snap.dump.sha256"
+    orphan_sha.write_text("deadbeef  deleted_snap.dump\n", encoding="utf-8")
+    orphan_meta = backups_dir / "deleted_snap.dump.meta.json"
+    orphan_meta.write_text("{}", encoding="utf-8")
+    temp_file = backups_dir / "partial_write.tmp"
+    temp_file.write_bytes(b"tempbytes")
+
+    stor_res = await client.get("/api/v1/housekeeping/storage", headers=auth_headers)
+    assert stor_res.status_code == 200
+    stor = stor_res.json()
+    assert stor["disk"]["free_bytes"] > 0
+    assert stor["breakdown"]["orphan_count"] == 3
+
+    clean_res = await client.post("/api/v1/housekeeping/storage/clean-orphans", headers=auth_headers)
+    assert clean_res.status_code == 200
+    cdata = clean_res.json()
+    assert len(cdata["deleted"]) == 3
+    assert valid_sql.exists()
+    assert not orphan_sha.exists()
+    assert not orphan_meta.exists()
+    assert not temp_file.exists()
+
+    # Dispatch health alert email digest
+    notify_res = await client.post(
+        "/api/v1/housekeeping/alerts/notify",
+        json={"recipient_email": "ops@prashant.edu"},
+        headers=auth_headers,
+    )
+    assert notify_res.status_code == 200
+    ndata = notify_res.json()
+    assert ndata["dispatched"] is True
+    assert ndata["recipient"] == "ops@prashant.edu"
+
+
+@pytest.mark.asyncio
+async def test_housekeeping_log_archival_preview_and_safe_purge(client, auth_headers, db, admin_user, monkeypatch, tmp_path):
+    backups_dir = tmp_path / "backups"
+    legacy_dir = tmp_path / "legacy"
+    backups_dir.mkdir()
+    legacy_dir.mkdir()
+    monkeypatch.setenv("HOUSEKEEPING_BACKUPS_DIR", str(backups_dir))
+    monkeypatch.setenv("HOUSEKEEPING_LEGACY_BACKUPS_DIR", str(legacy_dir))
+
+    inst_id = admin_user.institution_id or 1
+    old_dt = datetime.now(timezone.utc) - timedelta(days=120)
+    fresh_dt = datetime.now(timezone.utc) - timedelta(days=1)
+
+    # Seed old & fresh Navigation Activity
+    db.add(UserNavigationActivity(user_id=admin_user.id, institution_id=inst_id, module_key="dashboard", route_path="/dashboard", accessed_at=old_dt))
+    db.add(UserNavigationActivity(user_id=admin_user.id, institution_id=inst_id, module_key="students", route_path="/students", accessed_at=fresh_dt))
+
+    # Seed old & fresh SharedDocumentToken
+    db.add(SharedDocumentToken(token="tok_old_expired_1", institution_id=inst_id, document_type="RECEIPT", record_id=1, expires_at=old_dt))
+    db.add(SharedDocumentToken(token="tok_active_1", institution_id=inst_id, document_type="RECEIPT", record_id=2, expires_at=datetime.now(timezone.utc) + timedelta(days=5)))
+
+    # Seed old & fresh CommunicationLog
+    db.add(CommunicationLog(institution_id=inst_id, channel="EMAIL", recipient_type="STUDENT", recipient_name="A", recipient_destination="a@b.com", content="Old", status="SENT", created_at=old_dt))
+    db.add(CommunicationLog(institution_id=inst_id, channel="EMAIL", recipient_type="STUDENT", recipient_name="B", recipient_destination="b@c.com", content="Fresh", status="SENT", created_at=fresh_dt))
+
+    # Seed AuditLog: old routine INFO vs protected old WARNING vs protected old system audit
+    db.add(AuditLog(user_id=admin_user.id, action="ROUTINE_VIEW", resource_type="test_cleanup", severity="info", is_system_audit=False, details="old_info_row", created_at=old_dt))
+    db.add(AuditLog(user_id=admin_user.id, action="CRITICAL_SEC_EVENT", resource_type="test_cleanup", severity="WARNING", is_system_audit=False, details="protected_warn_row", created_at=old_dt))
+    db.add(AuditLog(user_id=admin_user.id, action="SYSTEM_POLICY_LOCK", resource_type="test_cleanup", severity="info", is_system_audit=True, details="protected_sys_row", created_at=old_dt))
+    await db.commit()
+
+    # Retention floor (<7 days) rejected
+    bad_prev = await client.get("/api/v1/housekeeping/cleanup/preview?retention_days=3", headers=auth_headers)
+    assert bad_prev.status_code == 422
+
+    # Execute without confirm=True blocked (400)
+    unconfirmed = await client.post(
+        "/api/v1/housekeeping/cleanup/execute",
+        json={"retention_days": 30, "confirm": False},
+        headers=auth_headers,
+    )
+    assert unconfirmed.status_code == 400
+
+    # Dry-run preview counts strictly eligible rows
+    prev_res = await client.get("/api/v1/housekeeping/cleanup/preview?retention_days=30", headers=auth_headers)
+    assert prev_res.status_code == 200
+    prev = prev_res.json()
+    counts = {c["category"]: c["eligible_count"] for c in prev["categories"]}
+    assert counts["navigation_activity"] >= 1
+    assert counts["expired_tokens"] >= 1
+    assert counts["communication_logs"] >= 1
+    assert counts["routine_audit_logs"] >= 1
+
+    # Confirmed archival + purge
+    exec_res = await client.post(
+        "/api/v1/housekeeping/cleanup/execute",
+        json={"retention_days": 30, "confirm": True},
+        headers=auth_headers,
+    )
+    assert exec_res.status_code == 200
+    edata = exec_res.json()
+    assert edata["total_purged"] >= 4
+    assert len(edata["archived_files"]) >= 4
+
+    # Verify gzip archive exists, contains exported data, and downloads cleanly
+    first_arch = edata["archived_files"][0]["filename"]
+    arch_path = backups_dir / "archives" / first_arch
+    assert arch_path.exists()
+    with gzip.open(arch_path, "rt", encoding="utf-8") as gz:
+        assert len(gz.read().strip().splitlines()) >= 1
+
+    dl_arch = await client.get(
+        f"/api/v1/housekeeping/cleanup/archives/{first_arch}/download",
+        headers=auth_headers,
+    )
+    assert dl_arch.status_code == 200
+
+    # Confirm protected WARNING & system audit & fresh rows remain in DB
+    warn_exists = (await db.execute(select(func.count(AuditLog.id)).where(AuditLog.details == "protected_warn_row"))).scalar()
+    sys_exists = (await db.execute(select(func.count(AuditLog.id)).where(AuditLog.details == "protected_sys_row"))).scalar()
+    old_info_exists = (await db.execute(select(func.count(AuditLog.id)).where(AuditLog.details == "old_info_row"))).scalar()
+    fresh_nav = (await db.execute(select(func.count(UserNavigationActivity.id)).where(UserNavigationActivity.route_path == "/students"))).scalar()
+    assert warn_exists == 1
+    assert sys_exists == 1
+    assert old_info_exists == 0
+    assert fresh_nav >= 1

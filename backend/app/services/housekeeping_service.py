@@ -17,6 +17,7 @@
 #  */
 
 import asyncio
+import gzip
 import hashlib
 import json
 import os
@@ -29,17 +30,21 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import unquote, urlparse
 
-from sqlalchemy import text, select, desc
+from sqlalchemy import text, select, desc, func, delete, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 from app.core.database import engine
+from app.models.communication import CommunicationLog, SharedDocumentToken
+from app.models.navigation import UserNavigationActivity
 from app.models.settings import InstitutionSetting, SettingAuditLog
 from app.models.user import AuditLog, User
+from app.services.communication import ChannelAdapter
 from app.services.financial_governance_service import FinancialGovernanceService, FinancialFilter
 
 VALID_FILENAME_RE = re.compile(r"^[A-Za-z0-9._-]+\.(edu|dump|sql)$")
+VALID_LOG_ARCHIVE_RE = re.compile(r"^[A-Za-z0-9._-]+\.jsonl\.gz$")
 RESTORE_CONFIRMATION_PHRASE = "RESTORE PRASHANT_ACADEMY"
 MAX_EDU_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024  # 2 GiB safety limit against malformed zip bombs
 
@@ -54,6 +59,12 @@ DEFAULT_HOUSEKEEPING_POLICY: Dict[str, Any] = {
     "retain_monthly": 6,
     "auto_vacuum_enabled": True,
     "log_retention_days": 90,
+    "alert_enabled": True,
+    "alert_email": "",
+    "alert_max_backup_age_hours": 36,
+    "alert_min_free_disk_percent": 15,
+    "dead_tuple_alert_threshold": 10000,
+    "archive_before_purge": True,
 }
 
 
@@ -1085,6 +1096,10 @@ class HousekeepingService:
         latest = verified_backups[0] if verified_backups else (backups[0] if backups else None)
         policy = await cls.get_housekeeping_policy(db, institution_id)
         dead_total = sum(int(r.dead_tuples or 0) for r in tbl_rows)
+        storage = cls.get_storage_telemetry()
+        alerts_summary = await cls.evaluate_health_alerts(
+            db, institution_id, policy=policy, storage=storage, dead_tuples_top15=dead_total, backups=backups
+        )
 
         return {
             "database": {
@@ -1121,6 +1136,8 @@ class HousekeepingService:
                 for r in tbl_rows
             ],
             "policy": policy,
+            "storage": storage,
+            "alerts_summary": alerts_summary,
             "scheduler_commands": {
                 "windows_task_scheduler": (
                     f'schtasks /Create /TN "PrathamOne_Nightly_DB_Backup" '
@@ -1132,5 +1149,536 @@ class HousekeepingService:
                     f'cd /opt/prashantacademy && python3 scripts/db_backup.py backup --prune >> backups/cron.log 2>&1'
                 ),
             },
+        }
+
+    # ─── Storage Inspection, Orphan Sidecar Cleanup, Log Archival & Health Alerts ───
+
+    @classmethod
+    def resolve_safe_log_archive_path(cls, filename: str) -> Path:
+        if not VALID_LOG_ARCHIVE_RE.match(filename or ""):
+            raise ValueError("Invalid log archive filename. Must end in .jsonl.gz.")
+        archives_dir = (resolve_backups_dir() / "archives").resolve()
+        archives_dir.mkdir(parents=True, exist_ok=True)
+        candidate = (archives_dir / filename).resolve()
+        if not candidate.is_relative_to(archives_dir):
+            raise ValueError("Path traversal outside approved log archive directory is forbidden.")
+        return candidate
+
+    @classmethod
+    def get_storage_telemetry(cls) -> Dict[str, Any]:
+        backups_dir = resolve_backups_dir()
+        legacy_dir = resolve_legacy_backups_dir()
+        archives_dir = backups_dir / "archives"
+        archives_dir.mkdir(parents=True, exist_ok=True)
+
+        usage = shutil.disk_usage(backups_dir)
+        valid_archives = {
+            p.name for p in backups_dir.iterdir()
+            if p.is_file() and p.suffix in (".edu", ".dump", ".sql")
+        }
+
+        breakdown = {
+            "edu_bytes": 0,
+            "edu_count": 0,
+            "raw_dump_sql_bytes": 0,
+            "raw_dump_sql_count": 0,
+            "legacy_bytes": 0,
+            "legacy_count": 0,
+            "log_archive_bytes": 0,
+            "log_archive_count": 0,
+            "orphan_bytes": 0,
+            "orphan_count": 0,
+        }
+        orphan_files: List[Dict[str, Any]] = []
+
+        for entry in sorted(backups_dir.iterdir(), key=lambda p: p.name):
+            if not entry.is_file():
+                continue
+            sz = entry.stat().st_size
+            if entry.suffix == ".edu":
+                breakdown["edu_bytes"] += sz
+                breakdown["edu_count"] += 1
+            elif entry.suffix in (".dump", ".sql"):
+                breakdown["raw_dump_sql_bytes"] += sz
+                breakdown["raw_dump_sql_count"] += 1
+            elif entry.name.endswith(".sha256") and entry.name[:-7] not in valid_archives:
+                breakdown["orphan_bytes"] += sz
+                breakdown["orphan_count"] += 1
+                orphan_files.append({"filename": entry.name, "size_bytes": sz, "kind": "orphan_sha256"})
+            elif entry.name.endswith(".meta.json") and entry.name[:-10] not in valid_archives:
+                breakdown["orphan_bytes"] += sz
+                breakdown["orphan_count"] += 1
+                orphan_files.append({"filename": entry.name, "size_bytes": sz, "kind": "orphan_meta"})
+            elif entry.suffix in (".tmp", ".part"):
+                breakdown["orphan_bytes"] += sz
+                breakdown["orphan_count"] += 1
+                orphan_files.append({"filename": entry.name, "size_bytes": sz, "kind": "temp_file"})
+
+        for entry in legacy_dir.iterdir() if legacy_dir.exists() else []:
+            if entry.is_file() and entry.suffix in (".edu", ".dump", ".sql"):
+                breakdown["legacy_bytes"] += entry.stat().st_size
+                breakdown["legacy_count"] += 1
+
+        log_archives: List[Dict[str, Any]] = []
+        for entry in sorted(archives_dir.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+            if not entry.is_file() or not entry.name.endswith(".jsonl.gz"):
+                continue
+            st = entry.stat()
+            breakdown["log_archive_bytes"] += st.st_size
+            breakdown["log_archive_count"] += 1
+            sha_p = Path(str(entry) + ".sha256")
+            sha_val = sha_p.read_text(encoding="utf-8", errors="replace").strip().split()[0] if sha_p.exists() else None
+            log_archives.append({
+                "filename": entry.name,
+                "size_bytes": st.st_size,
+                "size_human": f"{st.st_size / 1024:.1f} KB",
+                "created_at": datetime.fromtimestamp(st.st_mtime, tz=timezone.utc).isoformat(),
+                "sha256": sha_val,
+            })
+
+        total_disk = max(1, usage.total)
+        free_pct = round((usage.free / total_disk) * 100.0, 2)
+        return {
+            "disk": {
+                "path": str(backups_dir),
+                "total_bytes": int(usage.total),
+                "used_bytes": int(usage.used),
+                "free_bytes": int(usage.free),
+                "free_percent": free_pct,
+                "used_percent": round(100.0 - free_pct, 2),
+                "total_human": f"{usage.total / (1024 ** 3):.2f} GB",
+                "free_human": f"{usage.free / (1024 ** 3):.2f} GB",
+            },
+            "breakdown": breakdown,
+            "orphan_files": orphan_files,
+            "log_archives": log_archives,
+        }
+
+    @classmethod
+    async def clean_orphan_files(cls, db: AsyncSession, user: User) -> Dict[str, Any]:
+        backups_dir = resolve_backups_dir()
+        storage = cls.get_storage_telemetry()
+        deleted: List[str] = []
+        freed_bytes = 0
+        for item in storage["orphan_files"]:
+            fname = item["filename"]
+            candidate = (backups_dir / fname).resolve()
+            if not candidate.is_relative_to(backups_dir.resolve()):
+                continue
+            if candidate.exists() and candidate.is_file():
+                freed_bytes += candidate.stat().st_size
+                candidate.unlink(missing_ok=True)
+                deleted.append(fname)
+
+        db.add(AuditLog(
+            user_id=user.id,
+            action="HOUSEKEEPING_ORPHANS_CLEANED",
+            resource_type="storage_cleanup",
+            details=f"Removed {len(deleted)} orphan sidecar/temp file(s), freed {freed_bytes} bytes.",
+            severity="INFO",
+        ))
+        await db.commit()
+        _append_history_event({
+            "action": "ORPHANS_CLEANED",
+            "status": "success",
+            "actor": user.username,
+            "deleted_count": len(deleted),
+            "freed_bytes": freed_bytes,
+        })
+        return {"deleted": deleted, "freed_bytes": freed_bytes}
+
+    @classmethod
+    def _build_log_cleanup_specs(cls, institution_id: int, cutoff: datetime) -> Dict[str, Dict[str, Any]]:
+        inst_users = select(User.id).where(
+            or_(User.institution_id == institution_id, User.institution_id.is_(None))
+        )
+        return {
+            "navigation_activity": {
+                "label": "Navigation Telemetry (UserNavigationActivity)",
+                "model": UserNavigationActivity,
+                "where": and_(
+                    UserNavigationActivity.institution_id == institution_id,
+                    UserNavigationActivity.accessed_at < cutoff,
+                ),
+                "serializer": lambda r: {
+                    "id": r.id, "user_id": r.user_id, "institution_id": r.institution_id,
+                    "module_key": r.module_key, "route_path": r.route_path,
+                    "accessed_at": r.accessed_at.isoformat() if r.accessed_at else None,
+                },
+            },
+            "expired_tokens": {
+                "label": "Expired / Revoked Share Tokens (SharedDocumentToken)",
+                "model": SharedDocumentToken,
+                "where": and_(
+                    SharedDocumentToken.institution_id == institution_id,
+                    or_(
+                        SharedDocumentToken.expires_at < cutoff,
+                        and_(SharedDocumentToken.is_revoked.is_(True), SharedDocumentToken.created_at < cutoff),
+                    ),
+                ),
+                "serializer": lambda r: {
+                    "id": r.id, "document_type": r.document_type, "record_id": r.record_id,
+                    "recipient_name": r.recipient_name, "is_revoked": r.is_revoked,
+                    "expires_at": r.expires_at.isoformat() if r.expires_at else None,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                },
+            },
+            "communication_logs": {
+                "label": "Historical Message Dispatch Logs (CommunicationLog)",
+                "model": CommunicationLog,
+                "where": and_(
+                    CommunicationLog.institution_id == institution_id,
+                    CommunicationLog.created_at < cutoff,
+                ),
+                "serializer": lambda r: {
+                    "id": r.id, "channel": r.channel, "recipient_type": r.recipient_type,
+                    "recipient_name": r.recipient_name, "recipient_destination": r.recipient_destination,
+                    "template_code": r.template_code, "status": r.status,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                },
+            },
+            "routine_audit_logs": {
+                "label": "Routine Info Audit Logs (AuditLog severity='info', non-system)",
+                "model": AuditLog,
+                "where": and_(
+                    AuditLog.created_at < cutoff,
+                    AuditLog.is_system_audit.is_(False),
+                    func.lower(AuditLog.severity) == "info",
+                    or_(AuditLog.user_id.is_(None), AuditLog.user_id.in_(inst_users)),
+                ),
+                "serializer": lambda r: {
+                    "id": r.id, "user_id": r.user_id, "action": r.action,
+                    "resource_type": r.resource_type, "resource_id": r.resource_id,
+                    "severity": r.severity, "details": r.details,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                },
+            },
+        }
+
+    @classmethod
+    async def preview_log_cleanup(
+        cls,
+        db: AsyncSession,
+        institution_id: int = 1,
+        retention_days: Optional[int] = None,
+        categories: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        policy = await cls.get_housekeeping_policy(db, institution_id)
+        days = int(retention_days if retention_days is not None else policy.get("log_retention_days", 90))
+        if days < 7:
+            raise ValueError("Retention floor violation: retention_days must be at least 7 days.")
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        specs = cls._build_log_cleanup_specs(institution_id, cutoff)
+        selected = [c for c in (categories or list(specs.keys())) if c in specs]
+
+        breakdown: List[Dict[str, Any]] = []
+        total_eligible = 0
+        for key in selected:
+            spec = specs[key]
+            model = spec["model"]
+            cnt = int((await db.execute(select(func.count(model.id)).where(spec["where"]))).scalar() or 0)
+            total_eligible += cnt
+            breakdown.append({
+                "category": key,
+                "label": spec["label"],
+                "eligible_count": cnt,
+            })
+
+        return {
+            "retention_days": days,
+            "cutoff_at": cutoff.isoformat(),
+            "total_eligible": total_eligible,
+            "categories": breakdown,
+            "protected_guarantee": "Financial ledgers, FeeReceipts, SettingAuditLog, and WARNING/CRITICAL audit records are permanently exempt.",
+        }
+
+    @classmethod
+    async def execute_log_cleanup(
+        cls,
+        db: AsyncSession,
+        user: User,
+        institution_id: int = 1,
+        retention_days: Optional[int] = None,
+        categories: Optional[List[str]] = None,
+        confirm: bool = False,
+    ) -> Dict[str, Any]:
+        if not confirm:
+            raise ValueError("Explicit confirmation (confirm=True) is required before archiving and purging logs.")
+        policy = await cls.get_housekeeping_policy(db, institution_id)
+        days = int(retention_days if retention_days is not None else policy.get("log_retention_days", 90))
+        if days < 7:
+            raise ValueError("Retention floor violation: retention_days must be at least 7 days.")
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        specs = cls._build_log_cleanup_specs(institution_id, cutoff)
+        selected = [c for c in (categories or list(specs.keys())) if c in specs]
+        if not selected:
+            raise ValueError("Select at least one valid log category for cleanup.")
+
+        archives_dir = resolve_backups_dir() / "archives"
+        archives_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        archive_on = bool(policy.get("archive_before_purge", True))
+
+        archived_files: List[Dict[str, Any]] = []
+        purged_by_category: Dict[str, int] = {}
+        total_purged = 0
+
+        for key in selected:
+            spec = specs[key]
+            model = spec["model"]
+            rows = (await db.execute(select(model).where(spec["where"]).order_by(model.id))).scalars().all()
+            if not rows:
+                purged_by_category[key] = 0
+                continue
+
+            if archive_on:
+                arch_name = f"logs_{key}_{ts}.jsonl.gz"
+                arch_path = archives_dir / arch_name
+                seq = 1
+                while arch_path.exists():
+                    arch_name = f"logs_{key}_{ts}_{seq:02d}.jsonl.gz"
+                    arch_path = archives_dir / arch_name
+                    seq += 1
+                with gzip.open(arch_path, "wt", encoding="utf-8") as gz:
+                    for row in rows:
+                        gz.write(json.dumps(spec["serializer"](row), default=str) + "\n")
+                sha = compute_sha256(arch_path)
+                Path(str(arch_path) + ".sha256").write_text(f"{sha}  {arch_name}\n", encoding="utf-8")
+                archived_files.append({
+                    "category": key,
+                    "filename": arch_name,
+                    "row_count": len(rows),
+                    "size_bytes": arch_path.stat().st_size,
+                    "sha256": sha,
+                })
+
+            row_ids = [r.id for r in rows]
+            for i in range(0, len(row_ids), 500):
+                batch = row_ids[i:i + 500]
+                await db.execute(delete(model).where(model.id.in_(batch)))
+            purged_by_category[key] = len(row_ids)
+            total_purged += len(row_ids)
+
+        db.add(AuditLog(
+            user_id=user.id,
+            action="HOUSEKEEPING_LOGS_ARCHIVED_AND_PURGED",
+            resource_type="log_maintenance",
+            details=f"Archived & purged {total_purged} log row(s) older than {days}d across {', '.join(selected)}.",
+            severity="WARNING",
+        ))
+        await db.commit()
+        _append_history_event({
+            "action": "LOGS_ARCHIVED_PURGED",
+            "status": "success",
+            "actor": user.username,
+            "retention_days": days,
+            "total_purged": total_purged,
+            "archives": [a["filename"] for a in archived_files],
+        })
+        return {
+            "retention_days": days,
+            "cutoff_at": cutoff.isoformat(),
+            "total_purged": total_purged,
+            "purged_by_category": purged_by_category,
+            "archived_files": archived_files,
+        }
+
+    @classmethod
+    async def evaluate_health_alerts(
+        cls,
+        db: AsyncSession,
+        institution_id: int = 1,
+        policy: Optional[Dict[str, Any]] = None,
+        storage: Optional[Dict[str, Any]] = None,
+        dead_tuples_top15: Optional[int] = None,
+        backups: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        pol = policy or await cls.get_housekeeping_policy(db, institution_id)
+        stor = storage or cls.get_storage_telemetry()
+        bks = backups if backups is not None else cls.list_backups()
+        if dead_tuples_top15 is None:
+            dead_tuples_top15 = int((await db.execute(
+                text("SELECT COALESCE(SUM(n_dead_tup), 0) FROM (SELECT n_dead_tup FROM pg_stat_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 15) t")
+            )).scalar() or 0)
+
+        alerts: List[Dict[str, Any]] = []
+        now = datetime.now(timezone.utc)
+        max_age_h = int(pol.get("alert_max_backup_age_hours", 36) or 36)
+        min_free_pct = float(pol.get("alert_min_free_disk_percent", 15) or 15)
+        dead_thresh = int(pol.get("dead_tuple_alert_threshold", 10000) or 10000)
+
+        verified_bks = [b for b in bks if b.get("verified")]
+        if not verified_bks:
+            alerts.append({
+                "id": "no_verified_backup",
+                "severity": "critical",
+                "title": "No Verified Database Backup Found",
+                "detail": "Zero verified backups exist in the catalog. Create and verify a POeduOS_*.edu backup immediately.",
+                "recommended_tab": "backups",
+            })
+        else:
+            try:
+                latest_dt = datetime.fromisoformat(str(verified_bks[0]["created_at"]).replace("Z", "+00:00"))
+                if latest_dt.tzinfo is None:
+                    latest_dt = latest_dt.replace(tzinfo=timezone.utc)
+                age_hours = (now - latest_dt).total_seconds() / 3600.0
+                if age_hours >= max_age_h * 2:
+                    alerts.append({
+                        "id": "backup_critically_stale",
+                        "severity": "critical",
+                        "title": "Verified Backup Critically Overdue",
+                        "detail": f"Latest verified backup is {age_hours:.1f}h old (threshold {max_age_h}h).",
+                        "recommended_tab": "backups",
+                    })
+                elif age_hours >= max_age_h:
+                    alerts.append({
+                        "id": "backup_stale",
+                        "severity": "warning",
+                        "title": "Backup Schedule Attention Needed",
+                        "detail": f"Latest verified backup is {age_hours:.1f}h old (max threshold {max_age_h}h).",
+                        "recommended_tab": "backups",
+                    })
+            except Exception:
+                pass
+
+        unverified_managed = [b for b in bks if b.get("source") == "backups" and not b.get("verified")]
+        if unverified_managed:
+            alerts.append({
+                "id": "unverified_archives",
+                "severity": "warning",
+                "title": f"{len(unverified_managed)} Unverified Archive(s) in Managed Storage",
+                "detail": "Run checksum & TOC verification to confirm restore readiness of older archives.",
+                "recommended_tab": "backups",
+            })
+
+        free_pct = float(stor["disk"]["free_percent"])
+        if free_pct < 5.0:
+            alerts.append({
+                "id": "disk_critical",
+                "severity": "critical",
+                "title": "Critical Host Disk Capacity",
+                "detail": f"Only {free_pct:.1f}% ({stor['disk']['free_human']}) free on backup volume.",
+                "recommended_tab": "maintenance",
+            })
+        elif free_pct < min_free_pct:
+            alerts.append({
+                "id": "disk_low",
+                "severity": "warning",
+                "title": "Low Backup Volume Free Space",
+                "detail": f"Free disk space is {free_pct:.1f}% (below {min_free_pct:.0f}% policy floor).",
+                "recommended_tab": "maintenance",
+            })
+
+        if int(dead_tuples_top15) > dead_thresh:
+            alerts.append({
+                "id": "tuple_bloat",
+                "severity": "warning",
+                "title": "PostgreSQL Dead Tuple Bloat Detected",
+                "detail": f"{dead_tuples_top15:,} dead tuples detected across top tables (threshold {dead_thresh:,}). Run VACUUM (ANALYZE).",
+                "recommended_tab": "maintenance",
+            })
+
+        if stor["breakdown"]["orphan_count"] > 0:
+            alerts.append({
+                "id": "orphan_sidecars",
+                "severity": "info",
+                "title": f"{stor['breakdown']['orphan_count']} Orphan Sidecar/Temp File(s)",
+                "detail": "Dangling .sha256/.meta.json or .tmp files can be cleaned safely without touching backups.",
+                "recommended_tab": "maintenance",
+            })
+
+        cleanup_prev = await cls.preview_log_cleanup(db, institution_id, retention_days=int(pol.get("log_retention_days", 90) or 90))
+        if cleanup_prev["total_eligible"] > 5000:
+            alerts.append({
+                "id": "log_backlog",
+                "severity": "info",
+                "title": f"{cleanup_prev['total_eligible']:,} Historical Log Rows Eligible for Archival",
+                "detail": f"Logs older than {cleanup_prev['retention_days']} days can be archived to .jsonl.gz and purged.",
+                "recommended_tab": "maintenance",
+            })
+
+        crit_n = sum(1 for a in alerts if a["severity"] == "critical")
+        warn_n = sum(1 for a in alerts if a["severity"] == "warning")
+        health_status = "critical" if crit_n > 0 else ("warning" if warn_n > 0 else "healthy")
+        return {
+            "health_status": health_status,
+            "critical_count": crit_n,
+            "warning_count": warn_n,
+            "total_alerts": len(alerts),
+            "evaluated_at": now.isoformat(),
+            "items": alerts,
+        }
+
+    @classmethod
+    async def dispatch_health_alert_notification(
+        cls,
+        db: AsyncSession,
+        user: User,
+        institution_id: int = 1,
+        recipient_email: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        policy = await cls.get_housekeeping_policy(db, institution_id)
+        alerts = await cls.evaluate_health_alerts(db, institution_id, policy=policy)
+        target_email = (recipient_email or policy.get("alert_email") or user.email or "").strip()
+        if not target_email or "@" not in target_email:
+            raise ValueError("A valid recipient email address is required to dispatch housekeeping alerts.")
+
+        summary_lines = [
+            f"PrathamOne EduOS Housekeeping Health Report — Status: {alerts['health_status'].upper()}",
+            f"Critical Alerts: {alerts['critical_count']} | Warnings: {alerts['warning_count']}",
+            "",
+        ]
+        for item in alerts["items"]:
+            summary_lines.append(f"[{item['severity'].upper()}] {item['title']}: {item['detail']}")
+        if not alerts["items"]:
+            summary_lines.append("All backup, disk capacity, and PostgreSQL maintenance checks are healthy.")
+        body_text = "\n".join(summary_lines)
+        subject = f"[PrathamOne EduOS Housekeeping] Health Status: {alerts['health_status'].upper()}"
+
+        ok, dispatch_status, msg_or_err = await ChannelAdapter.dispatch_email(
+            recipient_email=target_email,
+            subject=subject,
+            html_body="<pre>" + body_text + "</pre>",
+            plain_text=body_text,
+        )
+        comm_log = CommunicationLog(
+            institution_id=institution_id,
+            channel="EMAIL",
+            recipient_type="STAFF",
+            recipient_id=user.id,
+            recipient_name=f"{user.first_name} {user.last_name}".strip() or user.username,
+            recipient_destination=target_email,
+            template_code="HOUSEKEEPING_ALERT",
+            subject=subject,
+            content=body_text,
+            status=dispatch_status if ok else "FAILED",
+            error_message=None if ok else msg_or_err,
+            sender_id=user.id,
+            sender_name=user.username,
+            sent_at=datetime.now(timezone.utc) if ok else None,
+        )
+        db.add(comm_log)
+        db.add(AuditLog(
+            user_id=user.id,
+            action="HOUSEKEEPING_ALERT_DISPATCHED",
+            resource_type="health_alert",
+            details=f"Dispatched Housekeeping alert digest to {target_email} ({dispatch_status}).",
+            severity="INFO",
+        ))
+        await db.commit()
+        _append_history_event({
+            "action": "ALERT_DISPATCHED",
+            "status": "success" if ok else "failed",
+            "actor": user.username,
+            "details": f"Digest to {target_email}: {alerts['health_status']} ({msg_or_err})",
+        })
+        return {
+            "dispatched": ok,
+            "status": dispatch_status if ok else "FAILED",
+            "recipient": target_email,
+            "reference": msg_or_err,
+            "health_status": alerts["health_status"],
+            "alert_count": alerts["total_alerts"],
         }
 

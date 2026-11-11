@@ -88,7 +88,23 @@ class PolicyUpdateRequest(BaseModel):
     retain_monthly: Optional[int] = Field(default=None, ge=0, le=36)
     auto_vacuum_enabled: Optional[bool] = None
     log_retention_days: Optional[int] = Field(default=None, ge=7, le=3650)
+    alert_enabled: Optional[bool] = None
+    alert_email: Optional[str] = None
+    alert_max_backup_age_hours: Optional[int] = Field(default=None, ge=1, le=720)
+    alert_min_free_disk_percent: Optional[int] = Field(default=None, ge=1, le=80)
+    dead_tuple_alert_threshold: Optional[int] = Field(default=None, ge=100, le=10000000)
+    archive_before_purge: Optional[bool] = None
     reason: str = Field(default="Housekeeping policy updated")
+
+
+class LogCleanupExecuteRequest(BaseModel):
+    retention_days: Optional[int] = Field(default=None, ge=7, le=3650)
+    categories: Optional[List[str]] = None
+    confirm: bool = False
+
+
+class AlertNotifyRequest(BaseModel):
+    recipient_email: Optional[str] = None
 
 
 @router.get("/overview")
@@ -295,4 +311,97 @@ async def get_housekeeping_history(
     _current_user: User = Depends(_require_housekeeping_access),
 ):
     return {"events": read_history_events(limit=limit)}
+
+
+@router.get("/storage")
+async def get_housekeeping_storage(
+    _current_user: User = Depends(_require_housekeeping_access),
+):
+    return HousekeepingService.get_storage_telemetry()
+
+
+@router.post("/storage/clean-orphans")
+async def clean_orphan_storage_files(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_access),
+):
+    return await HousekeepingService.clean_orphan_files(db, user=current_user)
+
+
+@router.get("/cleanup/preview")
+async def preview_housekeeping_log_cleanup(
+    retention_days: Optional[int] = Query(default=None, ge=7, le=3650),
+    categories: Optional[List[str]] = Query(default=None),
+    institution_id: Optional[int] = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_access),
+):
+    inst_id = institution_id or current_user.institution_id or 1
+    try:
+        return await HousekeepingService.preview_log_cleanup(
+            db, institution_id=inst_id, retention_days=retention_days, categories=categories
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/cleanup/execute")
+async def execute_housekeeping_log_cleanup(
+    payload: LogCleanupExecuteRequest,
+    institution_id: Optional[int] = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_access),
+):
+    inst_id = institution_id or current_user.institution_id or 1
+    try:
+        return await HousekeepingService.execute_log_cleanup(
+            db,
+            user=current_user,
+            institution_id=inst_id,
+            retention_days=payload.retention_days,
+            categories=payload.categories,
+            confirm=payload.confirm,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/cleanup/archives/{filename}/download")
+async def download_log_archive(
+    filename: str,
+    _current_user: User = Depends(_require_housekeeping_access),
+):
+    try:
+        path = HousekeepingService.resolve_safe_log_archive_path(filename)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Log archive not found")
+    return FileResponse(path=str(path), filename=path.name, media_type="application/gzip")
+
+
+@router.get("/alerts")
+async def get_housekeeping_alerts(
+    institution_id: Optional[int] = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_access),
+):
+    inst_id = institution_id or current_user.institution_id or 1
+    return await HousekeepingService.evaluate_health_alerts(db, institution_id=inst_id)
+
+
+@router.post("/alerts/notify")
+async def dispatch_housekeeping_alert_email(
+    payload: AlertNotifyRequest,
+    institution_id: Optional[int] = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_access),
+):
+    inst_id = institution_id or current_user.institution_id or 1
+    try:
+        return await HousekeepingService.dispatch_health_alert_notification(
+            db, user=current_user, institution_id=inst_id, recipient_email=payload.recipient_email
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 

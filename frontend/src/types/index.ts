@@ -4366,6 +4366,12 @@ export interface HousekeepingPolicy {
   retain_monthly: number
   auto_vacuum_enabled: boolean
   log_retention_days: number
+  alert_enabled?: boolean
+  alert_email?: string
+  alert_max_backup_age_hours?: number
+  alert_min_free_disk_percent?: number
+  dead_tuple_alert_threshold?: number
+  archive_before_purge?: boolean
   last_backup_date?: string | null
   last_backup_file?: string | null
   last_backup_status?: string
@@ -4404,6 +4410,8 @@ export interface HousekeepingOverview {
   }
   top_tables: HousekeepingTableMetric[]
   policy: HousekeepingPolicy
+  storage?: HousekeepingStorageTelemetry
+  alerts_summary?: HousekeepingAlertsSummary
   scheduler_commands: {
     windows_task_scheduler: string
     linux_cron: string
@@ -4511,6 +4519,101 @@ export interface HousekeepingHistoryEvent {
   details?: string
   [key: string]: any
 }
+
+export interface HousekeepingStorageTelemetry {
+  disk: {
+    path: string
+    total_bytes: number
+    used_bytes: number
+    free_bytes: number
+    free_percent: number
+    used_percent: number
+    total_human: string
+    free_human: string
+  }
+  breakdown: {
+    edu_bytes: number
+    edu_count: number
+    raw_dump_sql_bytes: number
+    raw_dump_sql_count: number
+    legacy_bytes: number
+    legacy_count: number
+    log_archive_bytes: number
+    log_archive_count: number
+    orphan_bytes: number
+    orphan_count: number
+  }
+  orphan_files: Array<{
+    filename: string
+    size_bytes: number
+    kind: string
+  }>
+  log_archives: Array<{
+    filename: string
+    size_bytes: number
+    size_human: string
+    created_at: string
+    sha256: string | null
+  }>
+}
+
+export interface HousekeepingCleanOrphansResponse {
+  deleted: string[]
+  freed_bytes: number
+}
+
+export interface HousekeepingLogCleanupPreview {
+  retention_days: number
+  cutoff_at: string
+  total_eligible: number
+  categories: Array<{
+    category: string
+    label: string
+    eligible_count: number
+  }>
+  protected_guarantee: string
+}
+
+export interface HousekeepingLogCleanupExecuteResponse {
+  retention_days: number
+  cutoff_at: string
+  total_purged: number
+  purged_by_category: Record<string, number>
+  archived_files: Array<{
+    category: string
+    filename: string
+    row_count: number
+    size_bytes: number
+    sha256: string
+  }>
+}
+
+export interface HousekeepingAlertItem {
+  id: string
+  severity: 'critical' | 'warning' | 'info' | string
+  title: string
+  detail: string
+  recommended_tab: string
+}
+
+export interface HousekeepingAlertsSummary {
+  health_status: 'healthy' | 'warning' | 'critical' | string
+  critical_count: number
+  warning_count: number
+  total_alerts: number
+  evaluated_at: string
+  items: HousekeepingAlertItem[]
+}
+
+export interface HousekeepingAlertNotifyResponse {
+  dispatched: boolean
+  status: string
+  recipient: string
+  reference: string | null
+  health_status: string
+  alert_count: number
+}
+
 
 
 

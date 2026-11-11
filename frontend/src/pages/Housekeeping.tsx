@@ -21,15 +21,20 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   Activity,
   AlertTriangle,
+  Archive,
+  Bell,
   Calendar,
   CheckCircle2,
   Clock,
   Copy,
   Database,
   Download,
+  Eye,
   FileCheck2,
+  FolderMinus,
   HardDrive,
   Lock,
+  Mail,
   Play,
   RefreshCw,
   RotateCcw,
@@ -48,14 +53,19 @@ import { EditModeBar, LockedButton } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
 import { useAuthStore, isUserSysAdmin, hasPermission } from '../store/authStore'
 import type {
+  HousekeepingAlertNotifyResponse,
+  HousekeepingAlertsSummary,
   HousekeepingBackupItem,
   HousekeepingCreateBackupResponse,
   HousekeepingDrillResponse,
   HousekeepingHistoryEvent,
+  HousekeepingLogCleanupExecuteResponse,
+  HousekeepingLogCleanupPreview,
   HousekeepingOverview,
   HousekeepingPolicy,
   HousekeepingReconciliationResult,
   HousekeepingRestoreResponse,
+  HousekeepingStorageTelemetry,
   HousekeepingVacuumResponse,
   HousekeepingVerifyResponse,
 } from '../types'
@@ -169,24 +179,59 @@ export default function Housekeeping() {
     retain_monthly: 6,
     auto_vacuum_enabled: true,
     log_retention_days: 90,
+    alert_enabled: true,
+    alert_email: '',
+    alert_max_backup_age_hours: 36,
+    alert_min_free_disk_percent: 15,
+    dead_tuple_alert_threshold: 10000,
+    archive_before_purge: true,
   })
   const [policyReason, setPolicyReason] = useState('')
   const [savingPolicy, setSavingPolicy] = useState(false)
 
+  // Storage, Log Archival Cleanup & Health Alerts state
+  const [storageTelemetry, setStorageTelemetry] = useState<HousekeepingStorageTelemetry | null>(null)
+  const [alertsSummary, setAlertsSummary] = useState<HousekeepingAlertsSummary | null>(null)
+  const [cleaningOrphans, setCleaningOrphans] = useState(false)
+  const [cleanupRetentionDays, setCleanupRetentionDays] = useState<number>(90)
+  const [selectedCleanupCategories, setSelectedCleanupCategories] = useState<string[]>([
+    'navigation_activity',
+    'expired_tokens',
+    'communication_logs',
+    'routine_audit_logs',
+  ])
+  const [loadingCleanupPreview, setLoadingCleanupPreview] = useState(false)
+  const [cleanupPreview, setCleanupPreview] = useState<HousekeepingLogCleanupPreview | null>(null)
+  const [cleanupModalOpen, setCleanupModalOpen] = useState(false)
+  const [executingCleanup, setExecutingCleanup] = useState(false)
+  const [cleanupResult, setCleanupResult] = useState<HousekeepingLogCleanupExecuteResponse | null>(null)
+  const [dispatchingAlert, setDispatchingAlert] = useState(false)
+  const [lastAlertDispatch, setLastAlertDispatch] = useState<HousekeepingAlertNotifyResponse | null>(null)
+
   const loadWorkspaceData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     try {
-      const [ovRes, bkRes, histRes] = await Promise.all([
+      const [ovRes, bkRes, histRes, storRes] = await Promise.all([
         housekeepingApi.getOverview(),
         housekeepingApi.listBackups(),
         housekeepingApi.getHistory(40),
+        housekeepingApi.getStorage?.().catch(() => null),
       ])
       setOverview(ovRes.data)
+      if (ovRes.data.storage) {
+        setStorageTelemetry(ovRes.data.storage)
+      } else if (storRes?.data) {
+        setStorageTelemetry(storRes.data)
+      }
+      if (ovRes.data.alerts_summary) {
+        setAlertsSummary(ovRes.data.alerts_summary)
+      }
       const list = bkRes.data.backups || []
       setBackups(list)
       setHistory(histRes.data.events || [])
       if (ovRes.data.policy) {
         setPolicyForm((prev) => ({ ...prev, ...ovRes.data.policy }))
+        setCleanupRetentionDays(Number(ovRes.data.policy.log_retention_days || 90))
         setMirrorDirOverride((curr) => curr || ovRes.data.policy.offsite_mirror_path || '')
       }
       setSelectedArchiveKey((curr) => {
@@ -422,6 +467,12 @@ export default function Housekeeping() {
         retain_monthly: Number(policyForm.retain_monthly),
         auto_vacuum_enabled: policyForm.auto_vacuum_enabled,
         log_retention_days: Number(policyForm.log_retention_days),
+        alert_enabled: policyForm.alert_enabled,
+        alert_email: policyForm.alert_email || '',
+        alert_max_backup_age_hours: Number(policyForm.alert_max_backup_age_hours || 36),
+        alert_min_free_disk_percent: Number(policyForm.alert_min_free_disk_percent || 15),
+        dead_tuple_alert_threshold: Number(policyForm.dead_tuple_alert_threshold || 10000),
+        archive_before_purge: policyForm.archive_before_purge ?? true,
         reason: policyReason.trim() || 'Updated from Housekeeping Policy Workspace',
       })
       setPolicyForm((prev) => ({ ...prev, ...updated.data }))
@@ -432,6 +483,96 @@ export default function Housekeeping() {
       toast.error(getApiError(err, 'Failed to save housekeeping policy'))
     } finally {
       setSavingPolicy(false)
+    }
+  }
+
+  const handleCleanOrphans = async () => {
+    if (!isEditMode || !canManage) return
+    setCleaningOrphans(true)
+    try {
+      const res = await housekeepingApi.cleanOrphans()
+      if (res.data.deleted.length === 0) {
+        toast.success('Storage clean: 0 orphan sidecars or temporary files found')
+      } else {
+        toast.success(`Removed ${res.data.deleted.length} orphan file(s), freed ${(res.data.freed_bytes / 1024).toFixed(1)} KB`)
+      }
+      await loadWorkspaceData(true)
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Failed to clean orphan storage files'))
+    } finally {
+      setCleaningOrphans(false)
+    }
+  }
+
+  const handlePreviewCleanup = async () => {
+    setLoadingCleanupPreview(true)
+    try {
+      const res = await housekeepingApi.previewLogCleanup({
+        retention_days: Math.max(7, Number(cleanupRetentionDays) || 90),
+        categories: selectedCleanupCategories,
+      })
+      setCleanupPreview(res.data)
+      toast.success(`Dry-run preview: ${res.data.total_eligible.toLocaleString()} log row(s) eligible for archival`)
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Failed to preview log archival cleanup'))
+    } finally {
+      setLoadingCleanupPreview(false)
+    }
+  }
+
+  const handleExecuteCleanup = async () => {
+    if (!isEditMode || !canManage) return
+    setExecutingCleanup(true)
+    try {
+      const res = await housekeepingApi.executeLogCleanup({
+        retention_days: Math.max(7, Number(cleanupRetentionDays) || 90),
+        categories: selectedCleanupCategories,
+        confirm: true,
+      })
+      setCleanupResult(res.data)
+      setCleanupModalOpen(false)
+      setCleanupPreview(null)
+      toast.success(`Archived & purged ${res.data.total_purged.toLocaleString()} historical log row(s)`)
+      await loadWorkspaceData(true)
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Log archival cleanup failed'))
+    } finally {
+      setExecutingCleanup(false)
+    }
+  }
+
+  const handleDownloadLogArchive = async (filename: string) => {
+    try {
+      const res = await housekeepingApi.downloadLogArchive(filename)
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data])
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success(`Downloading ${filename}`)
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Failed to download log archive'))
+    }
+  }
+
+  const handleDispatchAlertEmail = async () => {
+    if (!isEditMode || !canManage) return
+    setDispatchingAlert(true)
+    try {
+      const res = await housekeepingApi.dispatchAlertEmail({
+        recipient_email: policyForm.alert_email || undefined,
+      })
+      setLastAlertDispatch(res.data)
+      toast.success(`Health digest sent to ${res.data.recipient} (${res.data.status})`)
+      await loadWorkspaceData(true)
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Failed to dispatch health alert digest'))
+    } finally {
+      setDispatchingAlert(false)
     }
   }
 
@@ -476,6 +617,24 @@ export default function Housekeeping() {
                   }`}
                 >
                   {overview.backups_summary.backup_status}
+                </span>
+              )}
+              {alertsSummary && (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border inline-flex items-center gap-1 ${
+                    alertsSummary.health_status === 'healthy'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : alertsSummary.health_status === 'critical'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                  }`}
+                >
+                  <Bell className="w-3 h-3" />
+                  <span>
+                    {alertsSummary.total_alerts === 0
+                      ? '0 Active Alerts'
+                      : `${alertsSummary.total_alerts} Alert${alertsSummary.total_alerts > 1 ? 's' : ''}`}
+                  </span>
                 </span>
               )}
             </div>
@@ -628,6 +787,120 @@ export default function Housekeeping() {
               </button>
             </div>
           </div>
+
+          {/* Proactive Health Alerts & Host Disk Capacity */}
+          {(alertsSummary || storageTelemetry) && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-amber-600" />
+                    <span>Proactive Health & Backup Alerts</span>
+                  </h2>
+                  <LockedButton
+                    isEditMode={isEditMode}
+                    isAuthorized={canManage}
+                    disabled={dispatchingAlert}
+                    onClick={handleDispatchAlertEmail}
+                    icon={Mail}
+                    variant="secondary"
+                    size="xs"
+                  >
+                    {dispatchingAlert ? 'Sending Digest...' : 'Send Digest Email'}
+                  </LockedButton>
+                </div>
+
+                {lastAlertDispatch && (
+                  <div className="bg-sky-50 border border-sky-200 rounded-xl px-3 py-2 text-xs text-sky-900">
+                    Alert digest sent to <strong>{lastAlertDispatch.recipient}</strong> ({lastAlertDispatch.status} ·
+                    ref: <code className="font-mono">{lastAlertDispatch.reference}</code>)
+                  </div>
+                )}
+
+                {!alertsSummary || alertsSummary.items.length === 0 ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 text-xs text-emerald-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>All backup freshness, verification, disk capacity, and bloat thresholds are healthy.</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {alertsSummary.items.map((al) => (
+                      <div
+                        key={al.id}
+                        className={`border rounded-xl p-3 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${
+                          al.severity === 'critical'
+                            ? 'bg-rose-50 border-rose-200 text-rose-950'
+                            : al.severity === 'warning'
+                            ? 'bg-amber-50 border-amber-200 text-amber-950'
+                            : 'bg-sky-50 border-sky-200 text-sky-950'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-bold flex items-center gap-1.5">
+                            <span className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-white/70 border border-current/20">
+                              {al.severity}
+                            </span>
+                            <span>{al.title}</span>
+                          </div>
+                          <div className="text-[11px] opacity-90 mt-0.5">{al.detail}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleTabChange(al.recommended_tab as HousekeepingTab)}
+                          className="px-2.5 py-1 rounded-lg bg-white/80 hover:bg-white border border-current/20 text-[11px] font-semibold shrink-0 self-start sm:self-auto"
+                        >
+                          Inspect →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {storageTelemetry && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between space-y-3">
+                  <div className="space-y-2">
+                    <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <HardDrive className="w-4 h-4 text-emerald-600" />
+                      <span>Backup Volume Storage</span>
+                    </h2>
+                    <div className="text-2xl font-bold text-slate-900">
+                      {storageTelemetry.disk.free_human}{' '}
+                      <span className="text-xs font-semibold text-slate-500">
+                        free ({storageTelemetry.disk.free_percent}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          storageTelemetry.disk.free_percent < 10 ? 'bg-rose-600' : 'bg-emerald-600'
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(2, storageTelemetry.disk.used_percent))}%` }}
+                      />
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Total Volume: {storageTelemetry.disk.total_human}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600 space-y-1">
+                    <div className="flex justify-between">
+                      <span>EduOS (.edu) Archives:</span>
+                      <strong className="font-mono">{storageTelemetry.breakdown.edu_count}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Log (.jsonl.gz) Archives:</span>
+                      <strong className="font-mono">{storageTelemetry.breakdown.log_archive_count}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Orphan / Temp Files:</span>
+                      <strong className="font-mono">{storageTelemetry.breakdown.orphan_count}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Top 15 Tables Telemetry */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-3">
@@ -1255,6 +1528,200 @@ export default function Housekeeping() {
             </div>
           </div>
 
+          {/* Storage Breakdown & Orphan Sidecar Cleanup + Log Archival Cleanup */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Storage Breakdown & Orphan Cleanup */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <FolderMinus className="w-4 h-4 text-sky-600" />
+                  <span>Storage Breakdown & Orphan File Cleanup</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Inspect backup volume capacity and safely remove orphaned <code className="font-mono">.sha256</code>,{' '}
+                  <code className="font-mono">.meta.json</code>, or leftover <code className="font-mono">.tmp</code>{' '}
+                  files with no matching archive.
+                </p>
+              </div>
+
+              {storageTelemetry ? (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Disk Free / Total:</span>
+                    <strong className="font-mono text-slate-900">
+                      {storageTelemetry.disk.free_human} / {storageTelemetry.disk.total_human} (
+                      {storageTelemetry.disk.free_percent}%)
+                    </strong>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                    <div>
+                      EduOS (.edu): <strong>{storageTelemetry.breakdown.edu_count}</strong> (
+                      {(storageTelemetry.breakdown.edu_bytes / 1024).toFixed(1)} KB)
+                    </div>
+                    <div>
+                      Raw (.dump/.sql): <strong>{storageTelemetry.breakdown.raw_dump_sql_count}</strong> (
+                      {(storageTelemetry.breakdown.raw_dump_sql_bytes / (1024 * 1024)).toFixed(2)} MB)
+                    </div>
+                    <div>
+                      Legacy (data/): <strong>{storageTelemetry.breakdown.legacy_count}</strong> (
+                      {(storageTelemetry.breakdown.legacy_bytes / (1024 * 1024)).toFixed(2)} MB)
+                    </div>
+                    <div>
+                      Orphans / Temp: <strong>{storageTelemetry.breakdown.orphan_count}</strong> (
+                      {(storageTelemetry.breakdown.orphan_bytes / 1024).toFixed(1)} KB)
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-slate-500">Storage telemetry unavailable.</div>
+              )}
+
+              <LockedButton
+                isEditMode={isEditMode}
+                isAuthorized={canManage}
+                disabled={cleaningOrphans}
+                onClick={handleCleanOrphans}
+                icon={FolderMinus}
+                variant="outline"
+                size="sm"
+              >
+                {cleaningOrphans ? 'Cleaning Orphans...' : 'Clean Orphan Sidecars & Temp Files'}
+              </LockedButton>
+
+              {storageTelemetry && storageTelemetry.log_archives.length > 0 && (
+                <div className="pt-2 border-t border-slate-100 space-y-2">
+                  <div className="text-xs font-bold text-slate-700">
+                    Exported Log Archives ({storageTelemetry.log_archives.length})
+                  </div>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                    {storageTelemetry.log_archives.map((arch) => (
+                      <div
+                        key={arch.filename}
+                        className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[11px]"
+                      >
+                        <div className="truncate font-mono text-slate-800">
+                          {arch.filename} <span className="text-slate-500">({arch.size_human})</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadLogArchive(arch.filename)}
+                          className="text-primary-600 hover:text-primary-800 font-semibold shrink-0 inline-flex items-center gap-1"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Download</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Log Archival & Retention Cleanup */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Archive className="w-4 h-4 text-amber-600" />
+                  <span>Log Archival & Retention Cleanup</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Exports eligible historical operational logs into gzipped{' '}
+                  <code className="font-mono">.jsonl.gz</code> archives before purging.{' '}
+                  <strong>Financial ledgers, FeeReceipts, SettingAuditLog & WARNING/CRITICAL audit records are permanently immune.</strong>
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Retention Window (min 7 days)</label>
+                  <input
+                    type="number"
+                    min={7}
+                    max={3650}
+                    value={cleanupRetentionDays}
+                    onChange={(e) => setCleanupRetentionDays(Number(e.target.value))}
+                    className="w-full px-3 py-1.5 rounded-xl border border-slate-300 bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="font-semibold text-slate-700">Categories</div>
+                  {[
+                    { id: 'navigation_activity', label: 'Navigation Telemetry' },
+                    { id: 'expired_tokens', label: 'Expired Share Tokens' },
+                    { id: 'communication_logs', label: 'Communication Dispatch Logs' },
+                    { id: 'routine_audit_logs', label: 'Routine Info Audit Logs' },
+                  ].map((cat) => (
+                    <label key={cat.id} className="flex items-center gap-2 text-[11px] text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={selectedCleanupCategories.includes(cat.id)}
+                        onChange={(e) =>
+                          setSelectedCleanupCategories((prev) =>
+                            e.target.checked ? [...prev, cat.id] : prev.filter((x) => x !== cat.id)
+                          )
+                        }
+                        className="rounded border-slate-300 text-primary-600"
+                      />
+                      <span>{cat.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {cleanupPreview && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs space-y-1.5 text-amber-950">
+                  <div className="font-bold">
+                    Dry-Run Preview: {cleanupPreview.total_eligible.toLocaleString()} row(s) older than{' '}
+                    {cleanupPreview.retention_days} days
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-[11px]">
+                    {cleanupPreview.categories.map((c) => (
+                      <div key={c.category}>
+                        {c.category}: <strong className="font-mono">{c.eligible_count.toLocaleString()}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {cleanupResult && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-950">
+                  Archived & purged <strong>{cleanupResult.total_purged.toLocaleString()}</strong> row(s) into{' '}
+                  <strong>{cleanupResult.archived_files.length}</strong> <code className="font-mono">.jsonl.gz</code>{' '}
+                  archive(s).
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handlePreviewCleanup}
+                  disabled={loadingCleanupPreview || selectedCleanupCategories.length === 0}
+                  className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{loadingCleanupPreview ? 'Counting...' : 'Dry-Run Preview'}</span>
+                </button>
+                <LockedButton
+                  isEditMode={isEditMode}
+                  isAuthorized={canManage}
+                  disabled={selectedCleanupCategories.length === 0}
+                  onClick={async () => {
+                    if (!cleanupPreview) {
+                      await handlePreviewCleanup()
+                    }
+                    setCleanupModalOpen(true)
+                  }}
+                  icon={Archive}
+                  variant="warning"
+                  size="sm"
+                >
+                  Archive & Purge Eligible Logs...
+                </LockedButton>
+              </div>
+            </div>
+          </div>
+
           {/* Housekeeping Operation History */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-3">
             <h2 className="text-sm font-bold text-slate-900">Housekeeping Operations & Audit Log</h2>
@@ -1434,29 +1901,97 @@ export default function Housekeeping() {
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Alert Digest Email</label>
+                <input
+                  type="email"
+                  value={policyForm.alert_email || ''}
+                  onChange={(e) => setPolicyForm({ ...policyForm, alert_email: e.target.value })}
+                  disabled={!isEditMode}
+                  placeholder="admin@institute.edu (optional)"
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Max Backup Age Alert (hours)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={720}
+                  value={policyForm.alert_max_backup_age_hours ?? 36}
+                  onChange={(e) => setPolicyForm({ ...policyForm, alert_max_backup_age_hours: Number(e.target.value) })}
+                  disabled={!isEditMode}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Min Free Disk Alert (%)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={80}
+                  value={policyForm.alert_min_free_disk_percent ?? 15}
+                  onChange={(e) => setPolicyForm({ ...policyForm, alert_min_free_disk_percent: Number(e.target.value) })}
+                  disabled={!isEditMode}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50"
+                />
+              </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-              <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={policyForm.auto_vacuum_enabled}
-                  onChange={(e) => setPolicyForm({ ...policyForm, auto_vacuum_enabled: e.target.checked })}
-                  disabled={!isEditMode}
-                  className="rounded border-slate-300 text-primary-600"
-                />
-                <span>Enable scheduled VACUUM ANALYZE recommendation tracking</span>
-              </label>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={policyForm.auto_vacuum_enabled}
+                    onChange={(e) => setPolicyForm({ ...policyForm, auto_vacuum_enabled: e.target.checked })}
+                    disabled={!isEditMode}
+                    className="rounded border-slate-300 text-primary-600"
+                  />
+                  <span>Scheduled VACUUM tracking</span>
+                </label>
+                <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={policyForm.alert_enabled ?? true}
+                    onChange={(e) => setPolicyForm({ ...policyForm, alert_enabled: e.target.checked })}
+                    disabled={!isEditMode}
+                    className="rounded border-slate-300 text-primary-600"
+                  />
+                  <span>Proactive Health Alerts</span>
+                </label>
+                <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={policyForm.archive_before_purge ?? true}
+                    onChange={(e) => setPolicyForm({ ...policyForm, archive_before_purge: e.target.checked })}
+                    disabled={!isEditMode}
+                    className="rounded border-slate-300 text-primary-600"
+                  />
+                  <span>Archive .jsonl.gz before purge</span>
+                </label>
+              </div>
 
-              <div className="flex items-center gap-2 flex-1 max-w-md justify-end">
+              <div className="flex flex-wrap items-center gap-2 flex-1 max-w-xl justify-end">
                 <input
                   type="text"
                   value={policyReason}
                   onChange={(e) => setPolicyReason(e.target.value)}
                   disabled={!isEditMode}
                   placeholder="Optional change audit note"
-                  className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50"
+                  className="flex-1 min-w-[160px] px-3 py-1.5 text-xs rounded-xl border border-slate-300 bg-white disabled:bg-slate-50"
                 />
+                <LockedButton
+                  isEditMode={isEditMode}
+                  isAuthorized={canManage}
+                  disabled={dispatchingAlert}
+                  onClick={handleDispatchAlertEmail}
+                  icon={Mail}
+                  variant="secondary"
+                  size="sm"
+                >
+                  {dispatchingAlert ? 'Sending...' : 'Send Digest Email'}
+                </LockedButton>
                 <LockedButton
                   isEditMode={isEditMode}
                   isAuthorized={canManage}
@@ -1621,6 +2156,74 @@ export default function Housekeeping() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── LOG ARCHIVAL & PURGE CONFIRMATION MODAL ─────────────────────────── */}
+      {cleanupModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Confirm Log Archival & Cleanup"
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div className="bg-white border border-amber-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5 text-amber-800">
+                <Archive className="w-6 h-6 shrink-0" />
+                <div>
+                  <h3 className="text-base font-bold">Confirm Log Archival & Retention Cleanup</h3>
+                  <p className="text-xs text-slate-500">
+                    All eligible rows are first compressed into <code className="font-mono">.jsonl.gz</code> archives
+                    with SHA-256 verification before removal.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCleanupModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-500"
+                aria-label="Close cleanup modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {cleanupPreview && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1.5">
+                <div>
+                  Retention Window: <strong>{cleanupPreview.retention_days} days</strong> · Total Eligible Rows:{' '}
+                  <strong className="font-mono">{cleanupPreview.total_eligible.toLocaleString()}</strong>
+                </div>
+                {cleanupPreview.categories.map((c) => (
+                  <div key={c.category} className="flex justify-between text-[11px] text-slate-600">
+                    <span>{c.label}</span>
+                    <strong className="font-mono text-slate-900">{c.eligible_count.toLocaleString()}</strong>
+                  </div>
+                ))}
+                <div className="pt-1 text-[11px] text-emerald-800 font-medium">{cleanupPreview.protected_guarantee}</div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setCleanupModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={executingCleanup}
+                onClick={handleExecuteCleanup}
+                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-xs font-semibold inline-flex items-center gap-1.5"
+              >
+                <Archive className="w-3.5 h-3.5" />
+                <span>{executingCleanup ? 'Archiving & Purging...' : 'Confirm Archive & Purge'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
