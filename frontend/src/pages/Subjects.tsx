@@ -16,12 +16,12 @@
  * @description Academic Subject Management with Canonical Master Catalogue, Standard/Board Applicability Mappings, and Duplicate Prevention.
  */
 
-import { useState, useId, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   FileText, Plus, BookOpen, Check, X, Lock, Layers,
-  Link as LinkIcon, AlertTriangle, Search, Filter, ShieldAlert,
-  ArrowRight, Edit2, Trash2, CheckCircle2, Bookmark
+  Link as LinkIcon, AlertTriangle, Search,
+  ArrowRight, Trash2, CheckCircle2, Bookmark, ChevronRight, Sparkles
 } from 'lucide-react'
 import { standardsApi, boardsApi, subjectsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
@@ -49,7 +49,6 @@ export default function SubjectsPage() {
 
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false)
-  const [modalMode, setModalMode] = useState<'map_existing' | 'create_canonical'>('map_existing')
   const [deleteModalState, setDeleteModalState] = useState<{
     isOpen: boolean
     targetType: 'canonical' | 'mapping'
@@ -84,6 +83,13 @@ export default function SubjectsPage() {
   // Duplicate check state for new canonical subject creation
   const [duplicateCheck, setDuplicateCheck] = useState<SubjectDuplicateCheckResult | null>(null)
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false)
+
+  // Smart modal state — 3-step search-first flow
+  const [smartStep, setSmartStep] = useState<'search' | 'map' | 'create'>('search')
+  const [subjectSearchInput, setSubjectSearchInput] = useState('')
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
+  const [selectedCanonical, setSelectedCanonical] = useState<CanonicalSubject | null>(null)
+  const searchBoxRef = useRef<HTMLDivElement>(null)
 
   // Fetch standards
   const { data: standards = [] } = useQuery({
@@ -130,7 +136,7 @@ export default function SubjectsPage() {
 
   // Live duplicate check on canonical subject name input
   useEffect(() => {
-    if (!canonicalForm.name.trim() || modalMode !== 'create_canonical') {
+    if (!canonicalForm.name.trim() || smartStep !== 'create') {
       setDuplicateCheck(null)
       return
     }
@@ -148,7 +154,18 @@ export default function SubjectsPage() {
     }, 400)
 
     return () => clearTimeout(timer)
-  }, [canonicalForm.name, modalMode])
+  }, [canonicalForm.name, smartStep])
+
+  // Smart search query — live search against canonical subjects (debounced via staleTime)
+  const { data: searchResults = [], isFetching: isSearching } = useQuery({
+    queryKey: ['subject-smart-search', subjectSearchInput],
+    queryFn: () =>
+      subjectsApi
+        .listCanonical({ search: subjectSearchInput.trim() })
+        .then((r) => r.data),
+    enabled: subjectSearchInput.trim().length >= 2,
+    staleTime: 1500,
+  })
 
   // Create Mapping Mutation
   const createMappingMutation = useMutation({
@@ -260,17 +277,24 @@ export default function SubjectsPage() {
       board_id: '',
     })
     setDuplicateCheck(null)
+    // Reset smart modal flow
+    setSmartStep('search')
+    setSubjectSearchInput('')
+    setShowSearchDropdown(false)
+    setSelectedCanonical(null)
   }
 
-  // Pre-fill mapping modal from canonical subject row
+  // Pre-fill mapping modal from canonical subject row (quick-map button)
   const openMappingForCanonical = (cs: CanonicalSubject) => {
-    setModalMode('map_existing')
+    resetForms()
+    setSelectedCanonical(cs)
     setMapForm((prev) => ({
       ...prev,
       canonical_subject_id: String(cs.id),
       display_name: cs.name,
       curriculum_code: `${cs.code}-STD`,
     }))
+    setSmartStep('map')
     setShowAddModal(true)
   }
 
@@ -301,7 +325,6 @@ export default function SubjectsPage() {
           <button
             onClick={() => {
               resetForms()
-              setModalMode('map_existing')
               setShowAddModal(true)
             }}
             className="btn-primary flex items-center gap-1.5 shadow-sm"
@@ -758,83 +781,311 @@ export default function SubjectsPage() {
         </div>
       )}
 
-      {/* ADD / MAP SUBJECT MODAL */}
+      {/* ADD / MAP SUBJECT MODAL — Smart Search-First Flow */}
       <Modal
         isOpen={showAddModal}
         onClose={() => {
           setShowAddModal(false)
           resetForms()
         }}
-        title="Subject Configuration & Architecture"
+        title={
+          smartStep === 'search'
+            ? 'Add Subject to Curriculum'
+            : smartStep === 'map'
+            ? `Map "${selectedCanonical?.name}" to Standard`
+            : 'Register New Canonical Subject'
+        }
       >
         <div className="space-y-4">
-          {/* Mode Switcher */}
-          <div className="flex bg-gray-100 p-1 rounded-lg">
+          {/* Step Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <button
-              onClick={() => setModalMode('map_existing')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
-                modalMode === 'map_existing'
-                  ? 'bg-white text-primary-800 shadow-xs'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              onClick={() => { setSmartStep('search'); setSelectedCanonical(null) }}
+              className={`font-semibold transition-colors ${smartStep === 'search' ? 'text-primary-700' : 'hover:text-primary-600 underline underline-offset-2'}`}
             >
-              <LinkIcon className="w-3.5 h-3.5" />
-              <span>Map Existing Subject (Recommended)</span>
+              1 · Search
             </button>
-            <button
-              onClick={() => setModalMode('create_canonical')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
-                modalMode === 'create_canonical'
-                  ? 'bg-white text-primary-800 shadow-xs'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Register New Master Subject</span>
-            </button>
+            <ChevronRight className="w-3 h-3 text-gray-300" />
+            <span className={`font-semibold ${smartStep === 'map' ? 'text-primary-700' : 'text-gray-300'}`}>
+              2 · Map to Class
+            </span>
+            <ChevronRight className="w-3 h-3 text-gray-300" />
+            <span className={`font-semibold ${smartStep === 'create' ? 'text-amber-700' : 'text-gray-300'}`}>
+              3 · Register New
+            </span>
           </div>
 
-          {/* MODE 1: MAP EXISTING CANONICAL SUBJECT */}
-          {modalMode === 'map_existing' && (
-            <div className="space-y-3.5">
+          {/* ═══════════════════════════════════════════════════════════
+              STEP 1 — SEARCH / SELECT EXISTING CANONICAL SUBJECT
+          ═══════════════════════════════════════════════════════════ */}
+          {smartStep === 'search' && (
+            <div className="space-y-3" ref={searchBoxRef}>
+              {/* SSOT Guidance Banner */}
               <div className="bg-primary-50 border border-blue-200 rounded-lg p-3 text-xs text-primary-800 flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold">Single Source of Truth Rule:</span> Select a canonical subject from the master catalog and map it to a specific standard and examination board. This prevents duplicate subject records.
+                  <span className="font-bold">Single Source of Truth: </span>
+                  Search and select an existing canonical subject first. Only register a new one if it genuinely does not exist in the master catalog.
                 </div>
               </div>
 
+              {/* Smart Search Input */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Canonical Master Subject *
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Subject Name <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  className="input w-full text-sm"
-                  value={mapForm.canonical_subject_id}
-                  onChange={(e) => {
-                    const selectedId = e.target.value
-                    const cs = canonicalSubjects.find((c) => String(c.id) === selectedId)
-                    setMapForm({
-                      ...mapForm,
-                      canonical_subject_id: selectedId,
-                      display_name: cs ? cs.name : mapForm.display_name,
-                      curriculum_code: cs ? `${cs.code}-STD` : mapForm.curriculum_code,
-                    })
-                  }}
-                >
-                  <option value="">Select subject identity from master catalog...</option>
-                  {canonicalSubjects.map((cs) => (
-                    <option key={cs.id} value={cs.id}>
-                      {cs.name} ({cs.code}) — {cs.category}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Type to search existing subjects… (e.g. Chemistry, Math)"
+                    value={subjectSearchInput}
+                    onChange={(e) => {
+                      setSubjectSearchInput(e.target.value)
+                      setShowSearchDropdown(true)
+                    }}
+                    onFocus={() => setShowSearchDropdown(true)}
+                    className="input w-full pl-9 pr-9 text-sm"
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-2.5">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600" />
+                    </div>
+                  )}
+                  {subjectSearchInput && !isSearching && (
+                    <button
+                      onClick={() => { setSubjectSearchInput(''); setShowSearchDropdown(false) }}
+                      className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Search Dropdown Results */}
+                {showSearchDropdown && subjectSearchInput.trim().length >= 2 && (
+                  <div className="mt-1 border border-gray-200 rounded-lg shadow-lg bg-white overflow-hidden max-h-64 overflow-y-auto z-50">
+                    {searchResults.length === 0 && !isSearching ? (
+                      <div className="px-4 py-6 text-center">
+                        <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+                        <p className="text-sm font-semibold text-gray-700">No existing subject found</p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          "{subjectSearchInput}" is not in the master catalog yet.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCanonicalForm((prev) => ({
+                              ...prev,
+                              name: subjectSearchInput.trim(),
+                              code: subjectSearchInput.trim().length >= 3
+                                ? `${subjectSearchInput.trim().slice(0, 4).toUpperCase()}001`
+                                : '',
+                            }))
+                            setSmartStep('create')
+                            setShowSearchDropdown(false)
+                          }}
+                          className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition-colors shadow-sm"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Register as New Subject
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                          {searchResults.length} subject{searchResults.length !== 1 ? 's' : ''} found — select to map
+                        </div>
+                        {searchResults.map((cs) => (
+                          <button
+                            key={cs.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCanonical(cs)
+                              setMapForm((prev) => ({
+                                ...prev,
+                                canonical_subject_id: String(cs.id),
+                                display_name: cs.name,
+                                curriculum_code: `${cs.code}-STD`,
+                              }))
+                              setSmartStep('map')
+                              setShowSearchDropdown(false)
+                            }}
+                            className="w-full text-left px-4 py-3 hover:bg-primary-50 border-b border-gray-50 last:border-0 transition-colors group"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <BookOpen className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                                <div className="min-w-0">
+                                  <span className="font-semibold text-sm text-gray-900">{cs.name}</span>
+                                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                    <span className="font-mono text-[10px] bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded border border-primary-100">
+                                      {cs.code}
+                                    </span>
+                                    <span className="text-[11px] text-gray-400">{cs.category}</span>
+                                    {cs.aliases && (
+                                      <span className="text-[11px] text-gray-400 italic truncate">
+                                        aka: {cs.aliases}
+                                      </span>
+                                    )}
+                                    {cs.alternate_codes && (
+                                      <span className="text-[10px] font-mono bg-amber-50 text-amber-700 px-1 py-0.5 rounded border border-amber-100">
+                                        +{cs.alternate_codes.split(',').length} legacy
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="flex-shrink-0 text-xs text-primary-600 font-semibold group-hover:text-primary-800 flex items-center gap-0.5">
+                                Select <ArrowRight className="w-3 h-3" />
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                        {/* Footer: create new option */}
+                        <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Not the right subject?</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCanonicalForm((prev) => ({
+                                ...prev,
+                                name: subjectSearchInput.trim(),
+                                code: subjectSearchInput.trim().length >= 3
+                                  ? `${subjectSearchInput.trim().slice(0, 4).toUpperCase()}001`
+                                  : '',
+                              }))
+                              setSmartStep('create')
+                              setShowSearchDropdown(false)
+                            }}
+                            className="text-xs font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1 transition-colors"
+                          >
+                            <Plus className="w-3 h-3" /> Register New Subject
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
+              {/* Quick-pick from all canonical subjects when no search input */}
+              {subjectSearchInput.trim().length < 2 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+                    Or pick from the master catalog:
+                  </p>
+                  <div className="border border-gray-200 rounded-lg overflow-hidden max-h-52 overflow-y-auto">
+                    {canonicalSubjects.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-xs text-gray-400">No canonical subjects yet.</div>
+                    ) : (
+                      canonicalSubjects.map((cs) => (
+                        <button
+                          key={cs.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCanonical(cs)
+                            setMapForm((prev) => ({
+                              ...prev,
+                              canonical_subject_id: String(cs.id),
+                              display_name: cs.name,
+                              curriculum_code: `${cs.code}-STD`,
+                            }))
+                            setSmartStep('map')
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-primary-50 border-b border-gray-50 last:border-0 transition-colors group flex items-center justify-between gap-2"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <BookOpen className="w-3.5 h-3.5 text-primary-400 flex-shrink-0" />
+                            <span className="text-sm font-medium text-gray-800">{cs.name}</span>
+                            <span className="font-mono text-[10px] bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded border border-primary-100 flex-shrink-0">
+                              {cs.code}
+                            </span>
+                            <span className="text-[11px] text-gray-400 hidden sm:inline">{cs.category}</span>
+                          </div>
+                          <span className="text-[11px] text-primary-600 font-semibold group-hover:text-primary-800 flex items-center gap-0.5 flex-shrink-0">
+                            Map <ArrowRight className="w-3 h-3" />
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  <div className="flex justify-end mt-2">
+                    <button
+                      type="button"
+                      onClick={() => { setSmartStep('create'); setShowSearchDropdown(false) }}
+                      className="text-xs font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" /> Subject not listed? Register new →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="flex justify-end pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => { setShowAddModal(false); resetForms() }}
+                  className="btn-secondary text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ═══════════════════════════════════════════════════════════
+              STEP 2 — MAP SELECTED CANONICAL TO STANDARD / BOARD
+          ═══════════════════════════════════════════════════════════ */}
+          {smartStep === 'map' && selectedCanonical && (
+            <div className="space-y-3.5">
+              {/* Selected canonical subject card */}
+              <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 flex items-start gap-3">
+                <div className="bg-primary-100 rounded-lg p-2 flex-shrink-0">
+                  <BookOpen className="w-5 h-5 text-primary-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-primary-900 text-sm">{selectedCanonical.name}</span>
+                    <span className="font-mono text-[11px] bg-white text-primary-700 px-2 py-0.5 rounded border border-primary-200">
+                      {selectedCanonical.code}
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 bg-white rounded border border-gray-200 text-gray-600">
+                      {selectedCanonical.category}
+                    </span>
+                  </div>
+                  {selectedCanonical.aliases && (
+                    <p className="text-[11px] text-primary-600 mt-0.5">
+                      Aliases: {selectedCanonical.aliases}
+                    </p>
+                  )}
+                  {selectedCanonical.alternate_codes && (
+                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      <span className="text-[10px] font-semibold text-amber-700">Legacy codes:</span>
+                      {selectedCanonical.alternate_codes.split(',').map((c) => (
+                        <span key={c.trim()} className="font-mono text-[10px] bg-amber-50 text-amber-800 px-1 py-0.5 rounded border border-amber-200">
+                          {c.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setSmartStep('search'); setSelectedCanonical(null) }}
+                  className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                  title="Change subject"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Standard & Board */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Standard / Class *
+                    Class / Standard <span className="text-rose-500">*</span>
                   </label>
                   <select
                     className="input w-full text-sm"
@@ -843,13 +1094,10 @@ export default function SubjectsPage() {
                   >
                     <option value="">Select class level...</option>
                     {standards.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
+                      <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
                     Examination Board
@@ -861,27 +1109,25 @@ export default function SubjectsPage() {
                   >
                     <option value="">All Boards / Universal</option>
                     {boards.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name} ({b.code})
-                      </option>
+                      <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
                     ))}
                   </select>
                 </div>
               </div>
 
+              {/* Curriculum Code & Display Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Curriculum Subject Code
+                    Curriculum Code
                   </label>
                   <input
-                    className="input w-full text-sm"
+                    className="input w-full text-sm font-mono"
                     placeholder="e.g. MATH-10, ENG-9"
                     value={mapForm.curriculum_code}
                     onChange={(e) => setMapForm({ ...mapForm, curriculum_code: e.target.value })}
                   />
                 </div>
-
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
                     Display Name in Syllabus
@@ -895,9 +1141,10 @@ export default function SubjectsPage() {
                 </div>
               </div>
 
+              {/* Max & Pass Marks */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Max Marks</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Maximum Marks</label>
                   <input
                     type="number"
                     className="input w-full text-sm"
@@ -916,7 +1163,8 @@ export default function SubjectsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              {/* Optional toggle */}
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="map_is_optional"
@@ -929,74 +1177,87 @@ export default function SubjectsPage() {
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              {/* Footer buttons */}
+              <div className="flex justify-between gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="btn-secondary text-xs"
+                  onClick={() => { setSmartStep('search'); setSelectedCanonical(null) }}
+                  className="btn-secondary text-xs flex items-center gap-1"
                 >
-                  Cancel
+                  ← Back
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    createMappingMutation.mutate({
-                      canonical_subject_id: Number(mapForm.canonical_subject_id),
-                      standard_id: Number(mapForm.standard_id),
-                      board_id: mapForm.board_id ? Number(mapForm.board_id) : undefined,
-                      curriculum_code: mapForm.curriculum_code.trim() || undefined,
-                      display_name: mapForm.display_name.trim() || undefined,
-                      max_marks: Number(mapForm.max_marks) || 100,
-                      pass_marks: Number(mapForm.pass_marks) || 35,
-                      is_optional: mapForm.is_optional,
-                    })
-                  }
-                  disabled={
-                    createMappingMutation.isPending ||
-                    !mapForm.canonical_subject_id ||
-                    !mapForm.standard_id
-                  }
-                  className="btn-primary text-xs"
-                >
-                  {createMappingMutation.isPending ? 'Mapping...' : 'Confirm Mapping'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowAddModal(false); resetForms() }}
+                    className="btn-secondary text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      createMappingMutation.mutate({
+                        canonical_subject_id: Number(mapForm.canonical_subject_id),
+                        standard_id: Number(mapForm.standard_id),
+                        board_id: mapForm.board_id ? Number(mapForm.board_id) : undefined,
+                        curriculum_code: mapForm.curriculum_code.trim() || undefined,
+                        display_name: mapForm.display_name.trim() || undefined,
+                        max_marks: Number(mapForm.max_marks) || 100,
+                        pass_marks: Number(mapForm.pass_marks) || 35,
+                        is_optional: mapForm.is_optional,
+                      })
+                    }
+                    disabled={
+                      createMappingMutation.isPending ||
+                      !mapForm.canonical_subject_id ||
+                      !mapForm.standard_id
+                    }
+                    className="btn-primary text-xs"
+                  >
+                    {createMappingMutation.isPending ? 'Mapping…' : 'Confirm Mapping'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* MODE 2: REGISTER NEW CANONICAL SUBJECT */}
-          {modalMode === 'create_canonical' && (
+          {/* ═══════════════════════════════════════════════════════════
+              STEP 3 — REGISTER NEW CANONICAL SUBJECT
+          ═══════════════════════════════════════════════════════════ */}
+          {smartStep === 'create' && (
             <div className="space-y-3.5">
-              {/* Duplicate Check Alert Banner */}
+              {/* Duplicate Warning Banner */}
               {duplicateCheck && (duplicateCheck.has_exact_match || duplicateCheck.similar_matches.length > 0) && (
                 <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-xs text-amber-900 space-y-2">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold">Duplicate Subject Warning: </span>
+                      <span className="font-bold">Duplicate Warning: </span>
                       {duplicateCheck.message}
                     </div>
                   </div>
 
-                  {/* 1-Click Reuse Button */}
+                  {/* 1-click reuse exact match */}
                   {duplicateCheck.exact_match && (
                     <div className="pt-1">
                       <button
                         type="button"
                         onClick={() => {
                           const m = duplicateCheck.exact_match!
-                          setModalMode('map_existing')
+                          setSelectedCanonical(m as unknown as CanonicalSubject)
                           setMapForm((prev) => ({
                             ...prev,
                             canonical_subject_id: String(m.id),
                             display_name: m.name,
                             curriculum_code: `${m.code}-STD`,
                           }))
+                          setSmartStep('map')
                         }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" />
-                        <span>Reuse '{duplicateCheck.exact_match.name}' ({duplicateCheck.exact_match.code}) Instead</span>
+                        Use '{duplicateCheck.exact_match.name}' ({duplicateCheck.exact_match.code}) instead
                       </button>
                     </div>
                   )}
@@ -1004,19 +1265,20 @@ export default function SubjectsPage() {
                   {/* Similar suggestions */}
                   {!duplicateCheck.has_exact_match && duplicateCheck.similar_matches.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      <span className="text-xs font-semibold text-amber-800">Similar Existing:</span>
+                      <span className="text-xs font-semibold text-amber-800">Consider using:</span>
                       {duplicateCheck.similar_matches.slice(0, 3).map((sim) => (
                         <button
                           key={sim.id}
                           type="button"
                           onClick={() => {
-                            setModalMode('map_existing')
+                            setSelectedCanonical(sim as unknown as CanonicalSubject)
                             setMapForm((prev) => ({
                               ...prev,
                               canonical_subject_id: String(sim.id),
                               display_name: sim.name,
                               curriculum_code: `${sim.code}-STD`,
                             }))
+                            setSmartStep('map')
                           }}
                           className="px-2 py-0.5 rounded bg-white border border-amber-300 text-amber-900 font-semibold hover:bg-amber-100 transition-colors"
                         >
@@ -1028,14 +1290,15 @@ export default function SubjectsPage() {
                 </div>
               )}
 
+              {/* New Subject Name */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Permanent Subject Name *
+                  Permanent Subject Name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     className="input w-full text-sm"
-                    placeholder="e.g. Mathematics, Sanskrit, Economics, Psychology"
+                    placeholder="e.g. Mathematics, Sanskrit, Economics"
                     value={canonicalForm.name}
                     onChange={(e) => {
                       const val = e.target.value
@@ -1054,10 +1317,11 @@ export default function SubjectsPage() {
                 </div>
               </div>
 
+              {/* Code & Category */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Permanent Subject Code *
+                    Permanent Code <span className="text-rose-500">*</span>
                   </label>
                   <input
                     className="input w-full text-sm font-mono uppercase"
@@ -1067,9 +1331,8 @@ export default function SubjectsPage() {
                   />
                   <p className="text-[11px] text-gray-400 mt-0.5">Stable across all standards & boards</p>
                 </div>
-
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Category *</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Category <span className="text-rose-500">*</span></label>
                   <select
                     className="input w-full text-sm"
                     value={canonicalForm.category}
@@ -1086,6 +1349,7 @@ export default function SubjectsPage() {
                 </div>
               </div>
 
+              {/* Aliases & Description */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
                   Known Aliases / Common Names
@@ -1097,7 +1361,6 @@ export default function SubjectsPage() {
                   onChange={(e) => setCanonicalForm({ ...canonicalForm, aliases: e.target.value })}
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
                   Description / Academic Scope
@@ -1110,7 +1373,7 @@ export default function SubjectsPage() {
                 />
               </div>
 
-              {/* Immediate Mapping Checkbox */}
+              {/* Immediate Mapping Option */}
               <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
                 <div className="flex items-center gap-2">
                   <input
@@ -1124,7 +1387,6 @@ export default function SubjectsPage() {
                     Immediately map this new subject to a class/standard
                   </label>
                 </div>
-
                 {canonicalForm.auto_map && (
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <div>
@@ -1136,9 +1398,7 @@ export default function SubjectsPage() {
                       >
                         <option value="">Select standard...</option>
                         {standards.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
+                          <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
                     </div>
@@ -1151,9 +1411,7 @@ export default function SubjectsPage() {
                       >
                         <option value="">Universal / All</option>
                         {boards.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.code}
-                          </option>
+                          <option key={b.id} value={b.id}>{b.code}</option>
                         ))}
                       </select>
                     </div>
@@ -1161,37 +1419,47 @@ export default function SubjectsPage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              {/* Footer */}
+              <div className="flex justify-between gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="btn-secondary text-xs"
+                  onClick={() => setSmartStep('search')}
+                  className="btn-secondary text-xs flex items-center gap-1"
                 >
-                  Cancel
+                  ← Back to Search
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    createCanonicalMutation.mutate({
-                      name: canonicalForm.name.trim(),
-                      code: canonicalForm.code.trim().toUpperCase(),
-                      category: canonicalForm.category,
-                      description: canonicalForm.description.trim() || undefined,
-                      aliases: canonicalForm.aliases.trim() || undefined,
-                      auto_map: canonicalForm.auto_map,
-                      standard_id: canonicalForm.standard_id,
-                      board_id: canonicalForm.board_id,
-                    })
-                  }
-                  disabled={
-                    createCanonicalMutation.isPending ||
-                    !canonicalForm.name.trim() ||
-                    !canonicalForm.code.trim()
-                  }
-                  className="btn-primary text-xs"
-                >
-                  {createCanonicalMutation.isPending ? 'Registering...' : 'Register Canonical Subject'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowAddModal(false); resetForms() }}
+                    className="btn-secondary text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      createCanonicalMutation.mutate({
+                        name: canonicalForm.name.trim(),
+                        code: canonicalForm.code.trim().toUpperCase(),
+                        category: canonicalForm.category,
+                        description: canonicalForm.description.trim() || undefined,
+                        aliases: canonicalForm.aliases.trim() || undefined,
+                        auto_map: canonicalForm.auto_map,
+                        standard_id: canonicalForm.standard_id,
+                        board_id: canonicalForm.board_id,
+                      })
+                    }
+                    disabled={
+                      createCanonicalMutation.isPending ||
+                      !canonicalForm.name.trim() ||
+                      !canonicalForm.code.trim()
+                    }
+                    className="btn-primary text-xs"
+                  >
+                    {createCanonicalMutation.isPending ? 'Registering…' : 'Register Canonical Subject'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
