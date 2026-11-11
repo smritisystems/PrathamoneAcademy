@@ -5,7 +5,7 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-11T17:30:02.866799",
+  "generated_at": "2026-11-11T18:49:33.447553",
   "total_documents": 410,
   "modules_catalog": [
     {
@@ -7180,8 +7180,8 @@
       "filename": "2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md",
       "relative_path": "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md",
       "extension": ".md",
-      "size_bytes": 9662,
-      "sha256": "bf5a604ada85bfeefa5061d7abe9e8d59fc714d095ad4ef75ab61d586c6893f1",
+      "size_bytes": 10206,
+      "sha256": "f06a19e3df63735cd4522996290581b0a4b2ee4b7a50929ec2bdc64a3dcd033a",
       "module": "13_SYSADMIN_SETTINGS",
       "title": "Housekeeping Module & Automated Database Backup / Restore Governance Feature Report",
       "category": "FEATURE-REPORT",

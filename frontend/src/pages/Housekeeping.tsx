@@ -46,7 +46,7 @@ import toast from 'react-hot-toast'
 import { housekeepingApi } from '../api/endpoints'
 import { EditModeBar, LockedButton } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
-import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
+import { useAuthStore, isUserSysAdmin, hasPermission } from '../store/authStore'
 import type {
   HousekeepingBackupItem,
   HousekeepingCreateBackupResponse,
@@ -114,7 +114,10 @@ export default function Housekeeping() {
 
   const { user } = useAuthStore()
   const isEditMode = useEditModeStore((s) => !!s.scopes['system:housekeeping'])
-  const canManage = isUserSysAdmin(user) || isUserAdmin(user) || hasPermission(user, 'system:housekeeping')
+  const isHousekeepingRole = ['superadmin', 'super_admin', 'sysadmin', 'admin'].includes(
+    (user?.role || '').toLowerCase()
+  )
+  const canManage = isHousekeepingRole || isUserSysAdmin(user) || hasPermission(user, 'system:housekeeping')
 
   // Core state
   const [loading, setLoading] = useState(true)
@@ -498,7 +501,7 @@ export default function Housekeeping() {
       <EditModeBar
         scope="system:housekeeping"
         title="Housekeeping & Database Operations"
-        requiredPermission="system:housekeeping"
+        requiredPermission={isHousekeepingRole ? undefined : 'system:housekeeping'}
       />
 
       {/* Navigation Tabs */}

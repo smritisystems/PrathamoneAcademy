@@ -258,4 +258,29 @@ describe('Housekeeping Workspace & Module Governance', () => {
       })
     })
   })
+
+  it('allows institute admin role without explicit system:housekeeping permission string to unlock Edit Mode', async () => {
+    useAuthStore.setState({
+      user: {
+        id: 2,
+        username: 'admin',
+        email: 'admin@example.com',
+        first_name: 'Institute',
+        last_name: 'Admin',
+        role: 'admin',
+        institution_id: 1,
+        permissions: ['students:view'],
+      },
+      token: 'mock-token',
+    })
+
+    renderHousekeeping('/housekeeping')
+    await waitFor(() => {
+      expect(screen.getByText('Housekeeping & Database Governance')).toBeDefined()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
+    expect(useEditModeStore.getState().isEditMode('system:housekeeping')).toBe(true)
+    expect(screen.getByText(/Edit Mode Active/i)).toBeDefined()
+  })
 })
