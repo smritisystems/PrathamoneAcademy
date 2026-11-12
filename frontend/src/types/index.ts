@@ -2834,8 +2834,38 @@ export interface AutomationRules {
   fee_reminder_frequency_days: number
   attendance_alerts_enabled: boolean
   receipt_auto_share_enabled: boolean
+  homework_alerts_enabled?: boolean
+  exam_schedule_alerts_enabled?: boolean
   default_channel: string
   institute_display_name: string
+}
+
+export interface AutomationTriggerItem {
+  key: string
+  title: string
+  description: string
+  template_code: string
+  enabled: boolean
+  channel: string
+  total_dispatched_count: number
+  last_triggered_at?: string | null
+}
+
+export interface AutomationRecentDispatch {
+  id: number
+  channel: string
+  trigger_type: string
+  recipient_name: string
+  recipient_destination: string
+  subject?: string | null
+  status: string
+  sent_at: string
+}
+
+export interface AutomationTriggerStatus {
+  active_rules: AutomationRules
+  triggers: AutomationTriggerItem[]
+  recent_dispatches: AutomationRecentDispatch[]
 }
 
 export interface FeeReminderQueueItem {

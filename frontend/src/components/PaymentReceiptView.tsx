@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -37,6 +37,7 @@ import {
   FileCheck2,
   Share2,
   Download,
+  MessageSquare,
 } from 'lucide-react'
 import ShareModal from './ShareModal'
 import { DetailedPaymentReceipt, Receipt } from '../types'
@@ -44,7 +45,7 @@ import { printReceiptElement } from '../utils/printReceipt'
 import { numberToWordsINR } from '../pages/Fees'
 import { useBranding } from '../config/branding'
 import { PrintBrandingFooter } from './PrintDocumentBranding'
-import { settingsApi, paymentsApi } from '../api/endpoints'
+import { settingsApi, paymentsApi, communicationApi } from '../api/endpoints'
 import { shareOrDownloadReceiptPdf, triggerBlobDownload, sanitizeReceiptFilename, ShareNotification } from '../utils/receiptShare'
 
 const fallbackQueryClient = new QueryClient({
@@ -207,6 +208,7 @@ export default function PaymentReceiptView({
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false)
   const [downloadingPdf, setDownloadingPdf] = useState<boolean>(false)
   const [sharingPdf, setSharingPdf] = useState<boolean>(false)
+  const [sendingWhatsApp, setSendingWhatsApp] = useState<boolean>(false)
   const [shareFeedback, setShareFeedback] = useState<ShareNotification | null>(null)
 
   const handleDownloadPdf = async () => {
@@ -244,6 +246,39 @@ export default function PaymentReceiptView({
       })
     } finally {
       setSharingPdf(false)
+    }
+  }
+
+  const handleSendWhatsAppNotification = async () => {
+    const paymentId = (receipt as any).payment_id || receipt.id
+    if (!paymentId) {
+      setShareFeedback({
+        type: 'error',
+        title: 'Dispatch Failed',
+        message: 'No associated payment transaction ID found for this receipt.',
+      })
+      return
+    }
+    setSendingWhatsApp(true)
+    try {
+      const res = await communicationApi.dispatchPaymentReceiptNotification(paymentId, { channel: 'WHATSAPP' })
+      const waUrl = res.data?.receipt?.whatsapp_url
+      setShareFeedback({
+        type: 'success',
+        title: 'WhatsApp Receipt Dispatched',
+        message: `${res.data?.message || 'Receipt notification logged and prepared.'} ${waUrl ? 'Opening WhatsApp Web...' : ''}`,
+      })
+      if (waUrl) {
+        window.open(waUrl, '_blank', 'noopener,noreferrer')
+      }
+    } catch (err: any) {
+      setShareFeedback({
+        type: 'error',
+        title: 'Dispatch Failed',
+        message: err?.response?.data?.detail || err?.message || 'Could not dispatch WhatsApp receipt notification.',
+      })
+    } finally {
+      setSendingWhatsApp(false)
     }
   }
 
@@ -396,11 +431,21 @@ export default function PaymentReceiptView({
               type="button"
               onClick={handleDirectSharePdf}
               disabled={sharingPdf}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
               title="Share PDF file directly as attachment"
             >
               <Share2 className="w-4 h-4" />
               <span>{sharingPdf ? 'Preparing...' : 'Share PDF'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSendWhatsAppNotification}
+              disabled={sendingWhatsApp}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors disabled:opacity-50"
+              title="Dispatch instant WhatsApp receipt acknowledgement to parent"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>{sendingWhatsApp ? 'Sending...' : 'WhatsApp Receipt'}</span>
             </button>
             {onClose && (
               <button

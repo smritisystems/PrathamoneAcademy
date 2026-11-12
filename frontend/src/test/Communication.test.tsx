@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-10
+ * @updated     2026-11-13
  *
  * @description Vitest test suite for Communication Center workspace, covering compose & send, templates catalogue, delivery logs, diagnostics, and automated outbound triggers.
  */
@@ -60,6 +60,10 @@ vi.mock('../api/endpoints', () => ({
     previewFeeReminders: vi.fn(),
     dispatchFeeReminders: vi.fn(),
     dispatchAttendanceAlert: vi.fn(),
+    getAutomationTriggers: vi.fn(),
+    dispatchPaymentReceiptNotification: vi.fn(),
+    dispatchHomeworkNotification: vi.fn(),
+    dispatchExamScheduleNotification: vi.fn(),
   },
 }))
 
@@ -175,6 +179,24 @@ describe('Communication Center Workspace', () => {
     vi.mocked(communicationApi.getDiagnostics).mockResolvedValue({ data: mockDiagnostics } as any)
     vi.mocked(communicationApi.searchRecipients).mockResolvedValue({ data: mockRecipients } as any)
     vi.mocked(communicationApi.getAutomationRules).mockResolvedValue({ data: mockAutomationRules } as any)
+    vi.mocked(communicationApi.getAutomationTriggers).mockResolvedValue({
+      data: {
+        active_rules: mockAutomationRules,
+        triggers: [
+          {
+            key: 'fee_receipt',
+            title: 'Fee Receipt Instant Acknowledgement',
+            description: 'Auto-dispatches WhatsApp / SMS receipt confirmation to parent upon payment entry.',
+            template_code: 'FEE_RECEIPT_CONFIRMATION',
+            enabled: true,
+            channel: 'WHATSAPP',
+            total_dispatched_count: 5,
+            last_triggered_at: '2026-11-13T04:30:00Z',
+          },
+        ],
+        recent_dispatches: [],
+      },
+    } as any)
     vi.mocked(communicationApi.previewFeeReminders).mockResolvedValue({
       data: { count: 1, min_balance: 500, queue: mockFeeQueue },
     } as any)

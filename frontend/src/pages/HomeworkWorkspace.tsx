@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Flagship Homework & Assignment Management workspace featuring Overview, Unified Assignment Creation, Physical Checking Register, Digital Submissions, Templates, and Daily Reports.
  */
@@ -25,13 +25,13 @@ import {
   Download, Printer, Share2, Eye, Edit3, Trash2, ArrowRight,
   FileText, Upload, Sparkles, AlertTriangle, CheckSquare,
   XCircle, UserCheck, ShieldAlert, RotateCcw, CalendarDays, Lock, ExternalLink,
-  Inbox, BarChart3, Send, RefreshCw
+  Inbox, BarChart3, Send, RefreshCw, MessageSquare
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import {
   homeworkApi, standardsApi, divisionsApi, subjectsApi, usersApi,
-  academicYearsApi, studentPortalApi
+  academicYearsApi, studentPortalApi, communicationApi
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
@@ -299,6 +299,15 @@ export default function HomeworkWorkspace() {
       queryClient.invalidateQueries({ queryKey: ['hw-teacher-dashboard'] })
     },
     onError: (err: any) => toast.error(err.response?.data?.detail || 'Publish failed.'),
+  })
+
+  const broadcastMutation = useMutation({
+    mutationFn: (id: number) => communicationApi.dispatchHomeworkNotification(id, { channel: 'WHATSAPP' }),
+    onSuccess: (resp) => {
+      toast.success(resp.data?.message || 'Homework broadcast dispatched!')
+      queryClient.invalidateQueries({ queryKey: ['communication-triggers'] })
+    },
+    onError: (err: any) => toast.error(err.response?.data?.detail || 'Broadcast failed.'),
   })
 
   const closeMutation = useMutation({
@@ -744,6 +753,19 @@ export default function HomeworkWorkspace() {
                           title="Sync new batch joiners"
                         >
                           <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {hw.status === 'published' && (
+                        <button
+                          type="button"
+                          disabled={!isEditMode || broadcastMutation.isPending}
+                          onClick={() => broadcastMutation.mutate(hw.id)}
+                          className="py-2 px-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-bold disabled:opacity-40 flex items-center gap-1"
+                          title={!isEditMode ? 'Locked in View Mode: Enable Edit Mode to broadcast' : 'Broadcast Homework alert via WhatsApp'}
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>WhatsApp</span>
                         </button>
                       )}
 

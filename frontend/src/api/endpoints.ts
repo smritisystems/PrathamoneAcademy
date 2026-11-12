@@ -40,7 +40,7 @@ import type {
   SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
   MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
-  ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem, StudentIdCardData, ScanCheckinResult,
+  ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem, AutomationTriggerStatus, StudentIdCardData, ScanCheckinResult,
   ExamMarksSheet, ExamAnalyticsData, StudentReportCardData,
   StudentExitPayload, StudentReactivatePayload, StudentLifecycleHistoryResponse,
   WithdrawalReportItem, WithdrawalAnalyticsResponse,
@@ -1880,6 +1880,18 @@ export const communicationApi = {
 
   dispatchAttendanceAlert: (data: { student_id: number; date: string; status: string; remarks?: string }) =>
     apiClient.post<{ status: string; message: string; alert: any }>('/communication/automation/attendance-alerts', data),
+
+  getAutomationTriggers: () =>
+    apiClient.get<AutomationTriggerStatus>('/communication/automation/triggers'),
+
+  dispatchPaymentReceiptNotification: (paymentId: number, data?: { channel?: string }) =>
+    apiClient.post<{ status: string; message: string; receipt: any }>(`/communication/automation/dispatch-payment-receipt/${paymentId}`, data),
+
+  dispatchHomeworkNotification: (homeworkId: number, data?: { channel?: string }) =>
+    apiClient.post<{ status: string; message: string; summary: any }>(`/communication/automation/dispatch-homework/${homeworkId}`, data),
+
+  dispatchExamScheduleNotification: (examId: number, data?: { channel?: string }) =>
+    apiClient.post<{ status: string; message: string; summary: any }>(`/communication/automation/dispatch-exam-schedule/${examId}`, data),
 }
 
 // ─── Release & Change Management ─────────────────────────────────────────────

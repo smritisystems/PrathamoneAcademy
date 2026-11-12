@@ -151,6 +151,23 @@ async def create_examination(
     db.add(exam)
     await db.commit()
     await db.refresh(exam)
+
+    # Automated examination schedule broadcast trigger
+    try:
+        from app.services.communication import get_automation_rules, dispatch_exam_schedule_notification
+        comm_rules = await get_automation_rules(db, std.institution_id or 1)
+        if comm_rules.get("exam_schedule_alerts_enabled", True):
+            await dispatch_exam_schedule_notification(
+                db,
+                exam_id=exam.id,
+                institution_id=std.institution_id or 1,
+                sender_id=current_user.id,
+                sender_name=getattr(current_user, "full_name", None) or getattr(current_user, "username", "Exam Office"),
+                channel=comm_rules.get("default_channel", "WHATSAPP"),
+            )
+    except Exception:
+        pass
+
     return {
         "id": exam.id,
         "name": exam.name,

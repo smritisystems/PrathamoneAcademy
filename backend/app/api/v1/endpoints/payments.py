@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -474,6 +474,22 @@ async def create_payment(
 
     await db.commit()
 
+    # Automated receipt dispatch trigger
+    try:
+        from app.services.communication import get_automation_rules, dispatch_fee_payment_receipt_notification
+        comm_rules = await get_automation_rules(db, effective_inst_id)
+        if comm_rules.get("receipt_auto_share_enabled", True):
+            await dispatch_fee_payment_receipt_notification(
+                db,
+                payment_id=payment.id,
+                institution_id=effective_inst_id,
+                sender_id=current_user.id,
+                sender_name=getattr(current_user, "full_name", None) or getattr(current_user, "username", "System"),
+                channel=comm_rules.get("default_channel", "WHATSAPP"),
+            )
+    except Exception:
+        pass
+
     return {
         "payment_id": payment.id,
         "receipt_number": receipt.receipt_number,
@@ -789,6 +805,22 @@ async def post_payment(
     )
 
     await db.commit()
+
+    # Automated receipt dispatch trigger
+    try:
+        from app.services.communication import get_automation_rules, dispatch_fee_payment_receipt_notification
+        comm_rules = await get_automation_rules(db, effective_inst_id)
+        if comm_rules.get("receipt_auto_share_enabled", True):
+            await dispatch_fee_payment_receipt_notification(
+                db,
+                payment_id=payment.id,
+                institution_id=effective_inst_id,
+                sender_id=current_user.id,
+                sender_name=getattr(current_user, "full_name", None) or getattr(current_user, "username", "System"),
+                channel=comm_rules.get("default_channel", "WHATSAPP"),
+            )
+    except Exception:
+        pass
 
     return {
         "message": "Payment posted successfully",

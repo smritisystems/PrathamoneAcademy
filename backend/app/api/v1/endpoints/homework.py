@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.1.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
 #  * @description REST API endpoints for Homework & Assignment Management, Recipient Previews & Late-Joiner Policies, Secure File Attachments, Digital Submissions with Version History, Evaluations, Notifications, Dashboards, and Institute Analytics.
 #  */
@@ -878,6 +878,23 @@ async def publish_assignment_endpoint(
             selected_student_ids=payload.selected_student_ids if payload else None,
             student_overrides=[ov.model_dump() for ov in payload.student_overrides] if payload and payload.student_overrides else None,
         )
+
+        # Automated communication broadcast trigger
+        try:
+            from app.services.communication import get_automation_rules, dispatch_homework_notification
+            comm_rules = await get_automation_rules(db, current_user.institution_id or 1)
+            if comm_rules.get("homework_alerts_enabled", True):
+                await dispatch_homework_notification(
+                    db,
+                    homework_id=updated.id,
+                    institution_id=current_user.institution_id or 1,
+                    sender_id=current_user.id,
+                    sender_name=getattr(current_user, "full_name", None) or getattr(current_user, "username", "Teacher"),
+                    channel=comm_rules.get("default_channel", "WHATSAPP"),
+                )
+        except Exception:
+            pass
+
         return {
             "success": True,
             "message": f"Assignment '{updated.assignment_code}' published to {updated.original_recipient_count} students.",

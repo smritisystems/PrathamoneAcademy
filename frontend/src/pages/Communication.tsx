@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Centralized Communication Center workspace comprising 8 dedicated submenus, multichannel broadcasts, WhatsApp direct launcher, template authoring, delivery tracking, gateway diagnostics, and Rule 010 View-First governance.
  */
@@ -24,12 +24,12 @@ import {
   Search, Plus, Edit, Trash2, Shield, Eye, ExternalLink, Filter, X,
   FileText, Check, Paperclip, ChevronRight, RotateCcw,
   Zap, Copy, CheckSquare, Square, Sliders, BellRing, Lock, LockOpen,
-  ArrowRight, Radio, Smartphone, Activity, Server, Key, AlertTriangle
+  ArrowRight, Radio, Smartphone, Activity, Server, Key, AlertTriangle, BookOpen
 } from 'lucide-react'
 import { communicationApi } from '../api/endpoints'
 import type {
   MessageTemplateItem, CommunicationLogItem, RecipientItem, ChannelDiagnostics,
-  AutomationRules, FeeReminderQueueItem
+  AutomationRules, FeeReminderQueueItem, AutomationTriggerStatus, AutomationTriggerItem
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
@@ -165,10 +165,14 @@ function CommunicationContent() {
     fee_reminder_frequency_days: 7,
     attendance_alerts_enabled: true,
     receipt_auto_share_enabled: true,
+    homework_alerts_enabled: true,
+    exam_schedule_alerts_enabled: true,
     default_channel: 'WHATSAPP',
     institute_display_name: 'PrathamOne EduOS',
   })
   const [savingRules, setSavingRules] = useState<boolean>(false)
+  const [automationTriggers, setAutomationTriggers] = useState<AutomationTriggerStatus | null>(null)
+  const [triggersLoading, setTriggersLoading] = useState<boolean>(false)
   const [feeQueue, setFeeQueue] = useState<FeeReminderQueueItem[]>([])
   const [feeQueueLoading, setFeeQueueLoading] = useState<boolean>(false)
   const [feeQueueSearch, setFeeQueueSearch] = useState<string>('')
@@ -227,6 +231,18 @@ function CommunicationContent() {
     }
   }
 
+  const fetchAutomationTriggers = async () => {
+    try {
+      setTriggersLoading(true)
+      const res = await communicationApi.getAutomationTriggers()
+      if (res.data) setAutomationTriggers(res.data)
+    } catch (err: any) {
+      console.error('Failed to load automation triggers:', err)
+    } finally {
+      setTriggersLoading(false)
+    }
+  }
+
   const fetchFeeReminderQueue = async () => {
     try {
       setFeeQueueLoading(true)
@@ -252,6 +268,7 @@ function CommunicationContent() {
     if (activeTab === 'automations' || activeTab === 'overview') {
       fetchAutomationRules()
       fetchFeeReminderQueue()
+      fetchAutomationTriggers()
     }
   }, [activeTab])
 
@@ -489,6 +506,7 @@ function CommunicationContent() {
       setSavingRules(true)
       await communicationApi.updateAutomationRules(automationRules)
       showNotification('success', 'Automation triggers updated successfully.')
+      await fetchAutomationTriggers()
     } catch (err: any) {
       showNotification('error', err.response?.data?.detail || 'Failed to save automation rules.')
     } finally {
@@ -1905,7 +1923,7 @@ function CommunicationContent() {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {/* Fee Reminders Rule */}
                     <div className="p-4 rounded-xl border border-gray-200 bg-slate-50/50 space-y-3">
                       <div className="flex items-center justify-between">
@@ -2008,6 +2026,184 @@ function CommunicationContent() {
                           ✓ Secure 7-Day Cloud Link
                         </span>
                       </div>
+                    </div>
+
+                    {/* Homework Assignment Alert Rule */}
+                    <div className="p-4 rounded-xl border border-gray-200 bg-slate-50/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <BookOpen className="w-4 h-4 text-indigo-600" />
+                          Homework Publishing Alerts
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(automationRules.homework_alerts_enabled ?? true)}
+                            onChange={(e) =>
+                              setAutomationRules({ ...automationRules, homework_alerts_enabled: e.target.checked })
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-violet-600"></div>
+                        </label>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Broadcasts real-time homework assignments and due dates to class guardians upon publishing.
+                      </p>
+                      <div className="pt-2 border-t border-gray-200/60">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-100 text-indigo-800">
+                          ✓ Auto-Broadcast on Publish
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Examination Schedule Alert Rule */}
+                    <div className="p-4 rounded-xl border border-gray-200 bg-slate-50/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                          <GraduationCap className="w-4 h-4 text-purple-600" />
+                          Exam Timetable & Schedules
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(automationRules.exam_schedule_alerts_enabled ?? true)}
+                            onChange={(e) =>
+                              setAutomationRules({ ...automationRules, exam_schedule_alerts_enabled: e.target.checked })
+                            }
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-violet-600"></div>
+                        </label>
+                      </div>
+                      <p className="text-[11px] text-gray-500">
+                        Broadcasts assessment dates, passing criteria, and timetables to standard cohorts.
+                      </p>
+                      <div className="pt-2 border-t border-gray-200/60">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-800">
+                          ✓ Official Schedule Alerts
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Automated Triggers & Broadcast Monitor Card */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-2xs space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                          <Activity className="w-4 h-4" />
+                        </div>
+                        <h3 className="text-base font-bold text-gray-900">
+                          Live Automated Triggers & Broadcast Monitor
+                        </h3>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 ml-10">
+                        Real-time health and cumulative execution metrics for automated WhatsApp / SMS outbound triggers.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={fetchAutomationTriggers}
+                      disabled={triggersLoading}
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 bg-white hover:bg-slate-50 text-gray-700 flex items-center gap-1.5 shadow-2xs transition-all"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${triggersLoading ? 'animate-spin text-primary-600' : ''}`} />
+                      <span>Refresh Live Telemetry</span>
+                    </button>
+                  </div>
+
+                  {/* Trigger Status Cards Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                    {(automationTriggers?.triggers || []).map((t) => (
+                      <div
+                        key={t.key}
+                        className="p-3.5 rounded-xl border border-gray-200 bg-slate-50/70 hover:bg-white hover:shadow-2xs transition-all space-y-2 flex flex-col justify-between"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
+                              {t.channel}
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
+                              t.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                            }`}>
+                              {t.enabled ? 'ACTIVE' : 'PAUSED'}
+                            </span>
+                          </div>
+                          <h5 className="text-xs font-bold text-gray-900 line-clamp-1" title={t.title}>
+                            {t.title}
+                          </h5>
+                          <p className="text-[10px] text-gray-500 line-clamp-2" title={t.description}>
+                            {t.description}
+                          </p>
+                        </div>
+                        <div className="pt-2 border-t border-gray-200/60 flex items-center justify-between text-[11px]">
+                          <span className="text-gray-500">Dispatches:</span>
+                          <span className="font-extrabold text-gray-900">{t.total_dispatched_count}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Recent Automated Dispatches Table */}
+                  <div className="space-y-3 pt-2">
+                    <h5 className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-gray-500" />
+                      <span>Recent Automated Event Dispatches</span>
+                    </h5>
+                    <div className="border border-gray-200 rounded-xl overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold uppercase text-[10px]">
+                          <tr>
+                            <th className="px-4 py-2.5">Time</th>
+                            <th className="px-4 py-2.5">Trigger Pipeline</th>
+                            <th className="px-4 py-2.5">Channel</th>
+                            <th className="px-4 py-2.5">Recipient</th>
+                            <th className="px-4 py-2.5">Destination</th>
+                            <th className="px-4 py-2.5 text-center">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 bg-white">
+                          {(automationTriggers?.recent_dispatches || []).map((d) => (
+                            <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="px-4 py-2 text-gray-500 font-mono text-[11px]">
+                                {new Date(d.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •{' '}
+                                {new Date(d.sent_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                              </td>
+                              <td className="px-4 py-2 font-mono text-[11px] font-bold text-gray-800">
+                                {d.trigger_type}
+                              </td>
+                              <td className="px-4 py-2">
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 font-mono">
+                                  {d.channel}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 font-medium text-gray-900">{d.recipient_name}</td>
+                              <td className="px-4 py-2 font-mono text-[11px] text-gray-600">{d.recipient_destination}</td>
+                              <td className="px-4 py-2 text-center">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  d.status === 'DELIVERED' || d.status === 'SENT'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}>
+                                  {d.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                          {(!automationTriggers?.recent_dispatches || automationTriggers.recent_dispatches.length === 0) && (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-xs">
+                                No automated dispatches recorded yet in this institution workspace.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>

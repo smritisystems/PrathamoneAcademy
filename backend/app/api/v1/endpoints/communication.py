@@ -11,9 +11,9 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
-#  * @description REST API router for Communication Center, message templates, universal document sharing, and delivery tracking.
+#  * @description REST API router for Communication Center, message templates, universal document sharing, delivery tracking, and automated event notifications.
 #  */
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -48,6 +48,10 @@ from app.services.communication import (
     generate_fee_reminder_queue,
     dispatch_fee_reminders,
     dispatch_attendance_alert,
+    dispatch_fee_payment_receipt_notification,
+    dispatch_homework_notification,
+    dispatch_exam_schedule_notification,
+    get_automation_trigger_summary,
 )
 
 router = APIRouter()
@@ -830,8 +834,14 @@ class AutomationRulesUpdate(BaseModel):
     attendance_absent_alerts_enabled: Optional[bool] = None
     attendance_late_alerts_enabled: Optional[bool] = None
     receipt_auto_share_enabled: Optional[bool] = None
+    homework_alerts_enabled: Optional[bool] = None
+    exam_schedule_alerts_enabled: Optional[bool] = None
     default_channel: Optional[str] = None
     institute_display_name: Optional[str] = None
+
+
+class SingleDispatchChannelRequest(BaseModel):
+    channel: Optional[str] = "WHATSAPP"
 
 
 class FeeRemindersPreviewRequest(BaseModel):
@@ -944,4 +954,98 @@ async def dispatch_attendance_alerts_endpoint(
         "failed_count": len(errors),
         "dispatched": dispatched,
         "errors": errors,
+    }
+
+
+@router.get("/automation/triggers")
+async def get_automation_triggers_endpoint(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Returns overview of all automated communication triggers and recent dispatches."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    return await get_automation_trigger_summary(db, inst_id)
+
+
+@router.post("/automation/dispatch-payment-receipt/{payment_id}")
+async def dispatch_payment_receipt_endpoint(
+    payment_id: int,
+    payload: Optional[SingleDispatchChannelRequest] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Dispatches real-time fee payment receipt confirmation to student guardian."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    sender_name = current_user.full_name or current_user.username
+    channel = payload.channel if payload and payload.channel else "WHATSAPP"
+    res = await dispatch_fee_payment_receipt_notification(
+        db,
+        payment_id=payment_id,
+        institution_id=inst_id,
+        sender_id=current_user.id,
+        sender_name=sender_name,
+        channel=channel,
+    )
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Failed to dispatch receipt notification"))
+    return {
+        "status": "success",
+        "message": f"Receipt confirmation dispatched via {channel} to {res.get('recipient_name')}",
+        "receipt": res,
+    }
+
+
+@router.post("/automation/dispatch-homework/{homework_id}")
+async def dispatch_homework_endpoint(
+    homework_id: int,
+    payload: Optional[SingleDispatchChannelRequest] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Broadcasts homework assignment notification to cohort students and their guardians."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    sender_name = current_user.full_name or current_user.username
+    channel = payload.channel if payload and payload.channel else "WHATSAPP"
+    res = await dispatch_homework_notification(
+        db,
+        homework_id=homework_id,
+        institution_id=inst_id,
+        sender_id=current_user.id,
+        sender_name=sender_name,
+        channel=channel,
+    )
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Failed to dispatch homework broadcast"))
+    return {
+        "status": "success",
+        "message": f"Homework broadcast dispatched to {res.get('dispatched_count')} students via {channel}",
+        "summary": res,
+    }
+
+
+@router.post("/automation/dispatch-exam-schedule/{exam_id}")
+async def dispatch_exam_schedule_endpoint(
+    exam_id: int,
+    payload: Optional[SingleDispatchChannelRequest] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Broadcasts examination schedule announcement to cohort students and their guardians."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    sender_name = current_user.full_name or current_user.username
+    channel = payload.channel if payload and payload.channel else "WHATSAPP"
+    res = await dispatch_exam_schedule_notification(
+        db,
+        exam_id=exam_id,
+        institution_id=inst_id,
+        sender_id=current_user.id,
+        sender_name=sender_name,
+        channel=channel,
+    )
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("error", "Failed to dispatch exam schedule broadcast"))
+    return {
+        "status": "success",
+        "message": f"Exam schedule broadcast dispatched to {res.get('dispatched_count')} students via {channel}",
+        "summary": res,
     }

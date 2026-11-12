@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-11
+ * @updated     2026-11-13
  *
  * @description Comprehensive Vitest test suite validating all 8 dedicated submenus of the Communication Center, URL synchronization, Rule 010 View-First lock enforcement, and Training Mode isolation.
  */
@@ -114,10 +114,44 @@ vi.mock('../api/endpoints', () => ({
         fee_reminder_frequency_days: 7,
         attendance_alerts_enabled: true,
         receipt_auto_share_enabled: true,
+        homework_alerts_enabled: true,
+        exam_schedule_alerts_enabled: true,
         default_channel: 'WHATSAPP',
         institute_display_name: 'PrathamOne EduOS',
       },
     }),
+    getAutomationTriggers: vi.fn().mockResolvedValue({
+      data: {
+        active_rules: {
+          fee_reminders_enabled: true,
+          fee_reminder_days_before: 5,
+          fee_reminder_frequency_days: 7,
+          attendance_alerts_enabled: true,
+          receipt_auto_share_enabled: true,
+          homework_alerts_enabled: true,
+          exam_schedule_alerts_enabled: true,
+          default_channel: 'WHATSAPP',
+          institute_display_name: 'PrathamOne EduOS',
+        },
+        triggers: [
+          {
+            key: 'fee_receipt',
+            title: 'Fee Receipt Instant Acknowledgement',
+            description: 'Auto-dispatches WhatsApp / SMS receipt confirmation to parent upon payment entry.',
+            template_code: 'FEE_RECEIPT_CONFIRMATION',
+            enabled: true,
+            channel: 'WHATSAPP',
+            total_dispatched_count: 5,
+            last_triggered_at: '2026-11-13T04:30:00Z',
+          },
+        ],
+        recent_dispatches: [],
+      },
+    }),
+    dispatchPaymentReceiptNotification: vi.fn().mockResolvedValue({ data: { status: 'success' } }),
+    dispatchHomeworkNotification: vi.fn().mockResolvedValue({ data: { status: 'success' } }),
+    dispatchExamScheduleNotification: vi.fn().mockResolvedValue({ data: { status: 'success' } }),
+    updateAutomationRules: vi.fn().mockResolvedValue({ data: { status: 'success' } }),
     previewFeeReminders: vi.fn().mockResolvedValue({
       data: {
         queue: [
