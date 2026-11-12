@@ -43,5 +43,6 @@ export type { SortableHeaderProps } from './SortableHeader'
 export { default as TableSortSelect } from './TableSortSelect'
 export type { TableSortSelectProps, TableSortOption } from './TableSortSelect'
 
-export { ConcessionTraceModal } from './ConcessionTraceModal'
 export { default as ContextualHelpButton, resolveContextualHelpPath } from './ContextualHelpButton'
+
+export { ConcessionTraceModal } from './ConcessionTraceModal'

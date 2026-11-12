@@ -1,7 +1,7 @@
 /**
  * @file        helpNavigation.ts
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.help
+ * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,26 +13,8 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Helpnavigation in the src.components.help module.
+ * @description Shared navigation structure, section metadata, and role helpers for the Help & About Centre.
  */
-
-// /**
-//  * @file        helpNavigation.ts
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.help
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Shared navigation structure, section metadata, and role helpers for the Help & About Centre.
-//  */
 
 import type { HelpSectionKey } from '../../types'
 

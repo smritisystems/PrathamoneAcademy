@@ -1,7 +1,7 @@
 /**
  * @file        AboutCompanySection.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.help
+ * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,26 +13,8 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Aboutcompanysection in the src.components.help module.
+ * @description About SMRITI Systems & AITDL profile keeping subscribing institution identity strictly separated from software developer identity.
  */
-
-// /**
-//  * @file        AboutCompanySection.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.help
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description About SMRITI Systems & AITDL profile keeping subscribing institution identity strictly separated from software developer identity.
-//  */
 
 import {
   AlertTriangle,

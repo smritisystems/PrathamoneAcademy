@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-12
 #  *
 #  * @description FastAPI dependency injection providers for database sessions and authenticated user context.
 #  */
@@ -61,7 +61,8 @@ SYSADMIN_ROLES = {"sysadmin", "superadmin", "super_admin"}
 
 def is_sysadmin(user) -> bool:
     """Returns True if the given user possesses full system administrator privileges."""
-    return getattr(user, "role", None) in SYSADMIN_ROLES
+    role = (getattr(user, "role", None) or "").strip().lower()
+    return role in {r.lower() for r in SYSADMIN_ROLES}
 
 
 async def get_current_active_user(current_user=Depends(get_current_user)):
@@ -70,12 +71,21 @@ async def get_current_active_user(current_user=Depends(get_current_user)):
     return current_user
 
 
-def require_role(*roles: str):
+def require_role(*roles):
+    normalized_roles = set()
+    for item in roles:
+        if isinstance(item, (list, tuple, set)):
+            normalized_roles.update(str(sub).strip().lower() for sub in item if sub is not None)
+        elif item is not None:
+            normalized_roles.add(str(item).strip().lower())
+    normalized_sysadmin = {r.strip().lower() for r in SYSADMIN_ROLES}
+
     async def role_checker(
         current_user=Depends(get_current_active_user),
     ):
         # Universal superuser authorization: SysAdmin accounts have blanket access across all modules
-        if current_user.role in SYSADMIN_ROLES or current_user.role in roles:
+        user_role = (getattr(current_user, "role", None) or "").strip().lower()
+        if user_role in normalized_sysadmin or user_role in normalized_roles:
             return current_user
 
         raise HTTPException(

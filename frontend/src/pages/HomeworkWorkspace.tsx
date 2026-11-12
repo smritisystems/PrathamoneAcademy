@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Flagship Homework & Assignment Management workspace featuring Overview, Unified Assignment Creation, Physical Checking Register, Digital Submissions, Templates, and Daily Reports.
  */
@@ -34,7 +34,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, DeleteConfirmationModal } from '../components/common'
+import { EditModeBar, LockedButton, DeleteConfirmationModal, ContextualHelpButton } from '../components/common'
 import StatCard from '../components/StatCard'
 import Modal from '../components/Modal'
 import type {
@@ -388,6 +388,7 @@ export default function HomeworkWorkspace() {
         </div>
 
         <div className="flex items-center gap-3">
+          <ContextualHelpButton moduleKey="homework" variant="pill" label="Homework Help" />
           <button
             type="button"
             onClick={() => {

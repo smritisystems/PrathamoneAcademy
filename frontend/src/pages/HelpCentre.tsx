@@ -1,7 +1,7 @@
 /**
  * @file        HelpCentre.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.pages
+ * @module      frontend.src.pages
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,26 +13,8 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Helpcentre in the src.pages module.
+ * @description Official customer-facing Help & About Centre portal unifying Getting Started, Module Guides, Tutorials, FAQs, Support Centre, About Product, About Company, Version Info, Legal & Compliance, Admin System Info, and Content Governance.
  */
-
-// /**
-//  * @file        HelpCentre.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.pages
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Official customer-facing Help & About Centre portal unifying Getting Started, Module Guides, Tutorials, FAQs, Support Centre, About Product, About Company, Version Info, Legal & Compliance, Admin System Info, and Content Governance.
-//  */
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
@@ -136,7 +118,7 @@ export default function HelpCentre() {
     setLoadingBase(true)
     try {
       const [catRes, artRes, prodRes] = await Promise.all([
-        helpApi.getCategories(),
+        helpApi.getCategories(isAdmin),
         helpApi.getArticles(),
         helpApi.getProductInfo(),
       ])
@@ -148,7 +130,7 @@ export default function HelpCentre() {
     } finally {
       setLoadingBase(false)
     }
-  }, [])
+  }, [isAdmin])
 
   useEffect(() => {
     loadBaseData()
@@ -215,7 +197,9 @@ export default function HelpCentre() {
     if (qParam) {
       setSearchInput(qParam)
       executeSearch(qParam)
-    } else if (!searchInput) {
+    } else {
+      setSearchInput('')
+      setSearchQuery('')
       setSearchResults(null)
     }
   }, [location.search])
@@ -520,6 +504,7 @@ export default function HelpCentre() {
         <LegalComplianceSection
           legalArticles={articlesBySection.legal || []}
           selectedSlug={routeSlug}
+          fromRoute={fromRoute}
         />
       ) : activeTab === 'system_info' ? (
         <SystemInfoSection />

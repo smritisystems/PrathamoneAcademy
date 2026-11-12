@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import get_password_hash
+from app.models.institution import Institution
 from app.models.user import Role, User
 from app.services.help_seed_data import validate_customer_safe_content
 
@@ -82,14 +83,21 @@ class TestHelpAndAboutCentre:
             by_section.setdefault(item["section"], []).append(item)
 
         assert len(by_section.get("getting_started", [])) == 9
-        assert len(by_section.get("module_guide", [])) == 14
+        assert len(by_section.get("module_guide", [])) == 19
         assert len(by_section.get("tutorial", [])) == 13
         assert len(by_section.get("faq", [])) == 12
-        assert len(by_section.get("legal", [])) == 6
+        assert len(by_section.get("legal", [])) == 7
 
-        # Every legal baseline document must remain pending approval until management sign-off
+        # Unratified legal baseline policies remain pending approval until management sign-off,
+        # while management-approved third-party software acknowledgements is authorized & published.
+        legal_slugs = {item["slug"] for item in by_section["legal"]}
+        assert "third-party-acknowledgements" in legal_slugs
         for legal_item in by_section["legal"]:
-            assert legal_item["approval_status"] == "pending_approval"
+            if legal_item["slug"] == "third-party-acknowledgements":
+                assert legal_item["approval_status"] == "approved"
+                assert legal_item["status"] == "published"
+            else:
+                assert legal_item["approval_status"] == "pending_approval"
 
         # Every module guide must contain all 8 required documentation subsections
         required_headings = [
@@ -152,6 +160,12 @@ class TestHelpAndAboutCentre:
             ("/academic/timetable", "guide-timetable"),
             ("/students", "guide-students"),
             ("/attendance", "guide-attendance"),
+            ("/courses", "guide-courses"),
+            ("/homework", "guide-homework"),
+            ("/forms", "guide-forms"),
+            ("/import-export", "guide-import-export"),
+            ("/fees/import", "guide-import-export"),
+            ("/training", "guide-training"),
         ]
         for route_path, expected_slug in ctx_cases:
             c_res = await client.get("/api/v1/help/contextual", params={"route": route_path}, headers=auth_headers)
@@ -169,7 +183,7 @@ class TestHelpAndAboutCentre:
 
         assert data["about_product"]["product_name"] == settings.PRODUCT_NAME
         assert data["about_product"]["product_category"] == "Education Management Operating System"
-        assert len(data["about_product"]["available_modules"]) == 14
+        assert len(data["about_product"]["available_modules"]) == 19
 
         company = data["about_company"]
         assert company["smriti_systems"]["company_name"] == "SMRITI Systems"
@@ -196,7 +210,7 @@ class TestHelpAndAboutCentre:
         body = admin_res.json()
         assert body["application_health"]["status"] in ("Healthy", "Degraded")
         assert body["database_connectivity"]["status"] == "Connected"
-        assert len(body["module_availability"]) == 14
+        assert len(body["module_availability"]) == 19
         assert "last_successful_backup" in body
         assert "deployment_information" in body
 
@@ -356,3 +370,247 @@ class TestHelpAndAboutCentre:
             headers=auth_headers,
         )
         assert unapproved_pub.status_code == 400
+
+    async def test_support_cross_tenant_idor_reopen_and_assignee_validation(
+        self, client: AsyncClient, db: AsyncSession, auth_headers: dict, test_institution
+    ):
+        inst2 = Institution(
+            name="Other Coaching Institute",
+            code=f"OTH{random.randint(100, 999)}",
+            city="Mumbai",
+        )
+        db.add(inst2)
+        await db.commit()
+        await db.refresh(inst2)
+
+        _, teacher_inst1_headers = await _create_role_user(client, db, "teacher", test_institution.id)
+        _, admin_inst1_headers = await _create_role_user(client, db, "admin", test_institution.id)
+        admin_inst2_user, admin_inst2_headers = await _create_role_user(client, db, "admin", inst2.id)
+
+        create_res = await client.post(
+            "/api/v1/help/support-requests",
+            json={
+                "request_type": "support_request",
+                "category": "general",
+                "priority": "medium",
+                "module_key": "general",
+                "subject": "General onboarding query for institution 1",
+                "description": "Verifying multi-tenant support isolation and reopen timestamp reset.",
+            },
+            headers=teacher_inst1_headers,
+        )
+        assert create_res.status_code == 201
+        ticket = create_res.json()
+        assert ticket["module_key"] is None
+        ticket_id = ticket["id"]
+
+        # Same-institution admin CAN access, comment, and resolve
+        list_inst1 = await client.get("/api/v1/help/support-requests", headers=admin_inst1_headers)
+        assert list_inst1.status_code == 200
+        assert any(t["id"] == ticket_id for t in list_inst1.json()["items"])
+
+        # Another institution's admin MUST NOT see or modify this ticket (CRIT-01)
+        list_inst2 = await client.get("/api/v1/help/support-requests", headers=admin_inst2_headers)
+        assert list_inst2.status_code == 200
+        assert all(t["id"] != ticket_id for t in list_inst2.json()["items"])
+
+        for method, url, kwargs in [
+            ("get", f"/api/v1/help/support-requests/{ticket_id}", {}),
+            (
+                "post",
+                f"/api/v1/help/support-requests/{ticket_id}/comments",
+                {"json": {"message": "Unauthorized cross-tenant comment", "is_internal_note": False}},
+            ),
+            (
+                "patch",
+                f"/api/v1/help/support-requests/{ticket_id}/status",
+                {"json": {"status": "closed"}},
+            ),
+        ]:
+            resp = await getattr(client, method)(url, headers=admin_inst2_headers, **kwargs)
+            assert resp.status_code == 403, f"Expected 403 IDOR block for {method.upper()} {url}, got {resp.status_code}"
+
+        # Assigning a ticket to a user in a different institution must fail with 400
+        bad_assign = await client.patch(
+            f"/api/v1/help/support-requests/{ticket_id}/status",
+            json={"assigned_to_id": admin_inst2_user.id},
+            headers=admin_inst1_headers,
+        )
+        assert bad_assign.status_code == 400
+
+        # Resolve ticket -> resolved_at populated; Reopen -> resolved_at cleared
+        resolved = await client.patch(
+            f"/api/v1/help/support-requests/{ticket_id}/status",
+            json={"status": "resolved", "resolution_notes": "Answered clearly."},
+            headers=admin_inst1_headers,
+        )
+        assert resolved.status_code == 200
+        assert resolved.json()["resolved_at"] is not None
+
+        reopened = await client.patch(
+            f"/api/v1/help/support-requests/{ticket_id}/status",
+            json={"status": "open"},
+            headers=admin_inst1_headers,
+        )
+        assert reopened.status_code == 200
+        assert reopened.json()["status"] == "open"
+        assert reopened.json()["resolved_at"] is None
+
+        # Superadmin can still inspect ticket across institutions
+        sup_view = await client.get(f"/api/v1/help/support-requests/{ticket_id}", headers=auth_headers)
+        assert sup_view.status_code == 200
+
+    async def test_legal_maker_checker_commercial_guards_and_validation(
+        self, client: AsyncClient, db: AsyncSession, auth_headers: dict, test_institution
+    ):
+        _, admin_headers = await _create_role_user(client, db, "admin", test_institution.id)
+        _, principal_headers = await _create_role_user(client, db, "principal", test_institution.id)
+
+        # Non-sysadmin cannot approve legal documents directly or via publish endpoint
+        legal_slug = f"legal-maker-check-{random.randint(1000, 9999)}"
+        create_denied = await client.post(
+            "/api/v1/help/articles",
+            json={
+                "slug": legal_slug,
+                "category_slug": "legal-compliance",
+                "section": "legal",
+                "title": "Draft Compliance Policy",
+                "content_markdown": "## Policy\nDraft content pending review.",
+                "approval_status": "approved",
+            },
+            headers=admin_headers,
+        )
+        assert create_denied.status_code == 403
+
+        # Admin creates draft legal policy, self-approve fails (403), second reviewer (principal) approves (200)
+        create_draft = await client.post(
+            "/api/v1/help/articles",
+            json={
+                "slug": legal_slug,
+                "category_slug": "legal-compliance",
+                "section": "legal",
+                "title": "Draft Compliance Policy",
+                "content_markdown": "## Policy\nDraft content pending review.",
+            },
+            headers=admin_headers,
+        )
+        assert create_draft.status_code == 201
+        custom_legal_id = create_draft.json()["id"]
+
+        self_approve = await client.patch(
+            f"/api/v1/help/articles/{custom_legal_id}/publish",
+            json={"publish": True, "approve": True},
+            headers=admin_headers,
+        )
+        assert self_approve.status_code == 403
+
+        peer_approve = await client.patch(
+            f"/api/v1/help/articles/{custom_legal_id}/publish",
+            json={"publish": True, "approve": True},
+            headers=principal_headers,
+        )
+        assert peer_approve.status_code == 200
+        assert peer_approve.json()["approval_status"] == "approved"
+
+        legal_detail = await client.get("/api/v1/help/articles/terms-and-conditions", headers=admin_headers)
+        assert legal_detail.status_code == 200
+        legal_id = legal_detail.json()["id"]
+
+        approve_denied = await client.patch(
+            f"/api/v1/help/articles/{legal_id}/publish",
+            json={"publish": True, "approve": True},
+            headers=admin_headers,
+        )
+        assert approve_denied.status_code == 403
+
+        # Sysadmin/Superadmin CAN approve & publish legal doc, then admin content edit resets approval
+        approved = await client.patch(
+            f"/api/v1/help/articles/{legal_id}/publish",
+            json={"publish": True, "approve": True},
+            headers=auth_headers,
+        )
+        assert approved.status_code == 200
+        assert approved.json()["approval_status"] == "approved"
+        assert approved.json()["status"] == "published"
+
+        edited_by_admin = await client.put(
+            f"/api/v1/help/articles/{legal_id}",
+            json={
+                "content_markdown": "## Terms and Conditions\nUpdated clause requiring fresh management approval.",
+                "doc_version": "1.1",
+            },
+            headers=admin_headers,
+        )
+        assert edited_by_admin.status_code == 200
+        assert edited_by_admin.json()["approval_status"] == "pending_approval"
+        assert edited_by_admin.json()["status"] == "pending_approval"
+
+        # Non-sysadmin cannot alter license_* or smriti_* commercial fields
+        commercial_denied = await client.put(
+            "/api/v1/help/product-info",
+            json={"license_status": "Unauthorized License Claim"},
+            headers=admin_headers,
+        )
+        assert commercial_denied.status_code == 403
+
+        # Non-sysadmin CAN update institution product intro; superadmin CAN update license status
+        intro_ok = await client.put(
+            "/api/v1/help/product-info",
+            json={"product_introduction": "Customized verified overview for Prashant Academy."},
+            headers=admin_headers,
+        )
+        assert intro_ok.status_code == 200
+
+        # Invalid enum literals rejected with 422; unsafe category rejected with 400
+        bad_enum = await client.post(
+            "/api/v1/help/support-requests",
+            json={
+                "request_type": "invalid_type",
+                "priority": "medium",
+                "subject": "Invalid ticket type check",
+                "description": "Testing strict schema Literal validation.",
+            },
+            headers=admin_headers,
+        )
+        assert bad_enum.status_code == 422
+
+        unsafe_cat = await client.post(
+            "/api/v1/help/categories",
+            json={
+                "slug": "unsafe-cat",
+                "name": "GitHub Repo Guide",
+                "section": "faq",
+            },
+            headers=auth_headers,
+        )
+        assert unsafe_cat.status_code == 400
+
+        # Pagination parameters respected
+        paged = await client.get("/api/v1/help/articles", params={"limit": 5, "offset": 0}, headers=auth_headers)
+        assert paged.status_code == 200
+        assert len(paged.json()["items"]) == 5
+        assert paged.json()["limit"] == 5
+
+        # Custom CMS related_routes override in contextual resolution
+        custom_slug = f"ctx-custom-{random.randint(1000, 9999)}"
+        custom_ctx_art = await client.post(
+            "/api/v1/help/articles",
+            json={
+                "slug": custom_slug,
+                "category_slug": "module-user-guides",
+                "section": "module_guide",
+                "title": "Custom Contextual Workspace Guide",
+                "content_markdown": "## Custom Module\nContextual resolution check.",
+                "related_routes": ["/custom-workspace"],
+                "status": "published",
+            },
+            headers=auth_headers,
+        )
+        assert custom_ctx_art.status_code == 201
+        resolved_custom = await client.get(
+            "/api/v1/help/contextual",
+            params={"route": "/custom-workspace/details"},
+            headers=admin_headers,
+        )
+        assert resolved_custom.status_code == 200
+        assert resolved_custom.json()["article"]["slug"] == custom_slug

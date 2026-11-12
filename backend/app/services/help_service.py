@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import and_, desc, func, or_, select, text
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -50,6 +51,23 @@ from app.services.release_service import ReleaseService
 
 
 ADMIN_ROLES = {"superadmin", "sysadmin", "super_admin", "admin", "principal"}
+SYSADMIN_ONLY_ROLES = {"superadmin", "sysadmin", "super_admin"}
+SYSTEM_ONLY_PRODUCT_KEYS = {
+    "smriti_introduction",
+    "smriti_tech_profile",
+    "smriti_website",
+    "smriti_office",
+    "smriti_leadership",
+    "smriti_verification_status",
+    "license_status",
+    "license_validity",
+    "deployment_type",
+}
+
+
+def _is_sysadmin(user: User) -> bool:
+    return (getattr(user, "role", None) or "").strip().lower() in SYSADMIN_ONLY_ROLES
+
 
 # Customer-safe canonical module registry mirroring genuinely implemented application capabilities
 GENUINE_MODULES_META: List[Dict[str, str]] = [
@@ -61,11 +79,16 @@ GENUINE_MODULES_META: List[Dict[str, str]] = [
     {"key": "scholarships", "name": "Scholarships & Student Benefits", "guide_slug": "guide-scholarships", "route": "/fees/concessions"},
     {"key": "attendance", "name": "Attendance Management", "guide_slug": "guide-attendance", "route": "/attendance"},
     {"key": "timetable", "name": "Timetable Management", "guide_slug": "guide-timetable", "route": "/academic/timetable"},
+    {"key": "courses", "name": "Study Materials & Courses", "guide_slug": "guide-courses", "route": "/courses"},
+    {"key": "homework", "name": "Homework & Assignments", "guide_slug": "guide-homework", "route": "/homework"},
     {"key": "examinations", "name": "Examination Management", "guide_slug": "guide-examinations", "route": "/examinations"},
     {"key": "results", "name": "Results & Report Cards", "guide_slug": "guide-results", "route": "/examinations/report-cards"},
     {"key": "staff", "name": "Staff Management", "guide_slug": "guide-staff", "route": "/teachers"},
     {"key": "communication", "name": "Communication Management", "guide_slug": "guide-communication", "route": "/communication"},
+    {"key": "forms", "name": "Print Forms & KYC Studio", "guide_slug": "guide-forms", "route": "/forms"},
     {"key": "reports", "name": "Reports & Analytics", "guide_slug": "guide-reports", "route": "/reports"},
+    {"key": "import_export", "name": "Import & Export Center", "guide_slug": "guide-import-export", "route": "/import-export"},
+    {"key": "training", "name": "Training & Simulation Sandbox", "guide_slug": "guide-training", "route": "/training"},
     {"key": "settings", "name": "Administration & Settings", "guide_slug": "guide-settings", "route": "/settings"},
 ]
 
@@ -73,6 +96,9 @@ GENUINE_MODULES_META: List[Dict[str, str]] = [
 CONTEXTUAL_ROUTE_RULES: List[Tuple[str, str, str]] = [
     ("/fees/concessions", "guide-concessions", "concessions"),
     ("/fees/scholarships", "guide-scholarships", "scholarships"),
+    ("/fees/import", "guide-import-export", "import_export"),
+    ("/import/fee-register", "guide-import-export", "import_export"),
+    ("/import-export", "guide-import-export", "import_export"),
     ("/fees", "guide-fees", "fees"),
     ("/payments", "guide-fees", "fees"),
     ("/receipt", "tutorial-receipt-generation", "fees"),
@@ -86,7 +112,10 @@ CONTEXTUAL_ROUTE_RULES: List[Tuple[str, str, str]] = [
     ("/academic/timetable", "guide-timetable", "timetable"),
     ("/timetable", "guide-timetable", "timetable"),
     ("/academic", "branch-class-and-division-setup", "timetable"),
-    ("/courses", "branch-class-and-division-setup", "timetable"),
+    ("/courses", "guide-courses", "courses"),
+    ("/homework", "guide-homework", "homework"),
+    ("/forms-documents", "guide-forms", "forms"),
+    ("/forms", "guide-forms", "forms"),
     ("/attendance", "guide-attendance", "attendance"),
     ("/teachers", "guide-staff", "staff"),
     ("/staff", "guide-staff", "staff"),
@@ -96,6 +125,8 @@ CONTEXTUAL_ROUTE_RULES: List[Tuple[str, str, str]] = [
     ("/users", "user-management-setup", "settings"),
     ("/housekeeping", "guide-settings", "settings"),
     ("/settings", "guide-settings", "settings"),
+    ("/admin/training", "guide-training", "training"),
+    ("/training", "guide-training", "training"),
     ("/student-portal", "welcome-to-prathamone-eduos", "dashboard"),
     ("/teacher-portal", "guide-timetable", "timetable"),
     ("/dashboard", "guide-dashboard", "dashboard"),
@@ -249,12 +280,29 @@ def serialize_support_request(req: SupportRequest, include_comments: bool = True
 
 async def ensure_seeded(db: AsyncSession) -> None:
     """Idempotently seeds categories and customer-facing Help & Legal articles on first access."""
-    cat_res = await db.execute(select(HelpCategory))
-    existing_cats = {c.slug: c for c in cat_res.scalars().all()}
+    expected_cat_slugs = [c["slug"] for c in HELP_CATEGORIES]
+    expected_art_slugs = [a["slug"] for a in HELP_ARTICLES_SEED]
+    counts_row = (
+        await db.execute(
+            select(
+                select(func.count(HelpCategory.id))
+                .where(HelpCategory.slug.in_(expected_cat_slugs))
+                .scalar_subquery()
+                .label("cat_cnt"),
+                select(func.count(HelpArticle.id))
+                .where(HelpArticle.slug.in_(expected_art_slugs))
+                .scalar_subquery()
+                .label("art_cnt"),
+            )
+        )
+    ).first()
+    if counts_row and (counts_row.cat_cnt or 0) >= len(expected_cat_slugs) and (counts_row.art_cnt or 0) >= len(expected_art_slugs):
+        return
 
     for item in HELP_CATEGORIES:
-        if item["slug"] not in existing_cats:
-            cat = HelpCategory(
+        await db.execute(
+            pg_insert(HelpCategory)
+            .values(
                 slug=item["slug"],
                 name=item["name"],
                 section=item["section"],
@@ -263,9 +311,11 @@ async def ensure_seeded(db: AsyncSession) -> None:
                 sort_order=item["sort_order"],
                 is_active=True,
             )
-            db.add(cat)
-            await db.flush()
-            existing_cats[cat.slug] = cat
+            .on_conflict_do_nothing(index_elements=["slug"])
+        )
+
+    cat_res = await db.execute(select(HelpCategory))
+    existing_cats = {c.slug: c for c in cat_res.scalars().all()}
 
     art_res = await db.execute(select(HelpArticle.slug))
     existing_slugs = set(art_res.scalars().all())
@@ -284,41 +334,49 @@ async def ensure_seeded(db: AsyncSession) -> None:
         cat = existing_cats.get(entry["category_slug"])
         approval_status = entry.get("approval_status", "approved")
         status_val = entry.get("status", "published")
-        article = HelpArticle(
-            slug=entry["slug"],
-            category_id=cat.id if cat else None,
-            section=entry["section"],
-            module_key=entry.get("module_key"),
-            title=entry["title"],
-            summary=entry.get("summary"),
-            content_markdown=entry["content_markdown"],
-            tags=json.dumps(entry.get("tags", [])),
-            required_permissions=json.dumps(entry.get("required_permissions", [])),
-            related_routes=json.dumps(entry.get("related_routes", [])),
-            related_slugs=json.dumps(entry.get("related_slugs", [])),
-            doc_version="1.0",
-            status=status_val,
-            approval_status=approval_status,
-            published_at=now if status_val == "published" else None,
-            is_system=True,
-            sort_order=entry.get("sort_order", 0),
-        )
-        db.add(article)
-        await db.flush()
+        inserted_id = (
+            await db.execute(
+                pg_insert(HelpArticle)
+                .values(
+                    slug=entry["slug"],
+                    category_id=cat.id if cat else None,
+                    section=entry["section"],
+                    module_key=entry.get("module_key"),
+                    title=entry["title"],
+                    summary=entry.get("summary"),
+                    content_markdown=entry["content_markdown"],
+                    tags=json.dumps(entry.get("tags", [])),
+                    required_permissions=json.dumps(entry.get("required_permissions", [])),
+                    related_routes=json.dumps(entry.get("related_routes", [])),
+                    related_slugs=json.dumps(entry.get("related_slugs", [])),
+                    doc_version="1.0",
+                    status=status_val,
+                    approval_status=approval_status,
+                    approved_at=now if approval_status == "approved" else None,
+                    published_at=now if status_val == "published" else None,
+                    is_system=True,
+                    sort_order=entry.get("sort_order", 0),
+                )
+                .on_conflict_do_nothing(index_elements=["slug"])
+                .returning(HelpArticle.id)
+            )
+        ).scalar_one_or_none()
 
-        rev = HelpArticleRevision(
-            article_id=article.id,
-            doc_version="1.0",
-            title=article.title,
-            summary=article.summary,
-            content_markdown=article.content_markdown,
-            status=article.status,
-            approval_status=article.approval_status,
-            change_note="Initial verified Help & About Centre baseline.",
-            changed_by_name="System Baseline",
-        )
-        db.add(rev)
-        created_any = True
+        if inserted_id is not None:
+            db.add(
+                HelpArticleRevision(
+                    article_id=inserted_id,
+                    doc_version="1.0",
+                    title=entry["title"],
+                    summary=entry.get("summary"),
+                    content_markdown=entry["content_markdown"],
+                    status=status_val,
+                    approval_status=approval_status,
+                    change_note="Initial verified Help & About Centre baseline.",
+                    changed_by_name="System Baseline",
+                )
+            )
+            created_any = True
 
     if created_any:
         await db.flush()
@@ -342,6 +400,9 @@ async def list_categories(db: AsyncSession, include_inactive: bool = False) -> L
 
 async def upsert_category(db: AsyncSession, payload: Dict[str, Any], actor: User) -> Dict[str, Any]:
     await ensure_seeded(db)
+    violations = validate_customer_safe_content(f"{payload.get('name', '')}\n{payload.get('description') or ''}")
+    if violations:
+        raise ValueError(" ".join(violations))
     slug = payload["slug"].strip().lower()
     res = await db.execute(select(HelpCategory).where(HelpCategory.slug == slug))
     cat = res.scalar_one_or_none()
@@ -385,6 +446,8 @@ async def list_articles(
     category_slug: Optional[str] = None,
     module_key: Optional[str] = None,
     include_unpublished: bool = False,
+    limit: int = 200,
+    offset: int = 0,
 ) -> List[Dict[str, Any]]:
     await ensure_seeded(db)
     stmt = (
@@ -409,6 +472,7 @@ async def list_articles(
                 and_(HelpArticle.section == "legal", HelpArticle.status == "pending_approval"),
             )
         )
+    stmt = stmt.limit(limit).offset(offset)
     articles = (await db.execute(stmt)).scalars().all()
     return [serialize_article(a, include_content=False) for a in articles]
 
@@ -475,10 +539,28 @@ async def search_help(
                 and_(HelpArticle.section == "legal", HelpArticle.status == "pending_approval"),
             )
         )
-    all_articles = (await db.execute(stmt)).scalars().all()
 
     ql = q.lower()
     terms = [t for t in ql.split() if len(t) >= 2] if ql else []
+    if ql:
+        sql_filters = [
+            HelpArticle.title.ilike(f"%{q}%"),
+            HelpArticle.summary.ilike(f"%{q}%"),
+            HelpArticle.tags.ilike(f"%{q}%"),
+            HelpArticle.content_markdown.ilike(f"%{q}%"),
+        ]
+        for term in terms:
+            sql_filters.extend([
+                HelpArticle.title.ilike(f"%{term}%"),
+                HelpArticle.summary.ilike(f"%{term}%"),
+                HelpArticle.tags.ilike(f"%{term}%"),
+                HelpArticle.content_markdown.ilike(f"%{term}%"),
+            ])
+        stmt = stmt.where(or_(*sql_filters)).limit(100)
+    else:
+        stmt = stmt.limit(60)
+
+    all_articles = (await db.execute(stmt)).scalars().all()
     scored_results: List[Tuple[int, Dict[str, Any]]] = []
 
     for art in all_articles:
@@ -583,16 +665,62 @@ async def resolve_contextual_help(
     resolved_module = module_key or "dashboard"
 
     clean_route = (route_path or "/").split("?")[0].strip() or "/"
+    article: Optional[Dict[str, Any]] = None
+
     if module_key:
         mod_map = {m["key"]: m["guide_slug"] for m in GENUINE_MODULES_META}
         if module_key in mod_map:
             target_slug = mod_map[module_key]
+        else:
+            custom_mod_row = (
+                await db.execute(
+                    select(HelpArticle.slug)
+                    .where(
+                        HelpArticle.module_key == module_key,
+                        HelpArticle.status == "published",
+                    )
+                    .order_by(HelpArticle.is_system.asc(), HelpArticle.sort_order.asc())
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if custom_mod_row:
+                target_slug = custom_mod_row
     else:
-        for prefix, slug, mod_k in CONTEXTUAL_ROUTE_RULES:
-            if clean_route == prefix or (prefix != "/" and clean_route.startswith(prefix)):
-                target_slug = slug
-                resolved_module = mod_k
-                break
+        # Prefer explicit custom CMS articles mapped to matching route prefix before static route rules
+        if clean_route != "/":
+            custom_rows = (
+                await db.execute(
+                    select(HelpArticle.slug, HelpArticle.module_key, HelpArticle.related_routes)
+                    .where(
+                        HelpArticle.is_system == False,  # noqa: E712
+                        HelpArticle.status == "published",
+                        HelpArticle.related_routes.isnot(None),
+                    )
+                    .order_by(HelpArticle.sort_order.asc())
+                )
+            ).all()
+            best_len = -1
+            for row in custom_rows:
+                routes = _json_loads(row.related_routes, [])
+                if not isinstance(routes, list):
+                    continue
+                for pref in routes:
+                    pref_str = str(pref or "").strip()
+                    if not pref_str:
+                        continue
+                    if (
+                        (clean_route == pref_str or (pref_str != "/" and clean_route.startswith(pref_str)))
+                        and len(pref_str) > best_len
+                    ):
+                        best_len = len(pref_str)
+                        target_slug = row.slug
+                        resolved_module = row.module_key or resolved_module
+        if target_slug == "welcome-to-prathamone-eduos":
+            for prefix, slug, mod_k in CONTEXTUAL_ROUTE_RULES:
+                if clean_route == prefix or (prefix != "/" and clean_route.startswith(prefix)):
+                    target_slug = slug
+                    resolved_module = mod_k
+                    break
 
     article = await get_article_by_slug(db, target_slug, include_unpublished=False)
     if not article:
@@ -627,6 +755,10 @@ async def create_article(db: AsyncSession, payload: Dict[str, Any], actor: User)
     approval_val = payload.get("approval_status") or ("pending_approval" if section == "legal" else "approved")
     if section == "legal" and status_val == "published" and approval_val != "approved":
         raise ValueError("Legal documents cannot be published without explicit approval status.")
+    if section == "legal" and approval_val == "approved" and not _is_sysadmin(actor):
+        raise PermissionError(
+            "Maker-checker governance requires a second authorized reviewer or System Administrator to approve newly drafted legal documents."
+        )
 
     now = datetime.now(timezone.utc)
     article = HelpArticle(
@@ -696,6 +828,7 @@ async def update_article(db: AsyncSession, article_id: int, payload: Dict[str, A
     next_title = payload.get("title", article.title).strip()
     next_summary = payload.get("summary", article.summary)
     next_content = payload.get("content_markdown", article.content_markdown)
+    content_modified = next_content != article.content_markdown
     next_tags = payload.get("tags") if payload.get("tags") is not None else _json_loads(article.tags, [])
     _validate_article_safety(next_title, next_summary, next_content, next_tags)
 
@@ -720,7 +853,7 @@ async def update_article(db: AsyncSession, article_id: int, payload: Dict[str, A
     article.content_markdown = next_content
     article.tags = json.dumps(next_tags)
     if payload.get("module_key") is not None:
-        article.module_key = payload["module_key"]
+        article.module_key = payload["module_key"] or None
     if payload.get("required_permissions") is not None:
         article.required_permissions = json.dumps(payload["required_permissions"])
     if payload.get("related_routes") is not None:
@@ -733,7 +866,28 @@ async def update_article(db: AsyncSession, article_id: int, payload: Dict[str, A
         article.sort_order = payload["sort_order"]
 
     now = datetime.now(timezone.utc)
+    if article.section == "legal" and content_modified and not _is_sysadmin(actor):
+        if payload.get("approval_status") == "approved":
+            raise PermissionError(
+                "Maker-checker governance requires a second authorized reviewer or System Administrator to approve modified legal content."
+            )
+        article.approval_status = "pending_approval"
+        article.approved_by_id = None
+        article.approved_at = None
+        if article.status == "published":
+            article.status = "pending_approval"
+
     if payload.get("approval_status") is not None:
+        if payload["approval_status"] == "approved" and article.section == "legal":
+            if article.is_system and not _is_sysadmin(actor):
+                raise PermissionError(
+                    "System-wide legal compliance documents require System Administrator approval."
+                )
+            last_editor_id = article.updated_by_id or article.created_by_id
+            if not _is_sysadmin(actor) and last_editor_id == actor.id:
+                raise PermissionError(
+                    "Maker-checker governance prevents self-approving legal documents you authored or last edited."
+                )
         article.approval_status = payload["approval_status"]
         if article.approval_status == "approved":
             article.approved_by_id = actor.id
@@ -802,6 +956,16 @@ async def toggle_publish_article(
 
     now = datetime.now(timezone.utc)
     if approve is True:
+        if article.section == "legal":
+            if article.is_system and not _is_sysadmin(actor):
+                raise PermissionError(
+                    "System-wide legal compliance documents require System Administrator approval."
+                )
+            last_editor_id = article.updated_by_id or article.created_by_id
+            if not _is_sysadmin(actor) and last_editor_id == actor.id:
+                raise PermissionError(
+                    "Maker-checker governance prevents self-approving legal documents you authored or last edited."
+                )
         article.approval_status = "approved"
         article.approved_by_id = actor.id
         article.approved_at = now
@@ -1025,13 +1189,13 @@ async def get_product_and_version_info(
                         "name": "SmritiBooks",
                         "tagline": "Financial & Institutional Ledger",
                         "website": "https://smritibooks.com",
-                        "description": "Structured accounting, invoicing, and ledger record ecosystem.",
+                        "description": "Accounting & Bookkeeping Software",
                     },
                     {
                         "name": "SmritiSys",
                         "tagline": "Platform & Automation Core",
                         "website": "https://smritisys.com",
-                        "description": "Operational workflow and administrative automation suite.",
+                        "description": "E-commerce, Inventory & Warehouse Management",
                     },
                 ],
             },
@@ -1097,27 +1261,39 @@ async def update_product_about_metadata(
             raise ValueError("No active institution found for storing product metadata.")
         institution_id = inst.id
 
+    existing_rows = (
+        await db.execute(
+            select(InstitutionSetting).where(
+                and_(
+                    InstitutionSetting.institution_id == institution_id,
+                    InstitutionSetting.category == "product_about",
+                )
+            )
+        )
+    ).scalars().all()
+    existing_by_key = {row.key: row for row in existing_rows}
+    is_sys = _is_sysadmin(actor)
+
     for k, v in updates.items():
         if k not in allowed_keys or v is None:
             continue
         str_val = str(v)
+        existing = existing_by_key.get(k)
+        prev_val = existing.value if existing else None
+
+        # Skip redundant writes when nothing changed (or blank submitted for an unset field)
+        if prev_val == str_val or (prev_val is None and str_val == ""):
+            continue
+
+        if k in SYSTEM_ONLY_PRODUCT_KEYS and not is_sys:
+            raise PermissionError(
+                "System Administrator privileges are required to modify commercial license or software vendor identity settings."
+            )
+
         violations = validate_customer_safe_content(str_val)
         if violations:
             raise ValueError(f"Invalid content in '{k}': {' '.join(violations)}")
 
-        existing = (
-            await db.execute(
-                select(InstitutionSetting).where(
-                    and_(
-                        InstitutionSetting.institution_id == institution_id,
-                        InstitutionSetting.category == "product_about",
-                        InstitutionSetting.key == k,
-                    )
-                )
-            )
-        ).scalar_one_or_none()
-
-        prev_val = existing.value if existing else None
         if existing:
             existing.value = str_val
             existing.updated_by_id = actor.id
@@ -1277,6 +1453,9 @@ async def create_support_request(
     suffix = secrets.token_hex(3).upper()
     ticket_number = f"SUP-{stamp}-{suffix}"
 
+    raw_mod = payload.get("module_key")
+    clean_mod = None if not raw_mod or raw_mod == "general" else raw_mod
+
     req = SupportRequest(
         ticket_number=ticket_number,
         institution_id=inst_id,
@@ -1286,7 +1465,7 @@ async def create_support_request(
         priority=payload.get("priority") or "medium",
         subject=payload["subject"].strip(),
         description=payload["description"].strip(),
-        module_key=payload.get("module_key"),
+        module_key=clean_mod,
         page_route=payload.get("page_route"),
         error_reference_id=payload.get("error_reference_id"),
         contact_email=payload.get("contact_email") or actor.email,
@@ -1310,13 +1489,33 @@ async def create_support_request(
     return await get_support_request(db, req.id, actor)  # type: ignore
 
 
+def _assert_support_request_access(
+    req: SupportRequest,
+    actor: User,
+    *,
+    require_admin: bool = False,
+) -> bool:
+    """Enforces role and strict multi-tenant institution boundaries on a support ticket."""
+    is_admin = (getattr(actor, "role", None) or "").strip().lower() in ADMIN_ROLES
+    if require_admin and not is_admin:
+        raise PermissionError("Administrator authorization is required to update support ticket status.")
+    if not is_admin and req.user_id != actor.id:
+        raise PermissionError("You do not have permission to access another user's support request.")
+    if is_admin and not _is_sysadmin(actor):
+        if actor.institution_id is None or req.institution_id != actor.institution_id:
+            raise PermissionError("You do not have permission to access support requests from another institution.")
+    return is_admin
+
+
 async def list_support_requests(
     db: AsyncSession,
     actor: User,
     status_filter: Optional[str] = None,
     request_type: Optional[str] = None,
+    limit: int = 100,
+    offset: int = 0,
 ) -> List[Dict[str, Any]]:
-    is_admin = (actor.role or "").lower() in ADMIN_ROLES
+    is_admin = (getattr(actor, "role", None) or "").strip().lower() in ADMIN_ROLES
     stmt = (
         select(SupportRequest)
         .options(
@@ -1328,14 +1527,18 @@ async def list_support_requests(
     )
     if not is_admin:
         stmt = stmt.where(SupportRequest.user_id == actor.id)
-    elif actor.institution_id and (actor.role or "").lower() not in ("superadmin", "sysadmin", "super_admin"):
-        stmt = stmt.where(SupportRequest.institution_id == actor.institution_id)
+    elif not _is_sysadmin(actor):
+        if actor.institution_id:
+            stmt = stmt.where(SupportRequest.institution_id == actor.institution_id)
+        else:
+            stmt = stmt.where(SupportRequest.user_id == actor.id)
 
     if status_filter:
         stmt = stmt.where(SupportRequest.status == status_filter)
     if request_type:
         stmt = stmt.where(SupportRequest.request_type == request_type)
 
+    stmt = stmt.limit(limit).offset(offset)
     rows = (await db.execute(stmt)).scalars().all()
     return [serialize_support_request(r, include_comments=True, include_internal=is_admin) for r in rows]
 
@@ -1345,7 +1548,6 @@ async def get_support_request(
     request_id: int,
     actor: User,
 ) -> Optional[Dict[str, Any]]:
-    is_admin = (actor.role or "").lower() in ADMIN_ROLES
     req = (
         await db.execute(
             select(SupportRequest)
@@ -1359,8 +1561,7 @@ async def get_support_request(
     ).scalar_one_or_none()
     if not req:
         return None
-    if not is_admin and req.user_id != actor.id:
-        raise PermissionError("You do not have permission to view another user's support request.")
+    is_admin = _assert_support_request_access(req, actor)
     return serialize_support_request(req, include_comments=True, include_internal=is_admin)
 
 
@@ -1371,14 +1572,12 @@ async def add_support_comment(
     is_internal_note: bool,
     actor: User,
 ) -> Dict[str, Any]:
-    is_admin = (actor.role or "").lower() in ADMIN_ROLES
     req = (
         await db.execute(select(SupportRequest).where(SupportRequest.id == request_id))
     ).scalar_one_or_none()
     if not req:
         raise LookupError("Support request not found.")
-    if not is_admin and req.user_id != actor.id:
-        raise PermissionError("You do not have permission to update this support request.")
+    is_admin = _assert_support_request_access(req, actor)
     if is_internal_note and not is_admin:
         raise PermissionError("Only administrators can add internal support notes.")
 
@@ -1401,25 +1600,32 @@ async def update_support_request_status(
     payload: Dict[str, Any],
     actor: User,
 ) -> Dict[str, Any]:
-    is_admin = (actor.role or "").lower() in ADMIN_ROLES
-    if not is_admin:
-        raise PermissionError("Administrator authorization is required to update support ticket status.")
-
     req = (
         await db.execute(select(SupportRequest).where(SupportRequest.id == request_id))
     ).scalar_one_or_none()
     if not req:
         raise LookupError("Support request not found.")
+    _assert_support_request_access(req, actor, require_admin=True)
 
     old_status = req.status
     if payload.get("status"):
         req.status = payload["status"]
-        if req.status in ("resolved", "closed") and not req.resolved_at:
-            req.resolved_at = datetime.now(timezone.utc)
+        if req.status in ("resolved", "closed"):
+            if not req.resolved_at:
+                req.resolved_at = datetime.now(timezone.utc)
+        else:
+            req.resolved_at = None
     if "resolution_notes" in payload and payload["resolution_notes"] is not None:
         req.resolution_notes = payload["resolution_notes"]
     if "assigned_to_id" in payload:
-        req.assigned_to_id = payload["assigned_to_id"]
+        assignee_id = payload["assigned_to_id"]
+        if assignee_id is not None:
+            assignee = (await db.execute(select(User).where(User.id == assignee_id))).scalar_one_or_none()
+            if not assignee:
+                raise ValueError("Assigned staff member does not exist.")
+            if assignee.institution_id is not None and assignee.institution_id != req.institution_id:
+                raise ValueError("Cannot assign a support request to a user from another institution.")
+        req.assigned_to_id = assignee_id
     if payload.get("priority"):
         req.priority = payload["priority"]
 

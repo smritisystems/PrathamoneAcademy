@@ -1,7 +1,7 @@
 /**
  * @file        HelpArticleView.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.help
+ * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,26 +13,8 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Helparticleview in the src.components.help module.
+ * @description Clean structured reader for Help Guides, Tutorials, FAQs, and Legal Compliance documents with breadcrumbs, permission tags, and clear back navigation.
  */
-
-// /**
-//  * @file        HelpArticleView.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.help
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Clean structured reader for Help Guides, Tutorials, FAQs, and Legal Compliance documents with breadcrumbs, permission tags, and clear back navigation.
-//  */
 
 import type { ReactNode } from 'react'
 import {
@@ -45,7 +27,7 @@ import {
   Shield,
   Tag,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { HelpArticleDetail } from '../../types'
 import { getApprovalBadgeMeta, SECTION_LABELS } from './helpNavigation'
 
@@ -57,9 +39,35 @@ interface HelpArticleViewProps {
 }
 
 function renderInlineFormatting(text: string): ReactNode[] {
-  // Safe React tokenization for **bold** and `code` spans (zero innerHTML usage)
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+  // Safe React tokenization for [label](url), **bold**, and `code` spans (zero innerHTML usage)
+  const parts = text.split(/(\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|`[^`]+`)/g)
   return parts.map((part, idx) => {
+    const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+    if (linkMatch) {
+      const label = linkMatch[1]
+      const href = linkMatch[2].trim()
+      if (href.startsWith('/')) {
+        return (
+          <Link key={idx} to={href} className="text-indigo-600 hover:text-indigo-800 underline font-medium">
+            {label}
+          </Link>
+        )
+      }
+      if (/^(https?:\/\/|mailto:)/i.test(href)) {
+        return (
+          <a
+            key={idx}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-indigo-600 hover:text-indigo-800 underline font-medium"
+          >
+            {label}
+          </a>
+        )
+      }
+      return <span key={idx}>{label}</span>
+    }
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return (
         <strong key={idx} className="font-semibold text-slate-900">
@@ -84,8 +92,9 @@ function renderInlineFormatting(text: string): ReactNode[] {
 export function StructuredMarkdownContent({ markdown }: { markdown: string }) {
   const lines = (markdown || '').split(/\r?\n/)
   const elements: ReactNode[] = []
-  let bulletBuffer: string[] = []
+  let bulletBuffer: Array<{ text: string; children: string[] }> = []
   let orderedBuffer: string[] = []
+  let tableRows: string[][] = []
   let keyIdx = 0
 
   const flushLists = () => {
@@ -93,7 +102,16 @@ export function StructuredMarkdownContent({ markdown }: { markdown: string }) {
       elements.push(
         <ul key={`ul-${keyIdx++}`} className="my-3 space-y-1.5 pl-5 list-disc text-slate-700 text-sm leading-relaxed">
           {bulletBuffer.map((item, i) => (
-            <li key={i}>{renderInlineFormatting(item)}</li>
+            <li key={i}>
+              {renderInlineFormatting(item.text)}
+              {item.children.length > 0 && (
+                <ul className="mt-1 space-y-1 pl-5 list-[circle] text-slate-600">
+                  {item.children.map((sub, si) => (
+                    <li key={si}>{renderInlineFormatting(sub)}</li>
+                  ))}
+                </ul>
+              )}
+            </li>
           ))}
         </ul>,
       )
@@ -111,18 +129,78 @@ export function StructuredMarkdownContent({ markdown }: { markdown: string }) {
     }
   }
 
+  const flushTable = () => {
+    if (tableRows.length === 0) return
+    const [headerRow, ...bodyRows] = tableRows
+    elements.push(
+      <div key={`tbl-${keyIdx++}`} className="my-4 overflow-x-auto rounded-xl border border-slate-200">
+        <table className="w-full text-left border-collapse text-xs text-slate-700">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              {headerRow.map((cell, ci) => (
+                <th key={ci} className="px-3 py-2 font-semibold text-slate-900">
+                  {renderInlineFormatting(cell)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {bodyRows.map((row, ri) => (
+              <tr key={ri} className="hover:bg-slate-50/70">
+                {headerRow.map((_, ci) => (
+                  <td key={ci} className="px-3 py-2 align-top">
+                    {renderInlineFormatting(row[ci] ?? '')}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>,
+    )
+    tableRows = []
+  }
+
   for (const rawLine of lines) {
     const line = rawLine.trimEnd()
     const trimmed = line.trim()
 
     if (!trimmed) {
       flushLists()
+      flushTable()
+      continue
+    }
+
+    if (trimmed.startsWith('|') && trimmed.includes('|', 1)) {
+      flushLists()
+      const cells = trimmed
+        .replace(/^\|/, '')
+        .replace(/\|$/, '')
+        .split('|')
+        .map((c) => c.trim())
+      const isSeparator = cells.length > 0 && cells.every((c) => /^:?-{2,}:?$/.test(c))
+      if (!isSeparator) {
+        tableRows.push(cells)
+      }
+      continue
+    }
+
+    flushTable()
+
+    const nestedBullet = rawLine.match(/^\s{2,}(?:-|\*)\s+(.*)$/)
+    if (nestedBullet) {
+      if (orderedBuffer.length > 0) flushLists()
+      if (bulletBuffer.length > 0) {
+        bulletBuffer[bulletBuffer.length - 1].children.push(nestedBullet[1].trim())
+      } else {
+        bulletBuffer.push({ text: nestedBullet[1].trim(), children: [] })
+      }
       continue
     }
 
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       if (orderedBuffer.length > 0) flushLists()
-      bulletBuffer.push(trimmed.slice(2))
+      bulletBuffer.push({ text: trimmed.slice(2), children: [] })
       continue
     }
 
@@ -134,6 +212,11 @@ export function StructuredMarkdownContent({ markdown }: { markdown: string }) {
     }
 
     flushLists()
+
+    if (/^[-*_]{3,}$/.test(trimmed)) {
+      elements.push(<hr key={`hr-${keyIdx++}`} className="my-4 border-slate-200" />)
+      continue
+    }
 
     if (trimmed.startsWith('# ')) {
       // Top-level heading already shown in article header unless distinct
@@ -178,6 +261,7 @@ export function StructuredMarkdownContent({ markdown }: { markdown: string }) {
     )
   }
   flushLists()
+  flushTable()
 
   return <div className="max-w-none">{elements}</div>
 }

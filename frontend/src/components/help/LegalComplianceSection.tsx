@@ -1,7 +1,7 @@
 /**
  * @file        LegalComplianceSection.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.help
+ * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,29 +13,11 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Legalcompliancesection in the src.components.help module.
+ * @description Dedicated Legal & Compliance viewer covering Terms, Privacy, Data Protection, Software License Agreement, Copyright Notice, and Acceptable Use Policy with management-approval governance badges.
  */
 
-// /**
-//  * @file        LegalComplianceSection.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.help
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Dedicated Legal & Compliance viewer covering Terms, Privacy, Data Protection, Software License Agreement, Copyright Notice, and Acceptable Use Policy with management-approval governance badges.
-//  */
-
 import { useEffect, useState } from 'react'
-import { AlertTriangle, CheckCircle2, FileCheck2, Scale } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, FileCheck2, Scale } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { helpApi } from '../../api/endpoints'
 import type { HelpArticleDetail, HelpArticleSummary } from '../../types'
@@ -44,11 +26,13 @@ import { StructuredMarkdownContent } from './HelpArticleView'
 interface LegalComplianceSectionProps {
   legalArticles: HelpArticleSummary[]
   selectedSlug?: string
+  fromRoute?: string | null
 }
 
 export default function LegalComplianceSection({
   legalArticles,
   selectedSlug,
+  fromRoute,
 }: LegalComplianceSectionProps) {
   const navigate = useNavigate()
   const activeSlug = selectedSlug || legalArticles[0]?.slug || 'terms-and-conditions'
@@ -125,6 +109,18 @@ export default function LegalComplianceSection({
           <div className="text-sm text-slate-500 py-8 text-center">Loading legal document...</div>
         ) : detail ? (
           <div className="space-y-4">
+            {fromRoute && (
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => navigate(fromRoute)}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to Module</span>
+                </button>
+              </div>
+            )}
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <h1 className="text-xl font-bold text-slate-900">{detail.title}</h1>

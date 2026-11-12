@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-09
+ * @updated     2026-11-12
  *
  * @description Centralized Print Forms & KYC Document Studio comprising 8 dedicated workspaces, A4 template engine, direct URL synchronization, and Rule 010 View-First governance.
  */
@@ -29,7 +29,7 @@ import { formsApi, studentsApi, usersApi, divisionsApi, standardsApi } from '../
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, LockedIconButton } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
 import type { FormCatalogItem, FormConfigSection, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 import type { Student, UserListItem, Division, Standard } from '../types'
 import FormTemplateEngine from '../components/forms/FormTemplateEngine'
@@ -390,27 +390,30 @@ function FormsDocumentsContent() {
             </div>
           </div>
 
-          {/* Submenu Tabs Navigation */}
-          <div className="flex items-center gap-1 overflow-x-auto bg-slate-100 p-1 rounded-xl scrollbar-none">
-            {FORMS_TABS.map((tab) => {
-              const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleTabChange(tab.id, tab.route)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                    isActive
-                      ? 'bg-white text-emerald-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-600' : 'text-slate-500'}`} />
-                  <span>{tab.label}</span>
-                </button>
-              )
-            })}
+          {/* Submenu Tabs Navigation & Contextual Help */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1 overflow-x-auto bg-slate-100 p-1 rounded-xl scrollbar-none">
+              {FORMS_TABS.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => handleTabChange(tab.id, tab.route)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                      isActive
+                        ? 'bg-white text-emerald-700 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-600' : 'text-slate-500'}`} />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <ContextualHelpButton moduleKey="forms" variant="pill" label="Forms Help" />
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Data Import/Export workspace featuring Excel copy-paste spreadsheet grid and file upload.
  */
@@ -27,7 +27,7 @@ import {
   importExportApi, academicYearsApi, boardsApi, standardsApi, divisionsApi
 } from '../api/endpoints'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, ContextualHelpButton } from '../components/common'
 import { Lock } from 'lucide-react'
 import type {
   SupportedEntity, ImportPreviewResponse, ImportPreviewRow,
@@ -588,7 +588,8 @@ export default function ImportExportPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <ContextualHelpButton moduleKey="import_export" variant="pill" label="Import Help" />
             <button
               onClick={() => handleDownloadTemplate('xlsx')}
               disabled={loading}

@@ -1,7 +1,7 @@
 /**
  * @file        HelpSupportCentre.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.help
+ * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,26 +13,8 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Helpsupportcentre in the src.components.help module.
+ * @description Customer Support Centre workspace for technical support contacts, ticket submission (support/bug/feature/feedback), tracking, and admin triage.
  */
-
-// /**
-//  * @file        HelpSupportCentre.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.help
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Customer Support Centre workspace for technical support contacts, ticket submission (support/bug/feature/feedback), tracking, and admin triage.
-//  */
 
 import { useEffect, useState, type FormEvent } from 'react'
 import {
@@ -49,7 +31,7 @@ import {
   Send,
   ThumbsUp,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { helpApi } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
@@ -84,7 +66,8 @@ const STATUS_BADGE: Record<SupportRequestStatus, string> = {
 
 export default function HelpSupportCentre({ productInfo }: HelpSupportCentreProps) {
   const navigate = useNavigate()
-  const { user } = useAuthStore()
+  const location = useLocation()
+  const { user, token } = useAuthStore()
   const isAdmin = isHelpAdminRole(user?.role)
   const { isEditMode } = useEditModeStore()
   const triageEditable = isEditMode('admin:support_triage')
@@ -116,6 +99,10 @@ export default function HelpSupportCentre({ productInfo }: HelpSupportCentreProp
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
   const loadTickets = async () => {
+    if (!token) {
+      setLoadingTickets(false)
+      return
+    }
     setLoadingTickets(true)
     try {
       const res = await helpApi.getSupportRequests({
@@ -145,7 +132,7 @@ export default function HelpSupportCentre({ productInfo }: HelpSupportCentreProp
 
   useEffect(() => {
     loadTickets()
-  }, [statusFilter, typeFilter])
+  }, [statusFilter, typeFilter, token])
 
   const handleCreateTicket = async (e: FormEvent) => {
     e.preventDefault()
@@ -155,13 +142,15 @@ export default function HelpSupportCentre({ productInfo }: HelpSupportCentreProp
     }
     setSubmitting(true)
     try {
+      const fromParam = new URLSearchParams(location.search).get('from')
       const res = await helpApi.createSupportRequest({
         request_type: requestType,
         category,
         priority,
         subject: subject.trim(),
         description: description.trim(),
-        module_key: moduleKey || null,
+        module_key: moduleKey && moduleKey !== 'general' ? moduleKey : null,
+        page_route: fromParam || location.pathname,
         error_reference_id: errorRefId.trim() || null,
         contact_email: contactEmail.trim() || null,
         contact_phone: contactPhone.trim() || null,
@@ -344,8 +333,9 @@ export default function HelpSupportCentre({ productInfo }: HelpSupportCentreProp
               <select
                 value={moduleKey || category}
                 onChange={(e) => {
-                  setModuleKey(e.target.value)
-                  setCategory(e.target.value)
+                  const val = e.target.value
+                  setCategory(val)
+                  setModuleKey(val === 'general' ? '' : val)
                 }}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >

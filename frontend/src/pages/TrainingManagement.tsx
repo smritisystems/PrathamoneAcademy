@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Central Administrator Control Center for Global Training & Demo Environment: policy configuration, session monitor, and atomic reset engine.
  */
@@ -37,6 +37,7 @@ import { trainingApi, TrainingStatusResponse } from '../api/endpoints'
 import { useEnvironmentStore } from '../store/environmentStore'
 import { useAuthStore, isUserAdmin } from '../store/authStore'
 import EnvironmentSwitchModal from '../components/common/EnvironmentSwitchModal'
+import ContextualHelpButton from '../components/common/ContextualHelpButton'
 import { toast } from 'react-hot-toast'
 
 export default function TrainingManagement() {
@@ -130,6 +131,7 @@ export default function TrainingManagement() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <ContextualHelpButton moduleKey="training" variant="pill" label="Sandbox Help" />
           <button
             type="button"
             onClick={() => {

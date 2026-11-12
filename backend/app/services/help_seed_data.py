@@ -23,7 +23,7 @@ from typing import Dict, List, Any, Optional, Tuple
 # Strict customer-safety patterns: reject internal developer references, GitHub URLs,
 # commit hashes, internal file paths, and software installation instructions.
 FORBIDDEN_CONTENT_PATTERNS: List[Tuple[str, str]] = [
-    (r"github\.com", "GitHub URLs or repository references are prohibited in customer-facing Help content."),
+    (r"\bgithub(?:\.com)?\b", "GitHub URLs or repository references are prohibited in customer-facing Help content."),
     (r"\bgit\s+(?:clone|commit|branch|checkout|push|pull|status|merge|rebase)\b", "Internal version-control commands are prohibited in customer-facing Help content."),
     (r"\bdocker(?:[\s-]+compose|file)?\b", "Container and server deployment setup references are prohibited."),
     (r"\b(?:pip|npm|yarn|pnpm)\s+install\b", "Developer package installation instructions are prohibited."),
@@ -1130,6 +1130,234 @@ Follow this verification checklist when preparing PrathamOne EduOS for live acad
             ],
         ),
     },
+    {
+        "slug": "guide-courses",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "courses",
+        "title": "Study Materials and Courses Module User Guide",
+        "summary": "Organize the Master Content Library, chapter notes, question banks, video lectures, curriculum syllabi, and storage policies.",
+        "tags": ["courses", "study materials", "notes", "question banks", "video lectures", "syllabi"],
+        "required_permissions": ["courses:view", "courses:manage", "Teacher / Coordinator / Admin"],
+        "related_routes": ["/courses", "/courses/repository", "/courses/notes", "/courses/question-banks", "/courses/video-lectures", "/courses/syllabi"],
+        "related_slugs": ["guide-homework", "guide-examinations", "branch-class-and-division-setup"],
+        "sort_order": 24,
+        "content_markdown": _module_guide_markdown(
+            title="Study Materials and Courses Module User Guide",
+            intro="The Study Materials & Digital Content workspace centralizes academic handouts, chapter notes, practice question banks, video lectures, and syllabus trackers by Standard, Subject, and Division.",
+            purpose="Ensure learners receive structured, faculty-reviewed study resources while maintaining clean academic alignment across batches.",
+            operations=[
+                "Browse Overview and Master Library across boards, standards, subjects, and coaching programs (`/courses/overview`, `/courses/repository`).",
+                "Upload and categorize Chapter Notes, Question Banks, and Recorded Video Lectures (`/courses/upload`, `/courses/notes`, `/courses/question-banks`, `/courses/video-lectures`).",
+                "Track Curriculum Syllabi and review Storage Policies (`/courses/syllabi`, `/courses/settings`).",
+            ],
+            steps=[
+                "Open Study Materials (`/courses`) from the Academic / Learning navigation menu.",
+                "Select a workspace tab (`Master Library`, `Chapter Notes`, `Question Banks`, `Video Lectures`, or `Curriculum Syllabi`) and filter by Standard, Subject, or Division.",
+                "Activate Edit Mode in the Study Materials & Digital Content Catalog governance bar when publishing new study material.",
+                "Open Upload Content, enter the material title, select target Standard/Subject/Division, attach or link the resource, and save.",
+                "Verify visibility for assigned divisions before informing students.",
+            ],
+            permissions=[
+                "courses:view — View published notes, question banks, syllabi, and video lecture links.",
+                "courses:manage — Upload, update, and retire digital study materials when Edit Mode is active.",
+            ],
+            workflows=[
+                "Academic Setup (Standards & Subjects) -> Upload Study Material -> Student Access in Portal -> Examination Preparation.",
+            ],
+            mistakes=[
+                "Uploading chapter notes without linking the exact Subject and Standard, causing students in that batch to miss them.",
+                "Attempting to upload or edit materials without enabling Edit Mode first.",
+            ],
+            troubleshooting=[
+                "If a study material is not visible to learners in a batch, check both its Standard/Division mapping and published status.",
+                "If Edit buttons appear locked, toggle Edit Mode ON in the top governance bar.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-homework",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "homework",
+        "title": "Homework and Assignments Module User Guide",
+        "summary": "Create batch assignments, record physical notebook checks, track digital submissions, reuse templates, and export daily registers.",
+        "tags": ["homework", "assignments", "checking register", "submissions", "templates"],
+        "required_permissions": ["homework:view", "homework:manage", "Teacher / Coordinator / Admin"],
+        "related_routes": ["/homework", "/homework/create", "/homework/checking", "/homework/submissions", "/homework/templates", "/homework/reports"],
+        "related_slugs": ["guide-attendance", "guide-courses", "guide-students"],
+        "sort_order": 25,
+        "content_markdown": _module_guide_markdown(
+            title="Homework and Assignments Module User Guide",
+            intro="The Homework & Assignment Studio allows teachers and coordinators to issue assignments to entire divisions or selected learners and track physical notebook checks or digital submissions.",
+            purpose="Standardize daily practice tracking across batches with per-student status visibility and daily homework registers.",
+            operations=[
+                "Review active assignments and completion counts in Overview (`/homework`).",
+                "Assign new homework with target Division, Subject, due date, and reusable templates (`/homework/create`, `/homework/templates`).",
+                "Record physical classroom notebook checking per learner in Checking Register (`/homework/checking`).",
+                "Review uploaded learner responses in Submissions (`/homework/submissions`) and generate Daily Register Reports (`/homework/reports`).",
+            ],
+            steps=[
+                "Open Homework & Assignments (`/homework`) and switch to Assign New Homework (`/homework/create`).",
+                "Enable Edit Mode in the Homework & Assignment Governance bar before creating or grading records.",
+                "Select Standard, Division, Subject, due date, and instructions, then publish the assignment.",
+                "After class, open Checking Register (`/homework/checking`), choose the assignment, and mark each student's completion or review remarks.",
+                "Open Daily Register Reports (`/homework/reports`) to review batch completion trends.",
+            ],
+            permissions=[
+                "homework:view — Inspect assignments, checking registers, and completion statistics.",
+                "homework:manage — Create assignments, update checking statuses, and manage homework templates.",
+            ],
+            workflows=[
+                "Class Lecture Conducted -> Homework Assigned -> Notebook / Submission Checked -> Daily Register Reviewed.",
+            ],
+            mistakes=[
+                "Assigning homework to the wrong Academic Year or Division when multiple batches share the same subject.",
+                "Forgetting to save updated marks in the Checking Register before leaving the page.",
+            ],
+            troubleshooting=[
+                "If students do not appear in the Checking Register, verify active batch allocations under Students -> Batch Allocations.",
+                "Use filters by Standard, Division, and Subject at the top of the workspace to locate older assignments quickly.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-forms",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "forms",
+        "title": "Print Forms and KYC Document Studio User Guide",
+        "summary": "Generate standardized A4 admission forms, student/staff ID cards, fee notices, hall tickets, certificates, and print audit logs.",
+        "tags": ["forms", "printing", "kyc", "id cards", "hall tickets", "certificates", "bulk print"],
+        "required_permissions": ["forms:view", "forms:print", "Admin / Staff / Coordinator"],
+        "related_routes": ["/forms", "/forms/admissions", "/forms/id-cards", "/forms/financial", "/forms/academic", "/forms/certificates", "/forms/bulk-print", "/forms/audit-logs"],
+        "related_slugs": ["guide-students", "guide-examinations", "tutorial-receipt-generation"],
+        "sort_order": 26,
+        "content_markdown": _module_guide_markdown(
+            title="Print Forms and KYC Document Studio User Guide",
+            intro="Print Forms & KYC Document Studio produces standardized A4 dossiers, identity cards, official financial notices, examination hall tickets, transcripts, and institutional certificates using live master records.",
+            purpose="Eliminate manual document retyping and maintain a verified Print Audit Trail across official student and staff paperwork.",
+            operations=[
+                "Generate printable Admission Forms and KYC profiles (`/forms/admissions`).",
+                "Issue Student & Staff Identity Cards (`/forms/id-cards`).",
+                "Print Receipts, Fee Notices, Exam Hall Tickets, Academic Transcripts, Leaving Certificates, and Experience Certificates (`/forms/financial`, `/forms/academic`, `/forms/certificates`).",
+                "Batch-print documents via Bulk Print Spooler (`/forms/bulk-print`) and review Print Audit Logs (`/forms/audit-logs`).",
+            ],
+            steps=[
+                "Navigate to Print Forms & KYC (`/forms`) and choose the required document category tab.",
+                "Enable Edit Mode if updating template configurations or executing governed official certificate prints.",
+                "Search and select the student, staff member, or division batch for generation.",
+                "Inspect the live A4 preview carefully before clicking Print or exporting cleanly.",
+                "Check Print Audit Trail (`/forms/audit-logs`) whenever you need to verify who generated an official document and when.",
+            ],
+            permissions=[
+                "forms:view — Preview document catalogs and templates.",
+                "forms:print — Render and print individual or bulk institutional documents.",
+            ],
+            workflows=[
+                "Student Enrolled / Staff Onboarded -> ID Card & Admission Form Printed -> Exam Hall Ticket Issued -> Print Action Logged.",
+            ],
+            mistakes=[
+                "Printing ID cards or certificates before verifying spelling of student name, photo upload, and batch details in Student Master.",
+                "Disabling background graphics in browser print settings, hiding institutional header accents or badges.",
+            ],
+            troubleshooting=[
+                "If official institution headers or logos are missing from A4 previews, verify Organization Name and Logo under Administration -> Settings.",
+                "In Training Sandbox mode, document print previews automatically display sample simulation banners so test prints cannot be confused with live originals.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-import-export",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "import_export",
+        "title": "Bulk Data Import and Export Module User Guide",
+        "summary": "Paste spreadsheets from Excel, validate CSV/XLSX uploads with row previews, export filtered registers, and review import history.",
+        "tags": ["import", "export", "excel", "csv", "bulk upload", "fee register"],
+        "required_permissions": ["import_export:view", "import_export:execute", "Admin / SuperAdmin"],
+        "related_routes": ["/import-export", "/fees/import", "/import/fee-register"],
+        "related_slugs": ["guide-students", "guide-fees", "guide-reports"],
+        "sort_order": 27,
+        "content_markdown": _module_guide_markdown(
+            title="Bulk Data Import and Export Module User Guide",
+            intro="Import & Export Center streamlines onboarding structured student, faculty, and register spreadsheets via direct Excel copy-paste grids, file uploads, preview validation, and filtered CSV/XLSX exports.",
+            purpose="Enable fast, error-checked institutional onboarding and portable spreadsheet exports without bypassing database validation rules.",
+            operations=[
+                "Paste tabular rows directly into the Excel-style grid (`Paste from Excel`) and map columns interactively (`/import-export`).",
+                "Download official entity `.XLSX` / `.CSV` templates and upload populated files for dry-run validation before writing records.",
+                "Export filtered student, fee, or operational data cleanly to `.XLSX` or `.CSV`.",
+                "Inspect Import History logs and use Legacy Fee Register Import (`/fees/import`) for historical fee register onboarding.",
+            ],
+            steps=[
+                "Open Import & Export (`/import-export`) and download the official `.XLSX` or `.CSV` template for the target entity.",
+                "Switch ON Edit Mode in the Data Ingestion and Bulk Export Hub banner before executing any database write import.",
+                "Select Create Only or Update Existing mode, then paste rows or upload your spreadsheet to run the validation preview.",
+                "Resolve any highlighted row errors or unmapped columns shown in the validation preview before confirming execution.",
+                "Inspect the Import History tab after completion to confirm total created, updated, or skipped rows.",
+            ],
+            permissions=[
+                "import_export:view — Preview exports and inspect historical import logs.",
+                "import_export:execute — Validate and commit bulk spreadsheet imports while Edit Mode is active.",
+            ],
+            workflows=[
+                "Download Official Template -> Populate Data -> Run Dry-Run Preview Validation -> Confirm Import -> Verify in History.",
+            ],
+            mistakes=[
+                "Uploading unformatted phone numbers, blank required columns, or duplicate admission numbers without running Preview first.",
+                "Running Update Existing mode unintentionally when intending only to insert new students.",
+            ],
+            troubleshooting=[
+                "If validation flags date or currency cells, format date columns as `YYYY-MM-DD` and remove currency symbols from numeric columns.",
+                "For legacy 2024–2025 fee register workbooks, open Fee Register Migration (`/fees/import`) to review ledger discrepancies before confirming.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-training",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "training",
+        "title": "Training and Simulation Sandbox User Guide",
+        "summary": "Switch into the isolated PA001-DEMO Training Sandbox for staff practice, feature drills, and safe onboarding without affecting live data.",
+        "tags": ["training", "demo", "sandbox", "onboarding", "practice"],
+        "required_permissions": ["Authenticated Staff (Role-scoped)", "Admin / SuperAdmin for Reset"],
+        "related_routes": ["/training"],
+        "related_slugs": ["first-time-login", "initial-operational-checklist", "guide-settings"],
+        "sort_order": 28,
+        "content_markdown": _module_guide_markdown(
+            title="Training and Simulation Sandbox User Guide",
+            intro="The Training & Simulation Lab provides an isolated demonstration environment (`PA001-DEMO`) preloaded with sample data so coordinators, teachers, and accountants can practice workflows safely.",
+            purpose="Protect real student rosters and live financial ledgers while new staff learn admissions, fee collection, receipts, attendance, and report card workflows.",
+            operations=[
+                "Inspect Training Sandbox status, active sessions, and sandbox activity logs (`/training`).",
+                "Switch cleanly between Live Production and the isolated `PA001-DEMO` Training Sandbox via the confirmation modal.",
+                "Allow authorized administrators to reset training sample data back to a clean baseline between staff workshops.",
+            ],
+            steps=[
+                "Navigate to Training & Demo Lab (`/training`) from the Administration section.",
+                "Click Enter Training Sandbox and confirm the switch in the modal banner.",
+                "Verify the amber Training Mode indicator banner is active at the top of the screen before practicing entries.",
+                "Practice workflows (such as sample fee collection or student admissions) without affecting live institute records.",
+                "Exit Training Mode before resuming real institutional work.",
+            ],
+            permissions=[
+                "Staff / Teacher / Accountant / Admin — Enter and practice inside the isolated Training Sandbox.",
+                "Admin / SuperAdmin — Monitor training sessions and trigger sandbox baseline resets.",
+            ],
+            workflows=[
+                "Enter Training Sandbox -> Practice End-to-End Workflows -> Reset Sandbox Data -> Switch Back to Live Production.",
+            ],
+            mistakes=[
+                "Entering real newly admitted student records while the Training Sandbox indicator banner is still active.",
+                "Confusing demo watermark printouts from Training Mode with live official receipts or certificates.",
+            ],
+            troubleshooting=[
+                "If real students or recent live receipts appear missing, check the top banner to confirm you are not still inside Training Mode.",
+                "If sample records in Training Mode become cluttered after workshops, ask an administrator to trigger a sandbox reset on `/training`.",
+            ],
+        ),
+    },
 
     # =========================================================================
     # C. TUTORIALS & WORKFLOWS (13 Practical Operational Guides)
@@ -1905,6 +2133,65 @@ Scholarships and sponsor-funded benefits follow the unified governance workflow 
 - Institute user accounts are assigned per individual and must not be shared across staff members.
 - Communication channels (WhatsApp, Email, SMS) must only be used for legitimate educational, fee, attendance, and institutional notices.
 - Unauthorized attempts to bypass role permissions, financial period locks, or Edit Mode governance controls are prohibited and audited.
+""",
+    },
+    {
+        "slug": "third-party-acknowledgements",
+        "category_slug": "legal-compliance",
+        "section": "legal",
+        "module_key": "legal",
+        "title": "Third-Party & Open-Source Software Acknowledgements",
+        "summary": "Verified PrathamOne EduOS product credits, engineering ownership, and third-party open-source software component acknowledgements.",
+        "tags": ["legal", "credits", "acknowledgements", "open-source", "third-party", "licenses"],
+        "required_permissions": ["Authenticated User"],
+        "related_routes": ["/help/legal/third-party-acknowledgements", "/help/about-company"],
+        "related_slugs": ["copyright-notice", "software-license-agreement"],
+        "approval_status": "approved",
+        "status": "published",
+        "sort_order": 76,
+        "content_markdown": """# Third-Party & Open-Source Software Acknowledgements
+
+> **Authorized Notice:** Approved by Management for customer publication under **PrathamOne EduOS Legal & Compliance**.
+
+## PrathamOne EduOS Product & Engineering Credits
+- **Product:** PrathamOne EduOS — Education Management Operating System (Coaching Institute Edition).
+- **Developer & Product Owner:** AITDL (AI Technology & Development Lab) & SMRITI Systems.
+- **Product Architect:** Jawahar R. Mallah.
+- **Subscribing Institution Data Ownership:** All student records, fee ledgers, marks, and institutional assets remain the sole property of the subscribing coaching institute.
+
+## Verified Frontend Web Interface Components
+PrathamOne EduOS builds upon the following verified web technologies and libraries:
+
+| Component | Purpose in PrathamOne EduOS | Attribution / License |
+| :--- | :--- | :--- |
+| React & React DOM | Interactive user interface rendering | MIT |
+| React Router | Workspace navigation and contextual routing | MIT |
+| TanStack React Query & Axios | Server data caching and API communication | MIT |
+| Zustand | Client session and View-First Edit Mode state | MIT |
+| Tailwind CSS | Unified visual design system and responsive layouts | MIT |
+| Lucide Icons | Consistent application and navigation iconography | ISC |
+| Recharts | Academic and financial analytics visualizations | MIT |
+| React Hook Form & Zod | Structured form handling and schema validation | MIT |
+| SheetJS (`xlsx`) | Spreadsheet import/export compatibility | Apache-2.0 |
+| `date-fns`, `clsx`, `react-hot-toast` | Date formatting, styling helpers, and notifications | MIT |
+
+## Verified Backend Application & Data Processing Components
+The PrathamOne EduOS application services incorporate the following verified Python and database components:
+
+| Component | Purpose in PrathamOne EduOS | Attribution / License |
+| :--- | :--- | :--- |
+| FastAPI & Pydantic | REST API services and payload validation | MIT |
+| SQLAlchemy & Alembic | Relational database modeling and schema management | MIT |
+| `asyncpg` | High-performance PostgreSQL database driver | Apache-2.0 |
+| Python-JOSE | Cryptographic token signing and verification | MIT |
+| Passlib | Password hashing and credential security | BSD |
+| `openpyxl` | Excel workbook reading and report export generation | MIT |
+| `qrcode` & `Pillow` | Receipt verification QR code and image rendering | BSD / HPND |
+| `slowapi` & `httpx` | Request rate protection and HTTP service client | MIT / BSD-3-Clause |
+| PyMuPDF | PDF document processing and report generation | AGPL-3.0 |
+
+## Copyright & License Notice
+Respective copyrights, trademarks, and open-source licenses remain with their original authors and maintainers. Open-source components are distributed under their respective stated licenses.
 """,
     },
 ]

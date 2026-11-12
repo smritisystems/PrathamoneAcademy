@@ -21,6 +21,7 @@ import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/re
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import HelpCentre from '../pages/HelpCentre'
 import { ContextualHelpButton, resolveContextualHelpPath } from '../components/common'
+import { StructuredMarkdownContent } from '../components/help/HelpArticleView'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { helpApi } from '../api/endpoints'
@@ -53,7 +54,7 @@ const mockCategories = [
   { id: 2, slug: 'module-guides', name: 'Module User Guides', section: 'module_guide', sort_order: 2, is_active: true, article_count: 1 },
   { id: 3, slug: 'tutorials', name: 'Tutorials & Workflows', section: 'tutorial', sort_order: 3, is_active: true, article_count: 1 },
   { id: 4, slug: 'faq-troubleshooting', name: 'FAQ & Troubleshooting', section: 'faq', sort_order: 4, is_active: true, article_count: 1 },
-  { id: 5, slug: 'legal-compliance', name: 'Legal & Compliance', section: 'legal', sort_order: 5, is_active: true, article_count: 6 },
+  { id: 5, slug: 'legal-compliance', name: 'Legal & Compliance', section: 'legal', sort_order: 5, is_active: true, article_count: 7 },
 ]
 
 const mockArticles = [
@@ -140,6 +141,7 @@ const mockArticles = [
     { id: 13, slug: 'software-license-agreement', title: 'Software License Agreement' },
     { id: 14, slug: 'copyright-notice', title: 'Copyright Notice' },
     { id: 15, slug: 'acceptable-use-policy', title: 'Acceptable Use Policy' },
+    { id: 16, slug: 'third-party-acknowledgements', title: 'Third-Party & Open-Source Software Acknowledgements' },
   ].map((l, idx) => ({
     id: l.id,
     slug: l.slug,
@@ -148,14 +150,17 @@ const mockArticles = [
     section: 'legal',
     module_key: 'legal',
     title: l.title,
-    summary: `${l.title} (Management Approval Pending)`,
+    summary:
+      l.slug === 'third-party-acknowledgements'
+        ? 'Verified PrathamOne EduOS product credits and third-party open-source acknowledgements.'
+        : `${l.title} (Management Approval Pending)`,
     tags: ['legal'],
     required_permissions: ['Authenticated User'],
     related_routes: [`/help/legal/${l.slug}`],
     related_slugs: [],
     doc_version: '1.0',
-    status: 'pending_approval',
-    approval_status: 'pending_approval',
+    status: l.slug === 'third-party-acknowledgements' ? 'published' : 'pending_approval',
+    approval_status: l.slug === 'third-party-acknowledgements' ? 'approved' : 'pending_approval',
     is_system: true,
     sort_order: 70 + idx,
   })),
@@ -330,6 +335,16 @@ describe('Help & About Centre Suite', () => {
     expect(resolveContextualHelpPath('/reports').helpPath).toBe('/help/article/guide-reports?from=%2Freports')
     expect(resolveContextualHelpPath('/settings').helpPath).toBe('/help/article/guide-settings?from=%2Fsettings')
     expect(resolveContextualHelpPath('/dashboard').helpPath).toBe('/help/article/guide-dashboard?from=%2Fdashboard')
+    expect(resolveContextualHelpPath('/courses').helpPath).toBe('/help/article/guide-courses?from=%2Fcourses')
+    expect(resolveContextualHelpPath('/homework').helpPath).toBe('/help/article/guide-homework?from=%2Fhomework')
+    expect(resolveContextualHelpPath('/forms').helpPath).toBe('/help/article/guide-forms?from=%2Fforms')
+    expect(resolveContextualHelpPath('/import-export').helpPath).toBe(
+      '/help/article/guide-import-export?from=%2Fimport-export',
+    )
+    expect(resolveContextualHelpPath('/fees/import').helpPath).toBe(
+      '/help/article/guide-import-export?from=%2Ffees%2Fimport',
+    )
+    expect(resolveContextualHelpPath('/training').helpPath).toBe('/help/article/guide-training?from=%2Ftraining')
 
     render(
       <MemoryRouter initialEntries={['/fees/concessions']}>
@@ -481,7 +496,13 @@ describe('Help & About Centre Suite', () => {
     fireEvent.submit(subjectInput.closest('form')!)
 
     await waitFor(() => {
-      expect(helpApi.createSupportRequest).toHaveBeenCalled()
+      expect(helpApi.createSupportRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'general',
+          module_key: null,
+          page_route: '/help/support',
+        }),
+      )
       expect(screen.getByText('SUP-20261111-ABC123')).toBeDefined()
     })
 
@@ -490,5 +511,86 @@ describe('Help & About Centre Suite', () => {
     renderHelpAt('/help/governance')
     const newBtn = await screen.findByRole('button', { name: /New Help \/ FAQ Article/i })
     expect(newBtn.getAttribute('aria-disabled')).toBe('true')
+  })
+
+  it('renders Markdown tables, nested bullets, horizontal rules, and safe links without innerHTML', () => {
+    const md = [
+      '## Table Overview',
+      '| Module | Route |',
+      '| :--- | :--- |',
+      '| Fees | [Fee Guide](/help/article/guide-fees) |',
+      '| Portal | [AITDL](https://aitdl.com) |',
+      '',
+      '---',
+      '- Top bullet',
+      '  - Nested item',
+      '- Blocked [BadLink](javascript:alert(1))',
+    ].join('\n')
+
+    const { container } = render(
+      <MemoryRouter>
+        <StructuredMarkdownContent markdown={md} />
+      </MemoryRouter>,
+    )
+
+    expect(container.querySelector('table')).toBeTruthy()
+    expect(container.querySelector('hr')).toBeTruthy()
+    expect(screen.getByText('Top bullet')).toBeDefined()
+    expect(screen.getByText('Nested item')).toBeDefined()
+
+    const internalLink = screen.getByRole('link', { name: 'Fee Guide' })
+    expect(internalLink.getAttribute('href')).toBe('/help/article/guide-fees')
+
+    const externalLink = screen.getByRole('link', { name: 'AITDL' })
+    expect(externalLink.getAttribute('href')).toBe('https://aitdl.com')
+    expect(externalLink.getAttribute('rel')).toBe('noopener noreferrer')
+
+    // Unsafe javascript: scheme must render as harmless text span, NOT an anchor
+    expect(screen.queryByRole('link', { name: 'BadLink' })).toBeNull()
+    expect(screen.getByText('BadLink')).toBeDefined()
+  })
+
+  it('restricts commercial license and SMRITI corporate fields to SysAdmin roles in Governance', async () => {
+    const adminUser = {
+      id: 1,
+      username: 'admin',
+      role: 'admin',
+      full_name: 'Institute Admin',
+      is_active: true,
+    } as any
+    useAuthStore.setState({ user: adminUser, token: 'test-token' })
+    useEditModeStore.getState().enableEditMode('admin:help_centre', adminUser)
+
+    renderHelpAt('/help/governance')
+    const metaTab = await screen.findByRole('button', { name: /Product, SMRITI Systems & License/i })
+    fireEvent.click(metaTab)
+
+    const licenseInput = (await screen.findByPlaceholderText(
+      /Active Institutional License/i,
+    )) as HTMLInputElement
+    const introLabel = screen.getByText('Product Introduction')
+    const introTextarea = introLabel.parentElement?.querySelector('textarea') as HTMLTextAreaElement
+    expect(licenseInput.disabled).toBe(true)
+    expect(introTextarea.disabled).toBe(false)
+
+    // Switch to superadmin -> license field becomes editable in Edit Mode
+    cleanup()
+    const superUser = { ...adminUser, id: 2, username: 'superadmin', role: 'superadmin' }
+    useAuthStore.setState({ user: superUser, token: 'test-token' })
+    useEditModeStore.getState().enableEditMode('admin:help_centre', superUser)
+
+    renderHelpAt('/help/governance')
+    fireEvent.click(await screen.findByRole('button', { name: /Product, SMRITI Systems & License/i }))
+    const superLicenseInput = (await screen.findByPlaceholderText(
+      /Active Institutional License/i,
+    )) as HTMLInputElement
+    expect(superLicenseInput.disabled).toBe(false)
+  })
+
+  it('renders Back to Module navigation in LegalComplianceSection when opened from a module route', async () => {
+    renderHelpAt('/help/legal/terms-and-conditions?from=%2Fforms')
+    await waitFor(() => {
+      expect(screen.getByText('Back to Module')).toBeDefined()
+    })
   })
 })

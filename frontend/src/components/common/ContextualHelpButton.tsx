@@ -1,7 +1,7 @@
 /**
  * @file        ContextualHelpButton.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.common
+ * @module      frontend.src.components.common
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,29 +13,12 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Contextualhelpbutton in the src.components.common module.
+ * @description Contextual Help button and route-to-guide resolver opening module-specific user guides directly.
  */
-
-// /**
-//  * @file        ContextualHelpButton.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.common
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Contextual Help button and route-to-guide resolver opening module-specific user guides directly.
-//  */
 
 import { HelpCircle } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { helpApi } from '../../api/endpoints'
 
 interface ContextualMatch {
   slug: string
@@ -45,6 +28,9 @@ interface ContextualMatch {
 const CONTEXTUAL_ROUTE_TABLE: Array<{ prefix: string; slug: string; moduleLabel: string }> = [
   { prefix: '/fees/concessions', slug: 'guide-concessions', moduleLabel: 'Concessions & Waivers' },
   { prefix: '/fees/scholarships', slug: 'guide-scholarships', moduleLabel: 'Scholarships & Benefits' },
+  { prefix: '/fees/import', slug: 'guide-import-export', moduleLabel: 'Import & Export Center' },
+  { prefix: '/import/fee-register', slug: 'guide-import-export', moduleLabel: 'Import & Export Center' },
+  { prefix: '/import-export', slug: 'guide-import-export', moduleLabel: 'Import & Export Center' },
   { prefix: '/fees', slug: 'guide-fees', moduleLabel: 'Fee Management' },
   { prefix: '/payments', slug: 'guide-fees', moduleLabel: 'Fee Management' },
   { prefix: '/receipt', slug: 'tutorial-receipt-generation', moduleLabel: 'Receipt Generation' },
@@ -58,7 +44,10 @@ const CONTEXTUAL_ROUTE_TABLE: Array<{ prefix: string; slug: string; moduleLabel:
   { prefix: '/academic/timetable', slug: 'guide-timetable', moduleLabel: 'Timetable Management' },
   { prefix: '/timetable', slug: 'guide-timetable', moduleLabel: 'Timetable Management' },
   { prefix: '/academic', slug: 'branch-class-and-division-setup', moduleLabel: 'Academic Setup' },
-  { prefix: '/courses', slug: 'branch-class-and-division-setup', moduleLabel: 'Courses & Subjects' },
+  { prefix: '/courses', slug: 'guide-courses', moduleLabel: 'Courses & Study Materials' },
+  { prefix: '/homework', slug: 'guide-homework', moduleLabel: 'Homework & Assignments' },
+  { prefix: '/forms-documents', slug: 'guide-forms', moduleLabel: 'Print Forms & KYC Studio' },
+  { prefix: '/forms', slug: 'guide-forms', moduleLabel: 'Print Forms & KYC Studio' },
   { prefix: '/attendance', slug: 'guide-attendance', moduleLabel: 'Attendance Management' },
   { prefix: '/teachers', slug: 'guide-staff', moduleLabel: 'Staff & Faculty' },
   { prefix: '/staff', slug: 'guide-staff', moduleLabel: 'Staff Management' },
@@ -68,9 +57,12 @@ const CONTEXTUAL_ROUTE_TABLE: Array<{ prefix: string; slug: string; moduleLabel:
   { prefix: '/users', slug: 'user-management-setup', moduleLabel: 'User Management' },
   { prefix: '/housekeeping', slug: 'guide-settings', moduleLabel: 'Administration & Housekeeping' },
   { prefix: '/settings', slug: 'guide-settings', moduleLabel: 'Settings & Configuration' },
+  { prefix: '/admin/training', slug: 'guide-training', moduleLabel: 'Training & Simulation Sandbox' },
+  { prefix: '/training', slug: 'guide-training', moduleLabel: 'Training & Simulation Sandbox' },
   { prefix: '/student-portal', slug: 'welcome-to-prathamone-eduos', moduleLabel: 'Student Portal' },
   { prefix: '/teacher-portal', slug: 'guide-timetable', moduleLabel: 'Teacher Portal' },
   { prefix: '/dashboard', slug: 'guide-dashboard', moduleLabel: 'Dashboard' },
+  { prefix: '/help/support', slug: 'faq-common-application-errors', moduleLabel: 'Troubleshooting & Support' },
 ]
 
 const MODULE_KEY_TABLE: Record<string, ContextualMatch> = {
@@ -82,11 +74,16 @@ const MODULE_KEY_TABLE: Record<string, ContextualMatch> = {
   scholarships: { slug: 'guide-scholarships', moduleLabel: 'Scholarships & Benefits' },
   attendance: { slug: 'guide-attendance', moduleLabel: 'Attendance Management' },
   timetable: { slug: 'guide-timetable', moduleLabel: 'Timetable Management' },
+  courses: { slug: 'guide-courses', moduleLabel: 'Courses & Study Materials' },
+  homework: { slug: 'guide-homework', moduleLabel: 'Homework & Assignments' },
   examinations: { slug: 'guide-examinations', moduleLabel: 'Examination Management' },
   results: { slug: 'guide-results', moduleLabel: 'Results & Report Cards' },
   staff: { slug: 'guide-staff', moduleLabel: 'Staff Management' },
   communication: { slug: 'guide-communication', moduleLabel: 'Communication Management' },
+  forms: { slug: 'guide-forms', moduleLabel: 'Print Forms & KYC Studio' },
   reports: { slug: 'guide-reports', moduleLabel: 'Reports & Analytics' },
+  import_export: { slug: 'guide-import-export', moduleLabel: 'Import & Export Center' },
+  training: { slug: 'guide-training', moduleLabel: 'Training & Simulation Sandbox' },
   settings: { slug: 'guide-settings', moduleLabel: 'Administration & Settings' },
 }
 
@@ -143,7 +140,23 @@ export default function ContextualHelpButton({
   const { helpPath, moduleLabel } = resolveContextualHelpPath(activeRoute, moduleKey)
   const tooltip = title || `Open ${moduleLabel} Help Guide`
 
-  const handleClick = () => {
+  const handleClick = async () => {
+    try {
+      const res = await helpApi?.contextual?.({
+        route: activeRoute,
+        module_key: moduleKey,
+      })
+      const backendSlug = res?.data?.article?.slug
+      const backendHelpRoute = res?.data?.help_route
+      if (backendSlug || backendHelpRoute) {
+        const targetBase = backendHelpRoute || `/help/article/${backendSlug}`
+        const cleanBase = targetBase.split('?')[0]
+        navigate(`${cleanBase}?from=${encodeURIComponent(activeRoute)}`)
+        return
+      }
+    } catch {
+      // Fallback safely to static contextual resolver when offline or unavailable
+    }
     navigate(helpPath)
   }
 

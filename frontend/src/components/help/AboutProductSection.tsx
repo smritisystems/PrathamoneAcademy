@@ -1,7 +1,7 @@
 /**
  * @file        AboutProductSection.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.help
+ * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,26 +13,8 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Aboutproductsection in the src.components.help module.
+ * @description Customer-facing About PrathamOne EduOS product identity, vision, philosophy, capabilities, modules, and deployment summary.
  */
-
-// /**
-//  * @file        AboutProductSection.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.help
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Customer-facing About PrathamOne EduOS product identity, vision, philosophy, capabilities, modules, and deployment summary.
-//  */
 
 import {
   BookOpen,

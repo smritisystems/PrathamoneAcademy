@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Legacy fee register import wizard for spreadsheet mapping, preview, and validation.
  */
@@ -26,7 +26,7 @@ import {
 import toast from 'react-hot-toast'
 import { feeRegisterImportApi } from '../api/endpoints'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, ContextualHelpButton } from '../components/common'
 import { Lock } from 'lucide-react'
 import type {
   FeeRegisterPreviewResponse,
@@ -214,6 +214,7 @@ export default function ImportFeeRegister() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <ContextualHelpButton moduleKey="import_export" variant="pill" label="Import Help" />
           <label className="btn btn-secondary cursor-pointer flex items-center gap-2 text-sm">
             <Upload className="w-4 h-4" /> Upload Other Register
             <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} className="hidden" />

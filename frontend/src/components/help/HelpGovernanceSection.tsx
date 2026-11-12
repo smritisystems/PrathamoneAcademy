@@ -1,7 +1,7 @@
 /**
  * @file        HelpGovernanceSection.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.help
+ * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,26 +13,8 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Helpgovernancesection in the src.components.help module.
+ * @description Admin-only Content Management & Governance console adhering strictly to Rule 010 View-First Edit Mode for articles, FAQs, categories, legal approvals, revision history, and product metadata.
  */
-
-// /**
-//  * @file        HelpGovernanceSection.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.help
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Admin-only Content Management & Governance console adhering strictly to Rule 010 View-First Edit Mode for articles, FAQs, categories, legal approvals, revision history, and product metadata.
-//  */
 
 import { useEffect, useState } from 'react'
 import {
@@ -73,6 +55,9 @@ export default function HelpGovernanceSection({
 }: HelpGovernanceSectionProps) {
   const { user } = useAuthStore()
   const isAdmin = isHelpAdminRole(user?.role)
+  const isSysAdmin = ['superadmin', 'sysadmin', 'super_admin'].includes(
+    (user?.role || '').trim().toLowerCase(),
+  )
   const { isEditMode } = useEditModeStore()
   const editable = isEditMode('admin:help_centre')
 
@@ -89,9 +74,13 @@ export default function HelpGovernanceSection({
   const [artTitle, setArtTitle] = useState('')
   const [artSection, setArtSection] = useState<HelpSectionKey>('faq')
   const [artCategorySlug, setArtCategorySlug] = useState('faq-troubleshooting')
+  const [artModuleKey, setArtModuleKey] = useState('')
   const [artSummary, setArtSummary] = useState('')
   const [artMarkdown, setArtMarkdown] = useState('')
   const [artTags, setArtTags] = useState('')
+  const [artPermissions, setArtPermissions] = useState('')
+  const [artRelatedRoutes, setArtRelatedRoutes] = useState('')
+  const [artRelatedSlugs, setArtRelatedSlugs] = useState('')
   const [artDocVersion, setArtDocVersion] = useState('1.0')
   const [artStatus, setArtStatus] = useState<'draft' | 'pending_approval' | 'published' | 'unpublished'>('published')
   const [artApprovalStatus, setArtApprovalStatus] = useState<'approved' | 'pending_approval'>('approved')
@@ -108,12 +97,17 @@ export default function HelpGovernanceSection({
   const [catName, setCatName] = useState('')
   const [catSection, setCatSection] = useState<HelpSectionKey>('faq')
   const [catDesc, setCatDesc] = useState('')
+  const [catIsActive, setCatIsActive] = useState(true)
   const [savingCat, setSavingCat] = useState(false)
 
   // Product / Company / License Metadata
-  const [metaForm, setMetaForm] = useState({
+  const emptyMeta = {
+    product_introduction: '',
     product_vision: '',
     product_mission: '',
+    vision_mission_status: 'baseline_pending_commercial_signoff',
+    smriti_introduction: '',
+    smriti_tech_profile: '',
     smriti_website: '',
     smriti_office: '',
     smriti_leadership: '',
@@ -122,7 +116,9 @@ export default function HelpGovernanceSection({
     license_validity: '',
     deployment_type: '',
     change_note: '',
-  })
+  }
+  const [metaForm, setMetaForm] = useState(emptyMeta)
+  const [initialMetaForm, setInitialMetaForm] = useState(emptyMeta)
   const [savingMeta, setSavingMeta] = useState(false)
 
   const loadGovernedArticles = async () => {
@@ -147,9 +143,14 @@ export default function HelpGovernanceSection({
 
   useEffect(() => {
     if (!productInfo) return
-    setMetaForm({
+    const nextMeta = {
+      product_introduction: productInfo.about_product.introduction || '',
       product_vision: productInfo.about_product.vision || '',
       product_mission: productInfo.about_product.mission || '',
+      vision_mission_status:
+        productInfo.about_product.vision_mission_status || 'baseline_pending_commercial_signoff',
+      smriti_introduction: productInfo.about_company.smriti_systems.introduction || '',
+      smriti_tech_profile: productInfo.about_company.smriti_systems.technology_profile || '',
       smriti_website: productInfo.about_company.smriti_systems.official_website || '',
       smriti_office: productInfo.about_company.smriti_systems.registered_office || '',
       smriti_leadership: productInfo.about_company.smriti_systems.leadership_note || '',
@@ -159,7 +160,9 @@ export default function HelpGovernanceSection({
       license_validity: productInfo.version_info.license_validity || '',
       deployment_type: productInfo.version_info.deployment_type || '',
       change_note: '',
-    })
+    }
+    setMetaForm(nextMeta)
+    setInitialMetaForm(nextMeta)
   }, [productInfo])
 
   if (!isAdmin) {
@@ -174,15 +177,25 @@ export default function HelpGovernanceSection({
     )
   }
 
+  const splitCsv = (val: string) =>
+    val
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+
   const openNewArticleModal = () => {
     setEditingArticleId(null)
     setArtSlug('')
     setArtTitle('')
     setArtSection('faq')
     setArtCategorySlug('faq-troubleshooting')
+    setArtModuleKey('')
     setArtSummary('')
     setArtMarkdown('# Title\n\nWrite verified, customer-safe instructions here...')
     setArtTags('faq')
+    setArtPermissions('')
+    setArtRelatedRoutes('')
+    setArtRelatedSlugs('')
     setArtDocVersion('1.0')
     setArtStatus('draft')
     setArtApprovalStatus('approved')
@@ -199,9 +212,13 @@ export default function HelpGovernanceSection({
       setArtTitle(art.title)
       setArtSection(art.section)
       setArtCategorySlug(art.category_slug || 'faq-troubleshooting')
+      setArtModuleKey(art.module_key || '')
       setArtSummary(art.summary || '')
       setArtMarkdown(art.content_markdown)
       setArtTags((art.tags || []).join(', '))
+      setArtPermissions((art.required_permissions || []).join(', '))
+      setArtRelatedRoutes((art.related_routes || []).join(', '))
+      setArtRelatedSlugs((art.related_slugs || []).join(', '))
       setArtDocVersion(art.doc_version)
       setArtStatus(art.status)
       setArtApprovalStatus(art.approval_status)
@@ -213,19 +230,28 @@ export default function HelpGovernanceSection({
   }
 
   const handleSaveArticle = async () => {
+    if (!editable) {
+      toast.error('Enable Edit Mode above before saving changes.')
+      return
+    }
     setSavingArticle(true)
     try {
-      const tags = artTags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean)
+      const tags = splitCsv(artTags)
+      const requiredPermissions = splitCsv(artPermissions)
+      const relatedRoutes = splitCsv(artRelatedRoutes)
+      const relatedSlugs = splitCsv(artRelatedSlugs)
+      const normalizedModuleKey = artModuleKey.trim() || null
       if (editingArticleId) {
         await helpApi.updateArticle(editingArticleId, {
           title: artTitle,
           summary: artSummary,
           category_slug: artCategorySlug,
+          module_key: normalizedModuleKey,
           content_markdown: artMarkdown,
           tags,
+          required_permissions: requiredPermissions,
+          related_routes: relatedRoutes,
+          related_slugs: relatedSlugs,
           doc_version: artDocVersion,
           status: artStatus,
           approval_status: artApprovalStatus,
@@ -238,9 +264,13 @@ export default function HelpGovernanceSection({
           title: artTitle,
           section: artSection,
           category_slug: artCategorySlug,
+          module_key: normalizedModuleKey,
           summary: artSummary,
           content_markdown: artMarkdown,
           tags,
+          required_permissions: requiredPermissions,
+          related_routes: relatedRoutes,
+          related_slugs: relatedSlugs,
           doc_version: artDocVersion,
           status: artStatus,
           approval_status: artApprovalStatus,
@@ -284,6 +314,18 @@ export default function HelpGovernanceSection({
     }
   }
 
+  const SYSTEM_ONLY_META_KEYS = new Set([
+    'smriti_introduction',
+    'smriti_tech_profile',
+    'smriti_website',
+    'smriti_office',
+    'smriti_leadership',
+    'smriti_verification_status',
+    'license_status',
+    'license_validity',
+    'deployment_type',
+  ])
+
   const handleSaveCategory = async () => {
     if (!catSlug.trim() || !catName.trim()) {
       toast.error('Category slug and name are required.')
@@ -296,11 +338,13 @@ export default function HelpGovernanceSection({
         name: catName.trim(),
         section: catSection,
         description: catDesc.trim() || null,
+        is_active: catIsActive,
       })
       toast.success('Category saved cleanly.')
       setCatSlug('')
       setCatName('')
       setCatDesc('')
+      setCatIsActive(true)
       await onRefreshAll()
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || 'Failed to save category.')
@@ -310,9 +354,27 @@ export default function HelpGovernanceSection({
   }
 
   const handleSaveProductMetadata = async () => {
+    const diffPayload: Record<string, string | null | undefined> = {}
+    const editableKeys = Object.keys(metaForm) as Array<keyof typeof metaForm>
+    for (const key of editableKeys) {
+      if (key === 'change_note') continue
+      if (SYSTEM_ONLY_META_KEYS.has(key) && !isSysAdmin) continue
+      const currentVal = (metaForm[key] || '').trim()
+      const baselineVal = (initialMetaForm[key] || '').trim()
+      if (currentVal !== baselineVal) {
+        diffPayload[key] = currentVal
+      }
+    }
+    if (Object.keys(diffPayload).length === 0) {
+      toast('No metadata changes to save.')
+      return
+    }
+    if (metaForm.change_note.trim()) {
+      diffPayload.change_note = metaForm.change_note.trim()
+    }
     setSavingMeta(true)
     try {
-      await helpApi.updateProductInfo(metaForm)
+      await helpApi.updateProductInfo(diffPayload)
       toast.success('Product, company, and license metadata saved.')
       await onRefreshAll()
     } catch (err: any) {
@@ -540,6 +602,16 @@ export default function HelpGovernanceSection({
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 disabled:bg-slate-100"
               />
             </div>
+            <label className="flex items-center gap-2 text-xs text-slate-700 select-none">
+              <input
+                type="checkbox"
+                disabled={!editable}
+                checked={catIsActive}
+                onChange={(e) => setCatIsActive(e.target.checked)}
+                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span>Active category (visible in customer Help directory)</span>
+            </label>
             <LockedButton
               isEditMode={editable}
               disabled={savingCat}
@@ -553,15 +625,21 @@ export default function HelpGovernanceSection({
           </div>
 
           <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 space-y-2.5">
-            <h3 className="text-sm font-bold text-slate-900">Active Help Categories</h3>
+            <h3 className="text-sm font-bold text-slate-900">Help Categories</h3>
             {categories.map((cat) => (
               <div
                 key={cat.id}
                 className="p-3 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between gap-2"
               >
                 <div>
-                  <div className="text-xs font-bold text-slate-900">
-                    {cat.name} <span className="font-mono text-slate-400">({cat.slug})</span>
+                  <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                    <span>{cat.name}</span>
+                    <span className="font-mono text-slate-400 font-normal">({cat.slug})</span>
+                    {!cat.is_active && (
+                      <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-semibold">
+                        Inactive
+                      </span>
+                    )}
                   </div>
                   <div className="text-[11px] text-slate-500">{cat.description}</div>
                 </div>
@@ -573,6 +651,7 @@ export default function HelpGovernanceSection({
                     setCatName(cat.name)
                     setCatSection(cat.section)
                     setCatDesc(cat.description || '')
+                    setCatIsActive(cat.is_active ?? true)
                   }}
                   className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-50"
                 >
@@ -593,7 +672,7 @@ export default function HelpGovernanceSection({
                 Product, SMRITI Systems &amp; License Metadata
               </h3>
               <p className="text-xs text-slate-500">
-                Update management-approved SMRITI Systems corporate fields, official license validity, and product statements.
+                Update verified product overview, SMRITI Systems corporate profile, deployment model, and license posture.
               </p>
             </div>
             <LockedButton
@@ -607,7 +686,23 @@ export default function HelpGovernanceSection({
             </LockedButton>
           </div>
 
+          {!isSysAdmin && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+              SMRITI Systems corporate profile, deployment model, and commercial license fields are managed by System Administration (SysAdmin / SuperAdmin).
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">Product Introduction</label>
+              <textarea
+                rows={2}
+                disabled={!editable}
+                value={metaForm.product_introduction}
+                onChange={(e) => setMetaForm({ ...metaForm, product_introduction: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
+              />
+            </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">Product Vision</label>
               <textarea
@@ -629,12 +724,55 @@ export default function HelpGovernanceSection({
               />
             </div>
             <div>
+              <label className="block font-semibold text-slate-700 mb-1">Vision &amp; Mission Approval Status</label>
+              <select
+                disabled={!editable}
+                value={metaForm.vision_mission_status}
+                onChange={(e) => setMetaForm({ ...metaForm, vision_mission_status: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white disabled:bg-slate-100"
+              >
+                <option value="baseline_pending_commercial_signoff">Baseline Pending Commercial Sign-off</option>
+                <option value="approved">Approved Commercial Statement</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Deployment Type (SysAdmin only)</label>
+              <input
+                type="text"
+                disabled={!editable || !isSysAdmin}
+                value={metaForm.deployment_type}
+                onChange={(e) => setMetaForm({ ...metaForm, deployment_type: e.target.value })}
+                placeholder="e.g., Institutional Dedicated Deployment"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">SMRITI Systems Introduction (SysAdmin only)</label>
+              <textarea
+                rows={2}
+                disabled={!editable || !isSysAdmin}
+                value={metaForm.smriti_introduction}
+                onChange={(e) => setMetaForm({ ...metaForm, smriti_introduction: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">SMRITI Technology Profile (SysAdmin only)</label>
+              <textarea
+                rows={2}
+                disabled={!editable || !isSysAdmin}
+                value={metaForm.smriti_tech_profile}
+                onChange={(e) => setMetaForm({ ...metaForm, smriti_tech_profile: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
+              />
+            </div>
+            <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                SMRITI Systems Official Website
+                SMRITI Systems Official Website (SysAdmin only)
               </label>
               <input
                 type="text"
-                disabled={!editable}
+                disabled={!editable || !isSysAdmin}
                 value={metaForm.smriti_website}
                 onChange={(e) => setMetaForm({ ...metaForm, smriti_website: e.target.value })}
                 placeholder="Verified HTTPS URL when approved"
@@ -643,11 +781,11 @@ export default function HelpGovernanceSection({
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                SMRITI Systems Leadership Info
+                SMRITI Systems Leadership Info (SysAdmin only)
               </label>
               <input
                 type="text"
-                disabled={!editable}
+                disabled={!editable || !isSysAdmin}
                 value={metaForm.smriti_leadership}
                 onChange={(e) => setMetaForm({ ...metaForm, smriti_leadership: e.target.value })}
                 placeholder="Verified founder / leadership note"
@@ -656,11 +794,11 @@ export default function HelpGovernanceSection({
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                SMRITI Systems Registered Office
+                SMRITI Systems Registered Office (SysAdmin only)
               </label>
               <input
                 type="text"
-                disabled={!editable}
+                disabled={!editable || !isSysAdmin}
                 value={metaForm.smriti_office}
                 onChange={(e) => setMetaForm({ ...metaForm, smriti_office: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
@@ -668,10 +806,10 @@ export default function HelpGovernanceSection({
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                SMRITI Corporate Verification Status
+                SMRITI Corporate Verification Status (SysAdmin only)
               </label>
               <select
-                disabled={!editable}
+                disabled={!editable || !isSysAdmin}
                 value={metaForm.smriti_verification_status}
                 onChange={(e) => setMetaForm({ ...metaForm, smriti_verification_status: e.target.value })}
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white disabled:bg-slate-100"
@@ -681,10 +819,10 @@ export default function HelpGovernanceSection({
               </select>
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Commercial License Status</label>
+              <label className="block font-semibold text-slate-700 mb-1">Commercial License Status (SysAdmin only)</label>
               <input
                 type="text"
-                disabled={!editable}
+                disabled={!editable || !isSysAdmin}
                 value={metaForm.license_status}
                 onChange={(e) => setMetaForm({ ...metaForm, license_status: e.target.value })}
                 placeholder="e.g., Active Institutional License"
@@ -692,13 +830,24 @@ export default function HelpGovernanceSection({
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">License Validity Date</label>
+              <label className="block font-semibold text-slate-700 mb-1">License Validity Date (SysAdmin only)</label>
               <input
                 type="text"
-                disabled={!editable}
+                disabled={!editable || !isSysAdmin}
                 value={metaForm.license_validity}
                 onChange={(e) => setMetaForm({ ...metaForm, license_validity: e.target.value })}
                 placeholder="e.g., Valid through 31 Mar 2027"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block font-semibold text-slate-700 mb-1">Governance Change Note</label>
+              <input
+                type="text"
+                disabled={!editable}
+                value={metaForm.change_note}
+                onChange={(e) => setMetaForm({ ...metaForm, change_note: e.target.value })}
+                placeholder="Optional audit note describing metadata updates"
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
               />
             </div>
@@ -814,6 +963,52 @@ export default function HelpGovernanceSection({
               />
             </div>
             <div>
+              <label className="block font-semibold text-slate-700 mb-1">Module Key (optional)</label>
+              <input
+                type="text"
+                value={artModuleKey}
+                onChange={(e) => setArtModuleKey(e.target.value)}
+                placeholder="e.g., fees, courses, homework"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Required Permissions (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={artPermissions}
+                onChange={(e) => setArtPermissions(e.target.value)}
+                placeholder="e.g., fees:collect, students:view"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Related App Routes (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={artRelatedRoutes}
+                onChange={(e) => setArtRelatedRoutes(e.target.value)}
+                placeholder="e.g., /courses, /homework"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200"
+              />
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">
+                Related Article Slugs (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={artRelatedSlugs}
+                onChange={(e) => setArtRelatedSlugs(e.target.value)}
+                placeholder="e.g., guide-fees, tutorial-fee-collection"
+                className="w-full px-3 py-2 rounded-xl border border-slate-200"
+              />
+            </div>
+            <div>
               <label className="block font-semibold text-slate-700 mb-1">Revision Change Note</label>
               <input
                 type="text"
@@ -835,7 +1030,7 @@ export default function HelpGovernanceSection({
             </button>
             <button
               type="button"
-              disabled={savingArticle}
+              disabled={!editable || savingArticle}
               onClick={handleSaveArticle}
               className="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 font-semibold disabled:opacity-50 inline-flex items-center gap-1.5"
             >

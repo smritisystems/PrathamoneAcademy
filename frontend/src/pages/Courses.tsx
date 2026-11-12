@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Enterprise Study Materials & Digital Content management hub comprising 8 dedicated workspaces, live database persistence, and Rule 010 View-First governance.
  */
@@ -33,7 +33,7 @@ import type { StudyMaterialItem, Standard, AcademicSubject as Subject, Division 
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal, SortableHeader, TableSortSelect, TableSortOption } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, DeleteConfirmationModal, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 
@@ -531,6 +531,7 @@ function CoursesContent() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          <ContextualHelpButton moduleKey="courses" variant="pill" label="Courses Help" />
           {currentTabInfo.primaryActionLabel && (
             <>
               {currentTabInfo.requiresEditMode && !isEditMode ? (

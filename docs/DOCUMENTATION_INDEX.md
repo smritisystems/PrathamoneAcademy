@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-12 01:22:47  
-**Total Indexed Items:** 411  
+**Last Reindexed:** 2026-11-12 11:54:15  
+**Total Indexed Items:** 412  
 
 ---
 
@@ -34,7 +34,7 @@
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **10** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **4** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **8** | Releases, Versioning & Changelogs |
-| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **60** | Forensic Audits & Data Health |
+| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **61** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **3** | Troubleshooting, Runbooks & Recovery |
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **10** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
@@ -428,6 +428,7 @@
 | **PrathamOne EduOS — Global Placeholder, Mock & False-Completion Forensic Audit** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-PLACEHOLDER-AND-MOCK-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-PLACEHOLDER-AND-MOCK-AUDIT_V1.md) | - |
 | **PrathamOne EduOS — Global Software Module Inventory** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-MODULE-INVENTORY_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-MODULE-INVENTORY_V1.md) | - |
 | **PrathamOne EduOS — Global Testing and Deployment Status Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-TESTING-AND-DEPLOYMENT-STATUS_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-TESTING-AND-DEPLOYMENT-STATUS_V1.md) | - |
+| **PrathamOne EduOS — Help & About Centre Deep Architectural & Security Analysis** | `REPORT` | `1.1` | 2026-11-12 | `Approved` | [2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md](20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 16_DATABASE_API, 17_UI_UX_DESIGN, 18_TESTING_QA, 22_USER_MANUALS, 25_BUSINESS_REQUIREMENTS |
 | **PrathamOne EduOS — Information Security, RBAC & Governance Audit** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md) | 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 01_ARCHITECTURE |
 | **PrathamOne EduOS — Information Security, RBAC & Sensitive Permissions Audit** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md) | 12_RBAC_SECURITY, 16_DATABASE_API, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Infrastructure, Docker, Networking & Integrations Audit** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_INTEGRATION-INFRASTRUCTURE-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_INTEGRATION-INFRASTRUCTURE-AUDIT_V1.md) | 02_INSTALLATION_DEPLOYMENT, 15_INTEGRATIONS, 20_AUDITS_COMPLIANCE |

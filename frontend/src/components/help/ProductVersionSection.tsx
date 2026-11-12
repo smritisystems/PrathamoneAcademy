@@ -1,7 +1,7 @@
 /**
  * @file        ProductVersionSection.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.help
+ * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
  * @organization AITDL (AI Technology & Development Lab)
@@ -13,26 +13,8 @@
  * @created     2026-11-11
  * @updated     2026-11-12
  *
- * @description Source component for Productversionsection in the src.components.help module.
+ * @description Dynamically populated Product & Version Information view showing edition, build, release date, license posture, available modules, and customer-safe release notes.
  */
-
-// /**
-//  * @file        ProductVersionSection.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.help
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization AITDL (AI Technology & Development Lab)
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-11
-//  * @updated     2026-11-11
-//  *
-//  * @description Dynamically populated Product & Version Information view showing edition, build, release date, license posture, available modules, and customer-safe release notes.
-//  */
 
 import {
   AlertCircle,

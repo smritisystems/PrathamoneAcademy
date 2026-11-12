@@ -16,7 +16,7 @@
 #  * @description REST API endpoints for the customer-facing Help & About Centre, contextual guides, unified search, support ticketing, CMS governance, and restricted system info.
 #  */
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,15 +33,23 @@ HELP_ADMIN_ROLES = ("superadmin", "sysadmin", "super_admin", "admin", "principal
 
 
 def _is_help_admin(user: User) -> bool:
-    return (user.role or "").lower() in help_service.ADMIN_ROLES
+    return (user.role or "").strip().lower() in help_service.ADMIN_ROLES
 
 
 # ─── Pydantic Schemas ─────────────────────────────────────────────────────────
 
+HelpSectionLiteral = Literal["getting_started", "module_guide", "tutorial", "faq", "legal"]
+HelpArticleStatusLiteral = Literal["draft", "pending_approval", "published", "unpublished"]
+HelpApprovalStatusLiteral = Literal["approved", "pending_approval"]
+SupportRequestTypeLiteral = Literal["support_request", "bug_report", "feature_request", "feedback"]
+SupportPriorityLiteral = Literal["low", "medium", "high", "urgent"]
+SupportStatusLiteral = Literal["open", "in_progress", "waiting_on_customer", "resolved", "closed"]
+
+
 class HelpCategoryUpsert(BaseModel):
     slug: str = Field(..., min_length=2, max_length=80)
     name: str = Field(..., min_length=2, max_length=120)
-    section: str = Field(..., max_length=40)
+    section: HelpSectionLiteral
     description: Optional[str] = None
     icon: Optional[str] = Field(default="BookOpen", max_length=50)
     sort_order: int = 10
@@ -52,7 +60,7 @@ class HelpArticleCreate(BaseModel):
     slug: str = Field(..., min_length=2, max_length=120)
     category_id: Optional[int] = None
     category_slug: Optional[str] = None
-    section: str = Field(..., max_length=40)
+    section: HelpSectionLiteral
     module_key: Optional[str] = Field(default=None, max_length=60)
     title: str = Field(..., min_length=3, max_length=200)
     summary: Optional[str] = None
@@ -62,8 +70,8 @@ class HelpArticleCreate(BaseModel):
     related_routes: Optional[List[str]] = []
     related_slugs: Optional[List[str]] = []
     doc_version: str = Field(default="1.0", max_length=20)
-    status: Optional[str] = None
-    approval_status: Optional[str] = None
+    status: Optional[HelpArticleStatusLiteral] = None
+    approval_status: Optional[HelpApprovalStatusLiteral] = None
     sort_order: int = 100
     change_note: Optional[str] = None
 
@@ -80,8 +88,8 @@ class HelpArticleUpdate(BaseModel):
     related_routes: Optional[List[str]] = None
     related_slugs: Optional[List[str]] = None
     doc_version: Optional[str] = Field(default=None, max_length=20)
-    status: Optional[str] = None
-    approval_status: Optional[str] = None
+    status: Optional[HelpArticleStatusLiteral] = None
+    approval_status: Optional[HelpApprovalStatusLiteral] = None
     sort_order: Optional[int] = None
     change_note: Optional[str] = None
 
@@ -109,9 +117,9 @@ class ProductInfoUpdate(BaseModel):
 
 
 class SupportRequestCreate(BaseModel):
-    request_type: str = Field(default="support_request", max_length=30)
+    request_type: SupportRequestTypeLiteral = Field(default="support_request")
     category: str = Field(default="general", max_length=50)
-    priority: str = Field(default="medium", max_length=20)
+    priority: SupportPriorityLiteral = Field(default="medium")
     subject: str = Field(..., min_length=4, max_length=200)
     description: str = Field(..., min_length=10)
     module_key: Optional[str] = Field(default=None, max_length=60)
@@ -127,10 +135,10 @@ class SupportCommentCreate(BaseModel):
 
 
 class SupportStatusUpdate(BaseModel):
-    status: Optional[str] = Field(default=None, max_length=30)
+    status: Optional[SupportStatusLiteral] = None
     resolution_notes: Optional[str] = None
     assigned_to_id: Optional[int] = None
-    priority: Optional[str] = Field(default=None, max_length=20)
+    priority: Optional[SupportPriorityLiteral] = None
 
 
 # ─── Categories & Articles ────────────────────────────────────────────────────
@@ -152,7 +160,12 @@ async def upsert_category(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(*HELP_ADMIN_ROLES)),
 ):
-    return await help_service.upsert_category(db, payload.model_dump(), current_user)
+    try:
+        return await help_service.upsert_category(db, payload.model_dump(), current_user)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/articles")
@@ -161,6 +174,8 @@ async def list_articles(
     category_slug: Optional[str] = Query(default=None),
     module_key: Optional[str] = Query(default=None),
     include_unpublished: bool = Query(default=False),
+    limit: int = Query(default=200, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -171,8 +186,10 @@ async def list_articles(
         category_slug=category_slug,
         module_key=module_key,
         include_unpublished=allow_unpub,
+        limit=limit,
+        offset=offset,
     )
-    return {"items": items, "total": len(items)}
+    return {"items": items, "total": len(items), "limit": limit, "offset": offset}
 
 
 @router.get("/articles/{slug}")
@@ -197,6 +214,8 @@ async def create_article(
 ):
     try:
         return await help_service.create_article(db, payload.model_dump(), current_user)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -214,6 +233,8 @@ async def update_article(
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -231,6 +252,8 @@ async def publish_or_approve_article(
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -292,6 +315,8 @@ async def update_product_info(
         return await help_service.update_product_about_metadata(
             db, current_user.institution_id, payload.model_dump(exclude_unset=True), current_user
         )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -310,13 +335,20 @@ async def get_system_info(
 async def list_support_requests(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     request_type: Optional[str] = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     items = await help_service.list_support_requests(
-        db, actor=current_user, status_filter=status_filter, request_type=request_type
+        db,
+        actor=current_user,
+        status_filter=status_filter,
+        request_type=request_type,
+        limit=limit,
+        offset=offset,
     )
-    return {"items": items, "total": len(items)}
+    return {"items": items, "total": len(items), "limit": limit, "offset": offset}
 
 
 @router.post("/support-requests", status_code=status.HTTP_201_CREATED)
@@ -361,6 +393,8 @@ async def add_support_comment(
         raise HTTPException(status_code=404, detail=str(exc))
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.patch("/support-requests/{request_id}/status")
@@ -378,3 +412,5 @@ async def update_support_status(
         raise HTTPException(status_code=404, detail=str(exc))
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
