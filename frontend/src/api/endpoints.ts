@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -1184,8 +1184,16 @@ export const examinationsApi = {
     apiClient.post<{ status: string; saved_count: number }>(`/examinations/${examId}/marks`, data),
   getAnalytics: (examId: number | string) =>
     apiClient.get<ExamAnalyticsData>(`/examinations/${examId}/analytics`),
-  getReportCard: (examId: number | string, studentId: number | string) =>
-    apiClient.get<StudentReportCardData>(`/examinations/${examId}/report-card/${studentId}`),
+  getReportCard: (examId: number | string, studentId: number | string, scale?: string) =>
+    apiClient.get<StudentReportCardData>(`/examinations/${examId}/report-card/${studentId}`, { params: scale ? { scale } : undefined }),
+  getBatchReportCards: (examId: number | string, params?: { division_id?: number | string; scale?: string }) =>
+    apiClient.get<any>(`/examinations/${examId}/report-cards-batch`, { params }),
+  getCumulativeReport: (studentId: number | string, params?: { academic_year_id?: number | string; scale?: string }) =>
+    apiClient.get<any>(`/examinations/cumulative/student/${studentId}`, { params }),
+  getPolicies: () =>
+    apiClient.get<{ active_policies: any; available_scales: any[] }>('/examinations/settings/policies'),
+  savePolicies: (data: { default_grading_scale: string; default_passing_threshold: number; grace_marks_policy: string; rank_tie_breaker: string }) =>
+    apiClient.post<{ status: string; message: string }>('/examinations/settings/policies', data),
 }
 
 // ─── Fee Register Import ──────────────────────────────────────────────────────

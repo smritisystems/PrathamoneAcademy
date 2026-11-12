@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
 #  * @description Domain service for exam marks management, grade calculation, cohort analytics, and official report cards.
 #  */
@@ -31,27 +31,99 @@ from app.models.standard import Standard
 from app.models.division import Division
 from app.models.institution import Institution
 from app.models.academic_year import AcademicYear
+from app.models.settings import InstitutionSetting
 
 logger = logging.getLogger(__name__)
 
+# Standardized Grading Scales covering National & State Curriculums
+GRADING_SCALES = {
+    "STANDARD_6_POINT": {
+        "id": "STANDARD_6_POINT",
+        "name": "Standard 6-Point Scale",
+        "description": "Standard percentage-based letter grading (A+ to F).",
+        "thresholds": [
+            {"grade": "A+", "min_pct": 90.0, "max_pct": 100.0, "grade_point": 10.0, "label": "Outstanding (Merit)"},
+            {"grade": "A", "min_pct": 80.0, "max_pct": 89.99, "grade_point": 9.0, "label": "Excellent"},
+            {"grade": "B", "min_pct": 70.0, "max_pct": 79.99, "grade_point": 8.0, "label": "Very Good"},
+            {"grade": "C", "min_pct": 60.0, "max_pct": 69.99, "grade_point": 7.0, "label": "Good"},
+            {"grade": "D", "min_pct": 35.0, "max_pct": 59.99, "grade_point": 5.0, "label": "Satisfactory (Pass)"},
+            {"grade": "F", "min_pct": 0.0, "max_pct": 34.99, "grade_point": 0.0, "label": "Needs Improvement (Fail)"},
+        ],
+    },
+    "CBSE_9_POINT": {
+        "id": "CBSE_9_POINT",
+        "name": "CBSE 9-Point Scale",
+        "description": "Central Board of Secondary Education 9-point grading metric with Grade Points (A1 to E2).",
+        "thresholds": [
+            {"grade": "A1", "min_pct": 91.0, "max_pct": 100.0, "grade_point": 10.0, "label": "Top 1/8th of Passed Candidates"},
+            {"grade": "A2", "min_pct": 81.0, "max_pct": 90.99, "grade_point": 9.0, "label": "Next 1/8th of Passed Candidates"},
+            {"grade": "B1", "min_pct": 71.0, "max_pct": 80.99, "grade_point": 8.0, "label": "Next 1/8th of Passed Candidates"},
+            {"grade": "B2", "min_pct": 61.0, "max_pct": 70.99, "grade_point": 7.0, "label": "Next 1/8th of Passed Candidates"},
+            {"grade": "C1", "min_pct": 51.0, "max_pct": 60.99, "grade_point": 6.0, "label": "Next 1/8th of Passed Candidates"},
+            {"grade": "C2", "min_pct": 41.0, "max_pct": 50.99, "grade_point": 5.0, "label": "Next 1/8th of Passed Candidates"},
+            {"grade": "D", "min_pct": 33.0, "max_pct": 40.99, "grade_point": 4.0, "label": "Next 1/8th (Minimum Pass Marks)"},
+            {"grade": "E1", "min_pct": 21.0, "max_pct": 32.99, "grade_point": 0.0, "label": "Essential Repeat / Needs Improvement"},
+            {"grade": "E2", "min_pct": 0.0, "max_pct": 20.99, "grade_point": 0.0, "label": "Essential Repeat / Unsatisfactory"},
+        ],
+    },
+    "ICSE_PERCENTAGE": {
+        "id": "ICSE_PERCENTAGE",
+        "name": "ICSE Numerical Grade Scale",
+        "description": "Council for the Indian School Certificate Examinations 1 to 9 numeric band scale.",
+        "thresholds": [
+            {"grade": "1", "min_pct": 90.0, "max_pct": 100.0, "grade_point": 10.0, "label": "Very Good"},
+            {"grade": "2", "min_pct": 80.0, "max_pct": 89.99, "grade_point": 9.0, "label": "Very Good"},
+            {"grade": "3", "min_pct": 70.0, "max_pct": 79.99, "grade_point": 8.0, "label": "Good"},
+            {"grade": "4", "min_pct": 60.0, "max_pct": 69.99, "grade_point": 7.0, "label": "Good"},
+            {"grade": "5", "min_pct": 50.0, "max_pct": 59.99, "grade_point": 6.0, "label": "Satisfactory"},
+            {"grade": "6", "min_pct": 40.0, "max_pct": 49.99, "grade_point": 5.0, "label": "Satisfactory"},
+            {"grade": "7", "min_pct": 35.0, "max_pct": 39.99, "grade_point": 4.0, "label": "Pass"},
+            {"grade": "8", "min_pct": 20.0, "max_pct": 34.99, "grade_point": 0.0, "label": "Fail"},
+            {"grade": "9", "min_pct": 0.0, "max_pct": 19.99, "grade_point": 0.0, "label": "Fail"},
+        ],
+    },
+    "STATE_BOARD": {
+        "id": "STATE_BOARD",
+        "name": "State Board Classification",
+        "description": "State SSC/HSC Board division classification (Distinction, First Class, etc.).",
+        "thresholds": [
+            {"grade": "DIST", "min_pct": 75.0, "max_pct": 100.0, "grade_point": 10.0, "label": "First Class with Distinction"},
+            {"grade": "FIRST", "min_pct": 60.0, "max_pct": 74.99, "grade_point": 8.0, "label": "First Class"},
+            {"grade": "SECOND", "min_pct": 50.0, "max_pct": 59.99, "grade_point": 6.0, "label": "Second Class"},
+            {"grade": "PASS", "min_pct": 35.0, "max_pct": 49.99, "grade_point": 4.0, "label": "Pass Class"},
+            {"grade": "FAIL", "min_pct": 0.0, "max_pct": 34.99, "grade_point": 0.0, "label": "Failed / Needs Improvement"},
+        ],
+    },
+}
 
-def calculate_grade(marks: Optional[float], max_marks: float) -> str:
-    """Calculates standardized grade letter from score and maximum marks."""
+
+def calculate_grade(marks: Optional[float], max_marks: float, scale: str = "STANDARD_6_POINT") -> str:
+    """Calculates standardized grade letter or code from score, maximum marks, and selected grading scale."""
+    scale_key = scale if scale in GRADING_SCALES else "STANDARD_6_POINT"
+    scale_def = GRADING_SCALES[scale_key]
     if marks is None or max_marks <= 0:
-        return "F"
+        return scale_def["thresholds"][-1]["grade"]
     pct = (float(marks) / float(max_marks)) * 100.0
-    if pct >= 90.0:
-        return "A+"
-    elif pct >= 80.0:
-        return "A"
-    elif pct >= 70.0:
-        return "B"
-    elif pct >= 60.0:
-        return "C"
-    elif pct >= 35.0:
-        return "D"
-    else:
-        return "F"
+    for t in scale_def["thresholds"]:
+        if pct >= t["min_pct"]:
+            return t["grade"]
+    return scale_def["thresholds"][-1]["grade"]
+
+
+def get_grade_point(grade: str, scale: str = "STANDARD_6_POINT") -> float:
+    """Returns numeric Grade Point (GP) for a grade under the specified scale."""
+    scale_key = scale if scale in GRADING_SCALES else "STANDARD_6_POINT"
+    scale_def = GRADING_SCALES[scale_key]
+    for t in scale_def["thresholds"]:
+        if t["grade"] == grade:
+            return float(t.get("grade_point", 0.0))
+    return 0.0
+
+
+def get_grading_scale_details(scale: str = "STANDARD_6_POINT") -> Dict[str, Any]:
+    """Returns scale definition metadata for frontend and printing legends."""
+    scale_key = scale if scale in GRADING_SCALES else "STANDARD_6_POINT"
+    return GRADING_SCALES[scale_key]
 
 
 async def get_exam_marks_sheet(
@@ -395,12 +467,30 @@ async def get_exam_analytics(
 
 
 async def get_student_report_card(
-    db: AsyncSession, exam_id: int, student_id: int, institution_id: int
+    db: AsyncSession,
+    exam_id: int,
+    student_id: int,
+    institution_id: int,
+    scale: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Compiles comprehensive individual student report card with subject breakdown and class rank."""
     exam = await db.scalar(select(Examination).where(Examination.id == exam_id))
     if not exam:
         return None
+
+    # Resolve active grading scale from parameter or institution setting
+    effective_scale = scale
+    if not effective_scale:
+        setting_val = await db.scalar(
+            select(InstitutionSetting.value).where(
+                and_(
+                    InstitutionSetting.institution_id == institution_id,
+                    InstitutionSetting.category == "examinations",
+                    InstitutionSetting.key == "default_grading_scale",
+                )
+            )
+        )
+        effective_scale = setting_val if setting_val in GRADING_SCALES else "STANDARD_6_POINT"
 
     # Fetch student and active enrollment
     stu_stmt = (
@@ -470,19 +560,23 @@ async def get_student_report_card(
             grade = "AB"
             status_str = "ABSENT"
             has_failed = True
+            gp = 0.0
         elif mark.marks_obtained is not None:
             obt_val = float(mark.marks_obtained)
             obt_str = f"{obt_val:.1f}"
             total_obtained += obt_val
-            grade = mark.grade or calculate_grade(obt_val, effective_max)
+            # Compute grade dynamically under the effective curriculum grading scale
+            grade = calculate_grade(obt_val, effective_max, effective_scale)
             status_str = "PASS" if obt_val >= effective_pass else "FAIL"
             if status_str == "FAIL":
                 has_failed = True
+            gp = get_grade_point(grade, effective_scale)
         else:
             obt_str = "N/A"
             obt_val = 0.0
             grade = "N/A"
             status_str = "PENDING"
+            gp = 0.0
 
         pct = (obt_val / effective_max * 100.0) if effective_max > 0 else 0.0
 
@@ -495,13 +589,18 @@ async def get_student_report_card(
             "marks_obtained": obt_str,
             "percentage": round(pct, 1),
             "grade": grade,
+            "grade_point": gp,
             "status": status_str,
             "remarks": mark.remarks or "",
         })
 
     overall_pct = round((total_obtained / total_max * 100.0), 2) if total_max > 0 else 0.0
-    overall_grade = calculate_grade(total_obtained, total_max)
-    final_result = "FAIL" if (has_failed or overall_grade == "F") else "PASS"
+    overall_grade = calculate_grade(total_obtained, total_max, effective_scale)
+    fail_grades = {"F", "FAIL", "E", "E1", "E2", "8", "9"}
+    final_result = "FAIL" if (has_failed or overall_grade in fail_grades) else "PASS"
+
+    total_gp = sum(s["grade_point"] for s in subjects_table)
+    overall_gpa = round(total_gp / len(subjects_table), 2) if subjects_table else 0.0
 
     # Compute class rank
     analytics = await get_exam_analytics(db, exam_id)
@@ -518,6 +617,8 @@ async def get_student_report_card(
     primary_guardian = None
     if student.guardians:
         primary_guardian = next((g for g in student.guardians if g.is_primary), student.guardians[0])
+
+    scale_meta = get_grading_scale_details(effective_scale)
 
     return {
         "student": {
@@ -553,8 +654,198 @@ async def get_student_report_card(
             "total_obtained": round(total_obtained, 2),
             "percentage": overall_pct,
             "grade": overall_grade,
+            "gpa": overall_gpa,
             "result": final_result,
             "class_rank": rank,
             "total_candidates": total_in_class,
+            "grading_scale": effective_scale,
+            "grading_scale_name": scale_meta["name"],
+            "grading_scale_description": scale_meta["description"],
+            "grading_scale_thresholds": scale_meta["thresholds"],
         },
+    }
+
+
+async def get_batch_report_cards(
+    db: AsyncSession,
+    exam_id: int,
+    institution_id: int,
+    division_id: Optional[int] = None,
+    scale: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Compiles unified printable dossier of report cards for all candidates enrolled in an exam cohort."""
+    exam = await db.scalar(select(Examination).where(Examination.id == exam_id))
+    if not exam:
+        return None
+
+    # Fetch enrolled student IDs for exam's standard
+    query = (
+        select(Student.id)
+        .join(StudentEnrollment, Student.id == StudentEnrollment.student_id)
+        .where(
+            and_(
+                StudentEnrollment.standard_id == exam.standard_id,
+                StudentEnrollment.status == "active",
+                Student.is_active == True,
+                Student.institution_id == institution_id,
+            )
+        )
+    )
+    if division_id:
+        query = query.where(StudentEnrollment.division_id == division_id)
+
+    res = await db.execute(query.order_by(StudentEnrollment.roll_number, Student.first_name))
+    student_ids = res.scalars().all()
+
+    report_cards = []
+    for sid in student_ids:
+        rc = await get_student_report_card(
+            db, exam_id=exam_id, student_id=sid, institution_id=institution_id, scale=scale
+        )
+        if rc:
+            report_cards.append(rc)
+
+    # Sort candidates by percentage descending
+    report_cards.sort(key=lambda x: x["summary"]["percentage"], reverse=True)
+    total_candidates = len(report_cards)
+    passed_count = sum(1 for rc in report_cards if rc["summary"]["result"] == "PASS")
+    failed_count = total_candidates - passed_count
+    avg_pct = (
+        round(sum(rc["summary"]["percentage"] for rc in report_cards) / total_candidates, 2)
+        if total_candidates > 0
+        else 0.0
+    )
+
+    toppers = [
+        {
+            "rank": idx + 1,
+            "student_id": rc["student"]["id"],
+            "name": rc["student"]["full_name"],
+            "roll_number": rc["student"]["roll_number"],
+            "percentage": rc["summary"]["percentage"],
+            "grade": rc["summary"]["grade"],
+        }
+        for idx, rc in enumerate(report_cards[:5])
+    ]
+
+    inst = await db.scalar(select(Institution).where(Institution.id == institution_id))
+
+    return {
+        "examination": {
+            "id": exam.id,
+            "name": exam.name,
+            "exam_type": exam.exam_type,
+            "standard_id": exam.standard_id,
+            "max_marks": exam.max_marks,
+            "passing_marks": exam.passing_marks,
+            "start_date": str(exam.start_date) if exam.start_date else None,
+            "end_date": str(exam.end_date) if exam.end_date else None,
+        },
+        "institution": {
+            "name": inst.name if inst else "Prashant Academy Coaching Institute",
+            "short_name": getattr(inst, "short_name", "PA") or "PA",
+            "tagline": getattr(inst, "tagline", "Learn • Practice • Achieve") or "Learn • Practice • Achieve",
+            "address": inst.address if inst else "",
+            "city": inst.city if inst else "",
+            "phone": inst.phone if inst else "",
+            "logo_url": getattr(inst, "logo_url", None),
+        },
+        "metrics": {
+            "total_candidates": total_candidates,
+            "passed_count": passed_count,
+            "failed_count": failed_count,
+            "pass_percentage": round((passed_count / total_candidates * 100.0), 2) if total_candidates > 0 else 0.0,
+            "class_average_pct": avg_pct,
+            "toppers": toppers,
+        },
+        "report_cards": report_cards,
+    }
+
+
+async def get_cumulative_term_report(
+    db: AsyncSession,
+    student_id: int,
+    institution_id: int,
+    academic_year_id: Optional[int] = None,
+    scale: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    """Compiles cumulative multi-exam academic trajectory across an entire academic year."""
+    stu_stmt = (
+        select(Student)
+        .options(selectinload(Student.enrollments))
+        .where(and_(Student.id == student_id, Student.institution_id == institution_id))
+    )
+    student = await db.scalar(stu_stmt)
+    if not student:
+        return None
+
+    active_enr = next((e for e in student.enrollments if e.status == "active"), None)
+    if not active_enr:
+        return None
+
+    ay_id = academic_year_id or active_enr.academic_year_id
+
+    # Fetch all exams taken by standard in this academic year
+    exams_stmt = (
+        select(Examination)
+        .where(
+            and_(
+                Examination.standard_id == active_enr.standard_id,
+                Examination.academic_year_id == ay_id,
+                Examination.is_active == True,
+            )
+        )
+        .order_by(Examination.start_date, Examination.id)
+    )
+    exams = (await db.execute(exams_stmt)).scalars().all()
+
+    term_transcripts = []
+    total_obtained_all = 0.0
+    total_max_all = 0.0
+
+    for exam in exams:
+        rc = await get_student_report_card(
+            db, exam_id=exam.id, student_id=student_id, institution_id=institution_id, scale=scale
+        )
+        if rc and rc["subjects"]:
+            term_transcripts.append({
+                "exam_id": exam.id,
+                "exam_name": exam.name,
+                "exam_type": exam.exam_type,
+                "date": rc["examination"]["start_date"],
+                "total_max": rc["summary"]["total_max_marks"],
+                "total_obtained": rc["summary"]["total_obtained"],
+                "percentage": rc["summary"]["percentage"],
+                "grade": rc["summary"]["grade"],
+                "gpa": rc["summary"].get("gpa", 0.0),
+                "rank": rc["summary"]["class_rank"],
+                "result": rc["summary"]["result"],
+            })
+            total_obtained_all += rc["summary"]["total_obtained"]
+            total_max_all += rc["summary"]["total_max_marks"]
+
+    cumulative_pct = (
+        round((total_obtained_all / total_max_all * 100.0), 2) if total_max_all > 0 else 0.0
+    )
+    effective_scale = scale or "STANDARD_6_POINT"
+    cumulative_grade = calculate_grade(total_obtained_all, total_max_all, effective_scale)
+
+    return {
+        "student": {
+            "id": student.id,
+            "admission_number": student.admission_number,
+            "full_name": f"{student.first_name} {student.last_name}",
+            "standard_id": active_enr.standard_id,
+            "roll_number": active_enr.roll_number,
+        },
+        "academic_year_id": ay_id,
+        "total_exams_evaluated": len(term_transcripts),
+        "cumulative_summary": {
+            "total_max_marks": total_max_all,
+            "total_obtained": round(total_obtained_all, 2),
+            "percentage": cumulative_pct,
+            "grade": cumulative_grade,
+            "grading_scale": effective_scale,
+        },
+        "term_progression": term_transcripts,
     }

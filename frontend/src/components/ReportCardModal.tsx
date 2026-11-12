@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-08
+ * @updated     2026-11-13
  *
  * @description Official Printable Graphical Student Report Card modal with A4 transcript layout, progress bars, and analytics.
  */
@@ -31,6 +31,7 @@ interface ReportCardModalProps {
   onClose: () => void
   examId?: number | string
   studentId?: number | string
+  scale?: string
   initialData?: StudentReportCardData | null
 }
 
@@ -39,6 +40,7 @@ export default function ReportCardModal({
   onClose,
   examId,
   studentId,
+  scale,
   initialData,
 }: ReportCardModalProps) {
   const { openPrint, PrintModal } = useUniversalPrint()
@@ -53,13 +55,13 @@ export default function ReportCardModal({
     if (isOpen && examId && studentId) {
       fetchReport()
     }
-  }, [isOpen, examId, studentId, initialData])
+  }, [isOpen, examId, studentId, scale, initialData])
 
   const fetchReport = async () => {
     if (!examId || !studentId) return
     try {
       setLoading(true)
-      const res = await examinationsApi.getReportCard(examId, studentId)
+      const res = await examinationsApi.getReportCard(examId, studentId, scale)
       setReport(res.data)
     } catch (err: any) {
       console.error('Failed to load report card:', err)
@@ -185,6 +187,11 @@ export default function ReportCardModal({
                 </span>
                 <p className="text-xs font-semibold text-gray-600 mt-1">{report.examination.name}</p>
                 <p className="text-[11px] text-gray-400">Type: {report.examination.exam_type}</p>
+                {report.summary.grading_scale_name && (
+                  <span className="inline-block mt-1 text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                    {report.summary.grading_scale_name}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -314,25 +321,43 @@ export default function ReportCardModal({
                 <span className="text-[10px] uppercase font-bold text-gray-400 block">Final Result</span>
                 <span
                   className={`inline-block px-3 py-1 text-xs font-black tracking-wider uppercase rounded-full ${
-                    report.summary.result === 'PASSED'
+                    report.summary.result === 'PASS' || report.summary.result === 'PASSED'
                       ? 'bg-emerald-600 text-white shadow-sm'
                       : 'bg-rose-600 text-white shadow-sm'
                   }`}
                 >
                   {report.summary.result}
                 </span>
+                {report.summary.gpa !== undefined && report.summary.gpa > 0 && (
+                  <span className="block text-[10px] text-gray-500 font-bold mt-1">
+                    GPA: {report.summary.gpa}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Grading Scale Legend */}
+            {/* Dynamic Grading Scale Legend */}
             <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex flex-wrap items-center justify-between gap-2 text-[10px] text-gray-500">
-              <span className="font-semibold text-gray-600 uppercase">Grading Scale:</span>
-              <span>A+ (≥90%)</span>
-              <span>A (80–89%)</span>
-              <span>B (70–79%)</span>
-              <span>C (60–69%)</span>
-              <span>D (35–59%)</span>
-              <span className="text-rose-600 font-semibold">F (&lt;35% Fail)</span>
+              <span className="font-semibold text-gray-700 uppercase">
+                {report.summary.grading_scale_name || 'Grading Scale'}:
+              </span>
+              {report.summary.grading_scale_thresholds && report.summary.grading_scale_thresholds.length > 0 ? (
+                report.summary.grading_scale_thresholds.map((t) => (
+                  <span key={t.grade} className="inline-flex items-center gap-0.5">
+                    <strong className="text-gray-800">{t.grade}</strong> ({t.min_pct}–{Math.round(t.max_pct)}%
+                    {t.grade_point ? ` • ${t.grade_point} GP` : ''})
+                  </span>
+                ))
+              ) : (
+                <>
+                  <span>A+ (≥90%)</span>
+                  <span>A (80–89%)</span>
+                  <span>B (70–79%)</span>
+                  <span>C (60–69%)</span>
+                  <span>D (35–59%)</span>
+                  <span className="text-rose-600 font-semibold">F (&lt;35% Fail)</span>
+                </>
+              )}
               <span>AB (Absent)</span>
             </div>
 

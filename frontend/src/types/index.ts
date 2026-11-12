@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -2954,6 +2954,7 @@ export interface StudentReportCardData {
     marks_obtained: string
     percentage: number
     grade: string
+    grade_point?: number
     status: string
     remarks: string
   }>
@@ -2962,9 +2963,20 @@ export interface StudentReportCardData {
     total_obtained: number
     percentage: number
     grade: string
+    gpa?: number
     result: string
     class_rank: string
     total_candidates: number
+    grading_scale?: string
+    grading_scale_name?: string
+    grading_scale_description?: string
+    grading_scale_thresholds?: Array<{
+      grade: string
+      min_pct: number
+      max_pct: number
+      grade_point?: number
+      label: string
+    }>
   }
 }
 

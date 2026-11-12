@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-08
+ * @updated     2026-11-13
  *
  * @description Vitest test suite validating all 7 Examination Centre dedicated workspace routes, view-first locks, and training isolation.
  */
@@ -147,6 +147,31 @@ describe('Examinations Dedicated Workspace Submenu Suite', () => {
             grade: 'A+',
             result: 'PASS',
             rank: 1,
+          },
+        ],
+      } as any,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {} as any,
+    })
+
+    vi.spyOn(endpoints.examinationsApi, 'getPolicies').mockResolvedValue({
+      data: {
+        active_policies: {
+          default_grading_scale: 'STANDARD_6_POINT',
+          default_passing_threshold: 35,
+          grace_marks_policy: 'Max 3 Grace Marks per candidate',
+          rank_tie_breaker: 'Mathematics & Science Priority, then Roll Number',
+        },
+        available_scales: [
+          {
+            id: 'STANDARD_6_POINT',
+            name: 'Standard 6-Point Scale (A+ to F)',
+            description: 'Traditional academic grade boundaries',
+            thresholds: [
+              { grade: 'A+', min_pct: 90, max_pct: 100, grade_point: 4.0, label: 'Outstanding' },
+            ],
           },
         ],
       } as any,

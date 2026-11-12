@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-06
+ * @updated     2026-11-13
  *
  * @description Vitest test suite for Examinations workspace, Marks Entry grid, Performance Analytics, and Graphical Report Cards.
  */
@@ -46,6 +46,10 @@ vi.mock('../api/endpoints', () => ({
     saveMarks: vi.fn(),
     getAnalytics: vi.fn(),
     getReportCard: vi.fn(),
+    getBatchReportCards: vi.fn(),
+    getCumulativeReport: vi.fn(),
+    getPolicies: vi.fn(),
+    savePolicies: vi.fn(),
   },
 }))
 
@@ -271,6 +275,131 @@ describe('Examinations, Marks Entry, Analytics and Report Cards', () => {
       expect(screen.getByText(/Exam Performance Analytics/i)).toBeDefined()
       expect(screen.getByText('94.4%')).toBeDefined()
       expect(screen.getByText('78.2%')).toBeDefined()
+    })
+  })
+
+  it('renders report card with CBSE 9-point scale and GPA', () => {
+    const cbseReportData = {
+      ...mockReportCardData,
+      summary: {
+        ...mockReportCardData.summary,
+        grade: 'A1',
+        gpa: 9.8,
+        grading_scale: 'CBSE_9_POINT',
+        grading_scale_name: 'CBSE 9-Point Scale',
+        grading_scale_thresholds: [
+          { grade: 'A1', min_pct: 91, max_pct: 100, grade_point: 10.0, label: 'Top 1/8th' },
+          { grade: 'A2', min_pct: 81, max_pct: 90.99, grade_point: 9.0, label: 'Next 1/8th' },
+        ],
+      },
+    }
+
+    render(
+      <ReportCardModal
+        isOpen={true}
+        onClose={vi.fn()}
+        initialData={cbseReportData}
+      />
+    )
+
+    expect(screen.getByText('CBSE 9-Point Scale')).toBeDefined()
+    expect(screen.getAllByText('A1').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText(/GPA: 9.8/i)).toBeDefined()
+  })
+
+  it('triggers batch report card dossier compilation', async () => {
+    ;(standardsApi.list as any).mockResolvedValue({
+      data: [{ id: 1, name: 'Standard 10' }],
+    })
+    ;(academicYearsApi.list as any).mockResolvedValue({
+      data: [{ id: 1, name: '2026-27', is_current: true }],
+    })
+    ;(examinationsApi.list as any).mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          name: 'Mid-Term Assessment 2026',
+          exam_type: 'Term Exam',
+          standard_id: 1,
+          academic_year_id: 1,
+          max_marks: 100,
+          passing_marks: 35,
+          is_active: true,
+        },
+      ],
+    })
+    ;(examinationsApi.getMarks as any).mockResolvedValue({
+      data: {
+        exam: { id: 1, name: 'Mid-Term Assessment 2026', max_marks: 100, passing_marks: 35 },
+        subjects: [{ id: 1, name: 'Mathematics', code: 'MATH' }],
+        students: [
+          {
+            student_id: 101,
+            admission_number: 'ADM-001',
+            name: 'Aarav Sharma',
+            roll_number: '10A01',
+            scores: { '1': { marks_obtained: 95, grade: 'A+', is_absent: false } },
+          },
+        ],
+      },
+    })
+    ;(examinationsApi.getPolicies as any).mockResolvedValue({
+      data: {
+        active_policies: {
+          default_grading_scale: 'CBSE_9_POINT',
+          default_passing_threshold: 35,
+        },
+        available_scales: [],
+      },
+    })
+    ;(examinationsApi.getBatchReportCards as any).mockResolvedValue({
+      data: {
+        examination: { id: 1, name: 'Mid-Term Assessment 2026' },
+        metrics: {
+          total_candidates: 1,
+          passed_count: 1,
+          failed_count: 0,
+          pass_percentage: 100.0,
+          class_average_pct: 95.0,
+          toppers: [
+            { rank: 1, student_id: 101, name: 'Aarav Sharma', roll_number: '10A01', percentage: 95.0, grade: 'A1' },
+          ],
+        },
+        report_cards: [
+          {
+            student: { id: 101, full_name: 'Aarav Sharma', roll_number: '10A01' },
+            summary: { total_obtained: 95, total_max_marks: 100, percentage: 95.0, grade: 'A1', result: 'PASS' },
+          },
+        ],
+      },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ExaminationsPage />
+      </QueryClientProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Mid-Term Assessment 2026')).toBeDefined()
+    })
+
+    // Click Report Cards Tab
+    const reportCardsTab = screen.getByRole('button', { name: /Report Cards/i })
+    fireEvent.click(reportCardsTab)
+
+    await waitFor(() => {
+      expect(screen.getByText('Print All Report Cards')).toBeDefined()
+    })
+
+    // Click Print All Report Cards
+    const printAllBtn = screen.getByText('Print All Report Cards')
+    fireEvent.click(printAllBtn)
+
+    await waitFor(() => {
+      expect(examinationsApi.getBatchReportCards).toHaveBeenCalledWith(1, { scale: 'CBSE_9_POINT' })
+      expect(screen.getByText(/Batch Examination Dossier/i)).toBeDefined()
+      expect(screen.getByText(/Cohort Merit Leaderboard/i)).toBeDefined()
     })
   })
 })
