@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-07
+#  * @updated     2026-11-12
 #  *
 #  * @description Source component for Build Manual Docx in the scripts module.
 #  */
@@ -41,6 +41,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
 SCREENSHOTS_DIR = os.path.abspath("docs/user_manual/screenshots")
+ASSETS_DIR = os.path.abspath("docs/assets")
 DOCX_DIR = os.path.abspath("docs/user_manual/docx")
 ROOT_MANUAL_DIR = os.path.abspath("docs/user_manual")
 
@@ -91,6 +92,10 @@ def add_callout(doc, text, title="NOTE", color="1e40af", bg_color="eff6ff"):
 
 def add_figure(doc, filename, caption):
     img_path = os.path.join(SCREENSHOTS_DIR, filename)
+    if not os.path.exists(img_path):
+        asset_path = os.path.join(ASSETS_DIR, filename)
+        if os.path.exists(asset_path):
+            img_path = asset_path
     if os.path.exists(img_path):
         p_img = doc.add_paragraph()
         p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -176,8 +181,8 @@ def build_docx_manual():
         ("Author & Chief Architect", "Jawahar R Mallah"),
         ("Organization", "AITDL — AI Technology & Development Lab"),
         ("Official Website", "https://prathamone.com"),
-        ("Verified Release Version", "v1.0.0 (Build: 2026.11.06-STABLE-v1.0.0)"),
-        ("Manual Revision Date", "November 06, 2026"),
+        ("Verified Release Version", "v1.88.0 (Build: 2026.11.12-REV-159-v1.88.0)"),
+        ("Manual Revision Date", "November 12, 2026"),
     ]
     for idx, (label, val) in enumerate(meta_rows):
         r_cells = meta_table.rows[idx].cells
@@ -202,7 +207,7 @@ def build_docx_manual():
     p_sup = doc.add_paragraph(
         "This official manual provides authoritative operational guidance for administrators, "
         "principals, accountants, teachers, and administrative staff using the PrathamOne EduOS platform. "
-        "All instructions reflect verified system behavior under production release v1.0.0."
+        "All instructions reflect verified system behavior under production release v1.88.0."
     )
 
     add_callout(
@@ -455,6 +460,46 @@ def build_docx_manual():
     )
     add_figure(doc, "21_sysadmin_center_overview.png", "Figure 4.13: SysAdmin Operations Center.")
     add_figure(doc, "22_sysadmin_universal_editor.png", "Figure 4.14: Universal Records Editor.")
+
+    # 4.14 Homework & Assignment Studio (Phases 1-15)
+    doc.add_heading("4.14 Homework & Assignment Studio (Phases 1–15)", level=2)
+    doc.add_paragraph(
+        "Route: /homework | Student View: /student-portal | Access: Teachers, Coordinators, Admin, Students\n"
+        "Supports Batch-level, Selected Group-level, and Individual Student-level assignments with frozen recipient "
+        "snapshots, Draft-to-Publish notifications, file/text submissions, late-joiner auto-assignment, batch-transfer "
+        "carryover, and marks/remarks evaluation."
+    )
+    add_figure(doc, "2026-11-12_homework_studio-overview.png", "Figure 4.15: Homework & Assignment Studio Overview.")
+    add_figure(doc, "2026-11-12_homework_submissions-eval.png", "Figure 4.16: Homework Submission Evaluation Drawer.")
+
+    # 4.15 PrathamOne EduBoard Interactive Classroom
+    doc.add_heading("4.15 PrathamOne EduBoard Interactive Classroom", level=2)
+    doc.add_paragraph(
+        "Route: /eduboard | Access: Teachers, Coordinators, Admin, Students (Read-only published boards)\n"
+        "Multi-page digital classroom engine integrated with Academic Batches, Teaching Sessions, Timetables, and "
+        "Student Portal archives. Features Standard (collapsible Pages & Saved Boards drawers), Focus, and Immersive "
+        "Fullscreen modes; Whiteboard, Whiteboard Grid, Classic Greenboard, and Blackboard themes; multi-page PDF "
+        "import/export; and dual-screen Pop-Out Board synchronization via BroadcastChannel."
+    )
+    add_figure(doc, "eduboard_v188_rc2_greenboard_standard.png", "Figure 4.17: EduBoard Classic Greenboard Mode.")
+    add_figure(doc, "eduboard_v188_rc2_focus_mode.png", "Figure 4.18: EduBoard Focus Mode.")
+
+    # 4.16 Official Fee Receipt Printing & PDF Parity
+    doc.add_heading("4.16 Official Fee Receipt Printing & PDF Parity (A5 Compact & A4 Portrait)", level=2)
+    doc.add_paragraph(
+        "Route: /fees & /payments -> Payment Receipt View\n"
+        "Ensures 1:1 visual parity between the on-screen software preview, browser Print Preview, and Download PDF "
+        "for both A5 Compact and A4 Portrait formats, preserving academy logo, street address, phone, email, QR code, "
+        "installment history, and authorized signature via an isolated print frame."
+    )
+
+    # 4.17 Help & About Centre
+    doc.add_heading("4.17 Help & About Centre & Documentation Sync", level=2)
+    doc.add_paragraph(
+        "Route: /help | Access: All Authenticated Users (Diagnostics restricted to Sysadmin)\n"
+        "Provides searchable documentation across 20 modules, quick-start tutorials, troubleshooting FAQs, "
+        "Support Tickets, Release Changelog, and Open-Source Third-Party Acknowledgements."
+    )
 
     # ------------------ CHAPTER 5 ------------------
     doc.add_heading("5. Troubleshooting, Error Codes & FAQ", level=1)

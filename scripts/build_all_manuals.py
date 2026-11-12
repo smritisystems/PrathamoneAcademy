@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-07
+#  * @updated     2026-11-12
 #  *
 #  * @description Source component for Build All Manuals in the scripts module.
 #  */
@@ -39,12 +39,18 @@ from playwright.sync_api import sync_playwright
 from generate_user_manual_content import get_base_css, get_cover_html
 
 SCREENSHOTS_DIR = os.path.abspath("docs/user_manual/screenshots")
+ASSETS_DIR = os.path.abspath("docs/assets")
 SOURCES_DIR = os.path.abspath("docs/user_manual/sources")
 PDF_DIR = os.path.abspath("docs/user_manual/pdf")
 ROOT_MANUAL_DIR = os.path.abspath("docs/user_manual")
 
 def rel_img(filename):
-    path = os.path.join(SCREENSHOTS_DIR, filename).replace("\\", "/")
+    candidate = os.path.join(SCREENSHOTS_DIR, filename)
+    if not os.path.exists(candidate):
+        asset_candidate = os.path.join(ASSETS_DIR, filename)
+        if os.path.exists(asset_candidate):
+            candidate = asset_candidate
+    path = candidate.replace("\\", "/")
     return f"file:///{path}"
 
 def build_complete_user_manual_html():
@@ -78,7 +84,7 @@ def build_complete_user_manual_html():
         </tr>
         <tr>
             <th>Software Version</th>
-            <td><strong>v1.0.0</strong> (Release Build: <code>2026.11.06-STABLE-v1.0.0</code>)</td>
+            <td><strong>v1.88.0</strong> (Release Build: <code>2026.11.12-REV-159-v1.88.0</code>)</td>
         </tr>
         <tr>
             <th>Author & Chief Architect</th>
@@ -94,7 +100,7 @@ def build_complete_user_manual_html():
         </tr>
         <tr>
             <th>Manual Revision Date</th>
-            <td>November 06, 2026</td>
+            <td>November 12, 2026</td>
         </tr>
         <tr>
             <th>Document Classification</th>
@@ -155,8 +161,12 @@ def build_complete_user_manual_html():
     <div class="toc-item level-2"><span>4.18 Release Management & Semantic Version Audit</span><span>51</span></div>
     <div class="toc-item level-2"><span>4.19 CodeX — Configurable Feature Activation & Numeric Coding Studio</span><span>53</span></div>
     <div class="toc-item level-2"><span>4.20 Universal Print Fit & Page Layout Engine</span><span>55</span></div>
+    <div class="toc-item level-2"><span>4.21 Homework & Assignment Studio (Phases 1–15)</span><span>57</span></div>
+    <div class="toc-item level-2"><span>4.22 PrathamOne EduBoard Interactive Classroom</span><span>59</span></div>
+    <div class="toc-item level-2"><span>4.23 Official Fee Receipt Printing & PDF Parity (A5 / A4)</span><span>62</span></div>
+    <div class="toc-item level-2"><span>4.24 Help & About Centre, Documentation Sync & Governance</span><span>64</span></div>
 
-    <div class="toc-item level-1"><span>5. End-to-End Business Workflows</span><span>53</span></div>
+    <div class="toc-item level-1"><span>5. End-to-End Business Workflows</span><span>66</span></div>
     <div class="toc-item level-2"><span>5.1 Student Onboarding from Admission to Batch Enrollment</span><span>53</span></div>
     <div class="toc-item level-2"><span>5.2 Financial Collection, Receipting, Correction & Refunds</span><span>55</span></div>
     <div class="toc-item level-2"><span>5.3 Academic Term Setup, Subject Assignment & Timetable</span><span>57</span></div>
@@ -225,7 +235,7 @@ def build_complete_user_manual_html():
 <h2>1.3 Navigation, Layout & Responsive UI</h2>
 <p>The application interface is structured around an intuitive 3-zone layout:</p>
 <ol>
-    <li><strong>Top Application Bar:</strong> Displays the institute logo, active branch selector, current academic session, global search, notification bell, system version badge (<code>v1.0.0</code>), and the user profile dropdown.</li>
+    <li><strong>Top Application Bar:</strong> Displays the institute logo, active branch selector, current academic session, global search, notification bell, system version badge (<code>v1.88.0</code>), and the user profile dropdown.</li>
     <li><strong>Collapsible Sidebar Navigation:</strong> Houses quick-access links to all 20 modules organized logically by administrative function. Features collapse/expand toggling for focused workspace utilization.</li>
     <li><strong>Dynamic Workspace Area:</strong> The main viewport where data tables, interactive filter bars, modal dialogs, analytics charts, and printable document previews render.</li>
     <li><strong>Collapsible Enterprise Footer:</strong> Present across all authenticated screens, displaying the verified application release version, build identifier, and the subtle enterprise attribution: <code>PrathamOne Coaching Institutes Enterprise Suite · prathamone.com</code>.</li>
@@ -854,7 +864,7 @@ def build_complete_user_manual_html():
 <!-- 4.18 Release Management -->
 <h2>4.18 Release Management & Semantic Version Audit</h2>
 <p><strong>Route:</strong> <code>/releases</code> &nbsp;|&nbsp; <strong>Access:</strong> All Users (Read-only)</p>
-<p><strong>Purpose:</strong> Enterprise release tracking showing current version (<code>v1.0.0</code>), build number (<code>2026.11.06-STABLE-v1.0.0</code>), release history, and security patches.</p>
+<p><strong>Purpose:</strong> Enterprise release tracking showing current version (<code>v1.88.0</code>), build number (<code>2026.11.12-REV-159-v1.88.0</code>), release history, and security patches.</p>
 
 <div class="figure-box">
     <img src="{rel_img('27_releases_and_version_audit.png')}" class="figure-img" alt="Releases Workspace">
@@ -907,6 +917,65 @@ def build_complete_user_manual_html():
         <li><strong>Thermal Printer Compatibility:</strong> Automatically formats fee receipts for POS thermal printers (80mm/58mm) without manual re-configuration.</li>
     </ul>
 </div>
+
+<h2>4.21 Homework & Assignment Studio (Phases 1–15)</h2>
+<p><strong>Route:</strong> <code>/homework</code> &nbsp;|&nbsp; <strong>Student View:</strong> <code>/student-portal</code> &nbsp;|&nbsp; <strong>Access:</strong> Teachers, Academic Coordinators, Admin, Students</p>
+<p><strong>Purpose:</strong> End-to-end homework lifecycle supporting Batch-level, Individual Student-level, and Selected Group targeting, rich attachments, student file/text submissions, late-joiner backfill, batch-transfer carryover, and teacher evaluation with live analytics.</p>
+
+<div class="figure-box">
+    <img src="{rel_img('2026-11-12_homework_studio-overview.png')}" class="figure-img" alt="Homework Studio Overview">
+    <div class="figure-caption">Figure 4.21a: Homework & Assignment Studio workspace with live completion metrics.</div>
+</div>
+
+<h3>Creating & Targeting Assignments</h3>
+<ul>
+    <li><strong>Three Assignment Scopes:</strong> Assign work to an entire <strong>Batch</strong> (with frozen recipient snapshot), a curated <strong>Selected Subset</strong>, or <strong>Individual Students</strong> with custom per-student deadlines or exemptions.</li>
+    <li><strong>Draft &rarr; Publish Workflow:</strong> Teachers save assignments in Draft state, attach PDFs or worksheets, and click <strong>Publish</strong> to notify targeted students and parents immediately.</li>
+    <li><strong>Lifecycle Automation:</strong> Newly enrolled batch joiners automatically inherit active batch assignments, while batch transfers preserve submission history seamlessly.</li>
+</ul>
+
+<div class="figure-box">
+    <img src="{rel_img('2026-11-12_homework_submissions-eval.png')}" class="figure-img" alt="Homework Submission Evaluation">
+    <div class="figure-caption">Figure 4.21b: Submission review drawer with marks, remarks, and resubmission controls.</div>
+</div>
+
+<h2>4.22 PrathamOne EduBoard Interactive Classroom</h2>
+<p><strong>Route:</strong> <code>/eduboard</code> &nbsp;|&nbsp; <strong>Student Archive:</strong> <code>/student-portal</code> &nbsp;|&nbsp; <strong>Access:</strong> Teachers, Coordinators, Admin, Students (Read-only published boards)</p>
+<p><strong>Purpose:</strong> Built-in multi-page digital classroom engine integrated directly with Academic Batches, Subjects, Teaching Sessions, Timetables, and Student Portal revision archives.</p>
+
+<div class="figure-box">
+    <img src="{rel_img('eduboard_v188_rc2_greenboard_standard.png')}" class="figure-img" alt="EduBoard Greenboard Standard Mode">
+    <div class="figure-caption">Figure 4.22a: PrathamOne EduBoard running in Classic Greenboard theme with collapsible Pages & Saved Boards drawers.</div>
+</div>
+
+<h3>Workspace Display Modes & Themes</h3>
+<ul>
+    <li><strong>Three Display Modes:</strong> Switch seamlessly between <strong>Standard Mode</strong> (with independently collapsible Pages and Saved Lecture Boards panels), <strong>Focus Mode</strong> (maximized canvas with drawer overlays), and <strong>Immersive Fullscreen Mode</strong> (native browser Fullscreen API + viewport fallback and Escape-key exit).</li>
+    <li><strong>Board Themes:</strong> Choose <strong>Whiteboard</strong>, <strong>Whiteboard Grid</strong>, <strong>Classic Greenboard</strong>, or <strong>Blackboard</strong> with high-contrast chalk/marker palettes (White, Yellow Chalk, Sky Blue, Rose, Mint).</li>
+    <li><strong>Canvas & Teaching Tools:</strong> Vector Pen, Highlighter, Eraser, Line, Arrow, Rectangle, Circle, inline Text, Undo/Redo, zoom/pan, multi-page reordering, and multi-page PDF lecture import.</li>
+    <li><strong>Dual-Screen Pop-Out Sync:</strong> Teachers can detach a live projector/external monitor window using <strong>Pop-Out Board</strong> powered by cross-tab <code>BroadcastChannel</code> + database synchronization, then click <strong>Publish</strong> or <strong>Export PDF</strong> to share lecture notes directly to Student Portal.</li>
+</ul>
+
+<div class="figure-box">
+    <img src="{rel_img('eduboard_v188_rc2_focus_mode.png')}" class="figure-img" alt="EduBoard Focus Mode">
+    <div class="figure-caption">Figure 4.22b: Focus Mode maximizing classroom canvas real estate with compact floating tools.</div>
+</div>
+
+<h2>4.23 Official Fee Receipt Printing & PDF Parity (A5 Compact & A4 Portrait)</h2>
+<p><strong>Route:</strong> <code>/fees</code> &amp; <code>/payments</code> &rarr; <strong>Payment Receipt View</strong></p>
+<p><strong>Purpose:</strong> Guarantees 1:1 visual parity between the on-screen Receipt Preview, browser Print Preview (<code>Ctrl+P</code> / <strong>Print Receipt</strong>), and <strong>Download PDF</strong> output across both <strong>A5 Compact</strong> and <strong>A4 Portrait</strong> paper formats.</p>
+<ul>
+    <li><strong>Full Institute Branding Preserved:</strong> Academy crest logo, institute name, full street address, helpline phone numbers, email address, QR verification code, installment ledger summary, and authorized signature render identically in Print Preview and exported PDFs.</li>
+    <li><strong>Isolated Print Frame Architecture:</strong> Clicking <strong>Print Receipt</strong> activates a dedicated print container sized cleanly to the selected A5 or A4 geometry with crisp color retention (<code>print-color-adjust: exact</code>) and zero unwanted sidebar/header cropping or shrinking.</li>
+</ul>
+
+<h2>4.24 Help & About Centre, Documentation Sync & Governance</h2>
+<p><strong>Route:</strong> <code>/help</code> &nbsp;|&nbsp; <strong>Shortcut:</strong> Top Navbar <strong>Help</strong> button &nbsp;|&nbsp; <strong>Access:</strong> All Authenticated Users</p>
+<p><strong>Purpose:</strong> Centralized in-app knowledge base covering <strong>20 platform modules</strong>, interactive tutorials, troubleshooting guides, printable SOPs, Support Ticket Desk, Release Changelog (synced with live backend version metadata), and Third-Party Open-Source Acknowledgements.</p>
+<ul>
+    <li><strong>Verified v1.88.0 Guides:</strong> Includes dedicated guides for <em>Homework & Assignment Studio</em>, <em>PrathamOne EduBoard Interactive Classroom</em>, <em>A5/A4 Receipt Printing & PDF Export Parity</em>, and updated open-source dependency disclosures (PyMuPDF, Pillow, Konva/Canvas, React 18, FastAPI, PostgreSQL 16).</li>
+    <li><strong>Strict Data Privacy & RBAC:</strong> Technical System Diagnostics and Infrastructure telemetry remain restricted strictly to authorized Sysadmin accounts, while Help articles are auto-synchronized on startup without exposing secrets or stack credentials.</li>
+</ul>
 
 <!-- CHAPTER 5 -->
 <h1>5. End-to-End Business Workflows</h1>

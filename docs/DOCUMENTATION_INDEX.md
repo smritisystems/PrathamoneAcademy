@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-12 20:27:19  
-**Total Indexed Items:** 448  
+**Last Reindexed:** 2026-11-12 21:37:44  
+**Total Indexed Items:** 450  
 
 ---
 
@@ -32,11 +32,11 @@
 | `15` | [15_INTEGRATIONS](#15_integrations) | **5** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **10** | UI/UX Design, Components & Footer |
-| `18` | [18_TESTING_QA](#18_testing_qa) | **7** | Testing, Verification & Quality Assurance |
+| `18` | [18_TESTING_QA](#18_testing_qa) | **8** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **11** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **65** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **3** | Troubleshooting, Runbooks & Recovery |
-| `22` | [22_USER_MANUALS](#22_user_manuals) | **10** | User Manuals & Operating Guides |
+| `22` | [22_USER_MANUALS](#22_user_manuals) | **11** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
@@ -371,6 +371,7 @@
 | **PrathamOne EduBoard End-to-End Verification & QA Test Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-TEST-REPORT_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-TEST-REPORT_V1.md) | 03_ACADEMIC_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY |
 | **PrathamOne EduBoard — Greenboard, Display Modes & Pop-Out Test Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-GREENBOARD-AND-POPOUT_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-GREENBOARD-AND-POPOUT_V1.md) | 03_ACADEMIC_MANAGEMENT, 18_TESTING_QA |
 | **PrathamOne EduBoard — v1.88.0-rc.2 Regression Verification Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-REGRESSION-REPORT_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-REGRESSION-REPORT_V1.md) | 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 18_TESTING_QA |
+| **PrathamOne EduOS v1.88.0 — Full Backend & Frontend Regression QA Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_V1-88-0-FULL-REGRESSION_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_V1-88-0-FULL-REGRESSION_V1.md) | 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 18_TESTING_QA, 22_USER_MANUALS |
 | **Student Outstanding & Former Receivables Test Suite Report** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md](18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md) | 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS |
 | **System Acceptance Criteria and Test Verification Matrix** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md](18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md) | - |
 
@@ -477,15 +478,16 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **PrathamOne Academy — Complete User Manual Creation & Delivery Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md](22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md) | - |
+| **PrathamOne EduOS v1.88.0 — User Manuals & Documentation Refresh Report** | `REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md](22_USER_MANUALS/2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md) | 18_TESTING_QA, 22_USER_MANUALS, 24_AI_AGENT_KNOWLEDGE |
 | **PrathamOne EduOS — Help & About Centre Implementation & Delivery Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md](22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md) | 13_SYSADMIN_SETTINGS, 12_RBAC_SECURITY, 17_UI_UX_DESIGN, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Teacher & Staff Workforce Management, Universal Print & CodeX User Manual** | `USER-MANUAL` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md](22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 14_PRINTING_DOCUMENTS, 12_RBAC_SECURITY |
-| **PrathamOne_Academy_Complete_User_Manual.docx** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.docx](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.docx) | - |
-| **PrathamOne_Academy_Complete_User_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.pdf) | - |
-| **PrathamOne_Academy_Quick_Start_Guide.pdf** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [PrathamOne_Academy_Quick_Start_Guide.pdf](22_USER_MANUALS/PrathamOne_Academy_Quick_Start_Guide.pdf) | - |
-| **PrathamOne_Academy_Sysadmin_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [PrathamOne_Academy_Sysadmin_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Sysadmin_Manual.pdf) | - |
-| **complete_user_manual.html** | `DOCUMENT` | `1.0` | 2026-11-07 | `Approved` | [complete_user_manual.html](22_USER_MANUALS/complete_user_manual.html) | - |
-| **quick_start_guide.html** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [quick_start_guide.html](22_USER_MANUALS/quick_start_guide.html) | - |
-| **sysadmin_manual.html** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [sysadmin_manual.html](22_USER_MANUALS/sysadmin_manual.html) | - |
+| **PrathamOne_Academy_Complete_User_Manual.docx** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.docx](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.docx) | - |
+| **PrathamOne_Academy_Complete_User_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.pdf) | - |
+| **PrathamOne_Academy_Quick_Start_Guide.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Quick_Start_Guide.pdf](22_USER_MANUALS/PrathamOne_Academy_Quick_Start_Guide.pdf) | - |
+| **PrathamOne_Academy_Sysadmin_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Sysadmin_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Sysadmin_Manual.pdf) | - |
+| **complete_user_manual.html** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [complete_user_manual.html](22_USER_MANUALS/complete_user_manual.html) | - |
+| **quick_start_guide.html** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [quick_start_guide.html](22_USER_MANUALS/quick_start_guide.html) | - |
+| **sysadmin_manual.html** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [sysadmin_manual.html](22_USER_MANUALS/sysadmin_manual.html) | - |
 
 
 ### <a id="23_development_guides"></a>23_DEVELOPMENT_GUIDES — Developer Manuals & Coding Standards

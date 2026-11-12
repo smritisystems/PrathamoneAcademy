@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-12
 #  *
 #  * @description Source component for Generate User Manual Content in the scripts module.
 #  */
@@ -449,11 +449,11 @@ def get_cover_html(title, subtitle, doc_type="USER MANUAL"):
                 </div>
                 <div class="meta-item">
                     <div class="meta-label">Release Version</div>
-                    <div class="meta-value">v1.0.0 (Build: 2026.11.06-STABLE-v1.0.0)</div>
+                    <div class="meta-value">v1.88.0 (Build: 2026.11.12-REV-159-v1.88.0)</div>
                 </div>
                 <div class="meta-item">
                     <div class="meta-label">Publication Date</div>
-                    <div class="meta-value">November 06, 2026</div>
+                    <div class="meta-value">November 12, 2026</div>
                 </div>
             </div>
         </div>
