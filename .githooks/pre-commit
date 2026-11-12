@@ -12,14 +12,23 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-12
 #  *
-#  * @description Git pre-commit hook enforcing automated source header attribution and updating timestamps.
+#  * @description Git pre-commit hook enforcing automated revision versioning and source header attribution.
 #  */
 
-echo "[HOOK] Running Prashant Academy pre-commit header verification..."
+echo "[HOOK] Running PrathamOne EduOS pre-commit revision & header verification..."
 
-# Identify staged first-party source files
+# 1. Run automated version calculation and synchronization based on revision history
+python scripts/auto_version.py --hook
+HOOK_VER_STATUS=$?
+
+if [ $HOOK_VER_STATUS -ne 0 ]; then
+    echo "[ERROR] Pre-commit hook rejected commit: automated version synchronization failed."
+    exit 1
+fi
+
+# 2. Identify staged first-party source files
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(py|ts|tsx|js|jsx|css)$' | grep -v 'node_modules/' | grep -v 'dist/')
 
 if [ -z "$STAGED_FILES" ]; then
