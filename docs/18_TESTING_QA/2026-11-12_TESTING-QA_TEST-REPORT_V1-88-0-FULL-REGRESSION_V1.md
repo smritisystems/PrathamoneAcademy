@@ -51,3 +51,4 @@ No backend tests failed. Exactly **4 skips** occurred under expected environment
 - **Fee Receipt Print & PDF Parity + Financial Governance:** `tests/test_payments.py`, `tests/test_receipt_pdf_and_bulk_export.py`, `tests/test_transaction_governance.py`, `PrintDocumentBranding.test.tsx`, `PrintFooterAndGovernance.test.tsx`.
 - **Help & About Centre (`20` Modules):** `tests/test_help_and_about.py` (`test_help_governance_rbac_revisions_legal_approval_and_safety_blocker`, `test_product_company_and_dynamic_version_accuracy`, etc.).
 - **Global Security, RBAC, Tenant Isolation & Rule 010 View-First Governance:** `tests/test_tenant_isolation.py`, `P1SecurityAndViewFirst.test.tsx`, `GlobalViewFirstSoftwareWideCoverage.test.tsx`, `AuthInterceptorAndBranding.test.tsx`.
+
