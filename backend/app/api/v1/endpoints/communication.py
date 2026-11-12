@@ -11,12 +11,12 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-06
+#  * @updated     2026-11-12
 #  *
 #  * @description REST API router for Communication Center, message templates, universal document sharing, and delivery tracking.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, desc, update, delete
 from sqlalchemy.orm import selectinload
@@ -24,9 +24,12 @@ from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime, timedelta, timezone
 import json
+import hmac
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
+from app.core.limiter import limiter
+from app.core.security import get_password_hash, verify_password
 from app.models.institution import Institution
 from app.models.user import User
 from app.models.student import Student, Guardian
@@ -48,6 +51,20 @@ from app.services.communication import (
 )
 
 router = APIRouter()
+
+COMM_STAFF_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "teacher",
+    "staff",
+    "counselor",
+    "counsellor",
+    "receptionist",
+)
 
 
 # ─── Pydantic Request Models ──────────────────────────────────────────────────
@@ -115,9 +132,10 @@ async def list_message_templates(
     channel: Optional[str] = None,
     institution_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     query = select(MessageTemplate).where(MessageTemplate.institution_id == target_id)
 
     if category and category != "ALL":
@@ -156,6 +174,7 @@ async def create_message_template(
     current_user: User = Depends(require_role("admin", "principal", "sysadmin")),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     code_clean = data.code.strip().upper()
 
     # Check duplicate
@@ -211,6 +230,7 @@ async def update_message_template(
     template = (await db.execute(stmt)).scalar_one_or_none()
     if not template:
         raise HTTPException(status_code=404, detail="Message template not found")
+    check_institution_access(template.institution_id, current_user)
 
     if data.name is not None:
         template.name = data.name.strip()
@@ -242,6 +262,7 @@ async def delete_message_template(
     template = (await db.execute(stmt)).scalar_one_or_none()
     if not template:
         raise HTTPException(status_code=404, detail="Message template not found")
+    check_institution_access(template.institution_id, current_user)
 
     if template.is_system:
         template.is_active = False
@@ -260,19 +281,26 @@ async def create_document_share_link(
     payload: ShareDocumentRequest,
     institution_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     token_str = generate_secure_share_token()
     now_utc = datetime.now(timezone.utc)
     expires_at = now_utc + timedelta(hours=payload.expires_in_hours or 168)
+
+    stored_access_key = (
+        get_password_hash(payload.access_key)
+        if payload.access_key
+        else None
+    )
 
     shared_token = SharedDocumentToken(
         token=token_str,
         institution_id=target_id,
         document_type=payload.document_type.upper(),
         record_id=payload.record_id,
-        access_key=payload.access_key,
+        access_key=stored_access_key,
         recipient_name=payload.recipient_name,
         recipient_phone=payload.recipient_phone,
         recipient_email=payload.recipient_email,
@@ -330,7 +358,9 @@ async def create_document_share_link(
 
 
 @router.get("/shared-doc/{token}")
+@limiter.limit("10/minute")
 async def resolve_shared_document(
+    request: Request,
     token: str,
     pin: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
@@ -350,13 +380,24 @@ async def resolve_shared_document(
     if shared.view_count >= shared.max_views:
         raise HTTPException(status_code=403, detail="Maximum view limit reached for this secure document link.")
 
-    if shared.access_key and shared.access_key != pin:
-        return {
-            "status": "pin_required",
-            "message": "PIN or access code required to view this confidential document.",
-            "document_type": shared.document_type,
-            "recipient_name": shared.recipient_name,
-        }
+    if shared.access_key:
+        if not pin:
+            return {
+                "status": "pin_required",
+                "message": "PIN or access code required to view this confidential document.",
+                "document_type": shared.document_type,
+            }
+        is_hashed = shared.access_key.startswith(("$2", "sha256$"))
+        pin_valid = (
+            verify_password(pin, shared.access_key)
+            if is_hashed
+            else hmac.compare_digest(shared.access_key, pin)
+        )
+        if not pin_valid:
+            raise HTTPException(
+                status_code=403,
+                detail="Invalid PIN or access code for this confidential document.",
+            )
 
     # Increment view count
     shared.view_count += 1
@@ -484,9 +525,10 @@ async def search_communication_recipients(
     target_type: str = "ALL",  # ALL, STUDENT, PARENT, STAFF, BATCH
     institution_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     q_str = f"%{query.strip().lower()}%" if query else "%"
 
     results = []
@@ -816,7 +858,7 @@ class AttendanceAlertsRequest(BaseModel):
 @router.get("/automation/rules")
 async def get_rules_endpoint(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
 ):
     """Returns active automated communication rules."""
     inst_id = getattr(current_user, "institution_id", 1) or 1
@@ -827,7 +869,7 @@ async def get_rules_endpoint(
 async def update_rules_endpoint(
     payload: AutomationRulesUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(["sysadmin", "admin", "principal"])),
+    current_user: User = Depends(require_role("sysadmin", "admin", "principal")),
 ):
     """Updates automated communication rules."""
     inst_id = getattr(current_user, "institution_id", 1) or 1
@@ -839,7 +881,7 @@ async def update_rules_endpoint(
 async def preview_fee_reminders_endpoint(
     payload: FeeRemindersPreviewRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
 ):
     """Returns queue of students with outstanding fee balances and pre-filled WhatsApp links."""
     inst_id = getattr(current_user, "institution_id", 1) or 1
@@ -855,7 +897,7 @@ async def preview_fee_reminders_endpoint(
 async def dispatch_fee_reminders_endpoint(
     payload: FeeRemindersDispatchRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(["sysadmin", "admin", "principal", "accountant"])),
+    current_user: User = Depends(require_role("sysadmin", "admin", "principal", "accountant")),
 ):
     """Batch dispatches fee reminder notices and logs them."""
     inst_id = getattr(current_user, "institution_id", 1) or 1
@@ -873,7 +915,7 @@ async def dispatch_fee_reminders_endpoint(
 async def dispatch_attendance_alerts_endpoint(
     payload: AttendanceAlertsRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(["sysadmin", "admin", "principal", "teacher"])),
+    current_user: User = Depends(require_role("sysadmin", "admin", "principal", "teacher")),
 ):
     """Dispatches real-time absentee and late arrival notifications to guardians."""
     inst_id = getattr(current_user, "institution_id", 1) or 1

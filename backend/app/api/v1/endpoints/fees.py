@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -22,10 +22,16 @@ from sqlalchemy import select, func, and_, or_, desc, asc, case
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, is_sysadmin, get_data_environment
+from app.core.deps import (
+    get_current_active_user,
+    require_role,
+    is_sysadmin,
+    get_data_environment,
+    check_institution_access,
+)
 import uuid
 import json
-from app.models.user import AuditLog
+from app.models.user import AuditLog, User
 from app.models.fee import (
     FeeCategory,
     FeeStructure,
@@ -61,6 +67,37 @@ from decimal import Decimal
 import uuid
 
 router = APIRouter()
+
+FEE_STAFF_VIEW_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "staff",
+    "counselor",
+    "counsellor",
+    "receptionist",
+)
+
+
+def _authorize_fee_student_record(
+    record_student_id: Optional[int],
+    record_institution_id: Optional[int],
+    current_user,
+) -> None:
+    """Enforces student self-ownership or staff role, plus tenant isolation on fee records."""
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        if not record_student_id or getattr(current_user, "student_id", None) != record_student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: Students may only view their own fee records.",
+            )
+    elif not is_sysadmin(current_user) and role not in FEE_STAFF_VIEW_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+    check_institution_access(record_institution_id, current_user)
 
 
 class FeeCategoryCreate(BaseModel):
@@ -155,9 +192,14 @@ async def list_fee_categories(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+    target_inst = institution_id if institution_id is not None else (
+        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    )
     query = select(FeeCategory).where(FeeCategory.is_active == True)
-    if institution_id:
-        query = query.where(FeeCategory.institution_id == institution_id)
+    if target_inst is not None:
+        query = query.where(FeeCategory.institution_id == target_inst)
     result = await db.execute(query)
     cats = result.scalars().all()
     return [
@@ -187,13 +229,18 @@ async def list_fee_structures(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+    target_inst = institution_id if institution_id is not None else (
+        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    )
     query = select(FeeStructure).where(FeeStructure.is_active == True)
     if academic_year_id:
         query = query.where(FeeStructure.academic_year_id == academic_year_id)
     if standard_id:
         query = query.where(FeeStructure.standard_id == standard_id)
-    if institution_id:
-        query = query.where(FeeStructure.institution_id == institution_id)
+    if target_inst is not None:
+        query = query.where(FeeStructure.institution_id == target_inst)
     result = await db.execute(query)
     structures = result.scalars().all()
     return [
@@ -240,6 +287,7 @@ async def update_fee_structure(
     structure = res.scalar_one_or_none()
     if not structure:
         raise HTTPException(status_code=404, detail=f"Fee structure #{structure_id} not found")
+    check_institution_access(structure.institution_id, current_user)
 
     old_data = {"name": structure.name, "amount": float(structure.amount), "is_active": structure.is_active}
     update_dict = data.model_dump(exclude_unset=True)
@@ -319,7 +367,18 @@ async def list_fee_assignments(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    query = select(StudentFeeAssignment)
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        own_sid = getattr(current_user, "student_id", None)
+        if not own_sid or (student_id is not None and student_id != own_sid):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students can only view their own fee assignments")
+        student_id = own_sid
+    elif not is_sysadmin(current_user) and role not in FEE_STAFF_VIEW_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+
+    query = select(StudentFeeAssignment).join(Student, StudentFeeAssignment.student_id == Student.id)
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        query = query.where(Student.institution_id == current_user.institution_id)
     if student_id:
         query = query.where(StudentFeeAssignment.student_id == student_id)
     if academic_year_id:
@@ -363,6 +422,7 @@ async def get_student_fee_details(
     student = student_res.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail=f"Student #{student_id} not found")
+    _authorize_fee_student_record(student.id, student.institution_id, current_user)
 
     ay_res = await db.execute(select(AcademicYear).where(AcademicYear.is_active == True).order_by(desc(AcademicYear.id)))
     ay = ay_res.scalars().first()
@@ -451,6 +511,7 @@ async def adjust_student_fees(
     student = student_res.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail=f"Student #{student_id} not found")
+    _authorize_fee_student_record(student.id, student.institution_id, current_user)
 
     ay_res = await db.execute(select(AcademicYear).where(AcademicYear.is_active == True).order_by(desc(AcademicYear.id)))
     ay = ay_res.scalars().first()
@@ -567,8 +628,10 @@ async def adjust_student_fees(
             inv_items[0].description = f"Annual Academic & Coaching Tuition Fee (Adjusted: {reason})"
     else:
         new_item = FeeInvoiceItem(
+            institution_id=student.institution_id,
             invoice_id=invoice.id,
             fee_structure_id=assignment.fee_structure_id,
+            structure_name=fs_obj.name,
             amount=package_amt,
             discount_amount=disc_amt,
             net_amount=net_amt,
@@ -579,6 +642,7 @@ async def adjust_student_fees(
     # Log audit entry
     audit = AuditLog(
         user_id=current_user.id,
+        institution_id=student.institution_id or getattr(current_user, "institution_id", None),
         action="STUDENT_FEE_ADJUSTMENT",
         resource_type="student_fee",
         resource_id=student_id,
@@ -625,7 +689,18 @@ async def list_invoices(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    query = select(FeeInvoice)
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        own_sid = getattr(current_user, "student_id", None)
+        if not own_sid or (student_id is not None and student_id != own_sid):
+            raise HTTPException(status_code=403, detail="Students may only view their own fee invoices")
+        student_id = own_sid
+    elif not is_sysadmin(current_user) and role not in FEE_STAFF_VIEW_ROLES:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    query = select(FeeInvoice).join(Student, FeeInvoice.student_id == Student.id)
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        query = query.where(Student.institution_id == current_user.institution_id)
     if student_id:
         query = query.where(FeeInvoice.student_id == student_id)
     if academic_year_id:
@@ -733,8 +808,10 @@ async def create_fee_invoice(
     await db.flush()
 
     item = FeeInvoiceItem(
+        institution_id=getattr(student, "institution_id", None),
         invoice_id=invoice.id,
         fee_structure_id=structure.id,
+        structure_name=structure.name,
         description=structure.name,
         amount=base_amount,
         discount_amount=discount_amount,
@@ -775,6 +852,21 @@ async def create_fee_invoice(
     }
 
 
+async def _authorize_invoice_access(
+    db: AsyncSession,
+    invoice: FeeInvoice,
+    current_user: User,
+    allow_student_self: bool = False,
+) -> None:
+    """Resolve invoice tenant institution_id via Student and enforce access."""
+    student = await db.get(Student, invoice.student_id)
+    inst_id = student.institution_id if student else None
+    if allow_student_self:
+        _authorize_fee_student_record(invoice.student_id, inst_id, current_user)
+    else:
+        check_institution_access(inst_id, current_user)
+
+
 @router.get("/invoices/{invoice_id}")
 async def get_invoice(
     invoice_id: int,
@@ -783,14 +875,13 @@ async def get_invoice(
 ):
     result = await db.execute(
         select(FeeInvoice)
-        .options(
-            selectinload(FeeInvoice.items),
-        )
+        .options(selectinload(FeeInvoice.items))
         .where(FeeInvoice.id == invoice_id)
     )
     invoice = result.scalar_one_or_none()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
+    await _authorize_invoice_access(db, invoice, current_user, allow_student_self=True)
     return {
         "id": invoice.id,
         "invoice_number": invoice.invoice_number,
@@ -850,6 +941,7 @@ async def delete_fee_invoice(
     invoice = res.scalar_one_or_none()
     if not invoice:
         raise HTTPException(status_code=404, detail="Fee invoice not found")
+    await _authorize_invoice_access(db, invoice, current_user)
 
     # If any payments have been recorded or allocations exist, block deletion
     if (invoice.paid_amount and invoice.paid_amount > Decimal("0")) or len(invoice.allocations) > 0:
@@ -922,6 +1014,7 @@ async def cancel_fee_invoice(
     invoice = res.scalar_one_or_none()
     if not invoice:
         raise HTTPException(status_code=404, detail="Fee invoice not found")
+    await _authorize_invoice_access(db, invoice, current_user)
 
     if invoice.status == "cancelled":
         raise HTTPException(status_code=400, detail=f"Invoice '{invoice.invoice_number}' is already cancelled")
@@ -972,7 +1065,18 @@ async def list_installments(
     current_user=Depends(get_current_active_user),
 ):
     """Consolidated: Queries canonical FeeInvoiceItem line items."""
-    query = select(FeeInvoiceItem).join(FeeInvoice)
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        own_sid = getattr(current_user, "student_id", None)
+        if not own_sid or (student_id is not None and student_id != own_sid):
+            raise HTTPException(status_code=403, detail="Students may only view their own installments")
+        student_id = own_sid
+    elif not is_sysadmin(current_user) and role not in FEE_STAFF_VIEW_ROLES:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    query = select(FeeInvoiceItem).join(FeeInvoice).join(Student, FeeInvoice.student_id == Student.id)
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        query = query.where(Student.institution_id == current_user.institution_id)
     if invoice_id:
         query = query.where(FeeInvoiceItem.invoice_id == invoice_id)
     if student_id:
@@ -1004,7 +1108,7 @@ async def get_fees_overview(
     institution_id: Optional[int] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
 ):
     """
     Consolidated fees overview metrics with cascading filters:
@@ -1013,12 +1117,17 @@ async def get_fees_overview(
     - Monthly collection trend & governed concession/waiver/scholarship breakdowns
     - Recent payments
     """
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
-    effective_inst_id = institution_id
-    if institution_id:
-        inst_has_students = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
-        if inst_has_students == 0:
-            effective_inst_id = None
+    if is_sysadmin(current_user):
+        effective_inst_id = institution_id
+        if institution_id:
+            inst_has_students = (await db.execute(select(func.count(Student.id)).where(Student.institution_id == institution_id))).scalar() or 0
+            if inst_has_students == 0:
+                effective_inst_id = None
+    else:
+        effective_inst_id = institution_id or getattr(current_user, "institution_id", None)
 
     latest_enr = _latest_enrollment_sq()
 
@@ -1561,7 +1670,7 @@ async def get_fee_register(
     search: Optional[str] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
 ):
     """
     Consolidated student fee register records with cascading filters:
@@ -1601,6 +1710,8 @@ async def get_fee_register(
         .where(FeeInvoice.status != "cancelled")
     )
 
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        query = query.where(Student.institution_id == current_user.institution_id)
     if is_demo_filter is not None:
         query = query.where(Student.is_demo.is_(is_demo_filter))
     if academic_year_id:
@@ -1721,7 +1832,7 @@ async def get_former_students_recovery(
     min_outstanding: Optional[float] = None,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*FEE_STAFF_VIEW_ROLES)),
 ):
     """
     Dedicated recovery register for former / discontinued / withdrawn students with outstanding debt liabilities.
@@ -1758,6 +1869,8 @@ async def get_former_students_recovery(
         .where(or_(Student.is_active.is_(False), Student.exit_date.isnot(None), Student.exit_reason.isnot(None)))
     )
 
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        query = query.where(Student.institution_id == current_user.institution_id)
     if academic_year_id:
         query = query.where(FeeInvoice.academic_year_id == academic_year_id)
     if board_id:

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints dedicated to authenticated student dashboard views, timetables, and grades.
 #  */
@@ -25,7 +25,7 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, check_institution_access, is_sysadmin
 from app.models.user import User
 from app.models.student import Student, Guardian
 from app.models.enrollment import StudentEnrollment
@@ -62,18 +62,34 @@ class StudentProfileUpdate(BaseModel):
     pincode: Optional[str] = None
 
 
+PORTAL_STAFF_ROLES = {
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "teacher",
+    "staff",
+    "coordinator",
+    "counselor",
+    "counsellor",
+    "accountant",
+}
+
+
 async def get_effective_student(
     db: AsyncSession,
     current_user: User,
     requested_student_id: Optional[int] = None,
 ) -> Student:
     """
-    Enforces student isolation:
+    Enforces student isolation and multi-tenant scoping:
     - If user is role 'student', strictly binds to user.student_id.
-    - If user is admin/teacher/staff, allows viewing a requested student_id
-      or defaults to the first active student.
+    - If user is authorized staff, validates requested_student_id belongs to
+      current_user.institution_id (unless sysadmin) or defaults within that tenant.
     """
-    if current_user.role == "student":
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
         if not current_user.student_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -81,10 +97,20 @@ async def get_effective_student(
             )
         target_id = current_user.student_id
     else:
+        if not is_sysadmin(current_user) and role not in PORTAL_STAFF_ROLES:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions to access student portal.",
+            )
         if requested_student_id:
             target_id = requested_student_id
         else:
-            first_student_stmt = select(Student.id).where(Student.is_active == True).order_by(Student.id).limit(1)
+            first_student_stmt = select(Student.id).where(Student.is_active == True)
+            if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+                first_student_stmt = first_student_stmt.where(
+                    Student.institution_id == current_user.institution_id
+                )
+            first_student_stmt = first_student_stmt.order_by(Student.id).limit(1)
             first_id = (await db.execute(first_student_stmt)).scalar()
             if not first_id:
                 raise HTTPException(
@@ -108,6 +134,7 @@ async def get_effective_student(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Student ID {target_id} not found.",
         )
+    check_institution_access(student.institution_id, current_user)
     return student
 
 

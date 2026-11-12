@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description Domain service for database backup, SHA-256 verification, GFS retention pruning,
 #  */
@@ -45,6 +45,7 @@ from app.services.financial_governance_service import FinancialGovernanceService
 
 VALID_FILENAME_RE = re.compile(r"^[A-Za-z0-9._-]+\.(edu|dump|sql)$")
 VALID_LOG_ARCHIVE_RE = re.compile(r"^[A-Za-z0-9._-]+\.jsonl\.gz$")
+VALID_PG_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,62}$")
 RESTORE_CONFIRMATION_PHRASE = "RESTORE PRASHANT_ACADEMY"
 MAX_EDU_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024  # 2 GiB safety limit against malformed zip bombs
 
@@ -229,6 +230,32 @@ def read_history_events(limit: int = 50) -> List[Dict[str, Any]]:
 
 class HousekeepingService:
     """Authoritative backend governance service for database backups, restore, vacuum & schedules."""
+
+    @classmethod
+    def validate_mirror_dir(cls, mirror_dir: str) -> Path:
+        raw = (mirror_dir or "").strip()
+        if not raw or "\x00" in raw:
+            raise ValueError("Invalid mirror directory path.")
+        candidate = Path(raw)
+        if ".." in candidate.parts:
+            raise ValueError("Mirror directory must not contain path traversal segments ('..').")
+        resolved = candidate.resolve()
+        backups_root = resolve_backups_dir().resolve()
+        allowed_roots = [
+            (backups_root.parent / "mirror").resolve(),
+            (backups_root / "mirror").resolve(),
+        ]
+        env_allowed = os.getenv("HOUSEKEEPING_ALLOWED_MIRROR_DIRS", "")
+        for entry in env_allowed.split(os.pathsep):
+            entry = entry.strip()
+            if entry:
+                allowed_roots.append(Path(entry).resolve())
+        if not any(resolved == root or resolved.is_relative_to(root) for root in allowed_roots):
+            raise ValueError(
+                "Offsite mirror path must be located inside an approved backup mirror directory "
+                "(or configured via HOUSEKEEPING_ALLOWED_MIRROR_DIRS)."
+            )
+        return resolved
 
     @classmethod
     def resolve_safe_path(cls, filename: str, source: str = "backups") -> Path:
@@ -619,7 +646,7 @@ class HousekeepingService:
 
         mirror_copied = None
         if mirror_dir and mirror_dir.strip():
-            mdir = Path(mirror_dir.strip())
+            mdir = cls.validate_mirror_dir(mirror_dir)
             mdir.mkdir(parents=True, exist_ok=True)
             shutil.copy2(target, mdir / filename)
             shutil.copy2(str(target) + ".sha256", mdir / f"{filename}.sha256")
@@ -799,6 +826,10 @@ class HousekeepingService:
         target_db: str,
         backup_path: Path,
     ) -> None:
+        if not VALID_PG_IDENTIFIER_RE.match(target_db or ""):
+            raise ValueError(f"Unsafe target database identifier: {target_db!r}")
+        if not VALID_PG_IDENTIFIER_RE.match(pg.get("user", "")):
+            raise ValueError(f"Unsafe PostgreSQL user identifier: {pg.get('user')!r}")
         env = {"PGPASSWORD": pg["password"]}
         terminate_sql = (
             f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity "

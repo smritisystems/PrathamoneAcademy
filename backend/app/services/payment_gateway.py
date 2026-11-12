@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-12
 #  *
 #  * @description Domain service for Razorpay & UPI payment gateway integration, cryptographic signature verification, dynamic UPI QR generation, and automated receipt posting.
 #  */
@@ -27,10 +27,12 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 
+from app.core.config import settings
 from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.payment import Payment, PaymentAllocation, PaymentReceipt
 from app.models.student import Student
 from app.models.settings import InstitutionSetting
+from app.models.user import AuditLog
 from app.services.payment_workflow_service import execute_payment_posting
 from app.services.id_card import generate_student_qr_svg
 
@@ -71,6 +73,8 @@ async def get_payment_gateway_config(
             config["razorpay_key_id"] = val.strip()
         elif r.key == "razorpay_key_secret":
             config["razorpay_key_secret"] = val.strip()
+        elif r.key == "razorpay_webhook_secret":
+            config["razorpay_webhook_secret"] = val.strip()
         elif r.key == "upi_vpa":
             config["upi_vpa"] = val.strip()
         elif r.key == "merchant_name":
@@ -173,13 +177,39 @@ async def create_gateway_order(
             detail=f"Amount (₹{amount}) cannot exceed current invoice outstanding balance (₹{invoice.outstanding_amount}).",
         )
 
-    # Fetch Student
+    # Fetch Student & Enforce Institution Ownership
     student = await db.get(Student, invoice.student_id)
-    student_name = f"{student.first_name} {student.last_name}" if student else "Student"
+    if not student or student.institution_id != institution_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Invoice does not belong to the active institution.",
+        )
+    student_name = f"{student.first_name} {student.last_name}"
 
     # Generate Unique Order Reference
     order_ref = f"order_{uuid.uuid4().hex[:14]}"
     amount_in_paise = int(amount * 100)
+
+    # Persist authoritative server-side order metadata to prevent client amount/invoice tampering
+    db.add(
+        AuditLog(
+            user_id=None,
+            action="ONLINE_PAYMENT_ORDER_CREATED",
+            resource_type="gateway_order",
+            resource_id=invoice.id,
+            details=order_ref,
+            new_data=json.dumps(
+                {
+                    "order_id": order_ref,
+                    "invoice_id": invoice.id,
+                    "amount": str(amount),
+                    "institution_id": institution_id,
+                    "installment_id": installment_id,
+                }
+            ),
+        )
+    )
+    await db.commit()
 
     # Generate UPI URI & QR Code SVG
     upi_uri = generate_upi_uri(
@@ -219,8 +249,12 @@ def verify_razorpay_signature(
     is_test_mode: bool = False,
 ) -> bool:
     """Verifies HMAC SHA256 signature from Razorpay checkout."""
-    if is_test_mode and (signature in ("test_signature_valid", "mock_signature_valid") or not secret):
+    if not signature:
+        return False
+    if is_test_mode and settings.DEBUG and signature in ("test_signature_valid", "mock_signature_valid"):
         return True
+    if not secret:
+        return False
 
     payload = f"{order_id}|{payment_id}"
     expected = hmac.new(
@@ -230,6 +264,18 @@ def verify_razorpay_signature(
     ).hexdigest()
 
     return hmac.compare_digest(expected, signature)
+
+
+def verify_webhook_signature(raw_body: bytes, signature: str, secret: str) -> bool:
+    """Verifies Razorpay webhook X-Razorpay-Signature header using HMAC-SHA256."""
+    if not raw_body or not signature or not secret:
+        return False
+    expected = hmac.new(
+        secret.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature.strip())
 
 
 async def verify_and_post_gateway_payment(
@@ -242,6 +288,7 @@ async def verify_and_post_gateway_payment(
     installment_id: Optional[int] = None,
     current_user_id: int = 1,
     institution_id: int = 1,
+    require_order_record: bool = False,
 ) -> Dict[str, Any]:
     """
     Cryptographically verifies the payment and executes authoritative posting:
@@ -277,13 +324,60 @@ async def verify_and_post_gateway_payment(
             "amount": existing_payment.amount,
         }
 
-    # 3. Validate Invoice
+    # 3. Validate Invoice, Institution Ownership & Order Amount Integrity
     invoice = await db.get(FeeInvoice, invoice_id)
     if not invoice:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Fee invoice #{invoice_id} not found.",
         )
+
+    student = await db.get(Student, invoice.student_id)
+    if not student or student.institution_id != institution_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Invoice does not belong to the active institution.",
+        )
+
+    if amount <= Decimal("0") or amount > invoice.outstanding_amount:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid payment amount (₹{amount}) for invoice balance (₹{invoice.outstanding_amount}).",
+        )
+
+    order_log = (
+        await db.execute(
+            select(AuditLog)
+            .where(
+                and_(
+                    AuditLog.action == "ONLINE_PAYMENT_ORDER_CREATED",
+                    AuditLog.resource_type == "gateway_order",
+                    AuditLog.details == order_id,
+                )
+            )
+            .order_by(AuditLog.id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if require_order_record and not order_log:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired online payment order reference.",
+        )
+    if order_log and order_log.new_data:
+        try:
+            order_meta = json.loads(order_log.new_data)
+        except Exception:
+            order_meta = {}
+        if (
+            order_meta.get("invoice_id") != invoice.id
+            or order_meta.get("institution_id") != institution_id
+            or Decimal(str(order_meta.get("amount", "0"))) != Decimal(str(amount))
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment payload does not match server-issued order details.",
+            )
 
     # 4. Create Canonical Payment Record
     new_payment = Payment(

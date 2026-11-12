@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description SQLAlchemy models defining fee structures, fee categories, invoices, installments, and fee concessions.
 #  */
@@ -196,12 +196,17 @@ class FeeInvoiceItem(Base):
     __tablename__ = "fee_invoice_items"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    institution_id: Mapped[int | None] = mapped_column(
+        ForeignKey("institutions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     invoice_id: Mapped[int] = mapped_column(
         ForeignKey("fee_invoices.id"), nullable=False
     )
     fee_structure_id: Mapped[int] = mapped_column(
         ForeignKey("fee_structures.id"), nullable=False
     )
+    structure_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    fee_category_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     description: Mapped[str] = mapped_column(String(200), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     discount_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)

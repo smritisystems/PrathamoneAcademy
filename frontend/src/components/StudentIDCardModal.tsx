@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Official Digital Student ID Card modal with CR80 thermal/PVC dimensions and SVG QR code rendering.
  */
@@ -24,6 +24,7 @@ import {
 import { studentsApi } from '../api/endpoints'
 import type { StudentIdCardData } from '../types'
 import { printIDCardElement } from '../utils/printIDCard'
+import { sanitizeSvgMarkup } from '../utils/htmlSanitizer'
 import toast from 'react-hot-toast'
 
 interface StudentIDCardModalProps {
@@ -273,7 +274,7 @@ export default function StudentIDCardModal({
                     <div className="w-20 h-20 bg-white p-1 rounded-md border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-2xs">
                       <div
                         className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
-                        dangerouslySetInnerHTML={{ __html: cardData.qr_svg }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeSvgMarkup(cardData.qr_svg) }}
                       />
                     </div>
 

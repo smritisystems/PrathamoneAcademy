@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-09
+#  * @updated     2026-11-12
 #  *
 #  * @description Domain service for exam marks management, grade calculation, cohort analytics, and official report cards.
 #  */
@@ -167,16 +167,21 @@ async def save_exam_marks_bulk(
     exam = await db.scalar(select(Examination).where(Examination.id == exam_id))
     if not exam:
         raise ValueError(f"Examination #{exam_id} not found")
+    from app.models.standard import Standard
+    exam_inst_id = await db.scalar(
+        select(Standard.institution_id).where(Standard.id == exam.standard_id)
+    )
 
-    # Fetch subjects max marks and canonical subject_mapping_id lookup
+    # Fetch subjects max marks, names, and canonical subject_mapping_id lookup
     subj_res = await db.execute(
-        select(Subject.id, Subject.max_marks, SubjectMapping.id)
+        select(Subject.id, Subject.max_marks, SubjectMapping.id, Subject.name)
         .outerjoin(SubjectMapping, SubjectMapping.legacy_subject_id == Subject.id)
         .where(Subject.standard_id == exam.standard_id)
     )
     subj_rows = subj_res.all()
     subj_max_map = {row[0]: row[1] or exam.max_marks for row in subj_rows}
     subj_map_map = {row[0]: row[2] for row in subj_rows}
+    subj_name_map = {row[0]: row[3] for row in subj_rows}
 
     saved_count = 0
     for item in entries:
@@ -212,14 +217,22 @@ async def save_exam_marks_bulk(
             existing.grade = grade
             existing.is_absent = is_absent
             existing.remarks = remarks
+            existing.institution_id = existing.institution_id or exam_inst_id
+            existing.max_marks = existing.max_marks or Decimal(str(sub_max))
+            existing.subject_name = existing.subject_name or subj_name_map.get(subject_id)
+            existing.exam_name = existing.exam_name or exam.name
             if mapping_id and not existing.subject_mapping_id:
                 existing.subject_mapping_id = mapping_id
         else:
             new_mark = ExamMark(
+                institution_id=exam_inst_id,
                 examination_id=exam_id,
                 student_id=student_id,
                 subject_id=subject_id,
                 subject_mapping_id=mapping_id,
+                max_marks=Decimal(str(sub_max)),
+                subject_name=subj_name_map.get(subject_id),
+                exam_name=exam.name,
                 marks_obtained=marks_obtained,
                 grade=grade,
                 is_absent=is_absent,

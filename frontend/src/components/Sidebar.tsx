@@ -30,6 +30,7 @@ import { useSidebarStore } from '../store/sidebarStore'
 import { useNavigationStore } from '../store/navigationStore'
 import { CANONICAL_MODULE_REGISTRY, getAuthorizedModules } from '../config/modules'
 import { useBranding } from '../config/branding'
+import { authApi } from '../api/endpoints'
 
 interface NavItem {
   to: string
@@ -135,6 +136,8 @@ const homeworkSubItems = [
   { to: '/homework', label: 'Overview & List' },
   { to: '/homework/create', label: 'Assign Homework' },
   { to: '/homework/checking', label: 'Checking Register' },
+  { to: '/homework/submissions', label: 'Submissions' },
+  { to: '/homework/templates', label: 'Templates' },
   { to: '/homework/reports', label: 'Daily Register Report' },
 ]
 
@@ -267,6 +270,7 @@ export default function Sidebar() {
   const hasValidLogo = !!branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' && !logoLoadFailed
 
   const handleLogout = () => {
+    void authApi.logout().catch(() => {})
     logout()
     navigate('/login')
   }
@@ -468,6 +472,10 @@ const isStaffActive = location.pathname.startsWith('/staff')
   } = useNavigationStore()
 
   const authorizedModules = useMemo(() => getAuthorizedModules(user), [user])
+  const authorizedDefaultPaths = useMemo(
+    () => new Set(authorizedModules.map((m) => m.defaultPath)),
+    [authorizedModules]
+  )
   const moduleMap = useMemo(() => new Map(authorizedModules.map((m) => [m.id, m])), [authorizedModules])
 
   const renderPinnedItem = (itemId: string, inGroup = false) => {
@@ -1424,7 +1432,9 @@ const isStaffActive = location.pathname.startsWith('/staff')
           </div>
 
           {/* Secondary Nav Items */}
-          {secondaryNavItems.map((item) => {
+          {secondaryNavItems
+            .filter((item) => !user || authorizedDefaultPaths.has(item.to))
+            .map((item) => {
             if (item.to === '/teachers') {
               return (
                 <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : 'pt-0.5'}`}>
@@ -2496,7 +2506,7 @@ if (item.to === '/staff') {
             const isItemActive =
               item.to.includes('?')
                 ? location.pathname === '/academic' && location.search.includes('settings')
-                : location.pathname === item.to
+                : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
 
             return (
               <div key={item.to} className={`relative group ${isCollapsed ? 'w-full flex justify-center' : ''}`}>

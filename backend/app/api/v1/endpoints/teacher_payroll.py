@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-07
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for Teacher Payroll, Teaching Sessions Register,
 #  */
@@ -26,7 +26,7 @@ from sqlalchemy import select, and_, or_, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import check_institution_access, get_current_active_user, require_role
 from app.models.user import User, AuditLog
 from app.models.division import Division
 from app.models.subject import Subject
@@ -171,16 +171,49 @@ class ReverseVoucherSchema(BaseModel):
 
 
 # ============================================================================
+# ROLE & TENANT HELPERS
+# ============================================================================
+
+PAYROLL_ADMIN_ROLES = ("superadmin", "sysadmin", "super_admin", "admin", "principal", "accountant")
+PAYROLL_VIEW_ROLES = (*PAYROLL_ADMIN_ROLES, "teacher")
+PAYROLL_DROPDOWN_ROLES = (*PAYROLL_VIEW_ROLES, "staff")
+
+
+def _resolve_inst_id(current_user: User, target_inst_id: Optional[int] = None) -> int:
+    if target_inst_id is not None:
+        check_institution_access(target_inst_id, current_user)
+        return target_inst_id
+    return current_user.institution_id or 1
+
+
+async def _get_teacher_or_404(db: AsyncSession, teacher_user_id: int, current_user: User) -> User:
+    teacher = (await db.execute(select(User).where(User.id == teacher_user_id))).scalar_one_or_none()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher user not found")
+    check_institution_access(teacher.institution_id, current_user)
+    return teacher
+
+
+async def _get_payroll_or_404(db: AsyncSession, payroll_id: int, current_user: User) -> TeacherPayroll:
+    payroll = (await db.execute(select(TeacherPayroll).where(TeacherPayroll.id == payroll_id))).scalar_one_or_none()
+    if not payroll:
+        raise HTTPException(status_code=404, detail="Payroll record not found")
+    check_institution_access(payroll.institution_id, current_user)
+    return payroll
+
+
+# ============================================================================
 # 1. TEACHER PROFILES & RATES ENDPOINTS
 # ============================================================================
 
 @router.get("/teachers")
 async def list_available_teachers(
+    institution_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_DROPDOWN_ROLES)),
 ):
     """Returns list of active teachers for dropdowns and session assignments."""
-    inst_id = current_user.institution_id or 1
+    inst_id = _resolve_inst_id(current_user, institution_id)
     stmt = (
         select(User)
         .outerjoin(StaffProfile, StaffProfile.user_id == User.id)
@@ -212,25 +245,27 @@ async def list_available_teachers(
 
 @router.get("/profiles")
 async def list_teacher_payment_profiles(
+    institution_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
-    """Lists payment profiles for all teachers."""
-    inst_id = current_user.institution_id or 1
+    """Lists payment profiles for all teachers (teachers see only their own profile)."""
+    inst_id = _resolve_inst_id(current_user, institution_id)
+    filters = [
+        User.institution_id == inst_id,
+        User.is_active.is_(True),
+        or_(
+            User.role == "teacher",
+            StaffProfile.staff_type == "teacher",
+        ),
+    ]
+    if (current_user.role or "").lower() == "teacher":
+        filters.append(User.id == current_user.id)
     stmt = (
         select(User, TeacherPaymentProfile, StaffProfile)
         .outerjoin(TeacherPaymentProfile, and_(TeacherPaymentProfile.teacher_user_id == User.id, TeacherPaymentProfile.is_active.is_(True)))
         .outerjoin(StaffProfile, StaffProfile.user_id == User.id)
-        .where(
-            and_(
-                User.institution_id == inst_id,
-                User.is_active.is_(True),
-                or_(
-                    User.role == "teacher",
-                    StaffProfile.staff_type == "teacher",
-                ),
-            )
-        )
+        .where(and_(*filters))
         .order_by(User.first_name, User.last_name)
     )
     result = await db.execute(stmt)
@@ -263,10 +298,15 @@ async def list_teacher_payment_profiles(
 async def get_teacher_profile_details(
     teacher_user_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Retrieves payment profile, rate history, and milestones for a teacher."""
-    profile = await svc.get_or_create_payment_profile(db, teacher_user_id, current_user.institution_id or 1)
+    if (current_user.role or "").lower() == "teacher" and teacher_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Teachers may only view their own payment profile")
+    teacher = await _get_teacher_or_404(db, teacher_user_id, current_user)
+    profile = await svc.get_or_create_payment_profile(
+        db, teacher_user_id, teacher.institution_id or current_user.institution_id or 1
+    )
 
     # Get rate histories
     hist_stmt = (
@@ -340,10 +380,13 @@ async def update_teacher_profile(
     teacher_user_id: int,
     payload: ProfileUpdateSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Updates profile rates and preserves immutable rate revision history."""
-    profile = await svc.get_or_create_payment_profile(db, teacher_user_id, current_user.institution_id or 1)
+    teacher = await _get_teacher_or_404(db, teacher_user_id, current_user)
+    profile = await svc.get_or_create_payment_profile(
+        db, teacher_user_id, teacher.institution_id or current_user.institution_id or 1
+    )
     updated = await svc.update_payment_profile_rates(
         db=db,
         profile_id=profile.id,
@@ -358,9 +401,15 @@ async def create_contract_milestone(
     profile_id: int,
     payload: MilestoneCreateSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Adds a contract milestone to a teacher's payment profile."""
+    profile = (
+        await db.execute(select(TeacherPaymentProfile).where(TeacherPaymentProfile.id == profile_id))
+    ).scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Payment profile not found")
+    check_institution_access(profile.institution_id, current_user)
     ms = await svc.add_contract_milestone(db, profile_id, payload.model_dump())
     return {"message": "Contract milestone created", "milestone_id": ms.id}
 
@@ -370,14 +419,20 @@ async def update_contract_milestone(
     milestone_id: int,
     payload: MilestoneUpdateSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Updates contract milestone status or details."""
-    stmt = select(TeacherContractMilestone).where(TeacherContractMilestone.id == milestone_id)
+    stmt = (
+        select(TeacherContractMilestone, TeacherPaymentProfile.institution_id)
+        .join(TeacherPaymentProfile, TeacherContractMilestone.payment_profile_id == TeacherPaymentProfile.id)
+        .where(TeacherContractMilestone.id == milestone_id)
+    )
     res = await db.execute(stmt)
-    ms = res.scalar_one_or_none()
-    if not ms:
+    row = res.first()
+    if not row:
         raise HTTPException(status_code=404, detail="Milestone not found")
+    ms, profile_inst_id = row
+    check_institution_access(profile_inst_id, current_user)
 
     d = payload.model_dump(exclude_unset=True)
     for k, v in d.items():
@@ -403,15 +458,16 @@ async def list_teaching_sessions(
     date_to: Optional[date] = Query(None),
     approval_status: Optional[str] = Query(None),
     session_status: Optional[str] = Query(None),
+    institution_id: Optional[int] = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Retrieves teaching sessions register with filtering and pagination."""
-    inst_id = current_user.institution_id or 1
-    # If teacher role, only allow viewing own sessions unless permission granted
-    if current_user.role == "teacher":
+    inst_id = _resolve_inst_id(current_user, institution_id)
+    # If teacher role, only allow viewing own sessions
+    if (current_user.role or "").lower() == "teacher":
         teacher_id = current_user.id
 
     conditions = [TeachingSession.institution_id == inst_id]
@@ -507,11 +563,17 @@ async def list_teaching_sessions(
 async def create_teaching_session(
     payload: SessionCreateSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Logs a new teaching session."""
+    if (current_user.role or "").lower() == "teacher" and payload.teacher_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Teachers may only log teaching sessions for themselves")
+    teacher = await _get_teacher_or_404(db, payload.teacher_user_id, current_user)
     data = payload.model_dump()
-    data["institution_id"] = current_user.institution_id or 1
+    if (current_user.role or "").lower() == "teacher":
+        data["approval_status"] = "submitted"
+        data["substitute_teacher_id"] = None
+    data["institution_id"] = teacher.institution_id or current_user.institution_id or 1
     session = await svc.log_teaching_session(db, data, current_user.id)
     return {"message": "Teaching session logged successfully", "session_id": session.id, "session_code": session.session_code}
 
@@ -521,7 +583,7 @@ async def update_teaching_session(
     session_id: int,
     payload: SessionUpdateSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Updates an existing teaching session if not locked in payroll."""
     stmt = select(TeachingSession).where(TeachingSession.id == session_id)
@@ -529,6 +591,9 @@ async def update_teaching_session(
     sess = res.scalar_one_or_none()
     if not sess:
         raise HTTPException(status_code=404, detail="Teaching session not found")
+    check_institution_access(sess.institution_id, current_user)
+    if (current_user.role or "").lower() == "teacher" and sess.teacher_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Teachers may only update their own sessions")
     if sess.payroll_id:
         raise HTTPException(status_code=400, detail="Cannot edit session; it is locked in a payroll.")
 
@@ -554,9 +619,19 @@ async def update_teaching_session(
 async def bulk_approve_sessions(
     payload: BulkApproveSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Approves a list of teaching sessions in bulk."""
+    if payload.session_ids:
+        sess_rows = (
+            await db.execute(
+                select(TeachingSession.id, TeachingSession.institution_id).where(
+                    TeachingSession.id.in_(payload.session_ids)
+                )
+            )
+        ).all()
+        for _, sess_inst_id in sess_rows:
+            check_institution_access(sess_inst_id, current_user)
     count = await svc.bulk_approve_sessions(db, payload.session_ids, current_user.id)
     return {"message": f"Successfully approved {count} teaching sessions", "approved_count": count}
 
@@ -566,9 +641,15 @@ async def reject_session(
     session_id: int,
     payload: RejectSessionSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Rejects a teaching session with mandatory reason."""
+    target_sess = (
+        await db.execute(select(TeachingSession).where(TeachingSession.id == session_id))
+    ).scalar_one_or_none()
+    if not target_sess:
+        raise HTTPException(status_code=404, detail="Teaching session not found")
+    check_institution_access(target_sess.institution_id, current_user)
     try:
         sess = await svc.reject_teaching_session(db, session_id, current_user.id, payload.reason)
         return {"message": "Session rejected", "session_id": sess.id}
@@ -581,9 +662,16 @@ async def assign_substitute(
     session_id: int,
     payload: AssignSubstituteSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Assigns substitute teacher to a session and recalculates rates."""
+    target_sess = (
+        await db.execute(select(TeachingSession).where(TeachingSession.id == session_id))
+    ).scalar_one_or_none()
+    if not target_sess:
+        raise HTTPException(status_code=404, detail="Teaching session not found")
+    check_institution_access(target_sess.institution_id, current_user)
+    await _get_teacher_or_404(db, payload.substitute_teacher_id, current_user)
     try:
         sess = await svc.assign_substitute_teacher(
             db, session_id, payload.substitute_teacher_id, current_user.id, payload.reason
@@ -603,12 +691,13 @@ async def list_monthly_payrolls(
     year: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
     teacher_id: Optional[int] = Query(None),
+    institution_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Lists monthly payroll records for given month and year."""
-    inst_id = current_user.institution_id or 1
-    if current_user.role == "teacher":
+    inst_id = _resolve_inst_id(current_user, institution_id)
+    if (current_user.role or "").lower() == "teacher":
         teacher_id = current_user.id
 
     conditions = [TeacherPayroll.institution_id == inst_id]
@@ -679,16 +768,17 @@ async def list_monthly_payrolls(
 async def calculate_teacher_payroll(
     payload: CalculatePayrollSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Calculates or recalculates monthly payroll for a teacher."""
+    teacher = await _get_teacher_or_404(db, payload.teacher_user_id, current_user)
     try:
         payroll = await svc.calculate_monthly_payroll(
             db=db,
             teacher_user_id=payload.teacher_user_id,
             month=payload.month,
             year=payload.year,
-            institution_id=current_user.institution_id or 1,
+            institution_id=teacher.institution_id or current_user.institution_id or 1,
             academic_year_id=payload.academic_year_id or 1,
             calculated_by_user_id=current_user.id,
             allow_recalculation=True,
@@ -708,11 +798,12 @@ async def calculate_teacher_payroll(
 @router.post("/monthly/bulk-calculate")
 async def bulk_calculate_monthly_payroll(
     payload: BulkCalculateSchema,
+    institution_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Calculates payroll for all active teachers for the specified month and year."""
-    inst_id = current_user.institution_id or 1
+    inst_id = _resolve_inst_id(current_user, institution_id)
     teachers_stmt = (
         select(User.id)
         .outerjoin(StaffProfile, StaffProfile.user_id == User.id)
@@ -735,7 +826,7 @@ async def bulk_calculate_monthly_payroll(
                 teacher_user_id=tid,
                 month=payload.month,
                 year=payload.year,
-                institution_id=current_user.institution_id or 1,
+                institution_id=inst_id,
                 academic_year_id=payload.academic_year_id or 1,
                 calculated_by_user_id=current_user.id,
                 allow_recalculation=True,
@@ -755,7 +846,7 @@ async def bulk_calculate_monthly_payroll(
 async def get_payroll_details(
     payroll_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Retrieves full payroll details including session breakdown and vouchers."""
     stmt = (
@@ -768,6 +859,9 @@ async def get_payroll_details(
     if not row:
         raise HTTPException(status_code=404, detail="Payroll record not found")
     p, name, email = row
+    check_institution_access(p.institution_id, current_user)
+    if (current_user.role or "").lower() == "teacher" and p.teacher_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Teachers may only view their own payroll")
 
     # Get linked sessions
     sess_stmt = (
@@ -850,8 +944,9 @@ async def get_payroll_details(
 async def submit_payroll(
     payroll_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
+    await _get_payroll_or_404(db, payroll_id, current_user)
     try:
         p = await svc.submit_payroll_for_approval(db, payroll_id, current_user.id)
         return {"message": "Payroll submitted for approval", "payroll_id": p.id, "status": p.status}
@@ -863,8 +958,9 @@ async def submit_payroll(
 async def approve_payroll(
     payroll_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
+    await _get_payroll_or_404(db, payroll_id, current_user)
     try:
         p = await svc.approve_payroll(db, payroll_id, current_user.id)
         return {"message": "Payroll approved successfully", "payroll_id": p.id, "status": p.status}
@@ -876,8 +972,9 @@ async def approve_payroll(
 async def finalize_payroll(
     payroll_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
+    await _get_payroll_or_404(db, payroll_id, current_user)
     try:
         p = await svc.finalize_and_lock_payroll(db, payroll_id, current_user.id)
         return {"message": "Payroll finalized and locked", "payroll_id": p.id, "status": p.status}
@@ -890,8 +987,9 @@ async def adjust_payroll(
     payroll_id: int,
     payload: AdjustPayrollSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
+    await _get_payroll_or_404(db, payroll_id, current_user)
     try:
         p = await svc.apply_payroll_adjustments(db, payroll_id, payload.model_dump(exclude_unset=True), current_user.id)
         return {"message": "Payroll adjustments applied", "payroll_id": p.id, "net_payable": float(p.net_payable)}
@@ -909,12 +1007,13 @@ async def list_payment_vouchers(
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
     status: Optional[str] = Query(None),
+    institution_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Lists teacher payment vouchers with accounting classifications."""
-    inst_id = current_user.institution_id or 1
-    if current_user.role == "teacher":
+    inst_id = _resolve_inst_id(current_user, institution_id)
+    if (current_user.role or "").lower() == "teacher":
         teacher_id = current_user.id
 
     conditions = [TeacherPaymentVoucher.institution_id == inst_id]
@@ -969,12 +1068,13 @@ async def record_payment_voucher(
     payroll_id: int,
     payload: RecordVoucherSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """
     Records a payment voucher for teacher payroll.
     Enforces overpayment prevention: payment amount cannot exceed pending balance.
     """
+    await _get_payroll_or_404(db, payroll_id, current_user)
     try:
         voucher = await svc.record_payment_voucher(
             db=db,
@@ -998,9 +1098,15 @@ async def reverse_payment_voucher(
     voucher_id: int,
     payload: ReverseVoucherSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_ADMIN_ROLES)),
 ):
     """Reverses a posted payment voucher, restoring pending amount on payroll."""
+    target_voucher = (
+        await db.execute(select(TeacherPaymentVoucher).where(TeacherPaymentVoucher.id == voucher_id))
+    ).scalar_one_or_none()
+    if not target_voucher:
+        raise HTTPException(status_code=404, detail="Payment voucher not found")
+    check_institution_access(target_voucher.institution_id, current_user)
     try:
         voucher = await svc.reverse_payment_voucher(
             db=db,
@@ -1021,6 +1127,20 @@ async def reverse_payment_voucher(
 # 5. SPECIALIZED REPORTS & EXCEL EXPORTS (10 REPORTS)
 # ============================================================================
 
+def _authorize_report_scope(
+    report_type: str,
+    teacher_id: Optional[int],
+    institution_id: Optional[int],
+    current_user: User,
+) -> tuple[int, Optional[int]]:
+    inst_id = _resolve_inst_id(current_user, institution_id)
+    if (current_user.role or "").lower() == "teacher":
+        if report_type != "teacher-history":
+            raise HTTPException(status_code=403, detail="Insufficient permissions for institution-wide payroll reports")
+        return inst_id, current_user.id
+    return inst_id, teacher_id
+
+
 @router.get("/reports/{report_type}")
 async def get_specialized_report(
     report_type: str,
@@ -1029,11 +1149,12 @@ async def get_specialized_report(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     teacher_id: Optional[int] = Query(None),
+    institution_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Generates JSON datasets for all 10 specialized reports."""
-    inst_id = current_user.institution_id or 1
+    inst_id, scoped_teacher_id = _authorize_report_scope(report_type, teacher_id, institution_id, current_user)
     today = date.today()
     s_date = start_date or date(today.year, 1, 1)
     e_date = end_date or today
@@ -1043,7 +1164,7 @@ async def get_specialized_report(
     if report_type == "monthly-register":
         return await svc.get_monthly_payment_register(db, r_month, r_year, inst_id)
     elif report_type == "teacher-history":
-        tid = teacher_id or current_user.id
+        tid = scoped_teacher_id or current_user.id
         return await svc.get_teacher_payment_history(db, tid, inst_id)
     elif report_type == "teaching-hours":
         return await svc.get_teaching_hours_report(db, s_date, e_date, inst_id)
@@ -1073,11 +1194,12 @@ async def export_specialized_report(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     teacher_id: Optional[int] = Query(None),
+    institution_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*PAYROLL_VIEW_ROLES)),
 ):
     """Exports any of the 10 reports as a styled, branded Excel spreadsheet."""
-    inst_id = current_user.institution_id or 1
+    inst_id, scoped_teacher_id = _authorize_report_scope(report_type, teacher_id, institution_id, current_user)
     today = date.today()
     s_date = start_date or date(today.year, 1, 1)
     e_date = end_date or today
@@ -1093,7 +1215,7 @@ async def export_specialized_report(
         ]
         title = f"Monthly Teacher Payment Register — {r_month:02d}/{r_year}"
     elif report_type == "teacher-history":
-        tid = teacher_id or current_user.id
+        tid = scoped_teacher_id or current_user.id
         data = await svc.get_teacher_payment_history(db, tid, inst_id)
         headers = ["Voucher #", "Payroll #", "Period", "Amount Paid (₹)", "Date", "Method", "Reference", "Bank", "Status"]
         rows = [

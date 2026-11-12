@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for exam creation, marks entry, grading formulas, and report card generation.
 #  */
@@ -27,11 +27,14 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.core.deps import (
     get_current_active_user,
+    require_role,
     enforce_institution_access,
     check_institution_access,
+    is_sysadmin,
 )
 from app.models.exam import Examination, ExamMark
 from app.models.standard import Standard
+from app.models.student import Student
 from app.services.exam_reports import (
     get_exam_marks_sheet,
     save_exam_marks_bulk,
@@ -42,6 +45,28 @@ from app.services.exam_reports import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+EXAM_STAFF_ROLES = ("superadmin", "sysadmin", "super_admin", "admin", "principal", "teacher", "staff", "coordinator")
+EXAM_VIEW_ROLES = EXAM_STAFF_ROLES + ("counselor", "counsellor", "accountant")
+
+
+async def _authorize_exam_access(db: AsyncSession, exam_id: int, current_user) -> Examination:
+    """Ensures exam exists and belongs to the caller's institution."""
+    row = (
+        await db.execute(
+            select(Examination, Standard.institution_id)
+            .join(Standard, Examination.standard_id == Standard.id)
+            .where(Examination.id == exam_id)
+        )
+    ).first()
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Examination #{exam_id} not found.",
+        )
+    exam, inst_id = row
+    check_institution_access(inst_id, current_user)
+    return exam
 
 
 class ExamCreate(BaseModel):
@@ -111,7 +136,7 @@ async def list_examinations(
 async def create_examination(
     data: ExamCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*EXAM_STAFF_ROLES)),
 ):
     std = await db.scalar(select(Standard).where(Standard.id == data.standard_id))
     if not std:
@@ -134,9 +159,10 @@ async def create_examination(
 async def get_examination_marks(
     exam_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*EXAM_STAFF_ROLES)),
 ):
     """Retrieves marks entry spreadsheet dataset for an examination."""
+    await _authorize_exam_access(db, exam_id, current_user)
     sheet = await get_exam_marks_sheet(db, exam_id)
     if not sheet:
         raise HTTPException(
@@ -151,9 +177,26 @@ async def save_examination_marks(
     exam_id: int,
     data: BulkMarksPayload,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*EXAM_STAFF_ROLES)),
 ):
     """Saves student examination marks in bulk and computes standardized grades."""
+    await _authorize_exam_access(db, exam_id, current_user)
+    if data.entries and not is_sysadmin(current_user):
+        user_inst_id = getattr(current_user, "institution_id", None)
+        student_ids = list({e.student_id for e in data.entries})
+        foreign_students = (
+            await db.execute(
+                select(Student.id).where(
+                    Student.id.in_(student_ids),
+                    Student.institution_id != user_inst_id,
+                )
+            )
+        ).scalars().all()
+        if foreign_students:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: Marks entries include students outside your institution.",
+            )
     try:
         entries_dicts = [e.model_dump() for e in data.entries]
         res = await save_exam_marks_bulk(db, exam_id, entries_dicts)
@@ -172,9 +215,10 @@ async def save_examination_marks(
 async def get_examination_analytics(
     exam_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*EXAM_STAFF_ROLES)),
 ):
     """Retrieves cohort performance analytics, grade distributions, and leaderboard rankings."""
+    await _authorize_exam_access(db, exam_id, current_user)
     analytics = await get_exam_analytics(db, exam_id)
     if not analytics:
         raise HTTPException(
@@ -193,7 +237,23 @@ async def get_examination_student_report_card(
     current_user=Depends(get_current_active_user),
 ):
     """Compiles official printable graphical report card dataset for a student."""
-    inst_id = effective_inst_id or getattr(current_user, "institution_id", 1) or 1
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        if getattr(current_user, "student_id", None) != student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: Students can only view their own report card.",
+            )
+    elif not is_sysadmin(current_user) and role not in EXAM_VIEW_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+
+    await _authorize_exam_access(db, exam_id, current_user)
+    student = await db.get(Student, student_id)
+    if not student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Student #{student_id} not found.")
+    check_institution_access(student.institution_id, current_user)
+
+    inst_id = student.institution_id or effective_inst_id or getattr(current_user, "institution_id", 1) or 1
     report_card = await get_student_report_card(
         db, exam_id=exam_id, student_id=student_id, institution_id=inst_id
     )

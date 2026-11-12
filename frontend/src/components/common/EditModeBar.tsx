@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Master View-First & Explicit Edit Mode banner and toggle component enforcing global read-only default and explicit modification authorization.
  */
@@ -30,7 +30,7 @@ import {
   Info,
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
-import { useEditModeStore } from '../../store/editModeStore'
+import { useEditModeStore, canActivateEditMode } from '../../store/editModeStore'
 
 export interface EditModeBarProps {
   /** Canonical unique identifier for the workspace or record scope (e.g. 'academic:batches', 'student:detail:10') */
@@ -72,18 +72,9 @@ export default function EditModeBar({
   const [permissionError, setPermissionError] = useState<string | null>(null)
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
 
-  // Check if current user is authorized to edit
+  // Check if current user is authorized to edit (SSOT via editModeStore)
   const canActivateEdit = (): boolean => {
-    if (!user) return false
-    const role = (user.role || '').toLowerCase()
-    const isAdmin = ['sysadmin', 'superadmin', 'super_admin', 'admin', 'principal'].includes(role)
-    if (requiredPermission) {
-      if (isAdmin) return true
-      const reqList = requiredPermission.split(/[,|]/).map((s) => s.trim()).filter(Boolean)
-      const perms = Array.isArray(user.permissions) ? user.permissions : []
-      return reqList.some((rp) => perms.includes(rp)) || perms.includes('*:*') || perms.includes('*.*')
-    }
-    return isAdmin || ['staff', 'teacher', 'accountant'].includes(role)
+    return canActivateEditMode(user, requiredPermission).allowed
   }
 
   const handleEnable = () => {

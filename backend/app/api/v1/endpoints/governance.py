@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-10
+#  * @updated     2026-11-12
 #  *
 #  * @description API router for Global Safe Delete, Pre-flight Dependency Auditing, and Data Integrity Governance.
 #  */
@@ -24,13 +24,13 @@ from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, is_sysadmin, require_role
 from app.models.user import User, AuditLog
 from app.services.safe_delete_service import SafeDeleteService
 
 router = APIRouter()
 
-GOVERNANCE_ADMIN_ROLES = ["superadmin", "super_admin", "admin", "principal"]
+GOVERNANCE_ADMIN_ROLES = ["sysadmin", "superadmin", "super_admin", "admin", "principal"]
 
 
 # ─── Pydantic Request Models ──────────────────────────────────────────────────
@@ -60,7 +60,7 @@ async def check_delete_eligibility(
     entity_type: str = Query(..., description="Entity type to check (e.g., student, standard, division, subject, user, payment)"),
     entity_id: int = Query(..., description="Primary key identifier of the entity"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*GOVERNANCE_ADMIN_ROLES)),
 ):
     """
     Performs real-time, pre-flight dependency inspection for a target entity.
@@ -173,6 +173,10 @@ async def list_governance_audit_logs(
     )
     if resource_type:
         query = query.where(AuditLog.resource_type == resource_type.strip().lower())
+
+    if not is_sysadmin(current_user):
+        tenant_id = current_user.institution_id or 1
+        query = query.join(User, AuditLog.user_id == User.id).where(User.institution_id == tenant_id)
 
     query = query.options(selectinload(AuditLog.user)).order_by(desc(AuditLog.created_at)).limit(limit)
     logs = (await db.execute(query)).scalars().all()

@@ -24,7 +24,8 @@ import {
   CheckCircle2, AlertCircle, Clock4, Filter, ChevronRight,
   Download, Printer, Share2, Eye, Edit3, Trash2, ArrowRight,
   FileText, Upload, Sparkles, AlertTriangle, CheckSquare,
-  XCircle, UserCheck, ShieldAlert, RotateCcw, CalendarDays, Lock, ExternalLink
+  XCircle, UserCheck, ShieldAlert, RotateCcw, CalendarDays, Lock, ExternalLink,
+  Inbox, BarChart3, Send, RefreshCw
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -37,9 +38,13 @@ import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, DeleteConfirmationModal, ContextualHelpButton } from '../components/common'
 import StatCard from '../components/StatCard'
 import Modal from '../components/Modal'
+import HomeworkCreateForm from '../components/homework/HomeworkCreateForm'
+import HomeworkSubmissionsTab from '../components/homework/HomeworkSubmissionsTab'
+import HomeworkTemplatesTab from '../components/homework/HomeworkTemplatesTab'
+import HomeworkReportsAndSettingsTab from '../components/homework/HomeworkReportsAndSettingsTab'
 import type {
   HomeworkAssignmentItem, CheckingRegisterStudent,
-  TeacherHomeworkDashboard, DailyHomeworkRegisterReport
+  TeacherHomeworkDashboard, DailyHomeworkRegisterReport, HomeworkSettingsConfig
 } from '../types'
 
 type HomeworkTab = 'overview' | 'create' | 'checking' | 'submissions' | 'templates' | 'reports'
@@ -57,27 +62,26 @@ export default function HomeworkWorkspace() {
 
   // Determine active tab from URL path or query params
   const getTabFromLocation = (): HomeworkTab => {
-    const path = location.pathname.toLowerCase()
-    if (path.endsWith('/create')) return 'create'
-    if (path.endsWith('/checking')) return 'checking'
-    if (path.endsWith('/submissions')) return 'submissions'
-    if (path.endsWith('/templates')) return 'templates'
-    if (path.endsWith('/reports')) return 'reports'
     const paramTab = searchParams.get('tab') as HomeworkTab
     if (paramTab && ['overview', 'create', 'checking', 'submissions', 'templates', 'reports'].includes(paramTab)) {
       return paramTab
     }
+    const path = location.pathname.toLowerCase()
+    if (path.endsWith('/create') || path.endsWith('/new')) return 'create'
+    if (path.endsWith('/checking')) return 'checking'
+    if (path.endsWith('/submissions')) return 'submissions'
+    if (path.endsWith('/templates')) return 'templates'
+    if (path.endsWith('/reports')) return 'reports'
     return 'overview'
   }
 
   const activeTab = getTabFromLocation()
 
   const setActiveTab = (tab: HomeworkTab) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev)
-      next.set('tab', tab)
-      return next
-    })
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('tab')
+    const queryStr = nextParams.toString()
+    navigate(`/homework/${tab}${queryStr ? `?${queryStr}` : ''}`)
   }
 
   // ── Filter State ──
@@ -135,16 +139,38 @@ export default function HomeworkWorkspace() {
   })
   const teachers = teachersResp?.data?.items || []
 
+  // ── Fetch Homework Module Settings ──
+  const { data: hwSettingsResp } = useQuery({
+    queryKey: ['hw-settings', selectedInstitutionId],
+    queryFn: () =>
+      typeof homeworkApi.getSettings === 'function'
+        ? homeworkApi.getSettings({ institution_id: selectedInstitutionId || 1 }).then((r) => r.data)
+        : Promise.resolve(undefined),
+  })
+  const hwSettings: HomeworkSettingsConfig | undefined = hwSettingsResp
+
   // ── Fetch Teacher Dashboard KPIs ──
   const { data: teacherDashResp } = useQuery({
     queryKey: ['hw-teacher-dashboard', user?.id],
     queryFn: () => homeworkApi.getTeacherDashboard({ teacher_id: user?.role === 'teacher' ? user.id : undefined }).then((r) => r.data),
   })
-  const dashboardStats: TeacherHomeworkDashboard = teacherDashResp || {
+  const dashboardStats: Partial<TeacherHomeworkDashboard> & {
+    total_assigned: number
+    assigned_today: number
+    active_assignments: number
+    awaiting_check: number
+    overdue_count: number
+  } = teacherDashResp || {
     total_assigned: 0,
+    total_assignments: 0,
     assigned_today: 0,
     active_assignments: 0,
     awaiting_check: 0,
+    pending_submissions: 0,
+    submitted_assignments: 0,
+    late_submissions: 0,
+    pending_evaluations: 0,
+    completed_evaluations: 0,
     overdue_count: 0,
   }
 
@@ -163,7 +189,7 @@ export default function HomeworkWorkspace() {
         search: searchQuery.trim() || undefined,
         limit: 50,
       }).then((r) => r.data),
-    enabled: activeTab === 'overview' || activeTab === 'checking',
+    enabled: ['overview', 'checking', 'submissions', 'reports'].includes(activeTab),
   })
   const assignments: HomeworkAssignmentItem[] = assignmentsResp?.items || []
 
@@ -235,39 +261,29 @@ export default function HomeworkWorkspace() {
     },
   })
 
-  // ── Create Assignment Form State (Phase 2 & Phase 5) ──
-  const [formTitle, setFormTitle] = useState('')
-  const [formDescription, setFormDescription] = useState('')
-  const [formInstructions, setFormInstructions] = useState('')
-  const [formStandardId, setFormStandardId] = useState(searchParams.get('standard_id') || selectedStandardId || '')
-  const [formDivisionId, setFormDivisionId] = useState(searchParams.get('division_id') || selectedDivisionId || '')
-  const [formSubjectId, setFormSubjectId] = useState(searchParams.get('subject_id') || selectedSubjectId || '')
-  const [formTeacherId, setFormTeacherId] = useState(searchParams.get('teacher_id') || (user?.role === 'teacher' ? String(user.id) : ''))
-  const [formTopic, setFormTopic] = useState(searchParams.get('topic') || '')
-  const [formChapter, setFormChapter] = useState('')
-  const [formDueDate, setFormDueDate] = useState(() => {
-    const d = new Date()
-    d.setDate(d.getDate() + 2)
-    return d.toISOString().split('T')[0]
-  })
-  const [formDueTime, setFormDueTime] = useState('23:59')
-  const [formMaxMarks, setFormMaxMarks] = useState<number | ''>(25)
-  const [formDifficulty, setFormDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
-  const [formPriority, setFormPriority] = useState<'low' | 'normal' | 'high' | 'urgent'>('normal')
-  const [formSubmissionMethod, setFormSubmissionMethod] = useState<string>('physical_notebook')
-  const [formRecipientType, setFormRecipientType] = useState<string>('batch')
-  const [formIsTemplate, setFormIsTemplate] = useState<boolean>(false)
-  const [formTeachingSessionId, setFormTeachingSessionId] = useState<string>(
-    searchParams.get('teaching_session_id') || searchParams.get('session_id') || ''
-  )
+  // ── Prefill & Template State ──
+  const [templateInitialValues, setTemplateInitialValues] = useState<any>(() => ({
+    standard_id: searchParams.get('standard_id') || selectedStandardId || '',
+    division_id: searchParams.get('division_id') || selectedDivisionId || '',
+    subject_id: searchParams.get('subject_id') || selectedSubjectId || '',
+    teacher_id: searchParams.get('teacher_id') || (user?.role === 'teacher' ? String(user.id) : ''),
+    topic: searchParams.get('topic') || '',
+    assignment_type: searchParams.get('type') || 'homework',
+    teaching_session_id: searchParams.get('teaching_session_id') || searchParams.get('session_id') || '',
+  }))
 
   // Create Assignment Mutation
   const createMutation = useMutation({
     mutationFn: (payload: any) => homeworkApi.createAssignment(payload),
     onSuccess: (resp) => {
-      toast.success(`Homework created successfully! Code: ${resp.data.assignment_code}`)
+      toast.success(
+        resp.data.status === 'draft'
+          ? `Draft saved! Code: ${resp.data.assignment_code}`
+          : `Assignment published to ${resp.data.original_recipient_count} student(s)! Code: ${resp.data.assignment_code}`
+      )
       queryClient.invalidateQueries({ queryKey: ['hw-assignments'] })
       queryClient.invalidateQueries({ queryKey: ['hw-teacher-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['hw-templates'] })
       setActiveTab('overview')
     },
     onError: (err: any) => {
@@ -275,40 +291,49 @@ export default function HomeworkWorkspace() {
     },
   })
 
-  const handleCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!isEditMode) {
-      toast.error('Locked in View Mode: Please activate Edit Mode in the top governance bar.')
-      return
-    }
-    if (!formTitle.trim() || !formStandardId || !formSubjectId || !formDueDate) {
-      toast.error('Please fill all mandatory fields (Title, Standard, Subject, Due Date).')
-      return
-    }
+  const publishMutation = useMutation({
+    mutationFn: (id: number) => homeworkApi.publishAssignment(id),
+    onSuccess: (resp) => {
+      toast.success(`Assignment published to ${resp.data.original_recipient_count} student(s)!`)
+      queryClient.invalidateQueries({ queryKey: ['hw-assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['hw-teacher-dashboard'] })
+    },
+    onError: (err: any) => toast.error(err.response?.data?.detail || 'Publish failed.'),
+  })
 
-    createMutation.mutate({
-      academic_year_id: selectedAcademicYearId || 1,
-      standard_id: Number(formStandardId),
-      division_id: formDivisionId ? Number(formDivisionId) : undefined,
-      subject_id: Number(formSubjectId),
-      teacher_user_id: formTeacherId ? Number(formTeacherId) : (user?.id || 1),
-      teaching_session_id: formTeachingSessionId ? Number(formTeachingSessionId) : undefined,
-      title: formTitle.trim(),
-      description: formDescription.trim() || undefined,
-      instructions: formInstructions.trim() || undefined,
-      topic: formTopic.trim() || undefined,
-      chapter: formChapter.trim() || undefined,
-      due_date: formDueDate,
-      due_time: formDueTime,
-      max_marks: formMaxMarks !== '' ? Number(formMaxMarks) : undefined,
-      difficulty_level: formDifficulty,
-      priority: formPriority,
-      submission_method: formSubmissionMethod,
-      recipient_type: formRecipientType,
-      status: 'published',
-      is_template: formIsTemplate,
-    })
-  }
+  const closeMutation = useMutation({
+    mutationFn: (id: number) => homeworkApi.closeAssignment(id),
+    onSuccess: () => {
+      toast.success('Assignment closed for new submissions.')
+      queryClient.invalidateQueries({ queryKey: ['hw-assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['hw-teacher-dashboard'] })
+    },
+    onError: (err: any) => toast.error(err.response?.data?.detail || 'Failed to close assignment.'),
+  })
+
+  const reopenMutation = useMutation({
+    mutationFn: (id: number) => homeworkApi.reopenAssignment(id),
+    onSuccess: () => {
+      toast.success('Assignment reopened and students notified.')
+      queryClient.invalidateQueries({ queryKey: ['hw-assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['hw-teacher-dashboard'] })
+    },
+    onError: (err: any) => toast.error(err.response?.data?.detail || 'Failed to reopen assignment.'),
+  })
+
+  const syncLateJoinersMutation = useMutation({
+    mutationFn: (id: number) => homeworkApi.syncLateJoiners(id),
+    onSuccess: (resp) => {
+      toast.success(
+        resp.data.added_count > 0
+          ? `Added ${resp.data.added_count} newly joined student(s) (Snapshot preserved at ${resp.data.original_recipient_count}).`
+          : 'All eligible batch students are already assigned.'
+      )
+      queryClient.invalidateQueries({ queryKey: ['hw-assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['hw-checking-register'] })
+    },
+    onError: (err: any) => toast.error(err.response?.data?.detail || 'Failed to sync late joiners.'),
+  })
 
   // Handle Bulk Status Set in Checking Register
   const handleBulkSetStatus = (targetStatus: string) => {
@@ -412,52 +437,68 @@ export default function HomeworkWorkspace() {
         </div>
       </div>
 
-      {/* ── Top Stat Cards (Teacher Dashboard KPIs) ── */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* ── Top Stat Cards (7 Phase 10 Teacher Dashboard KPIs) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
         <StatCard
           title="Total Assigned"
-          value={dashboardStats.total_assigned}
+          value={dashboardStats.total_assignments ?? dashboardStats.total_assigned}
           icon={BookOpen}
           color="primary"
-          subtitle="All active batches"
-        />
-        <StatCard
-          title="Assigned Today"
-          value={dashboardStats.assigned_today}
-          icon={CalendarDays}
-          color="blue"
-          subtitle="Recent dispatches"
+          subtitle="All assignments"
         />
         <StatCard
           title="Active Homework"
           value={dashboardStats.active_assignments}
           icon={Clock4}
           color="green"
-          subtitle="Open for completion"
+          subtitle="Currently published"
         />
         <StatCard
-          title="Awaiting Checking"
-          value={dashboardStats.awaiting_check}
-          icon={CheckSquare}
-          color="orange"
-          subtitle="Pending teacher review"
+          title="Pending Submissions"
+          value={dashboardStats.pending_submissions ?? 0}
+          icon={Inbox}
+          color="blue"
+          subtitle="Awaiting student work"
         />
         <StatCard
-          title="Overdue Submissions"
-          value={dashboardStats.overdue_count}
+          title="Submitted"
+          value={dashboardStats.submitted_assignments ?? 0}
+          icon={FileText}
+          color="primary"
+          subtitle="Turned in by students"
+        />
+        <StatCard
+          title="Late Submissions"
+          value={dashboardStats.late_submissions ?? dashboardStats.overdue_count}
           icon={AlertTriangle}
           color="red"
-          subtitle="Passed due deadline"
+          subtitle="Submitted after due"
+        />
+        <StatCard
+          title="Pending Evaluations"
+          value={dashboardStats.pending_evaluations ?? dashboardStats.awaiting_check}
+          icon={CheckSquare}
+          color="orange"
+          subtitle="Awaiting grading"
+        />
+        <StatCard
+          title="Evaluated"
+          value={dashboardStats.completed_evaluations ?? 0}
+          icon={CheckCircle2}
+          color="green"
+          subtitle="Completed evaluations"
         />
       </div>
 
-      {/* ── Tab Navigation ── */}
+      {/* ── Tab Navigation (6 Workspaces matching Sidebar routes) ── */}
       <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-px">
         {[
           { id: 'overview', label: 'Homework Overview', icon: BookOpen },
           { id: 'create', label: 'Assign Homework', icon: Plus },
           { id: 'checking', label: 'Checking Register', icon: CheckSquare },
-          { id: 'reports', label: 'Daily Register Report', icon: Printer },
+          { id: 'submissions', label: 'Digital Submissions', icon: Inbox },
+          { id: 'templates', label: 'Templates Library', icon: Sparkles },
+          { id: 'reports', label: 'Reports & Analytics', icon: BarChart3 },
         ].map((t) => {
           const Icon = t.icon
           const isActive = activeTab === t.id
@@ -465,7 +506,7 @@ export default function HomeworkWorkspace() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as HomeworkTab)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
                 isActive
                   ? 'border-primary-600 text-primary-600 bg-primary-50/50 rounded-t-xl'
                   : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
@@ -574,13 +615,22 @@ export default function HomeworkWorkspace() {
                   >
                     <div className="p-5 space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="px-2.5 py-1 text-xs font-mono font-bold bg-primary-50 text-primary-700 rounded-lg">
-                          {hw.assignment_code}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2.5 py-1 text-xs font-mono font-bold bg-primary-50 text-primary-700 rounded-lg">
+                            {hw.assignment_code}
+                          </span>
+                          {hw.assignment_type && (
+                            <span className="px-2 py-0.5 text-[11px] font-bold bg-indigo-50 text-indigo-700 rounded-md capitalize">
+                              {hw.assignment_type.replace('_', ' ')}
+                            </span>
+                          )}
+                        </div>
                         <span
                           className={`px-2 py-0.5 text-xs font-bold rounded-md ${
                             hw.status === 'published'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : hw.status === 'draft'
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
                               : 'bg-slate-100 text-slate-600'
                           }`}
                         >
@@ -599,6 +649,11 @@ export default function HomeworkWorkspace() {
                         <span className="font-semibold bg-slate-100 px-2 py-0.5 rounded-md">{hw.standard_name}</span>
                         <span className="font-semibold bg-slate-100 px-2 py-0.5 rounded-md">{hw.division_name}</span>
                         <span className="font-semibold bg-primary-50 text-primary-700 px-2 py-0.5 rounded-md">{hw.subject_name}</span>
+                        {hw.estimated_duration_minutes && (
+                          <span className="font-medium bg-slate-100 px-2 py-0.5 rounded-md">
+                            ~{hw.estimated_duration_minutes} mins
+                          </span>
+                        )}
                       </div>
 
                       <div className="pt-2 border-t border-slate-100 text-xs space-y-1.5 text-slate-500">
@@ -617,6 +672,14 @@ export default function HomeworkWorkspace() {
                             {hw.submission_method.replace('_', ' ')}
                           </span>
                         </div>
+                        {typeof hw.original_recipient_count === 'number' && hw.original_recipient_count > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span>Published Snapshot:</span>
+                            <span className="font-mono font-semibold text-slate-700">
+                              {hw.original_recipient_count} student(s)
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Progress Bar */}
@@ -635,18 +698,78 @@ export default function HomeworkWorkspace() {
                     </div>
 
                     {/* Bottom Actions */}
-                    <div className="bg-slate-50 p-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div className="bg-slate-50 p-3.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={() => {
                           setCheckingAssignmentId(hw.id)
                           setActiveTab('checking')
                         }}
-                        className="flex-1 py-2 px-3 bg-white hover:bg-primary-50 hover:text-primary-600 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                        className="flex-1 min-w-[120px] py-2 px-2.5 bg-white hover:bg-primary-50 hover:text-primary-600 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                       >
                         <CheckSquare className="w-3.5 h-3.5 text-primary-600" />
-                        <span>Checking Register</span>
+                        <span>Checking</span>
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCheckingAssignmentId(hw.id)
+                          setActiveTab('submissions')
+                        }}
+                        className="py-2 px-2.5 bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 rounded-xl text-xs font-bold text-slate-700"
+                        title="Review digital submissions & evaluate"
+                      >
+                        Evaluate
+                      </button>
+
+                      {hw.status === 'draft' && (
+                        <button
+                          type="button"
+                          disabled={!isEditMode || publishMutation.isPending}
+                          onClick={() => publishMutation.mutate(hw.id)}
+                          className="py-2 px-2.5 bg-primary-600 text-white hover:bg-primary-700 rounded-xl text-xs font-bold disabled:opacity-40"
+                          title="Publish draft to students"
+                        >
+                          Publish
+                        </button>
+                      )}
+
+                      {hw.status === 'published' && hw.recipient_type === 'batch' && (
+                        <button
+                          type="button"
+                          disabled={!isEditMode || syncLateJoinersMutation.isPending}
+                          onClick={() => syncLateJoinersMutation.mutate(hw.id)}
+                          className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-40"
+                          title="Sync new batch joiners"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {hw.status === 'published' && (
+                        <button
+                          type="button"
+                          disabled={!isEditMode || closeMutation.isPending}
+                          onClick={() => closeMutation.mutate(hw.id)}
+                          className="py-2 px-2 bg-white border border-slate-200 hover:bg-amber-50 hover:text-amber-700 rounded-xl text-xs font-semibold text-slate-600 disabled:opacity-40"
+                          title="Close assignment"
+                        >
+                          Close
+                        </button>
+                      )}
+
+                      {hw.status === 'closed' && (
+                        <button
+                          type="button"
+                          disabled={!isEditMode || reopenMutation.isPending}
+                          onClick={() => reopenMutation.mutate(hw.id)}
+                          className="py-2 px-2 bg-white border border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl text-xs font-semibold text-slate-600 disabled:opacity-40"
+                          title="Reopen assignment"
+                        >
+                          Reopen
+                        </button>
+                      )}
 
                       <button
                         type="button"
@@ -672,264 +795,21 @@ export default function HomeworkWorkspace() {
       {/* TAB 2: ASSIGN NEW HOMEWORK (CREATION FORM)                           */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'create' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 max-w-4xl mx-auto">
-          <div className="border-b border-slate-100 pb-4 mb-6">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-primary-600" />
-              <span>Create Homework Assignment</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Distribute homework questions or problem sets to a batch, multiple batches, or selected students.
-            </p>
-          </div>
-
-          <form onSubmit={handleCreateSubmit} className="space-y-6">
-            {/* Session integration notice */}
-            {formTeachingSessionId && (
-              <div className="p-3 bg-primary-50 border border-primary-200 rounded-xl text-xs text-primary-800 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary-600 shrink-0" />
-                <span>
-                  <strong>Prefilled from Teaching Session:</strong> This homework will retain a permanent reference to Teaching Session #{formTeachingSessionId}.
-                </span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Assignment Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  disabled={!isEditMode}
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="e.g. Chapter 4: Quadratic Equations Problem Set 1"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Standard / Class <span className="text-red-500">*</span>
-                </label>
-                <select
-                  disabled={!isEditMode}
-                  value={formStandardId}
-                  onChange={(e) => {
-                    setFormStandardId(e.target.value)
-                    setFormDivisionId('')
-                  }}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium bg-white"
-                  required
-                >
-                  <option value="">Select Standard</option>
-                  {standards.map((s: any) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Primary Batch / Division
-                </label>
-                <select
-                  disabled={!isEditMode}
-                  value={formDivisionId}
-                  onChange={(e) => setFormDivisionId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium bg-white"
-                >
-                  <option value="">Select Batch (or standard-wide)</option>
-                  {divisions.map((d: any) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Subject <span className="text-red-500">*</span>
-                </label>
-                <select
-                  disabled={!isEditMode}
-                  value={formSubjectId}
-                  onChange={(e) => setFormSubjectId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium bg-white"
-                  required
-                >
-                  <option value="">Select Subject</option>
-                  {subjects.map((sub: any) => (
-                    <option key={sub.id} value={sub.id}>{sub.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Assigned Teacher
-                </label>
-                <select
-                  disabled={!isEditMode}
-                  value={formTeacherId}
-                  onChange={(e) => setFormTeacherId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium bg-white"
-                >
-                  <option value="">Select Faculty</option>
-                  {teachers.map((t: any) => (
-                    <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Chapter / Unit
-                </label>
-                <input
-                  type="text"
-                  disabled={!isEditMode}
-                  value={formChapter}
-                  onChange={(e) => setFormChapter(e.target.value)}
-                  placeholder="e.g. Chapter 4: Quadratic Equations"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Topic Covered
-                </label>
-                <input
-                  type="text"
-                  disabled={!isEditMode}
-                  value={formTopic}
-                  onChange={(e) => setFormTopic(e.target.value)}
-                  placeholder="e.g. Factoring and Quadratic Formula"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Due Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  disabled={!isEditMode}
-                  value={formDueDate}
-                  onChange={(e) => setFormDueDate(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Due Time
-                </label>
-                <input
-                  type="time"
-                  disabled={!isEditMode}
-                  value={formDueTime}
-                  onChange={(e) => setFormDueTime(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Submission Method <span className="text-red-500">*</span>
-                </label>
-                <select
-                  disabled={!isEditMode}
-                  value={formSubmissionMethod}
-                  onChange={(e) => setFormSubmissionMethod(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium bg-white"
-                >
-                  <option value="physical_notebook">Physical Notebook / In-Class Checking</option>
-                  <option value="photo_upload">Photograph Upload (Student Portal)</option>
-                  <option value="pdf_document">PDF / Document Upload</option>
-                  <option value="online_text">Online Text Response</option>
-                  <option value="in_class">In-Class Completion</option>
-                  <option value="no_submission">No Submission Required (Reading / Revision)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Maximum Marks (Optional)
-                </label>
-                <input
-                  type="number"
-                  disabled={!isEditMode}
-                  value={formMaxMarks}
-                  onChange={(e) => setFormMaxMarks(e.target.value ? Number(e.target.value) : '')}
-                  placeholder="e.g. 25"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Detailed Instructions & Question References
-              </label>
-              <textarea
-                rows={4}
-                disabled={!isEditMode}
-                value={formInstructions}
-                onChange={(e) => setFormInstructions(e.target.value)}
-                placeholder="Enter textbook page numbers, exercise problems, or specific instructions for completion..."
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <input
-                type="checkbox"
-                id="templateCheckbox"
-                disabled={!isEditMode}
-                checked={formIsTemplate}
-                onChange={(e) => setFormIsTemplate(e.target.checked)}
-                className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
-              />
-              <label htmlFor="templateCheckbox" className="text-xs font-semibold text-slate-700">
-                Save this homework as a reusable template for future batches
-              </label>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setActiveTab('overview')}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
-              >
-                Cancel
-              </button>
-              {isEditMode ? (
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{createMutation.isPending ? 'Publishing...' : 'Publish Homework'}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => toast.error('Locked in View Mode: Enable Edit Mode in the top bar to publish.')}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl font-bold text-xs cursor-not-allowed"
-                >
-                  <Lock className="w-4 h-4" />
-                  <span>Publish Homework (Locked)</span>
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
+        <HomeworkCreateForm
+          isEditMode={isEditMode}
+          academicYearId={selectedAcademicYearId || 1}
+          currentUserId={user?.id || 1}
+          currentUserRole={user?.role}
+          standards={standards}
+          divisions={divisions}
+          subjects={subjects}
+          teachers={teachers}
+          settings={hwSettings}
+          initialValues={templateInitialValues}
+          isSubmitting={createMutation.isPending}
+          onSubmitAssignment={(payload) => createMutation.mutate(payload)}
+          onCancel={() => setActiveTab('overview')}
+        />
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════ */}
@@ -1213,94 +1093,59 @@ export default function HomeworkWorkspace() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* TAB 4: DAILY REGISTER REPORT (PHASE 9)                                */}
+      {/* TAB 4: DIGITAL SUBMISSIONS REVIEW & EVALUATION                       */}
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'submissions' && (
+        <HomeworkSubmissionsTab
+          isEditMode={isEditMode}
+          assignments={assignments}
+          selectedAssignmentId={checkingAssignmentId}
+          onSelectAssignmentId={(id) => setCheckingAssignmentId(id)}
+        />
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* TAB 5: REUSABLE TEMPLATES LIBRARY                                     */}
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'templates' && (
+        <HomeworkTemplatesTab
+          onUseTemplate={(tpl) => {
+            setTemplateInitialValues({
+              title: tpl.title || '',
+              description: tpl.description || '',
+              instructions: tpl.instructions || '',
+              standard_id: tpl.standard_id ? String(tpl.standard_id) : '',
+              subject_id: tpl.subject_id ? String(tpl.subject_id) : '',
+              topic: tpl.topic || '',
+              chapter: tpl.chapter || '',
+              assignment_type: tpl.assignment_type || 'homework',
+              submission_method: tpl.submission_method || 'physical_notebook',
+              max_marks: tpl.max_marks ?? 25,
+            })
+            setActiveTab('create')
+            toast.success('Loaded template into Create Assignment form.')
+          }}
+        />
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* TAB 6: REPORTS, ANALYTICS, NOTIFICATIONS & SETTINGS                  */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'reports' && (
-        <div className="space-y-6">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <label className="text-xs font-bold text-slate-700">Date:</label>
-              <input
-                type="date"
-                value={reportDate}
-                onChange={(e) => setReportDate(e.target.value)}
-                className="px-3 py-1.5 text-xs border border-slate-200 rounded-xl font-medium"
-              />
-
-              <label className="text-xs font-bold text-slate-700 ml-2">Batch:</label>
-              <select
-                value={selectedDivisionId}
-                onChange={(e) => setSelectedDivisionId(e.target.value)}
-                className="px-3 py-1.5 text-xs border border-slate-200 rounded-xl font-medium bg-white"
-              >
-                <option value="">All Batches</option>
-                {divisions.map((d: any) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="btn-secondary inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 shadow-2xs"
-            >
-              <Printer className="w-4 h-4 text-slate-600" />
-              <span>Print Homework Register</span>
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4 print:border-none print:shadow-none">
-            <div className="border-b border-slate-100 pb-3">
-              <div className="text-xs font-mono font-bold text-primary-600 uppercase">Daily Academic Operations Report</div>
-              <h2 className="text-xl font-black text-slate-900">
-                Daily Homework Register — {dailyReport.date}
-              </h2>
-              <div className="text-xs text-slate-500 mt-0.5">
-                Total Assignments Logged: <strong>{dailyReport.total_assignments}</strong>
-              </div>
-            </div>
-
-            {dailyReport.items.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 text-xs">
-                No homework was issued on this date.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                    <tr>
-                      <th className="py-2.5 px-3">Code</th>
-                      <th className="py-2.5 px-3">Standard / Batch</th>
-                      <th className="py-2.5 px-3">Subject</th>
-                      <th className="py-2.5 px-3">Assignment Title</th>
-                      <th className="py-2.5 px-3">Faculty</th>
-                      <th className="py-2.5 px-3">Due Date</th>
-                      <th className="py-2.5 px-3 text-center">Total Students</th>
-                      <th className="py-2.5 px-3 text-center">Done</th>
-                      <th className="py-2.5 px-3 text-center">Completion Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {dailyReport.items.map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-3 font-mono font-bold text-primary-700">{row.assignment_code}</td>
-                        <td className="py-2.5 px-3 font-semibold text-slate-800">{row.standard} — {row.batch}</td>
-                        <td className="py-2.5 px-3 font-bold text-slate-700">{row.subject}</td>
-                        <td className="py-2.5 px-3">{row.title}</td>
-                        <td className="py-2.5 px-3 text-slate-600">{row.teacher}</td>
-                        <td className="py-2.5 px-3 font-mono">{row.due_date}</td>
-                        <td className="py-2.5 px-3 text-center font-bold">{row.total_students}</td>
-                        <td className="py-2.5 px-3 text-center font-bold text-emerald-600">{row.completed}</td>
-                        <td className="py-2.5 px-3 text-center font-bold text-primary-600">{row.completion_rate}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
+        <HomeworkReportsAndSettingsTab
+          isEditMode={isEditMode}
+          isAdminRole={['superadmin', 'sysadmin', 'super_admin', 'admin', 'principal'].includes(
+            (user?.role || '').toLowerCase()
+          )}
+          assignments={assignments}
+          divisions={divisions}
+          reportDate={reportDate}
+          onReportDateChange={setReportDate}
+          selectedDivisionId={selectedDivisionId}
+          onSelectedDivisionIdChange={setSelectedDivisionId}
+          dailyReport={dailyReport}
+          settings={hwSettings}
+        />
       )}
 
       {/* ── Action Modal (Resubmit / Extend / Exempt) ── */}

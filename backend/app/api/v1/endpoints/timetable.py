@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-09
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for class timetable scheduling, room allocation, and collision detection.
 #  */
@@ -24,7 +24,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
 from app.models.portal import TimetableEntry
 from app.models.division import Division
 from app.models.subject import Subject, SubjectMapping
@@ -94,6 +94,12 @@ async def list_timetable_entries(
         .where(TimetableEntry.is_active == True)
     )
 
+    if not is_sysadmin(current_user):
+        inst_id = getattr(current_user, "institution_id", None)
+        if inst_id is None:
+            raise HTTPException(status_code=403, detail="Institution context required")
+        query = query.where(Standard.institution_id == inst_id)
+
     if teacher_id:
         query = query.where(
             or_(
@@ -158,10 +164,16 @@ async def list_distinct_rooms(
 ):
     query = (
         select(TimetableEntry.room_number)
+        .join(Division, TimetableEntry.division_id == Division.id)
+        .join(Standard, Division.standard_id == Standard.id)
         .where(TimetableEntry.is_active == True, TimetableEntry.room_number.isnot(None))
-        .distinct()
-        .order_by(TimetableEntry.room_number)
     )
+    if not is_sysadmin(current_user):
+        inst_id = getattr(current_user, "institution_id", None)
+        if inst_id is None:
+            raise HTTPException(status_code=403, detail="Institution context required")
+        query = query.where(Standard.institution_id == inst_id)
+    query = query.distinct().order_by(TimetableEntry.room_number)
     rooms = (await db.execute(query)).scalars().all()
     # Add common rooms if not present
     default_rooms = ["Room 101", "Room 102", "Room 103", "Hall A", "Lab 1"]
@@ -175,17 +187,38 @@ async def check_conflict(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    inst_filter_id = None
+    if not is_sysadmin(current_user):
+        inst_filter_id = getattr(current_user, "institution_id", None)
+        if inst_filter_id is None:
+            raise HTTPException(status_code=403, detail="Institution context required")
+
+    if req.division_id:
+        div_std = (
+            await db.execute(
+                select(Standard.institution_id)
+                .join(Division, Division.standard_id == Standard.id)
+                .where(Division.id == req.division_id)
+            )
+        ).first()
+        if not div_std:
+            raise HTTPException(status_code=404, detail="Division not found")
+        check_institution_access(div_std[0], current_user)
+
     # 1. Room conflict check
     if req.room_number and req.day_of_week:
         room_stmt = (
             select(TimetableEntry, Division)
             .join(Division, TimetableEntry.division_id == Division.id)
+            .join(Standard, Division.standard_id == Standard.id)
             .where(
                 TimetableEntry.room_number.ilike(req.room_number),
                 TimetableEntry.day_of_week.ilike(req.day_of_week),
                 TimetableEntry.is_active == True,
             )
         )
+        if inst_filter_id is not None:
+            room_stmt = room_stmt.where(Standard.institution_id == inst_filter_id)
         if req.exclude_entry_id:
             room_stmt = room_stmt.where(TimetableEntry.id != req.exclude_entry_id)
 
@@ -204,12 +237,16 @@ async def check_conflict(
         batch_stmt = (
             select(TimetableEntry, Subject)
             .join(Subject, TimetableEntry.subject_id == Subject.id)
+            .join(Division, TimetableEntry.division_id == Division.id)
+            .join(Standard, Division.standard_id == Standard.id)
             .where(
                 TimetableEntry.division_id == req.division_id,
                 TimetableEntry.day_of_week.ilike(req.day_of_week),
                 TimetableEntry.is_active == True,
             )
         )
+        if inst_filter_id is not None:
+            batch_stmt = batch_stmt.where(Standard.institution_id == inst_filter_id)
         if req.exclude_entry_id:
             batch_stmt = batch_stmt.where(TimetableEntry.id != req.exclude_entry_id)
 
@@ -233,6 +270,7 @@ async def check_conflict(
         teacher_stmt = (
             select(TimetableEntry, Division, User)
             .join(Division, TimetableEntry.division_id == Division.id)
+            .join(Standard, Division.standard_id == Standard.id)
             .join(User, Division.class_teacher_id == User.id)
             .where(
                 Division.class_teacher_id == check_teacher_id,
@@ -240,6 +278,8 @@ async def check_conflict(
                 TimetableEntry.is_active == True,
             )
         )
+        if inst_filter_id is not None:
+            teacher_stmt = teacher_stmt.where(Standard.institution_id == inst_filter_id)
         if req.exclude_entry_id:
             teacher_stmt = teacher_stmt.where(TimetableEntry.id != req.exclude_entry_id)
         if req.division_id:
@@ -263,6 +303,18 @@ async def create_timetable_entry(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
+    div = await db.get(Division, data.division_id)
+    if not div:
+        raise HTTPException(status_code=404, detail="Division not found")
+    std = await db.get(Standard, div.standard_id)
+    check_institution_access(std.institution_id if std else None, current_user)
+
+    sub = await db.get(Subject, data.subject_id)
+    if not sub:
+        raise HTTPException(status_code=404, detail="Subject not found")
+    sub_std = await db.get(Standard, sub.standard_id)
+    check_institution_access(sub_std.institution_id if sub_std else None, current_user)
+
     # Validate conflict
     conflict_check = await check_conflict(
         ConflictCheckRequest(
@@ -314,6 +366,17 @@ async def update_timetable_entry(
     if not entry:
         raise HTTPException(status_code=404, detail="Schedule session not found")
 
+    div = await db.get(Division, entry.division_id)
+    std = await db.get(Standard, div.standard_id) if div else None
+    check_institution_access(std.institution_id if std else None, current_user)
+
+    if data.subject_id is not None:
+        sub = await db.get(Subject, data.subject_id)
+        if not sub:
+            raise HTTPException(status_code=404, detail="Subject not found")
+        sub_std = await db.get(Standard, sub.standard_id)
+        check_institution_access(sub_std.institution_id if sub_std else None, current_user)
+
     new_room = data.room_number if data.room_number is not None else entry.room_number
     new_day = data.day_of_week if data.day_of_week is not None else entry.day_of_week
     new_start = data.start_time if data.start_time is not None else entry.start_time
@@ -356,6 +419,10 @@ async def delete_timetable_entry(
     ).scalar_one_or_none()
     if not entry:
         raise HTTPException(status_code=404, detail="Schedule session not found")
+
+    div = await db.get(Division, entry.division_id)
+    std = await db.get(Standard, div.standard_id) if div else None
+    check_institution_access(std.institution_id if std else None, current_user)
 
     entry.is_active = False
     await db.commit()

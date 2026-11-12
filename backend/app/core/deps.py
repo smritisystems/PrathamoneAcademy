@@ -17,38 +17,56 @@
 #  */
 
 from typing import Optional
-from fastapi import Depends, HTTPException, Query, Header, status
+from fastapi import Depends, HTTPException, Query, Header, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from jose import JWTError
+from jwt.exceptions import InvalidTokenError as JWTError
 from app.core.database import get_db
 from app.core.security import decode_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+ACCESS_COOKIE_NAME = "prashant_access_token"
+REFRESH_COOKIE_NAME = "prashant_refresh_token"
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
+    bearer_token: Optional[str] = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ):
-    from app.models.user import User
+    from app.models.user import RevokedToken, User
 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = decode_token(token)
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
+    token = bearer_token or (request.cookies.get(ACCESS_COOKIE_NAME) if request else None)
+    if not token:
         raise credentials_exception
 
+    try:
+        payload = decode_token(token)
+        token_type = payload.get("type")
+        if token_type != "access":
+            raise credentials_exception
+        raw_sub = payload.get("sub")
+        user_id = int(raw_sub)
+        jti = payload.get("jti")
+    except (JWTError, TypeError, ValueError):
+        raise credentials_exception
+
+    if jti:
+        revoked = (
+            await db.execute(select(RevokedToken.id).where(RevokedToken.jti == jti))
+        ).scalar_one_or_none()
+        if revoked is not None:
+            raise credentials_exception
+
     result = await db.execute(
-        select(User).where(User.id == int(user_id), User.is_active == True)
+        select(User).where(User.id == user_id, User.is_active == True)
     )
     user = result.scalar_one_or_none()
     if user is None:
@@ -176,12 +194,13 @@ async def enforce_institution_access(
 
 def check_institution_access(target_institution_id: Optional[int], current_user) -> None:
     """
-    Raises HTTP 403 if current_user is assigned to an institution and target_institution_id differs from current_user's institution.
+    Raises HTTP 403 if a non-sysadmin tenant user accesses an unassigned/global
+    record or a record outside their assigned institution.
     """
     if is_sysadmin(current_user):
         return
     user_inst_id = getattr(current_user, "institution_id", None)
-    if user_inst_id is not None and target_institution_id is not None and target_institution_id != user_inst_id:
+    if user_inst_id is not None and (target_institution_id is None or target_institution_id != user_inst_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access forbidden: You cannot access data outside your assigned institution.",

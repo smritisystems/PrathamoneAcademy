@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description REST API router for fee concessions, merit scholarships, eligibility evaluation, and multi-stage approval workflow.
 #  */
@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role, has_permission
+from app.core.deps import get_current_active_user, require_role, has_permission, check_institution_access, is_sysadmin
 from app.models.user import User, AuditLog
 from app.models.student import Student
 from app.models.enrollment import StudentEnrollment
@@ -53,6 +53,46 @@ from app.services.financial_governance_service import (
 )
 
 router = APIRouter(tags=["fees-concessions"])
+
+CONCESSION_STAFF_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "staff",
+    "teacher",
+    "counselor",
+    "counsellor",
+    "receptionist",
+)
+CONCESSION_REPORT_ROLES = ("superadmin", "sysadmin", "super_admin", "admin", "principal", "accountant")
+
+
+def _authorize_concession_student_or_staff(
+    student_id: Optional[int],
+    institution_id: Optional[int],
+    current_user: User,
+) -> None:
+    """Enforces student self-ownership or staff role, plus tenant isolation."""
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        if not student_id or getattr(current_user, "student_id", None) != student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: Students may only view their own concession records.",
+            )
+    elif not is_sysadmin(current_user) and role not in CONCESSION_STAFF_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+    check_institution_access(institution_id, current_user)
+
+
+async def _authorize_application_tenant(db: AsyncSession, application_id: int, current_user: User) -> None:
+    app_row = await db.get(StudentConcessionApplication, application_id)
+    if not app_row:
+        raise HTTPException(status_code=404, detail="Application not found")
+    check_institution_access(app_row.institution_id, current_user)
 
 
 # ─── PYDANTIC SCHEMAS ─────────────────────────────────────────────────────────
@@ -172,6 +212,8 @@ async def list_concession_types(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     inst_id = institution_id or current_user.institution_id or 1
     query = select(FeeConcessionType).where(FeeConcessionType.institution_id == inst_id)
 
@@ -276,6 +318,7 @@ async def update_concession_type(
     ctype = await db.get(FeeConcessionType, type_id)
     if not ctype:
         raise HTTPException(status_code=404, detail="Concession type not found")
+    check_institution_access(ctype.institution_id, current_user)
 
     update_dict = payload.dict(exclude_unset=True)
     if "code" in update_dict and update_dict["code"]:
@@ -322,6 +365,7 @@ async def toggle_concession_type_status(
     ctype = await db.get(FeeConcessionType, type_id)
     if not ctype:
         raise HTTPException(status_code=404, detail="Concession type not found")
+    check_institution_access(ctype.institution_id, current_user)
     ctype.is_active = not ctype.is_active
     await db.commit()
     await db.refresh(ctype)
@@ -342,6 +386,7 @@ async def delete_concession_type(
     ctype = await db.get(FeeConcessionType, type_id)
     if not ctype:
         raise HTTPException(status_code=404, detail="Concession type not found")
+    check_institution_access(ctype.institution_id, current_user)
 
     # Anti-De-Linking & Ledger Immutability Rule:
     # Existing schemes should be deactivated or revised, not deleted,
@@ -372,6 +417,10 @@ async def evaluate_eligibility(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
+    student = await db.get(Student, student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    _authorize_concession_student_or_staff(student.id, student.institution_id, current_user)
     try:
         res = await ConcessionEligibilityService.evaluate_student_eligibility(
             db=db,
@@ -403,6 +452,17 @@ async def list_applications(
     current_user: User = Depends(get_current_active_user),
 ):
     inst_id = current_user.institution_id or 1
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        own_sid = getattr(current_user, "student_id", None)
+        if not own_sid or (student_id is not None and student_id != own_sid):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: Students may only view their own concession applications.",
+            )
+        student_id = own_sid
+    elif not is_sysadmin(current_user) and role not in CONCESSION_STAFF_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
     query = (
         select(StudentConcessionApplication)
         .options(
@@ -654,6 +714,7 @@ async def get_application_detail(
     app = app_res.scalar_one_or_none()
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
+    _authorize_concession_student_or_staff(app.student_id, app.institution_id, current_user)
 
     eligibility_parsed = None
     if app.eligibility_snapshot:
@@ -739,6 +800,7 @@ async def verify_application(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions: requires 'concessions:verify' privilege.",
         )
+    await _authorize_application_tenant(db, application_id, current_user)
     try:
         app = await ConcessionWorkflowService.verify_application(
             db=db,
@@ -765,6 +827,7 @@ async def approve_application(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions: requires 'concessions:approve' privilege.",
         )
+    await _authorize_application_tenant(db, application_id, current_user)
     try:
         app = await ConcessionWorkflowService.approve_application(
             db=db,
@@ -802,6 +865,7 @@ async def reject_application(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions: requires 'concessions:approve' privilege.",
         )
+    await _authorize_application_tenant(db, application_id, current_user)
     try:
         app = await ConcessionWorkflowService.reject_application(
             db=db,
@@ -1006,8 +1070,10 @@ async def get_concession_analytics(
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*CONCESSION_STAFF_ROLES)),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     inst_id = institution_id or current_user.institution_id or 1
     ay_id = academic_year_id
     if not ay_id:
@@ -1068,8 +1134,10 @@ async def get_governance_summary(
     search: Optional[str] = None,
     include_breakdowns: bool = False,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*CONCESSION_STAFF_ROLES)),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     inst_id = institution_id or current_user.institution_id or 1
     flt = FinancialFilter(
         institution_id=inst_id,
@@ -1098,7 +1166,7 @@ async def get_concession_reconciliation(
     standard_id: Optional[int] = None,
     division_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*CONCESSION_REPORT_ROLES)),
 ):
     can_rep = await has_permission(db, current_user, "concessions", "reports")
     if not can_rep and current_user.role not in ("superadmin", "admin", "accountant", "principal"):
@@ -1106,6 +1174,8 @@ async def get_concession_reconciliation(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions: requires 'concessions:reports' privilege.",
         )
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     inst_id = institution_id or current_user.institution_id or 1
     flt = FinancialFilter(
         institution_id=inst_id,
@@ -1121,13 +1191,32 @@ async def get_transaction_trace(
     entity_type: str,
     entity_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*CONCESSION_REPORT_ROLES)),
 ):
     if entity_type not in ("application", "allocation", "invoice", "student"):
         raise HTTPException(
             status_code=400,
             detail="Invalid trace entity_type. Allowed: 'application', 'allocation', 'invoice', 'student'.",
         )
+    if not is_sysadmin(current_user):
+        target_inst_id = None
+        if entity_type == "student":
+            stu = await db.get(Student, entity_id)
+            target_inst_id = stu.institution_id if stu else None
+        elif entity_type == "application":
+            app_obj = await db.get(StudentConcessionApplication, entity_id)
+            target_inst_id = app_obj.institution_id if app_obj else None
+        elif entity_type == "allocation":
+            alloc = await db.get(FeeConcessionAllocation, entity_id)
+            if alloc:
+                app_obj = await db.get(StudentConcessionApplication, alloc.application_id)
+                target_inst_id = app_obj.institution_id if app_obj else None
+        elif entity_type == "invoice":
+            inv = await db.get(FeeInvoice, entity_id)
+            if inv:
+                stu = await db.get(Student, inv.student_id)
+                target_inst_id = stu.institution_id if stu else None
+        check_institution_access(target_inst_id, current_user)
     return await FinancialGovernanceService.trace_transaction_chain(db, entity_type, entity_id)
 
 
@@ -1151,6 +1240,7 @@ async def get_award_letter_data(
     app = app_res.scalar_one_or_none()
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
+    _authorize_concession_student_or_staff(app.student_id, app.institution_id, current_user)
 
     student = app.student
     return {

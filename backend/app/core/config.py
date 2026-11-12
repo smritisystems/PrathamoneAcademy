@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
@@ -22,6 +22,11 @@ import json
 import sys
 
 _INSECURE_DEFAULT = "changeme-in-production-use-long-random-string"
+_INSECURE_SECRETS = {
+    _INSECURE_DEFAULT,
+    "prashant_academy_super_secure_jwt_secret_key_change_in_production_2024",
+    "REPLACE_WITH_RANDOM_64_CHAR_HEX_SECRET",
+}
 
 
 class Settings(BaseSettings):
@@ -36,14 +41,14 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.76.0"
-    BUILD_NUMBER: str = "2026.11.10-REV-137-v1.76.0-C31CC0B"
+    VERSION: str = "1.87.0"
+    BUILD_NUMBER: str = "2026.11.12-REV-158-v1.87.0-EB97155"
     RELEASE_CHANNEL: str = "Stable"
     RELEASE_STATUS: str = "Production Candidate"
-    BUILD_DATE: str = "2026-11-10"
+    BUILD_DATE: str = "2026-11-12"
     AUTHOR: str = "Jawahar R Mallah"
     ORGANIZATION: str = "AITDL — AI Technology & Development Lab"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # PRATHAMONE CodeX — Mandatory Default Directives (Opt-in only, System Default: DISABLED)
     CODEX_SYSTEM_DEFAULT: bool = False
@@ -81,7 +86,7 @@ class Settings(BaseSettings):
     def validate_security(self) -> None:
         """Fail fast in production when insecure defaults are detected."""
         if not self.DEBUG:
-            if self.SECRET_KEY == _INSECURE_DEFAULT or len(self.SECRET_KEY) < 32:
+            if self.SECRET_KEY in _INSECURE_SECRETS or len(self.SECRET_KEY) < 32:
                 print(
                     "FATAL: SECRET_KEY is insecure. "
                     "Set a strong SECRET_KEY in your .env file before running in production.",

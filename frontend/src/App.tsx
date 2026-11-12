@@ -17,8 +17,8 @@
  */
 
 import React, { Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore } from './store/authStore'
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { useAuthStore, isUserSysAdmin } from './store/authStore'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { OfflineBanner } from './components/OfflineBanner'
 import { lazyWithRetry } from './utils/lazyWithRetry'
@@ -29,8 +29,6 @@ import NotFoundPage from './pages/NotFound'
 const LoginPage = lazyWithRetry(() => import('./pages/Login'), 'Login')
 const DashboardPage = lazyWithRetry(() => import('./pages/Dashboard'), 'Dashboard')
 const CoursesPage = lazyWithRetry(() => import('./pages/Courses'), 'Courses')
-const StandardsPage = lazyWithRetry(() => import('./pages/Standards'), 'Standards')
-const BatchesPage = lazyWithRetry(() => import('./pages/Batches'), 'Batches')
 const SubjectsPage = lazyWithRetry(() => import('./pages/Subjects'), 'Subjects')
 const StudentsPage = lazyWithRetry(() => import('./pages/Students'), 'Students')
 const StudentDetailPage = lazyWithRetry(() => import('./pages/StudentDetail'), 'StudentDetail')
@@ -74,6 +72,7 @@ const CrmReportsPage = lazyWithRetry(() => import('./pages/crm/CrmReportsPage'),
 const CrmSettingsPage = lazyWithRetry(() => import('./pages/crm/CrmSettingsPage'), 'CrmSettingsPage')
 const TrainingManagementPage = lazyWithRetry(() => import('./pages/TrainingManagement'), 'TrainingManagement')
 const HomeworkWorkspacePage = lazyWithRetry(() => import('./pages/HomeworkWorkspace'), 'HomeworkWorkspace')
+const EduBoardWorkspacePage = lazyWithRetry(() => import('./pages/EduBoardWorkspace'), 'EduBoardWorkspace')
 
 function PageLoader() {
   return (
@@ -90,10 +89,28 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 function StaffRoute({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user)
-  if (user?.role === 'student') {
+  if ((user?.role || '').toLowerCase() === 'student') {
     return <Navigate to="/student-portal" replace />
   }
   return <>{children}</>
+}
+
+function RoleOutlet({ roles, sysadminOnly = false }: { roles?: string[]; sysadminOnly?: boolean }) {
+  const user = useAuthStore((s) => s.user)
+  const role = (user?.role || '').toLowerCase()
+  if (role === 'student') {
+    return <Navigate to="/student-portal" replace />
+  }
+  if (isUserSysAdmin(user)) {
+    return <Outlet />
+  }
+  if (sysadminOnly) {
+    return <Navigate to="/dashboard" replace />
+  }
+  if (roles && !roles.map((r) => r.toLowerCase()).includes(role)) {
+    return <Navigate to="/dashboard" replace />
+  }
+  return <Outlet />
 }
 
 function IndexRedirect() {
@@ -164,6 +181,61 @@ export default function App() {
               </ErrorBoundary>
             }
           />
+          <Route path="receipts/:receiptNumber" element={<Suspense fallback={<PageLoader />}><ReceiptPage /></Suspense>} />
+          <Route path="receipts/payment/:paymentId" element={<Suspense fallback={<PageLoader />}><ReceiptPage /></Suspense>} />
+          <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
+
+          {/* SysAdmin-Only Control Plane & Legacy Cluster Endpoints */}
+          <Route element={<RoleOutlet sysadminOnly />}>
+            <Route path="sysadmin" element={<Suspense fallback={<PageLoader />}><SysAdminWorkspacePage /></Suspense>} />
+            <Route path="housekeeping" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
+            <Route path="housekeeping/:tab" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
+            <Route path="fees/import" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
+            <Route path="import/fee-register" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
+          </Route>
+
+          {/* Institution Administrator & Principal Governance Routes */}
+          <Route element={<RoleOutlet roles={['admin', 'principal']} />}>
+            <Route path="users" element={<Suspense fallback={<PageLoader />}><UsersPage /></Suspense>} />
+            <Route path="users/:id" element={<Suspense fallback={<PageLoader />}><UserProfilePage /></Suspense>} />
+            <Route path="settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
+            <Route path="codex" element={<Suspense fallback={<PageLoader />}><CodeXStudioPage /></Suspense>} />
+            <Route path="import-export" element={<Suspense fallback={<PageLoader />}><ImportExportPage /></Suspense>} />
+            <Route path="releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
+            <Route path="admin/releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
+            <Route path="training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />
+            <Route path="admin/training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />
+          </Route>
+
+          {/* Finance Desk Routes */}
+          <Route element={<RoleOutlet roles={['admin', 'principal', 'accountant', 'staff']} />}>
+            <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/overview" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/structures" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/invoicing" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/collection" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/defaulters" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/concessions" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/online-gateway" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/reports" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/register" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/collect" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/collect/:studentId" element={<Suspense fallback={<PageLoader />}><FeeCollectionPage /></Suspense>} />
+            <Route path="fees/payments" element={<Navigate to="/payments" replace />} />
+            <Route path="fees/receipts" element={<Navigate to="/payments" replace />} />
+            <Route path="fees/plans" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/settings" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="payments" element={<Suspense fallback={<PageLoader />}><PaymentsPage /></Suspense>} />
+          </Route>
+
+          {/* Teacher Payroll Routes */}
+          <Route element={<RoleOutlet roles={['admin', 'principal', 'accountant', 'teacher']} />}>
+            <Route path="teacher-payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
+            <Route path="payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
+          </Route>
+
+          {/* Non-Student Staff & Faculty Operational Workspaces */}
+          <Route element={<RoleOutlet />}>
           {/* Academic Structure Dedicated Workspaces */}
           <Route path="academic" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
           <Route path="academic/overview" element={<Suspense fallback={<PageLoader />}><AcademicWorkspacePage /></Suspense>} />
@@ -248,37 +320,17 @@ export default function App() {
           {/* Homework & Assignment Dedicated Workspaces */}
           <Route path="homework" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/overview" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
+          <Route path="homework/new" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/create" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/checking" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/submissions" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/templates" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/reports" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
-          {/* Fees & Payments Dedicated Workspaces */}
-          <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/overview" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/structures" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/invoicing" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/collection" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/defaulters" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/concessions" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/online-gateway" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/reports" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          {/* Backwards compatibility aliases */}
-          <Route path="fees/register" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/collect" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/collect/:studentId" element={<Suspense fallback={<PageLoader />}><FeeCollectionPage /></Suspense>} />
-          <Route path="fees/payments" element={<Navigate to="/payments" replace />} />
-          <Route path="fees/receipts" element={<Navigate to="/payments" replace />} />
-          <Route path="fees/plans" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/settings" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
-          <Route path="fees/import" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
-          <Route path="import/fee-register" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
-          <Route path="payments" element={<Suspense fallback={<PageLoader />}><PaymentsPage /></Suspense>} />
-          <Route path="receipts/:receiptNumber" element={<Suspense fallback={<PageLoader />}><ReceiptPage /></Suspense>} />
-          <Route path="receipts/payment/:paymentId" element={<Suspense fallback={<PageLoader />}><ReceiptPage /></Suspense>} />
+          {/* PrathamOne EduBoard Interactive Classroom Engine */}
+          <Route path="eduboard" element={<Suspense fallback={<PageLoader />}><EduBoardWorkspacePage /></Suspense>} />
+          <Route path="eduboard/:boardId" element={<Suspense fallback={<PageLoader />}><EduBoardWorkspacePage /></Suspense>} />
+          {/* Fees & Payments aliases already guarded above */}
           <Route path="reports" element={<Suspense fallback={<PageLoader />}><ReportsPage /></Suspense>} />
-          <Route path="users" element={<Suspense fallback={<PageLoader />}><UsersPage /></Suspense>} />
-          <Route path="users/:id" element={<Suspense fallback={<PageLoader />}><UserProfilePage /></Suspense>} />
           <Route path="teachers" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
           <Route path="teachers/overview" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
           <Route path="teachers/directory" element={<Suspense fallback={<PageLoader />}><TeacherManagementPage /></Suspense>} />
@@ -301,10 +353,6 @@ export default function App() {
           <Route path="staff/documents" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
           <Route path="staff/settings" element={<Suspense fallback={<PageLoader />}><StaffManagementPage /></Suspense>} />
           <Route path="staff/:id" element={<Suspense fallback={<PageLoader />}><StaffProfilePage /></Suspense>} />
-          <Route path="teacher-payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
-          <Route path="payroll" element={<Suspense fallback={<PageLoader />}><TeacherPayrollPage /></Suspense>} />
-          <Route path="sysadmin" element={<Suspense fallback={<PageLoader />}><SysAdminWorkspacePage /></Suspense>} />
-          <Route path="import-export" element={<Suspense fallback={<PageLoader />}><ImportExportPage /></Suspense>} />
           {/* Forms & KYC Document Studio Dedicated Workspaces */}
           <Route path="forms" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="forms/overview" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
@@ -316,11 +364,6 @@ export default function App() {
           <Route path="forms/bulk-print" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="forms/audit-logs" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
           <Route path="forms-documents" element={<Suspense fallback={<PageLoader />}><FormsDocumentsPage /></Suspense>} />
-          <Route path="install" element={<Suspense fallback={<PageLoader />}><InstallAppPage /></Suspense>} />
-          <Route path="housekeeping" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
-          <Route path="housekeeping/:tab" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
-          <Route path="settings" element={<Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>} />
-          <Route path="codex" element={<Suspense fallback={<PageLoader />}><CodeXStudioPage /></Suspense>} />
           {/* Communication Center Dedicated Workspaces */}
           <Route path="communication" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/overview" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
@@ -333,10 +376,7 @@ export default function App() {
           <Route path="communication/gateways" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/diagnostics" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/settings" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
-          <Route path="releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
-          <Route path="admin/releases" element={<Suspense fallback={<PageLoader />}><ReleasesPage /></Suspense>} />
-          <Route path="training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />
-          <Route path="admin/training" element={<Suspense fallback={<PageLoader />}><TrainingManagementPage /></Suspense>} />
+          </Route>
 
           {/* Help & About Centre Workspaces */}
           <Route path="help" element={<Suspense fallback={<PageLoader />}><HelpCentrePage /></Suspense>} />

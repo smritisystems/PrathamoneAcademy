@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-12
 #  *
 #  * @description Service for parsing, validating, duplicate-checking, and importing batch data from spreadsheets.
 #  */
@@ -499,13 +499,23 @@ async def validate_and_preview_import(
         existing_boards[b_code.strip().upper()] = b_id
         existing_boards[b_name.strip().lower()] = b_id
 
-    div_rows = (await db.execute(select(Division.id, Division.code, Division.name))).all()
+    div_rows = (
+        await db.execute(
+            select(Division.id, Division.code, Division.name)
+            .join(Standard, Division.standard_id == Standard.id)
+            .where(Standard.institution_id == institution_id)
+        )
+    ).all()
     for d_id, d_code, d_name in div_rows:
         if d_code:
             existing_batches[d_code.strip().upper()] = d_id
         existing_batches[d_name.strip().lower()] = d_id
 
-    ay_rows = (await db.execute(select(AcademicYear.id, AcademicYear.name))).all()
+    ay_rows = (
+        await db.execute(
+            select(AcademicYear.id, AcademicYear.name).where(AcademicYear.institution_id == institution_id)
+        )
+    ).all()
     for ay_id, ay_name in ay_rows:
         existing_ay[ay_name.strip().lower()] = ay_id
 
@@ -518,10 +528,22 @@ async def validate_and_preview_import(
     elif entity_type == "classes":
         existing_keys_in_db = set(lvl for _, _, lvl in std_rows)
     elif entity_type == "batches":
-        div_codes = (await db.execute(select(Division.code))).scalars().all()
+        div_codes = (
+            await db.execute(
+                select(Division.code)
+                .join(Standard, Division.standard_id == Standard.id)
+                .where(Standard.institution_id == institution_id)
+            )
+        ).scalars().all()
         existing_keys_in_db = set(c.strip().upper() for c in div_codes if c)
     elif entity_type == "payments":
-        pay_refs = (await db.execute(select(Payment.transaction_reference))).scalars().all()
+        pay_refs = (
+            await db.execute(
+                select(Payment.transaction_reference)
+                .join(Student, Payment.student_id == Student.id)
+                .where(Student.institution_id == institution_id)
+            )
+        ).scalars().all()
         existing_keys_in_db = set(r.strip().upper() for r in pay_refs if r)
 
     # Process Rows
@@ -672,14 +694,24 @@ async def execute_verified_import(
         board_map[b_code.strip().upper()] = b_id
         board_map[b_name.strip().lower()] = b_id
 
-    div_rows = (await db.execute(select(Division.id, Division.code, Division.name))).all()
+    div_rows = (
+        await db.execute(
+            select(Division.id, Division.code, Division.name)
+            .join(Standard, Division.standard_id == Standard.id)
+            .where(Standard.institution_id == institution_id)
+        )
+    ).all()
     batch_map = {}
     for d_id, d_code, d_name in div_rows:
         if d_code:
             batch_map[d_code.strip().upper()] = d_id
         batch_map[d_name.strip().lower()] = d_id
 
-    ay_rows = (await db.execute(select(AcademicYear.id, AcademicYear.name))).all()
+    ay_rows = (
+        await db.execute(
+            select(AcademicYear.id, AcademicYear.name).where(AcademicYear.institution_id == institution_id)
+        )
+    ).all()
     ay_map = {ay_name.strip().lower(): ay_id for ay_id, ay_name in ay_rows}
     default_ay_id = academic_year_id or (list(ay_map.values())[0] if ay_map else 1)
 
@@ -710,7 +742,14 @@ async def execute_verified_import(
                 adm_date = parse_date_value(data.get("admission_date")) or date.today()
 
                 if action == "update":
-                    st = (await db.execute(select(Student).where(Student.admission_number == adm_no))).scalar_one_or_none()
+                    st = (
+                        await db.execute(
+                            select(Student).where(
+                                Student.admission_number == adm_no,
+                                Student.institution_id == institution_id,
+                            )
+                        )
+                    ).scalar_one_or_none()
                     if st:
                         st.first_name = data["first_name"]
                         st.last_name = data.get("last_name") or ""
@@ -792,7 +831,14 @@ async def execute_verified_import(
             elif entity_type == "boards":
                 code = data["code"].strip().upper()
                 if action == "update":
-                    brd = (await db.execute(select(Board).where(Board.code == code))).scalar_one_or_none()
+                    brd = (
+                        await db.execute(
+                            select(Board).where(
+                                Board.code == code,
+                                Board.institution_id == institution_id,
+                            )
+                        )
+                    ).scalar_one_or_none()
                     if brd:
                         brd.name = data["name"]
                         brd.description = data.get("description")
@@ -817,7 +863,16 @@ async def execute_verified_import(
                 b_id = board_map.get(b_code)
 
                 if action == "update":
-                    div = (await db.execute(select(Division).where(Division.code == code))).scalar_one_or_none()
+                    div = (
+                        await db.execute(
+                            select(Division)
+                            .join(Standard, Division.standard_id == Standard.id)
+                            .where(
+                                Division.code == code,
+                                Standard.institution_id == institution_id,
+                            )
+                        )
+                    ).scalar_one_or_none()
                     if div:
                         div.name = data["name"]
                         div.capacity = parse_int_value(data.get("capacity")) or 40
@@ -856,7 +911,16 @@ async def execute_verified_import(
                 ref = data["transaction_reference"].strip()
 
                 if action == "update":
-                    pay = (await db.execute(select(Payment).where(Payment.transaction_reference == ref))).scalar_one_or_none()
+                    pay = (
+                        await db.execute(
+                            select(Payment)
+                            .join(Student, Payment.student_id == Student.id)
+                            .where(
+                                Payment.transaction_reference == ref,
+                                Student.institution_id == institution_id,
+                            )
+                        )
+                    ).scalar_one_or_none()
                     if pay:
                         pay.amount = amt
                         pay.payment_date = p_date

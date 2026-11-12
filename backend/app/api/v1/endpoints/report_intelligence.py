@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description REST API endpoints for Universal Report Calculation & Intelligence Engine.
 #  */
@@ -22,17 +22,32 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_active_user, require_role
 from app.models.user import User
 from app.models.settings import InstitutionSetting
 from app.services.report_intelligence_service import ReportIntelligenceService
 
 router = APIRouter()
 
+REPORT_STAFF_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "teacher",
+    "staff",
+    "counselor",
+    "counsellor",
+    "receptionist",
+)
+REPORT_ADMIN_ROLES = ("superadmin", "sysadmin", "super_admin", "admin", "principal")
+
 
 @router.get("/definitions")
 async def get_calculation_definitions(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ) -> Dict[str, Any]:
     """Retrieve canonical registry of mathematical formulas, inclusion/exclusion rules, and business meanings."""
     defs = ReportIntelligenceService.get_all_calculation_definitions()
@@ -48,7 +63,7 @@ async def get_report_intelligence(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ) -> Dict[str, Any]:
     """Calculate and return live KPIs, mathematical provenance, comparisons, and actionable insights."""
     institution_id = current_user.institution_id or 1
@@ -68,7 +83,7 @@ async def get_report_intelligence(
 @router.get("/thresholds")
 async def get_report_thresholds(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ) -> Dict[str, Any]:
     """Retrieve current institutional calculation thresholds and policy benchmarks."""
     institution_id = current_user.institution_id or 1
@@ -80,11 +95,11 @@ async def get_report_thresholds(
 async def update_report_thresholds(
     payload: Dict[str, float],
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(*REPORT_ADMIN_ROLES)),
 ) -> Dict[str, Any]:
     """Update institutional targets and thresholds (Restricted to Administrators/Principals)."""
     role = (current_user.role or "").lower()
-    if role not in ["admin", "sysadmin", "superadmin", "principal"]:
+    if role not in ["admin", "sysadmin", "superadmin", "super_admin", "principal"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only administrators and principals can modify official reporting thresholds.",

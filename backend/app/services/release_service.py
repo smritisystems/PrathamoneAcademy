@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-10
+#  * @updated     2026-11-12
 #  *
 #  * @description Enterprise Release & Change Management service governing change tracking, automated release notes, semantic versioning, validation, and production approval lifecycles.
 #  */
@@ -249,6 +249,15 @@ class ReleaseService:
                     continue
         return None
 
+    _SAFE_GIT_REF_RE = re.compile(r"^(?:[a-fA-F0-9]{4,40}|v?[0-9]+\.[0-9]+\.[0-9]+(?:[-+._a-zA-Z0-9]*)?)$")
+
+    @classmethod
+    def _sanitize_git_ref(cls, ref: Optional[str]) -> Optional[str]:
+        if not ref:
+            return None
+        clean = ref.strip()
+        return clean if cls._SAFE_GIT_REF_RE.match(clean) else None
+
     @classmethod
     def get_git_commits(cls, since_commit: Optional[str] = None, max_count: int = 40) -> List[Dict[str, Any]]:
         """
@@ -256,10 +265,11 @@ class ReleaseService:
         Falls back to release_manifest.json when running inside containerized runtimes.
         """
         commits: List[Dict[str, Any]] = []
+        safe_since = cls._sanitize_git_ref(since_commit)
         try:
             cmd = ["git", "log", f"-n{max_count}", "--pretty=format:%H|%an|%ad|%s", "--date=iso-strict"]
-            if since_commit:
-                cmd = ["git", "log", f"{since_commit}..HEAD", "--pretty=format:%H|%an|%ad|%s", "--date=iso-strict"]
+            if safe_since:
+                cmd = ["git", "log", f"{safe_since}..HEAD", "--pretty=format:%H|%an|%ad|%s", "--date=iso-strict"]
 
             output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=5).decode("utf-8", errors="ignore")
             for line in output.strip().split("\n"):
@@ -308,7 +318,8 @@ class ReleaseService:
     @classmethod
     def get_git_changed_files(cls, since_commit: Optional[str] = None) -> List[str]:
         try:
-            cmd = ["git", "diff", "--name-only", f"{since_commit}..HEAD" if since_commit else "HEAD~10..HEAD"]
+            safe_since = cls._sanitize_git_ref(since_commit)
+            cmd = ["git", "diff", "--name-only", f"{safe_since}..HEAD" if safe_since else "HEAD~10..HEAD"]
             output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=5).decode("utf-8", errors="ignore")
             files = [line.strip() for line in output.strip().split("\n") if line.strip()]
             if files:
@@ -864,8 +875,18 @@ class ReleaseService:
         """
         Seeds canonical historical releases (v1.0.0, v1.4.0, v6.99.1) if not already present.
         """
-        existing = (await db.execute(select(func.count(SystemRelease.id)))).scalar() or 0
-        if existing > 0:
+        existing_versions = set(
+            (
+                await db.execute(
+                    select(SystemRelease.version).where(
+                        SystemRelease.version.in_(["1.0.0", "1.4.0", "6.99.1"])
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if {"1.0.0", "1.4.0", "6.99.1"}.issubset(existing_versions):
             return
 
         historical = [
@@ -936,6 +957,8 @@ class ReleaseService:
 
         now = datetime.now(timezone.utc)
         for h in historical:
+            if h["version"] in existing_versions:
+                continue
             rel = SystemRelease(
                 version=h["version"],
                 build_number=h["build_number"],

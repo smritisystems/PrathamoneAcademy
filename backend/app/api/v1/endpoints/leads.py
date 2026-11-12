@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -2228,8 +2228,10 @@ async def convert_lead_to_admission(
             await db.flush()
             db.add(
                 FeeInvoiceItem(
+                    institution_id=student.institution_id,
                     invoice_id=inv_obj.id,
                     fee_structure_id=target_fs.id,
+                    structure_name=target_fs.name,
                     description=target_fs.name,
                     amount=target_fs.amount,
                     discount_amount=Decimal("0.00"),

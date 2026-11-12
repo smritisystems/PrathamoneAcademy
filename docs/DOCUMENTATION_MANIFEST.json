@@ -5,8 +5,8 @@
   "product_version": "1.0.0",
   "organization": "AITDL — AI Technology & Development Lab",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-12T11:54:15.695848",
-  "total_documents": 412,
+  "generated_at": "2026-11-12T16:14:18.959709",
+  "total_documents": 423,
   "modules_catalog": [
     {
       "id": "00_PRODUCT_OVERVIEW",
@@ -1945,6 +1945,68 @@
         "04_STUDENT_MANAGEMENT",
         "05_TEACHER_MANAGEMENT",
         "06_TEACHER_PAYROLL"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "03_ACADEMIC_MANAGEMENT_2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1_md",
+      "filename": "2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "relative_path": "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "extension": ".md",
+      "size_bytes": 14129,
+      "sha256": "512e8fbe6bd75c1f7b3cebbdd2e6164b2d0aa06e764e1590c75b611c4036e143",
+      "module": "03_ACADEMIC_MANAGEMENT",
+      "title": "Homework & Assignment Management Enhancement — Final Acceptance Report",
+      "category": "ACCEPTANCE-REPORT",
+      "document_type": "REPORT",
+      "version": "1.87.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "homework",
+        "assignments",
+        "acceptance-report",
+        "phase-15",
+        "ssot",
+        "rbac",
+        "testing",
+        "v1.87.0"
+      ],
+      "entities": [
+        "HomeworkAssignment",
+        "StudentHomeworkRecord",
+        "HomeworkAuditLog",
+        "HomeworkFile",
+        "CommunicationLog",
+        "InstitutionSetting"
+      ],
+      "api_routes": [
+        "/api/v1/homework/settings",
+        "/api/v1/homework/files/upload",
+        "/api/v1/homework/files/{file_id}/download",
+        "/api/v1/homework/students/search",
+        "/api/v1/homework/recipients/preview",
+        "/api/v1/homework/assignments",
+        "/api/v1/homework/assignments/{id}/publish",
+        "/api/v1/homework/assignments/{id}/sync-late-joiners",
+        "/api/v1/homework/records/{record_id}/evaluate",
+        "/api/v1/homework/dashboards/teacher",
+        "/api/v1/homework/dashboards/student",
+        "/api/v1/homework/reports/batch/{assignment_id}",
+        "/api/v1/homework/reports/analytics"
+      ],
+      "related_modules": [
+        "03_ACADEMIC_MANAGEMENT",
+        "04_STUDENT_MANAGEMENT",
+        "05_TEACHER_MANAGEMENT",
+        "11_REPORTS_EXPORTS",
+        "12_RBAC_SECURITY",
+        "19_RELEASES_CHANGELOG"
       ],
       "product": "PrathamOne EduOS",
       "edition": "Coaching Institute Edition"
@@ -9032,6 +9094,55 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "19_RELEASES_CHANGELOG_2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1_md",
+      "filename": "2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md",
+      "relative_path": "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md",
+      "extension": ".md",
+      "size_bytes": 5823,
+      "sha256": "30c695c4e4d99f7f57f4d7d738a65dc7bb907b157bbf95b09d0eb108d50ab804",
+      "module": "19_RELEASES_CHANGELOG",
+      "title": "Release Notes v1.87.0 — Homework & Assignment Management Enhancement",
+      "category": "CHANGELOG",
+      "document_type": "CHANGELOG",
+      "version": "1.87.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "releases",
+        "v1.87.0",
+        "homework",
+        "assignments",
+        "submissions",
+        "evaluation",
+        "notifications",
+        "governance"
+      ],
+      "entities": [
+        "HomeworkAssignment",
+        "StudentHomeworkRecord",
+        "HomeworkAuditLog",
+        "HomeworkFile",
+        "CommunicationLog"
+      ],
+      "api_routes": [
+        "/api/v1/homework",
+        "/api/v1/students"
+      ],
+      "related_modules": [
+        "03_ACADEMIC_MANAGEMENT",
+        "04_STUDENT_MANAGEMENT",
+        "05_TEACHER_MANAGEMENT",
+        "11_REPORTS_EXPORTS",
+        "19_RELEASES_CHANGELOG"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "20_AUDITS_COMPLIANCE_2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_AUDIT-REPORT_V1_md",
       "filename": "2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_AUDIT-REPORT_V1.md",
       "relative_path": "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_AUDIT-REPORT_V1.md",
@@ -11600,6 +11711,91 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1_md",
+      "filename": "2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "extension": ".md",
+      "size_bytes": 29543,
+      "sha256": "aca842fa976946fb9bc4302c6b65496132f217061800612e300a6182f3b38dd0",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "PrathamOne EduOS — Full Platform Security, Architecture, Governance & Dependency Audit",
+      "category": "AUDIT-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "full-audit",
+        "security",
+        "rbac",
+        "multi-tenancy",
+        "idor",
+        "rule-010",
+        "rule-011",
+        "ssot",
+        "dependencies",
+        "performance",
+        "nginx"
+      ],
+      "entities": [
+        "User",
+        "Institution",
+        "Student",
+        "Payment",
+        "PaymentReceipt",
+        "FeeInvoice",
+        "FeeConcessionAllocation",
+        "TeacherPayroll",
+        "AuditLog",
+        "ExamMark",
+        "Subject",
+        "CanonicalSubject",
+        "SubjectMapping",
+        "StaffProfile"
+      ],
+      "api_routes": [
+        "/api/v1/payments/online/webhook",
+        "/api/v1/import-register",
+        "/api/v1/teacher-payroll",
+        "/api/v1/institutions",
+        "/api/v1/users",
+        "/api/v1/housekeeping",
+        "/api/v1/governance",
+        "/api/v1/examinations",
+        "/api/v1/homework",
+        "/api/v1/attendance",
+        "/api/v1/students",
+        "/api/v1/reports",
+        "/api/v1/concessions",
+        "/api/v1/communication",
+        "/api/v1/forms",
+        "/api/v1/fees",
+        "/api/v1/student-portal",
+        "/api/v1/codex"
+      ],
+      "related_modules": [
+        "01_ARCHITECTURE",
+        "03_ACADEMIC_MANAGEMENT",
+        "04_STUDENT_MANAGEMENT",
+        "05_TEACHER_MANAGEMENT",
+        "06_TEACHER_PAYROLL",
+        "07_ATTENDANCE",
+        "08_EXAMINATION",
+        "09_FEES_PAYMENTS",
+        "12_RBAC_SECURITY",
+        "13_SYSADMIN_SETTINGS",
+        "16_DATABASE_API",
+        "18_TESTING_QA",
+        "25_BUSINESS_REQUIREMENTS"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "20_AUDITS_COMPLIANCE_2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1_md",
       "filename": "2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
       "relative_path": "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
@@ -11657,6 +11853,207 @@
         "18_TESTING_QA",
         "22_USER_MANUALS",
         "25_BUSINESS_REQUIREMENTS"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1_md",
+      "filename": "2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "extension": ".md",
+      "size_bytes": 9962,
+      "sha256": "ec5fbf9625315f72d5298bbbab964b874557a729275674984d55fa5173b5af17",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "PrathamOne EduOS — Sprint 1 (P0) Critical Security Lockdown Remediation Report",
+      "category": "REMEDIATION-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "sprint-1",
+        "p0",
+        "security-lockdown",
+        "rbac",
+        "tenant-isolation",
+        "payments",
+        "nginx",
+        "remediation"
+      ],
+      "entities": [
+        "Payment",
+        "PaymentReceipt",
+        "FeeInvoice",
+        "User",
+        "Institution",
+        "TeacherPayroll",
+        "AuditLog",
+        "InstitutionSetting"
+      ],
+      "api_routes": [
+        "/api/v1/payments/online/webhook",
+        "/api/v1/payments/online/create-order",
+        "/api/v1/payments/online/verify",
+        "/api/v1/payments/online/config",
+        "/api/v1/import/fee-register/preview",
+        "/api/v1/import/fee-register/preview-upload",
+        "/api/v1/import/fee-register/execute",
+        "/api/v1/import/fee-register/status",
+        "/api/v1/institutions/",
+        "/api/v1/teacher-payroll",
+        "/api/v1/users",
+        "/api/v1/housekeeping",
+        "/api/v1/governance/safe-delete"
+      ],
+      "related_modules": [
+        "09_FEES_PAYMENTS",
+        "06_TEACHER_PAYROLL",
+        "12_RBAC_SECURITY",
+        "13_SYSADMIN_SETTINGS",
+        "18_TESTING_QA",
+        "20_AUDITS_COMPLIANCE"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1_md",
+      "filename": "2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "extension": ".md",
+      "size_bytes": 13553,
+      "sha256": "d65bf542d11ec28cf2714c9710f043aaa28990b5267402a4d8709f4140129b00",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "PrathamOne EduOS — Sprint 2 (P1) Security, View-First & Dependency Remediation Report",
+      "category": "REMEDIATION-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "remediation",
+        "sprint-2",
+        "p1",
+        "rbac",
+        "multi-tenancy",
+        "idor",
+        "xss",
+        "rule-010",
+        "dependencies",
+        "pyjwt",
+        "write-excel-file",
+        "vite-8"
+      ],
+      "entities": [
+        "User",
+        "Institution",
+        "Student",
+        "Payment",
+        "PaymentReceipt",
+        "FeeInvoice",
+        "FeeConcessionAllocation",
+        "Subject",
+        "CanonicalSubject",
+        "StaffProfile"
+      ],
+      "api_routes": [
+        "/api/v1/auth/login",
+        "/api/v1/examinations",
+        "/api/v1/homework",
+        "/api/v1/attendance",
+        "/api/v1/students",
+        "/api/v1/reports",
+        "/api/v1/concessions",
+        "/api/v1/communication",
+        "/api/v1/forms",
+        "/api/v1/fees",
+        "/api/v1/payments",
+        "/api/v1/student-portal",
+        "/api/v1/divisions",
+        "/api/v1/timetable",
+        "/api/v1/boards",
+        "/api/v1/academic-years",
+        "/api/v1/standards",
+        "/api/v1/subjects",
+        "/api/v1/staff",
+        "/api/v1/codex"
+      ],
+      "related_modules": [
+        "03_ACADEMIC_MANAGEMENT",
+        "04_STUDENT_MANAGEMENT",
+        "05_TEACHER_MANAGEMENT",
+        "07_ATTENDANCE",
+        "08_EXAMINATION",
+        "09_FEES_PAYMENTS",
+        "12_RBAC_SECURITY",
+        "13_SYSADMIN_SETTINGS",
+        "14_PRINTING_DOCUMENTS",
+        "18_TESTING_QA",
+        "20_AUDITS_COMPLIANCE"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "20_AUDITS_COMPLIANCE_2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1_md",
+      "filename": "2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
+      "relative_path": "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
+      "extension": ".md",
+      "size_bytes": 10556,
+      "sha256": "851a4433fbceeb59b45534d171b74b947febfd6ffb3035d1a7190d5fc007d798",
+      "module": "20_AUDITS_COMPLIANCE",
+      "title": "PrathamOne EduOS — Sprint 3 Session Cookies, SSOT Consolidation, Performance & Test Stability Remediation Report",
+      "category": "REMEDIATION-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [
+        "sprint-3",
+        "p2",
+        "p3",
+        "httponly-cookies",
+        "ssot",
+        "alembic-044",
+        "performance",
+        "asset-optimization"
+      ],
+      "entities": [
+        "RevokedToken",
+        "AuditLog",
+        "ExamMark",
+        "FeeInvoiceItem",
+        "SharedDocumentToken",
+        "InstitutionSetting"
+      ],
+      "api_routes": [
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/logout",
+        "/api/v1/communication/share-links",
+        "/api/v1/standards/settings",
+        "/api/v1/releases"
+      ],
+      "related_modules": [
+        "backend.app.core",
+        "backend.app.models",
+        "backend.app.services",
+        "frontend.src.api",
+        "frontend.src.store",
+        "frontend.src.components"
       ],
       "product": "PrathamOne EduOS",
       "edition": "Coaching Institute Edition"
@@ -12655,6 +13052,121 @@
       "status": "Approved",
       "created_date": "2026-11-04",
       "updated_date": "2026-11-04",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_2026-11-12_homework_create-form_png",
+      "filename": "2026-11-12_homework_create-form.png",
+      "relative_path": "assets/2026-11-12_homework_create-form.png",
+      "extension": ".png",
+      "size_bytes": 229706,
+      "sha256": "ee36cae3b0659289548855ee95ef07db2e7ff977fe1551971a5f4f3a72327c93",
+      "module": "assets",
+      "title": "2026-11-12_homework_create-form.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_2026-11-12_homework_reports-analytics_png",
+      "filename": "2026-11-12_homework_reports-analytics.png",
+      "relative_path": "assets/2026-11-12_homework_reports-analytics.png",
+      "extension": ".png",
+      "size_bytes": 210539,
+      "sha256": "e256d0780a1c0973d8c4c74b005bc7cc2cb357f618dc80efeaf610e9b2e3e9ed",
+      "module": "assets",
+      "title": "2026-11-12_homework_reports-analytics.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_2026-11-12_homework_studio-overview_png",
+      "filename": "2026-11-12_homework_studio-overview.png",
+      "relative_path": "assets/2026-11-12_homework_studio-overview.png",
+      "extension": ".png",
+      "size_bytes": 246647,
+      "sha256": "ec819095927201978b250069d6cd82271cc3e68f2b5e79ebe44d11c4a64ab97b",
+      "module": "assets",
+      "title": "2026-11-12_homework_studio-overview.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_2026-11-12_homework_submissions-eval_png",
+      "filename": "2026-11-12_homework_submissions-eval.png",
+      "relative_path": "assets/2026-11-12_homework_submissions-eval.png",
+      "extension": ".png",
+      "size_bytes": 250364,
+      "sha256": "f823c993ec6f7efb157324beeda53adbfb937616608ab357bc161328ec80511b",
+      "module": "assets",
+      "title": "2026-11-12_homework_submissions-eval.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
+      "author": "Jawahar R Mallah",
+      "organization": "AITDL — AI Technology & Development Lab",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_2026-11-12_homework_teacher-workspace_png",
+      "filename": "2026-11-12_homework_teacher-workspace.png",
+      "relative_path": "assets/2026-11-12_homework_teacher-workspace.png",
+      "extension": ".png",
+      "size_bytes": 277848,
+      "sha256": "f2c64fac8fa4a01791a696047444ee73680aa701a56222b838e236af67d6cdc2",
+      "module": "assets",
+      "title": "2026-11-12_homework_teacher-workspace.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-12",
+      "updated_date": "2026-11-12",
       "author": "Jawahar R Mallah",
       "organization": "AITDL — AI Technology & Development Lab",
       "tags": [],
@@ -15062,9 +15574,12 @@
       "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_RULE-010-COMPLETE-SOFTWARE-WIDE-COVERAGE_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "011": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md"
     ],
     "01_login_screen": [
@@ -15164,6 +15679,9 @@
     ],
     "041": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md"
+    ],
+    "044": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "04_academic_management_implementation": [
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md",
@@ -15567,7 +16085,8 @@
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md"
     ],
     "0_v1": [
-      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md"
+      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "10_audits": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_AUTOMATED-TEST-REPORT_V1.md",
@@ -15643,11 +16162,36 @@
     "11_user": [
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md"
     ],
+    "12_academic": [
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md"
+    ],
     "12_audits": [
-      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "12_examinations_results": [
       "assets/screenshots/12_examinations_results.png"
+    ],
+    "12_homework_create": [
+      "assets/2026-11-12_homework_create-form.png"
+    ],
+    "12_homework_reports": [
+      "assets/2026-11-12_homework_reports-analytics.png"
+    ],
+    "12_homework_studio": [
+      "assets/2026-11-12_homework_studio-overview.png"
+    ],
+    "12_homework_submissions": [
+      "assets/2026-11-12_homework_submissions-eval.png"
+    ],
+    "12_homework_teacher": [
+      "assets/2026-11-12_homework_teacher-workspace.png"
+    ],
+    "12_releases_changelog_release": [
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "13_fee_plans_structures": [
       "assets/screenshots/13_fee_plans_structures.png"
@@ -15709,6 +16253,7 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-03_STUDENT_MANAGEMENT_SPECIFICATION_ADMISSIONS-CHANGELOG_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-03_STUDENT_MANAGEMENT_SPECIFICATION_ADMISSIONS-DEVELOPER-MANUAL_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-03_STUDENT_MANAGEMENT_SPECIFICATION_ADMISSIONS-SPECIFICATION_V1.md",
@@ -15884,6 +16429,7 @@
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_AUDIT-REPORT_AUTO-VERSIONING-AND-RELEASE-ENGINE-VERIFICATION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_COMPREHENSIVE-AUDIT-AND-REMEDIATION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_REPORT_CLEAN-PRODUCTION-DATA-CLEANUP-PREVIEW_V1.md",
@@ -15944,7 +16490,11 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md",
@@ -15959,7 +16509,12 @@
       "25_BUSINESS_REQUIREMENTS/2026-11-04_BUSINESS_REQUIREMENTS_IMPLEMENTATION-PLAN_ORIGINAL-IMPLEMENTATION-PLAN_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md",
-      "25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md"
+      "25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md",
+      "assets/2026-11-12_homework_create-form.png",
+      "assets/2026-11-12_homework_reports-analytics.png",
+      "assets/2026-11-12_homework_studio-overview.png",
+      "assets/2026-11-12_homework_submissions-eval.png",
+      "assets/2026-11-12_homework_teacher-workspace.png"
     ],
     "20_staff_management": [
       "assets/screenshots/20_staff_management.png"
@@ -16070,6 +16625,7 @@
     ],
     "acceptance": [
       "03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-PDF-GOVERNANCE-ENGINE_V1.md",
       "17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md",
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md",
@@ -16167,6 +16723,7 @@
     "alembic": [
       "16_DATABASE_API/2026-11-09_DATABASE-API_MIGRATION-PLAN_FINANCIAL-TRANSACTION-INTEGRITY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md"
     ],
     "alembicmigrations": [
@@ -16219,7 +16776,8 @@
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_DASHBOARD-RECONCILIATION-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_DASHBOARD-RECONCILIATION-REPORT_V1.md",
+      "assets/2026-11-12_homework_reports-analytics.png"
     ],
     "analytics_v1": [
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
@@ -16233,6 +16791,7 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_COURSE-BATCH-ENROLLMENT-RULES_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_SUBJECT-MASTER-ARCHITECTURE-AND-MAPPINGS_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-05_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-LIFECYCLE-AND-WITHDRAWAL-ANALYTICS-REPORT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-GAP-ANALYSIS_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-PRODUCTION-READINESS_V1.md",
@@ -16315,6 +16874,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md",
@@ -16417,6 +16977,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md"
@@ -16443,7 +17004,8 @@
     ],
     "asset": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md",
-      "17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_SPEC_PRATHAMONE-EDUOS-SOFTWARE-BRAND-ASSET-SYSTEM_V1.md"
+      "17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_SPEC_PRATHAMONE-EDUOS-SOFTWARE-BRAND-ASSET-SYSTEM_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "assets": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md",
@@ -16455,12 +17017,16 @@
     "assignment": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
-      "04_STUDENT_MANAGEMENT/2026-11-04_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-ASSIGNMENT-RECONCILIATION-REPORT_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "04_STUDENT_MANAGEMENT/2026-11-04_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-ASSIGNMENT-RECONCILIATION-REPORT_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "assignments": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
-      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "assurance": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_AUTOMATED-TEST-REPORT_V1.md"
@@ -16598,6 +17164,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md"
     ],
@@ -16664,6 +17231,9 @@
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md",
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_FINANCIAL-TRANSACTION-AUTOMATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md"
     ],
     "auditlogs": [
@@ -16896,7 +17466,9 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_MODULE-INVENTORY_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_MODULE-INVENTORY_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "capabilities": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-COMPREHENSIVE-VERIFIED-AUDIT-REPORT_V1.md"
@@ -17201,12 +17773,14 @@
       "15_INTEGRATIONS/2026-11-09_COMMUNICATION-CENTER_COMPLETION-MATRIX_WORKSPACES_V1.md"
     ],
     "communicationlog": [
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-PRODUCTION-READINESS_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_LEAD-MANAGEMENT-AND-CRM_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-09_COMMUNICATION-CENTER_COMPLETION-MATRIX_WORKSPACES_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_POST-IMPLEMENTATION-FORENSIC-VALIDATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_INTEGRATION-INFRASTRUCTURE-AUDIT_V1.md"
     ],
@@ -17290,6 +17864,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRINT-EXPORT-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md"
     ],
     "compliance_audit_global": [
@@ -17303,6 +17878,11 @@
     ],
     "compliance_plan_remediation": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md"
+    ],
+    "compliance_remediation": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "compliance_report_global": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-AUDIT-EXECUTIVE-SUMMARY_V1.md",
@@ -17361,7 +17941,8 @@
     "consolidation": [
       "01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md",
-      "16_DATABASE_API/2026-11-09_DATABASE-API_REPORT_API-AND-SERVICE-CONSOLIDATION_V1.md"
+      "16_DATABASE_API/2026-11-09_DATABASE-API_REPORT_API-AND-SERVICE-CONSOLIDATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "consolidation_v1": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md",
@@ -17390,6 +17971,9 @@
     ],
     "conversion": [
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-GAP-ANALYSIS_V1.md"
+    ],
+    "cookies": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "corporate": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md"
@@ -17431,6 +18015,9 @@
     ],
     "criteria_v1": [
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md"
+    ],
+    "critical": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
     ],
     "crm": [
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-GAP-ANALYSIS_V1.md",
@@ -17669,8 +18256,14 @@
     "demo": [
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md"
     ],
+    "dependencies": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
+    ],
     "dependency": [
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-CROSS-MODULE-DEPENDENCY-MAP_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-CROSS-MODULE-DEPENDENCY-MAP_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "deployment": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md",
@@ -17963,7 +18556,11 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md",
       "DOCUMENTATION_RULES.md",
@@ -18061,9 +18658,12 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md"
     ],
     "enhancement": [
-      "05_TEACHER_MANAGEMENT/2026-11-07_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_EMPLOYEE-DOSSIER-ENHANCEMENT_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "05_TEACHER_MANAGEMENT/2026-11-07_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_EMPLOYEE-DOSSIER-ENHANCEMENT_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "enhancement_v1": [
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-07_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_EMPLOYEE-DOSSIER-ENHANCEMENT_V1.md"
     ],
     "enquiries": [
@@ -18094,8 +18694,12 @@
       "17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md"
     ],
+    "eval": [
+      "assets/2026-11-12_homework_submissions-eval.png"
+    ],
     "evaluation": [
       "16_DATABASE_API/2026-11-09_DATABASE-API_MIGRATION-PLAN_STUDENT-RECEIVABLES-GOVERNANCE_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
     "exam": [
@@ -18142,7 +18746,9 @@
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
-      "11_REPORTS_EXPORTS/2026-11-11_REPORTS-EXPORTS_SPECIFICATION_CALCULATION-REGISTRY-AND-BUSINESS-RULES_V1.md"
+      "11_REPORTS_EXPORTS/2026-11-11_REPORTS-EXPORTS_SPECIFICATION_CALCULATION-REGISTRY-AND-BUSINESS-RULES_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "exammarks": [
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
@@ -18158,7 +18764,8 @@
       "11_REPORTS_EXPORTS/2026-11-04_REPORTS_EXPORTS_IMPLEMENTATION-REPORT_EXCEL-REPORT-GRIDS-REPORT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
       "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRINT-EXPORT-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRINT-EXPORT-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "excelreportgrid": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md"
@@ -18292,7 +18899,9 @@
     "feeconcessionallocation": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-PLAN_FEE-CONCESSION-AND-SCHOLARSHIP-ENGINE_V1.md",
       "09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_AUDIT-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-AUDIT_V1.md",
-      "09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_FEATURE-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-IMPLEMENTATION_V1.md"
+      "09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_FEATURE-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-IMPLEMENTATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "feeconcessiontype": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-PLAN_FEE-CONCESSION-AND-SCHOLARSHIP-ENGINE_V1.md",
@@ -18348,13 +18957,17 @@
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_MODULE-INVENTORY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "feeinvoiceitem": [
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_ARCHITECTURE-AUDIT_FINANCIAL-TRANSACTION-LIFECYCLE_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_DATA-DICTIONARY_TABLE-AND-FIELD-REUSE-MATRIX_V1.md",
       "09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_AUDIT-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-AUDIT_V1.md",
-      "09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_FEATURE-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-IMPLEMENTATION_V1.md"
+      "09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_FEATURE-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-IMPLEMENTATION_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "feeplan": [
       "09_FEES_PAYMENTS/2026-11-03_FEES_PAYMENTS_POLICY-FRAMEWORK_FEE-POLICY-AND-ACCOUNTING_V1.md",
@@ -18461,6 +19074,9 @@
       "01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-FIELD-DEDUPLICATION-AUDIT_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_MATRIX_RECEIPT-FIELD-COMPLETENESS_V1.md"
     ],
+    "file": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
+    ],
     "filter": [
       "17_UI_UX_DESIGN/2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md"
     ],
@@ -18469,6 +19085,7 @@
     ],
     "final": [
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-PRODUCTION-READINESS_V1.md",
       "09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_FEATURE-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-IMPLEMENTATION_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-RUNTIME-AND-PRODUCTION-READINESS-VERIFICATION-REPORT_V1.md",
@@ -18521,7 +19138,8 @@
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md",
       "12_RBAC_SECURITY/2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "fit": [
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-PRINT-FIT-AND-PAGE-LAYOUT-ENGINE_V1.md"
@@ -18605,6 +19223,9 @@
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT_GLOBAL-HARDCODED-BRANDING-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md"
+    ],
+    "form": [
+      "assets/2026-11-12_homework_create-form.png"
     ],
     "formauditlogitem": [
       "14_PRINTING_DOCUMENTS/2026-11-09_PRINT-FORMS_COMPLETION-MATRIX_WORKSPACES_V1.md"
@@ -18707,7 +19328,8 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md"
     ],
     "functional": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-FUNCTIONAL-GAP-ANALYSIS_V1.md",
@@ -18810,11 +19432,13 @@
       "19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "24_AI_AGENT_KNOWLEDGE/2026-11-03_AI_AGENT_KNOWLEDGE_POLICY-FRAMEWORK_AI-AGENT-GOVERNANCE_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md",
@@ -18899,6 +19523,9 @@
     "hardcoded": [
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT_GLOBAL-HARDCODED-BRANDING-AUDIT_V1.md"
     ],
+    "hardening_v1": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
+    ],
     "header": [
       "19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_POLICY-FRAMEWORK_CODE-ATTRIBUTION-POLICY_V1.md"
@@ -18937,18 +19564,28 @@
     "homework": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
-      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "homeworkassignment": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-11_REPORTS-EXPORTS_AUDIT-REPORT_UNIVERSAL-CALCULATION-AND-INTELLIGENCE-ENGINE_V1.md",
       "11_REPORTS_EXPORTS/2026-11-11_REPORTS-EXPORTS_SPECIFICATION_CALCULATION-REGISTRY-AND-BUSINESS-RULES_V1.md",
-      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md"
+      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "homeworkauditlog": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
-      "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
+    ],
+    "homeworkfile": [
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "hook": [
       "19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md"
@@ -18975,6 +19612,9 @@
       "22_USER_MANUALS/quick_start_guide.html",
       "22_USER_MANUALS/sysadmin_manual.html"
     ],
+    "httponly": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
+    ],
     "hub": [
       "README.md"
     ],
@@ -18999,6 +19639,10 @@
       "17_UI_UX_DESIGN/2026-11-07_UI-UX-DESIGN_REPORT_PRATHAMONE-BRAND-IDENTITY-INTEGRATION_V1.md",
       "17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_SPEC_PRATHAMONE-EDUOS-SOFTWARE-BRAND-ASSET-SYSTEM_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_PRATHAMONE-GLOBAL-BRANDING-AUDIT_V1.md"
+    ],
+    "idor": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "immutability": [
       "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md",
@@ -19191,6 +19835,9 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_INTEGRATION-INFRASTRUCTURE-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_MODULE-INVENTORY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md"
     ],
     "institutional": [
@@ -19199,6 +19846,7 @@
     "institutionsetting": [
       "01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-08_ACADEMIC-MANAGEMENT_COMPLETION-MATRIX_ACADEMIC-SUBMENU-WORKSPACES_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md",
       "11_REPORTS_EXPORTS/2026-11-11_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_UNIVERSAL-CALCULATION-AND-INTELLIGENCE-ENGINE_V1.md",
@@ -19208,6 +19856,8 @@
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md"
     ],
     "integration": [
@@ -19310,7 +19960,8 @@
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_GLOBAL-BRANDING-TENANT-ISOLATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_FORENSIC-AUDIT_GLOBAL-TRAINING-ENVIRONMENT-AND-CRM-DATA-INTEGRITY_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
     ],
     "jpg": [
       "assets/branding/prathamone-eduos-logo-original.jpg"
@@ -19434,6 +20085,12 @@
     "local": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md"
     ],
+    "lockdown": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
+    ],
+    "lockdown_v1": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
+    ],
     "lockedbutton": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md"
     ],
@@ -19487,6 +20144,7 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-03_STUDENT_MANAGEMENT_SPECIFICATION_ADMISSIONS-CHANGELOG_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-03_STUDENT_MANAGEMENT_SPECIFICATION_ADMISSIONS-DEVELOPER-MANUAL_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-03_STUDENT_MANAGEMENT_SPECIFICATION_ADMISSIONS-SPECIFICATION_V1.md",
@@ -19520,9 +20178,13 @@
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_AUDIT-REPORT_AUTO-VERSIONING-AND-RELEASE-ENGINE-VERIFICATION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EXISTING-FUNCTIONALITY-AND-REUSE-ANALYSIS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md"
+    ],
+    "management_acceptance": [
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md"
     ],
     "management_audit": [
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md",
@@ -19873,7 +20535,9 @@
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_GLOBAL-BRANDING-TENANT-ISOLATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_TROUBLESHOOTING-REPORT_CODEX-CONFIGURATION-LOAD-RESOLUTION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "name": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_NETHAN-RECEIPT-TYPOS-RECONCILIATION_V1.md"
@@ -19913,17 +20577,23 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_INTEGRATION-INFRASTRUCTURE-AUDIT_V1.md"
     ],
     "nginx": [
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_INTEGRATION-INFRASTRUCTURE-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_INTEGRATION-INFRASTRUCTURE-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
     ],
     "not": [
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md"
     ],
     "notes": [
       "19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_CHANGELOG_RELEASE-NOTES-HISTORICAL_V1.md",
-      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md"
+      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "notification": [
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md"
+    ],
+    "notifications": [
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "nov2026_v1": [
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-APPLICATION-AUDIT-REPORT-NOV2026_V1.md"
@@ -19979,7 +20649,8 @@
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md"
     ],
     "optimization": [
-      "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md"
+      "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "options": [
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_AUDIT-REPORT_SYSADMIN-COMPLETE-EDITING-OPTIONS-AUDIT_V1.md"
@@ -19997,7 +20668,8 @@
     "overview": [
       "00_PRODUCT_OVERVIEW/2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md",
-      "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md"
+      "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md",
+      "assets/2026-11-12_homework_studio-overview.png"
     ],
     "overview_specification_official": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md"
@@ -20103,7 +20775,10 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "paymentallocation": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
@@ -20152,7 +20827,10 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRINT-EXPORT-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "paymentreceiptview": [
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-PDF-GOVERNANCE-ENGINE_V1.md",
@@ -20199,7 +20877,8 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
     ],
     "payments_architecture": [
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_ARCHITECTURE-AUDIT_FINANCIAL-TRANSACTION-LIFECYCLE_V1.md"
@@ -20298,7 +20977,12 @@
     ],
     "performance": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT-REPORT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
+    ],
+    "performance_v1": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "permission": [
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md",
@@ -20319,6 +21003,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md"
     ],
     "phase": [
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md"
     ],
     "phase2": [
@@ -20403,10 +21088,18 @@
     "plan_whatsapp": [
       "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md"
     ],
+    "platform": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md"
+    ],
     "playwright": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md"
     ],
     "png": [
+      "assets/2026-11-12_homework_create-form.png",
+      "assets/2026-11-12_homework_reports-analytics.png",
+      "assets/2026-11-12_homework_studio-overview.png",
+      "assets/2026-11-12_homework_submissions-eval.png",
+      "assets/2026-11-12_homework_teacher-workspace.png",
       "assets/branding/prashant-academy-logo.png",
       "assets/branding/prathamone-app-icon-192.png",
       "assets/branding/prathamone-app-icon-512.png",
@@ -20649,7 +21342,11 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md",
@@ -20839,6 +21536,9 @@
       "16_DATABASE_API/2026-11-09_DATABASE-API_REPORT_API-AND-SERVICE-CONSOLIDATION_V1.md",
       "16_DATABASE_API/2026-11-09_DATABASE-API_REPORT_FRONTEND-BACKEND-DATABASE-MAPPING-MATRIX_V1.md"
     ],
+    "pyjwt": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
+    ],
     "pytest": [
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_FINANCIAL-TRANSACTION-AUTOMATION_V1.md",
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_RECEIPT-PDF-RENDERING_V1.md",
@@ -20868,6 +21568,7 @@
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md"
     ],
     "rbac": [
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
       "12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_POLICY-FRAMEWORK_DATA-PRIVACY-AND-SECURITY_V1.md",
@@ -20891,7 +21592,10 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "react": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md"
@@ -20976,6 +21680,9 @@
     ],
     "recommendations": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md"
+    ],
+    "recommendations_v1": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md"
     ],
     "reconciliation": [
       "04_STUDENT_MANAGEMENT/2026-11-04_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-ASSIGNMENT-RECONCILIATION-REPORT_V1.md",
@@ -21090,7 +21797,8 @@
       "19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_AUDIT-REPORT_AUTO-VERSIONING-AND-RELEASE-ENGINE-VERIFICATION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md",
-      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md"
+      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "releases": [
       "19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_CHANGELOG_RELEASE-NOTES-HISTORICAL_V1.md",
@@ -21099,7 +21807,8 @@
       "19_RELEASES_CHANGELOG/2026-11-05_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_ENTERPRISE-RELEASE-AND-CHANGE-MANAGEMENT-REPORT_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_AUDIT-REPORT_AUTO-VERSIONING-AND-RELEASE-ENGINE-VERIFICATION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md",
-      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md"
+      "19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "releaseservice": [
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_AUDIT-REPORT_AUTO-VERSIONING-AND-RELEASE-ENGINE-VERIFICATION_V1.md",
@@ -21117,6 +21826,9 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md"
     ],
@@ -21152,6 +21864,7 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-09_ACADEMIC-MANAGEMENT_REPORT_SUBJECT-MASTER-CANONICALIZATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-04_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-ASSIGNMENT-RECONCILIATION-REPORT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-04_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-RECORDS-RESTORATION-REPORT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-05_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-COUNT-RECONCILIATION-DIAGNOSTIC-REPORT_V1.md",
@@ -21258,6 +21971,9 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md"
@@ -21400,7 +22116,8 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md"
     ],
     "report_functional": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md"
@@ -21425,7 +22142,8 @@
     ],
     "report_homework": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
-      "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md"
     ],
     "report_housekeeping": [
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md"
@@ -21506,6 +22224,15 @@
     ],
     "report_smart": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md"
+    ],
+    "report_sprint1": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
+    ],
+    "report_sprint2": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
+    ],
+    "report_sprint3": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "report_staff": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER_PAYROLL_AUDIT-REPORT_STAFF-EMPLOYEE-VS-PAYROLL-IDENTITY-AUDIT_V1.md"
@@ -21727,6 +22454,9 @@
     "revisions": [
       "19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md"
     ],
+    "revokedtoken": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
+    ],
     "risks": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
     ],
@@ -21792,7 +22522,9 @@
       "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_RULE-010-COMPLETE-SOFTWARE-WIDE-COVERAGE_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "rules": [
       "03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_COURSE-BATCH-ENROLLMENT-RULES_V1.md",
@@ -21903,7 +22635,10 @@
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
       "26_ARCHIVED/legacy_root/DATA_PRIVACY_AND_SECURITY.md"
     ],
     "security_audit": [
@@ -21968,7 +22703,8 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_BACKEND-API-AUDIT_V1.md"
     ],
     "session": [
-      "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "settingauditlog": [
       "13_SYSADMIN_SETTINGS/2026-11-10_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_USER-DEFINED-MENU-AND-ADAPTIVE-NAVIGATION_V1.md",
@@ -22013,7 +22749,8 @@
     ],
     "shareddocumenttoken": [
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md",
-      "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md"
+      "15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-PLAN_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "sharing": [
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_REPORT_BULK-RECEIPT-EXPORT-AND-SHARING_V1.md",
@@ -22167,6 +22904,11 @@
     "sponsorsettlement": [
       "09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_FEATURE-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-IMPLEMENTATION_V1.md"
     ],
+    "sprint": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
+    ],
     "sql": [
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md"
     ],
@@ -22186,6 +22928,7 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-08_ACADEMIC-MANAGEMENT_COMPLETION-MATRIX_ACADEMIC-SUBMENU-WORKSPACES_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-GAP-ANALYSIS_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-PRODUCTION-READINESS_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_IMPLEMENTATION-REPORT_LEAD-MANAGEMENT-AND-CRM_V1.md",
@@ -22223,10 +22966,15 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FINANCIAL-INTEGRITY-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md"
+    ],
+    "stability": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
     "staff": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
@@ -22337,6 +23085,8 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_MODULE-INVENTORY_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md"
     ],
@@ -22466,6 +23216,8 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRINT-EXPORT-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
     ],
     "student_portal": [
@@ -22558,7 +23310,9 @@
     ],
     "studenthomeworkrecord": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
-      "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md",
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "studentidcard": [
       "04_STUDENT_MANAGEMENT/2026-11-09_STUDENT-MANAGEMENT_COMPLETION-MATRIX_STUDENT-SUBMENU-WORKSPACES_V1.md"
@@ -22624,7 +23378,9 @@
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_FORENSIC-AUDIT_REPORT-INVENTORY-AND-GAP-ANALYSIS_V1.md",
       "11_REPORTS_EXPORTS/2026-11-07_REPORTS-EXPORTS_IMPLEMENTATION-REPORT_REPORTING-AND-ANALYTICS-CENTRE_V1.md",
       "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "subjectlegacymapping": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md"
@@ -22634,7 +23390,8 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_SUBJECT-MASTER-ARCHITECTURE-AND-MAPPINGS_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-09_ACADEMIC-MANAGEMENT_REPORT_SUBJECT-MASTER-CANONICALIZATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md",
-      "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md"
+      "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md"
     ],
     "subjects": [
       "01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md",
@@ -22664,6 +23421,9 @@
       "08_EXAMINATION/2026-11-08_EXAMINATION_COMPLETION-MATRIX_EXAM-SUBMENU-WORKSPACES_V1.md",
       "15_INTEGRATIONS/2026-11-09_COMMUNICATION-CENTER_COMPLETION-MATRIX_WORKSPACES_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md"
+    ],
+    "submissions": [
+      "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md"
     ],
     "suite": [
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md"
@@ -22911,7 +23671,9 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PLACEHOLDER-AND-MOCK-DATA-REGISTER_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
     ],
     "teacherpayrollmonthly": [
       "05_TEACHER_MANAGEMENT/2026-11-09_TEACHER-MANAGEMENT_COMPLETION-MATRIX_TEACHER-SUBMENU-WORKSPACES_V1.md"
@@ -22952,12 +23714,17 @@
     "templates": [
       "15_INTEGRATIONS/2026-11-09_COMMUNICATION-CENTER_COMPLETION-MATRIX_WORKSPACES_V1.md"
     ],
+    "tenancy": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
+    ],
     "tenant": [
       "01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md",
       "12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_GLOBAL-BRANDING-TENANT-ISOLATION-REPORT_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md"
     ],
     "tenantidentity": [
       "17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_SPEC_PRATHAMONE-EDUOS-SOFTWARE-BRAND-ASSET-SYSTEM_V1.md"
@@ -22974,9 +23741,11 @@
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_AUTOMATED-TEST-REPORT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md"
     ],
     "testing": [
+      "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md",
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_FINANCIAL-TRANSACTION-AUTOMATION_V1.md",
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_RECEIPT-PDF-RENDERING_V1.md",
@@ -23175,7 +23944,10 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-SAFE-DELETE-AND-DATA-INTEGRITY-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md",
@@ -23292,7 +24064,8 @@
       "12_RBAC_SECURITY/2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md",
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "visibility": [
       "06_TEACHER_PAYROLL/2026-11-06_TEACHER-PAYROLL_AUDIT-REPORT_TEACHER-VISIBILITY-REMEDIATION_V1.md"
@@ -23304,6 +24077,9 @@
       "17_UI_UX_DESIGN/2026-11-07_UI-UX-DESIGN_REPORT_PRATHAMONE-BRAND-IDENTITY-INTEGRATION_V1.md",
       "17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
+    ],
+    "vite": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "vitest": [
       "18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_FINANCIAL-TRANSACTION-AUTOMATION_V1.md",
@@ -23371,7 +24147,8 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-WORKSPACE-PIXEL-PERFECTION-REPORT_V1.md",
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
-      "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md"
+      "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
+      "assets/2026-11-12_homework_teacher-workspace.png"
     ],
     "workspaces": [
       "03_ACADEMIC_MANAGEMENT/2026-11-08_ACADEMIC-MANAGEMENT_COMPLETION-MATRIX_ACADEMIC-SUBMENU-WORKSPACES_V1.md",
@@ -23398,6 +24175,12 @@
       "08_EXAMINATION/2026-11-08_EXAMINATION_COMPLETION-MATRIX_EXAM-SUBMENU-WORKSPACES_V1.md",
       "09_FEES_PAYMENTS/2026-11-08_FEES-PAYMENTS_COMPLETION-MATRIX_FEES-SUBMENU-WORKSPACES_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md"
+    ],
+    "write": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
+    ],
+    "xss": [
+      "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
     ],
     "year": [
       "03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md"

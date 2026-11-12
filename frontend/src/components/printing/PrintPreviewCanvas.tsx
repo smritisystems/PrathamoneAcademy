@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description True-to-scale visual print preview viewport with physical margin guides, scaling indicators, and page boundaries.
  */
@@ -27,6 +27,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { useEnvironmentStore } from '../../store/environmentStore'
+import { sanitizeRichHtml } from '../../utils/htmlSanitizer'
 import type {
   PrintSettings,
   PrintLayoutCalculation,
@@ -194,7 +195,7 @@ export default function PrintPreviewCanvas({
               {/* Cloned HTML or Direct Child Container */}
               {contentHtml ? (
                 <div
-                  dangerouslySetInnerHTML={{ __html: contentHtml }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(contentHtml) }}
                   className="preview-content-rendered"
                 />
               ) : (

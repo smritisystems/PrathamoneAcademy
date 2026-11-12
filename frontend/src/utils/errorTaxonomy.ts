@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-12
  *
  * @description Centralized error classification, user-friendly messaging, reference ID generation, and diagnostic logging.
  */
@@ -413,6 +413,9 @@ export function logTechnicalError(details: {
   apiEndpoint?: string
   status?: number
 }): void {
+  if (!(import.meta as any).env?.DEV) {
+    return
+  }
   const { errorId, error, category, route, componentStack, apiEndpoint, status } = details
   const timestamp = new Date().toISOString()
   const version = `${BRANDING_CONFIG.appName} ${BRANDING_CONFIG.versionDisplay} (${BRANDING_CONFIG.buildNumber})`

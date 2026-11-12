@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -182,6 +182,36 @@ class StudentReactivateRequest(BaseModel):
     notes: Optional[str] = None
 
 
+STUDENT_READ_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "teacher",
+    "accountant",
+    "staff",
+    "counselor",
+    "counsellor",
+    "receptionist",
+    "coordinator",
+)
+
+
+def _authorize_student_read(student_id: int, student_inst_id: Optional[int], current_user) -> None:
+    """Enforces role/self ownership and tenant scoping for student record reads."""
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        if getattr(current_user, "student_id", None) != student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: Students can only view their own profile.",
+            )
+    elif not is_sysadmin(current_user) and role not in STUDENT_READ_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+    check_institution_access(student_inst_id, current_user)
+
+
 @router.get("/")
 async def list_students(
     standard_id: Optional[int] = None,
@@ -194,7 +224,7 @@ async def list_students(
     page_size: int = Query(default=20, le=100),
     effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*STUDENT_READ_ROLES)),
 ):
     query = select(Student)
 
@@ -393,7 +423,7 @@ async def get_batch_student_id_cards(
     division_id: Optional[int] = None,
     effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*STUDENT_READ_ROLES)),
 ):
     """Generates printable ID card datasets with SVG QR codes for a batch of students."""
     from app.services.id_card import get_batch_id_card_data
@@ -424,9 +454,7 @@ async def get_student(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    check_institution_access(student.institution_id, current_user)
-
-    check_institution_access(student.institution_id, current_user)
+    _authorize_student_read(student_id, student.institution_id, current_user)
 
     fee_result = await db.execute(
         select(
@@ -507,9 +535,16 @@ async def get_student_id_card(
     current_user=Depends(get_current_active_user),
 ):
     """Generates official student ID card data with SVG QR code for thermal/PVC printing."""
+    student = await db.get(Student, student_id)
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Student #{student_id} not found or does not belong to this institution.",
+        )
+    _authorize_student_read(student_id, student.institution_id, current_user)
     from app.services.id_card import get_student_id_card_data
     card = await get_student_id_card_data(
-        db=db, student_id=student_id, institution_id=effective_inst_id
+        db=db, student_id=student_id, institution_id=student.institution_id or effective_inst_id
     )
     if not card:
         raise HTTPException(
@@ -717,6 +752,21 @@ async def update_student_profile(
     await db.commit()
     await db.refresh(student)
 
+    # Apply homework late-joiner policy if student was newly enrolled or transferred batch
+    if is_batch_transfer or "enrollment" in diff_changes:
+        try:
+            enr_obj = await db.scalar(
+                select(StudentEnrollment).where(
+                    StudentEnrollment.student_id == student.id,
+                    StudentEnrollment.status == "active",
+                ).order_by(desc(StudentEnrollment.id))
+            )
+            if enr_obj:
+                from app.services.homework_service import HomeworkService
+                await HomeworkService.apply_late_joiner_policy_for_enrollment(db, enr_obj, current_user)
+        except Exception:
+            pass
+
     return {
         "message": "Student profile updated successfully",
         "id": student_id,
@@ -745,6 +795,11 @@ async def enroll_student(
     db.add(enrollment)
     await db.commit()
     await db.refresh(enrollment)
+    try:
+        from app.services.homework_service import HomeworkService
+        await HomeworkService.apply_late_joiner_policy_for_enrollment(db, enrollment, current_user)
+    except Exception:
+        pass
     return {
         "id": enrollment.id,
         "student_id": student_id,
@@ -1669,7 +1724,7 @@ async def get_student_lifecycle_history(
     student = await db.scalar(select(Student).where(Student.id == student_id))
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
-    check_institution_access(student.institution_id, current_user)
+    _authorize_student_read(student_id, student.institution_id, current_user)
 
     # Fetch lifecycle logs with performer details
     logs_stmt = (

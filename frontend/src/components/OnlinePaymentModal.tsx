@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Online Payment Gateway & UPI Checkout modal with dynamic QR code generation, Razorpay checkout, and automated receipt generation.
  */
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { paymentsApi } from '../api/endpoints'
 import type { OnlineOrderResponse, OnlinePaymentVerifyResult } from '../types'
+import { sanitizeSvgMarkup } from '../utils/htmlSanitizer'
 import toast from 'react-hot-toast'
 
 interface OnlinePaymentModalProps {
@@ -354,7 +355,7 @@ export default function OnlinePaymentModal({
                     {/* High-contrast SVG QR Code */}
                     <div
                       className="p-3 bg-white rounded-xl shadow-md border border-gray-200 w-48 h-48 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
-                      dangerouslySetInnerHTML={{ __html: order.upi_qr_svg }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeSvgMarkup(order.upi_qr_svg) }}
                     />
 
                     <div className="text-lg font-black text-gray-900 mt-3">
@@ -379,12 +380,14 @@ export default function OnlinePaymentModal({
                   </div>
 
                   {/* Deep Link to UPI App */}
-                  <a
-                    href={order.upi_uri}
-                    className="block w-full py-2 px-3 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition"
-                  >
-                    Open directly in UPI Mobile App <ExternalLink className="w-3.5 h-3.5 inline ml-1" />
-                  </a>
+                  {order.upi_uri && order.upi_uri.toLowerCase().startsWith('upi://') && (
+                    <a
+                      href={order.upi_uri}
+                      className="block w-full py-2 px-3 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition"
+                    >
+                      Open directly in UPI Mobile App <ExternalLink className="w-3.5 h-3.5 inline ml-1" />
+                    </a>
+                  )}
 
                   {/* Verification Triggers */}
                   <div className="pt-2 space-y-2">

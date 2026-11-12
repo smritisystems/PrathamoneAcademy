@@ -1165,7 +1165,7 @@ export interface FeeRegisterImportExecutionResponse {
   imported_students: {
     student_id: number
     admission_number: string
-  academic_year?: string
+    academic_year?: string
     name: string
     group: string
     batch: string
@@ -1286,7 +1286,7 @@ export interface StudentPortalDashboard {
   student: {
     id: number
     admission_number: string
-  academic_year?: string
+    academic_year?: string
     first_name: string
     last_name: string
     full_name: string
@@ -1342,7 +1342,7 @@ export interface StudentAdminProfile {
   overview: {
     id: number
     admission_number: string
-  academic_year?: string
+    academic_year?: string
     first_name: string
     last_name: string
     middle_name?: string
@@ -1678,7 +1678,7 @@ export interface UserProfileWorkspaceData {
   linked_student?: {
     id: number
     admission_number: string
-  academic_year?: string
+    academic_year?: string
     first_name: string
     last_name: string
     full_name: string
@@ -2124,7 +2124,7 @@ export interface UserProfileWorkspaceData {
   linked_student?: {
     id: number
     admission_number: string
-  academic_year?: string
+    academic_year?: string
     first_name: string
     last_name: string
     full_name: string
@@ -3170,7 +3170,7 @@ export interface SystemReleaseDetail extends SystemReleaseListItem {
     database?: string[]
     deprecated?: string[]
   }
-  validation_results: Record<string, { status: string; message: string; [key: string]: any }>
+  validation_results: Record<string, { status: string; message: string;[key: string]: any }>
   requires_db_backup: boolean
   migration_plan?: string | null
 }
@@ -3848,6 +3848,25 @@ export interface HomeworkAttachment {
   file_url: string
   file_type?: string
   file_size_bytes?: number
+  file_id?: number
+}
+
+export interface HomeworkFileUploadResponse {
+  id: number
+  title: string
+  file_name: string
+  file_url: string
+  file_type: string
+  mime_type?: string
+  file_size_bytes: number
+}
+
+export interface StudentAssignmentOverride {
+  student_id: number
+  due_date?: string
+  due_time?: string
+  instructions?: string
+  attachments?: HomeworkAttachment[]
 }
 
 export interface HomeworkSummary {
@@ -3865,6 +3884,8 @@ export interface HomeworkAssignmentItem {
   id: number
   assignment_code: string
   title: string
+  assignment_type?: string
+  estimated_duration_minutes?: number | null
   description?: string | null
   instructions?: string | null
   chapter?: string | null
@@ -3885,19 +3906,41 @@ export interface HomeworkAssignmentItem {
   difficulty_level: 'easy' | 'medium' | 'hard'
   priority: 'low' | 'normal' | 'high' | 'urgent'
   submission_method:
-    | 'physical_notebook'
-    | 'photo_upload'
-    | 'pdf_document'
-    | 'online_text'
-    | 'online_quiz'
-    | 'in_class'
-    | 'no_submission'
-  recipient_type: 'batch' | 'multi_batch' | 'selected_students' | 'individual_student' | 'student_group'
-  status: 'draft' | 'published' | 'scheduled' | 'archived'
+  | 'physical_notebook'
+  | 'photo_upload'
+  | 'pdf_document'
+  | 'online_text'
+  | 'online_quiz'
+  | 'in_class'
+  | 'no_submission'
+  recipient_type: 'batch' | 'multi_batch' | 'selected_group' | 'selected_students' | 'individual_student' | 'student_group'
+  status: 'draft' | 'published' | 'scheduled' | 'closed' | 'archived'
+  original_recipient_count?: number
+  late_joiner_policy?: 'manual' | 'auto_include' | 'exclude'
+  allow_late_submissions?: boolean
+  allow_resubmission?: boolean
+  published_at?: string | null
+  closed_at?: string | null
   is_template?: boolean
   template_name?: string | null
   attachments: HomeworkAttachment[]
   summary: HomeworkSummary
+}
+
+export interface HomeworkSubmissionFile {
+  file_id?: number
+  file_url: string
+  file_name?: string
+  file_type?: string
+  file_size_bytes?: number
+}
+
+export interface HomeworkSubmissionVersion {
+  version: number
+  submitted_at: string
+  submission_text?: string | null
+  submission_files: HomeworkSubmissionFile[]
+  is_late?: boolean
 }
 
 export interface CheckingRegisterStudent {
@@ -3912,13 +3955,21 @@ export interface CheckingRegisterStudent {
   submission_status: 'pending' | 'submitted' | 'late' | 'not_submitted' | 'excused'
   submission_time?: string | null
   submission_text?: string | null
-  submission_files: Array<{ file_url: string; file_name?: string; file_type?: string }>
-  review_status: 'pending' | 'done' | 'incomplete' | 'not_done' | 'absent_not_checked' | 'excused' | 'checked'
+  submission_files: HomeworkSubmissionFile[]
+  submission_version?: number
+  submission_history?: HomeworkSubmissionVersion[]
+  evaluation_history?: Array<Record<string, any>>
+  review_status: 'pending' | 'done' | 'evaluated' | 'incomplete' | 'not_done' | 'absent_not_checked' | 'excused' | 'returned' | 'under_evaluation' | 'checked'
   marks_obtained?: number | null
   teacher_remarks?: string | null
+  teacher_feedback_attachments?: HomeworkAttachment[]
   reviewed_at?: string | null
+  viewed_at?: string | null
   individual_due_date?: string | null
+  custom_instructions?: string | null
   exemption_reason?: string | null
+  is_late_addition?: boolean
+  addition_reason?: string | null
   resubmission_count: number
 }
 
@@ -3926,9 +3977,12 @@ export interface StudentPortalHomeworkItem {
   record_id: number
   assignment_id: number
   assignment_code: string
+  assignment_type?: string
+  estimated_duration_minutes?: number | null
   title: string
   description?: string | null
   instructions?: string | null
+  custom_instructions?: string | null
   chapter?: string | null
   topic?: string | null
   subject_name: string
@@ -3936,21 +3990,29 @@ export interface StudentPortalHomeworkItem {
   teacher_name: string
   submission_method: string
   max_marks?: number | null
+  assigned_date?: string
   due_date: string
   due_time: string
   status: string
   submission_status: string
   submission_time?: string | null
   submission_text?: string | null
-  submission_files: Array<{ file_url: string; file_name?: string; file_type?: string }>
+  submission_files: HomeworkSubmissionFile[]
+  submission_version?: number
+  submission_history?: HomeworkSubmissionVersion[]
   review_status: string
   marks_obtained?: number | null
   teacher_remarks?: string | null
+  teacher_feedback_attachments?: HomeworkAttachment[]
+  reviewed_at?: string | null
+  viewed_at?: string | null
   exemption_reason?: string | null
   resubmission_count: number
   resubmission_history?: any[]
   attachments: HomeworkAttachment[]
+  custom_attachments?: HomeworkAttachment[]
   allow_late_submissions: boolean
+  allow_resubmission?: boolean
 }
 
 export interface AcademicActivityRegisterItem {
@@ -3975,10 +4037,120 @@ export interface AcademicActivityRegisterItem {
 
 export interface TeacherHomeworkDashboard {
   total_assigned: number
+  total_assignments: number
   assigned_today: number
   active_assignments: number
   awaiting_check: number
+  pending_submissions: number
+  submitted_assignments: number
+  late_submissions: number
+  pending_evaluations: number
+  completed_evaluations: number
   overdue_count: number
+}
+
+export interface StudentHomeworkDashboard {
+  student_id: number
+  new_homework: number
+  due_today: number
+  upcoming_deadlines: number
+  overdue_work: number
+  submitted_work: number
+  evaluated_work: number
+  unread_notifications: number
+}
+
+export interface HomeworkRecipientPreviewStudent {
+  student_id: number
+  enrollment_id?: number
+  student_name: string
+  admission_number: string
+  roll_number?: string | null
+  division_id?: number | null
+  division_name?: string | null
+}
+
+export interface HomeworkNotificationItem {
+  id: number
+  template_code: string
+  subject: string
+  message: string
+  is_read: boolean
+  metadata?: Record<string, any>
+  created_at?: string | null
+}
+
+export interface HomeworkSettingsConfig {
+  allowed_extensions: string[]
+  max_file_size_mb: number
+  custom_assignment_types: string[]
+  available_assignment_types: string[]
+  default_late_joiner_policy: 'manual' | 'auto_include' | 'exclude'
+  reminder_hours_before_due: number
+  pending_eval_alert_threshold: number
+  allow_parent_portal_view: boolean
+}
+
+export interface BatchHomeworkReport {
+  assignment_id: number
+  assignment_code: string
+  title: string
+  assignment_type?: string
+  due_date: string
+  max_marks?: number | null
+  original_recipient_count: number
+  summary: HomeworkSummary
+  rows: Array<{
+    record_id: number
+    student_id: number
+    student_name: string
+    admission_number: string
+    roll_number: string
+    assignment_status: string
+    submission_status: string
+    submission_date?: string | null
+    marks_obtained?: number | null
+    max_marks?: number | null
+    feedback?: string | null
+    review_status: string
+    is_late_addition: boolean
+    addition_reason?: string | null
+    submission_version: number
+  }>
+}
+
+export interface InstituteHomeworkAnalytics {
+  total_assignments: number
+  total_records: number
+  student_submission_rate_pct: number
+  late_submission_rate_pct: number
+  evaluation_completion_rate_pct: number
+  avg_evaluation_turnaround_hours: number
+  subject_wise: Array<{
+    subject_id: number
+    subject_name: string
+    assignments: number
+    total_records: number
+    submitted: number
+    evaluated: number
+    submission_rate_pct: number
+  }>
+  teacher_wise: Array<{
+    teacher_user_id: number
+    teacher_name: string
+    assignments: number
+    total_records: number
+    evaluated: number
+    pending_evaluations: number
+  }>
+  batch_wise: Array<{
+    division_id?: number | null
+    division_name: string
+    assignments: number
+    total_records: number
+    completed: number
+    completion_rate_pct: number
+  }>
 }
 
 export interface DailyHomeworkRegisterReport {
@@ -4871,9 +5043,180 @@ export interface SupportRequestItem {
   comments: SupportRequestComment[]
 }
 
+// ─── PrathamOne EduBoard (Digital Classroom Engine) ──────────────────────────
 
+export type EduBoardMode = 'classic' | 'whiteboard' | 'presentation'
+export type EduBoardBackgroundStyle = 'blackboard' | 'greenboard' | 'white' | 'grid' | 'notebook' | 'pdf_slide'
+export type EduBoardStatus = 'draft' | 'active' | 'published' | 'closed' | 'archived'
+export type EduBoardTool =
+  | 'select'
+  | 'pen'
+  | 'marker'
+  | 'chalk'
+  | 'highlighter'
+  | 'eraser'
+  | 'line'
+  | 'arrow'
+  | 'rect'
+  | 'circle'
+  | 'text'
+  | 'image'
 
+export interface EduBoardSceneElement {
+  id: string
+  type: 'stroke' | 'line' | 'arrow' | 'rect' | 'circle' | 'text' | 'image'
+  tool?: string
+  points?: number[]
+  pressures?: number[]
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  text?: string
+  fontSize?: number
+  color?: string
+  fill?: string
+  size?: number
+  opacity?: number
+  attachmentId?: number
+  src?: string
+}
 
+export interface EduBoardScenePayload {
+  schemaVersion: number
+  elements: EduBoardSceneElement[]
+}
 
+export interface EduBoardPageItem {
+  id?: number
+  page_uid: string
+  page_order: number
+  title: string
+  mode: EduBoardMode
+  background_style: EduBoardBackgroundStyle
+  source_attachment_id?: number | null
+  source_page_number?: number | null
+  scene_json: string | EduBoardScenePayload
+  version: number
+  updated_at?: string | null
+}
+
+export interface EduBoardAttachmentItem {
+  id: number
+  attachment_role: string
+  original_filename: string
+  mime_type: string
+  extension: string
+  file_size_bytes: number
+  page_count?: number | null
+  is_immutable: boolean
+  created_at?: string | null
+}
+
+export interface EduBoardSummaryItem {
+  id: number
+  board_code: string
+  institution_id: number
+  is_demo: boolean
+  academic_year_id?: number | null
+  academic_year_name?: string | null
+  teaching_session_id?: number | null
+  session_code?: string | null
+  session_date?: string | null
+  timetable_entry_id?: number | null
+  teacher_user_id: number
+  teacher_name?: string | null
+  standard_id?: number | null
+  standard_name?: string | null
+  division_id?: number | null
+  division_name?: string | null
+  subject_id?: number | null
+  subject_name?: string | null
+  subject_mapping_id?: number | null
+  title: string
+  topic?: string | null
+  board_mode_default: EduBoardMode
+  status: EduBoardStatus
+  is_template: boolean
+  template_category?: string | null
+  collaboration_enabled: boolean
+  published_at?: string | null
+  latest_revision_no: number
+  page_count: number
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export interface EduBoardDetailItem extends EduBoardSummaryItem {
+  pages: EduBoardPageItem[]
+  attachments: EduBoardAttachmentItem[]
+  read_only?: boolean
+}
+
+export interface EduBoardRevisionItem {
+  id: number
+  revision_no: number
+  save_type: 'autosave' | 'manual' | 'publish' | 'restore'
+  note?: string | null
+  created_by_id: number
+  created_at?: string | null
+}
+
+export interface EduBoardContextResponse {
+  academic_years: Array<{ id: number; name: string; is_current: boolean }>
+  divisions: Array<{
+    id: number
+    name: string
+    code?: string | null
+    standard_id: number
+    standard_name?: string | null
+  }>
+  subjects: Array<{ id: number; name: string; code?: string | null; standard_id?: number | null }>
+  teaching_sessions: Array<{
+    id: number
+    session_code: string
+    session_date: string
+    division_id?: number | null
+    subject_id?: number | null
+    teacher_user_id: number
+    topic_taught?: string | null
+    timetable_entry_id?: number | null
+  }>
+  templates: Array<{
+    id: number
+    title: string
+    template_category?: string | null
+    board_mode_default: EduBoardMode
+    page_count: number
+  }>
+}
+
+export interface EduBoardSettingsConfig {
+  max_file_size_mb: number
+  allowed_extensions: string[]
+  autosave_interval_ms: number
+  pptx_conversion_enabled: boolean
+  default_board_mode: EduBoardMode
+  notify_students_on_publish: boolean
+}
+
+export interface EduBoardReportsSummary {
+  total_boards: number
+  published_boards: number
+  draft_boards: number
+  total_pages: number
+  total_pdf_attachments: number
+  templates_count: number
+  mode_breakdown: Record<string, number>
+  recent_boards: Array<{
+    id: number
+    board_code: string
+    title: string
+    status: string
+    mode: string
+    page_count: number
+    updated_at?: string | null
+  }>
+}
 
 

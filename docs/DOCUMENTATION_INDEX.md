@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-12 11:54:15  
-**Total Indexed Items:** 412  
+**Last Reindexed:** 2026-11-12 16:14:19  
+**Total Indexed Items:** 423  
 
 ---
 
@@ -17,7 +17,7 @@
 | `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **8** | Product Overview & Vision |
 | `01` | [01_ARCHITECTURE](#01_architecture) | **6** | System Architecture & Workflows |
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **6** | Installation & Deployment |
-| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **17** | Academic Structure & Courses |
+| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **18** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **20** | Student Directory & Admissions |
 | `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **7** | Teacher & Faculty Directory |
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
@@ -33,15 +33,15 @@
 | `16` | [16_DATABASE_API](#16_database_api) | **7** | Database Schema & REST API Standards |
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **10** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **4** | Testing, Verification & Quality Assurance |
-| `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **8** | Releases, Versioning & Changelogs |
-| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **61** | Forensic Audits & Data Health |
+| `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **9** | Releases, Versioning & Changelogs |
+| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **65** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **3** | Troubleshooting, Runbooks & Recovery |
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **10** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **104** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **109** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -94,6 +94,7 @@
 | **Academic Year & Financial Session Selector — Forensic Investigation & Resolution** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-05_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-YEAR-FORENSIC-RESOLUTION-REPORT_V1.md) | - |
 | **Canonical Subject Architecture Final Integrity Audit & Regression Verification Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md) | 03_ACADEMIC_MANAGEMENT, 08_EXAMINATION, 12_RBAC_SECURITY |
 | **Course, Batch, and Enrollment Rules** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_COURSE-BATCH-ENROLLMENT-RULES_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_COURSE-BATCH-ENROLLMENT-RULES_V1.md) | - |
+| **Homework & Assignment Management Enhancement — Final Acceptance Report** | `REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY, 19_RELEASES_CHANGELOG |
 | **Homework & Assignment Management System Implementation Report** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL |
 | **Homework & Assignment Management System — Software Audit & Architectural Blueprint** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION |
 | **Independent End-to-End Acceptance Audit Report: Academic Structure & Batch Management** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md) | - |
@@ -372,6 +373,7 @@
 | **PrathamOne Academy — Enterprise Release & Change Management System Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_ENTERPRISE-RELEASE-AND-CHANGE-MANAGEMENT-REPORT_V1.md](19_RELEASES_CHANGELOG/2026-11-05_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_ENTERPRISE-RELEASE-AND-CHANGE-MANAGEMENT-REPORT_V1.md) | - |
 | **Release & Change Management Runtime Synchronization Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md](19_RELEASES_CHANGELOG/2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md) | 01_ARCHITECTURE, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
 | **Release Notes v1.76.0 — Homework Management & Universal Report Intelligence** | `CHANGELOG` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md](19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md) | 03_ACADEMIC_MANAGEMENT, 11_REPORTS_EXPORTS, 19_RELEASES_CHANGELOG |
+| **Release Notes v1.87.0 — Homework & Assignment Management Enhancement** | `CHANGELOG` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md](19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 11_REPORTS_EXPORTS, 19_RELEASES_CHANGELOG |
 | **Release Notes — Prashant Academy** | `CHANGELOG` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RELEASES_CHANGELOG_CHANGELOG_RELEASE-NOTES-HISTORICAL_V1.md](19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_CHANGELOG_RELEASE-NOTES-HISTORICAL_V1.md) | - |
 | **Source Code Attribution, Header, and Versioning Policy** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RELEASES_CHANGELOG_POLICY-FRAMEWORK_CODE-ATTRIBUTION-POLICY_V1.md](19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_POLICY-FRAMEWORK_CODE-ATTRIBUTION-POLICY_V1.md) | - |
 | **Source-Code Attribution, Header, and Versioning System Implementation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md](19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md) | - |
@@ -416,6 +418,7 @@
 | **PrathamOne EduOS — Financial Integrity, Ledger Reconciliation & Numbering Audit** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FINANCIAL-INTEGRITY-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FINANCIAL-INTEGRITY-AUDIT_V1.md) | 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 16_DATABASE_API, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Frontend Architecture, UI/UX & Component Audit** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md) | 17_UI_UX_DESIGN, 18_TESTING_QA, 13_SYSADMIN_SETTINGS |
 | **PrathamOne EduOS — Frontend Functional & UX Integrity Audit Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md) | 17_UI_UX_DESIGN, 18_TESTING_QA, 20_AUDITS_COMPLIANCE |
+| **PrathamOne EduOS — Full Platform Security, Architecture, Governance & Dependency Audit** | `REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md](20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 16_DATABASE_API, 18_TESTING_QA, 25_BUSINESS_REQUIREMENTS |
 | **PrathamOne EduOS — Full Software Audit & Operational Health Report** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 12_RBAC_SECURITY, 16_DATABASE_API |
 | **PrathamOne EduOS — Full Software Audit Remediation Plan & Execution Record** | `PLAN` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 18_TESTING_QA, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Full Software Audit, Verification & Master Health Assessment** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-AUDIT-REPORT_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 06_TEACHER_PAYROLL, 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 12_RBAC_SECURITY, 16_DATABASE_API |
@@ -439,6 +442,9 @@
 | **PrathamOne EduOS — Production Readiness & Institutional Deployment Sign-Off** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 02_INSTALLATION_DEPLOYMENT, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Repository Documentation Audit & Baseline Inventory** | `AUDIT-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md](20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md) | - |
 | **PrathamOne EduOS — Single Source of Truth & Architecture Compliance Report** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md) | 01_ARCHITECTURE, 25_BUSINESS_REQUIREMENTS, 16_DATABASE_API |
+| **PrathamOne EduOS — Sprint 1 (P0) Critical Security Lockdown Remediation Report** | `REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md](20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT1-P0-SECURITY-LOCKDOWN_V1.md) | 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 18_TESTING_QA, 20_AUDITS_COMPLIANCE |
+| **PrathamOne EduOS — Sprint 2 (P1) Security, View-First & Dependency Remediation Report** | `REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md](20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 14_PRINTING_DOCUMENTS, 18_TESTING_QA, 20_AUDITS_COMPLIANCE |
+| **PrathamOne EduOS — Sprint 3 Session Cookies, SSOT Consolidation, Performance & Test Stability Remediation Report** | `REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md](20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md) | backend.app.core, backend.app.models, backend.app.services, frontend.src.api, frontend.src.store, frontend.src.components |
 | **PrathamOne EduOS — System Performance, Latency & Reliability Benchmarks** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_PERFORMANCE-RELIABILITY-REPORT_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 18_TESTING_QA |
 | **PrathamOne Global Brand Identity Forensic Audit & Compliance Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS-COMPLIANCE_REPORT_PRATHAMONE-GLOBAL-BRANDING-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_PRATHAMONE-GLOBAL-BRANDING-AUDIT_V1.md) | frontend.config, frontend.components, 14_PRINTING_DOCUMENTS, 00_PRODUCT_OVERVIEW |
 | **Teacher and Staff Dashboard & Profile Forensic Audit — Workspaces, Navigation, and Action Verification** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 17_UI_UX_DESIGN |
@@ -536,6 +542,11 @@
 | `17_reports_analytics_grid.png` | `assets/screenshots` | 406.3 KB | [17_reports_analytics_grid.png](assets/screenshots/17_reports_analytics_grid.png) |
 | `18_user_management.png` | `assets/screenshots` | 422.1 KB | [18_user_management.png](assets/screenshots/18_user_management.png) |
 | `19_user_profile_rbac_matrix.png` | `assets/screenshots` | 320.9 KB | [19_user_profile_rbac_matrix.png](assets/screenshots/19_user_profile_rbac_matrix.png) |
+| `2026-11-12_homework_create-form.png` | `assets` | 224.3 KB | [2026-11-12_homework_create-form.png](assets/2026-11-12_homework_create-form.png) |
+| `2026-11-12_homework_reports-analytics.png` | `assets` | 205.6 KB | [2026-11-12_homework_reports-analytics.png](assets/2026-11-12_homework_reports-analytics.png) |
+| `2026-11-12_homework_studio-overview.png` | `assets` | 240.9 KB | [2026-11-12_homework_studio-overview.png](assets/2026-11-12_homework_studio-overview.png) |
+| `2026-11-12_homework_submissions-eval.png` | `assets` | 244.5 KB | [2026-11-12_homework_submissions-eval.png](assets/2026-11-12_homework_submissions-eval.png) |
+| `2026-11-12_homework_teacher-workspace.png` | `assets` | 271.3 KB | [2026-11-12_homework_teacher-workspace.png](assets/2026-11-12_homework_teacher-workspace.png) |
 | `20_staff_management.png` | `assets/screenshots` | 385.2 KB | [20_staff_management.png](assets/screenshots/20_staff_management.png) |
 | `21_sysadmin_center_overview.png` | `assets/screenshots` | 515.3 KB | [21_sysadmin_center_overview.png](assets/screenshots/21_sysadmin_center_overview.png) |
 | `22_sysadmin_universal_editor.png` | `assets/screenshots` | 409.8 KB | [22_sysadmin_universal_editor.png](assets/screenshots/22_sysadmin_universal_editor.png) |

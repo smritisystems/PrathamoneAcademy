@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -30,12 +30,29 @@ from app.services.settings_service import get_institution_setting
 from app.models.institution import Institution
 from app.core.deps import (
     get_current_active_user,
+    require_role,
+    is_sysadmin,
     enforce_institution_access,
     check_institution_access,
     get_data_environment,
     has_permission,
     TRAINING_INSTITUTION_CODE,
 )
+
+REPORT_STAFF_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "teacher",
+    "staff",
+    "counselor",
+    "counsellor",
+    "receptionist",
+)
+AUDIT_REPORT_ROLES = ("superadmin", "sysadmin", "super_admin", "admin", "principal")
 from app.services.financial_governance_service import (
     FinancialGovernanceService,
     FinancialFilter,
@@ -90,8 +107,13 @@ async def fee_collection_report(
     include_inactive: Optional[bool] = Query(default=None),
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+    target_inst_id = institution_id if institution_id is not None else (
+        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    )
     query = (
         select(
             Student.admission_number,
@@ -119,8 +141,8 @@ async def fee_collection_report(
 
     if academic_year_id:
         query = query.where(FeeInvoice.academic_year_id == academic_year_id)
-    if institution_id:
-        query = query.where(Student.institution_id == institution_id)
+    if target_inst_id is not None:
+        query = query.where(Student.institution_id == target_inst_id)
 
     # Student visibility criteria
     if status:
@@ -184,7 +206,7 @@ async def export_fee_collection(
     status: Optional[str] = Query(default=None),
     include_inactive: Optional[bool] = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     data = await fee_collection_report(
         academic_year_id=academic_year_id,
@@ -289,8 +311,13 @@ async def outstanding_report(
     status: Optional[str] = Query(default=None),
     include_inactive: Optional[bool] = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+    target_inst_id = institution_id if institution_id is not None else (
+        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    )
     user_inst_id = institution_id or getattr(current_user, "institution_id", None) or 1
     configured_report_mode = await get_institution_setting(
         db, user_inst_id, "admission", "student_visibility_reports", "include_all"
@@ -302,8 +329,8 @@ async def outstanding_report(
     
     if academic_year_id:
         query = query.where(FeeInvoice.academic_year_id == academic_year_id)
-    if institution_id:
-        query = query.where(Student.institution_id == institution_id)
+    if target_inst_id is not None:
+        query = query.where(Student.institution_id == target_inst_id)
 
     if status:
         st = status.strip().lower()
@@ -365,14 +392,20 @@ async def outstanding_report(
 async def payments_summary(
     academic_year_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
-    query = select(
-        Payment.payment_method,
-        func.count(Payment.id).label("count"),
-        func.coalesce(func.sum(Payment.amount), 0).label("total"),
-    ).where(Payment.status.in_(["completed", "posted"]))
+    query = (
+        select(
+            Payment.payment_method,
+            func.count(Payment.id).label("count"),
+            func.coalesce(func.sum(Payment.amount), 0).label("total"),
+        )
+        .join(Student, Payment.student_id == Student.id)
+        .where(Payment.status.in_(["completed", "posted"]))
+    )
 
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        query = query.where(Student.institution_id == current_user.institution_id)
     if academic_year_id:
         query = query.where(Payment.academic_year_id == academic_year_id)
 
@@ -406,7 +439,7 @@ async def batch_capacity_report(
     board_id: Optional[int] = Query(None),
     standard_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     query = (
         select(Division, Standard, Board, User)
@@ -415,6 +448,8 @@ async def batch_capacity_report(
         .outerjoin(User, Division.class_teacher_id == User.id)
         .where(Division.is_active == True)
     )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        query = query.where(Standard.institution_id == current_user.institution_id)
 
     if board_id:
         query = query.where(Division.board_id == board_id)
@@ -462,27 +497,39 @@ async def batch_capacity_report(
 @router.get("/academic/distribution")
 async def academic_distribution_report(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
-    boards = (await db.execute(select(Board).where(Board.is_active == True).order_by(Board.name))).scalars().all()
-    standards = (await db.execute(select(Standard).where(Standard.is_active == True).order_by(Standard.level))).scalars().all()
+    scoped_inst_id = None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    board_stmt = select(Board).where(Board.is_active == True)
+    std_stmt = select(Standard).where(Standard.is_active == True)
+    if scoped_inst_id is not None:
+        board_stmt = board_stmt.where(Board.institution_id == scoped_inst_id)
+        std_stmt = std_stmt.where(Standard.institution_id == scoped_inst_id)
+    boards = (await db.execute(board_stmt.order_by(Board.name))).scalars().all()
+    standards = (await db.execute(std_stmt.order_by(Standard.level))).scalars().all()
 
     # Enrolled count by board and standard
     enr_stmt = (
         select(Division.board_id, Division.standard_id, func.count(StudentEnrollment.id))
         .join(StudentEnrollment, Division.id == StudentEnrollment.division_id)
+        .join(Standard, Division.standard_id == Standard.id)
         .where(StudentEnrollment.status == "active")
         .group_by(Division.board_id, Division.standard_id)
     )
+    if scoped_inst_id is not None:
+        enr_stmt = enr_stmt.where(Standard.institution_id == scoped_inst_id)
     enr_rows = (await db.execute(enr_stmt)).all()
     enr_map = {(b_id, s_id): cnt for b_id, s_id, cnt in enr_rows}
 
     # Batch count and total capacity by board and standard
     div_stmt = (
         select(Division.board_id, Division.standard_id, func.count(Division.id), func.sum(Division.capacity))
+        .join(Standard, Division.standard_id == Standard.id)
         .where(Division.is_active == True)
         .group_by(Division.board_id, Division.standard_id)
     )
+    if scoped_inst_id is not None:
+        div_stmt = div_stmt.where(Standard.institution_id == scoped_inst_id)
     div_rows = (await db.execute(div_stmt)).all()
     div_map = {}
     for b_id, s_id, cnt, cap in div_rows:
@@ -516,13 +563,12 @@ async def academic_distribution_report(
 @router.get("/academic/faculty-load")
 async def faculty_load_report(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
-    users = (
-        await db.execute(
-            select(User).where(User.role.in_(["teacher", "faculty", "staff", "admin"]), User.is_active == True)
-        )
-    ).scalars().all()
+    user_stmt = select(User).where(User.role.in_(["teacher", "faculty", "staff", "admin"]), User.is_active == True)
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        user_stmt = user_stmt.where(User.institution_id == current_user.institution_id)
+    users = (await db.execute(user_stmt)).scalars().all()
 
     # Pre-fetch divisions where teacher is in charge
     div_stmt = (
@@ -578,7 +624,7 @@ async def export_academic_report(
     board_id: Optional[int] = Query(None),
     standard_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     output = io.StringIO()
 
@@ -645,7 +691,7 @@ async def student_withdrawals_report(
     search: Optional[str] = None,
     effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Detailed Student Withdrawal Report providing student metadata, class & batch allocation,
@@ -801,7 +847,7 @@ async def withdrawal_analytics_report(
     division_id: Optional[int] = None,
     effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Comprehensive Analytics Blueprint endpoint providing aggregate KPIs, Attrition Rate,
@@ -953,7 +999,7 @@ async def export_student_withdrawals_report(
     division_id: Optional[int] = None,
     effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     data = await student_withdrawals_report(
         academic_year_id=academic_year_id,
@@ -1000,7 +1046,7 @@ async def student_master_directory_report(
     search: Optional[str] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Exportable Demographic Roster of all enrolled students with academic allocations,
@@ -1085,7 +1131,7 @@ async def student_attendance_summary_report(
     defaulters_only: bool = Query(False),
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Cohort and batch-level student attendance summary with percentage computation
@@ -1168,7 +1214,7 @@ async def academic_curriculum_matrix_report(
     standard_id: Optional[int] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Cross-tabulation matrix of subjects taught per standard and board,
@@ -1233,7 +1279,7 @@ async def timetable_utilization_report(
     day_of_week: Optional[str] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Weekly schedule occupancy analysis showing room utilization, weekday distribution,
@@ -1280,7 +1326,7 @@ async def exam_consolidated_merit_report(
     standard_id: Optional[int] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Consolidated cohort exam merit ranking and performance register
@@ -1307,6 +1353,9 @@ async def exam_consolidated_merit_report(
     exam = (await db.execute(select(Examination).where(Examination.id == target_exam_id))).scalar_one_or_none()
     if not exam:
         return []
+    exam_std = await db.get(Standard, exam.standard_id)
+    if exam_std:
+        check_institution_access(exam_std.institution_id, current_user)
 
     marks_query = (
         select(ExamMark, Student, Subject)
@@ -1314,6 +1363,8 @@ async def exam_consolidated_merit_report(
         .join(Subject, ExamMark.subject_id == Subject.id)
         .where(ExamMark.examination_id == target_exam_id)
     )
+    if inst_id:
+        marks_query = marks_query.where(Student.institution_id == inst_id)
     marks_res = await db.execute(marks_query)
     marks_rows = marks_res.all()
 
@@ -1387,13 +1438,15 @@ async def fee_defaulters_aging_report(
     institution_id: Optional[int] = None,
     min_days_overdue: int = Query(0),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Consolidated overdue fee aging register with guardian contacts, days overdue,
     and CodeX privacy masking.
     """
-    inst_id = institution_id or getattr(current_user, "institution_id", None)
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+    inst_id = institution_id or (None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None))
     today = date.today()
 
     query = (
@@ -1470,7 +1523,7 @@ async def daily_payment_collection_report(
     payment_mode: Optional[str] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """
     Day-wise cashier intake register showing receipt numbers, student admissions,
@@ -1534,7 +1587,7 @@ async def system_audit_summary_report(
     end_date: Optional[date] = None,
     limit: int = Query(100, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*AUDIT_REPORT_ROLES)),
 ):
     """
     Institutional user activity, login, and authorization verification audit log.
@@ -1545,6 +1598,8 @@ async def system_audit_summary_report(
     )
 
     conditions = []
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        conditions.append(User.institution_id == current_user.institution_id)
     if severity:
         conditions.append(AuditLog.severity == severity)
     if resource_type:
@@ -1582,7 +1637,7 @@ async def system_audit_summary_report(
 
 @router.get("/concessions/catalog")
 async def get_concession_reports_catalog(
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     """Returns metadata catalog of all 20 governed concession, waiver, and scholarship reports."""
     return [
@@ -1607,7 +1662,7 @@ async def get_concession_governance_report(
     search: Optional[str] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     can_rep = await has_permission(db, current_user, "concessions", "reports")
     if not can_rep and current_user.role not in ("superadmin", "admin", "accountant", "principal"):
@@ -1618,6 +1673,8 @@ async def get_concession_governance_report(
     if report_id not in CONCESSION_REPORT_DEFINITIONS:
         raise HTTPException(status_code=404, detail=f"Unknown concession report '{report_id}'")
 
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     inst_id = institution_id or await resolve_report_institution_id(db, current_user, data_env)
     is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
 
@@ -1655,7 +1712,7 @@ async def export_concession_governance_report(
     search: Optional[str] = None,
     data_env: str = Depends(get_data_environment),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
 ):
     can_rep = await has_permission(db, current_user, "concessions", "reports")
     if not can_rep and current_user.role not in ("superadmin", "admin", "accountant", "principal"):
@@ -1666,6 +1723,8 @@ async def export_concession_governance_report(
     if report_id not in CONCESSION_REPORT_DEFINITIONS:
         raise HTTPException(status_code=404, detail=f"Unknown concession report '{report_id}'")
 
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     inst_id = institution_id or await resolve_report_institution_id(db, current_user, data_env)
     is_demo_filter = True if data_env == "TRAINING" else (False if data_env == "PRODUCTION" else None)
 
@@ -1699,6 +1758,23 @@ async def export_concession_governance_report(
         io.BytesIO(xlsx_bytes),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{report_id}_{ts}.xlsx"'},
+    )
+
+
+@router.get("/eduboard-summary")
+async def get_eduboard_summary_report(
+    academic_year_id: Optional[int] = None,
+    institution_id: int = Depends(enforce_institution_access),
+    data_env: str = Depends(get_data_environment),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    """Classroom EduBoard adoption, publication, and PDF export analytics summary."""
+    from app.services.eduboard_service import EduBoardService
+
+    await EduBoardService.require_permission_or_403(db, current_user, "view")
+    return await EduBoardService.get_reports_summary(
+        db, institution_id, data_env, academic_year_id=academic_year_id
     )
 
 

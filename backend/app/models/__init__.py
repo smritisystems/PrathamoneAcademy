@@ -19,7 +19,7 @@
 from app.models.institution import Institution
 from app.models.academic_year import AcademicYear
 from app.models.board import Board
-from app.models.user import User, Role, Permission, AuditLog
+from app.models.user import User, Role, Permission, AuditLog, RevokedToken
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.student import Student, Guardian, StudentLifecycleLog
@@ -68,7 +68,10 @@ from app.models.navigation import (
     UserNavigationPreference, UserNavigationActivity
 )
 from app.models.homework import (
-    HomeworkAssignment, StudentHomeworkRecord, HomeworkAuditLog
+    HomeworkAssignment, StudentHomeworkRecord, HomeworkAuditLog, HomeworkFile
+)
+from app.models.eduboard import (
+    EduBoard, EduBoardPage, EduBoardRevision, EduBoardAttachment
 )
 from app.models.help import (
     HelpCategory, HelpArticle, HelpArticleRevision,
@@ -84,6 +87,7 @@ __all__ = [
     "Role",
     "Permission",
     "AuditLog",
+    "RevokedToken",
     "Standard",
     "Division",
     "Student",
@@ -155,6 +159,11 @@ __all__ = [
     "HomeworkAssignment",
     "StudentHomeworkRecord",
     "HomeworkAuditLog",
+    "HomeworkFile",
+    "EduBoard",
+    "EduBoardPage",
+    "EduBoardRevision",
+    "EduBoardAttachment",
     "HelpCategory",
     "HelpArticle",
     "HelpArticleRevision",

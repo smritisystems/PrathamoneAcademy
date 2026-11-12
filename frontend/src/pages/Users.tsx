@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description User management dashboard listing system accounts, roles, access scopes, and invitation workflows.
  */
@@ -230,6 +230,11 @@ export default function UsersPage() {
   }
 
   const handleEditOpen = (u: UserListItem) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Enable Edit Mode above to edit user accounts.')
+      setActiveMenuId(null)
+      return
+    }
     setEditModalUser(u)
     setEditForm({
       first_name: u.first_name,
@@ -277,6 +282,11 @@ export default function UsersPage() {
   }
 
   const handleToggleStatus = async (u: UserListItem) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Enable Edit Mode above to activate or deactivate accounts.')
+      setActiveMenuId(null)
+      return
+    }
     try {
       const res = await usersApi.toggleStatus(u.id)
       toast.success(res.data.message)
@@ -289,6 +299,11 @@ export default function UsersPage() {
   }
 
   const handleResendInvitation = async (u: UserListItem) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Enable Edit Mode above to resend invitations.')
+      setActiveMenuId(null)
+      return
+    }
     try {
       const res = await usersApi.resendInvitation(u.id)
       toast.success(res.data.message)
@@ -803,6 +818,11 @@ export default function UsersPage() {
 
                             <button
                               onClick={() => {
+                                if (!isEditMode) {
+                                  toast.error('Locked in View Mode: Enable Edit Mode above to reset user passwords.')
+                                  setActiveMenuId(null)
+                                  return
+                                }
                                 setResetPasswordUser(u)
                                 setGeneratedTempPassword(null)
                                 setActiveMenuId(null)
@@ -847,6 +867,11 @@ export default function UsersPage() {
 
                             <button
                               onClick={() => {
+                                if (!isEditMode) {
+                                  toast.error('Locked in View Mode: Enable Edit Mode above to delete user accounts.')
+                                  setActiveMenuId(null)
+                                  return
+                                }
                                 setDeleteModalUser(u)
                                 setIsPermanentDelete(false)
                                 setActiveMenuId(null)

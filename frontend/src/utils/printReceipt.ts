@@ -11,10 +11,12 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
+
+import { escapeHtml, sanitizeDomSubtree } from './htmlSanitizer';
 
 export interface PrintReceiptOptions {
   elementId?: string;
@@ -90,6 +92,7 @@ export function printReceiptElement(
     clonedReceipt.querySelectorAll('.print\\:hidden, button, [role="button"]').forEach((el) => {
       el.parentNode?.removeChild(el);
     });
+    sanitizeDomSubtree(clonedReceipt);
 
     // Collect parent stylesheets and Tailwind styles to ensure styling parity
     const parentStyles = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'))
@@ -108,7 +111,7 @@ export function printReceiptElement(
       <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <title>${title}</title>
+        <title>${escapeHtml(title)}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />

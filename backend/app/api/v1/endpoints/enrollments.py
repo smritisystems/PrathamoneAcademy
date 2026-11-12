@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-06
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for student course and batch enrollment, transfers, and status tracking.
 #  */
@@ -24,7 +24,7 @@ from pydantic import BaseModel
 from datetime import date, datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
 from app.models.enrollment import StudentEnrollment
 from app.models.student import Student
 from app.models.division import Division
@@ -66,25 +66,44 @@ async def get_enrollment_stats(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if (getattr(current_user, "role", "") or "").lower() == "student":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students cannot access institute enrollment statistics")
+
+    inst_id = None
+    if not is_sysadmin(current_user):
+        inst_id = getattr(current_user, "institution_id", None)
+        if inst_id is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution context required")
+
     ay_id = academic_year_id or 1
 
     # Active enrollments
-    enr_stmt = select(func.count(StudentEnrollment.id)).where(
+    enr_stmt = select(func.count(StudentEnrollment.id)).join(
+        Student, StudentEnrollment.student_id == Student.id
+    ).where(
         StudentEnrollment.academic_year_id == ay_id,
         StudentEnrollment.status == "active",
     )
+    if inst_id is not None:
+        enr_stmt = enr_stmt.where(Student.institution_id == inst_id)
     total_active = (await db.execute(enr_stmt)).scalar() or 0
 
     # Total student master count
     stu_stmt = select(func.count(Student.id)).where(Student.is_active == True)
+    if inst_id is not None:
+        stu_stmt = stu_stmt.where(Student.institution_id == inst_id)
     total_students = (await db.execute(stu_stmt)).scalar() or 0
 
     unassigned_count = max(0, total_students - total_active)
 
     # Total batch capacity
-    div_stmt = select(Division.id, Division.capacity).where(
+    div_stmt = select(Division.id, Division.capacity).join(
+        Standard, Division.standard_id == Standard.id
+    ).where(
         Division.is_active == True, Division.status == "active"
     )
+    if inst_id is not None:
+        div_stmt = div_stmt.where(Standard.institution_id == inst_id)
     divs = (await db.execute(div_stmt)).all()
     total_capacity = sum(d[1] or 40 for d in divs)
     available_seats = max(0, total_capacity - total_active)
@@ -147,6 +166,17 @@ async def list_enrollments(
         .outerjoin(Division, StudentEnrollment.division_id == Division.id)
         .outerjoin(Board, Division.board_id == Board.id)
     )
+
+    if not is_sysadmin(current_user):
+        inst_id = getattr(current_user, "institution_id", None)
+        if inst_id is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution context required")
+        query = query.where(Student.institution_id == inst_id)
+        if (getattr(current_user, "role", "") or "").lower() == "student":
+            linked_stu_id = getattr(current_user, "student_id", None)
+            if linked_stu_id is None:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Student profile not linked to user account")
+            query = query.where(StudentEnrollment.student_id == linked_stu_id)
 
     if academic_year_id:
         query = query.where(StudentEnrollment.academic_year_id == academic_year_id)
@@ -233,6 +263,15 @@ async def list_unassigned_students(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if (getattr(current_user, "role", "") or "").lower() == "student":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students cannot list unassigned peers")
+
+    inst_id = None
+    if not is_sysadmin(current_user):
+        inst_id = getattr(current_user, "institution_id", None)
+        if inst_id is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution context required")
+
     ay_id = academic_year_id or 1
 
     # Active enrolled student IDs
@@ -248,6 +287,8 @@ async def list_unassigned_students(
         Student.is_active == True,
         ~Student.id.in_(active_enr_subq),
     )
+    if inst_id is not None:
+        query = query.where(Student.institution_id == inst_id)
 
     if search and search.strip():
         s = f"%{search.strip()}%"
@@ -279,6 +320,16 @@ async def create_enrollment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("superadmin", "admin", "principal", "staff")),
 ):
+    student = await db.get(Student, data.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    check_institution_access(student.institution_id, current_user)
+
+    std = await db.get(Standard, data.standard_id)
+    if not std:
+        raise HTTPException(status_code=404, detail="Standard not found")
+    check_institution_access(std.institution_id, current_user)
+
     # 1. Prevent duplicate active enrollment in same academic year
     existing_active = (
         await db.execute(
@@ -302,6 +353,8 @@ async def create_enrollment(
         ).scalar_one_or_none()
         if not div:
             raise HTTPException(status_code=404, detail="Batch / Division not found")
+        div_std = await db.get(Standard, div.standard_id)
+        check_institution_access(div_std.institution_id if div_std else None, current_user)
 
         current_enrolled = (
             await db.execute(
@@ -358,6 +411,9 @@ async def transfer_batch(
     if not enr:
         raise HTTPException(status_code=404, detail="Enrollment record not found")
 
+    stu = await db.get(Student, enr.student_id)
+    check_institution_access(stu.institution_id if stu else None, current_user)
+
     if enr.status != "active":
         raise HTTPException(
             status_code=400,
@@ -373,6 +429,8 @@ async def transfer_batch(
     ).scalar_one_or_none()
     if not target_div:
         raise HTTPException(status_code=404, detail="Target batch not found")
+    target_std = await db.get(Standard, target_div.standard_id)
+    check_institution_access(target_std.institution_id if target_std else None, current_user)
 
     target_enrolled = (
         await db.execute(
@@ -441,6 +499,16 @@ async def update_enrollment(
     if not enr:
         raise HTTPException(status_code=404, detail="Enrollment record not found")
 
+    stu = await db.get(Student, enr.student_id)
+    check_institution_access(stu.institution_id if stu else None, current_user)
+
+    if data.division_id is not None:
+        div = await db.get(Division, data.division_id)
+        if not div:
+            raise HTTPException(status_code=404, detail="Target division not found")
+        div_std = await db.get(Standard, div.standard_id)
+        check_institution_access(div_std.institution_id if div_std else None, current_user)
+
     update_dict = data.model_dump(exclude_unset=True)
     for k, v in update_dict.items():
         if hasattr(enr, k) and v is not None:
@@ -462,6 +530,9 @@ async def delete_enrollment(
     ).scalar_one_or_none()
     if not enr:
         raise HTTPException(status_code=404, detail="Enrollment record not found")
+
+    stu = await db.get(Student, enr.student_id)
+    check_institution_access(stu.institution_id if stu else None, current_user)
 
     enr.status = "archived"
     await db.commit()

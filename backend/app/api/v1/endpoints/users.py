@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-07
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for user account administration, RBAC roles, security scopes, and invitations.
 #  */
@@ -28,7 +28,14 @@ from sqlalchemy import select, func, or_, and_, desc, asc
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_user_permissions, get_current_active_user, require_role
+from app.core.deps import (
+    SYSADMIN_ROLES,
+    check_institution_access,
+    get_current_active_user,
+    get_user_permissions,
+    is_sysadmin,
+    require_role,
+)
 from app.core.security import get_password_hash
 from app.models.user import User, Role, Permission, AuditLog
 from app.models.student import Student
@@ -89,6 +96,60 @@ class PasswordResetRequest(BaseModel):
     send_notification: bool = False
 
 
+# ─── Tenant & Role Escalation Helpers ─────────────────────────────────────────
+
+SYSADMIN_ROLE_SET = {r.lower() for r in SYSADMIN_ROLES}
+
+
+def _tenant_visibility_clause(current_user: User):
+    inst_id = current_user.institution_id or 1
+    if is_sysadmin(current_user):
+        return or_(User.institution_id == inst_id, User.institution_id.is_(None))
+    return and_(
+        User.institution_id == inst_id,
+        ~func.lower(User.role).in_(list(SYSADMIN_ROLE_SET)),
+    )
+
+
+def _authorize_target_user(
+    target_user: User,
+    current_user: User,
+    *,
+    allow_self_read: bool = False,
+) -> None:
+    if allow_self_read and current_user.id == target_user.id:
+        return
+    check_institution_access(target_user.institution_id, current_user)
+    if not is_sysadmin(current_user):
+        if target_user.institution_id is None or is_sysadmin(target_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions to access or modify global/sysadmin accounts",
+            )
+
+
+async def _validate_role_assignment(
+    role_name: Optional[str],
+    role_id: Optional[int],
+    current_user: User,
+    db: AsyncSession,
+) -> None:
+    if is_sysadmin(current_user):
+        return
+    if role_name and role_name.strip().lower() in SYSADMIN_ROLE_SET:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only System Administrators may assign sysadmin or superadmin roles",
+        )
+    if role_id is not None:
+        r_obj = (await db.execute(select(Role).where(Role.id == role_id))).scalar_one_or_none()
+        if r_obj and (r_obj.name or "").strip().lower() in SYSADMIN_ROLE_SET:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only System Administrators may assign sysadmin or superadmin roles",
+            )
+
+
 # ─── Helper Functions ─────────────────────────────────────────────────────────
 
 async def resolve_scope_label(db: AsyncSession, scope_type: str, scope_id: Optional[int]) -> str:
@@ -142,10 +203,8 @@ async def get_user_management_stats(
     Returns high-level summary cards for the User Management Dashboard:
     Total accounts, Active, Inactive, Pending Invitations, and breakdown by role.
     """
-    inst_id = current_user.institution_id or 1
-
     # Base query for counts
-    base_q = select(User).where(or_(User.institution_id == inst_id, User.institution_id.is_(None)))
+    base_q = select(User).where(_tenant_visibility_clause(current_user))
 
     all_users = (await db.execute(base_q)).scalars().all()
     total = len(all_users)
@@ -186,13 +245,13 @@ async def list_users(
     Paginated user directory with comprehensive search, multi-field filters,
     linked student/staff identification, and role-based access scope.
     """
-    inst_id = current_user.institution_id or 1
     offset = (page - 1) * limit
+    visibility_clause = _tenant_visibility_clause(current_user)
 
     q = (
         select(User)
         .outerjoin(Student, User.student_id == Student.id)
-        .where(or_(User.institution_id == inst_id, User.institution_id.is_(None)))
+        .where(visibility_clause)
     )
 
     # Search filter
@@ -242,7 +301,7 @@ async def list_users(
         count_q
         .select_from(User)
         .outerjoin(Student, User.student_id == Student.id)
-        .where(or_(User.institution_id == inst_id, User.institution_id.is_(None)))
+        .where(visibility_clause)
     )
     if search:
         s = f"%{search.strip()}%"
@@ -389,12 +448,13 @@ async def get_user_profile_workspace(
     and tab-specific data (Academic, Attendance, Exams, Fees, Activity Log).
     Restricted: Admin roles can view any profile; regular users can only view their own.
     """
-    if current_user.role not in ADMIN_ROLES and current_user.id != user_id:
+    if (current_user.role or "").lower() not in ADMIN_ROLES and current_user.id != user_id:
         raise HTTPException(status_code=403, detail="Access denied to view this user profile")
 
     user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User account not found")
+    _authorize_target_user(user, current_user, allow_self_read=True)
 
     # 1. Role & Permissions
     role_obj = None
@@ -678,6 +738,10 @@ async def create_user(
     Creates a new user account with explicit student or staff linkage,
     scoped access permissions, and audit logging.
     """
+    if data.institution_id is not None:
+        check_institution_access(data.institution_id, current_user)
+    await _validate_role_assignment(data.role, data.role_id, current_user, db)
+
     # Check username / email uniqueness
     existing = await db.execute(
         select(User).where(or_(User.username == data.username, User.email == data.email))
@@ -767,6 +831,8 @@ async def update_user(
     user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User account not found")
+    _authorize_target_user(user, current_user)
+    await _validate_role_assignment(data.role, data.role_id, current_user, db)
 
     old_state = {
         "first_name": user.first_name,
@@ -867,6 +933,7 @@ async def reset_user_password(
     user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User account not found")
+    _authorize_target_user(user, current_user)
 
     pwd = req.new_password
     generated = False
@@ -910,6 +977,7 @@ async def toggle_user_status(
     user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User account not found")
+    _authorize_target_user(user, current_user)
 
     if user.is_active and user.role in ("sysadmin", "superadmin", "super_admin"):
         super_count = (
@@ -953,6 +1021,7 @@ async def resend_user_invitation(
     user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User account not found")
+    _authorize_target_user(user, current_user)
 
     user.invitation_status = "pending"
     user.invitation_sent_at = datetime.now()
@@ -991,6 +1060,7 @@ async def delete_user(
     user = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    _authorize_target_user(user, current_user)
 
     if user.role in ("sysadmin", "super_admin", "superadmin"):
         super_count = (

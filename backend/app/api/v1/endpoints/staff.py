@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description Comprehensive API endpoints for Teacher & Staff Management, assignments, attendance, leaves, and documents.
 #  */
@@ -66,6 +66,20 @@ router = APIRouter()
 
 STAFF_ADMIN_ROLES = ("sysadmin", "superadmin", "super_admin", "admin", "principal")
 FINANCIAL_ROLES = ("sysadmin", "superadmin", "super_admin", "admin", "accountant")
+STAFF_READ_ROLES = (
+    "sysadmin",
+    "superadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "teacher",
+    "faculty",
+    "staff",
+    "counselor",
+    "counsellor",
+    "receptionist",
+)
 
 
 # ─── Pydantic Schemas ──────────────────────────────────────────────────────────
@@ -235,7 +249,7 @@ async def list_staff_members(
     limit: int = Query(20, ge=1, le=100),
     effective_inst_id: int = Depends(enforce_institution_access),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*STAFF_READ_ROLES)),
 ):
     """
     Returns paginated directory of faculty and staff with full filtering and workload aggregation.
@@ -1314,7 +1328,7 @@ async def list_teacher_assignments(
     subject_id: Optional[int] = Query(None),
     academic_year_id: Optional[int] = Query(1),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*STAFF_READ_ROLES)),
 ):
     """
     Lists teacher subject-batch allocations with workload and division student counts.
@@ -1326,6 +1340,8 @@ async def list_teacher_assignments(
     sub_id = subject_id if not hasattr(subject_id, "default") else None
 
     conditions = [TeacherAssignment.is_active == True]
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        conditions.append(Standard.institution_id == current_user.institution_id)
     if ay_id:
         conditions.append(TeacherAssignment.academic_year_id == ay_id)
     if t_id:
@@ -1473,25 +1489,33 @@ async def get_daily_staff_attendance(
     attendance_date: date = Query(default_factory=date.today),
     staff_type: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*STAFF_READ_ROLES)),
 ):
     """
     Returns the complete faculty and staff attendance register for a specific date.
     """
-    # Fetch all active staff
+    # Fetch all active staff in tenant
     staff_query = (
         select(StaffProfile, User)
         .join(User, StaffProfile.user_id == User.id)
         .where(StaffProfile.status.in_(["active", "on_leave"]))
     )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        staff_query = staff_query.where(StaffProfile.institution_id == current_user.institution_id)
     if staff_type:
         staff_query = staff_query.where(StaffProfile.staff_type == staff_type)
     staff_query = staff_query.order_by(StaffProfile.employee_id.asc())
 
     staff_list = (await db.execute(staff_query)).all()
 
-    # Fetch marked attendances for this date
-    att_query = select(StaffAttendance).where(StaffAttendance.date == attendance_date)
+    # Fetch marked attendances for this date scoped to tenant
+    att_query = (
+        select(StaffAttendance)
+        .join(User, StaffAttendance.user_id == User.id)
+        .where(StaffAttendance.date == attendance_date)
+    )
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        att_query = att_query.where(User.institution_id == current_user.institution_id)
     att_records = {a.user_id: a for a in (await db.execute(att_query)).scalars().all()}
 
     output = []
@@ -1592,12 +1616,14 @@ async def list_staff_leaves(
     status_filter: Optional[str] = Query(None, alias="status"),
     user_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*STAFF_READ_ROLES)),
 ):
     """
     Lists leave applications with status, dates, and approval details.
     """
     conditions = []
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
+        conditions.append(User.institution_id == current_user.institution_id)
     # Regular teachers/staff only see their own leaves; admins see all
     if current_user.role not in STAFF_ADMIN_ROLES:
         conditions.append(StaffLeave.user_id == current_user.id)
@@ -1701,7 +1727,7 @@ async def action_staff_leave(
 @router.get("/dashboard/stats")
 async def get_staff_dashboard_stats(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*STAFF_READ_ROLES)),
 ):
     """
     Returns contextual metrics customized to the user's role:
@@ -1710,23 +1736,36 @@ async def get_staff_dashboard_stats(
     Staff: My attendance, leave balances, duty roster.
     """
     today = date.today()
+    scoped_inst_id = None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
 
     if current_user.role in STAFF_ADMIN_ROLES or current_user.role in FINANCIAL_ROLES:
-        total_staff = (await db.execute(select(func.count(StaffProfile.id)).where(StaffProfile.status == "active"))).scalar() or 0
-        teachers_count = (await db.execute(select(func.count(StaffProfile.id)).where(StaffProfile.staff_type == "Teacher", StaffProfile.status == "active"))).scalar() or 0
+        staff_q = select(func.count(StaffProfile.id)).where(StaffProfile.status == "active")
+        teacher_q = select(func.count(StaffProfile.id)).where(StaffProfile.staff_type == "Teacher", StaffProfile.status == "active")
+        att_q = (
+            select(StaffAttendance.status, func.count(StaffAttendance.id))
+            .join(User, StaffAttendance.user_id == User.id)
+            .where(StaffAttendance.date == today)
+        )
+        leaves_q = (
+            select(func.count(StaffLeave.id))
+            .join(User, StaffLeave.user_id == User.id)
+            .where(StaffLeave.status == "pending")
+        )
+        if scoped_inst_id is not None:
+            staff_q = staff_q.where(StaffProfile.institution_id == scoped_inst_id)
+            teacher_q = teacher_q.where(StaffProfile.institution_id == scoped_inst_id)
+            att_q = att_q.where(User.institution_id == scoped_inst_id)
+            leaves_q = leaves_q.where(User.institution_id == scoped_inst_id)
+
+        total_staff = (await db.execute(staff_q)).scalar() or 0
+        teachers_count = (await db.execute(teacher_q)).scalar() or 0
         non_teaching = total_staff - teachers_count
 
-        today_att = (await db.execute(
-            select(StaffAttendance.status, func.count(StaffAttendance.id))
-            .where(StaffAttendance.date == today)
-            .group_by(StaffAttendance.status)
-        )).all()
+        today_att = (await db.execute(att_q.group_by(StaffAttendance.status))).all()
         att_map = {row[0]: row[1] for row in today_att}
         present_today = att_map.get("present", 0) + att_map.get("late", 0)
 
-        pending_leaves = (await db.execute(
-            select(func.count(StaffLeave.id)).where(StaffLeave.status == "pending")
-        )).scalar() or 0
+        pending_leaves = (await db.execute(leaves_q)).scalar() or 0
 
         return {
             "view_mode": "admin",
@@ -2089,7 +2128,7 @@ async def render_staff_document(
 async def get_teacher_dashboard_endpoint(
     academic_year_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*STAFF_READ_ROLES)),
 ):
     """
     Computes dedicated live Teacher Workspace metrics, assignment classifications
@@ -2102,7 +2141,7 @@ async def get_teacher_dashboard_endpoint(
 @router.get("/non-teaching/dashboard")
 async def get_non_teaching_dashboard_endpoint(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role(*STAFF_READ_ROLES)),
 ):
     """
     Computes dedicated live Staff Workspace metrics, department headcounts,
@@ -2117,13 +2156,17 @@ async def update_staff_lifecycle_endpoint(
     user_id: int,
     payload: LifecycleUpdateRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(list(STAFF_ADMIN_ROLES))),
+    current_user: User = Depends(require_role(*STAFF_ADMIN_ROLES)),
 ):
     """
     Executes authoritative employee lifecycle state transition:
     activate, put_on_leave, deactivate, resign, terminate, end_contract, or rehire.
     Records immutable event in StaffEmploymentHistory.
     """
+    target_user = await db.get(User, user_id)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    check_institution_access(target_user.institution_id, current_user)
     return await update_employee_lifecycle(
         db=db,
         user_id=user_id,
@@ -2147,5 +2190,14 @@ async def get_staff_activity_history_endpoint(
     Returns a unified, chronological employee activity timeline across status transitions,
     assignments, attendance, leaves, lectures, and payroll.
     """
+    is_self = current_user.id == user_id
+    role = (current_user.role or "").strip().lower()
+    if not is_self and role not in STAFF_ADMIN_ROLES and role not in FINANCIAL_ROLES:
+        raise HTTPException(status_code=403, detail="Insufficient permissions to view employee activity history")
+    target_user = await db.get(User, user_id)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not is_self:
+        check_institution_access(target_user.institution_id, current_user)
     return await get_employee_activity_history(db, user_id=user_id, limit=limit)
 

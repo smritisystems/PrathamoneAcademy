@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for legacy fee register spreadsheet parsing and ledger migration.
 #  */
@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import require_role
 from app.models.import_log import FeeRegisterImport
 from app.services.fee_register_importer import (
     parse_fee_register_workbook,
@@ -34,6 +34,8 @@ from pydantic import BaseModel
 router = APIRouter()
 
 DEFAULT_WORKBOOK_PATH = r"F:\Smriti-Clients Data\Prashant Academy\Book1.xlsx"
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB upper bound for uploaded spreadsheets
+REGISTER_IMPORT_ROLES = ("superadmin", "sysadmin", "super_admin")
 
 
 class ImportExecuteRequest(BaseModel):
@@ -43,7 +45,7 @@ class ImportExecuteRequest(BaseModel):
 
 @router.get("/preview")
 async def preview_default_register(
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REGISTER_IMPORT_ROLES)),
 ):
     """
     Stage 1 & 2: Preview default uploaded fee register (Book1.xlsx).
@@ -65,38 +67,48 @@ async def preview_default_register(
 @router.post("/preview-upload")
 async def preview_uploaded_register(
     file: UploadFile = File(...),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REGISTER_IMPORT_ROLES)),
 ):
     """Stage 1 & 2: Preview an uploaded Excel fee register workbook."""
-    if not file.filename.endswith((".xlsx", ".xls")):
+    filename = file.filename or ""
+    if not filename.lower().endswith((".xlsx", ".xls")):
         raise HTTPException(
             status_code=400, detail="Invalid file format. Please upload an Excel .xlsx workbook."
         )
 
-    content = await file.read()
-    return parse_fee_register_workbook(content, file.filename)
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413, detail="Uploaded workbook exceeds the 10 MB safety limit."
+        )
+    return parse_fee_register_workbook(content, filename)
 
 
 @router.post("/execute")
 async def execute_register_import(
     request: ImportExecuteRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REGISTER_IMPORT_ROLES)),
 ):
     """
     Stage 4 & 5: Execute verified database import in an atomic transaction.
     Guards against duplicates using SHA-256 fingerprinting.
     """
     file_path = request.file_path or DEFAULT_WORKBOOK_PATH
-    if not os.path.exists(file_path):
+    if os.path.realpath(file_path) != os.path.realpath(DEFAULT_WORKBOOK_PATH):
         raise HTTPException(
-            status_code=404, detail=f"Workbook file not found at: {file_path}"
+            status_code=403,
+            detail="Arbitrary server filesystem paths are not allowed. Use upload preview or authorized baseline path.",
+        )
+    if not os.path.exists(DEFAULT_WORKBOOK_PATH):
+        raise HTTPException(
+            status_code=404, detail=f"Workbook file not found at: {DEFAULT_WORKBOOK_PATH}"
         )
 
-    with open(file_path, "rb") as f:
+    with open(DEFAULT_WORKBOOK_PATH, "rb") as f:
         content = f.read()
 
-    file_name = os.path.basename(file_path)
+    file_name = os.path.basename(DEFAULT_WORKBOOK_PATH)
     result = await execute_fee_register_import(
         db=db,
         user_id=current_user.id,
@@ -110,7 +122,7 @@ async def execute_register_import(
 @router.get("/status")
 async def get_import_status(
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*REGISTER_IMPORT_ROLES)),
 ):
     """Returns import history and check if default workbook has already been imported."""
     result = await db.execute(

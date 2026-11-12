@@ -11,10 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Isolated student and staff ID card printing utility for high-fidelity CR80 PVC and A4 sheet generation.
  */
+
+import { escapeHtml, sanitizeDomSubtree } from './htmlSanitizer'
 
 export interface PrintIDCardOptions {
   elementId?: string
@@ -97,6 +99,7 @@ export function printIDCardElement(
     clonedContainer.querySelectorAll('.no-print, .print\\:hidden, button, [role="button"]').forEach((el) => {
       el.parentNode?.removeChild(el)
     })
+    sanitizeDomSubtree(clonedContainer)
 
     // Reset container background, dashed borders, and padding
     clonedContainer.removeAttribute('id')
@@ -205,7 +208,7 @@ export function printIDCardElement(
       <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <title>${title}</title>
+        <title>${escapeHtml(title)}</title>
         ${parentStyles}
         <style>
           ${layoutCss}

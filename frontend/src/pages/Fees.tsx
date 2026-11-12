@@ -1603,7 +1603,7 @@ function FeesContent() {
     setBulkExportingZip(true)
     try {
       const res = await paymentsApi.exportBulkReceiptsZip(Array.from(selectedReceiptNumbers))
-      const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 15)
+      const timestamp = new Date().toISOString().replace(/-/g, '').replace(/:/g, '').replace('T', '').slice(0, 15)
       const filename = `Receipts_Batch_${timestamp}.zip`
       triggerBlobDownload(new Blob([res.data], { type: 'application/zip' }), filename)
       setReceiptNotification({

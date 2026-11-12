@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Official institutional document preview modal rendering dynamic staff documents with Universal Print integration.
  */
@@ -21,6 +21,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Printer, XCircle, FileText, Loader2, AlertCircle } from 'lucide-react'
 import { staffApi } from '../../api/endpoints'
 import { useUniversalPrint } from '../printing'
+import { sanitizeRichHtml } from '../../utils/htmlSanitizer'
 
 interface DocumentPreviewModalProps {
   isOpen: boolean
@@ -123,7 +124,10 @@ export default function DocumentPreviewModal({
                 id="doc-preview-print-content"
                 className="bg-white shadow-md rounded-xl p-8 border border-slate-200 max-w-3xl mx-auto overflow-hidden print:p-0 print:shadow-none print:border-none"
                 dangerouslySetInnerHTML={{
-                  __html: renderedDoc?.html_content || '<p className="p-8 text-center text-slate-400">No content generated.</p>',
+                  __html: sanitizeRichHtml(
+                    renderedDoc?.html_content ||
+                    '<p className="p-8 text-center text-slate-400">No content generated.</p>'
+                  ),
                 }}
               />
             )}

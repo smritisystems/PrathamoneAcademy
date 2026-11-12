@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Zustand state store managing user authentication token, logged-in profile, and active institute ID.
  */
@@ -105,7 +105,20 @@ export const useAuthStore = create<AuthState>()(
       },
       setSelectedAcademicYear: (id) => set({ selectedAcademicYearId: id || 1 }),
     }),
-    { name: 'prashant-auth' }
+    {
+      name: 'prashant-auth',
+      // Never persist bearer JWTs in localStorage; browser auth relies on HttpOnly; SameSite=Lax cookies.
+      partialize: (state) => ({
+        user: state.user,
+        selectedInstitutionId: state.selectedInstitutionId,
+        selectedAcademicYearId: state.selectedAcademicYearId,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state && state.user && !state.token) {
+          state.token = 'cookie-session'
+        }
+      },
+    }
   )
 )
 

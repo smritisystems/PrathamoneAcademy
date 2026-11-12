@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -25,7 +25,7 @@ from datetime import datetime
 import json
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
 from app.models.institution import Institution
 from app.models.settings import InstitutionSetting, LookupItem, SettingAuditLog
 from app.models.user import User
@@ -267,6 +267,7 @@ async def get_institute_profile(
     current_user: User = Depends(get_current_active_user),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     res = await db.execute(select(Institution).where(Institution.id == target_id))
     inst = res.scalar_one_or_none()
     if not inst:
@@ -312,6 +313,7 @@ async def update_institute_profile(
     current_user: User = Depends(require_role("admin", "principal")),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     res = await db.execute(select(Institution).where(Institution.id == target_id))
     inst = res.scalar_one_or_none()
     if not inst:
@@ -376,6 +378,7 @@ async def get_all_settings(
     current_user: User = Depends(get_current_active_user),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     # Load stored key-values
     stmt = select(InstitutionSetting).where(InstitutionSetting.institution_id == target_id)
     result = await db.execute(stmt)
@@ -443,6 +446,7 @@ async def update_settings_batch(
     current_user: User = Depends(require_role("admin", "principal")),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     category = payload.category
 
     for k, v in payload.settings.items():
@@ -510,6 +514,7 @@ async def list_lookups(
     current_user: User = Depends(get_current_active_user),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
 
     # Auto-seed lookups if table is empty
     count_stmt = select(func.count(LookupItem.id))
@@ -570,6 +575,7 @@ async def create_lookup_item(
     current_user: User = Depends(require_role("admin", "principal")),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     code_clean = data.code.strip().upper()
 
     # Check duplicate
@@ -624,6 +630,8 @@ async def update_lookup_item(
     item = (await db.execute(stmt)).scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Lookup item not found")
+    if item.institution_id is not None:
+        check_institution_access(item.institution_id, current_user)
 
     updates = data.model_dump(exclude_unset=True)
     for field, val in updates.items():
@@ -666,6 +674,8 @@ async def delete_lookup_item(
     item = (await db.execute(stmt)).scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Lookup item not found")
+    if item.institution_id is not None:
+        check_institution_access(item.institution_id, current_user)
 
     if item.is_system:
         # Instead of hard-deleting core system lookups, safely deactivate
@@ -687,6 +697,7 @@ async def list_setting_audit_logs(
     current_user: User = Depends(require_role("admin", "principal")),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     query = select(SettingAuditLog).where(SettingAuditLog.institution_id == target_id)
     if category:
         query = query.where(SettingAuditLog.category == category)
@@ -716,6 +727,7 @@ async def reset_section_defaults(
     current_user: User = Depends(require_role("admin", "principal")),
 ):
     target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
     if category not in DEFAULT_SETTINGS:
         raise HTTPException(status_code=400, detail=f"Unknown settings category '{category}'")
 

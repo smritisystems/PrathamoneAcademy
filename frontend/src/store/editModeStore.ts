@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Centralized Zustand store enforcing Global View-First & Explicit Edit Mode governance across all modules, pages, forms, and tables.
  */
@@ -58,6 +58,59 @@ export interface EditModeState {
   resetAll: () => void
 }
 
+export const EDIT_CAPABLE_ROLES = [
+  'sysadmin',
+  'superadmin',
+  'super_admin',
+  'admin',
+  'principal',
+  'staff',
+  'teacher',
+  'accountant',
+  'counselor',
+  'counsellor',
+  'coordinator',
+  'receptionist',
+] as const
+
+export function canActivateEditMode(
+  user: User | null,
+  requiredPermission?: string
+): { allowed: boolean; reason?: string } {
+  if (!user) {
+    return { allowed: false, reason: 'Authentication required to activate Edit Mode.' }
+  }
+
+  const role = (user.role || '').toLowerCase()
+  const isSuperAdmin = ['sysadmin', 'superadmin', 'super_admin'].includes(role)
+
+  if (requiredPermission) {
+    const perms = Array.isArray(user.permissions) ? user.permissions : []
+    const reqList = requiredPermission.split(/[,|]/).map((s) => s.trim()).filter(Boolean)
+    const hasPerm = reqList.length === 0 || reqList.some((rp) => perms.includes(rp))
+    const permitted =
+      hasPerm ||
+      isSuperAdmin ||
+      perms.includes('*:*') ||
+      perms.includes('*.*')
+    if (!permitted) {
+      return {
+        allowed: false,
+        reason: `Insufficient privileges: Permission '${requiredPermission}' is required.`,
+      }
+    }
+    return { allowed: true }
+  }
+
+  if (!EDIT_CAPABLE_ROLES.includes(role as (typeof EDIT_CAPABLE_ROLES)[number])) {
+    return {
+      allowed: false,
+      reason: 'Your account role is restricted to View-Only access.',
+    }
+  }
+  return { allowed: true }
+}
+
 export const useEditModeStore = create<EditModeState>()((set, get) => ({
   scopes: {},
   dirty: {},
@@ -71,37 +124,11 @@ export const useEditModeStore = create<EditModeState>()((set, get) => ({
   },
 
   enableEditMode: (scope: string, user: User | null, requiredPermission?: string) => {
-    if (!user) {
-      return { success: false, reason: 'Authentication required to activate Edit Mode.' }
-    }
-
-    // Role & Permission Verification
-    const role = (user.role || '').toLowerCase()
-    const isSuperAdmin = ['sysadmin', 'superadmin', 'super_admin'].includes(role)
-
-    if (requiredPermission) {
-      const perms = Array.isArray(user.permissions) ? user.permissions : []
-      const reqList = requiredPermission.split(/[,|]/).map((s) => s.trim()).filter(Boolean)
-      const hasPerm = reqList.length === 0 || reqList.some((rp) => perms.includes(rp))
-      const permitted =
-        hasPerm ||
-        isSuperAdmin ||
-        perms.includes('*:*') ||
-        perms.includes('*.*')
-      if (!permitted) {
-        return {
-          success: false,
-          reason: `Insufficient privileges: Permission '${requiredPermission}' is required.`,
-        }
-      }
-    } else {
-      // Default: Administrative or staff role required for mutating application records
-      const allowedRoles = ['sysadmin', 'superadmin', 'super_admin', 'admin', 'principal', 'staff', 'teacher', 'accountant']
-      if (!allowedRoles.includes(role)) {
-        return {
-          success: false,
-          reason: 'Your account role is restricted to View-Only access.',
-        }
+    const authz = canActivateEditMode(user, requiredPermission)
+    if (!authz.allowed) {
+      return {
+        success: false,
+        reason: authz.reason || 'Insufficient privileges to activate Edit Mode.',
       }
     }
 

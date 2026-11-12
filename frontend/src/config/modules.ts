@@ -41,6 +41,7 @@ import {
   Terminal,
   HardDrive,
   HelpCircle,
+  Presentation,
   LucideIcon,
 } from 'lucide-react'
 import type { User, NavigationModule, NavigationSubItem } from '../types'
@@ -143,6 +144,7 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
       { id: 'fees_structures', label: 'Fee Structures', to: '/fees/structures' },
       { id: 'fees_invoicing', label: 'Fee Invoicing', to: '/fees/invoicing' },
       { id: 'fees_collection', label: 'Collection Desk', to: '/fees/collection' },
+      { id: 'fees_payments', label: 'Payment Ledger', to: '/payments' },
       { id: 'fees_defaulters', label: 'Defaulters & Dues', to: '/fees/defaulters' },
       { id: 'fees_concessions', label: 'Concessions & Waivers', to: '/fees/concessions' },
       { id: 'fees_online_gateway', label: 'Online Gateway', to: '/fees/online-gateway' },
@@ -246,8 +248,21 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
       { id: 'homework_overview', label: 'Overview & List', to: '/homework' },
       { id: 'homework_create', label: 'Assign Homework', to: '/homework/create' },
       { id: 'homework_checking', label: 'Checking Register', to: '/homework/checking' },
+      { id: 'homework_submissions', label: 'Submissions', to: '/homework/submissions' },
+      { id: 'homework_templates', label: 'Templates', to: '/homework/templates' },
       { id: 'homework_reports', label: 'Daily Register Report', to: '/homework/reports' },
     ],
+  },
+  {
+    id: 'eduboard',
+    label: 'EduBoard Classroom',
+    category: 'learning',
+    defaultPath: '/eduboard',
+    icon: Presentation,
+    iconName: 'Presentation',
+    requiredPermission: 'eduboard:view',
+    description: 'Interactive Classic Chalkboard, Digital Whiteboard, and PDF Slide Presentation board for live teaching.',
+    subItems: [],
   },
   {
     id: 'courses',

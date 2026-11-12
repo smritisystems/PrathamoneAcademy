@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description REST API endpoints for CodeX configurable feature activation, digit mapping management, and decoder access.
 #  */
@@ -25,7 +25,7 @@ from datetime import datetime
 import json
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_active_user
 from app.models.user import User
 from app.models.codex import (
     CodexConfig, CodexMappingProfile, CodexMappingVersion,
@@ -146,7 +146,7 @@ class GenerateQrRequest(BaseModel):
 @router.get("/config")
 async def get_codex_config(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Retrieves the institution's CodeX configuration and activation state.
@@ -217,7 +217,7 @@ async def update_codex_config(
     payload: CodexConfigUpdateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Updates the master switch, feature options, and decoder security settings.
@@ -265,7 +265,7 @@ async def update_codex_config(
 @router.get("/profiles")
 async def list_mapping_profiles(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Lists all digit-to-symbol mapping profiles for the institution.
@@ -305,7 +305,7 @@ async def create_mapping_profile(
     payload: MappingProfileCreateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Creates a new custom digit-to-symbol mapping profile.
@@ -384,7 +384,7 @@ async def update_mapping_profile(
     payload: MappingProfileUpdateRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Updates a mapping profile and increments its immutable version snapshot.
@@ -426,7 +426,7 @@ async def update_mapping_profile(
 async def get_profile_version_history(
     profile_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Retrieves the complete immutable version history for a profile.
@@ -459,7 +459,7 @@ async def rollback_profile(
     target_version: int,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Rolls back a profile to a previous version snapshot.
@@ -494,7 +494,7 @@ async def rollback_profile(
 @router.get("/scopes")
 async def list_scope_assignments(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Lists all scope assignments (business, department, role, user) for the institution.
@@ -526,7 +526,7 @@ async def upsert_scope_assignment(
     payload: ScopeAssignmentRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Creates or updates a scope assignment for business, department, role, or user.
@@ -583,7 +583,7 @@ async def delete_scope_assignment(
     scope_id: int,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Deletes a scope assignment.
@@ -621,7 +621,7 @@ async def delete_scope_assignment(
 async def test_encode_value(
     payload: EncodeTestRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Encodes a numeric value using the selected or default mapping profile.
@@ -665,7 +665,7 @@ async def test_decode_value(
     payload: DecodeTestRequest,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Decodes an encoded string back to its original numeric value.
@@ -847,7 +847,7 @@ async def test_decode_value(
 async def generate_qr_payload(
     payload: GenerateQrRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Issues an ephemeral token for QR code distribution and mobile decoding.
@@ -878,7 +878,7 @@ async def get_codex_audit_logs(
     action: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Retrieves the security audit logs for CodeX events.
@@ -922,7 +922,7 @@ async def get_codex_audit_logs(
 async def get_user_codex_status(
     module: str = Query("general"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Returns the resolved CodeX visibility mode and decoding capability for the requesting user.

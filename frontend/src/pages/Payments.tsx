@@ -496,6 +496,10 @@ export default function Payments() {
   }
 
   const handleOpenApproval = (payment: PaymentTransactionItem) => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Please enable Edit Mode above to approve vouchers.')
+      return
+    }
     setApprovingPayment(payment)
     setApprovalRemarks('')
     setApprovalModalOpen(true)
@@ -580,6 +584,10 @@ export default function Payments() {
                   <button
                     type="button"
                     onClick={() => {
+                      if (!isEditMode) {
+                        toast.error('Locked in View Mode: Enable Edit Mode above to toggle posted payment lock.')
+                        return
+                      }
                       setTogglePermReason('Administrative lock applied')
                       togglePermMutation.mutate(false)
                     }}
@@ -595,7 +603,13 @@ export default function Payments() {
                   <span>Posted Edits: Protected</span>
                   <button
                     type="button"
-                    onClick={() => setTogglePermModalOpen(true)}
+                    onClick={() => {
+                      if (!isEditMode) {
+                        toast.error('Locked in View Mode: Enable Edit Mode above to unlock posted payment editing.')
+                        return
+                      }
+                      setTogglePermModalOpen(true)
+                    }}
                     className="ml-1 text-xs underline font-medium text-primary-700 hover:text-primary-800"
                     title="Grant Explicit Permission to Edit Posted Payments"
                   >
@@ -889,7 +903,10 @@ export default function Payments() {
                             <>
                               <button
                                 type="button"
-                                onClick={() => submitMutation.mutate(p.id)}
+                                onClick={() => {
+                                  if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to submit payments.')
+                                  submitMutation.mutate(p.id)
+                                }}
                                 disabled={submitMutation.isPending}
                                 className="btn-secondary text-xs py-1 px-2 inline-flex items-center gap-1 text-primary-700 hover:text-primary-800"
                                 title="Submit draft payment for review/posting"
@@ -908,7 +925,10 @@ export default function Payments() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => postMutation.mutate(p.id)}
+                                onClick={() => {
+                                  if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to post payments.')
+                                  postMutation.mutate(p.id)
+                                }}
                                 disabled={postMutation.isPending}
                                 className="btn-primary text-xs py-1 px-2.5 inline-flex items-center gap-1 shadow-2xs"
                                 title="Post payment and issue official receipt"
@@ -919,7 +939,10 @@ export default function Payments() {
                               {canDeleteDraft && (
                                 <button
                                   type="button"
-                                  onClick={() => setDeletingDraftPayment(p)}
+                                  onClick={() => {
+                                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to delete draft payments.')
+                                    setDeletingDraftPayment(p)
+                                  }}
                                   className="text-xs text-red-600 hover:text-red-800 font-medium py-1 px-2 border border-red-200 rounded hover:bg-red-50 inline-flex items-center gap-1"
                                   title="Permanently Delete Draft Payment"
                                 >
@@ -946,7 +969,10 @@ export default function Payments() {
                               )}
                               <button
                                 type="button"
-                                onClick={() => postMutation.mutate(p.id)}
+                                onClick={() => {
+                                  if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to post payments.')
+                                  postMutation.mutate(p.id)
+                                }}
                                 disabled={postMutation.isPending}
                                 className="btn-primary text-xs py-1 px-2 inline-flex items-center gap-1"
                                 title="Post payment directly"
@@ -967,6 +993,7 @@ export default function Payments() {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to cancel payments.')
                                     setCancellingPayment(p)
                                     setCancelReason('')
                                   }}
@@ -985,7 +1012,10 @@ export default function Payments() {
                             <>
                               <button
                                 type="button"
-                                onClick={() => postMutation.mutate(p.id)}
+                                onClick={() => {
+                                  if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to post payments.')
+                                  postMutation.mutate(p.id)
+                                }}
                                 disabled={postMutation.isPending}
                                 className="btn-primary text-xs py-1 px-2.5 inline-flex items-center gap-1 shadow-2xs"
                                 title="Post approved voucher and generate official receipt"
@@ -1006,6 +1036,7 @@ export default function Payments() {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    if (!isEditMode) return toast.error('Locked in View Mode: Enable Edit Mode above to cancel payments.')
                                     setCancellingPayment(p)
                                     setCancelReason('')
                                   }}

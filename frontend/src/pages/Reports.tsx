@@ -31,6 +31,7 @@ import {
   academicYearsApi,
   homeworkApi,
   leadsApi,
+  eduboardApi,
 } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { InvoiceStatusBadge } from '../components/Badge'
@@ -56,6 +57,7 @@ import {
   BarChart3,
   Lock,
   ArrowUpRight,
+  Presentation,
 } from 'lucide-react'
 import {
   BarChart,
@@ -183,6 +185,15 @@ const REPORT_CATALOG: ReportMeta[] = [
     description: 'Cohort homework assignments, submission turnaround, teacher review velocity, and non-completion defaulters.',
     badge: 'Curriculum Ops',
     icon: FileSpreadsheet,
+  },
+  {
+    id: 'eduboard-summary',
+    name: 'EduBoard Digital Classroom Usage',
+    category: 'academics',
+    categoryLabel: 'Academics & Batches',
+    description: 'Lecture board adoption, Classic vs Whiteboard vs Presentation slide counts, templates, and PDF publications.',
+    badge: 'Smart Classroom',
+    icon: Presentation,
   },
 
   // 3. Fees & Financials
@@ -897,6 +908,13 @@ export default function Reports() {
     enabled: activeReportId === 'homework-register',
   })
 
+  // 22b. Academics: EduBoard Usage Summary
+  const { data: eduboardSummaryData, isLoading: loadingEduBoardSummary, refetch: refetchEduBoardSummary } = useQuery({
+    queryKey: ['report-eduboard-summary', selectedAcademicYearId],
+    queryFn: () => eduboardApi.getReportsSummary(selectedAcademicYearId || undefined).then((r) => r.data),
+    enabled: activeReportId === 'eduboard-summary',
+  })
+
   // 23. Students: CRM Enquiries & Conversion Pipeline
   const { data: crmReportsData, isLoading: loadingCrmReports, refetch: refetchCrmReports } = useQuery({
     queryKey: ['report-crm-enquiries', selectedAcademicYearId],
@@ -993,6 +1011,7 @@ export default function Reports() {
     else if (activeReportId === 'comm-logs') refetchCommLogs()
     else if (activeReportId === 'import-history') refetchImportHistory()
     else if (activeReportId === 'homework-register') refetchHomeworkRegister()
+    else if (activeReportId === 'eduboard-summary') refetchEduBoardSummary()
     else if (activeReportId === 'crm-enquiries') refetchCrmReports()
     toast.success('Report data refreshed')
   }
@@ -2030,6 +2049,50 @@ export default function Reports() {
               sheetName="Homework"
               showSummaryRow={true}
             />
+          )}
+
+          {/* 22b. Academics: EduBoard Digital Classroom Usage */}
+          {activeReportId === 'eduboard-summary' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="bg-white border border-slate-200 rounded-xl p-3">
+                  <p className="text-[11px] text-slate-500 uppercase font-semibold">Total Boards</p>
+                  <p className="text-xl font-bold text-slate-900 mt-1">{eduboardSummaryData?.total_boards ?? 0}</p>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-xl p-3">
+                  <p className="text-[11px] text-slate-500 uppercase font-semibold">Published</p>
+                  <p className="text-xl font-bold text-emerald-700 mt-1">{eduboardSummaryData?.published_boards ?? 0}</p>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-xl p-3">
+                  <p className="text-[11px] text-slate-500 uppercase font-semibold">Total Pages</p>
+                  <p className="text-xl font-bold text-indigo-700 mt-1">{eduboardSummaryData?.total_pages ?? 0}</p>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-xl p-3">
+                  <p className="text-[11px] text-slate-500 uppercase font-semibold">PDF Attachments</p>
+                  <p className="text-xl font-bold text-slate-900 mt-1">{eduboardSummaryData?.total_pdf_attachments ?? 0}</p>
+                </div>
+                <div className="bg-white border border-slate-200 rounded-xl p-3">
+                  <p className="text-[11px] text-slate-500 uppercase font-semibold">Templates</p>
+                  <p className="text-xl font-bold text-amber-700 mt-1">{eduboardSummaryData?.templates_count ?? 0}</p>
+                </div>
+              </div>
+              <ExcelReportGrid
+                title="Recent EduBoard Classroom Boards"
+                subtitle="Published and draft teaching boards across Classic, Whiteboard, and PDF Presentation modes"
+                columns={[
+                  { id: 'board_code', header: 'Board Code', accessorKey: 'board_code', type: 'text', width: 150 },
+                  { id: 'title', header: 'Title', accessorKey: 'title', type: 'text', width: 240, sortable: true },
+                  { id: 'mode', header: 'Mode', accessorKey: 'mode', type: 'text', width: 120 },
+                  { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110 },
+                  { id: 'page_count', header: 'Pages', accessorKey: 'page_count', type: 'number', width: 90, align: 'right' },
+                ]}
+                data={eduboardSummaryData?.recent_boards || []}
+                loading={loadingEduBoardSummary}
+                exportFilename="eduboard_usage_summary"
+                sheetName="EduBoard"
+                showSummaryRow={true}
+              />
+            </div>
           )}
 
           {/* 23. Students: CRM Enquiries & Pipeline */}

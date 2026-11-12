@@ -327,22 +327,38 @@ export default function ImportExportPage() {
   }
 
   const handleAddRow = () => {
+    if (!isEditMode) {
+      setFeedbackMsg({ type: 'error', text: 'Locked in View Mode: Please enable Edit Mode above to add grid rows.' })
+      return
+    }
     const emptyRow = gridHeaders.map(() => '')
     setGridRows(prev => [...prev, emptyRow])
   }
 
   const handleDeleteRow = (index: number) => {
+    if (!isEditMode) {
+      setFeedbackMsg({ type: 'error', text: 'Locked in View Mode: Please enable Edit Mode above to remove grid rows.' })
+      return
+    }
     setGridRows(prev => prev.filter((_, idx) => idx !== index))
     setGridPreview(null)
   }
 
   const handleAddColumn = () => {
+    if (!isEditMode) {
+      setFeedbackMsg({ type: 'error', text: 'Locked in View Mode: Please enable Edit Mode above to add grid columns.' })
+      return
+    }
     const newColName = `Col ${gridHeaders.length + 1}`
     setGridHeaders(prev => [...prev, newColName])
     setGridRows(prev => prev.map(r => [...r, '']))
   }
 
   const handleClearGrid = () => {
+    if (!isEditMode) {
+      setFeedbackMsg({ type: 'error', text: 'Locked in View Mode: Please enable Edit Mode above to clear the grid.' })
+      return
+    }
     if (currentEntity) {
       initGridForEntity(currentEntity)
       setFeedbackMsg({ type: 'info', text: 'Grid cleared.' })
@@ -945,13 +961,15 @@ export default function ImportExportPage() {
                       <td className="px-2 py-1.5 text-center font-mono text-[11px] text-slate-400 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
                         <div className="flex items-center justify-center gap-1">
                           <span>{rowIdx + 1}</span>
-                          <button
-                            onClick={() => handleDeleteRow(rowIdx)}
-                            className="opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-opacity"
-                            title="Delete Row"
-                          >
-                            <Trash2 className="w-3 h-3 text-slate-400 hover:text-rose-500" />
-                          </button>
+                          {isEditMode && (
+                            <button
+                              onClick={() => handleDeleteRow(rowIdx)}
+                              className="opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-opacity"
+                              title="Delete Row"
+                            >
+                              <Trash2 className="w-3 h-3 text-slate-400 hover:text-rose-500" />
+                            </button>
+                          )}
                         </div>
                       </td>
 

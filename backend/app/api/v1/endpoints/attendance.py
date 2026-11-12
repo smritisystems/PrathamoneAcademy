@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for student attendance tracking, session marking, QR code scanning, and absenteeism reporting.
 #  */
@@ -29,7 +29,9 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.deps import (
     get_current_active_user,
+    require_role,
     enforce_institution_access,
+    check_institution_access,
     is_sysadmin,
 )
 from app.models.attendance import Attendance
@@ -39,6 +41,18 @@ from app.services.communication import get_automation_rules, dispatch_attendance
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+ATTENDANCE_STAFF_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "teacher",
+    "staff",
+    "coordinator",
+    "receptionist",
+)
 
 
 class AttendanceEntry(BaseModel):
@@ -64,7 +78,7 @@ class AttendanceScanCheckin(BaseModel):
 async def mark_attendance_bulk(
     data: AttendanceBulk,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*ATTENDANCE_STAFF_ROLES)),
 ):
     user_inst_id = getattr(current_user, "institution_id", None) or 1
     if not is_sysadmin(current_user) and data.entries:
@@ -141,7 +155,7 @@ async def mark_attendance_bulk(
 async def scan_attendance_checkin(
     data: AttendanceScanCheckin,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*ATTENDANCE_STAFF_ROLES)),
 ):
     """High-speed QR Code & Barcode Attendance Terminal check-in.
 
@@ -183,6 +197,7 @@ async def scan_attendance_checkin(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Student with identifier '{target_adm}' was not found in this institution.",
         )
+    check_institution_access(student.institution_id, current_user)
 
     checkin_date = data.date or dt_date.today()
 
@@ -261,6 +276,17 @@ async def get_attendance(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        linked_student_id = getattr(current_user, "student_id", None)
+        if not linked_student_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No student profile is linked to this account.")
+        if student_id is not None and student_id != linked_student_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students can only view their own attendance.")
+        student_id = linked_student_id
+    elif not is_sysadmin(current_user) and role not in ATTENDANCE_STAFF_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+
     query = select(Attendance).join(Student, Attendance.student_id == Student.id)
     if effective_inst_id:
         query = query.where(Student.institution_id == effective_inst_id)

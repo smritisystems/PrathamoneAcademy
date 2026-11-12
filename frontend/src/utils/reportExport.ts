@@ -11,12 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Universal client-side export utility supporting Excel (.xlsx), CSV (.csv), and JSON (.json) with formula injection protection.
  */
 
-import * as XLSX from 'xlsx'
+import writeXlsxFile, { type Row as ExcelRow } from 'write-excel-file/browser'
 import { PRINT_SHARE_BRANDING } from '../config/branding'
 
 export interface ExportColumn<T = any> {
@@ -94,7 +94,15 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 /**
- * Exports tabular dataset to Excel (.xlsx) preserving numeric/date types and formatting.
+ * Neutralizes spreadsheet formula injection prefixes on string cell exports.
+ */
+function sanitizeExcelText(str: string): string {
+  return /^[=+\-@\t\r]/.test(str) ? `'${str}` : str
+}
+
+/**
+ * Exports tabular dataset to Excel (.xlsx) preserving numeric/date types and formatting
+ * via write-excel-file (zero-SheetJS, formula-injection hardened).
  */
 export function exportToExcel<T>({
   filename,
@@ -106,61 +114,83 @@ export function exportToExcel<T>({
   const safeFilename = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`
 
   // 1. Build Header Row
-  const headers = columns.map((c) => c.header)
+  const headerRow: ExcelRow = columns.map((c) => ({
+    value: sanitizeExcelText(c.header),
+    type: String,
+    fontWeight: 'bold',
+  }))
 
-  // 2. Build Data Rows with native JavaScript data types
-  const rows = data.map((row) => {
-    return columns.map((col) => {
+  // 2. Build Data Rows preserving numeric and boolean types cleanly
+  const rawMatrix: Array<Array<string | number | boolean>> = []
+  const dataRows: ExcelRow[] = data.map((row) => {
+    const rawVals: Array<string | number | boolean> = []
+    const excelCells: ExcelRow = columns.map((col) => {
       const raw = getRawCellValue(row, col)
-      if (raw === null || raw === undefined) return ''
+      if (raw === null || raw === undefined || raw === '') {
+        rawVals.push('')
+        return { value: '', type: String }
+      }
       if (col.type === 'number' || col.type === 'currency' || col.type === 'percentage') {
         const num = Number(raw)
-        return isNaN(num) ? raw : num
+        if (!isNaN(num)) {
+          rawVals.push(num)
+          return { value: num, type: Number }
+        }
       }
-      return raw
+      if (typeof raw === 'number' && !isNaN(raw)) {
+        rawVals.push(raw)
+        return { value: raw, type: Number }
+      }
+      if (typeof raw === 'boolean') {
+        rawVals.push(raw)
+        return { value: raw, type: Boolean }
+      }
+      const textVal = sanitizeExcelText(String(raw))
+      rawVals.push(textVal)
+      return { value: textVal, type: String }
     })
+    rawMatrix.push(rawVals)
+    return excelCells
   })
 
   // 3. Assemble worksheet with optional calculation notes and trailing branding row
-  const notesRows =
+  const notesRows: ExcelRow[] =
     calculationNotes && calculationNotes.length > 0
       ? [
           [],
-          ['--- CALCULATION PROVENANCE & INSTITUTIONAL BENCHMARKS ---'],
-          ...calculationNotes.map((n) => [n]),
+          [{ value: '--- CALCULATION PROVENANCE & INSTITUTIONAL BENCHMARKS ---', type: String, fontWeight: 'bold' }],
+          ...calculationNotes.map((n): ExcelRow => [{ value: sanitizeExcelText(n), type: String }]),
           [],
         ]
       : []
 
-  const aoa = [headers, ...rows, ...notesRows, [], [PRINT_SHARE_BRANDING.text]]
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-  // Configure print page footer in Excel workbook
-  (ws as any)['!footer'] = {
-    odd: `&C&8&K888888${PRINT_SHARE_BRANDING.text}`,
-    even: `&C&8&K888888${PRINT_SHARE_BRANDING.text}`,
-  }
+  const sheetData: ExcelRow[] = [
+    headerRow,
+    ...dataRows,
+    ...notesRows,
+    [],
+    [{ value: PRINT_SHARE_BRANDING.text, type: String }],
+  ]
 
   // 4. Calculate sensible column widths
-  const colWidths = columns.map((col, idx) => {
+  const sheetColumns = columns.map((col, idx) => {
     let maxLen = col.header.length
-    for (const r of rows) {
+    for (const r of rawMatrix) {
       const cellStr = String(r[idx] ?? '')
       if (cellStr.length > maxLen) maxLen = cellStr.length
     }
-    return { wch: Math.min(Math.max(maxLen + 4, 12), 40) }
+    return { width: Math.min(Math.max(maxLen + 4, 12), 40) }
   })
-  ws['!cols'] = colWidths
 
-  // 5. Build workbook and trigger download
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31))
-
-  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-  const blob = new Blob([wbout], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // 5. Generate OOXML workbook Blob and download
+  void writeXlsxFile(sheetData, {
+    sheet: sheetName.substring(0, 31),
+    columns: sheetColumns,
   })
-  downloadBlob(blob, safeFilename)
+    .toBlob()
+    .then((blob) => {
+      downloadBlob(blob, safeFilename)
+    })
 }
 
 /**

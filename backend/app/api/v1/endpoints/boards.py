@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-06
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for educational boards management, standards mapping, and academic hierarchy.
 #  */
@@ -23,7 +23,7 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
 from app.models.board import Board
 from app.models.division import Division
 from app.models.enrollment import StudentEnrollment
@@ -54,11 +54,16 @@ async def list_boards(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+    target_inst = institution_id if institution_id is not None else (
+        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    )
     query = select(Board)
     if not include_inactive:
         query = query.where(Board.is_active == True)
-    if institution_id:
-        query = query.where(Board.institution_id == institution_id)
+    if target_inst is not None:
+        query = query.where(Board.institution_id == target_inst)
     if search and search.strip():
         s = f"%{search.strip()}%"
         query = query.where(or_(Board.name.ilike(s), Board.code.ilike(s)))
@@ -130,6 +135,7 @@ async def create_board(
     d = data.model_dump()
     if not d.get("institution_id"):
         d["institution_id"] = getattr(current_user, "institution_id", None) or 1
+    check_institution_access(d["institution_id"], current_user)
     board = Board(**d)
     db.add(board)
     await db.commit()
@@ -152,6 +158,7 @@ async def get_board(
     b = result.scalar_one_or_none()
     if not b:
         raise HTTPException(status_code=404, detail="Board not found")
+    check_institution_access(b.institution_id, current_user)
 
     batches_cnt = (
         await db.execute(
@@ -190,6 +197,7 @@ async def update_board(
     board = result.scalar_one_or_none()
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
+    check_institution_access(board.institution_id, current_user)
 
     update_dict = data.model_dump(exclude_unset=True)
     for k, v in update_dict.items():
@@ -217,6 +225,7 @@ async def toggle_board_status(
     board = result.scalar_one_or_none()
     if not board:
         raise HTTPException(status_code=404, detail="Board not found")
+    check_institution_access(board.institution_id, current_user)
 
     board.is_active = not board.is_active
     await db.commit()

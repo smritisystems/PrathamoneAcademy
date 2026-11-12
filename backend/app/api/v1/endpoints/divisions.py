@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for batch/division management, teacher allocation, capacity, and scheduling.
 #  */
@@ -24,7 +24,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
 from app.services.settings_service import get_institution_setting
 from app.services.safe_delete_service import SafeDeleteService
 from app.models.division import Division
@@ -90,6 +90,11 @@ async def list_divisions(
         .outerjoin(Board, Division.board_id == Board.id)
         .outerjoin(User, Division.class_teacher_id == User.id)
     )
+    if not is_sysadmin(current_user):
+        inst_id = getattr(current_user, "institution_id", None)
+        if inst_id is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Institution context required")
+        query = query.where(Standard.institution_id == inst_id)
 
     if isinstance(status_filter, str) and status_filter.strip() and status_filter.lower() != "all":
         query = query.where(Division.status == status_filter.lower())
@@ -170,6 +175,17 @@ async def create_division(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("superadmin", "admin", "principal")),
 ):
+    std = await db.get(Standard, data.standard_id)
+    if not std:
+        raise HTTPException(status_code=404, detail="Standard not found")
+    check_institution_access(std.institution_id, current_user)
+
+    if data.board_id is not None:
+        brd = await db.get(Board, data.board_id)
+        if not brd:
+            raise HTTPException(status_code=404, detail="Board not found")
+        check_institution_access(brd.institution_id, current_user)
+
     # Check if duplicate code exists under same standard and board
     if data.code:
         dup_stmt = select(Division).where(
@@ -244,6 +260,7 @@ async def get_division(
         raise HTTPException(status_code=404, detail="Batch / Division not found")
 
     d, std, brd, teacher = row
+    check_institution_access(std.institution_id, current_user)
 
     enrolled = (
         await db.execute(
@@ -296,6 +313,15 @@ async def update_division(
     if not division:
         raise HTTPException(status_code=404, detail="Batch / Division not found")
 
+    std = await db.get(Standard, division.standard_id)
+    check_institution_access(std.institution_id if std else None, current_user)
+
+    if data.standard_id is not None and data.standard_id != division.standard_id:
+        new_std = await db.get(Standard, data.standard_id)
+        if not new_std:
+            raise HTTPException(status_code=404, detail="Target standard not found")
+        check_institution_access(new_std.institution_id, current_user)
+
     old_data = f"name={division.name}, code={division.code}, capacity={division.capacity}, status={division.status}"
 
     update_dict = data.model_dump(exclude_unset=True)
@@ -324,6 +350,10 @@ async def archive_division(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("superadmin", "admin", "principal")),
 ):
+    div = await db.get(Division, division_id)
+    if div:
+        std = await db.get(Standard, div.standard_id)
+        check_institution_access(std.institution_id if std else None, current_user)
     return await SafeDeleteService.execute_safe_archive(
         db=db, entity_type="division", entity_id=division_id, current_user=current_user
     )
@@ -336,6 +366,10 @@ async def delete_division(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role("superadmin", "admin", "principal")),
 ):
+    div = await db.get(Division, division_id)
+    if div:
+        std = await db.get(Standard, div.standard_id)
+        check_institution_access(std.institution_id if std else None, current_user)
     if permanent:
         return await SafeDeleteService.execute_safe_delete(
             db=db, entity_type="division", entity_id=division_id, current_user=current_user
@@ -364,6 +398,7 @@ async def get_division_roster(
     if not div_row:
         raise HTTPException(status_code=404, detail="Batch not found")
     div, std, brd = div_row
+    check_institution_access(std.institution_id, current_user)
 
     user_inst_id = getattr(current_user, "institution_id", None) or 1
     configured_list_mode = await get_institution_setting(
@@ -482,11 +517,18 @@ async def check_conflict(
     if req.room_number and req.day_of_week:
         room_stmt = select(TimetableEntry, Division).join(
             Division, TimetableEntry.division_id == Division.id
+        ).join(
+            Standard, Division.standard_id == Standard.id
         ).where(
             TimetableEntry.room_number == req.room_number,
             TimetableEntry.day_of_week.ilike(req.day_of_week),
             TimetableEntry.is_active == True,
         )
+        if not is_sysadmin(current_user):
+            inst_id = getattr(current_user, "institution_id", None)
+            if inst_id is None:
+                raise HTTPException(status_code=403, detail="Institution context required")
+            room_stmt = room_stmt.where(Standard.institution_id == inst_id)
         if req.exclude_division_id:
             room_stmt = room_stmt.where(TimetableEntry.division_id != req.exclude_division_id)
         

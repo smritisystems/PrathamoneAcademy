@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-07
+ * @updated     2026-11-12
  *
  * @description Axios HTTP client instance configured with base URL, authentication headers, error classification, and response interceptors.
  */
@@ -28,12 +28,13 @@ import {
 
 const apiClient = axios.create({
   baseURL: '/api/v1',
+  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 })
 
 apiClient.interceptors.request.use((config) => {
   const token = typeof useAuthStore?.getState === 'function' ? useAuthStore.getState()?.token : null
-  if (token) {
+  if (token && token !== 'cookie-session') {
     config.headers.Authorization = `Bearer ${token}`
   }
   const dataEnv = typeof useEnvironmentStore?.getState === 'function'

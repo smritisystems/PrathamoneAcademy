@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-10
+#  * @updated     2026-11-12
 #  *
 #  * @description Canonical Safe Delete & Data Integrity Service enforcing dependency checks, audit logging, and financial ledger immutability.
 #  */
@@ -25,6 +25,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 
+from app.core.deps import check_institution_access, is_sysadmin
 from app.models import (
     User, AuditLog, Student, StudentEnrollment, StudentDocument,
     Standard, Division, Subject, CanonicalSubject, SubjectMapping, AcademicYear,
@@ -63,6 +64,61 @@ class SafeDeleteService:
     FINANCIAL_IMMUTABLE_TYPES = {
         "payment_receipt", "refund", "teacher_payroll", "fee_installment"
     }
+
+    _ENTITY_MODEL_MAP = {
+        "user": User,
+        "student": Student,
+        "standard": Standard,
+        "division": Division,
+        "batch": Division,
+        "canonical_subject": CanonicalSubject,
+        "subject": Subject,
+        "subject_mapping": SubjectMapping,
+        "fee_category": FeeCategory,
+        "fee_structure": FeeStructure,
+        "academic_year": AcademicYear,
+        "examination": Examination,
+        "exam": Examination,
+        "lead": Lead,
+        "lookup_item": LookupItem,
+        "payment": Payment,
+        "fee_invoice": FeeInvoice,
+        "invoice": FeeInvoice,
+    }
+
+    @classmethod
+    async def _authorize_entity_scope(
+        cls,
+        db: AsyncSession,
+        normalized_type: str,
+        entity_id: int,
+        current_user: Optional[User],
+    ) -> None:
+        if current_user is None or is_sysadmin(current_user):
+            return
+        model = cls._ENTITY_MODEL_MAP.get(normalized_type)
+        if not model:
+            return
+        entity = (await db.execute(select(model).where(model.id == entity_id))).scalar_one_or_none()
+        if not entity:
+            return
+
+        target_inst_id = getattr(entity, "institution_id", None)
+        if target_inst_id is None and isinstance(entity, (Division, SubjectMapping)):
+            if getattr(entity, "standard_id", None):
+                target_inst_id = (
+                    await db.execute(select(Standard.institution_id).where(Standard.id == entity.standard_id))
+                ).scalar_one_or_none()
+
+        if isinstance(entity, User):
+            check_institution_access(target_inst_id, current_user)
+            if target_inst_id is None or is_sysadmin(entity):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Insufficient permissions to access or modify global/sysadmin accounts",
+                )
+        elif target_inst_id is not None:
+            check_institution_access(target_inst_id, current_user)
 
     @classmethod
     async def check_eligibility(
@@ -126,7 +182,9 @@ class SafeDeleteService:
 
         handler = handler_map.get(normalized_type)
         if handler:
-            return await handler(db, int(entity_id), current_user)
+            target_pk = int(entity_id)
+            await cls._authorize_entity_scope(db, normalized_type, target_pk, current_user)
+            return await handler(db, target_pk, current_user)
 
         # Fallback for unrecognized entity types: block by default to ensure safety
         return DeletionEligibilityReport(
@@ -991,9 +1049,8 @@ class SafeDeleteService:
         stmt = (
             select(FeeInvoice)
             .options(
-                selectinload(FeeInvoice.payments),
+                selectinload(FeeInvoice.allocations),
                 selectinload(FeeInvoice.items),
-                selectinload(FeeInvoice.student),
             )
             .where(FeeInvoice.id == invoice_id)
         )
@@ -1005,7 +1062,7 @@ class SafeDeleteService:
         counts: Dict[str, int] = {}
         details: List[str] = []
 
-        payment_count = len(invoice.payments) if invoice.payments else 0
+        payment_count = len(invoice.allocations) if invoice.allocations else 0
         if payment_count > 0:
             counts["Linked Payment Allocations"] = payment_count
             details.append(f"{payment_count} linked payment transaction(s)")
@@ -1178,6 +1235,9 @@ class SafeDeleteService:
         with comprehensive AuditLog tracking.
         """
         normalized_type = entity_type.strip().lower()
+        await cls._authorize_entity_scope(db, normalized_type, entity_id, current_user)
+        if normalized_type == "user" and current_user and current_user.id == entity_id:
+            raise HTTPException(status_code=400, detail="Security Policy: You cannot deactivate your own account.")
         target = None
 
         if normalized_type == "user":
@@ -1269,6 +1329,9 @@ class SafeDeleteService:
         with comprehensive AuditLog tracking.
         """
         normalized_type = entity_type.strip().lower()
+        await cls._authorize_entity_scope(db, normalized_type, entity_id, current_user)
+        if normalized_type == "user" and current_user and current_user.id == entity_id:
+            raise HTTPException(status_code=400, detail="Security Policy: You cannot deactivate your own account.")
         target = None
 
         if normalized_type in ("division", "batch"):

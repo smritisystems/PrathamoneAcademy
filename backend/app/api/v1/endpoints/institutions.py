@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access
 from app.models.institution import Institution
 from app.models.settings import InstitutionSetting
 from pydantic import BaseModel
@@ -57,30 +57,17 @@ async def list_institutions(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    result = await db.execute(
-        select(Institution).where(Institution.is_active == True)
-    )
+    stmt = select(Institution).where(Institution.is_active == True)
+    if not is_sysadmin(current_user):
+        user_inst_id = getattr(current_user, "institution_id", None)
+        if not user_inst_id:
+            return []
+        stmt = stmt.where(Institution.id == user_inst_id)
+    result = await db.execute(stmt)
     institutions = result.scalars().all()
-    if not institutions:
+    if not institutions and is_sysadmin(current_user):
         res_any = await db.execute(select(Institution))
         institutions = res_any.scalars().all()
-    if not institutions:
-        pa = Institution(
-            name="Prashant Academy",
-            code="PA001",
-            address="Dadar West, Near Shivaji Park",
-            city="Mumbai",
-            state="Maharashtra",
-            pincode="400028",
-            phone="+91-22-12345678",
-            email="info@example.com",
-            website="https://example.com",
-            is_active=True,
-        )
-        db.add(pa)
-        await db.commit()
-        await db.refresh(pa)
-        institutions = [pa]
     return [
         {
             "id": i.id,
@@ -109,7 +96,7 @@ async def list_institutions(
 async def create_institution(
     data: InstitutionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "sysadmin", "super_admin")),
 ):
     institution = Institution(**data.model_dump())
     db.add(institution)
@@ -188,6 +175,7 @@ async def get_institution(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    check_institution_access(institution_id, current_user)
     result = await db.execute(
         select(Institution).where(Institution.id == institution_id)
     )
@@ -220,8 +208,9 @@ async def update_institution(
     institution_id: int,
     data: InstitutionUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role("superadmin", "sysadmin", "super_admin", "admin", "principal")),
 ):
+    check_institution_access(institution_id, current_user)
     result = await db.execute(
         select(Institution).where(Institution.id == institution_id)
     )

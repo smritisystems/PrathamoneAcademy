@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-07
+#  * @updated     2026-11-12
 #  *
 #  * @description SQLAlchemy ORM models for Message Templates, Communication Logs, and Expiring Shared Document Tokens.
 #  */
@@ -102,7 +102,7 @@ class SharedDocumentToken(Base):
     )
     document_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)  # RECEIPT, REPORT_CARD, KYC_FORM, FEE_STATEMENT, etc.
     record_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    access_key: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    access_key: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     recipient_name: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
     recipient_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     recipient_email: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)

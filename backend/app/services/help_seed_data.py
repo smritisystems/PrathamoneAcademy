@@ -2172,7 +2172,7 @@ PrathamOne EduOS builds upon the following verified web technologies and librari
 | Lucide Icons | Consistent application and navigation iconography | ISC |
 | Recharts | Academic and financial analytics visualizations | MIT |
 | React Hook Form & Zod | Structured form handling and schema validation | MIT |
-| SheetJS (`xlsx`) | Spreadsheet import/export compatibility | Apache-2.0 |
+| `write-excel-file` | Spreadsheet `.xlsx` export generation | MIT |
 | `date-fns`, `clsx`, `react-hot-toast` | Date formatting, styling helpers, and notifications | MIT |
 
 ## Verified Backend Application & Data Processing Components
@@ -2183,7 +2183,7 @@ The PrathamOne EduOS application services incorporate the following verified Pyt
 | FastAPI & Pydantic | REST API services and payload validation | MIT |
 | SQLAlchemy & Alembic | Relational database modeling and schema management | MIT |
 | `asyncpg` | High-performance PostgreSQL database driver | Apache-2.0 |
-| Python-JOSE | Cryptographic token signing and verification | MIT |
+| PyJWT & Cryptography | Cryptographic token signing and verification | MIT / Apache-2.0 |
 | Passlib | Password hashing and credential security | BSD |
 | `openpyxl` | Excel workbook reading and report export generation | MIT |
 | `qrcode` & `Pillow` | Receipt verification QR code and image rendering | BSD / HPND |

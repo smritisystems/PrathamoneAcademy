@@ -80,7 +80,8 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const resp = await authApi.login(data.username, data.password)
-      login(resp.data.access_token, resp.data.user)
+      // Store non-secret sentinel in memory; actual JWT lives in HttpOnly; SameSite=Lax cookie.
+      login('cookie-session', resp.data.user)
       toast.success(`Welcome, ${resp.data.user.first_name}!`)
       if (resp.data.user.role === 'student') {
         navigate('/student-portal', { replace: true })
@@ -453,33 +454,35 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Quick Demo Credentials Assistant */}
-            <div className="mt-6 p-3.5 bg-slate-50/90 rounded-xl border border-slate-200/80">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Quick Access Profiles
-                </span>
-                <span className="text-[10px] text-slate-400">Click to fill</span>
+            {/* Quick Demo Credentials Assistant (Development Mode Only) */}
+            {(import.meta as any).env?.DEV && (
+              <div className="mt-6 p-3.5 bg-slate-50/90 rounded-xl border border-slate-200/80">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Quick Access Profiles
+                  </span>
+                  <span className="text-[10px] text-slate-400">Click to fill</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => fillCredentials('admin', 'admin123')}
+                    className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-primary-400 hover:bg-primary-50/40 transition-colors text-left group"
+                  >
+                    <span className="font-semibold text-slate-800 group-hover:text-primary-700">Administrator</span>
+                    <span className="text-[11px] text-slate-500 font-mono">admin / admin123</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillCredentials('accountant', 'account123')}
+                    className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-primary-400 hover:bg-primary-50/40 transition-colors text-left group"
+                  >
+                    <span className="font-semibold text-slate-800 group-hover:text-primary-700">Accountant</span>
+                    <span className="text-[11px] text-slate-500 font-mono">accountant / •••</span>
+                  </button>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => fillCredentials('admin', 'admin123')}
-                  className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-primary-400 hover:bg-primary-50/40 transition-colors text-left group"
-                >
-                  <span className="font-semibold text-slate-800 group-hover:text-primary-700">Administrator</span>
-                  <span className="text-[11px] text-slate-500 font-mono">admin / admin123</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials('accountant', 'account123')}
-                  className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-primary-400 hover:bg-primary-50/40 transition-colors text-left group"
-                >
-                  <span className="font-semibold text-slate-800 group-hover:text-primary-700">Accountant</span>
-                  <span className="text-[11px] text-slate-500 font-mono">accountant / •••</span>
-                </button>
-              </div>
-            </div>
+            )}
 
             {/* First-Time Login & Support Help */}
             <div className="mt-4">

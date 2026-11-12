@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Enterprise Release & Change Management workspace governing change tracking, automated release notes, pre-flight validations, approvals, and deployment lifecycles.
  */
@@ -310,7 +310,7 @@ export default function Releases() {
   return (
     <div className="space-y-6 pb-12">
       {/* Global View-First & Explicit Edit Mode Governance Bar */}
-      <EditModeBar scope={editScope} title="Release Management & Deployment History" isDirty={draftModalOpen || editModalOpen} />
+      <EditModeBar scope={editScope} title="Release Management & Deployment History" isDirty={draftModalOpen || editModalOpen || rollbackModalOpen} />
 
       {/* ─── Top Header Banner ──────────────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 rounded-2xl p-6 text-white shadow-xl border border-slate-800">
@@ -403,8 +403,9 @@ export default function Releases() {
 
             <button
               onClick={() => setDraftModalOpen(true)}
-              disabled={!isSysAdmin}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-sm transition"
+              disabled={!isEditMode || !isSysAdmin}
+              title={!isEditMode ? 'Enable Edit Mode above to generate release candidates' : undefined}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold shadow-sm transition"
             >
               <Rocket className="w-4 h-4" />
               Generate Release Candidate
@@ -497,8 +498,9 @@ export default function Releases() {
                       })
                       setEditModalOpen(true)
                     }}
-                    disabled={!isSysAdmin || ['approved', 'published', 'rolled_back'].includes(inspectDetails.status)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-700 rounded-lg text-xs font-semibold transition"
+                    disabled={!isEditMode || !isSysAdmin || ['approved', 'published', 'rolled_back'].includes(inspectDetails.status)}
+                    title={!isEditMode ? 'Enable Edit Mode above to edit release notes' : undefined}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 rounded-lg text-xs font-semibold transition"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     Edit Notes
@@ -507,8 +509,9 @@ export default function Releases() {
                   {/* Pre-Flight Validation Button */}
                   <button
                     onClick={() => validateMutation.mutate(inspectDetails.id)}
-                    disabled={validateMutation.isPending || ['approved', 'published', 'rolled_back'].includes(inspectDetails.status)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition shadow-sm"
+                    disabled={!isEditMode || !isSysAdmin || validateMutation.isPending || ['approved', 'published', 'rolled_back'].includes(inspectDetails.status)}
+                    title={!isEditMode ? 'Enable Edit Mode above to run pre-flight validations' : undefined}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition shadow-sm"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${validateMutation.isPending ? 'animate-spin' : ''}`} />
                     Run Pre-Flight Validations
@@ -518,9 +521,9 @@ export default function Releases() {
                   {inspectDetails.status === 'draft' && (
                     <button
                       onClick={() => promoteRcMutation.mutate(inspectDetails.id)}
-                      disabled={promoteRcMutation.isPending || inspectDetails.validation_status !== 'passed'}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition shadow-sm"
-                      title={inspectDetails.validation_status !== 'passed' ? 'Validations must pass first' : 'Promote to Release Candidate'}
+                      disabled={!isEditMode || !isSysAdmin || promoteRcMutation.isPending || inspectDetails.validation_status !== 'passed'}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition shadow-sm"
+                      title={!isEditMode ? 'Enable Edit Mode above to promote releases' : inspectDetails.validation_status !== 'passed' ? 'Validations must pass first' : 'Promote to Release Candidate'}
                     >
                       <Tag className="w-3.5 h-3.5" />
                       Promote to Release Candidate
@@ -531,8 +534,9 @@ export default function Releases() {
                   {inspectDetails.status === 'release_candidate' && (
                     <button
                       onClick={() => approveMutation.mutate(inspectDetails.id)}
-                      disabled={approveMutation.isPending || !isSysAdmin}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition shadow-sm"
+                      disabled={!isEditMode || approveMutation.isPending || !isSysAdmin}
+                      title={!isEditMode ? 'Enable Edit Mode above to approve releases' : undefined}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition shadow-sm"
                     >
                       <UserCheck className="w-3.5 h-3.5" />
                       Approve Production Release
@@ -543,8 +547,9 @@ export default function Releases() {
                   {inspectDetails.status === 'approved' && (
                     <button
                       onClick={() => publishMutation.mutate(inspectDetails.id)}
-                      disabled={publishMutation.isPending || !isSysAdmin}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold transition shadow-sm"
+                      disabled={!isEditMode || publishMutation.isPending || !isSysAdmin}
+                      title={!isEditMode ? 'Enable Edit Mode above to publish releases' : undefined}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-semibold transition shadow-sm"
                     >
                       <Rocket className="w-3.5 h-3.5" />
                       Publish & Deploy Release
@@ -690,8 +695,9 @@ export default function Releases() {
               </p>
               <button
                 onClick={() => setDraftModalOpen(true)}
-                disabled={!isSysAdmin}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-semibold hover:bg-primary-700 transition"
+                disabled={!isEditMode || !isSysAdmin}
+                title={!isEditMode ? 'Enable Edit Mode above to prepare a new release draft' : undefined}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 <Rocket className="w-4 h-4" />
                 Prepare New Release Draft
@@ -797,7 +803,9 @@ export default function Releases() {
                             })
                             setRollbackModalOpen(true)
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition"
+                          disabled={!isEditMode}
+                          title={!isEditMode ? 'Enable Edit Mode above to trigger production rollback' : undefined}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           Rollback

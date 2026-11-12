@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-10
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for standards/classes management, board associations, and settings.
 #  */
@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.board import Board
@@ -36,8 +36,6 @@ from pathlib import Path
 from pydantic import BaseModel
 
 router = APIRouter()
-
-SETTINGS_FILE = Path(__file__).resolve().parent.parent.parent.parent / "academic_settings.json"
 
 DEFAULT_ACADEMIC_SETTINGS = {
     "defaultBatchCapacity": 40,
@@ -88,12 +86,6 @@ async def get_academic_settings(
                 conf["autoRollNumberFormat"] = r.value
         return conf
 
-    if SETTINGS_FILE.exists():
-        try:
-            with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
     return DEFAULT_ACADEMIC_SETTINGS
 
 
@@ -137,12 +129,6 @@ async def update_academic_settings(
             ))
     await db.commit()
 
-    try:
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(settings_dict, f, indent=2)
-    except Exception:
-        pass
-
     return {
         "settings": settings_dict,
         "message": "Academic workspace settings saved successfully",
@@ -170,24 +156,41 @@ async def get_academic_overview(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+    target_inst = institution_id if institution_id is not None else (
+        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    )
     # 1. Total Students
     student_count_stmt = select(func.count(Student.id)).where(Student.is_active == True)
+    if target_inst is not None:
+        student_count_stmt = student_count_stmt.where(Student.institution_id == target_inst)
     total_students = (await db.execute(student_count_stmt)).scalar() or 0
 
     # 2. Total Standards / Classes
     standards_count_stmt = select(func.count(Standard.id)).where(Standard.is_active == True)
+    if target_inst is not None:
+        standards_count_stmt = standards_count_stmt.where(Standard.institution_id == target_inst)
     total_classes = (await db.execute(standards_count_stmt)).scalar() or 0
 
     # 3. Active Batches
-    active_batches_stmt = select(func.count(Division.id)).where(
-        Division.is_active == True, Division.status == "active"
+    active_batches_stmt = (
+        select(func.count(Division.id))
+        .join(Standard, Division.standard_id == Standard.id)
+        .where(Division.is_active == True, Division.status == "active")
     )
+    if target_inst is not None:
+        active_batches_stmt = active_batches_stmt.where(Standard.institution_id == target_inst)
     active_batches = (await db.execute(active_batches_stmt)).scalar() or 0
 
     # 4. Enrolled vs Total Seats
-    active_divs_stmt = select(Division.id, Division.capacity).where(
-        Division.is_active == True, Division.status == "active"
+    active_divs_stmt = (
+        select(Division.id, Division.capacity)
+        .join(Standard, Division.standard_id == Standard.id)
+        .where(Division.is_active == True, Division.status == "active")
     )
+    if target_inst is not None:
+        active_divs_stmt = active_divs_stmt.where(Standard.institution_id == target_inst)
     active_divs = (await db.execute(active_divs_stmt)).all()
     total_seats = sum(d[1] or 40 for d in active_divs)
 
@@ -275,9 +278,14 @@ async def list_standards(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+    target_inst = institution_id if institution_id is not None else (
+        None if is_sysadmin(current_user) else getattr(current_user, "institution_id", None)
+    )
     query = select(Standard).where(Standard.is_active == True)
-    if institution_id:
-        query = query.where(Standard.institution_id == institution_id)
+    if target_inst is not None:
+        query = query.where(Standard.institution_id == target_inst)
     if board_id:
         query = (
             query.join(Division, Division.standard_id == Standard.id)
@@ -342,6 +350,7 @@ async def create_standard(
     d = data.model_dump()
     if not d.get("institution_id"):
         d["institution_id"] = getattr(current_user, "institution_id", None) or 1
+    check_institution_access(d["institution_id"], current_user)
 
     # Check duplicate level per institution
     existing = (
@@ -381,6 +390,7 @@ async def get_standard(
     standard = result.scalar_one_or_none()
     if not standard:
         raise HTTPException(status_code=404, detail="Standard not found")
+    check_institution_access(standard.institution_id, current_user)
 
     batches_cnt = (
         await db.execute(
@@ -424,6 +434,7 @@ async def update_standard(
     standard = result.scalar_one_or_none()
     if not standard:
         raise HTTPException(status_code=404, detail="Standard not found")
+    check_institution_access(standard.institution_id, current_user)
 
     update_dict = data.model_dump(exclude_unset=True)
     for key, value in update_dict.items():
@@ -447,6 +458,9 @@ async def delete_standard(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
+    target_std = await db.get(Standard, standard_id)
+    if target_std:
+        check_institution_access(target_std.institution_id, current_user)
     if permanent:
         return await SafeDeleteService.execute_safe_delete(
             db=db, entity_type="standard", entity_id=standard_id, current_user=current_user

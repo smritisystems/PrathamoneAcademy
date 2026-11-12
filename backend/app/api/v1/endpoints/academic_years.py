@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for academic year lifecycle, current session selection, and validation.
 #  */
@@ -134,6 +134,7 @@ async def get_academic_year(
     year = result.scalar_one_or_none()
     if not year:
         raise HTTPException(status_code=404, detail="Academic year not found")
+    check_institution_access(year.institution_id, current_user)
     return {
         "id": year.id,
         "name": year.name,
@@ -157,6 +158,7 @@ async def update_academic_year(
     year = result.scalar_one_or_none()
     if not year:
         raise HTTPException(status_code=404, detail="Academic year not found")
+    check_institution_access(year.institution_id, current_user)
     for key, value in data.model_dump(exclude_none=True).items():
         setattr(year, key, value)
     await db.commit()

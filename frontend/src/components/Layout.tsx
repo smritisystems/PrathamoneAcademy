@@ -72,10 +72,10 @@ export default function Layout() {
   const { isInstalled } = usePWA()
   const location = useLocation()
 
-  // STRICT GOVERNANCE: Reset all workspace edit modes to View Mode on route navigation
+  // STRICT GOVERNANCE: Reset all workspace edit modes to View Mode on route or tab navigation
   useEffect(() => {
     useEditModeStore.getState().resetAll()
-  }, [location.pathname])
+  }, [location.pathname, location.search])
 
   const token = useAuthStore((s) => s.token)
   const { data: institutions = [] } = useQuery({

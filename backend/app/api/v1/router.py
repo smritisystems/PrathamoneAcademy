@@ -56,6 +56,7 @@ from app.api.v1.endpoints import (
     report_intelligence,
     housekeeping,
     help as help_endpoint,
+    eduboard,
 )
 
 api_router = APIRouter()
@@ -119,4 +120,5 @@ api_router.include_router(governance.router, prefix="/governance", tags=["govern
 api_router.include_router(homework.router, prefix="/homework", tags=["homework"])
 api_router.include_router(housekeeping.router, prefix="/housekeeping", tags=["housekeeping"])
 api_router.include_router(help_endpoint.router, prefix="/help", tags=["help"])
+api_router.include_router(eduboard.router, prefix="/eduboard", tags=["eduboard"])
 

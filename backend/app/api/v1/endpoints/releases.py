@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for Release & Change Management, automated release notes, version tracking, pre-flight validations, and production approvals.
 #  */
@@ -77,7 +77,7 @@ async def get_current_release(
 @router.get("/pending-changes")
 async def get_pending_changes(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "sysadmin", "super_admin", "admin", "principal")),
 ):
     """
     Inspects repository commits, changed files, and schema migrations
@@ -442,7 +442,7 @@ async def rollback_release(
 async def get_release_audit_history(
     release_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(require_role("superadmin", "sysadmin", "super_admin", "admin", "principal")),
 ):
     """
     Returns the complete chronological audit log entries recorded for this release.

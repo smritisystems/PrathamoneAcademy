@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-04
+ * @updated     2026-11-12
  *
  * @description Vitest test suite verifying user profile details rendering, role badges, and security reset modals.
  */
@@ -262,7 +262,7 @@ describe('Dedicated User Profile Workspace Specification', () => {
     })
   })
 
-  it('opens Edit Account modal when clicking Edit Account button', async () => {
+  it('opens Edit Account modal when Edit Mode is enabled and clicking Edit Account button', async () => {
     render(
       <BrowserRouter>
         <UserProfilePage />
@@ -273,6 +273,12 @@ describe('Dedicated User Profile Workspace Specification', () => {
       expect(screen.getByRole('button', { name: /Edit Account/i })).toBeDefined()
     })
 
+    // View-First Lock: clicking Edit Account in View Mode must not open the edit modal
+    fireEvent.click(screen.getByRole('button', { name: /Edit Account/i }))
+    expect(screen.queryByRole('heading', { name: 'Edit User Profile' })).toBeNull()
+
+    // Activate Edit Mode via EditModeBar
+    fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
     fireEvent.click(screen.getByRole('button', { name: /Edit Account/i }))
 
     await waitFor(() => {

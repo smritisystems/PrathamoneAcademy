@@ -11,11 +11,12 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description Pytest configuration fixtures providing test database session, test client, and auth helpers.
 #  */
 
+import os
 import pytest
 import asyncio
 from decimal import Decimal
@@ -23,6 +24,10 @@ from datetime import date
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
+# Configure isolated dev/test defaults prior to importing application settings
+os.environ.setdefault("DEBUG", "True")
+os.environ.setdefault("SECRET_KEY", "pytest_ephemeral_signing_secret_not_for_production_deployment_2026")
 
 from app.main import app
 from app.core.database import Base, get_db
@@ -40,7 +45,6 @@ from app.models.fee import (
     FeeInstallment,
 )
 
-import os
 from app.core.limiter import limiter
 
 from sqlalchemy.pool import NullPool
@@ -165,9 +169,39 @@ async def db_setup():
 
             ("teacher", "concessions", "view"),
             ("teacher", "concessions", "nominate"),
+            ("teacher", "eduboard", "view"),
+            ("teacher", "eduboard", "create"),
+            ("teacher", "eduboard", "edit"),
+            ("teacher", "eduboard", "publish"),
+            ("teacher", "eduboard", "download"),
+            ("teacher", "eduboard", "manage_templates"),
+            ("teacher", "eduboard", "collaborate"),
 
             ("staff", "concessions", "view"),
             ("staff", "concessions", "nominate"),
+            ("staff", "eduboard", "view"),
+            ("staff", "eduboard", "download"),
+
+            ("student", "eduboard", "view"),
+            ("student", "eduboard", "download"),
+
+            ("admin", "eduboard", "view"),
+            ("admin", "eduboard", "create"),
+            ("admin", "eduboard", "edit"),
+            ("admin", "eduboard", "delete"),
+            ("admin", "eduboard", "publish"),
+            ("admin", "eduboard", "download"),
+            ("admin", "eduboard", "manage_templates"),
+            ("admin", "eduboard", "collaborate"),
+
+            ("principal", "eduboard", "view"),
+            ("principal", "eduboard", "create"),
+            ("principal", "eduboard", "edit"),
+            ("principal", "eduboard", "delete"),
+            ("principal", "eduboard", "publish"),
+            ("principal", "eduboard", "download"),
+            ("principal", "eduboard", "manage_templates"),
+            ("principal", "eduboard", "collaborate"),
         ]
 
         for rname, res, act in perms_to_seed:

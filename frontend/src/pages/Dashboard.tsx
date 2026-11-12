@@ -30,6 +30,7 @@ import {
   FileSpreadsheet, Sparkles, Building2, School, BarChart3, PieChart as PieChartIcon
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { downloadBlob } from '../utils/reportExport'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -249,14 +250,7 @@ export default function DashboardPage() {
       setDownloadingReceipt(receiptNum)
       const res = await paymentsApi.downloadReceiptPdf(receiptNum)
       const blob = new Blob([res.data], { type: 'application/pdf' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `Receipt_${receiptNum}_${studentName.replace(/\s+/g, '_')}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
+      downloadBlob(blob, `Receipt_${receiptNum}_${studentName.replace(/\s+/g, '_')}.pdf`)
     } catch (err) {
       console.error('Failed to download receipt PDF:', err)
       alert('Could not download receipt PDF. Please try again.')
@@ -272,14 +266,10 @@ export default function DashboardPage() {
       setIsDownloadingZip(true)
       const res = await paymentsApi.exportBulkReceiptsZip(selectedReceipts)
       const blob = new Blob([res.data], { type: 'application/zip' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `Fee_Receipts_Selected_${selectedReceipts.length}_${new Date().toISOString().slice(0, 10)}.zip`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
+      downloadBlob(
+        blob,
+        `Fee_Receipts_Selected_${selectedReceipts.length}_${new Date().toISOString().slice(0, 10)}.zip`
+      )
     } catch (err) {
       console.error('Failed to bulk download receipts:', err)
       alert('Failed to generate bulk receipt archive. Please try again.')
@@ -354,14 +344,10 @@ export default function DashboardPage() {
 
     const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `Outstanding_Drilldown_${drilldownStatus}_${new Date().toISOString().slice(0, 10)}.csv`
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    URL.revokeObjectURL(url)
+    downloadBlob(
+      blob,
+      `Outstanding_Drilldown_${drilldownStatus}_${new Date().toISOString().slice(0, 10)}.csv`
+    )
   }
 
   // Aging view selection: active vs total_historical

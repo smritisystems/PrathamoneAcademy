@@ -36,6 +36,8 @@ import {
 import { trainingApi, TrainingStatusResponse } from '../api/endpoints'
 import { useEnvironmentStore } from '../store/environmentStore'
 import { useAuthStore, isUserAdmin } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
+import { EditModeBar } from '../components/common'
 import EnvironmentSwitchModal from '../components/common/EnvironmentSwitchModal'
 import ContextualHelpButton from '../components/common/ContextualHelpButton'
 import { toast } from 'react-hot-toast'
@@ -106,9 +108,16 @@ export default function TrainingManagement() {
   })
 
   const isAdmin = isUserAdmin(user)
+  const editScope = 'admin:training'
+  const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      <EditModeBar
+        scope={editScope}
+        title="Global Training & Simulation Lab"
+        isDirty={showResetConfirmModal}
+      />
       {/* ── Page Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex items-center gap-3.5">
@@ -266,12 +275,19 @@ export default function TrainingManagement() {
               return (
                 <div
                   key={policy.id}
-                  onClick={() => isAdmin && updateConfigMutation.mutate(policy.id)}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                  onClick={() => {
+                    if (!isAdmin) return
+                    if (!isEditMode) {
+                      toast.error('Locked in View Mode: Enable Edit Mode above to change reset policy.')
+                      return
+                    }
+                    updateConfigMutation.mutate(policy.id)
+                  }}
+                  className={`p-4 rounded-xl border transition-all ${
                     isSelected
                       ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/10'
                       : 'border-slate-200 hover:border-slate-300 bg-white'
-                  } ${!isAdmin ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  } ${!isAdmin || !isEditMode ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
@@ -341,11 +357,13 @@ export default function TrainingManagement() {
             {isAdmin ? (
               <button
                 type="button"
+                disabled={!isEditMode}
                 onClick={() => setShowResetConfirmModal(true)}
-                className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                title={!isEditMode ? 'Enable Edit Mode above to trigger environment reset' : 'Reset Training Environment'}
+                className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
-                <span>Reset Training Environment Now</span>
+                <span>{isEditMode ? 'Reset Training Environment Now' : 'Enable Edit Mode to Reset Sandbox'}</span>
               </button>
             ) : (
               <p className="text-xs text-slate-400 text-center italic">

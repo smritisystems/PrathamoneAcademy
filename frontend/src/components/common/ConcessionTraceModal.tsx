@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Full end-to-end drill-down transaction traceability modal:
  */
@@ -20,6 +20,7 @@ import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { X, ShieldCheck, FileText, ArrowRight, CheckCircle2, Clock, AlertCircle, User } from 'lucide-react'
 import { concessionsApi } from '../../api/endpoints'
+import { formatINR } from '../../utils/formatters'
 
 interface ConcessionTraceModalProps {
   entityType: 'application' | 'allocation' | 'invoice' | 'student' | null
@@ -28,8 +29,7 @@ interface ConcessionTraceModalProps {
   onNavigateStudent?: (studentId: number) => void
 }
 
-const fmtCurrency = (n: number | undefined | null) =>
-  `₹${Number(n ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+const fmtCurrency = (n: number | undefined | null) => formatINR(n)
 
 export const ConcessionTraceModal: React.FC<ConcessionTraceModalProps> = ({
   entityType,

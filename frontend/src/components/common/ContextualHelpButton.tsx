@@ -27,7 +27,6 @@ interface ContextualMatch {
 
 const CONTEXTUAL_ROUTE_TABLE: Array<{ prefix: string; slug: string; moduleLabel: string }> = [
   { prefix: '/fees/concessions', slug: 'guide-concessions', moduleLabel: 'Concessions & Waivers' },
-  { prefix: '/fees/scholarships', slug: 'guide-scholarships', moduleLabel: 'Scholarships & Benefits' },
   { prefix: '/fees/import', slug: 'guide-import-export', moduleLabel: 'Import & Export Center' },
   { prefix: '/import/fee-register', slug: 'guide-import-export', moduleLabel: 'Import & Export Center' },
   { prefix: '/import-export', slug: 'guide-import-export', moduleLabel: 'Import & Export Center' },
@@ -60,7 +59,6 @@ const CONTEXTUAL_ROUTE_TABLE: Array<{ prefix: string; slug: string; moduleLabel:
   { prefix: '/admin/training', slug: 'guide-training', moduleLabel: 'Training & Simulation Sandbox' },
   { prefix: '/training', slug: 'guide-training', moduleLabel: 'Training & Simulation Sandbox' },
   { prefix: '/student-portal', slug: 'welcome-to-prathamone-eduos', moduleLabel: 'Student Portal' },
-  { prefix: '/teacher-portal', slug: 'guide-timetable', moduleLabel: 'Teacher Portal' },
   { prefix: '/dashboard', slug: 'guide-dashboard', moduleLabel: 'Dashboard' },
   { prefix: '/help/support', slug: 'faq-common-application-errors', moduleLabel: 'Troubleshooting & Support' },
 ]

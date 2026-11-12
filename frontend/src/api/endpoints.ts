@@ -57,6 +57,9 @@ import type {
   CrmReportsAnalytics, CrmConfigSettings,
   HomeworkAssignmentItem, CheckingRegisterStudent, StudentPortalHomeworkItem,
   AcademicActivityRegisterItem, TeacherHomeworkDashboard, DailyHomeworkRegisterReport,
+  HomeworkSettingsConfig, HomeworkFileUploadResponse, HomeworkRecipientPreviewStudent,
+  StudentAssignmentOverride, HomeworkAttachment, StudentHomeworkDashboard,
+  HomeworkNotificationItem, BatchHomeworkReport, InstituteHomeworkAnalytics,
   ReportKPIItem, ReportInsightItem, ReportIntelligencePayload, CalculationDefinitionItem,
   HousekeepingOverview, HousekeepingBackupItem, HousekeepingPolicy,
   HousekeepingCreateBackupResponse, HousekeepingVerifyResponse, HousekeepingPruneResponse,
@@ -68,6 +71,8 @@ import type {
   HelpCategory, HelpArticleSummary, HelpArticleDetail, HelpArticleRevision,
   HelpSearchResponse, ContextualHelpResolution, HelpProductAndVersionResponse,
   HelpSystemInfoResponse, SupportRequestItem,
+  EduBoardContextResponse, EduBoardSettingsConfig, EduBoardSummaryItem,
+  EduBoardDetailItem, EduBoardRevisionItem, EduBoardReportsSummary, EduBoardPageItem,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -86,6 +91,7 @@ export const authApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
+  logout: () => apiClient.post<{ message: string }>('/auth/logout'),
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -2261,12 +2267,71 @@ export const governanceApi = {
 // ─── Homework & Assignment System (SSOT) ──────────────────────────────────────
 
 export const homeworkApi = {
+  getSettings: (params?: { institution_id?: number | string }) =>
+    apiClient.get<HomeworkSettingsConfig>('/homework/settings', { params }),
+
+  updateSettings: (payload: Partial<HomeworkSettingsConfig>, params?: { institution_id?: number | string }) =>
+    apiClient.put<{ success: boolean; settings: HomeworkSettingsConfig }>('/homework/settings', payload, { params }),
+
+  uploadFile: (
+    file: File,
+    context: 'assignment_attachment' | 'student_custom_attachment' | 'submission_file' | 'evaluation_attachment',
+    options?: { assignment_id?: number; student_record_id?: number }
+  ) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('context', context)
+    if (options?.assignment_id) formData.append('assignment_id', String(options.assignment_id))
+    if (options?.student_record_id) formData.append('student_record_id', String(options.student_record_id))
+    return apiClient.post<HomeworkFileUploadResponse>('/homework/files/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  getDownloadUrl: (fileUrlOrId: string | number) => {
+    const raw = String(fileUrlOrId || '')
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw
+    if (raw.startsWith('/api/v1/')) return raw
+    if (/^\d+$/.test(raw)) return `/api/v1/homework/files/${raw}/download`
+    return raw
+  },
+
+  searchStudents: (params: {
+    standard_id?: number | string
+    division_id?: number | string
+    academic_year_id?: number | string
+    search?: string
+  }) =>
+    apiClient.get<{
+      items: Array<{
+        student_id: number
+        student_name: string
+        admission_number: string
+        roll_number?: string | null
+        division_id?: number | null
+        division_name?: string | null
+      }>
+      total: number
+    }>('/homework/students/search', { params }),
+
+  previewRecipients: (payload: {
+    academic_year_id: number
+    standard_id: number
+    division_id?: number | null
+    subject_id?: number | null
+    recipient_type: string
+    recipient_batch_ids?: number[]
+    selected_student_ids?: number[]
+  }) =>
+    apiClient.post<{ count: number; students: HomeworkRecipientPreviewStudent[] }>('/homework/recipients/preview', payload),
+
   listAssignments: (params?: {
     division_id?: number | string
     standard_id?: number | string
     subject_id?: number | string
     teacher_id?: number | string
     status?: string
+    assignment_type?: string
     submission_method?: string
     is_template?: boolean
     search?: string
@@ -2275,7 +2340,7 @@ export const homeworkApi = {
   }) => apiClient.get<{ items: HomeworkAssignmentItem[]; total: number; page: number; limit: number }>('/homework/assignments', { params }),
 
   createAssignment: (payload: any) =>
-    apiClient.post<{ success: boolean; message: string; id: number; assignment_code: string }>('/homework/assignments', payload),
+    apiClient.post<{ success: boolean; message: string; id: number; assignment_code: string; status: string; original_recipient_count: number }>('/homework/assignments', payload),
 
   getAssignment: (id: number | string) =>
     apiClient.get<HomeworkAssignmentItem>(`/homework/assignments/${id}`),
@@ -2286,11 +2351,36 @@ export const homeworkApi = {
   deleteAssignment: (id: number | string) =>
     apiClient.delete<{ success: boolean; message: string }>(`/homework/assignments/${id}`),
 
+  publishAssignment: (
+    id: number | string,
+    payload?: { selected_student_ids?: number[]; student_overrides?: StudentAssignmentOverride[] }
+  ) => apiClient.post<{ success: boolean; message: string; id: number; status: string; original_recipient_count: number }>(`/homework/assignments/${id}/publish`, payload || {}),
+
+  closeAssignment: (id: number | string) =>
+    apiClient.post<{ success: boolean; message: string; status: string }>(`/homework/assignments/${id}/close`),
+
+  reopenAssignment: (id: number | string, payload?: { new_due_date?: string; reason?: string }) =>
+    apiClient.post<{ success: boolean; message: string; status: string; due_date: string }>(`/homework/assignments/${id}/reopen`, payload || {}),
+
+  syncLateJoiners: (id: number | string, payload?: { student_ids?: number[]; reason?: string }) =>
+    apiClient.post<{ assignment_id: number; original_recipient_count: number; added_count: number; added_student_ids: number[] }>(`/homework/assignments/${id}/sync-late-joiners`, payload || {}),
+
   getCheckingRegister: (assignmentId: number | string, params?: { search?: string; review_status?: string }) =>
     apiClient.get<{ assignment_id: number; students: CheckingRegisterStudent[]; total: number }>(`/homework/assignments/${assignmentId}/register`, { params }),
 
   checkRegister: (assignmentId: number | string, payload: { items: any[] }) =>
     apiClient.post<{ success: boolean; updated_count: number }>(`/homework/assignments/${assignmentId}/check`, payload),
+
+  evaluateRecord: (
+    recordId: number | string,
+    payload: {
+      review_status: string
+      marks_obtained?: number | null
+      teacher_remarks?: string
+      teacher_feedback_attachments?: HomeworkAttachment[]
+      correction_requested?: boolean
+    }
+  ) => apiClient.post<{ success: boolean; record_id: number; review_status: string; status: string; marks_obtained?: number | null }>(`/homework/records/${recordId}/evaluate`, payload),
 
   requestResubmission: (recordId: number | string, payload: { remarks: string; extended_due_date?: string }) =>
     apiClient.post<{ success: boolean; message: string; record_id: number }>(`/homework/records/${recordId}/resubmit`, payload),
@@ -2304,17 +2394,38 @@ export const homeworkApi = {
   getMyHomework: (params?: { student_id?: number | string; status?: string }) =>
     apiClient.get<{ student_id: number; items: StudentPortalHomeworkItem[]; total: number }>('/homework/student/my-homework', { params }),
 
+  markViewed: (recordId: number | string) =>
+    apiClient.post<{ success: boolean; record_id: number; status: string; viewed_at?: string | null }>(`/homework/student/${recordId}/view`),
+
   submitHomework: (recordId: number | string, payload: { submission_text?: string; submission_files?: any[] }) =>
-    apiClient.post<{ success: boolean; message: string; record_id: number; submission_status: string }>(`/homework/student/${recordId}/submit`, payload),
+    apiClient.post<{ success: boolean; message: string; record_id: number; submission_status: string; submission_version?: number }>(`/homework/student/${recordId}/submit`, payload),
 
   getTeacherDashboard: (params?: { teacher_id?: number | string }) =>
     apiClient.get<TeacherHomeworkDashboard>('/homework/dashboards/teacher', { params }),
+
+  getStudentDashboard: (params?: { student_id?: number | string }) =>
+    apiClient.get<StudentHomeworkDashboard>('/homework/dashboards/student', { params }),
+
+  getMyNotifications: (params?: { unread_only?: boolean }) =>
+    apiClient.get<{ items: HomeworkNotificationItem[]; unread_count: number }>('/homework/notifications/my', { params }),
+
+  markNotificationRead: (logId: number | string) =>
+    apiClient.post<{ success: boolean; id: number; is_read: boolean }>(`/homework/notifications/${logId}/read`),
+
+  runReminders: (params?: { institution_id?: number | string }) =>
+    apiClient.post<{ success: boolean; student_reminders_sent: number; teacher_reminders_sent: number }>('/homework/reminders/run', undefined, { params }),
 
   getStudentActivityRegister: (studentId: number | string, params?: { activity_type?: string }) =>
     apiClient.get<{ student_id: number; activities: AcademicActivityRegisterItem[]; items?: AcademicActivityRegisterItem[]; total: number }>(`/homework/reports/activity-register/${studentId}`, { params }),
 
   getDailyRegisterReport: (params?: { target_date?: string; division_id?: number | string; standard_id?: number | string }) =>
     apiClient.get<DailyHomeworkRegisterReport>('/homework/reports/daily-register', { params }),
+
+  getBatchReport: (assignmentId: number | string) =>
+    apiClient.get<BatchHomeworkReport>(`/homework/reports/batch/${assignmentId}`),
+
+  getInstituteAnalytics: (params?: { standard_id?: number | string; division_id?: number | string; subject_id?: number | string }) =>
+    apiClient.get<InstituteHomeworkAnalytics>('/homework/reports/analytics', { params }),
 
   listTemplates: (params?: { standard_id?: number | string; subject_id?: number | string }) =>
     apiClient.get<{ templates: any[] }>('/homework/templates', { params }),
@@ -2464,6 +2575,152 @@ export const helpApi = {
     },
   ) => apiClient.patch<SupportRequestItem>(`/help/support-requests/${requestId}/status`, payload),
 }
+
+// ─── PrathamOne EduBoard (Digital Classroom Engine) ──────────────────────────
+
+export const eduboardApi = {
+  getContext: (academicYearId?: number) =>
+    apiClient.get<EduBoardContextResponse>('/eduboard/context', {
+      params: academicYearId ? { academic_year_id: academicYearId } : undefined,
+    }),
+
+  getSettings: () => apiClient.get<EduBoardSettingsConfig>('/eduboard/settings'),
+
+  updateSettings: (payload: Partial<EduBoardSettingsConfig>) =>
+    apiClient.put<EduBoardSettingsConfig>('/eduboard/settings', payload),
+
+  listBoards: (params?: {
+    academic_year_id?: number
+    division_id?: number
+    subject_id?: number
+    teaching_session_id?: number
+    status?: string
+    is_template?: boolean
+    search?: string
+  }) => apiClient.get<{ items: EduBoardSummaryItem[]; total: number }>('/eduboard/boards', { params }),
+
+  createBoard: (payload: {
+    title: string
+    topic?: string
+    academic_year_id?: number | null
+    standard_id?: number | null
+    division_id?: number | null
+    subject_id?: number | null
+    subject_mapping_id?: number | null
+    teaching_session_id?: number | null
+    timetable_entry_id?: number | null
+    teacher_user_id?: number | null
+    board_mode_default?: string
+    is_template?: boolean
+    template_category?: string
+    collaboration_enabled?: boolean
+    from_template_id?: number | null
+  }) => apiClient.post<EduBoardDetailItem>('/eduboard/boards', payload),
+
+  getBoard: (boardId: number) => apiClient.get<EduBoardDetailItem>(`/eduboard/boards/${boardId}`),
+
+  syncBoard: (
+    boardId: number,
+    payload: {
+      title?: string
+      topic?: string
+      board_mode_default?: string
+      is_template?: boolean
+      template_category?: string | null
+      collaboration_enabled?: boolean
+      expected_revision_no?: number
+      force_overwrite?: boolean
+      save_type?: 'autosave' | 'manual'
+      note?: string
+      replace_pages?: boolean
+      pages?: Array<{
+        page_uid: string
+        page_order: number
+        title: string
+        mode: string
+        background_style: string
+        source_attachment_id?: number | null
+        source_page_number?: number | null
+        scene_json: unknown
+        version?: number
+      }>
+    },
+  ) => apiClient.put<EduBoardDetailItem>(`/eduboard/boards/${boardId}/sync`, payload),
+
+  publishBoard: (boardId: number) =>
+    apiClient.post<{ board: EduBoardDetailItem; notified_students: number }>(
+      `/eduboard/boards/${boardId}/publish`,
+    ),
+
+  updateStatus: (boardId: number, newStatus: string) =>
+    apiClient.post<EduBoardSummaryItem>(`/eduboard/boards/${boardId}/status`, null, {
+      params: { new_status: newStatus },
+    }),
+
+  deleteBoard: (boardId: number) =>
+    apiClient.delete<{ success: boolean; deleted_id: number }>(`/eduboard/boards/${boardId}`),
+
+  getRevisions: (boardId: number) =>
+    apiClient.get<{ board_id: number; latest_revision_no: number; items: EduBoardRevisionItem[] }>(
+      `/eduboard/boards/${boardId}/revisions`,
+    ),
+
+  restoreRevision: (boardId: number, revisionId: number) =>
+    apiClient.post<EduBoardDetailItem>(`/eduboard/boards/${boardId}/revisions/${revisionId}/restore`),
+
+  uploadAttachment: (
+    boardId: number,
+    file: File,
+    options?: { attachment_role?: string; create_slides?: boolean },
+  ) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('attachment_role', options?.attachment_role || 'source_document')
+    fd.append('create_slides', String(options?.create_slides ?? true))
+    return apiClient.post<{
+      id: number
+      attachment_role: string
+      original_filename: string
+      mime_type: string
+      extension: string
+      file_size_bytes: number
+      page_count?: number | null
+      sha256_checksum: string
+      created_pages_count: number
+    }>(`/eduboard/boards/${boardId}/attachments`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  fetchAttachmentBlob: (attachmentId: number) =>
+    apiClient.get<Blob>(`/eduboard/attachments/${attachmentId}/download`, { responseType: 'blob' }),
+
+  fetchRenderedPdfPageBlob: (attachmentId: number, pageNumber: number) =>
+    apiClient.get<Blob>(`/eduboard/attachments/${attachmentId}/pages/${pageNumber}/render`, {
+      responseType: 'blob',
+    }),
+
+  exportBoardPdfBlob: (boardId: number) =>
+    apiClient.get<Blob>(`/eduboard/boards/${boardId}/export-pdf`, { responseType: 'blob' }),
+
+  listStudentBoards: (studentId?: number) =>
+    apiClient.get<{ items: EduBoardSummaryItem[]; total: number }>('/eduboard/student/boards', {
+      params: studentId ? { student_id: studentId } : undefined,
+    }),
+
+  getStudentBoardDetail: (boardId: number, studentId?: number) =>
+    apiClient.get<EduBoardDetailItem>(`/eduboard/student/boards/${boardId}`, {
+      params: studentId ? { student_id: studentId } : undefined,
+    }),
+
+  getReportsSummary: (academicYearId?: number) =>
+    apiClient.get<EduBoardReportsSummary>('/eduboard/reports/summary', {
+      params: academicYearId ? { academic_year_id: academicYearId } : undefined,
+    }),
+}
+
+export type { EduBoardPageItem }
+
 
 
 

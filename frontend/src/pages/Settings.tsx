@@ -33,6 +33,7 @@ import type {
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState
 } from '../types'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
+import { downloadBlob } from '../utils/reportExport'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
 import { useBranding, applyGlobalBrandTheme, BRANDING_STORAGE_KEY } from '../config/branding'
@@ -516,14 +517,7 @@ export default function Settings() {
       exported_by: user?.username || 'system',
     }
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `prathamone_settings_backup_${new Date().toISOString().slice(0, 10)}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    downloadBlob(blob, `prathamone_settings_backup_${new Date().toISOString().slice(0, 10)}.json`)
     showNotification('success', 'Settings configuration snapshot downloaded successfully.')
   }
 

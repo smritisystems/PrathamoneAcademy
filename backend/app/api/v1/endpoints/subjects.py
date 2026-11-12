@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for canonical subject master catalogue, curriculum syllabus mappings, and legacy subject compatibility.
 #  */
@@ -25,7 +25,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.deps import get_current_active_user, require_role
+from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
 from app.models.institution import Institution
 from app.models.subject import Subject, CanonicalSubject, SubjectMapping, SubjectLegacyMapping
 from app.models.standard import Standard
@@ -34,6 +34,22 @@ from app.models.academic_year import AcademicYear
 from app.services.safe_delete_service import SafeDeleteService
 
 router = APIRouter()
+
+
+def _resolve_subject_institution_filter(institution_id: Optional[int], current_user) -> Optional[int]:
+    """Resolve and validate effective institution_id for tenant-scoped subject queries."""
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+        return institution_id
+    if not is_sysadmin(current_user):
+        inst_id = getattr(current_user, "institution_id", None)
+        if inst_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Institution context required",
+            )
+        return inst_id
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -47,7 +63,7 @@ class CanonicalSubjectCreate(BaseModel):
     description: Optional[str] = None
     aliases: Optional[str] = None
     alternate_codes: Optional[str] = None
-    institution_id: int = 1
+    institution_id: Optional[int] = None
 
 
 class CanonicalSubjectUpdate(BaseModel):
@@ -121,6 +137,7 @@ async def check_duplicate_subject(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    effective_inst_id = _resolve_subject_institution_filter(institution_id, current_user)
     clean_name = name.strip()
 
     # Exact name match (case-insensitive and trimmed)
@@ -128,22 +145,26 @@ async def check_duplicate_subject(
         func.lower(func.trim(CanonicalSubject.name)) == clean_name.lower(),
         CanonicalSubject.is_active == True,
     )
-    if institution_id:
-        exact_q = exact_q.where(CanonicalSubject.institution_id == institution_id)
+    if effective_inst_id is not None:
+        exact_q = exact_q.where(CanonicalSubject.institution_id == effective_inst_id)
     exact_res = await db.execute(exact_q)
     exact = exact_res.scalars().first()
 
     # Check if input matches legacy mapping code/name
     legacy_match = None
     if not exact:
-        slm_res = await db.execute(
-            select(SubjectLegacyMapping).where(
-                or_(
-                    func.lower(SubjectLegacyMapping.legacy_code) == clean_name.lower(),
-                    func.lower(SubjectLegacyMapping.legacy_name) == clean_name.lower(),
-                )
-            )
+        slm_q = select(SubjectLegacyMapping).join(
+            CanonicalSubject, SubjectLegacyMapping.canonical_subject_id == CanonicalSubject.id
+        ).where(
+            CanonicalSubject.is_active == True,
+            or_(
+                func.lower(SubjectLegacyMapping.legacy_code) == clean_name.lower(),
+                func.lower(SubjectLegacyMapping.legacy_name) == clean_name.lower(),
+            ),
         )
+        if effective_inst_id is not None:
+            slm_q = slm_q.where(CanonicalSubject.institution_id == effective_inst_id)
+        slm_res = await db.execute(slm_q)
         slm = slm_res.scalars().first()
         if slm:
             exact = (await db.execute(
@@ -166,8 +187,8 @@ async def check_duplicate_subject(
             CanonicalSubject.code.ilike(pattern),
         ),
     )
-    if institution_id:
-        sim_q = sim_q.where(CanonicalSubject.institution_id == institution_id)
+    if effective_inst_id is not None:
+        sim_q = sim_q.where(CanonicalSubject.institution_id == effective_inst_id)
     sim_res = await db.execute(sim_q.limit(10))
     similar = sim_res.scalars().all()
 
@@ -220,6 +241,7 @@ async def list_canonical_subjects(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    effective_inst_id = _resolve_subject_institution_filter(institution_id, current_user)
     query = (
         select(CanonicalSubject)
         .options(
@@ -228,8 +250,8 @@ async def list_canonical_subjects(
             selectinload(CanonicalSubject.legacy_mappings),
         )
     )
-    if institution_id:
-        query = query.where(CanonicalSubject.institution_id == institution_id)
+    if effective_inst_id is not None:
+        query = query.where(CanonicalSubject.institution_id == effective_inst_id)
     if not include_inactive:
         query = query.where(CanonicalSubject.is_active == True)
     if category and category.strip():
@@ -296,13 +318,15 @@ async def create_canonical_subject(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
-    # Verify institution_id exists, fallback to first institution if needed
-    inst_id = data.institution_id
-    inst_check = (await db.execute(select(Institution).where(Institution.id == inst_id))).scalar_one_or_none()
-    if not inst_check:
+    effective_inst_id = _resolve_subject_institution_filter(data.institution_id, current_user)
+    inst_id = effective_inst_id
+    if inst_id is None:
         first_inst = (await db.execute(select(Institution))).scalars().first()
-        if first_inst:
-            inst_id = first_inst.id
+        inst_id = first_inst.id if first_inst else 1
+    else:
+        inst_check = (await db.execute(select(Institution).where(Institution.id == inst_id))).scalar_one_or_none()
+        if not inst_check:
+            raise HTTPException(status_code=404, detail="Institution not found")
 
     clean_name = data.name.strip()
     clean_code = data.code.strip().upper()
@@ -383,6 +407,7 @@ async def get_canonical_subject(
     cs = res.scalar_one_or_none()
     if not cs:
         raise HTTPException(status_code=404, detail="Canonical subject not found")
+    check_institution_access(cs.institution_id, current_user)
 
     mappings_data = [
         {
@@ -444,6 +469,7 @@ async def update_canonical_subject(
     cs = res.scalar_one_or_none()
     if not cs:
         raise HTTPException(status_code=404, detail="Canonical subject not found")
+    check_institution_access(cs.institution_id, current_user)
 
     update_dict = data.model_dump(exclude_unset=True)
     if "name" in update_dict and update_dict["name"]:
@@ -487,6 +513,9 @@ async def delete_canonical_subject(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
+    cs = await db.get(CanonicalSubject, canonical_id)
+    if cs:
+        check_institution_access(cs.institution_id, current_user)
     if permanent:
         return await SafeDeleteService.execute_safe_delete(
             db=db, entity_type="canonical_subject", entity_id=canonical_id, current_user=current_user
@@ -511,6 +540,7 @@ async def list_subject_mappings(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    effective_inst_id = _resolve_subject_institution_filter(None, current_user)
     query = (
         select(
             SubjectMapping,
@@ -529,6 +559,8 @@ async def list_subject_mappings(
         .outerjoin(AcademicYear, SubjectMapping.academic_year_id == AcademicYear.id)
         .where(SubjectMapping.is_active == True)
     )
+    if effective_inst_id is not None:
+        query = query.where(Standard.institution_id == effective_inst_id)
 
     if canonical_subject_id:
         query = query.where(SubjectMapping.canonical_subject_id == canonical_subject_id)
@@ -590,11 +622,25 @@ async def create_subject_mapping(
     cs = (await db.execute(select(CanonicalSubject).where(CanonicalSubject.id == data.canonical_subject_id))).scalar_one_or_none()
     if not cs:
         raise HTTPException(status_code=404, detail="Canonical subject not found")
+    check_institution_access(cs.institution_id, current_user)
 
     # Verify standard exists
     std = (await db.execute(select(Standard).where(Standard.id == data.standard_id))).scalar_one_or_none()
     if not std:
         raise HTTPException(status_code=404, detail="Standard not found")
+    check_institution_access(std.institution_id, current_user)
+
+    if data.board_id is not None:
+        brd = await db.get(Board, data.board_id)
+        if not brd:
+            raise HTTPException(status_code=404, detail="Board not found")
+        check_institution_access(brd.institution_id, current_user)
+
+    if data.academic_year_id is not None:
+        ay = await db.get(AcademicYear, data.academic_year_id)
+        if not ay:
+            raise HTTPException(status_code=404, detail="Academic year not found")
+        check_institution_access(ay.institution_id, current_user)
 
     # Check for existing duplicate mapping
     check_query = select(SubjectMapping).where(
@@ -691,6 +737,8 @@ async def update_subject_mapping(
     sm = res.scalar_one_or_none()
     if not sm:
         raise HTTPException(status_code=404, detail="Subject mapping not found")
+    std = await db.get(Standard, sm.standard_id)
+    check_institution_access(std.institution_id if std else None, current_user)
 
     update_dict = data.model_dump(exclude_unset=True)
     for k, v in update_dict.items():
@@ -727,6 +775,10 @@ async def delete_subject_mapping(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
+    sm = await db.get(SubjectMapping, mapping_id)
+    if sm:
+        std = await db.get(Standard, sm.standard_id)
+        check_institution_access(std.institution_id if std else None, current_user)
     if permanent:
         return await SafeDeleteService.execute_safe_delete(
             db=db, entity_type="subject_mapping", entity_id=mapping_id, current_user=current_user
@@ -753,6 +805,7 @@ async def list_legacy_mappings(
     Returns reversible legacy subject mapping records linking original subject IDs
     and curriculum codes to canonical subject identities.
     """
+    effective_inst_id = _resolve_subject_institution_filter(None, current_user)
     query = (
         select(
             SubjectLegacyMapping,
@@ -763,6 +816,8 @@ async def list_legacy_mappings(
         .join(CanonicalSubject, SubjectLegacyMapping.canonical_subject_id == CanonicalSubject.id)
         .outerjoin(Standard, SubjectLegacyMapping.standard_id == Standard.id)
     )
+    if effective_inst_id is not None:
+        query = query.where(CanonicalSubject.institution_id == effective_inst_id)
     if canonical_subject_id:
         query = query.where(SubjectLegacyMapping.canonical_subject_id == canonical_subject_id)
     if standard_id:
@@ -812,8 +867,22 @@ async def resolve_subject(
     legacy code, or alias) into its canonical subject identity and curriculum mappings.
     """
     clean_id = identifier.strip()
+    effective_inst_id = _resolve_subject_institution_filter(None, current_user)
     cs: Optional[CanonicalSubject] = None
     resolved_via: str = "unknown"
+
+    def _canon_lookup_stmt(*filters):
+        stmt = (
+            select(CanonicalSubject)
+            .options(
+                selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
+                selectinload(CanonicalSubject.legacy_mappings),
+            )
+            .where(CanonicalSubject.is_active == True, *filters)
+        )
+        if effective_inst_id is not None:
+            stmt = stmt.where(CanonicalSubject.institution_id == effective_inst_id)
+        return stmt
 
     # 1. Numeric ID resolution (canonical ID or legacy ID)
     if clean_id.isdigit():
@@ -821,85 +890,53 @@ async def resolve_subject(
 
         if id_type == "legacy":
             # Explicit legacy ID resolution
-            slm = (await db.execute(
-                select(SubjectLegacyMapping).where(SubjectLegacyMapping.legacy_subject_id == num_id)
-            )).scalar_one_or_none()
+            slm_q = select(SubjectLegacyMapping).where(SubjectLegacyMapping.legacy_subject_id == num_id)
+            if effective_inst_id is not None:
+                slm_q = slm_q.join(
+                    CanonicalSubject, SubjectLegacyMapping.canonical_subject_id == CanonicalSubject.id
+                ).where(CanonicalSubject.institution_id == effective_inst_id)
+            slm = (await db.execute(slm_q)).scalar_one_or_none()
             if slm:
-                cs = (await db.execute(
-                    select(CanonicalSubject)
-                    .options(
-                        selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
-                        selectinload(CanonicalSubject.legacy_mappings),
-                    )
-                    .where(CanonicalSubject.id == slm.canonical_subject_id, CanonicalSubject.is_active == True)
-                )).scalar_one_or_none()
+                cs = (await db.execute(_canon_lookup_stmt(CanonicalSubject.id == slm.canonical_subject_id))).scalar_one_or_none()
                 resolved_via = f"legacy_subject_id #{num_id} ({slm.legacy_name})"
         elif id_type == "canonical":
             # Explicit canonical ID resolution
-            cs = (await db.execute(
-                select(CanonicalSubject)
-                .options(
-                    selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
-                    selectinload(CanonicalSubject.legacy_mappings),
-                )
-                .where(CanonicalSubject.id == num_id, CanonicalSubject.is_active == True)
-            )).scalar_one_or_none()
+            cs = (await db.execute(_canon_lookup_stmt(CanonicalSubject.id == num_id))).scalar_one_or_none()
             resolved_via = f"canonical_id #{num_id}"
         else:
             # Auto: check canonical ID first, fallback to legacy ID
-            cs = (await db.execute(
-                select(CanonicalSubject)
-                .options(
-                    selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
-                    selectinload(CanonicalSubject.legacy_mappings),
-                )
-                .where(CanonicalSubject.id == num_id, CanonicalSubject.is_active == True)
-            )).scalar_one_or_none()
+            cs = (await db.execute(_canon_lookup_stmt(CanonicalSubject.id == num_id))).scalar_one_or_none()
             if cs:
                 resolved_via = f"canonical_id #{num_id}"
             else:
-                slm = (await db.execute(
-                    select(SubjectLegacyMapping).where(SubjectLegacyMapping.legacy_subject_id == num_id)
-                )).scalar_one_or_none()
+                slm_q = select(SubjectLegacyMapping).where(SubjectLegacyMapping.legacy_subject_id == num_id)
+                if effective_inst_id is not None:
+                    slm_q = slm_q.join(
+                        CanonicalSubject, SubjectLegacyMapping.canonical_subject_id == CanonicalSubject.id
+                    ).where(CanonicalSubject.institution_id == effective_inst_id)
+                slm = (await db.execute(slm_q)).scalar_one_or_none()
                 if slm:
-                    cs = (await db.execute(
-                        select(CanonicalSubject)
-                        .options(
-                            selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
-                            selectinload(CanonicalSubject.legacy_mappings),
-                        )
-                        .where(CanonicalSubject.id == slm.canonical_subject_id, CanonicalSubject.is_active == True)
-                    )).scalar_one_or_none()
+                    cs = (await db.execute(_canon_lookup_stmt(CanonicalSubject.id == slm.canonical_subject_id))).scalar_one_or_none()
                     resolved_via = f"legacy_subject_id #{num_id} ({slm.legacy_name})"
 
     # 2. String resolution: legacy code in subject_legacy_mappings
     if not cs:
-        slm = (await db.execute(
-            select(SubjectLegacyMapping).where(
-                func.lower(SubjectLegacyMapping.legacy_code) == clean_id.lower()
-            )
-        )).scalars().first()
+        slm_q = select(SubjectLegacyMapping).where(
+            func.lower(SubjectLegacyMapping.legacy_code) == clean_id.lower()
+        )
+        if effective_inst_id is not None:
+            slm_q = slm_q.join(
+                CanonicalSubject, SubjectLegacyMapping.canonical_subject_id == CanonicalSubject.id
+            ).where(CanonicalSubject.institution_id == effective_inst_id)
+        slm = (await db.execute(slm_q)).scalars().first()
         if slm:
-            cs = (await db.execute(
-                select(CanonicalSubject)
-                .options(
-                    selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
-                    selectinload(CanonicalSubject.legacy_mappings),
-                )
-                .where(CanonicalSubject.id == slm.canonical_subject_id, CanonicalSubject.is_active == True)
-            )).scalar_one_or_none()
+            cs = (await db.execute(_canon_lookup_stmt(CanonicalSubject.id == slm.canonical_subject_id))).scalar_one_or_none()
             resolved_via = f"legacy_code '{slm.legacy_code}'"
 
     # 3. String resolution: canonical code, name, alternate_codes, or aliases
     if not cs:
         cs = (await db.execute(
-            select(CanonicalSubject)
-            .options(
-                selectinload(CanonicalSubject.mappings).joinedload(SubjectMapping.standard),
-                selectinload(CanonicalSubject.legacy_mappings),
-            )
-            .where(
-                CanonicalSubject.is_active == True,
+            _canon_lookup_stmt(
                 or_(
                     func.lower(CanonicalSubject.code) == clean_id.lower(),
                     func.lower(CanonicalSubject.name) == clean_id.lower(),
@@ -981,6 +1018,7 @@ async def list_subjects(
     - If standard_id is omitted (general dropdowns): returns consolidated canonical subjects
       without duplicate identities, supporting lookup by old subject codes and aliases.
     """
+    effective_inst_id = _resolve_subject_institution_filter(institution_id, current_user)
     if standard_id is not None or raw:
         query = (
             select(Subject, Standard.name.label("standard_name"))
@@ -989,8 +1027,8 @@ async def list_subjects(
         )
         if standard_id:
             query = query.where(Subject.standard_id == standard_id)
-        if institution_id is not None:
-            query = query.where(Standard.institution_id == institution_id)
+        if effective_inst_id is not None:
+            query = query.where(Standard.institution_id == effective_inst_id)
         if search and search.strip():
             s = f"%{search.strip()}%"
             query = (
@@ -1028,11 +1066,6 @@ async def list_subjects(
         ]
 
     # Consolidated Canonical View for general dropdowns when standard_id is omitted
-    effective_inst_id = (
-        institution_id
-        if institution_id is not None
-        else getattr(current_user, "institution_id", None)
-    )
     query = (
         select(CanonicalSubject)
         .options(
@@ -1135,6 +1168,11 @@ async def create_subject(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
+    std_rec = (await db.execute(select(Standard).where(Standard.id == data.standard_id))).scalar_one_or_none()
+    if not std_rec:
+        raise HTTPException(status_code=404, detail="Standard not found")
+    check_institution_access(std_rec.institution_id, current_user)
+
     if data.code:
         existing = (
             await db.execute(
@@ -1154,8 +1192,7 @@ async def create_subject(
     # Find or auto-link canonical subject
     clean_name = data.name.strip()
     clean_code = data.code.strip().upper() if data.code else None
-    std_rec = (await db.execute(select(Standard).where(Standard.id == data.standard_id))).scalar_one_or_none()
-    inst_id = std_rec.institution_id if std_rec else 1
+    inst_id = std_rec.institution_id
 
     # Check by normalized name, code, alternate codes, or aliases
     match_conditions = [func.lower(func.trim(CanonicalSubject.name)) == clean_name.lower()]
@@ -1268,14 +1305,15 @@ async def get_subject(
     current_user=Depends(get_current_active_user),
 ):
     query = (
-        select(Subject, Standard.name.label("standard_name"))
+        select(Subject, Standard.name.label("standard_name"), Standard.institution_id.label("institution_id"))
         .join(Standard, Subject.standard_id == Standard.id)
         .where(Subject.id == subject_id)
     )
     row = (await db.execute(query)).first()
     if not row:
         raise HTTPException(status_code=404, detail="Subject not found")
-    sub, std_name = row
+    sub, std_name, std_inst_id = row
+    check_institution_access(std_inst_id, current_user)
     return {
         "id": sub.id,
         "name": sub.name,
@@ -1303,6 +1341,14 @@ async def update_subject(
     subject = result.scalar_one_or_none()
     if not subject:
         raise HTTPException(status_code=404, detail="Subject not found")
+    std = await db.get(Standard, subject.standard_id)
+    check_institution_access(std.institution_id if std else None, current_user)
+
+    if data.standard_id is not None and data.standard_id != subject.standard_id:
+        target_std = await db.get(Standard, data.standard_id)
+        if not target_std:
+            raise HTTPException(status_code=404, detail="Target standard not found")
+        check_institution_access(target_std.institution_id, current_user)
 
     update_dict = data.model_dump(exclude_unset=True)
     if "passing_marks" in update_dict and update_dict["passing_marks"] is not None:
@@ -1352,6 +1398,10 @@ async def delete_subject(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal")),
 ):
+    sub = await db.get(Subject, subject_id)
+    if sub:
+        std = await db.get(Standard, sub.standard_id)
+        check_institution_access(std.institution_id if std else None, current_user)
     if permanent:
         return await SafeDeleteService.execute_safe_delete(
             db=db, entity_type="subject", entity_id=subject_id, current_user=current_user

@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.87.0] - 2026-11-12
+### Added
+- **Homework & Assignment Management Enhancement (Phases 1–15)**:
+  - **Schema & Migration (`045_homework_enhancement`)**: Added assignment snapshot (`original_recipient_count`), late-joiner inclusion policy (`late_joiner_policy`), `estimated_duration_minutes`, configurable `assignment_types`, per-student overrides (`custom_due_date`, `custom_instructions`, `custom_attachments`), recipient addition audit (`is_late_addition`, `addition_reason`), view tracking (`viewed_at`), versioned student submissions (`submission_version`, `submission_history`), teacher feedback attachments & evaluation history (`teacher_feedback_attachments`, `evaluation_history`), and separated `homework:publish`, `homework:evaluate`, `homework:reports`, `homework:settings` permissions.
+  - **Backend API & Service Extensions**:
+    - Secure file upload and isolated download endpoints (`/api/v1/homework/files/upload`, `/api/v1/homework/files/{file_id}/download`) validating MIME type, extension allowlist, size limit (`max_file_size_mb`), and tenant/student ownership.
+    - Recipient preview (`/api/v1/homework/recipients/preview`), student search (`/api/v1/homework/students/search`), draft publish/close/reopen, manual late-joiner sync (`/sync-late-joiners`), and automatic enrollment hook in `students.py`.
+    - Deduplicated `IN_APP` notifications via `CommunicationLog` (`HW_%` event keys) and reminder sweep (`/api/v1/homework/reminders/run`).
+    - Student Homework Dashboard (`/api/v1/homework/dashboards/student`), Batch Report (`/api/v1/homework/reports/batch/{assignment_id}`), Institute Homework Analytics (`/api/v1/homework/reports/analytics`), and Admin Settings (`/api/v1/homework/settings`).
+    - Fixed Checking Register `search`/`review_status` optional params on internal calls and normalized custom attachment ID binding.
+  - **Frontend UI & Governance**:
+    - Teacher Workspace quick-launch entry (`TeacherManagement.tsx` + `TeacherPayroll.tsx`) routing into `/homework/*` tabs under Rule 010 View-First Edit Mode.
+    - Refactored `HomeworkWorkspace.tsx` + modular components (`HomeworkCreateForm.tsx`, `HomeworkSubmissionsTab.tsx`, `HomeworkTemplatesTab.tsx`, `HomeworkReportsAndSettingsTab.tsx`) with Excel (`.xlsx`) & CSV exports via `write-excel-file`.
+    - Extended Student Portal `My Homework` tab (`StudentDashboard.tsx`) with 6 Student KPIs, unread notifications, downloadable attachments/feedback, auto `markViewed`, file uploads, and versioned submission history.
+
 ## [1.76.0] - 2026-11-10
 ### Added
 - **Universal Report Calculation & Intelligence Engine**:

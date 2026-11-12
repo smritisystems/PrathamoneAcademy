@@ -11,12 +11,12 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Request, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, desc, and_
 from sqlalchemy.orm import selectinload
@@ -47,6 +47,7 @@ from app.services.payment_gateway import (
     update_payment_gateway_config,
     create_gateway_order,
     verify_and_post_gateway_payment,
+    verify_webhook_signature,
 )
 from app.services.payment_workflow_service import (
     get_payment_workflow_settings,
@@ -62,6 +63,46 @@ from pydantic import BaseModel, Field
 router = APIRouter()
 
 APPROVER_ROLES = {"superadmin", "sysadmin", "super_admin", "admin", "principal"}
+PAYMENT_STAFF_VIEW_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "staff",
+    "counselor",
+    "counsellor",
+    "receptionist",
+)
+PAYMENT_EXPORT_ROLES = (
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "staff",
+)
+
+
+def _authorize_payment_record_access(
+    record_student_id: Optional[int],
+    record_institution_id: Optional[int],
+    current_user,
+) -> None:
+    """Enforces role/self ownership and multi-tenant scoping for payment & receipt reads."""
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        if not record_student_id or getattr(current_user, "student_id", None) != record_student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: Students can only access their own payment receipts.",
+            )
+    elif not is_sysadmin(current_user) and role not in PAYMENT_STAFF_VIEW_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+    if record_institution_id is not None:
+        check_institution_access(record_institution_id, current_user)
 
 
 class FinancialPeriodCreate(BaseModel):
@@ -458,8 +499,11 @@ async def submit_draft_payment(
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
-    if payment.student:
-        check_institution_access(payment.student.institution_id, current_user)
+    _authorize_payment_record_access(
+        payment.student_id,
+        payment.student.institution_id if payment.student else None,
+        current_user,
+    )
     if payment.status != "draft":
         raise HTTPException(status_code=400, detail=f"Cannot submit payment in '{payment.status}' state")
 
@@ -654,8 +698,11 @@ async def approve_payment(
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
-    if payment.student:
-        check_institution_access(payment.student.institution_id, current_user)
+    _authorize_payment_record_access(
+        payment.student_id,
+        payment.student.institution_id if payment.student else None,
+        current_user,
+    )
     if payment.status != "submitted":
         raise HTTPException(status_code=400, detail=f"Cannot approve payment in '{payment.status}' state")
 
@@ -701,8 +748,11 @@ async def post_payment(
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
-    if payment.student:
-        check_institution_access(payment.student.institution_id, current_user)
+    _authorize_payment_record_access(
+        payment.student_id,
+        payment.student.institution_id if payment.student else None,
+        current_user,
+    )
 
     effective_inst_id = getattr(current_user, "institution_id", None) or 1
     settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
@@ -777,8 +827,11 @@ async def update_payment(
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
-    if payment.student:
-        check_institution_access(payment.student.institution_id, current_user)
+    _authorize_payment_record_access(
+        payment.student_id,
+        payment.student.institution_id if payment.student else None,
+        current_user,
+    )
 
     effective_reason = (data.reason or data.edit_reason or "").strip()
     # Mandatory audit reason validation for submitted or posted payments
@@ -842,7 +895,7 @@ async def update_payment(
 async def reprint_receipt(
     receipt_number: str,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*PAYMENT_EXPORT_ROLES)),
 ):
     """Increments reprint count and records duplicate copy issuance."""
     result = await db.execute(
@@ -887,11 +940,19 @@ async def cancel_receipt(
 ):
     """Explicitly marks an issued receipt voucher as cancelled without deleting the historical record."""
     result = await db.execute(
-        select(PaymentReceipt).where(PaymentReceipt.receipt_number == receipt_number)
+        select(PaymentReceipt)
+        .options(selectinload(PaymentReceipt.payment).selectinload(Payment.student))
+        .where(PaymentReceipt.receipt_number == receipt_number)
     )
     receipt = result.scalar_one_or_none()
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
+    if receipt.payment and receipt.payment.student:
+        check_institution_access(receipt.payment.student.institution_id, current_user)
+    elif receipt.student_id:
+        std = await db.get(Student, receipt.student_id)
+        if std:
+            check_institution_access(std.institution_id, current_user)
     if receipt.status == "cancelled":
         raise HTTPException(status_code=400, detail="Receipt is already cancelled")
 
@@ -1177,7 +1238,7 @@ async def list_refunds(
     status: Optional[str] = None,
     institution_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*PAYMENT_STAFF_VIEW_ROLES)),
 ):
     """Lists refund records with student and payment metadata."""
     if institution_id is not None:
@@ -1364,6 +1425,17 @@ async def list_payments(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role == "student":
+        linked_student_id = getattr(current_user, "student_id", None)
+        if not linked_student_id:
+            raise HTTPException(status_code=403, detail="No student profile linked to this account.")
+        if student_id is not None and student_id != linked_student_id:
+            raise HTTPException(status_code=403, detail="Students can only list their own payments.")
+        student_id = linked_student_id
+    elif not is_sysadmin(current_user) and role not in PAYMENT_STAFF_VIEW_ROLES:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
     if institution_id is not None:
         check_institution_access(institution_id, current_user)
         effective_inst_id = institution_id
@@ -1458,7 +1530,7 @@ async def list_receipts(
     institution_id: Optional[int] = None,
     search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*PAYMENT_STAFF_VIEW_ROLES)),
 ):
     if institution_id is not None:
         check_institution_access(institution_id, current_user)
@@ -1577,8 +1649,11 @@ async def get_payment(
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
-    if payment.student:
-        check_institution_access(payment.student.institution_id, current_user)
+    _authorize_payment_record_access(
+        payment.student_id,
+        payment.student.institution_id if payment.student else None,
+        current_user,
+    )
     
     curr_rec = next((r for r in payment.receipts if r.status == "valid"), None) if payment.receipts else None
     return {
@@ -1626,8 +1701,11 @@ async def reverse_payment(
     payment = result.scalar_one_or_none()
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
-    if payment.student:
-        check_institution_access(payment.student.institution_id, current_user)
+    _authorize_payment_record_access(
+        payment.student_id,
+        payment.student.institution_id if payment.student else None,
+        current_user,
+    )
     if payment.status == "reversed":
         raise HTTPException(status_code=400, detail="Payment already reversed")
 
@@ -2085,12 +2163,15 @@ async def get_receipt(
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
+    rec_inst_id = None
+    rec_stu_id = receipt.student_id or (receipt.payment.student_id if receipt.payment else None)
     if receipt.payment and receipt.payment.student:
-        check_institution_access(receipt.payment.student.institution_id, current_user)
+        rec_inst_id = receipt.payment.student.institution_id
     elif receipt.student_id:
         std = await db.get(Student, receipt.student_id)
         if std:
-            check_institution_access(std.institution_id, current_user)
+            rec_inst_id = std.institution_id
+    _authorize_payment_record_access(rec_stu_id, rec_inst_id, current_user)
 
     return await build_receipt_response(db, receipt, current_user=current_user)
 
@@ -2226,15 +2307,16 @@ async def get_receipt_pdf(
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
 
-    student_inst_id = 1
+    student_inst_id = None
+    rec_stu_id = receipt.student_id or (receipt.payment.student_id if receipt.payment else None)
     if receipt.payment and receipt.payment.student:
         student_inst_id = receipt.payment.student.institution_id or 1
-        check_institution_access(student_inst_id, current_user)
     elif receipt.student_id:
         std = await db.get(Student, receipt.student_id)
         if std:
             student_inst_id = std.institution_id or 1
-            check_institution_access(student_inst_id, current_user)
+    _authorize_payment_record_access(rec_stu_id, student_inst_id, current_user)
+    student_inst_id = student_inst_id or 1
 
     receipt_payload = await build_receipt_response(db, receipt, current_user=current_user)
     institution_dict = await get_institution_dict(db, student_inst_id)
@@ -2266,7 +2348,7 @@ async def get_receipt_pdf(
 async def export_bulk_receipts_zip(
     payload: BulkReceiptPdfRequest,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*PAYMENT_EXPORT_ROLES)),
 ):
     """
     Generates individual PDFs for all selected receipts and returns a ZIP archive
@@ -2289,23 +2371,20 @@ async def export_bulk_receipts_zip(
             failed_receipts.append(r_num)
             continue
 
-        student_inst_id = 1
+        student_inst_id = None
         if receipt.payment and receipt.payment.student:
-            student_inst_id = receipt.payment.student.institution_id or 1
-            try:
-                check_institution_access(student_inst_id, current_user)
-            except HTTPException:
-                failed_receipts.append(r_num)
-                continue
+            student_inst_id = receipt.payment.student.institution_id
         elif receipt.student_id:
             std = await db.get(Student, receipt.student_id)
             if std:
-                student_inst_id = std.institution_id or 1
-                try:
-                    check_institution_access(student_inst_id, current_user)
-                except HTTPException:
-                    failed_receipts.append(r_num)
-                    continue
+                student_inst_id = std.institution_id
+
+        try:
+            check_institution_access(student_inst_id, current_user)
+        except HTTPException:
+            failed_receipts.append(r_num)
+            continue
+        student_inst_id = student_inst_id or 1
 
         r_payload = await build_receipt_response(db, receipt, current_user=current_user)
         inst_dict = await get_institution_dict(db, student_inst_id)
@@ -2342,6 +2421,51 @@ async def export_bulk_receipts_zip(
 # ONLINE PAYMENT GATEWAY & UPI ENDPOINTS (Razorpay / UPI)
 # ─────────────────────────────────────────────────────────────────────────────
 
+ONLINE_CHECKOUT_ROLES = {
+    "student",
+    "superadmin",
+    "sysadmin",
+    "super_admin",
+    "admin",
+    "principal",
+    "accountant",
+    "staff",
+}
+
+
+async def _authorize_online_invoice_access(
+    db: AsyncSession,
+    invoice_id: int,
+    current_user,
+) -> int:
+    """Validates role, tenant isolation, and student ownership before online payment operations."""
+    role = (getattr(current_user, "role", "") or "").strip().lower()
+    if role not in ONLINE_CHECKOUT_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Role not authorized for online fee checkout.",
+        )
+    invoice = await db.get(FeeInvoice, invoice_id)
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Fee invoice #{invoice_id} not found.",
+        )
+    student = await db.get(Student, invoice.student_id)
+    if not student:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Student record linked to invoice was not found.",
+        )
+    check_institution_access(student.institution_id, current_user)
+    if role == "student" and getattr(current_user, "student_id", None) != invoice.student_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Students can only access payments for their own fee invoices.",
+        )
+    return student.institution_id
+
+
 @router.get("/online/config")
 async def get_online_gateway_config_endpoint(
     db: AsyncSession = Depends(get_db),
@@ -2350,12 +2474,13 @@ async def get_online_gateway_config_endpoint(
     """Fetches public payment gateway configuration for Razorpay and UPI checkout."""
     inst_id = getattr(current_user, "institution_id", 1) or 1
     config = await get_payment_gateway_config(db, inst_id)
-    # Mask secret key for safety
+    # Mask secret keys for safety
     secret = config.get("razorpay_key_secret", "")
     masked_secret = f"{secret[:4]}••••••••{secret[-4:]}" if len(secret) > 8 else "••••••••"
     safe_config = dict(config)
     safe_config["razorpay_key_secret_masked"] = masked_secret
     safe_config.pop("razorpay_key_secret", None)
+    safe_config.pop("razorpay_webhook_secret", None)
     return safe_config
 
 
@@ -2386,7 +2511,7 @@ async def create_online_order_endpoint(
     Creates a verified online checkout order for a fee invoice.
     Returns Razorpay order parameters, dynamic UPI payment link, and high-contrast SVG QR code.
     """
-    inst_id = getattr(current_user, "institution_id", 1) or 1
+    inst_id = await _authorize_online_invoice_access(db, payload.invoice_id, current_user)
     order_data = await create_gateway_order(
         db=db,
         invoice_id=payload.invoice_id,
@@ -2407,7 +2532,7 @@ async def verify_online_payment_endpoint(
     Cryptographically verifies the Razorpay/UPI payment signature and executes
     authoritative posting: updates fee invoice balances and generates an official receipt.
     """
-    inst_id = getattr(current_user, "institution_id", 1) or 1
+    inst_id = await _authorize_online_invoice_access(db, payload.invoice_id, current_user)
     result = await verify_and_post_gateway_payment(
         db=db,
         order_id=payload.order_id,
@@ -2418,25 +2543,83 @@ async def verify_online_payment_endpoint(
         installment_id=payload.installment_id,
         current_user_id=current_user.id,
         institution_id=inst_id,
+        require_order_record=True,
     )
     return result
 
 
 @router.post("/online/webhook")
 async def online_payment_webhook_endpoint(
-    event: Dict[str, Any],
+    request: Request,
+    x_razorpay_signature: Optional[str] = Header(default=None, alias="X-Razorpay-Signature"),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Server-to-server webhook callback receiver for asynchronous Razorpay events
-    (e.g., payment.captured, order.paid).
+    (e.g., payment.captured, order.paid), strictly protected by HMAC-SHA256 verification.
     """
+    if not x_razorpay_signature:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing X-Razorpay-Signature webhook header.",
+        )
+
+    raw_body = await request.body()
+    try:
+        event = json.loads(raw_body.decode("utf-8"))
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JSON webhook payload.",
+        )
+
     event_type = event.get("event", "")
     payload_data = event.get("payload", {})
     payment_entity = payload_data.get("payment", {}).get("entity", {})
     order_id = payment_entity.get("order_id")
     payment_id = payment_entity.get("id")
     amount_in_paise = payment_entity.get("amount", 0)
+
+    inst_id = None
+    if order_id:
+        order_log = (
+            await db.execute(
+                select(AuditLog)
+                .where(
+                    and_(
+                        AuditLog.action == "ONLINE_PAYMENT_ORDER_CREATED",
+                        AuditLog.resource_type == "gateway_order",
+                        AuditLog.details == str(order_id),
+                    )
+                )
+                .order_by(AuditLog.id.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if order_log and order_log.new_data:
+            try:
+                inst_id = int(json.loads(order_log.new_data).get("institution_id") or 0) or None
+            except Exception:
+                inst_id = None
+
+    if inst_id is None:
+        raw_inv_id = (payment_entity.get("notes") or {}).get("invoice_id")
+        if raw_inv_id is not None and str(raw_inv_id).isdigit():
+            inv_row = await db.get(FeeInvoice, int(raw_inv_id))
+            if inv_row:
+                stu_row = await db.get(Student, inv_row.student_id)
+                if stu_row and stu_row.institution_id:
+                    inst_id = stu_row.institution_id
+
+    inst_id = inst_id or 1
+
+    config = await get_payment_gateway_config(db, inst_id)
+    webhook_secret = config.get("razorpay_webhook_secret") or config.get("razorpay_key_secret", "")
+    if not verify_webhook_signature(raw_body, x_razorpay_signature, webhook_secret):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid webhook cryptographic signature.",
+        )
 
     return {
         "status": "received",
@@ -2455,9 +2638,11 @@ async def list_financial_periods(
     institution_id: Optional[int] = None,
     academic_year_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(require_role(*PAYMENT_STAFF_VIEW_ROLES)),
 ):
     """Lists accounting financial periods with closure status."""
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
     effective_inst_id = institution_id or getattr(current_user, "institution_id", None) or 1
     stmt = select(FinancialPeriod).where(FinancialPeriod.institution_id == effective_inst_id).order_by(FinancialPeriod.start_date.desc())
     if academic_year_id:
@@ -2510,6 +2695,7 @@ async def close_financial_period(
     period = (await db.execute(select(FinancialPeriod).where(FinancialPeriod.id == period_id))).scalar_one_or_none()
     if not period:
         raise HTTPException(status_code=404, detail="Financial period not found")
+    check_institution_access(period.institution_id, current_user)
     if period.is_closed:
         raise HTTPException(status_code=400, detail="Financial period is already closed")
 
@@ -2531,6 +2717,7 @@ async def reopen_financial_period(
     period = (await db.execute(select(FinancialPeriod).where(FinancialPeriod.id == period_id))).scalar_one_or_none()
     if not period:
         raise HTTPException(status_code=404, detail="Financial period not found")
+    check_institution_access(period.institution_id, current_user)
     if not period.is_closed:
         raise HTTPException(status_code=400, detail="Financial period is already open")
 

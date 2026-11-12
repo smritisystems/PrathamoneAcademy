@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Comprehensive unit and specification tests verifying the Enterprise Release & Change Management workspace, tabs, quality gates, and approval lifecycles.
  */
@@ -237,10 +237,16 @@ describe('Release & Change Management Workspace Specifications', () => {
     expect(await screen.findByText(/Official Release Notes/i)).toBeDefined()
   })
 
-  it('opens Generate Release Candidate Draft modal', async () => {
+  it('opens Generate Release Candidate Draft modal when Edit Mode is enabled', async () => {
     renderComponent()
 
-    const generateBtn = await screen.findByRole('button', { name: /Generate Release Candidate/i })
+    const generateBtn = (await screen.findByRole('button', { name: /Generate Release Candidate/i })) as HTMLButtonElement
+    // Rule 010 View-First Lock: disabled until Edit Mode is active
+    expect(generateBtn.disabled).toBe(true)
+
+    fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
+    expect(generateBtn.disabled).toBe(false)
+
     fireEvent.click(generateBtn)
 
     expect(await screen.findByText('Generate Release Candidate Draft')).toBeDefined()

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -24,13 +24,24 @@ import {
   FileText, User, Bell, Clock, MapPin, Phone, Mail, CheckCircle,
   AlertCircle, Download, ChevronRight, Save, RefreshCw, ShieldAlert,
   FileCheck, Upload, MessageSquare, Paperclip, AlertTriangle, CheckCircle2,
-  XCircle, Send, Sparkles
+  XCircle, Send, Sparkles, Presentation
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { studentPortalApi, studentsApi, homeworkApi } from '../api/endpoints'
+import { studentPortalApi, studentsApi, homeworkApi, eduboardApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { StatusBadge } from '../components/Badge'
-import type { TimetableSlot, StudyMaterialItem, StudentPortalHomeworkItem } from '../types'
+import Modal from '../components/Modal'
+import EduBoardCanvas from '../components/eduboard/EduBoardCanvas'
+import type {
+  TimetableSlot,
+  StudyMaterialItem,
+  StudentPortalHomeworkItem,
+  HomeworkSubmissionFile,
+  StudentHomeworkDashboard,
+  HomeworkNotificationItem,
+  EduBoardSummaryItem,
+  EduBoardDetailItem,
+} from '../types'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
@@ -62,6 +73,11 @@ export default function StudentDashboardPage() {
   const [activeTab, setActiveTab] = useState<PortalTab>('home')
   const [selectedStudentId, setSelectedStudentId] = useState<number | undefined>(urlStudentId)
   const [editSuccessMessage, setEditSuccessMessage] = useState<string | null>(null)
+  const [isProfileEditMode, setIsProfileEditMode] = useState(false)
+
+  useEffect(() => {
+    setIsProfileEditMode(false)
+  }, [activeTab, selectedStudentId])
 
   useEffect(() => {
     if (urlStudentId) {
@@ -121,11 +137,31 @@ export default function StudentDashboardPage() {
     enabled: activeTab === 'fees',
   })
 
-  // 8. Fetch Study Materials
+  // 8. Fetch Study Materials & Published EduBoard Lecture Boards
   const { data: materialsData } = useQuery({
     queryKey: ['student-portal-materials', effectiveId],
     queryFn: () => studentPortalApi.getStudyMaterials({ student_id: effectiveId }).then((r) => r.data),
     enabled: activeTab === 'materials',
+  })
+
+  const { data: studentEduBoardsData } = useQuery({
+    queryKey: ['student-portal-eduboards', effectiveId],
+    queryFn: () =>
+      typeof eduboardApi?.listStudentBoards === 'function'
+        ? eduboardApi.listStudentBoards(effectiveId).then((r) => r.data)
+        : Promise.resolve({ items: [] as EduBoardSummaryItem[], total: 0 }),
+    enabled: activeTab === 'materials' || activeTab === 'home',
+  })
+
+  const [selectedEduBoardId, setSelectedEduBoardId] = useState<number | null>(null)
+  const [viewerPageIdx, setViewerPageIdx] = useState<number>(0)
+  const { data: activeEduBoardDetail, isLoading: loadingEduBoardDetail } = useQuery<EduBoardDetailItem | null>({
+    queryKey: ['student-portal-eduboard-detail', selectedEduBoardId, effectiveId],
+    queryFn: () =>
+      selectedEduBoardId && typeof eduboardApi?.getStudentBoardDetail === 'function'
+        ? eduboardApi.getStudentBoardDetail(selectedEduBoardId, effectiveId).then((r) => r.data)
+        : Promise.resolve(null),
+    enabled: !!selectedEduBoardId,
   })
 
   // 9. Fetch Profile
@@ -135,12 +171,14 @@ export default function StudentDashboardPage() {
     enabled: activeTab === 'profile',
   })
 
-  // 10. Fetch Homework
+  // 10. Fetch Homework, Dashboard KPIs & Notifications
   const [homeworkFilter, setHomeworkFilter] = useState<string>('all')
   const [selectedHwForSubmission, setSelectedHwForSubmission] = useState<StudentPortalHomeworkItem | null>(null)
   const [submitText, setSubmitText] = useState('')
   const [submitFileUrl, setSubmitFileUrl] = useState('')
   const [submitFileName, setSubmitFileName] = useState('')
+  const [uploadedSubmissionFiles, setUploadedSubmissionFiles] = useState<HomeworkSubmissionFile[]>([])
+  const [isUploadingSubFile, setIsUploadingSubFile] = useState(false)
 
   const { data: homeworkData, isLoading: isLoadingHomework, refetch: refetchHomework } = useQuery({
     queryKey: ['student-portal-homework', effectiveId, homeworkFilter],
@@ -151,9 +189,30 @@ export default function StudentDashboardPage() {
     enabled: !!effectiveId,
   })
 
+  const { data: studentHwDash, refetch: refetchStudentHwDash } = useQuery<StudentHomeworkDashboard | undefined>({
+    queryKey: ['student-hw-dashboard', effectiveId],
+    queryFn: () =>
+      typeof homeworkApi.getStudentDashboard === 'function'
+        ? homeworkApi.getStudentDashboard({ student_id: effectiveId }).then((r) => r.data)
+        : Promise.resolve(undefined),
+    enabled: activeTab === 'homework' && !!effectiveId,
+  })
+
+  const { data: hwNotifsData, refetch: refetchHwNotifs } = useQuery<{
+    items: HomeworkNotificationItem[]
+    unread_count: number
+  }>({
+    queryKey: ['student-hw-notifications'],
+    queryFn: () =>
+      typeof homeworkApi.getMyNotifications === 'function'
+        ? homeworkApi.getMyNotifications({ unread_only: true }).then((r) => r.data)
+        : Promise.resolve({ items: [], unread_count: 0 }),
+    enabled: activeTab === 'homework',
+  })
+
   const homeworkItems: StudentPortalHomeworkItem[] = homeworkData?.items || []
   const pendingHomeworkCount = homeworkItems.filter((h) =>
-    ['assigned', 'in_progress', 'pending', 'resubmit_required', 'overdue'].includes(h.status)
+    ['assigned', 'viewed', 'in_progress', 'pending', 'resubmit_required', 'returned', 'reopened', 'overdue'].includes(h.status)
   ).length
 
   const submitHomeworkMutation = useMutation({
@@ -165,12 +224,43 @@ export default function StudentDashboardPage() {
       setSubmitText('')
       setSubmitFileUrl('')
       setSubmitFileName('')
+      setUploadedSubmissionFiles([])
       refetchHomework()
+      refetchStudentHwDash()
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.detail || 'Failed to submit homework.')
     },
   })
+
+  const handleStudentFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0 || !selectedHwForSubmission) return
+    setIsUploadingSubFile(true)
+    try {
+      const added: HomeworkSubmissionFile[] = []
+      for (const f of Array.from(files)) {
+        const res = await homeworkApi.uploadFile(f, 'submission_file', {
+          assignment_id: selectedHwForSubmission.assignment_id,
+          student_record_id: selectedHwForSubmission.record_id,
+        })
+        added.push({
+          file_id: res.data.id,
+          file_url: res.data.file_url,
+          file_name: res.data.file_name || f.name,
+          file_type: res.data.file_type,
+          file_size_bytes: res.data.file_size_bytes,
+        })
+      }
+      setUploadedSubmissionFiles((prev) => [...prev, ...added])
+      toast.success(`Uploaded ${added.length} submission file(s).`)
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'File upload failed.')
+    } finally {
+      setIsUploadingSubFile(false)
+      e.target.value = ''
+    }
+  }
 
   // Profile Form state
   const [profileForm, setProfileForm] = useState({
@@ -202,6 +292,7 @@ export default function StudentDashboardPage() {
     mutationFn: (data: typeof profileForm) =>
       studentPortalApi.updateProfile(data, effectiveId),
     onSuccess: () => {
+      setIsProfileEditMode(false)
       setEditSuccessMessage('Profile details saved successfully!')
       queryClient.invalidateQueries({ queryKey: ['student-portal-profile', effectiveId] })
       queryClient.invalidateQueries({ queryKey: ['student-portal-dashboard', effectiveId] })
@@ -634,31 +725,81 @@ export default function StudentDashboardPage() {
             </div>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="card text-center border-l-4 border-l-primary-500">
-              <p className="text-xs text-gray-500 font-medium">Total Assigned</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{homeworkItems.length}</p>
+          {/* 6 Phase 10 Student Dashboard KPIs */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="card text-center border-l-4 border-l-blue-500">
+              <p className="text-xs text-gray-500 font-medium">New Homework</p>
+              <p className="text-2xl font-bold text-blue-700 mt-1">
+                {studentHwDash?.new_homework ?? homeworkItems.filter((h) => h.status === 'assigned').length}
+              </p>
             </div>
             <div className="card text-center border-l-4 border-l-amber-500">
-              <p className="text-xs text-gray-500 font-medium">Pending Work</p>
+              <p className="text-xs text-gray-500 font-medium">Due Today</p>
               <p className="text-2xl font-bold text-amber-600 mt-1">
-                {homeworkItems.filter((h) => ['assigned', 'in_progress', 'pending'].includes(h.status)).length}
+                {studentHwDash?.due_today ?? 0}
+              </p>
+            </div>
+            <div className="card text-center border-l-4 border-l-indigo-500">
+              <p className="text-xs text-gray-500 font-medium">Upcoming</p>
+              <p className="text-2xl font-bold text-indigo-700 mt-1">
+                {studentHwDash?.upcoming_deadlines ??
+                  homeworkItems.filter((h) => ['assigned', 'viewed', 'in_progress', 'pending'].includes(h.status)).length}
+              </p>
+            </div>
+            <div className="card text-center border-l-4 border-l-rose-500">
+              <p className="text-xs text-gray-500 font-medium">Overdue Work</p>
+              <p className="text-2xl font-bold text-rose-600 mt-1">
+                {studentHwDash?.overdue_work ?? homeworkItems.filter((h) => h.status === 'overdue').length}
               </p>
             </div>
             <div className="card text-center border-l-4 border-l-purple-500">
-              <p className="text-xs text-gray-500 font-medium">Submitted / Review</p>
+              <p className="text-xs text-gray-500 font-medium">Submitted</p>
               <p className="text-2xl font-bold text-purple-600 mt-1">
-                {homeworkItems.filter((h) => ['submitted', 'late_submitted'].includes(h.status)).length}
+                {studentHwDash?.submitted_work ??
+                  homeworkItems.filter((h) => ['submitted', 'late_submitted'].includes(h.submission_status)).length}
               </p>
             </div>
             <div className="card text-center border-l-4 border-l-emerald-500">
-              <p className="text-xs text-gray-500 font-medium">Checked & Graded</p>
+              <p className="text-xs text-gray-500 font-medium">Evaluated</p>
               <p className="text-2xl font-bold text-emerald-600 mt-1">
-                {homeworkItems.filter((h) => ['checked', 'completed'].includes(h.status)).length}
+                {studentHwDash?.evaluated_work ??
+                  homeworkItems.filter((h) => ['done', 'evaluated', 'checked', 'completed'].includes(h.review_status)).length}
               </p>
             </div>
           </div>
+
+          {/* Unread Homework Notification Alerts */}
+          {(hwNotifsData?.items || []).length > 0 && (
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-900">
+                <span className="flex items-center gap-1.5">
+                  <Bell className="w-4 h-4 text-amber-600" />
+                  Homework Updates ({hwNotifsData?.unread_count})
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {(hwNotifsData?.items || []).slice(0, 3).map((n) => (
+                  <div key={n.id} className="flex items-center justify-between gap-2 text-xs bg-white p-2 rounded-lg border border-amber-100">
+                    <div>
+                      <span className="font-bold text-gray-900">{n.subject}: </span>
+                      <span className="text-gray-600">{n.message}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await homeworkApi.markNotificationRead?.(n.id)
+                        refetchHwNotifs()
+                        refetchStudentHwDash()
+                      }}
+                      className="px-2 py-1 text-[11px] font-semibold text-primary-700 hover:bg-primary-50 rounded shrink-0"
+                    >
+                      Mark Read
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Filter Chips */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -705,9 +846,21 @@ export default function StudentDashboardPage() {
                 const isOverdue =
                   hw.status === 'overdue' ||
                   (new Date(`${hw.due_date}T${hw.due_time || '23:59'}`) < new Date() &&
-                    !['submitted', 'late_submitted', 'checked', 'completed', 'excused'].includes(hw.status))
+                    !['submitted', 'late_submitted', 'checked', 'completed', 'evaluated', 'excused'].includes(hw.status))
                 const isPhysical = hw.submission_method === 'physical_notebook' || hw.submission_method === 'in_class'
-                const canSubmit = !isPhysical && ['assigned', 'in_progress', 'pending', 'resubmit_required', 'overdue'].includes(hw.status)
+                const alreadySubmitted = hw.submission_status === 'submitted' || hw.submission_status === 'late'
+                const canResubmit = alreadySubmitted && (hw.allow_resubmission !== false) && hw.status !== 'closed'
+                const canSubmit =
+                  !isPhysical &&
+                  (
+                    ['assigned', 'viewed', 'in_progress', 'pending', 'resubmit_required', 'returned', 'reopened', 'overdue'].includes(hw.status) ||
+                    canResubmit
+                  ) &&
+                  (!isOverdue || hw.allow_late_submissions)
+                const allReferenceAttachments = [
+                  ...(hw.attachments || []),
+                  ...(hw.custom_attachments || []),
+                ]
 
                 return (
                   <div
@@ -721,17 +874,22 @@ export default function StudentDashboardPage() {
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary-100 text-primary-800">
                             {hw.subject_name}
                           </span>
+                          {hw.assignment_type && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-indigo-50 text-indigo-700">
+                              {hw.assignment_type.replace('_', ' ')}
+                            </span>
+                          )}
                           <span className="font-mono text-xs font-semibold text-gray-600">
                             {hw.assignment_code}
                           </span>
                         </div>
                         <span
                           className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                            hw.status === 'checked' || hw.status === 'completed'
+                            ['checked', 'completed', 'evaluated'].includes(hw.status)
                               ? 'bg-emerald-100 text-emerald-800'
-                              : hw.status === 'submitted' || hw.status === 'late_submitted'
+                              : ['submitted', 'late_submitted'].includes(hw.status)
                               ? 'bg-purple-100 text-purple-800'
-                              : hw.status === 'resubmit_required'
+                              : ['resubmit_required', 'returned'].includes(hw.status)
                               ? 'bg-amber-100 text-amber-800'
                               : isOverdue
                               ? 'bg-rose-100 text-rose-800'
@@ -745,11 +903,12 @@ export default function StudentDashboardPage() {
                       {/* Title & Topic */}
                       <div>
                         <h3 className="font-bold text-gray-900 text-base">{hw.title}</h3>
-                        {(hw.chapter || hw.topic) && (
+                        {(hw.chapter || hw.topic || hw.estimated_duration_minutes) && (
                           <p className="text-xs text-gray-500 mt-0.5">
                             {hw.chapter && <span>Chapter: {hw.chapter}</span>}
                             {hw.chapter && hw.topic && <span> &bull; </span>}
                             {hw.topic && <span>Topic: {hw.topic}</span>}
+                            {hw.estimated_duration_minutes && <span> &bull; ~{hw.estimated_duration_minutes} mins</span>}
                           </p>
                         )}
                       </div>
@@ -759,6 +918,29 @@ export default function StudentDashboardPage() {
                         <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs text-gray-700">
                           <p className="font-semibold text-gray-900 mb-0.5">Instructions:</p>
                           <p className="whitespace-pre-line">{hw.instructions}</p>
+                        </div>
+                      )}
+
+                      {/* Downloadable Reference Attachments */}
+                      {allReferenceAttachments.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {allReferenceAttachments.map((att, idx) => (
+                            <a
+                              key={idx}
+                              href={
+                                typeof homeworkApi.getDownloadUrl === 'function'
+                                  ? homeworkApi.getDownloadUrl(att.file_url)
+                                  : att.file_url
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={() => homeworkApi.markViewed?.(hw.record_id).catch(() => {})}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-primary-50 text-xs font-semibold text-primary-700 border border-slate-200"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>{att.title || `Attachment ${idx + 1}`}</span>
+                            </a>
+                          ))}
                         </div>
                       )}
 
@@ -797,13 +979,13 @@ export default function StudentDashboardPage() {
                       </div>
 
                       {/* Feedback & Grading Section */}
-                      {(hw.review_status === 'checked' || hw.marks_obtained !== null || hw.teacher_remarks) && (
+                      {(['done', 'evaluated', 'checked', 'returned'].includes(hw.review_status) || hw.marks_obtained !== null || hw.teacher_remarks) && (
                         <div className="p-3 rounded-xl border border-emerald-200 bg-emerald-50/60 space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-emerald-900">Teacher Evaluation</span>
-                            {hw.marks_obtained !== null && hw.max_marks && (
+                            {hw.marks_obtained !== null && (
                               <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white">
-                                {hw.marks_obtained} / {hw.max_marks} Marks
+                                {hw.marks_obtained}{hw.max_marks ? ` / ${hw.max_marks}` : ''} Marks
                               </span>
                             )}
                           </div>
@@ -812,19 +994,40 @@ export default function StudentDashboardPage() {
                               &ldquo;{hw.teacher_remarks}&rdquo;
                             </p>
                           )}
+                          {(hw.teacher_feedback_attachments || []).length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {(hw.teacher_feedback_attachments || []).map((fa, idx) => (
+                                <a
+                                  key={idx}
+                                  href={
+                                    typeof homeworkApi.getDownloadUrl === 'function'
+                                      ? homeworkApi.getDownloadUrl(fa.file_url)
+                                      : fa.file_url
+                                  }
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white text-[11px] font-semibold text-emerald-800 border border-emerald-200"
+                                >
+                                  <Download className="w-3 h-3" /> {fa.title || 'Feedback File'}
+                                </a>
+                              ))}
+                            </div>
+                          )}
                           {hw.resubmission_count > 0 && (
                             <p className="text-[10px] text-emerald-700">Resubmissions: {hw.resubmission_count}</p>
                           )}
                         </div>
                       )}
 
-                      {/* Student's Submitted Content (if digital and already submitted) */}
-                      {hw.submission_status === 'submitted' && (hw.submission_text || (hw.submission_files && hw.submission_files.length > 0)) && (
-                        <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs space-y-1">
+                      {/* Student's Submitted Content (versioned) */}
+                      {(hw.submission_status === 'submitted' || hw.submission_status === 'late') && (hw.submission_text || (hw.submission_files && hw.submission_files.length > 0)) && (
+                        <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-gray-800">Your Submitted Work:</span>
+                            <span className="font-semibold text-gray-800">
+                              Your Submitted Work {hw.submission_version ? `(v${hw.submission_version})` : ''}:
+                            </span>
                             {hw.submission_time && (
-                              <span className="text-[10px] text-gray-400">{new Date(hw.submission_time).toLocaleDateString()}</span>
+                              <span className="text-[10px] text-gray-400">{new Date(hw.submission_time).toLocaleString()}</span>
                             )}
                           </div>
                           {hw.submission_text && (
@@ -833,11 +1036,35 @@ export default function StudentDashboardPage() {
                           {hw.submission_files?.map((f, i) => (
                             <div key={i} className="flex items-center gap-1.5 text-primary-700 font-medium">
                               <Paperclip className="w-3.5 h-3.5" />
-                              <a href={f.file_url} target="_blank" rel="noreferrer" className="underline hover:text-primary-900">
+                              <a
+                                href={
+                                  typeof homeworkApi.getDownloadUrl === 'function'
+                                    ? homeworkApi.getDownloadUrl(f.file_url)
+                                    : f.file_url
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline hover:text-primary-900"
+                              >
                                 {f.file_name || `Attachment ${i + 1}`}
                               </a>
                             </div>
                           ))}
+                          {hw.submission_history && hw.submission_history.length > 1 && (
+                            <details className="text-[11px] text-gray-600 pt-1">
+                              <summary className="cursor-pointer font-semibold text-indigo-700">
+                                Version History ({hw.submission_history.length} submissions)
+                              </summary>
+                              <div className="mt-1 space-y-1 pl-2">
+                                {hw.submission_history.map((v, idx) => (
+                                  <div key={idx} className="bg-white p-1.5 rounded border border-gray-100">
+                                    <strong>v{v.version}</strong> &bull; {new Date(v.submitted_at).toLocaleString()}
+                                    {v.is_late && ' (Late)'}
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          )}
                         </div>
                       )}
                     </div>
@@ -845,20 +1072,24 @@ export default function StudentDashboardPage() {
                     {/* Card Footer Actions */}
                     <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-3">
                       <span className="text-[11px] text-gray-400">
-                        {hw.submission_time ? `Submitted ${new Date(hw.submission_time).toLocaleDateString()}` : 'Not submitted yet'}
+                        {hw.submission_time ? `Submitted ${new Date(hw.submission_time).toLocaleDateString()}` : hw.viewed_at ? 'Viewed' : 'Not submitted yet'}
                       </span>
                       {canSubmit && (
                         <button
                           onClick={() => {
+                            homeworkApi.markViewed?.(hw.record_id).catch(() => {})
                             setSelectedHwForSubmission(hw)
                             setSubmitText(hw.submission_text || '')
-                            setSubmitFileName(hw.submission_files?.[0]?.file_name || '')
-                            setSubmitFileUrl(hw.submission_files?.[0]?.file_url || '')
+                            setUploadedSubmissionFiles(hw.submission_files || [])
+                            setSubmitFileName('')
+                            setSubmitFileUrl('')
                           }}
                           className="px-3 py-1.5 rounded-lg bg-primary-700 hover:bg-primary-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
                         >
                           <Send className="w-3.5 h-3.5" />
-                          {hw.status === 'resubmit_required' ? 'Resubmit Homework' : 'Submit Solution'}
+                          {hw.status === 'resubmit_required' || hw.status === 'returned' || alreadySubmitted
+                            ? 'Resubmit Homework'
+                            : 'Submit Solution'}
                         </button>
                       )}
                     </div>
@@ -1192,6 +1423,122 @@ export default function StudentDashboardPage() {
               ))}
             </div>
           )}
+
+          {/* Published Lecture Boards (PrathamOne EduBoard Read-Only Archive) */}
+          <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Presentation className="w-5 h-5 text-indigo-700" />
+                <h3 className="font-bold text-gray-900">Published Lecture Boards (EduBoard)</h3>
+              </div>
+              <span className="text-xs text-gray-500">
+                {studentEduBoardsData?.items?.length || 0} published board(s)
+              </span>
+            </div>
+
+            {!studentEduBoardsData?.items?.length ? (
+              <p className="text-xs text-gray-500 py-4 text-center">
+                No classroom lecture boards have been published for your enrolled batches yet.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {studentEduBoardsData.items.map((eb: EduBoardSummaryItem) => (
+                  <div
+                    key={eb.id}
+                    className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/30 flex flex-col justify-between gap-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-100 text-indigo-800">
+                          {eb.board_mode_default}
+                        </span>
+                        <span className="text-[11px] text-gray-500 font-mono">{eb.page_count} page(s)</span>
+                      </div>
+                      <h4 className="font-bold text-gray-900 mt-2 text-sm">{eb.title}</h4>
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        {eb.subject_name || 'Subject'} · {eb.teacher_name || 'Faculty'}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-indigo-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setViewerPageIdx(0)
+                          setSelectedEduBoardId(eb.id)
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700"
+                      >
+                        <Presentation className="w-3.5 h-3.5" /> View Lecture Board
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const res = await eduboardApi.exportBoardPdfBlob(eb.id)
+                            const url = URL.createObjectURL(res.data)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `${eb.board_code}_notes.pdf`
+                            document.body.appendChild(a)
+                            a.click()
+                            a.remove()
+                            setTimeout(() => URL.revokeObjectURL(url), 1000)
+                          } catch {
+                            toast.error('Failed to download lecture PDF')
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Export PDF
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Modal
+            isOpen={!!selectedEduBoardId}
+            onClose={() => setSelectedEduBoardId(null)}
+            title={activeEduBoardDetail ? `${activeEduBoardDetail.title} (Read-Only)` : 'Lecture Board Viewer'}
+          >
+            {loadingEduBoardDetail ? (
+              <p className="text-xs text-slate-500 py-8 text-center">Loading lecture board...</p>
+            ) : activeEduBoardDetail?.pages?.length ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span>
+                    Page {viewerPageIdx + 1} of {activeEduBoardDetail.pages.length}:{' '}
+                    <strong>{activeEduBoardDetail.pages[viewerPageIdx]?.title}</strong>
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      disabled={viewerPageIdx === 0}
+                      onClick={() => setViewerPageIdx((i) => Math.max(0, i - 1))}
+                      className="px-2.5 py-1 rounded border border-slate-300 disabled:opacity-40"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      disabled={viewerPageIdx >= activeEduBoardDetail.pages.length - 1}
+                      onClick={() =>
+                        setViewerPageIdx((i) => Math.min(activeEduBoardDetail.pages.length - 1, i + 1))
+                      }
+                      className="px-2.5 py-1 rounded border border-slate-300 disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+                <EduBoardCanvas page={activeEduBoardDetail.pages[viewerPageIdx]} readOnly={true} />
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 py-8 text-center">No slides available in this board.</p>
+            )}
+          </Modal>
         </div>
       )}
 
@@ -1211,13 +1558,36 @@ export default function StudentDashboardPage() {
               <div className="flex items-center gap-2">
                 <User className="w-5 h-5 text-primary-700" />
                 <h3 className="font-bold text-gray-900">Student Personal & Contact Profile</h3>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${isProfileEditMode ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+                  {isProfileEditMode ? 'Edit Mode' : 'View Mode'}
+                </span>
               </div>
-              <span className="text-xs text-gray-400">Editable by student/guardian</span>
+              {!isProfileEditMode ? (
+                <button
+                  type="button"
+                  onClick={() => setIsProfileEditMode(true)}
+                  className="btn-secondary text-xs py-1.5 px-3"
+                >
+                  Edit Contact Details
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsProfileEditMode(false)}
+                  className="btn-secondary text-xs py-1.5 px-3"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </div>
 
             <form
               onSubmit={(e) => {
                 e.preventDefault()
+                if (!isProfileEditMode) {
+                  toast.error('Activate Edit Mode above before saving profile changes.')
+                  return
+                }
                 profileMutation.mutate(profileForm)
               }}
               className="space-y-4"
@@ -1242,9 +1612,10 @@ export default function StudentDashboardPage() {
                   <label className="text-xs font-medium text-gray-700">Phone Number</label>
                   <input
                     type="text"
+                    disabled={!isProfileEditMode}
                     value={profileForm.phone}
                     onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                    className="form-input text-sm mt-1"
+                    className="form-input text-sm mt-1 disabled:bg-gray-50 disabled:text-gray-600"
                     placeholder="Enter contact number"
                   />
                 </div>
@@ -1252,9 +1623,10 @@ export default function StudentDashboardPage() {
                   <label className="text-xs font-medium text-gray-700">Email Address</label>
                   <input
                     type="email"
+                    disabled={!isProfileEditMode}
                     value={profileForm.email}
                     onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                    className="form-input text-sm mt-1"
+                    className="form-input text-sm mt-1 disabled:bg-gray-50 disabled:text-gray-600"
                     placeholder="student@example.com"
                   />
                 </div>
@@ -1262,9 +1634,10 @@ export default function StudentDashboardPage() {
                   <label className="text-xs font-medium text-gray-700">Blood Group</label>
                   <input
                     type="text"
+                    disabled={!isProfileEditMode}
                     value={profileForm.blood_group}
                     onChange={(e) => setProfileForm({ ...profileForm, blood_group: e.target.value })}
-                    className="form-input text-sm mt-1"
+                    className="form-input text-sm mt-1 disabled:bg-gray-50 disabled:text-gray-600"
                     placeholder="e.g. O+, B+, A+"
                   />
                 </div>
@@ -1275,9 +1648,10 @@ export default function StudentDashboardPage() {
                   <label className="text-xs font-medium text-gray-700">Residential Address</label>
                   <input
                     type="text"
+                    disabled={!isProfileEditMode}
                     value={profileForm.address}
                     onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
-                    className="form-input text-sm mt-1"
+                    className="form-input text-sm mt-1 disabled:bg-gray-50 disabled:text-gray-600"
                     placeholder="Street, Building, Landmark"
                   />
                 </div>
@@ -1285,9 +1659,10 @@ export default function StudentDashboardPage() {
                   <label className="text-xs font-medium text-gray-700">City</label>
                   <input
                     type="text"
+                    disabled={!isProfileEditMode}
                     value={profileForm.city}
                     onChange={(e) => setProfileForm({ ...profileForm, city: e.target.value })}
-                    className="form-input text-sm mt-1"
+                    className="form-input text-sm mt-1 disabled:bg-gray-50 disabled:text-gray-600"
                     placeholder="e.g. Thane / Mumbai"
                   />
                 </div>
@@ -1295,24 +1670,27 @@ export default function StudentDashboardPage() {
                   <label className="text-xs font-medium text-gray-700">Pincode</label>
                   <input
                     type="text"
+                    disabled={!isProfileEditMode}
                     value={profileForm.pincode}
                     onChange={(e) => setProfileForm({ ...profileForm, pincode: e.target.value })}
-                    className="form-input text-sm mt-1"
+                    className="form-input text-sm mt-1 disabled:bg-gray-50 disabled:text-gray-600"
                     placeholder="e.g. 400601"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end pt-3">
-                <button
-                  type="submit"
-                  disabled={profileMutation.isPending}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  {profileMutation.isPending ? 'Saving Details...' : 'Save Profile Changes'}
-                </button>
-              </div>
+              {isProfileEditMode && (
+                <div className="flex justify-end pt-3">
+                  <button
+                    type="submit"
+                    disabled={profileMutation.isPending}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    {profileMutation.isPending ? 'Saving Details...' : 'Save Profile Changes'}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
 
@@ -1392,10 +1770,44 @@ export default function StudentDashboardPage() {
                 />
               </div>
 
+              {/* Secure Multi-File Upload */}
+              <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700">Upload Homework Files (PDF / Image / Doc)</span>
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{isUploadingSubFile ? 'Uploading...' : 'Select Files'}</span>
+                    <input
+                      type="file"
+                      multiple
+                      disabled={isUploadingSubFile}
+                      onChange={handleStudentFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                {uploadedSubmissionFiles.length > 0 && (
+                  <div className="space-y-1">
+                    {uploadedSubmissionFiles.map((f, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-xs bg-white px-2.5 py-1.5 rounded border border-slate-200">
+                        <span className="truncate font-medium text-slate-700">{f.file_name || `File ${idx + 1}`}</span>
+                        <button
+                          type="button"
+                          onClick={() => setUploadedSubmissionFiles((prev) => prev.filter((_, i) => i !== idx))}
+                          className="text-rose-500 hover:text-rose-700 text-[11px] font-bold ml-2"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-semibold text-gray-700 block mb-1">
-                    Attachment / Document Name
+                    Optional External File Name
                   </label>
                   <input
                     type="text"
@@ -1407,13 +1819,13 @@ export default function StudentDashboardPage() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-700 block mb-1">
-                    Document File Link / URL
+                    Optional External Link / URL
                   </label>
                   <input
                     type="text"
                     value={submitFileUrl}
                     onChange={(e) => setSubmitFileUrl(e.target.value)}
-                    placeholder="https://drive.google.com/... or cloud url"
+                    placeholder="https://..."
                     className="w-full text-xs p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
                   />
                 </div>
@@ -1430,11 +1842,18 @@ export default function StudentDashboardPage() {
               </button>
               <button
                 type="button"
-                disabled={submitHomeworkMutation.isPending || (!submitText.trim() && !submitFileUrl.trim())}
+                disabled={
+                  submitHomeworkMutation.isPending ||
+                  isUploadingSubFile ||
+                  (!submitText.trim() && uploadedSubmissionFiles.length === 0 && !submitFileUrl.trim())
+                }
                 onClick={() => {
-                  const files = submitFileUrl.trim()
-                    ? [{ file_url: submitFileUrl.trim(), file_name: submitFileName.trim() || 'homework_solution' }]
-                    : []
+                  const files = [
+                    ...uploadedSubmissionFiles,
+                    ...(submitFileUrl.trim()
+                      ? [{ file_url: submitFileUrl.trim(), file_name: submitFileName.trim() || 'homework_solution' }]
+                      : []),
+                  ]
                   submitHomeworkMutation.mutate({
                     recordId: selectedHwForSubmission.record_id,
                     data: {

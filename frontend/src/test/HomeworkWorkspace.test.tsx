@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Comprehensive Vitest test suite for Homework & Assignment Management System workspace.
  */
@@ -55,10 +55,21 @@ vi.mock('../api/endpoints', () => ({
     list: vi.fn(),
   },
   homeworkApi: {
+    getSettings: vi.fn(),
+    updateSettings: vi.fn(),
+    uploadFile: vi.fn(),
+    getDownloadUrl: (u: string) => u,
+    searchStudents: vi.fn(),
+    previewRecipients: vi.fn(),
     listAssignments: vi.fn(),
     createAssignment: vi.fn(),
     getAssignment: vi.fn(),
+    publishAssignment: vi.fn(),
+    closeAssignment: vi.fn(),
+    reopenAssignment: vi.fn(),
+    syncLateJoiners: vi.fn(),
     getCheckingRegister: vi.fn(),
+    evaluateRecord: vi.fn(),
     checkStudentPhysicalHomework: vi.fn(),
     bulkCheckPhysicalHomework: vi.fn(),
     submitHomework: vi.fn(),
@@ -67,6 +78,11 @@ vi.mock('../api/endpoints', () => ({
     exemptStudent: vi.fn(),
     getTeacherDashboard: vi.fn(),
     getDailyRegisterReport: vi.fn(),
+    getBatchReport: vi.fn(),
+    getInstituteAnalytics: vi.fn(),
+    getMyNotifications: vi.fn(),
+    runReminders: vi.fn(),
+    listTemplates: vi.fn(),
   },
 }))
 
@@ -185,6 +201,65 @@ describe('HomeworkWorkspace Component Suite', () => {
       },
     } as any)
 
+    vi.mocked(homeworkApi.getSettings).mockResolvedValue({
+      data: {
+        allowed_extensions: ['pdf', 'doc', 'docx', 'png', 'jpg'],
+        max_file_size_mb: 10,
+        custom_assignment_types: [],
+        available_assignment_types: ['homework', 'classwork', 'worksheet', 'project'],
+        default_late_joiner_policy: 'manual',
+        reminder_hours_before_due: 24,
+        pending_eval_alert_threshold: 5,
+        allow_parent_portal_view: true,
+      },
+    } as any)
+
+    vi.mocked(homeworkApi.getBatchReport).mockResolvedValue({
+      data: {
+        assignment_id: 1,
+        assignment_code: 'HW-2026-0001',
+        title: 'Quadratic Equations Exercise 4.2',
+        due_date: '2026-11-15',
+        max_marks: 25,
+        original_recipient_count: 25,
+        summary: mockAssignments[0].summary,
+        rows: [
+          {
+            record_id: 101,
+            student_id: 501,
+            student_name: 'Aarav Sharma',
+            admission_number: 'ADM-101',
+            roll_number: '12',
+            assignment_status: 'assigned',
+            submission_status: 'pending',
+            marks_obtained: null,
+            max_marks: 25,
+            feedback: null,
+            review_status: 'pending',
+            is_late_addition: false,
+            submission_version: 0,
+          },
+        ],
+      },
+    } as any)
+
+    vi.mocked(homeworkApi.listTemplates).mockResolvedValue({
+      data: {
+        templates: [
+          {
+            id: 99,
+            title: 'Weekly Formula Drill',
+            assignment_type: 'practice',
+            standard_id: 10,
+            subject_id: 1,
+            topic: 'Algebra',
+            max_marks: 20,
+            submission_method: 'pdf_document',
+          },
+        ],
+      },
+    } as any)
+
     vi.mocked(homeworkApi.getDailyRegisterReport).mockResolvedValue({
       data: {
         date: '2026-11-11',
@@ -256,6 +331,51 @@ describe('HomeworkWorkspace Component Suite', () => {
     await waitFor(() => {
       expect(screen.getByText('Print Homework Register')).toBeDefined()
       expect(screen.getByText('All Batches')).toBeDefined()
+    })
+  })
+
+  it('renders Create Homework tab with Batch, Individual Student & Selected Group target selector', async () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/homework/create']}>
+          <HomeworkWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Create Homework or Assignment')).toBeDefined()
+      expect(screen.getByText('Review Recipient Count')).toBeDefined()
+      expect(screen.getByText('Save as Draft')).toBeDefined()
+      expect(screen.getByText('Publish & Notify Students')).toBeDefined()
+    })
+  })
+
+  it('renders Digital Submissions tab and Templates Library tab without dead routes', async () => {
+    const { unmount } = render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/homework/submissions?assignment_id=1']}>
+          <HomeworkWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Digital Submissions')).toBeDefined()
+    })
+    unmount()
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/homework/templates']}>
+          <HomeworkWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Reusable Homework & Worksheet Templates')).toBeDefined()
+      expect(screen.getByText('Weekly Formula Drill')).toBeDefined()
     })
   })
 })

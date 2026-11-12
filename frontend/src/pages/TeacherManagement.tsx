@@ -862,6 +862,67 @@ function TeacherManagementContent() {
             </div>
           </div>
 
+          {/* Teacher Workspace → Homework & Assignments Quick Launch */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 flex items-center justify-center shrink-0">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Teacher Workspace → Homework &amp; Assignments
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Direct shortcuts to assign batch or individual work, review student submissions, evaluate, and view reports.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/homework/create?type=homework"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700 transition-colors shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" /> Create Homework
+              </Link>
+              <Link
+                to="/homework/create?type=project"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+              >
+                <Layers className="w-3.5 h-3.5" /> Create Assignment
+              </Link>
+              <Link
+                to="/homework/overview"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors"
+              >
+                <BookOpen className="w-3.5 h-3.5" /> View Assigned Work
+              </Link>
+              <Link
+                to="/homework/submissions"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5" /> Review Submissions
+              </Link>
+              <Link
+                to="/homework/checking"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" /> Evaluate
+              </Link>
+              <Link
+                to="/homework/reports"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors"
+              >
+                <Activity className="w-3.5 h-3.5" /> Reports
+              </Link>
+              <Link
+                to="/eduboard"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs"
+              >
+                <BookOpen className="w-3.5 h-3.5" /> Open EduBoard
+              </Link>
+            </div>
+          </div>
+
           {/* Visual Charts: Donut & Monthly Teaching Hours */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-2xs">

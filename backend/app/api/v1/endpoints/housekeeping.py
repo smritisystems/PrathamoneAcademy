@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description Protected REST API endpoints for the Housekeeping Module: DB backups, verification, retention pruning, sandbox restore drills, guarded production restore, vacuum maintenance, and backup schedules.
 #  */
@@ -23,25 +23,28 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import has_permission, require_role
+from app.core.deps import check_institution_access, require_sysadmin
 from app.models.user import User
 from app.services.financial_governance_service import FinancialFilter, FinancialGovernanceService
 from app.services.housekeeping_service import HousekeepingService, read_history_events
 
 router = APIRouter(tags=["housekeeping"])
 
+MAX_BACKUP_UPLOAD_BYTES = 500 * 1024 * 1024  # 500 MB hard upload cap
+
 
 async def _require_housekeeping_access(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("superadmin", "admin", "sysadmin")),
+    current_user: User = Depends(require_sysadmin),
 ) -> User:
-    allowed = await has_permission(db, current_user, "system", "housekeeping")
-    if not allowed and (current_user.role or "").lower() not in ("superadmin", "super_admin", "sysadmin", "admin"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions: Housekeeping requires admin/sysadmin authority or 'system:housekeeping' privilege.",
-        )
+    """Cluster-wide database backup, restore, vacuum, and archival controls require SysAdmin."""
     return current_user
+
+
+def _resolve_housekeeping_inst_id(institution_id: Optional[int], current_user: User) -> int:
+    if institution_id is not None:
+        check_institution_access(institution_id, current_user)
+        return institution_id
+    return current_user.institution_id or 1
 
 
 class CreateBackupRequest(BaseModel):
@@ -113,7 +116,7 @@ async def get_housekeeping_overview(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     return await HousekeepingService.get_overview_telemetry(db, inst_id)
 
 
@@ -133,7 +136,7 @@ async def create_database_backup(
 ):
     if payload.backup_format not in ("edu", "edu_sql", "custom", "plain_sql"):
         raise HTTPException(status_code=400, detail="backup_format must be 'edu', 'edu_sql', 'custom', or 'plain_sql'")
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     try:
         policy = await HousekeepingService.get_housekeeping_policy(db, inst_id)
         mirror = payload.mirror_dir if payload.mirror_dir is not None else policy.get("offsite_mirror_path")
@@ -190,7 +193,20 @@ async def upload_database_backup(
     file: UploadFile = File(...),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    raw = await file.read()
+    chunks = []
+    total_size = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total_size += len(chunk)
+        if total_size > MAX_BACKUP_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Uploaded backup exceeds maximum allowed size of 500 MB",
+            )
+        chunks.append(chunk)
+    raw = b"".join(chunks)
     try:
         return await HousekeepingService.save_uploaded_backup(file.filename or "upload.dump", raw, user=current_user)
     except RuntimeError as e:
@@ -269,7 +285,7 @@ async def run_housekeeping_reconciliation(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     return await FinancialGovernanceService.reconcile_financial_ledgers(
         db,
         FinancialFilter(institution_id=inst_id, is_demo=is_demo),
@@ -282,7 +298,7 @@ async def get_housekeeping_policy(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     return await HousekeepingService.get_housekeeping_policy(db, inst_id)
 
 
@@ -293,8 +309,13 @@ async def update_housekeeping_policy(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     updates = payload.model_dump(exclude_unset=True)
+    if updates.get("offsite_mirror_path"):
+        try:
+            HousekeepingService.validate_mirror_dir(updates["offsite_mirror_path"])
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
     reason = updates.pop("reason", "Housekeeping policy updated")
     return await HousekeepingService.update_housekeeping_policy(
         db=db,
@@ -336,7 +357,7 @@ async def preview_housekeeping_log_cleanup(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     try:
         return await HousekeepingService.preview_log_cleanup(
             db, institution_id=inst_id, retention_days=retention_days, categories=categories
@@ -352,7 +373,7 @@ async def execute_housekeeping_log_cleanup(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     try:
         return await HousekeepingService.execute_log_cleanup(
             db,
@@ -386,7 +407,7 @@ async def get_housekeeping_alerts(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     return await HousekeepingService.evaluate_health_alerts(db, institution_id=inst_id)
 
 
@@ -397,7 +418,7 @@ async def dispatch_housekeeping_alert_email(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(_require_housekeeping_access),
 ):
-    inst_id = institution_id or current_user.institution_id or 1
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     try:
         return await HousekeepingService.dispatch_health_alert_notification(
             db, user=current_user, institution_id=inst_id, recipient_email=payload.recipient_email

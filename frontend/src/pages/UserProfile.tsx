@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-12
  *
  * @description Dedicated user profile management workspace for inspecting activity logs, scopes, and passwords.
  */
@@ -124,6 +124,10 @@ export default function UserProfilePage() {
 
   // ── Actions ─────────────────────────────────────────────────────────────────
   const handleOpenEdit = () => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Enable Edit Mode above to edit this user profile.')
+      return
+    }
     if (!data) return
     setEditForm({
       first_name: data.user.first_name,
@@ -178,6 +182,10 @@ export default function UserProfilePage() {
   }
 
   const handleToggleStatus = async () => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Enable Edit Mode above to change user status.')
+      return
+    }
     if (!id || !data) return
     try {
       const res = await usersApi.toggleStatus(id)
@@ -190,6 +198,10 @@ export default function UserProfilePage() {
   }
 
   const handleResendInvitation = async () => {
+    if (!isEditMode) {
+      toast.error('Locked in View Mode: Enable Edit Mode above to resend invitations.')
+      return
+    }
     if (!id) return
     try {
       const res = await usersApi.resendInvitation(id)
@@ -396,6 +408,10 @@ export default function UserProfilePage() {
             {/* Reset Password Button */}
             <button
               onClick={() => {
+                if (!isEditMode) {
+                  toast.error('Locked in View Mode: Enable Edit Mode above to reset user passwords.')
+                  return
+                }
                 setGeneratedTempPassword(null)
                 setCustomPassword('')
                 setUseAutoGenerate(true)
@@ -420,7 +436,13 @@ export default function UserProfilePage() {
 
             {/* Toggle Status (Activate / Deactivate) */}
             <button
-              onClick={() => setStatusConfirmOpen(true)}
+              onClick={() => {
+                if (!isEditMode) {
+                  toast.error('Locked in View Mode: Enable Edit Mode above to change account status.')
+                  return
+                }
+                setStatusConfirmOpen(true)
+              }}
               className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 ${
                 user.is_active
                   ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100'
