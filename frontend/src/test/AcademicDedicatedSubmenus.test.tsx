@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-08
+ * @updated     2026-11-13
  *
  * @description Dedicated automated test suite verifying all 9 Academic Structure & Management workspaces.
  */
@@ -93,6 +93,38 @@ describe('Academic Submenu Dedicated Workspaces Specification', () => {
       data: [
         { id: 1, division_id: 1, subject_id: 1, day_of_week: 'Monday', start_time: '08:00', end_time: '09:30', room_number: 'Room 101' },
       ],
+    } as any)
+
+    vi.spyOn(endpoints.timetableApi, 'getMatrix').mockResolvedValue({
+      data: {
+        scope: { name: 'Batch 10-A', code: 'B10A' },
+        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        slots: [{ start_time: '08:00', end_time: '09:30', slot_key: '08:00-09:30' }],
+        matrix: {
+          Monday: {
+            '08:00-09:30': {
+              id: 1,
+              subject_name: 'Mathematics',
+              subject_code: 'MATH',
+              division_name: 'Batch 10-A',
+              division_code: 'B10A',
+              room_number: 'Room 101',
+              teacher_name: 'Prof. Sharma',
+              start_time: '08:00',
+              end_time: '09:30',
+              day_of_week: 'Monday',
+            },
+          },
+        },
+        entries: [],
+        summary: {
+          total_sessions: 1,
+          total_hours: 1.5,
+          unique_teachers: 1,
+          unique_subjects: 1,
+          rooms_used: 1,
+        },
+      },
     } as any)
 
     vi.spyOn(endpoints.enrollmentsApi, 'list').mockResolvedValue({

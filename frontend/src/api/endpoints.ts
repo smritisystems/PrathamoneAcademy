@@ -33,7 +33,7 @@ import type {
   ImportHistoryDetail, ExportFilterParams,
   UserManagementStats, UserListItem, UserListResponse, UserProfileWorkspaceData,
   UserCreatePayload, UserUpdatePayload,
-  AcademicSubject, CanonicalSubject, SubjectLegacyMapping, SubjectMappingItem, SubjectDuplicateCheckResult, AcademicTimetableEntry, EnrollmentRecord, EnrollmentStats,
+  AcademicSubject, CanonicalSubject, SubjectLegacyMapping, SubjectMappingItem, SubjectDuplicateCheckResult, AcademicTimetableEntry, TimetableMatrixResponse, TimetableDocketResponse, EnrollmentRecord, EnrollmentStats,
   UnassignedStudent, BatchCapacityReportRow, AcademicDistributionReportRow, FacultyLoadReportRow,
   StaffMember, StaffProfileDetail, TeacherAssignmentItem, StaffAttendanceItem,
   StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
@@ -301,14 +301,37 @@ export const timetableApi = {
     teacher_id?: number | string
   }) => apiClient.get<AcademicTimetableEntry[]>('/timetable/', { params }),
   getRooms: () => apiClient.get<string[]>('/timetable/rooms'),
+  getMatrix: (params?: {
+    division_id?: number | string
+    standard_id?: number | string
+    teacher_id?: number | string
+    room_number?: string
+  }) => apiClient.get<TimetableMatrixResponse>('/timetable/matrix', { params }),
+  getExportDocket: (params?: {
+    division_id?: number | string
+    teacher_id?: number | string
+  }) => apiClient.get<TimetableDocketResponse>('/timetable/export/docket', { params }),
+  batchGenerateSlots: (data: {
+    division_id: number | string
+    subject_id: number | string
+    teacher_id?: number | string
+    room_number?: string
+    period_duration_mins?: number
+    start_time?: string
+    number_of_periods?: number
+    break_after_period?: number
+    break_duration_mins?: number
+    days?: string[]
+  }) => apiClient.post<{ message: string; created_count: number }>('/timetable/batch-generate-slots', data),
   checkConflict: (data: {
     day_of_week: string
     start_time: string
     end_time: string
     room_number?: string
     division_id?: number | string
+    teacher_id?: number | string
     exclude_entry_id?: number | string
-  }) => apiClient.post<{ has_conflict: boolean; conflict_type?: string; message?: string }>('/timetable/check-conflict', data),
+  }) => apiClient.post<{ has_conflict: boolean; conflict_type?: string; details?: string; message?: string }>('/timetable/check-conflict', data),
   create: (data: {
     division_id: number | string
     subject_id: number | string
@@ -316,6 +339,7 @@ export const timetableApi = {
     start_time: string
     end_time: string
     room_number: string
+    teacher_id?: number | string
   }) => apiClient.post<AcademicTimetableEntry>('/timetable/', data),
   update: (id: number | string, data: Partial<AcademicTimetableEntry>) =>
     apiClient.put<AcademicTimetableEntry>(`/timetable/${id}`, data),

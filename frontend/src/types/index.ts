@@ -1917,7 +1917,65 @@ export interface AcademicTimetableEntry {
   start_time: string
   end_time: string
   room_number: string
+  teacher_id?: number | null
+  teacher_name?: string
   is_active: boolean
+}
+
+export interface TimetableSlot {
+  start_time: string
+  end_time: string
+  slot_key: string
+  label?: string
+}
+
+export interface TimetableMatrixResponse {
+  scope: {
+    type?: string
+    id?: number
+    name?: string
+    code?: string
+    standard_name?: string
+    room_number?: string
+    email?: string
+  }
+  days: string[]
+  slots: TimetableSlot[]
+  matrix: Record<string, Record<string, AcademicTimetableEntry>>
+  entries: AcademicTimetableEntry[]
+  summary: {
+    total_sessions: number
+    total_hours: number
+    unique_teachers: number
+    unique_subjects: number
+    rooms_used: number
+  }
+}
+
+export interface TimetableDocketResponse {
+  institution: {
+    name: string
+    code: string
+    tagline?: string
+    address: string
+    phone: string
+    email: string
+    website: string
+    logo_url?: string | null
+  }
+  academic_year: string
+  docket_type: 'division' | 'teacher' | 'master'
+  scope: TimetableMatrixResponse['scope']
+  days: string[]
+  slots: TimetableSlot[]
+  matrix: Record<string, Record<string, AcademicTimetableEntry>>
+  summary: TimetableMatrixResponse['summary']
+  signatures: {
+    prepared_by: string
+    verified_by: string
+    approved_by: string
+  }
+  generated_at: string
 }
 
 export interface EnrollmentRecord {

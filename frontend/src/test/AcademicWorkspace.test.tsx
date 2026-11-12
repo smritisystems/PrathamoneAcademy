@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-11
+ * @updated     2026-11-13
  *
  * @description Vitest test suite verifying Academic Workspace navigation, KPIs, batch cards, and roster modals.
  */
@@ -132,6 +132,38 @@ describe('Academic Structure & Batch Management Workspace Specification', () => 
 
     vi.spyOn(endpoints.timetableApi, 'getRooms').mockResolvedValue({
       data: ['Room 101', 'Room 102', 'Hall A', 'Lab 1'],
+    } as any)
+
+    vi.spyOn(endpoints.timetableApi, 'getMatrix').mockResolvedValue({
+      data: {
+        scope: { name: 'Batch A (Morning)', code: 'ICSE-X-A' },
+        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        slots: [{ start_time: '08:00', end_time: '09:30', slot_key: '08:00-09:30' }],
+        matrix: {
+          Monday: {
+            '08:00-09:30': {
+              id: 1,
+              subject_name: 'Mathematics',
+              subject_code: 'MATH10',
+              division_name: 'Batch A (Morning)',
+              division_code: 'ICSE-X-A',
+              room_number: 'Room 101',
+              teacher_name: 'Prof. Sharma',
+              start_time: '08:00',
+              end_time: '09:30',
+              day_of_week: 'Monday',
+            },
+          },
+        },
+        entries: [],
+        summary: {
+          total_sessions: 1,
+          total_hours: 1.5,
+          unique_teachers: 1,
+          unique_subjects: 1,
+          rooms_used: 1,
+        },
+      },
     } as any)
 
     vi.spyOn(endpoints.enrollmentsApi, 'getStats').mockResolvedValue({
@@ -325,7 +357,7 @@ describe('Academic Structure & Batch Management Workspace Specification', () => 
     fireEvent.click(timetableTabBtn)
 
     await waitFor(() => {
-      expect(screen.getByText('Institute Master Timetable')).toBeDefined()
+      expect(screen.getByText(/Institute.*Timetable/i)).toBeDefined()
       expect(screen.getByText('Add Session')).toBeDefined()
       expect(screen.getByText('Monday')).toBeDefined()
     })

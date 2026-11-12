@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -27,7 +27,7 @@ import {
   CalendarDays, ArrowUpRight, School, X, ShieldAlert, Sparkles,
   ExternalLink, User, Download, RefreshCw, ArrowRightLeft, UserPlus,
   Filter, Check, ShieldCheck, AlertCircle, Trash2, Power, Sliders, Lock,
-  ArrowRight, Link as LinkIcon
+  ArrowRight, Link as LinkIcon, Printer, LayoutGrid
 } from 'lucide-react'
 import {
   standardsApi, divisionsApi, boardsApi, academicYearsApi, usersApi,
@@ -43,8 +43,8 @@ import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReport
 import toast from 'react-hot-toast'
 import type {
   Division, Board, Standard, BatchRosterStudent, AcademicTreeBoard,
-  AcademicSubject, AcademicTimetableEntry, EnrollmentRecord,
-  BatchCapacityReportRow, AcademicDistributionReportRow, FacultyLoadReportRow,
+  AcademicSubject, AcademicTimetableEntry, TimetableMatrixResponse, TimetableDocketResponse, TimetableSlot,
+  EnrollmentRecord, BatchCapacityReportRow, AcademicDistributionReportRow, FacultyLoadReportRow,
   CanonicalSubject, SubjectDuplicateCheckResult
 } from '../types'
 
@@ -167,18 +167,37 @@ export default function AcademicWorkspace() {
   const [subjectDupCheck, setSubjectDupCheck] = useState<SubjectDuplicateCheckResult | null>(null)
   const [isCheckingSubjectDup, setIsCheckingSubjectDup] = useState(false)
 
-  // Timetable Modals
+  // Timetable Modals & Studio State
   const [showAddSessionModal, setShowAddSessionModal] = useState(false)
   const [selectedTimetableDay, setSelectedTimetableDay] = useState<string>('Monday')
   const [timetableRoomFilter, setTimetableRoomFilter] = useState<string>('all')
   const [timetableBatchFilter, setTimetableBatchFilter] = useState<string>('all')
+  const [timetableTeacherFilter, setTimetableTeacherFilter] = useState<string>('all')
+  const [timetableLayoutView, setTimetableLayoutView] = useState<'matrix' | 'daily' | 'faculty'>('matrix')
+  const [showBatchGenerateSlotsModal, setShowBatchGenerateSlotsModal] = useState(false)
+  const [showTimetableDocketModal, setShowTimetableDocketModal] = useState(false)
+  const [timetableDocketData, setTimetableDocketData] = useState<TimetableDocketResponse | null>(null)
+  const [isLoadingDocket, setIsLoadingDocket] = useState(false)
   const [sessionForm, setSessionForm] = useState({
     division_id: '',
     subject_id: '',
+    teacher_id: '',
     day_of_week: 'Monday',
     start_time: '08:00',
     end_time: '09:30',
     room_number: 'Room 101',
+  })
+  const [batchSlotForm, setBatchSlotForm] = useState({
+    division_id: '',
+    subject_id: '',
+    teacher_id: '',
+    room_number: 'Room 101',
+    period_duration_mins: 45,
+    start_time: '08:30',
+    number_of_periods: 6,
+    break_after_period: 3,
+    break_duration_mins: 20,
+    days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
   })
   const [conflictWarning, setConflictWarning] = useState<string | null>(null)
   const [isCheckingConflict, setIsCheckingConflict] = useState(false)
@@ -432,13 +451,28 @@ export default function AcademicWorkspace() {
 
   // 7. Timetable Query
   const { data: timetableEntries = [], isLoading: isTimetableLoading } = useQuery({
-    queryKey: ['timetable', timetableBatchFilter, timetableRoomFilter, selectedBoardId, selectedStandardId],
+    queryKey: ['timetable', timetableBatchFilter, timetableTeacherFilter, timetableRoomFilter, selectedBoardId, selectedStandardId],
     queryFn: () =>
       timetableApi
         .list({
           division_id: timetableBatchFilter !== 'all' ? timetableBatchFilter : undefined,
+          teacher_id: timetableTeacherFilter !== 'all' ? timetableTeacherFilter : undefined,
           room_number: timetableRoomFilter !== 'all' ? timetableRoomFilter : undefined,
           board_id: selectedBoardId !== 'all' ? selectedBoardId : undefined,
+          standard_id: selectedStandardId !== 'all' ? selectedStandardId : undefined,
+        })
+        .then((r) => r.data),
+  })
+
+  // 7b. Weekly Timetable Matrix Query
+  const { data: timetableMatrixData, isLoading: isMatrixLoading } = useQuery({
+    queryKey: ['timetable-matrix', timetableBatchFilter, timetableTeacherFilter, timetableRoomFilter, selectedBoardId, selectedStandardId],
+    queryFn: () =>
+      timetableApi
+        .getMatrix({
+          division_id: timetableBatchFilter !== 'all' ? timetableBatchFilter : undefined,
+          teacher_id: timetableTeacherFilter !== 'all' ? timetableTeacherFilter : undefined,
+          room_number: timetableRoomFilter !== 'all' ? timetableRoomFilter : undefined,
           standard_id: selectedStandardId !== 'all' ? selectedStandardId : undefined,
         })
         .then((r) => r.data),
@@ -1136,6 +1170,7 @@ export default function AcademicWorkspace() {
     onSuccess: () => {
       toast.success('Timetable session added successfully')
       qc.invalidateQueries({ queryKey: ['timetable'] })
+      qc.invalidateQueries({ queryKey: ['timetable-matrix'] })
       qc.invalidateQueries({ queryKey: ['academic-overview'] })
       setShowAddSessionModal(false)
       setConflictWarning(null)
@@ -1143,11 +1178,24 @@ export default function AcademicWorkspace() {
     onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to schedule session'),
   })
 
+  const batchGenerateSlotsMutation = useMutation({
+    mutationFn: (data: any) => timetableApi.batchGenerateSlots(data),
+    onSuccess: (res: any) => {
+      toast.success(res.data?.message || 'Period schedule slots generated successfully')
+      qc.invalidateQueries({ queryKey: ['timetable'] })
+      qc.invalidateQueries({ queryKey: ['timetable-matrix'] })
+      qc.invalidateQueries({ queryKey: ['academic-overview'] })
+      setShowBatchGenerateSlotsModal(false)
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to generate period slots'),
+  })
+
   const deleteSessionMutation = useMutation({
     mutationFn: (id: number) => timetableApi.delete(id),
     onSuccess: () => {
       toast.success('Session deleted successfully')
       qc.invalidateQueries({ queryKey: ['timetable'] })
+      qc.invalidateQueries({ queryKey: ['timetable-matrix'] })
       qc.invalidateQueries({ queryKey: ['academic-overview'] })
     },
     onError: (err: any) => toast.error(err?.response?.data?.detail || 'Failed to delete session'),
@@ -1327,17 +1375,34 @@ export default function AcademicWorkspace() {
         end_time: sessionForm.end_time,
         room_number: sessionForm.room_number || undefined,
         division_id: sessionForm.division_id ? Number(sessionForm.division_id) : undefined,
+        teacher_id: sessionForm.teacher_id ? Number(sessionForm.teacher_id) : undefined,
       })
       if (res.data.has_conflict) {
-        setConflictWarning(res.data.message || 'Schedule conflict detected for this room or batch!')
+        setConflictWarning(res.data.details || res.data.message || 'Schedule conflict detected!')
       } else {
         setConflictWarning(null)
-        toast.success('Room and batch are available for this time slot!')
+        toast.success('Room, faculty, and batch are free for this time slot!')
       }
     } catch {
       // Ignore
     } finally {
       setIsCheckingConflict(false)
+    }
+  }
+
+  const handleOpenTimetableDocket = async (divId?: number | string, facultyId?: number | string) => {
+    setIsLoadingDocket(true)
+    try {
+      const res = await timetableApi.getExportDocket({
+        division_id: divId && divId !== 'all' ? divId : (timetableBatchFilter !== 'all' ? timetableBatchFilter : undefined),
+        teacher_id: facultyId && facultyId !== 'all' ? facultyId : (timetableTeacherFilter !== 'all' ? timetableTeacherFilter : undefined),
+      })
+      setTimetableDocketData(res.data)
+      setShowTimetableDocketModal(true)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'Failed to generate timetable docket')
+    } finally {
+      setIsLoadingDocket(false)
     }
   }
 
@@ -2871,104 +2936,449 @@ export default function AcademicWorkspace() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          TAB 6: TIMETABLE SCHEDULE
+          TAB 6: TIMETABLE SCHEDULE STUDIO
       ═══════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'timetable' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Studio Control Header */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Institute Master Timetable</h2>
-              <p className="text-xs text-gray-500">
-                100 active class sessions with real-time room conflict validation
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-primary-50 text-primary-600">
+                  <CalendarDays className="w-5 h-5" />
+                </span>
+                <h2 className="text-lg font-bold text-gray-900">Institute Timetable &amp; Scheduling Studio</h2>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {timetableMatrixData?.summary?.total_sessions || timetableEntries.length} Active Sessions
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Multi-stream weekly schedule grid with real-time room, division &amp; faculty collision prevention
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
-                <select
-                  value={timetableRoomFilter}
-                  onChange={(e) => setTimetableRoomFilter(e.target.value)}
-                  className="bg-gray-50 border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800"
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Layout Switcher */}
+              <div className="inline-flex rounded-xl bg-gray-100 p-1 border border-gray-200 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setTimetableLayoutView('matrix')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                    timetableLayoutView === 'matrix' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
-                  <option value="all">All Rooms</option>
-                  {distinctRooms.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
+                  <Grid className="w-3.5 h-3.5" /> Weekly Grid
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimetableLayoutView('daily')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                    timetableLayoutView === 'daily' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" /> Day Cards
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimetableLayoutView('faculty')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                    timetableLayoutView === 'faculty' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <UserCheck className="w-3.5 h-3.5" /> Faculty
+                </button>
               </div>
+
+              {/* Filters */}
+              <select
+                value={timetableBatchFilter}
+                onChange={(e) => setTimetableBatchFilter(e.target.value)}
+                className="bg-gray-50 border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800"
+              >
+                <option value="all">All Batches</option>
+                {batches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                ))}
+              </select>
+
+              <select
+                value={timetableTeacherFilter}
+                onChange={(e) => setTimetableTeacherFilter(e.target.value)}
+                className="bg-gray-50 border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800"
+              >
+                <option value="all">All Faculty</option>
+                {teachers.map((t: any) => (
+                  <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
+                ))}
+              </select>
+
+              <select
+                value={timetableRoomFilter}
+                onChange={(e) => setTimetableRoomFilter(e.target.value)}
+                className="bg-gray-50 border rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800"
+              >
+                <option value="all">All Rooms</option>
+                {distinctRooms.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+
+              {/* Actions */}
               <button
+                type="button"
+                onClick={() => handleOpenTimetableDocket()}
+                disabled={isLoadingDocket}
+                className="px-3 py-1.5 border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              >
+                <Printer className="w-3.5 h-3.5" /> {isLoadingDocket ? 'Loading...' : 'Print Docket'}
+              </button>
+
+              <LockedButton
+                isEditMode={isEditMode}
+                onClick={() => {
+                  setBatchSlotForm({
+                    division_id: batches[0]?.id ? String(batches[0].id) : '',
+                    subject_id: subjects[0]?.id ? String(subjects[0].id) : '',
+                    teacher_id: teachers[0]?.id ? String(teachers[0].id) : '',
+                    room_number: 'Room 101',
+                    period_duration_mins: 45,
+                    start_time: '08:30',
+                    number_of_periods: 6,
+                    break_after_period: 3,
+                    break_duration_mins: 20,
+                    days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                  })
+                  setShowBatchGenerateSlotsModal(true)
+                }}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                viewModeTooltip="Enable Edit Mode to auto-generate period schedules"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Auto-Generate
+              </LockedButton>
+
+              <LockedButton
+                isEditMode={isEditMode}
                 onClick={() => {
                   setSessionForm({
                     division_id: batches[0]?.id ? String(batches[0].id) : '',
                     subject_id: subjects[0]?.id ? String(subjects[0].id) : '',
+                    teacher_id: '',
                     day_of_week: 'Monday',
-                    start_time: '08:00',
-                    end_time: '09:30',
+                    start_time: '08:30',
+                    end_time: '09:15',
                     room_number: 'Room 101',
                   })
                   setConflictWarning(null)
                   setShowAddSessionModal(true)
                 }}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm"
+                className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                viewModeTooltip="Enable Edit Mode to schedule new timetable session"
               >
-                <Plus className="w-4 h-4" /> Add Session
-              </button>
+                <Plus className="w-3.5 h-3.5" /> Add Session
+              </LockedButton>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
-            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
-              const daySessions = timetableEntries.filter((t) => t.day_of_week === day)
-              return (
-                <div key={day} className="bg-white rounded-2xl p-3 border border-gray-200/80 shadow-sm flex flex-col">
-                  <div className="flex items-center justify-between pb-2 border-b mb-2">
-                    <p className="font-extrabold text-xs text-gray-900">{day}</p>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-700">
-                      {daySessions.length}
-                    </span>
-                  </div>
+          {/* KPI Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white p-3.5 rounded-xl border border-gray-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Weekly Sessions</p>
+                <p className="text-xl font-black text-gray-900 mt-0.5">
+                  {timetableMatrixData?.summary?.total_sessions || timetableEntries.length}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center font-bold">
+                <Calendar className="w-4 h-4" />
+              </div>
+            </div>
 
-                  <div className="space-y-2 overflow-y-auto max-h-[480px] custom-scrollbar">
-                    {daySessions.map((s) => (
-                      <div
-                        key={s.id}
-                        className="p-2.5 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-primary-50/30 hover:border-blue-200 transition-all text-xs space-y-1 relative group"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-gray-900 text-[11px]">{s.subject_name}</span>
-                          <LockedIconButton
-                            isEditMode={isEditMode}
-                            onClick={() => {
-                              setDeleteModalState({
-                                isOpen: true,
-                                targetType: 'session',
-                                id: s.id,
-                                name: `Timetable Session '${s.subject_name}'`,
-                              })
-                            }}
-                            icon={Trash2}
-                            title="Delete Session"
-                            tone="danger"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          />
-                        </div>
-                        <p className="text-[11px] font-semibold text-primary-600">{s.division_name}</p>
-                        <p className="text-[10px] text-gray-500 font-mono">
-                          {s.start_time} - {s.end_time}
-                        </p>
-                        <div className="flex items-center justify-between text-[10px] text-gray-600 pt-1 border-t border-gray-200/60">
-                          <span className="font-bold text-gray-700">{s.room_number}</span>
-                          <span className="text-gray-400 font-mono">{s.division_code}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {daySessions.length === 0 && (
-                      <div className="py-8 text-center text-[11px] text-gray-400 italic">No classes scheduled</div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+            <div className="bg-white p-3.5 rounded-xl border border-gray-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Instruction Hours</p>
+                <p className="text-xl font-black text-indigo-700 mt-0.5">
+                  {timetableMatrixData?.summary?.total_hours || 0} hrs
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                <Clock className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 rounded-xl border border-gray-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Assigned Faculty</p>
+                <p className="text-xl font-black text-emerald-700 mt-0.5">
+                  {timetableMatrixData?.summary?.unique_teachers || teachers.length}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                <UserCheck className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 rounded-xl border border-gray-200/80 shadow-sm flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Classrooms Active</p>
+                <p className="text-xl font-black text-purple-700 mt-0.5">
+                  {timetableMatrixData?.summary?.rooms_used || distinctRooms.length}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+                <MapPin className="w-4 h-4" />
+              </div>
+            </div>
           </div>
+
+          {/* VIEW 1: Weekly Matrix Grid */}
+          {timetableLayoutView === 'matrix' && (
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200/80 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 uppercase font-black tracking-wider">
+                      <th className="py-3 px-3 w-32 border-r border-gray-200">Day / Period</th>
+                      {(timetableMatrixData?.slots && timetableMatrixData.slots.length > 0
+                        ? timetableMatrixData.slots
+                        : [
+                            { start_time: '08:30', end_time: '09:15', slot_key: '08:30-09:15' },
+                            { start_time: '09:15', end_time: '10:00', slot_key: '09:15-10:00' },
+                            { start_time: '10:15', end_time: '11:00', slot_key: '10:15-11:00' },
+                            { start_time: '11:00', end_time: '11:45', slot_key: '11:00-11:45' },
+                            { start_time: '12:00', end_time: '12:45', slot_key: '12:00-12:45' },
+                            { start_time: '12:45', end_time: '13:30', slot_key: '12:45-13:30' },
+                          ]
+                      ).map((slot, sIdx) => (
+                        <th key={slot.slot_key} className="py-3 px-3 text-center border-r border-gray-200 min-w-[150px]">
+                          <span className="block text-[11px] font-bold text-gray-900">Period {sIdx + 1}</span>
+                          <span className="block text-[10px] font-normal text-gray-500 font-mono">
+                            {slot.start_time} - {slot.end_time}
+                          </span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => {
+                      const daySlots = timetableMatrixData?.slots && timetableMatrixData.slots.length > 0
+                        ? timetableMatrixData.slots
+                        : [
+                            { start_time: '08:30', end_time: '09:15', slot_key: '08:30-09:15' },
+                            { start_time: '09:15', end_time: '10:00', slot_key: '09:15-10:00' },
+                            { start_time: '10:15', end_time: '11:00', slot_key: '10:15-11:00' },
+                            { start_time: '11:00', end_time: '11:45', slot_key: '11:00-11:45' },
+                            { start_time: '12:00', end_time: '12:45', slot_key: '12:00-12:45' },
+                            { start_time: '12:45', end_time: '13:30', slot_key: '12:45-13:30' },
+                          ]
+                      const daySessionsCount = Object.keys(timetableMatrixData?.matrix?.[day] || {}).length
+                      return (
+                        <tr key={day} className="hover:bg-gray-50/50 transition">
+                          <td className="py-3 px-3 font-extrabold text-gray-900 bg-gray-50/40 border-r border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <span>{day}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-primary-100 text-primary-800">
+                                {daySessionsCount}
+                              </span>
+                            </div>
+                          </td>
+                          {daySlots.map((slot) => {
+                            const session = timetableMatrixData?.matrix?.[day]?.[slot.slot_key]
+                            return (
+                              <td key={slot.slot_key} className="p-2 border-r border-gray-200 align-top">
+                                {session ? (
+                                  <div className="p-2.5 rounded-xl border border-primary-200 bg-primary-50/40 hover:bg-primary-50/80 transition text-xs space-y-1 relative group shadow-2xs">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-extrabold text-gray-900 text-[11px] truncate">
+                                        {session.subject_name}
+                                      </span>
+                                      <LockedIconButton
+                                        isEditMode={isEditMode}
+                                        onClick={() => {
+                                          setDeleteModalState({
+                                            isOpen: true,
+                                            targetType: 'session',
+                                            id: session.id,
+                                            name: `Timetable Session '${session.subject_name}'`,
+                                          })
+                                        }}
+                                        icon={Trash2}
+                                        title="Delete Session"
+                                        tone="danger"
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                      />
+                                    </div>
+                                    <p className="text-[10px] font-semibold text-primary-700 truncate">
+                                      {session.division_name}
+                                    </p>
+                                    <p className="text-[10px] text-gray-600 truncate flex items-center gap-1">
+                                      <User className="w-3 h-3 text-gray-400" />
+                                      {session.teacher_name || 'Unassigned'}
+                                    </p>
+                                    <div className="flex items-center justify-between text-[10px] text-gray-600 pt-1 border-t border-primary-100/80">
+                                      <span className="font-bold text-gray-700 bg-white px-1.5 py-0.2 rounded border border-gray-200">
+                                        {session.room_number || 'Room 101'}
+                                      </span>
+                                      <span className="text-gray-400 font-mono text-[9px]">{session.subject_code}</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="h-20 rounded-xl border border-dashed border-gray-200 flex flex-col items-center justify-center p-2 text-center text-gray-400 group hover:border-primary-300 transition">
+                                    {isEditMode ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSessionForm({
+                                            division_id: batches[0]?.id ? String(batches[0].id) : '',
+                                            subject_id: subjects[0]?.id ? String(subjects[0].id) : '',
+                                            teacher_id: '',
+                                            day_of_week: day,
+                                            start_time: slot.start_time,
+                                            end_time: slot.end_time,
+                                            room_number: 'Room 101',
+                                          })
+                                          setConflictWarning(null)
+                                          setShowAddSessionModal(true)
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-100 transition"
+                                        title={`Add session on ${day} (${slot.start_time}-${slot.end_time})`}
+                                      >
+                                        <Plus className="w-4 h-4" />
+                                      </button>
+                                    ) : (
+                                      <span className="text-[10px] text-gray-300 italic">Free</span>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 2: Daily Day Cards */}
+          {timetableLayoutView === 'daily' && (
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                const daySessions = timetableEntries.filter((t) => t.day_of_week === day)
+                return (
+                  <div key={day} className="bg-white rounded-2xl p-3 border border-gray-200/80 shadow-sm flex flex-col">
+                    <div className="flex items-center justify-between pb-2 border-b mb-2">
+                      <p className="font-extrabold text-xs text-gray-900">{day}</p>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary-50 text-primary-700">
+                        {daySessions.length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 overflow-y-auto max-h-[480px] custom-scrollbar">
+                      {daySessions.map((s) => (
+                        <div
+                          key={s.id}
+                          className="p-2.5 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-primary-50/30 hover:border-blue-200 transition-all text-xs space-y-1 relative group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-extrabold text-gray-900 text-[11px]">{s.subject_name}</span>
+                            <LockedIconButton
+                              isEditMode={isEditMode}
+                              onClick={() => {
+                                setDeleteModalState({
+                                  isOpen: true,
+                                  targetType: 'session',
+                                  id: s.id,
+                                  name: `Timetable Session '${s.subject_name}'`,
+                                })
+                              }}
+                              icon={Trash2}
+                              title="Delete Session"
+                              tone="danger"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            />
+                          </div>
+                          <p className="text-[11px] font-semibold text-primary-600">{s.division_name}</p>
+                          <p className="text-[10px] text-gray-500 font-mono">
+                            {s.start_time} - {s.end_time}
+                          </p>
+                          <p className="text-[10px] text-gray-600 flex items-center gap-1">
+                            <User className="w-3 h-3 text-gray-400" />
+                            {s.teacher_name || 'Unassigned'}
+                          </p>
+                          <div className="flex items-center justify-between text-[10px] text-gray-600 pt-1 border-t border-gray-200/60">
+                            <span className="font-bold text-gray-700">{s.room_number}</span>
+                            <span className="text-gray-400 font-mono">{s.division_code}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {daySessions.length === 0 && (
+                        <div className="py-8 text-center text-[11px] text-gray-400 italic">No classes scheduled</div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* VIEW 3: Faculty Schedule */}
+          {timetableLayoutView === 'faculty' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {teachers.map((teacher: any) => {
+                const teacherSessions = timetableEntries.filter(
+                  (s) => s.teacher_name?.includes(teacher.first_name) || s.teacher_id === teacher.id
+                )
+                return (
+                  <div key={teacher.id} className="bg-white rounded-2xl p-4 border border-gray-200/80 shadow-sm space-y-3 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs">
+                            {teacher.first_name?.[0]}{teacher.last_name?.[0]}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm text-gray-900">{teacher.first_name} {teacher.last_name}</h4>
+                            <p className="text-[11px] text-gray-500 capitalize">{teacher.role}</p>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          {teacherSessions.length} periods/wk
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 mt-3 max-h-56 overflow-y-auto custom-scrollbar">
+                        {teacherSessions.map((ts) => (
+                          <div key={ts.id} className="p-2 rounded-lg bg-gray-50 border border-gray-100 text-xs flex items-center justify-between">
+                            <div>
+                              <p className="font-bold text-gray-900 text-[11px]">{ts.subject_name}</p>
+                              <p className="text-[10px] text-gray-500">{ts.division_name} • {ts.day_of_week}</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-mono text-[10px] text-primary-600 block">{ts.start_time}-{ts.end_time}</span>
+                              <span className="text-[9px] text-gray-400">{ts.room_number}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {teacherSessions.length === 0 && (
+                          <p className="text-[11px] text-gray-400 italic py-4 text-center">No assigned periods this week</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenTimetableDocket(undefined, teacher.id)}
+                      className="w-full mt-2 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition border"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-gray-500" /> Print Faculty Schedule
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -4254,6 +4664,7 @@ export default function AcademicWorkspace() {
             createSessionMutation.mutate({
               division_id: Number(sessionForm.division_id),
               subject_id: Number(sessionForm.subject_id),
+              teacher_id: sessionForm.teacher_id ? Number(sessionForm.teacher_id) : undefined,
               day_of_week: sessionForm.day_of_week,
               start_time: sessionForm.start_time,
               end_time: sessionForm.end_time,
@@ -4298,6 +4709,57 @@ export default function AcademicWorkspace() {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Assigned Faculty (Optional)</label>
+              <select
+                value={sessionForm.teacher_id}
+                onChange={(e) => setSessionForm({ ...sessionForm, teacher_id: e.target.value })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              >
+                <option value="">Default (Division Class Teacher)</option>
+                {teachers.map((t: any) => (
+                  <option key={t.id} value={t.id}>
+                    {t.first_name} {t.last_name} ({t.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Room Number *</label>
+              <input
+                type="text"
+                required
+                value={sessionForm.room_number}
+                onChange={(e) => setSessionForm({ ...sessionForm, room_number: e.target.value })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              />
+            </div>
+          </div>
+
+          <div>
+            <span className="block font-bold text-gray-700 mb-1.5">Quick Period Presets:</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { label: 'P1: 08:30-09:15', start: '08:30', end: '09:15' },
+                { label: 'P2: 09:15-10:00', start: '09:15', end: '10:00' },
+                { label: 'P3: 10:15-11:00', start: '10:15', end: '11:00' },
+                { label: 'P4: 11:00-11:45', start: '11:00', end: '11:45' },
+                { label: 'P5: 12:00-12:45', start: '12:00', end: '12:45' },
+                { label: 'P6: 12:45-13:30', start: '12:45', end: '13:30' },
+              ].map((slot) => (
+                <button
+                  key={slot.label}
+                  type="button"
+                  onClick={() => setSessionForm({ ...sessionForm, start_time: slot.start, end_time: slot.end })}
+                  className="px-2 py-1 bg-gray-100 hover:bg-primary-50 hover:text-primary-700 text-gray-700 rounded-lg text-[10px] font-semibold transition border border-gray-200"
+                >
+                  {slot.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block font-bold text-gray-700 mb-1">Day of Week *</label>
@@ -4334,17 +4796,6 @@ export default function AcademicWorkspace() {
             </div>
           </div>
 
-          <div>
-            <label className="block font-bold text-gray-700 mb-1">Room Number *</label>
-            <input
-              type="text"
-              required
-              value={sessionForm.room_number}
-              onChange={(e) => setSessionForm({ ...sessionForm, room_number: e.target.value })}
-              className="w-full border rounded-xl px-3 py-2 text-gray-800"
-            />
-          </div>
-
           <div className="flex items-center justify-between pt-2">
             <button
               type="button"
@@ -4373,6 +4824,352 @@ export default function AcademicWorkspace() {
             </div>
           </div>
         </form>
+      </Modal>
+
+      {/* ── Modal: Batch Auto-Generate Period Slots ── */}
+      <Modal
+        isOpen={showBatchGenerateSlotsModal}
+        onClose={() => setShowBatchGenerateSlotsModal(false)}
+        title="Auto-Generate Weekly Period Schedule"
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            batchGenerateSlotsMutation.mutate({
+              division_id: Number(batchSlotForm.division_id),
+              subject_id: Number(batchSlotForm.subject_id),
+              teacher_id: batchSlotForm.teacher_id ? Number(batchSlotForm.teacher_id) : undefined,
+              room_number: batchSlotForm.room_number,
+              period_duration_mins: Number(batchSlotForm.period_duration_mins),
+              start_time: batchSlotForm.start_time,
+              number_of_periods: Number(batchSlotForm.number_of_periods),
+              break_after_period: Number(batchSlotForm.break_after_period),
+              break_duration_mins: Number(batchSlotForm.break_duration_mins),
+              days: batchSlotForm.days,
+            })
+          }}
+          className="space-y-4 text-xs"
+        >
+          <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-800 space-y-1">
+            <p className="font-bold flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              Recurring Period Framework Generator
+            </p>
+            <p className="text-[11px] text-indigo-700">
+              Instantly provisions recurring lecture slots across selected weekdays with configured breaks. Overlapping collisions are safely bypassed.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Target Batch *</label>
+              <select
+                required
+                value={batchSlotForm.division_id}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, division_id: e.target.value })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              >
+                {batches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name} ({b.code})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Default Subject *</label>
+              <select
+                required
+                value={batchSlotForm.subject_id}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, subject_id: e.target.value })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              >
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Faculty / Instructor</label>
+              <select
+                value={batchSlotForm.teacher_id}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, teacher_id: e.target.value })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              >
+                <option value="">Default (Class Teacher)</option>
+                {teachers.map((t: any) => (
+                  <option key={t.id} value={t.id}>{t.first_name} {t.last_name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Room / Classroom *</label>
+              <input
+                type="text"
+                required
+                value={batchSlotForm.room_number}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, room_number: e.target.value })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Start Time *</label>
+              <input
+                type="time"
+                required
+                value={batchSlotForm.start_time}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, start_time: e.target.value })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Period Length (Mins)</label>
+              <input
+                type="number"
+                min={30}
+                max={120}
+                required
+                value={batchSlotForm.period_duration_mins}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, period_duration_mins: Number(e.target.value) })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Number of Periods</label>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                required
+                value={batchSlotForm.number_of_periods}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, number_of_periods: Number(e.target.value) })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Break After Period</label>
+              <input
+                type="number"
+                min={1}
+                max={batchSlotForm.number_of_periods}
+                value={batchSlotForm.break_after_period}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, break_after_period: Number(e.target.value) })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-gray-700 mb-1">Break Duration (Mins)</label>
+              <input
+                type="number"
+                min={10}
+                max={60}
+                value={batchSlotForm.break_duration_mins}
+                onChange={(e) => setBatchSlotForm({ ...batchSlotForm, break_duration_mins: Number(e.target.value) })}
+                className="w-full border rounded-xl px-3 py-2 text-gray-800"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-gray-700 mb-1.5">Scheduled Days</label>
+            <div className="flex flex-wrap gap-2">
+              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
+                <label key={day} className="flex items-center gap-1.5 p-2 rounded-lg border bg-gray-50 text-gray-800 text-[11px] font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={batchSlotForm.days.includes(day)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setBatchSlotForm({ ...batchSlotForm, days: [...batchSlotForm.days, day] })
+                      } else {
+                        setBatchSlotForm({ ...batchSlotForm, days: batchSlotForm.days.filter((d) => d !== day) })
+                      }
+                    }}
+                    className="rounded text-primary-600"
+                  />
+                  <span>{day}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t">
+            <button
+              type="button"
+              onClick={() => setShowBatchGenerateSlotsModal(false)}
+              className="px-4 py-2 border rounded-xl font-semibold text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={batchGenerateSlotsMutation.isPending || batchSlotForm.days.length === 0}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-sm"
+            >
+              {batchGenerateSlotsMutation.isPending ? 'Generating...' : 'Generate Period Slots'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Modal: Printable Timetable Docket ── */}
+      <Modal
+        isOpen={showTimetableDocketModal}
+        onClose={() => setShowTimetableDocketModal(false)}
+        title="Official Timetable Docket"
+      >
+        <div className="space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar p-1">
+          {timetableDocketData && (
+            <div id="printable-timetable-docket" className="bg-white p-6 border rounded-2xl shadow-sm text-gray-800 space-y-6">
+              {/* Institution Header */}
+              <div className="border-b-2 border-primary-900 pb-4 flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-800 to-indigo-700 text-white flex items-center justify-center font-black text-2xl shadow-sm">
+                    {timetableDocketData.institution.logo_url ? (
+                      <img src={timetableDocketData.institution.logo_url} alt="Logo" className="w-12 h-12 object-contain" />
+                    ) : (
+                      <School className="w-8 h-8" />
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                      {timetableDocketData.institution.name}
+                    </h2>
+                    <p className="text-xs font-semibold text-primary-700">
+                      {timetableDocketData.institution.tagline}
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {timetableDocketData.institution.address} • Phone: {timetableDocketData.institution.phone} • Email: {timetableDocketData.institution.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-primary-100 text-primary-800 border border-primary-200 uppercase tracking-wider">
+                    Official Timetable
+                  </span>
+                  <p className="text-[11px] font-mono text-gray-500 mt-1">
+                    AY: {timetableDocketData.academic_year}
+                  </p>
+                </div>
+              </div>
+
+              {/* Docket Metadata Banner */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div>
+                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Class / Stream</span>
+                  <span className="font-extrabold text-sm text-gray-900">
+                    {timetableDocketData.scope?.name || 'Full Academic Cohort'} ({timetableDocketData.scope?.code || 'INST'})
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Primary Classroom</span>
+                  <span className="font-bold text-gray-800">
+                    {timetableDocketData.scope?.room_number || 'Multiple Rooms'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Weekly Load</span>
+                  <span className="font-bold text-indigo-700">
+                    {timetableDocketData.summary?.total_sessions} Periods • {timetableDocketData.summary?.total_hours} Hours
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Faculty Involved</span>
+                  <span className="font-bold text-emerald-700">
+                    {timetableDocketData.summary?.unique_teachers} Instructors
+                  </span>
+                </div>
+              </div>
+
+              {/* Weekly Timetable Grid */}
+              <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-primary-900 text-white uppercase text-[10px] tracking-wider font-extrabold">
+                      <th className="py-2.5 px-3 w-28 border-r border-primary-800">Day</th>
+                      {timetableDocketData.slots.map((s, idx) => (
+                        <th key={s.slot_key} className="py-2.5 px-2 text-center border-r border-primary-800 min-w-[120px]">
+                          <div>Period {idx + 1}</div>
+                          <div className="text-[9px] font-mono font-normal opacity-80">{s.start_time} - {s.end_time}</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 text-xs">
+                    {timetableDocketData.days.map((d) => (
+                      <tr key={d} className="hover:bg-gray-50/50">
+                        <td className="py-3 px-3 font-extrabold text-gray-900 bg-gray-50 border-r border-gray-200">
+                          {d}
+                        </td>
+                        {timetableDocketData.slots.map((slot) => {
+                          const sess = timetableDocketData.matrix?.[d]?.[slot.slot_key]
+                          return (
+                            <td key={slot.slot_key} className="p-2 border-r border-gray-200 align-top">
+                              {sess ? (
+                                <div className="space-y-0.5">
+                                  <p className="font-black text-gray-900 text-[11px]">{sess.subject_name}</p>
+                                  <p className="text-[10px] font-medium text-gray-600">{sess.teacher_name}</p>
+                                  <p className="text-[9px] font-mono font-bold text-primary-700 bg-primary-50 px-1 py-0.2 rounded inline-block">
+                                    {sess.room_number}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-gray-300 italic block text-center">—</span>
+                              )}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Signatures Block */}
+              <div className="pt-8 border-t flex items-end justify-between text-xs text-center">
+                <div className="space-y-1">
+                  <div className="w-36 border-b border-gray-400 pb-8"></div>
+                  <p className="font-bold text-gray-800">{timetableDocketData.signatures.prepared_by}</p>
+                  <p className="text-[10px] text-gray-400">Timetable In-charge</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="w-36 border-b border-gray-400 pb-8"></div>
+                  <p className="font-bold text-gray-800">{timetableDocketData.signatures.verified_by}</p>
+                  <p className="text-[10px] text-gray-400">Head of Department</p>
+                </div>
+                <div className="space-y-1">
+                  <div className="w-36 border-b border-gray-400 pb-8"></div>
+                  <p className="font-bold text-gray-800">{timetableDocketData.signatures.approved_by}</p>
+                  <p className="text-[10px] text-gray-400">Principal / Director</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowTimetableDocketModal(false)}
+              className="px-4 py-2 border rounded-xl font-semibold text-gray-600 hover:bg-gray-50 text-xs"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm"
+            >
+              <Printer className="w-3.5 h-3.5" /> Print Timetable Docket
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* ── Modal: Enroll Student ── */}
