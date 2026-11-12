@@ -81,6 +81,7 @@ GENUINE_MODULES_META: List[Dict[str, str]] = [
     {"key": "timetable", "name": "Timetable Management", "guide_slug": "guide-timetable", "route": "/academic/timetable"},
     {"key": "courses", "name": "Study Materials & Courses", "guide_slug": "guide-courses", "route": "/courses"},
     {"key": "homework", "name": "Homework & Assignments", "guide_slug": "guide-homework", "route": "/homework"},
+    {"key": "eduboard", "name": "EduBoard Interactive Classroom", "guide_slug": "guide-eduboard", "route": "/eduboard"},
     {"key": "examinations", "name": "Examination Management", "guide_slug": "guide-examinations", "route": "/examinations"},
     {"key": "results", "name": "Results & Report Cards", "guide_slug": "guide-results", "route": "/examinations/report-cards"},
     {"key": "staff", "name": "Staff Management", "guide_slug": "guide-staff", "route": "/teachers"},
@@ -114,6 +115,7 @@ CONTEXTUAL_ROUTE_RULES: List[Tuple[str, str, str]] = [
     ("/academic", "branch-class-and-division-setup", "timetable"),
     ("/courses", "guide-courses", "courses"),
     ("/homework", "guide-homework", "homework"),
+    ("/eduboard", "guide-eduboard", "eduboard"),
     ("/forms-documents", "guide-forms", "forms"),
     ("/forms", "guide-forms", "forms"),
     ("/attendance", "guide-attendance", "attendance"),
@@ -279,24 +281,24 @@ def serialize_support_request(req: SupportRequest, include_comments: bool = True
 
 
 async def ensure_seeded(db: AsyncSession) -> None:
-    """Idempotently seeds categories and customer-facing Help & Legal articles on first access."""
+    """Idempotently seeds categories and customer-facing Help & Legal articles and syncs updated baseline doc versions."""
     expected_cat_slugs = [c["slug"] for c in HELP_CATEGORIES]
-    expected_art_slugs = [a["slug"] for a in HELP_ARTICLES_SEED]
-    counts_row = (
+    expected_art_versions = {a["slug"]: str(a.get("doc_version") or "1.0") for a in HELP_ARTICLES_SEED}
+    cat_cnt = (
         await db.execute(
-            select(
-                select(func.count(HelpCategory.id))
-                .where(HelpCategory.slug.in_(expected_cat_slugs))
-                .scalar_subquery()
-                .label("cat_cnt"),
-                select(func.count(HelpArticle.id))
-                .where(HelpArticle.slug.in_(expected_art_slugs))
-                .scalar_subquery()
-                .label("art_cnt"),
-            )
+            select(func.count(HelpCategory.id)).where(HelpCategory.slug.in_(expected_cat_slugs))
         )
-    ).first()
-    if counts_row and (counts_row.cat_cnt or 0) >= len(expected_cat_slugs) and (counts_row.art_cnt or 0) >= len(expected_art_slugs):
+    ).scalar_one() or 0
+    existing_art_rows = (
+        await db.execute(select(HelpArticle.id, HelpArticle.slug, HelpArticle.doc_version, HelpArticle.is_system))
+    ).all()
+    existing_by_slug = {row.slug: row for row in existing_art_rows}
+    needs_seed_or_upgrade = cat_cnt < len(expected_cat_slugs) or any(
+        (slug not in existing_by_slug)
+        or (existing_by_slug[slug].is_system and existing_by_slug[slug].doc_version != target_ver)
+        for slug, target_ver in expected_art_versions.items()
+    )
+    if not needs_seed_or_upgrade:
         return
 
     for item in HELP_CATEGORIES:
@@ -317,14 +319,48 @@ async def ensure_seeded(db: AsyncSession) -> None:
     cat_res = await db.execute(select(HelpCategory))
     existing_cats = {c.slug: c for c in cat_res.scalars().all()}
 
-    art_res = await db.execute(select(HelpArticle.slug))
-    existing_slugs = set(art_res.scalars().all())
     now = datetime.now(timezone.utc)
-    created_any = False
+    changed_any = False
 
     for entry in HELP_ARTICLES_SEED:
-        if entry["slug"] in existing_slugs:
+        slug = entry["slug"]
+        target_ver = str(entry.get("doc_version") or "1.0")
+        existing_row = existing_by_slug.get(slug)
+
+        if existing_row is not None:
+            if existing_row.is_system and existing_row.doc_version != target_ver:
+                _validate_article_safety(
+                    entry["title"],
+                    entry.get("summary"),
+                    entry["content_markdown"],
+                    entry.get("tags", []),
+                )
+                art_obj = await db.get(HelpArticle, existing_row.id)
+                if art_obj is not None:
+                    art_obj.title = entry["title"]
+                    art_obj.summary = entry.get("summary")
+                    art_obj.content_markdown = entry["content_markdown"]
+                    art_obj.tags = json.dumps(entry.get("tags", []))
+                    art_obj.required_permissions = json.dumps(entry.get("required_permissions", []))
+                    art_obj.related_routes = json.dumps(entry.get("related_routes", []))
+                    art_obj.related_slugs = json.dumps(entry.get("related_slugs", []))
+                    art_obj.doc_version = target_ver
+                    db.add(
+                        HelpArticleRevision(
+                            article_id=art_obj.id,
+                            doc_version=target_ver,
+                            title=entry["title"],
+                            summary=entry.get("summary"),
+                            content_markdown=entry["content_markdown"],
+                            status=art_obj.status,
+                            approval_status=art_obj.approval_status,
+                            change_note=f"Automated Help & About baseline update to doc v{target_ver}.",
+                            changed_by_name="System Baseline",
+                        )
+                    )
+                    changed_any = True
             continue
+
         _validate_article_safety(
             entry["title"],
             entry.get("summary"),
@@ -338,7 +374,7 @@ async def ensure_seeded(db: AsyncSession) -> None:
             await db.execute(
                 pg_insert(HelpArticle)
                 .values(
-                    slug=entry["slug"],
+                    slug=slug,
                     category_id=cat.id if cat else None,
                     section=entry["section"],
                     module_key=entry.get("module_key"),
@@ -349,7 +385,7 @@ async def ensure_seeded(db: AsyncSession) -> None:
                     required_permissions=json.dumps(entry.get("required_permissions", [])),
                     related_routes=json.dumps(entry.get("related_routes", [])),
                     related_slugs=json.dumps(entry.get("related_slugs", [])),
-                    doc_version="1.0",
+                    doc_version=target_ver,
                     status=status_val,
                     approval_status=approval_status,
                     approved_at=now if approval_status == "approved" else None,
@@ -366,7 +402,7 @@ async def ensure_seeded(db: AsyncSession) -> None:
             db.add(
                 HelpArticleRevision(
                     article_id=inserted_id,
-                    doc_version="1.0",
+                    doc_version=target_ver,
                     title=entry["title"],
                     summary=entry.get("summary"),
                     content_markdown=entry["content_markdown"],
@@ -376,9 +412,9 @@ async def ensure_seeded(db: AsyncSession) -> None:
                     changed_by_name="System Baseline",
                 )
             )
-            created_any = True
+            changed_any = True
 
-    if created_any:
+    if changed_any:
         await db.flush()
 
 
@@ -1121,10 +1157,12 @@ async def get_product_and_version_info(
             "core_capabilities": [
                 "End-to-end CRM Lead Pipeline & Student Admission Conversion",
                 "Student Directory, Batch Enrollments, Exit/Reactivation & Printable ID Cards",
-                "Configurable Fee Structures, Invoicing, Multi-Mode Collection Desk & Official Receipts",
+                "Configurable Fee Structures, Invoicing, Multi-Mode Collection Desk & Print-Matched A5/A4 PDF Official Receipts",
                 "Governed Concessions, Waivers, Merit Scholarships & Sponsor Settlement Tracking",
                 "Daily Roll Call, QR Self-Check Terminal, Monthly Register & Absentee Alerts",
                 "Conflict-Checked Weekly Division Timetable & Teacher/Student Schedule Portals",
+                "Homework & Assignment Studio with Batch/Individual Targeting, Versioned Student Submissions & Grading",
+                "PrathamOne EduBoard Digital Classroom (Whiteboard, Greenboard, PDF Annotation, Display Modes & Pop-Out Sync)",
                 "Examination Scheduling, Marks Entry, Merit Analytics & Consolidated Report Cards",
                 "Unified Faculty & Staff Dossiers, Attendance/Leave Tracking & Teacher Payroll Vouchers",
                 "WhatsApp, Email & SMS Communication Center with Expiring Document Sharing",

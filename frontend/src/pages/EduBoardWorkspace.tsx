@@ -41,14 +41,28 @@ import {
   BookOpen,
   Layers,
   RotateCcw,
+  PanelLeftClose,
+  PanelLeftOpen,
+  SlidersHorizontal,
+  Focus,
+  Monitor,
+  Wifi,
+  WifiOff,
+  ExternalLink,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { eduboardApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
+import { useEduBoardDisplayStore } from '../store/eduboardDisplayStore'
+import { useEduBoardSync } from '../hooks/useEduBoardSync'
 import { EditModeBar, DeleteConfirmationModal, ContextualHelpButton } from '../components/common'
 import Modal from '../components/Modal'
 import EduBoardCanvas, { parseSceneJson } from '../components/eduboard/EduBoardCanvas'
+import EduBoardPopoutMenu from '../components/eduboard/EduBoardPopoutMenu'
 import {
   clearRecoverySnapshot,
   loadRecoverySnapshot,
@@ -58,10 +72,14 @@ import {
 import type {
   EduBoardBackgroundStyle,
   EduBoardDetailItem,
+  EduBoardDisplayPrefsValues,
   EduBoardMode,
   EduBoardPageItem,
   EduBoardScenePayload,
   EduBoardSummaryItem,
+  EduBoardToolbarPosition,
+  EduBoardToolbarState,
+  EduBoardWorkspaceMode,
 } from '../types'
 
 function triggerBlobDownload(blob: Blob, filename: string) {
@@ -112,12 +130,39 @@ export default function EduBoardWorkspace() {
   const [showRevisionsModal, setShowRevisionsModal] = useState<boolean>(false)
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false)
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false)
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
+  const [showPrefsModal, setShowPrefsModal] = useState<boolean>(false)
   const [uploadingDoc, setUploadingDoc] = useState<boolean>(false)
   const [actionBanner, setActionBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [blockedPopoutFallback, setBlockedPopoutFallback] = useState<{ url: string; label: string } | null>(null)
 
+  const workspaceContainerRef = useRef<HTMLDivElement | null>(null)
   const docInputRef = useRef<HTMLInputElement | null>(null)
   const autosaveTimerRef = useRef<number | null>(null)
+
+  const workspaceMode = useEduBoardDisplayStore((s) => s.workspaceMode)
+  const setWorkspaceMode = useEduBoardDisplayStore((s) => s.setWorkspaceMode)
+  const pagesPanelOpen = useEduBoardDisplayStore((s) => s.pagesPanelOpen)
+  const setPagesPanelOpen = useEduBoardDisplayStore((s) => s.setPagesPanelOpen)
+  const savedBoardsPanelOpen = useEduBoardDisplayStore((s) => s.savedBoardsPanelOpen)
+  const setSavedBoardsPanelOpen = useEduBoardDisplayStore((s) => s.setSavedBoardsPanelOpen)
+  const hideAppHeader = useEduBoardDisplayStore((s) => s.hideAppHeader)
+  const setHideAppHeader = useEduBoardDisplayStore((s) => s.setHideAppHeader)
+  const hideStatusBar = useEduBoardDisplayStore((s) => s.hideStatusBar)
+  const setHideStatusBar = useEduBoardDisplayStore((s) => s.setHideStatusBar)
+  const toolbarState = useEduBoardDisplayStore((s) => s.toolbarState)
+  const setToolbarState = useEduBoardDisplayStore((s) => s.setToolbarState)
+  const toolbarPosition = useEduBoardDisplayStore((s) => s.toolbarPosition)
+  const setToolbarPosition = useEduBoardDisplayStore((s) => s.setToolbarPosition)
+  const preferredAppearance = useEduBoardDisplayStore((s) => s.preferredAppearance)
+  const setPreferredAppearance = useEduBoardDisplayStore((s) => s.setPreferredAppearance)
+  const focusDrawer = useEduBoardDisplayStore((s) => s.focusDrawer)
+  const setFocusDrawer = useEduBoardDisplayStore((s) => s.setFocusDrawer)
+  const isViewportFullscreenFallback = useEduBoardDisplayStore((s) => s.isViewportFullscreenFallback)
+  const setViewportFullscreenFallback = useEduBoardDisplayStore((s) => s.setViewportFullscreenFallback)
+  const applyResolvedPreferences = useEduBoardDisplayStore((s) => s.applyResolvedPreferences)
+
+  const isFullscreen = workspaceMode === 'fullscreen'
+  const isFocusOrFullscreen = workspaceMode === 'focus' || workspaceMode === 'fullscreen'
 
   // Create form state
   const [newTitle, setNewTitle] = useState<string>('')
@@ -135,6 +180,13 @@ export default function EduBoardWorkspace() {
     autosave_interval_ms: 3500,
     default_board_mode: 'whiteboard' as EduBoardMode,
     notify_students_on_publish: true,
+    default_workspace_mode: 'standard' as 'standard' | 'focus' | 'fullscreen',
+    default_board_appearance: 'white' as EduBoardBackgroundStyle,
+    toolbar_state: 'expanded' as 'expanded' | 'compact' | 'hidden',
+    toolbar_position: 'top' as 'top' | 'left' | 'right' | 'bottom' | 'floating',
+    allow_user_display_overrides: true,
+    allow_collaborator_mode: true,
+    allow_popout_window: true,
   })
 
   const { data: contextData } = useQuery({
@@ -170,6 +222,18 @@ export default function EduBoardWorkspace() {
     enabled: !!selectedBoardId && showRevisionsModal,
   })
 
+  const { data: prefsData, refetch: refetchPrefs } = useQuery({
+    queryKey: ['eduboard-preferences', dataEnv, user?.id],
+    queryFn: async () => (eduboardApi.getPreferences ? (await eduboardApi.getPreferences()).data : null),
+    enabled: !!user,
+  })
+
+  useEffect(() => {
+    if (prefsData?.effective) {
+      applyResolvedPreferences(prefsData.effective)
+    }
+  }, [prefsData, applyResolvedPreferences])
+
   useEffect(() => {
     if (settingsData) {
       setSettingsForm({
@@ -177,6 +241,13 @@ export default function EduBoardWorkspace() {
         autosave_interval_ms: settingsData.autosave_interval_ms ?? 3500,
         default_board_mode: (settingsData.default_board_mode as EduBoardMode) || 'whiteboard',
         notify_students_on_publish: settingsData.notify_students_on_publish ?? true,
+        default_workspace_mode: settingsData.default_workspace_mode || 'standard',
+        default_board_appearance: settingsData.default_board_appearance || 'white',
+        toolbar_state: settingsData.toolbar_state || 'expanded',
+        toolbar_position: settingsData.toolbar_position || 'top',
+        allow_user_display_overrides: settingsData.allow_user_display_overrides ?? true,
+        allow_collaborator_mode: settingsData.allow_collaborator_mode ?? true,
+        allow_popout_window: settingsData.allow_popout_window ?? true,
       })
     }
   }, [settingsData])
@@ -206,6 +277,9 @@ export default function EduBoardWorkspace() {
     }
   }, [searchParams, boardsData, selectedBoardId])
 
+  const userId = user?.id
+  const userInstitutionId = user?.institution_id
+
   // Sync fetched board into local workspace & check scoped IndexedDB crash recovery
   useEffect(() => {
     if (!fetchedBoardDetail) {
@@ -223,11 +297,11 @@ export default function EduBoardWorkspace() {
     setScopeDirty(editScope, false)
     setSyncStatus('idle')
 
-    if (user) {
+    if (userId) {
       void loadRecoverySnapshot({
-        institutionId: user.institution_id || 1,
+        institutionId: userInstitutionId || 1,
         dataEnvironment: dataEnv,
-        userId: user.id,
+        userId,
         boardId: fetchedBoardDetail.id,
         teachingSessionId: fetchedBoardDetail.teaching_session_id,
       }).then((rec) => {
@@ -238,7 +312,7 @@ export default function EduBoardWorkspace() {
         }
       })
     }
-  }, [fetchedBoardDetail, user, dataEnv, setScopeDirty])
+  }, [fetchedBoardDetail, userId, userInstitutionId, dataEnv, setScopeDirty])
 
   // Unsaved warning on browser tab close/refresh
   useEffect(() => {
@@ -279,14 +353,94 @@ export default function EduBoardWorkspace() {
     [user, localBoard, dataEnv],
   )
 
+  const {
+    clientId,
+    wsState,
+    detachedWindowCount,
+    broadcastScenePatch,
+    notifyCommittedRevision,
+  } = useEduBoardSync({
+    boardId: localBoard?.id ?? null,
+    institutionId: localBoard?.institution_id ?? (user?.institution_id || 1),
+    dataEnvironment: dataEnv,
+    latestRevisionNo: localBoard?.latest_revision_no ?? 1,
+    windowType: 'main',
+    canSendEdits: isEditMode,
+    enabled: !!localBoard,
+    onRemotePagesSync: (incomingPages) => {
+      setLocalPages([...incomingPages].sort((a, b) => a.page_order - b.page_order))
+      setSyncMessage('Synced live from detached window')
+    },
+    onRemoteRevisionCommitted: (updatedBoard) => {
+      setLocalBoard(updatedBoard)
+      setLocalPages([...(updatedBoard.pages || [])].sort((a, b) => a.page_order - b.page_order))
+      setIsDirty(false)
+      setScopeDirty(editScope, false)
+      setSyncStatus('saved')
+      setSyncMessage(`Synced rev #${updatedBoard.latest_revision_no}`)
+    },
+  })
+
+  // Browser Fullscreen API & Escape Key Synchronization
+  const enterWorkspaceMode = useCallback(
+    async (mode: EduBoardWorkspaceMode) => {
+      setWorkspaceMode(mode)
+      if (mode === 'fullscreen') {
+        const target = workspaceContainerRef.current
+        if (target && typeof target.requestFullscreen === 'function' && !document.fullscreenElement) {
+          try {
+            await target.requestFullscreen()
+            setViewportFullscreenFallback(false)
+          } catch {
+            setViewportFullscreenFallback(true)
+          }
+        } else if (!target || typeof target.requestFullscreen !== 'function') {
+          setViewportFullscreenFallback(true)
+        }
+      } else {
+        setViewportFullscreenFallback(false)
+        if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
+          try {
+            await document.exitFullscreen()
+          } catch {
+            // ignore
+          }
+        }
+      }
+    },
+    [setWorkspaceMode, setViewportFullscreenFallback],
+  )
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement && workspaceMode === 'fullscreen' && !isViewportFullscreenFallback) {
+        setWorkspaceMode('standard')
+      }
+    }
+    const onEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && workspaceMode === 'fullscreen') {
+        void enterWorkspaceMode('standard')
+      } else if (e.key === 'Escape' && focusDrawer !== 'none') {
+        setFocusDrawer('none')
+      }
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    window.addEventListener('keydown', onEscapeKey)
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange)
+      window.removeEventListener('keydown', onEscapeKey)
+    }
+  }, [workspaceMode, isViewportFullscreenFallback, focusDrawer, setWorkspaceMode, setFocusDrawer, enterWorkspaceMode])
+
   const markDirtyPages = useCallback(
     (nextPages: EduBoardPageItem[]) => {
       setLocalPages(nextPages)
       setIsDirty(true)
       setScopeDirty(editScope, true)
       persistRecoveryDraft(nextPages, true)
+      broadcastScenePatch(nextPages, activePageUid)
     },
-    [setScopeDirty, persistRecoveryDraft],
+    [setScopeDirty, persistRecoveryDraft, broadcastScenePatch, activePageUid],
   )
 
   const handleSyncToServer = useCallback(
@@ -305,6 +459,7 @@ export default function EduBoardWorkspace() {
           save_type: saveType,
           note: saveType === 'manual' ? 'Manual classroom save' : undefined,
           replace_pages: true,
+          client_id: clientId,
           pages: localPages.map((pg, idx) => ({
             page_uid: pg.page_uid,
             page_order: idx + 1,
@@ -326,6 +481,7 @@ export default function EduBoardWorkspace() {
         setRecoveryCandidate(null)
         setSyncStatus('saved')
         setSyncMessage(`Saved rev #${updated.latest_revision_no}`)
+        notifyCommittedRevision(updated)
         if (user) {
           void clearRecoverySnapshot({
             institutionId: user.institution_id || 1,
@@ -445,7 +601,7 @@ export default function EduBoardWorkspace() {
     e.preventDefault()
     if (!newTitle.trim()) return
     try {
-      const selectedDiv = contextData?.divisions.find((d) => String(d.id) === newDivisionId)
+      const selectedDiv = contextData?.divisions?.find((d) => String(d.id) === newDivisionId)
       const res = await eduboardApi.createBoard({
         title: newTitle.trim(),
         topic: newTopic.trim() || undefined,
@@ -516,6 +672,7 @@ export default function EduBoardWorkspace() {
     try {
       const res = await eduboardApi.publishBoard(localBoard.id)
       setLocalBoard(res.data.board)
+      notifyCommittedRevision(res.data.board)
       await refetchBoards()
       setActionBanner({
         type: 'success',
@@ -548,6 +705,7 @@ export default function EduBoardWorkspace() {
       setLocalPages([...(res.data.pages || [])].sort((a, b) => a.page_order - b.page_order))
       setIsDirty(false)
       setScopeDirty(editScope, false)
+      notifyCommittedRevision(res.data)
       setShowRevisionsModal(false)
       setActionBanner({ type: 'success', text: `Restored revision cleanly (now rev #${res.data.latest_revision_no}).` })
     } catch (err: any) {
@@ -573,18 +731,49 @@ export default function EduBoardWorkspace() {
   const isAdmin = ['superadmin', 'sysadmin', 'super_admin', 'admin', 'principal'].includes(
     (user?.role || '').toLowerCase(),
   )
+  const canCollaborate =
+    isAdmin ||
+    (Array.isArray(user?.permissions) && user.permissions.includes('eduboard:collaborate')) ||
+    (user?.role || '').toLowerCase() === 'teacher'
+
+  const saveUserDisplayPrefs = async (patch: Partial<EduBoardDisplayPrefsValues>) => {
+    try {
+      if (eduboardApi.updatePreferences) {
+        await eduboardApi.updatePreferences(patch)
+        await refetchPrefs()
+      }
+      setActionBanner({ type: 'success', text: 'EduBoard display preferences saved.' })
+    } catch (err: any) {
+      setActionBanner({
+        type: 'error',
+        text: err?.response?.data?.detail || 'Could not save display preferences.',
+      })
+    }
+  }
 
   return (
-    <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-slate-50 p-4 overflow-y-auto' : 'space-y-4 pb-10'}`}>
-      {/* ── Rule 010 Global View-First Edit Mode Governance Bar ── */}
-      <EditModeBar
-        scope={editScope}
-        title="PrathamOne EduBoard Classroom Workspace"
-        requiredPermission="eduboard:edit"
-        isDirty={isDirty}
-        onSave={() => void handleSyncToServer('manual', false)}
-        saveLoading={syncStatus === 'saving'}
-      />
+    <div
+      ref={workspaceContainerRef}
+      data-workspace-mode={workspaceMode}
+      className={`${
+        isFullscreen
+          ? 'fixed inset-0 z-50 bg-slate-50 p-3 flex flex-col gap-2 overflow-hidden'
+          : workspaceMode === 'focus'
+            ? 'flex flex-col gap-2 h-[calc(100dvh-1rem)] overflow-hidden'
+            : 'space-y-4 pb-10'
+      }`}
+    >
+      {/* ── Rule 010 Global View-First Edit Mode Governance Bar (hidden in compact Focus/Fullscreen unless needed via banner) ── */}
+      {!isFocusOrFullscreen && (
+        <EditModeBar
+          scope={editScope}
+          title="PrathamOne EduBoard Classroom Workspace"
+          requiredPermission="eduboard:edit"
+          isDirty={isDirty}
+          onSave={() => void handleSyncToServer('manual', false)}
+          saveLoading={syncStatus === 'saving'}
+        />
+      )}
 
       {/* ── Workspace Top Bar ── */}
       <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-2xs flex flex-wrap items-center justify-between gap-3">
@@ -705,14 +894,122 @@ export default function EduBoardWorkspace() {
                 <History className="w-3.5 h-3.5" />
               </button>
 
-              <button
-                type="button"
-                onClick={() => setIsFullscreen((f) => !f)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Classroom Mode'}
+              {/* Workspace Display Mode Switcher: Standard | Focus | Fullscreen */}
+              <div
+                role="group"
+                aria-label="Workspace Display Mode"
+                className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-[11px]"
               >
-                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => void enterWorkspaceMode('standard')}
+                  className={`px-2 py-1 rounded-md font-semibold transition-colors ${
+                    workspaceMode === 'standard'
+                      ? 'bg-white text-slate-900 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Standard Mode (full sidebar, panels & workspace chrome)"
+                >
+                  Standard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void enterWorkspaceMode('focus')}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-colors ${
+                    workspaceMode === 'focus'
+                      ? 'bg-white text-indigo-700 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Focus Mode (hide app sidebar/header, maximize canvas & drawers)"
+                >
+                  <Focus className="w-3 h-3" /> Focus
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void enterWorkspaceMode(isFullscreen ? 'standard' : 'fullscreen')}
+                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-colors ${
+                    isFullscreen
+                      ? 'bg-primary-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title={isFullscreen ? 'Exit Fullscreen (Esc)' : 'Immersive Full-Screen Mode'}
+                >
+                  {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+                  <span>{isFullscreen ? 'Exit Fullscreen' : 'Full-Screen'}</span>
+                </button>
+              </div>
+
+              {/* Pop Out Board Launcher */}
+              <EduBoardPopoutMenu
+                boardId={localBoard.id}
+                canEdit={isEditMode}
+                canCollaborate={canCollaborate}
+                allowCollaboratorPolicy={prefsData?.allow_collaborator_mode ?? true}
+                allowPopoutPolicy={prefsData?.allow_popout_window ?? true}
+                collaborationEnabled={localBoard.collaboration_enabled}
+                onLaunchBlockedFallback={(url, label) => setBlockedPopoutFallback({ url, label })}
+                onError={(msg) => setActionBanner({ type: 'error', text: msg })}
+                onLaunched={(mode) =>
+                  setActionBanner({
+                    type: 'success',
+                    text: `Launched detached EduBoard window in ${mode.replace('_', ' ')} mode.`,
+                  })
+                }
+              />
+
+              {/* Live Sync & Detached Presence Badge */}
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium border ${
+                  wsState === 'connected'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                }`}
+                title="Real-time multi-window WebSocket sync status"
+              >
+                {wsState === 'connected' ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                <span>{wsState === 'connected' ? 'Live Sync' : wsState}</span>
+              </span>
+
+              {detachedWindowCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  <Monitor className="w-3 h-3" />
+                  <span>Open in detached window ({detachedWindowCount})</span>
+                </span>
+              )}
+
+              {isFocusOrFullscreen && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDrawer(focusDrawer === 'pages' ? 'none' : 'pages')}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border ${
+                      focusDrawer === 'pages'
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" /> Pages ({localPages.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDrawer(focusDrawer === 'boards' ? 'none' : 'boards')}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border ${
+                      focusDrawer === 'boards'
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" /> Saved Boards
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void enterWorkspaceMode('standard')}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800"
+                  >
+                    Exit {isFullscreen ? 'Fullscreen' : 'Focus'}
+                  </button>
+                </>
+              )}
 
               {isEditMode && localBoard.status !== 'published' && (
                 <button
@@ -726,6 +1023,15 @@ export default function EduBoardWorkspace() {
               )}
             </>
           )}
+
+          <button
+            type="button"
+            onClick={() => setShowPrefsModal(true)}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            title="EduBoard Display Preferences (Modes, Panels, Toolbar)"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" /> Display Prefs
+          </button>
 
           {isAdmin && (
             <button
@@ -754,6 +1060,33 @@ export default function EduBoardWorkspace() {
           <button type="button" onClick={() => setActionBanner(null)} className="underline ml-3">
             Dismiss
           </button>
+        </div>
+      )}
+
+      {blockedPopoutFallback && (
+        <div className="bg-amber-50 border border-amber-300 text-amber-900 rounded-xl px-4 py-2.5 text-xs flex flex-wrap items-center justify-between gap-2">
+          <span>
+            Browser blocked opening <strong>{blockedPopoutFallback.label}</strong> automatically. Click below to open it
+            manually:
+          </span>
+          <div className="flex items-center gap-2">
+            <a
+              href={blockedPopoutFallback.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setBlockedPopoutFallback(null)}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-600 text-white font-semibold hover:bg-amber-700"
+            >
+              <ExternalLink className="w-3 h-3" /> Open Detached Tab
+            </a>
+            <button
+              type="button"
+              onClick={() => setBlockedPopoutFallback(null)}
+              className="px-2 py-1 text-amber-700 hover:underline"
+            >
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
 
@@ -803,11 +1136,15 @@ export default function EduBoardWorkspace() {
       )}
 
       {/* ── Main Split Workspace: Left Board & Page Sidebar + Right Canvas Stage ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* Left Sidebar: Saved Boards History + Multi-Page Slide Strip */}
-        <div className={`${isFullscreen ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-4`}>
-          {/* Page Strip */}
-          {localBoard && (
+      {(() => {
+        const showStandardLeftColumn =
+          !isFocusOrFullscreen && (pagesPanelOpen || savedBoardsPanelOpen)
+        const canvasColClass = showStandardLeftColumn
+          ? 'lg:col-span-9'
+          : 'lg:col-span-12'
+
+        const renderPagesCard = (inDrawer = false) => (
+          localBoard && (
             <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2.5 shadow-2xs">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -832,6 +1169,26 @@ export default function EduBoardWorkspace() {
                   >
                     <Plus className="w-3 h-3" /> Add
                   </button>
+                  {!inDrawer ? (
+                    <button
+                      type="button"
+                      onClick={() => setPagesPanelOpen(false)}
+                      title="Collapse Pages Panel"
+                      aria-label="Collapse Pages Panel"
+                      className="p-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-500"
+                    >
+                      <PanelLeftClose className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setFocusDrawer('none')}
+                      aria-label="Close Pages Drawer"
+                      className="p-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -842,7 +1199,10 @@ export default function EduBoardWorkspace() {
                   return (
                     <div
                       key={pg.page_uid}
-                      onClick={() => setActivePageUid(pg.page_uid)}
+                      onClick={() => {
+                        setActivePageUid(pg.page_uid)
+                        if (inDrawer) setFocusDrawer('none')
+                      }}
                       className={`p-2 rounded-lg border cursor-pointer transition-colors flex items-center justify-between gap-2 ${
                         isActive
                           ? 'bg-indigo-50 border-indigo-400 text-indigo-900'
@@ -894,110 +1254,192 @@ export default function EduBoardWorkspace() {
                 })}
               </div>
             </div>
-          )}
+          )
+        )
 
-          {/* Previous Boards & Lecture Library */}
-          {!isFullscreen && (
-            <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2.5 shadow-2xs">
+        const renderSavedBoardsCard = (inDrawer = false) => (
+          <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2.5 shadow-2xs">
+            <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-primary-600" />
                 Saved Lecture Boards
               </h2>
-
-              <div className="flex gap-1.5">
-                <div className="relative flex-1">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
-                  <input
-                    type="text"
-                    value={boardSearch}
-                    onChange={(e) => setBoardSearch(e.target.value)}
-                    placeholder="Search boards..."
-                    className="w-full pl-7 pr-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="text-xs border border-slate-200 rounded-lg px-2 py-1"
+              {!inDrawer ? (
+                <button
+                  type="button"
+                  onClick={() => setSavedBoardsPanelOpen(false)}
+                  title="Collapse Saved Lecture Boards"
+                  aria-label="Collapse Saved Lecture Boards"
+                  className="p-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-500"
                 >
-                  <option value="">All</option>
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                </select>
-              </div>
+                  <PanelLeftClose className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setFocusDrawer('none')}
+                  aria-label="Close Saved Boards Drawer"
+                  className="p-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-500"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
 
-              <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-                {loadingList ? (
-                  <p className="text-xs text-slate-400 py-4 text-center">Loading boards...</p>
-                ) : !boardsData?.items?.length ? (
-                  <p className="text-xs text-slate-400 py-4 text-center">No boards match filters.</p>
+            <div className="flex gap-1.5">
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
+                <input
+                  type="text"
+                  value={boardSearch}
+                  onChange={(e) => setBoardSearch(e.target.value)}
+                  placeholder="Search boards..."
+                  className="w-full pl-7 pr-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="text-xs border border-slate-200 rounded-lg px-2 py-1"
+              >
+                <option value="">All</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+              {loadingList ? (
+                <p className="text-xs text-slate-400 py-4 text-center">Loading boards...</p>
+              ) : !boardsData?.items?.length ? (
+                <p className="text-xs text-slate-400 py-4 text-center">No boards match filters.</p>
+              ) : (
+                boardsData.items.map((item: EduBoardSummaryItem) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedBoardId(item.id)
+                      navigate(`/eduboard/${item.id}`, { replace: true })
+                      if (inDrawer) setFocusDrawer('none')
+                    }}
+                    className={`w-full text-left p-2.5 rounded-lg border transition-colors ${
+                      selectedBoardId === item.id
+                        ? 'bg-primary-50 border-primary-300'
+                        : 'bg-white border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-semibold text-slate-900 truncate">{item.title}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                          item.status === 'published'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                      {item.division_name || 'Unscoped'} · {item.subject_name || 'General'} · {item.page_count}p
+                    </p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )
+
+        const activePgIdx = localPages.findIndex((p) => p.page_uid === activePage?.page_uid)
+
+        return (
+          <div className={`relative ${isFocusOrFullscreen ? 'flex-1 min-h-0 flex flex-col gap-2' : 'space-y-2'}`}>
+            {!isFocusOrFullscreen && (!pagesPanelOpen || !savedBoardsPanelOpen) && (
+              <div className="flex flex-wrap items-center gap-2">
+                {!pagesPanelOpen && localBoard && (
+                  <button
+                    type="button"
+                    onClick={() => setPagesPanelOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-indigo-700 hover:bg-indigo-50 shadow-2xs"
+                  >
+                    <PanelLeftOpen className="w-3.5 h-3.5" /> Show Pages ({localPages.length})
+                  </button>
+                )}
+                {!savedBoardsPanelOpen && (
+                  <button
+                    type="button"
+                    onClick={() => setSavedBoardsPanelOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-2xs"
+                  >
+                    <PanelLeftOpen className="w-3.5 h-3.5" /> Show Saved Lecture Boards
+                  </button>
+                )}
+              </div>
+            )}
+
+            {isFocusOrFullscreen && focusDrawer !== 'none' && (
+              <div className="fixed inset-0 z-50 flex">
+                <div
+                  className="fixed inset-0 bg-slate-900/35 backdrop-blur-[1px]"
+                  onClick={() => setFocusDrawer('none')}
+                />
+                <div className="relative z-10 w-80 max-w-[85vw] bg-slate-50 h-full p-3 shadow-2xl overflow-y-auto border-r border-slate-200">
+                  {focusDrawer === 'pages' ? renderPagesCard(true) : renderSavedBoardsCard(true)}
+                </div>
+              </div>
+            )}
+
+            <div className={`${isFocusOrFullscreen ? 'flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12' : 'grid grid-cols-1 lg:grid-cols-12 gap-4 items-start'}`}>
+              {showStandardLeftColumn && (
+                <div className="lg:col-span-3 space-y-4">
+                  {pagesPanelOpen && renderPagesCard(false)}
+                  {savedBoardsPanelOpen && renderSavedBoardsCard(false)}
+                </div>
+              )}
+
+              <div className={`${canvasColClass} ${isFocusOrFullscreen ? 'h-full min-h-0 flex flex-col' : ''}`}>
+                {localBoard && activePage ? (
+                  <EduBoardCanvas
+                    page={activePage}
+                    readOnly={!isEditMode}
+                    fullscreenFill={isFocusOrFullscreen}
+                    pageIndex={activePgIdx >= 0 ? activePgIdx : 0}
+                    totalPages={localPages.length}
+                    onPrevPage={() => {
+                      if (activePgIdx > 0) setActivePageUid(localPages[activePgIdx - 1].page_uid)
+                    }}
+                    onNextPage={() => {
+                      if (activePgIdx >= 0 && activePgIdx < localPages.length - 1) {
+                        setActivePageUid(localPages[activePgIdx + 1].page_uid)
+                      }
+                    }}
+                    onSceneChange={handleSceneChange}
+                    onModeOrBackgroundChange={handleModeBgChange}
+                    onUploadInlineImage={isEditMode ? handleInlineImageUpload : undefined}
+                  />
                 ) : (
-                  boardsData.items.map((item: EduBoardSummaryItem) => (
+                  <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center space-y-3">
+                    <Presentation className="w-10 h-10 text-indigo-400 mx-auto" />
+                    <h3 className="text-sm font-bold text-slate-800">Ready to Teach with PrathamOne EduBoard</h3>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                      Create a classroom board linked to your Teaching Session &amp; Batch, draw in Classic Chalkboard or
+                      Digital Whiteboard mode, or import PDF slides for live annotation.
+                    </p>
                     <button
-                      key={item.id}
                       type="button"
-                      onClick={() => {
-                        setSelectedBoardId(item.id)
-                        navigate(`/eduboard/${item.id}`, { replace: true })
-                      }}
-                      className={`w-full text-left p-2.5 rounded-lg border transition-colors ${
-                        selectedBoardId === item.id
-                          ? 'bg-primary-50 border-primary-300'
-                          : 'bg-white border-slate-200 hover:bg-slate-50'
-                      }`}
+                      onClick={() => setShowCreateModal(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700"
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-semibold text-slate-900 truncate">{item.title}</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
-                            item.status === 'published'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                        {item.division_name || 'Unscoped'} · {item.subject_name || 'General'} · {item.page_count}p
-                      </p>
+                      <Plus className="w-4 h-4" /> Create Classroom Board
                     </button>
-                  ))
+                  </div>
                 )}
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Right Primary Canvas Area */}
-        <div className={isFullscreen ? 'lg:col-span-10' : 'lg:col-span-9'}>
-          {localBoard && activePage ? (
-            <EduBoardCanvas
-              page={activePage}
-              readOnly={!isEditMode}
-              onSceneChange={handleSceneChange}
-              onModeOrBackgroundChange={handleModeBgChange}
-              onUploadInlineImage={isEditMode ? handleInlineImageUpload : undefined}
-            />
-          ) : (
-            <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center space-y-3">
-              <Presentation className="w-10 h-10 text-indigo-400 mx-auto" />
-              <h3 className="text-sm font-bold text-slate-800">Ready to Teach with PrathamOne EduBoard</h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Create a classroom board linked to your Teaching Session &amp; Batch, draw in Classic Chalkboard or
-                Digital Whiteboard mode, or import PDF slides for live annotation.
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700"
-              >
-                <Plus className="w-4 h-4" /> Create Classroom Board
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )
+      })()}
 
       {/* ── Create New EduBoard Modal ── */}
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create Classroom EduBoard">
@@ -1023,7 +1465,7 @@ export default function EduBoardWorkspace() {
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
               >
                 <option value="">Select Batch</option>
-                {contextData?.divisions.map((d) => (
+                {(contextData?.divisions || []).map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.standard_name ? `${d.standard_name} — ` : ''}{d.name}
                   </option>
@@ -1038,7 +1480,7 @@ export default function EduBoardWorkspace() {
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
               >
                 <option value="">Select Subject</option>
-                {contextData?.subjects.map((s) => (
+                {(contextData?.subjects || []).map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
                   </option>
@@ -1056,7 +1498,7 @@ export default function EduBoardWorkspace() {
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
               >
                 <option value="">Unlinked / Standalone Lecture</option>
-                {contextData?.teaching_sessions.map((ts) => (
+                {(contextData?.teaching_sessions || []).map((ts) => (
                   <option key={ts.id} value={ts.id}>
                     {ts.session_date} · {ts.session_code} {ts.topic_taught ? `— ${ts.topic_taught}` : ''}
                   </option>
@@ -1086,7 +1528,7 @@ export default function EduBoardWorkspace() {
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
               >
                 <option value="">Start Blank</option>
-                {contextData?.templates.map((t) => (
+                {(contextData?.templates || []).map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.title} ({t.page_count}p)
                   </option>
@@ -1230,6 +1672,71 @@ export default function EduBoardWorkspace() {
             />
             Notify enrolled batch students in CommunicationLog upon Publish
           </label>
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Institution Default Workspace Mode</label>
+              <select
+                value={settingsForm.default_workspace_mode}
+                onChange={(e) =>
+                  setSettingsForm({ ...settingsForm, default_workspace_mode: e.target.value as EduBoardWorkspaceMode })
+                }
+                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg"
+              >
+                <option value="standard">Standard Mode</option>
+                <option value="focus">Focus Mode</option>
+                <option value="fullscreen">Immersive Full-Screen</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Institution Default Surface</label>
+              <select
+                value={settingsForm.default_board_appearance}
+                onChange={(e) =>
+                  setSettingsForm({
+                    ...settingsForm,
+                    default_board_appearance: e.target.value as EduBoardBackgroundStyle,
+                  })
+                }
+                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg"
+              >
+                <option value="white">Whiteboard (Plain)</option>
+                <option value="grid">Grid Whiteboard</option>
+                <option value="notebook">Notebook / Ruled</option>
+                <option value="greenboard">Greenboard</option>
+                <option value="blackboard">Blackboard</option>
+              </select>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={settingsForm.allow_user_display_overrides}
+              onChange={(e) =>
+                setSettingsForm({ ...settingsForm, allow_user_display_overrides: e.target.checked })
+              }
+            />
+            Allow teachers to save personal Display Preferences
+          </label>
+          <label className="flex items-center gap-2 font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={settingsForm.allow_popout_window}
+              onChange={(e) =>
+                setSettingsForm({ ...settingsForm, allow_popout_window: e.target.checked })
+              }
+            />
+            Allow Detached Pop-Out Board Windows
+          </label>
+          <label className="flex items-center gap-2 font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={settingsForm.allow_collaborator_mode}
+              onChange={(e) =>
+                setSettingsForm({ ...settingsForm, allow_collaborator_mode: e.target.checked })
+              }
+            />
+            Allow Live Collaborator Pop-Out Mode
+          </label>
           <p className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200">
             PPT/PPTX conversion is disabled in the current runtime baseline (LibreOffice / python-pptx not installed).
             Export presentations as PDF before importing.
@@ -1269,6 +1776,162 @@ export default function EduBoardWorkspace() {
         enablePreflightCheck={false}
         onConfirm={() => void handleDeleteBoard()}
       />
+
+      {/* ── Personal Display Preferences Modal (System -> Institution -> Individual) ── */}
+      <Modal
+        isOpen={showPrefsModal}
+        onClose={() => setShowPrefsModal(false)}
+        title="EduBoard Display & Layout Preferences"
+      >
+        <div className="space-y-3 text-xs">
+          {prefsData?.locked_by_institution && (
+            <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+              Personal display overrides are currently locked by your institution administrator.
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Workspace Display Mode</label>
+              <select
+                value={workspaceMode}
+                disabled={prefsData?.locked_by_institution}
+                onChange={(e) => void enterWorkspaceMode(e.target.value as EduBoardWorkspaceMode)}
+                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg"
+              >
+                <option value="standard">Standard Mode</option>
+                <option value="focus">Focus Mode</option>
+                <option value="fullscreen">Immersive Full-Screen</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Preferred Surface</label>
+              <select
+                value={preferredAppearance}
+                disabled={prefsData?.locked_by_institution}
+                onChange={(e) => setPreferredAppearance(e.target.value as EduBoardBackgroundStyle)}
+                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg"
+              >
+                <option value="white">Whiteboard (Plain)</option>
+                <option value="grid">Grid Whiteboard</option>
+                <option value="notebook">Notebook / Ruled</option>
+                <option value="greenboard">Greenboard</option>
+                <option value="blackboard">Blackboard</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Toolbar State</label>
+              <select
+                value={toolbarState}
+                disabled={prefsData?.locked_by_institution}
+                onChange={(e) => setToolbarState(e.target.value as EduBoardToolbarState)}
+                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg"
+              >
+                <option value="expanded">Expanded (Labels + Options)</option>
+                <option value="compact">Compact (Icons)</option>
+                <option value="hidden">Hidden (Show Tools Pill)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold text-slate-700 mb-1">Toolbar Dock Position</label>
+              <select
+                value={toolbarPosition}
+                disabled={prefsData?.locked_by_institution}
+                onChange={(e) => setToolbarPosition(e.target.value as EduBoardToolbarPosition)}
+                className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg"
+              >
+                <option value="top">Dock Top</option>
+                <option value="left">Dock Left</option>
+                <option value="right">Dock Right</option>
+                <option value="bottom">Dock Bottom</option>
+                <option value="floating">Floating Overlay</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 pt-1 border-t border-slate-100">
+            <label className="flex items-center gap-2 font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={pagesPanelOpen}
+                onChange={(e) => setPagesPanelOpen(e.target.checked)}
+              />
+              Show Pages Panel by default in Standard Mode
+            </label>
+            <label className="flex items-center gap-2 font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={savedBoardsPanelOpen}
+                onChange={(e) => setSavedBoardsPanelOpen(e.target.checked)}
+              />
+              Show Saved Lecture Boards Panel by default in Standard Mode
+            </label>
+            <label className="flex items-center gap-2 font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={hideAppHeader}
+                onChange={(e) => setHideAppHeader(e.target.checked)}
+              />
+              Hide Application Header while on EduBoard
+            </label>
+            <label className="flex items-center gap-2 font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={hideStatusBar}
+                onChange={(e) => setHideStatusBar(e.target.checked)}
+              />
+              Hide Bottom Status Bar while on EduBoard
+            </label>
+          </div>
+
+          <div className="flex flex-wrap justify-between gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              disabled={prefsData?.locked_by_institution}
+              onClick={async () => {
+                if (eduboardApi.resetPreferences) {
+                  await eduboardApi.resetPreferences()
+                  await refetchPrefs()
+                }
+                setShowPrefsModal(false)
+                setActionBanner({ type: 'success', text: 'Display preferences reset to institution defaults.' })
+              }}
+              className="px-3 py-1.5 border border-slate-200 rounded-lg font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Reset to Institution Default
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPrefsModal(false)}
+                className="px-3 py-1.5 border border-slate-200 rounded-lg font-semibold"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                disabled={prefsData?.locked_by_institution}
+                onClick={async () => {
+                  await saveUserDisplayPrefs({
+                    default_workspace_mode: workspaceMode,
+                    default_board_appearance: preferredAppearance,
+                    toolbar_state: toolbarState,
+                    toolbar_position: toolbarPosition,
+                    pages_panel_open: pagesPanelOpen,
+                    saved_boards_panel_open: savedBoardsPanelOpen,
+                    hide_app_header: hideAppHeader,
+                    hide_status_bar: hideStatusBar,
+                  })
+                  setShowPrefsModal(false)
+                }}
+                className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-40"
+              >
+                Save My Preferences
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

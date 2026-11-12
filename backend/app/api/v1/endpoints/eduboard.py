@@ -17,17 +17,20 @@
 #  */
 
 import os
-from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile, status
+import uuid
+from typing import Any, Dict, List, Optional, Tuple
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.core.deps import enforce_institution_access, get_current_active_user, get_data_environment
+from app.core.database import AsyncSessionLocal, get_db
+from app.core.deps import ACCESS_COOKIE_NAME, enforce_institution_access, get_current_active_user, get_data_environment, is_sysadmin
+from app.core.security import decode_token
 from app.models.eduboard import EduBoard, EduBoardRevision
 from app.models.user import User
+from app.services.eduboard_realtime import EduBoardWsClient, eduboard_realtime_manager
 from app.services.eduboard_service import EduBoardService, RevisionConflictError
 
 router = APIRouter()
@@ -76,6 +79,8 @@ class EduBoardSyncSchema(BaseModel):
     note: Optional[str] = None
     replace_pages: bool = True
     pages: Optional[List[EduBoardPageSyncSchema]] = None
+    client_id: Optional[str] = None
+    popout_token: Optional[str] = None
 
 
 class EduBoardSettingsSchema(BaseModel):
@@ -84,6 +89,36 @@ class EduBoardSettingsSchema(BaseModel):
     autosave_interval_ms: Optional[int] = None
     default_board_mode: Optional[str] = None
     notify_students_on_publish: Optional[bool] = None
+    default_workspace_mode: Optional[str] = None
+    default_board_appearance: Optional[str] = None
+    toolbar_state: Optional[str] = None
+    toolbar_position: Optional[str] = None
+    pages_panel_open: Optional[bool] = None
+    saved_boards_panel_open: Optional[bool] = None
+    hide_app_header: Optional[bool] = None
+    hide_status_bar: Optional[bool] = None
+    allow_user_display_overrides: Optional[bool] = None
+    allow_collaborator_mode: Optional[bool] = None
+    allow_popout_window: Optional[bool] = None
+
+
+class EduBoardDisplayPrefsSchema(BaseModel):
+    default_workspace_mode: Optional[str] = None
+    default_board_appearance: Optional[str] = None
+    toolbar_state: Optional[str] = None
+    toolbar_position: Optional[str] = None
+    pages_panel_open: Optional[bool] = None
+    saved_boards_panel_open: Optional[bool] = None
+    hide_app_header: Optional[bool] = None
+    hide_status_bar: Optional[bool] = None
+
+
+class EduBoardPopoutLaunchSchema(BaseModel):
+    launch_mode: str = "teacher_edit"
+    surface: Optional[str] = None
+    compact_tools: bool = True
+    show_branding: bool = True
+    hide_toolbar: bool = False
 
 
 def _serialize_board_summary(b: EduBoard) -> Dict[str, Any]:
@@ -165,11 +200,18 @@ def _serialize_board_detail(b: EduBoard) -> Dict[str, Any]:
 async def get_eduboard_context(
     academic_year_id: Optional[int] = None,
     institution_id: int = Depends(enforce_institution_access),
+    data_env: str = Depends(get_data_environment),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
     await EduBoardService.require_permission_or_403(db, current_user, "view")
-    return await EduBoardService.get_teacher_context(db, current_user, institution_id, academic_year_id=academic_year_id)
+    return await EduBoardService.get_teacher_context(
+        db,
+        current_user,
+        institution_id,
+        academic_year_id=academic_year_id,
+        data_env=data_env,
+    )
 
 
 @router.get("/settings")
@@ -193,6 +235,39 @@ async def update_eduboard_settings(
     if role not in {"superadmin", "sysadmin", "super_admin", "admin", "principal"}:
         raise HTTPException(status_code=403, detail="Only administrators may update EduBoard settings.")
     return await EduBoardService.update_settings(db, institution_id, current_user, payload.model_dump(exclude_none=True))
+
+
+@router.get("/preferences")
+async def get_eduboard_display_preferences(
+    institution_id: int = Depends(enforce_institution_access),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await EduBoardService.require_permission_or_403(db, current_user, "view")
+    return await EduBoardService.get_display_preferences(db, current_user, institution_id)
+
+
+@router.put("/preferences")
+async def update_eduboard_display_preferences(
+    payload: EduBoardDisplayPrefsSchema,
+    institution_id: int = Depends(enforce_institution_access),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await EduBoardService.require_permission_or_403(db, current_user, "view")
+    return await EduBoardService.update_display_preferences(
+        db, current_user, institution_id, payload.model_dump(exclude_none=True)
+    )
+
+
+@router.delete("/preferences")
+async def reset_eduboard_display_preferences(
+    institution_id: int = Depends(enforce_institution_access),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await EduBoardService.require_permission_or_403(db, current_user, "view")
+    return await EduBoardService.reset_display_preferences(db, current_user, institution_id)
 
 
 # =========================================================================
@@ -272,7 +347,20 @@ async def sync_eduboard(
         board = await EduBoardService.sync_board(
             db, current_user, institution_id, data_env, board_id, payload.model_dump(exclude_unset=True)
         )
-        return _serialize_board_detail(board)
+        detail = _serialize_board_detail(board)
+        await eduboard_realtime_manager.broadcast_room(
+            (institution_id, data_env == "TRAINING", board.id),
+            {
+                "type": "revision_committed",
+                "board_id": board.id,
+                "latest_revision_no": board.latest_revision_no,
+                "actor_user_id": current_user.id,
+                "client_id": payload.client_id,
+                "board": detail,
+            },
+            exclude_client_id=payload.client_id,
+        )
+        return detail
     except RevisionConflictError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -294,7 +382,18 @@ async def publish_eduboard(
     db: AsyncSession = Depends(get_db),
 ):
     res = await EduBoardService.publish_board(db, current_user, institution_id, data_env, board_id)
-    return {"board": _serialize_board_detail(res["board"]), "notified_students": res["notified_students"]}
+    detail = _serialize_board_detail(res["board"])
+    await eduboard_realtime_manager.broadcast_room(
+        (institution_id, data_env == "TRAINING", board_id),
+        {
+            "type": "revision_committed",
+            "board_id": board_id,
+            "latest_revision_no": res["board"].latest_revision_no,
+            "actor_user_id": current_user.id,
+            "board": detail,
+        },
+    )
+    return {"board": detail, "notified_students": res["notified_students"]}
 
 
 @router.post("/boards/{board_id}/status")
@@ -368,7 +467,18 @@ async def restore_eduboard_revision(
     db: AsyncSession = Depends(get_db),
 ):
     board = await EduBoardService.restore_revision(db, current_user, institution_id, data_env, board_id, revision_id)
-    return _serialize_board_detail(board)
+    detail = _serialize_board_detail(board)
+    await eduboard_realtime_manager.broadcast_room(
+        (institution_id, data_env == "TRAINING", board_id),
+        {
+            "type": "revision_committed",
+            "board_id": board_id,
+            "latest_revision_no": board.latest_revision_no,
+            "actor_user_id": current_user.id,
+            "board": detail,
+        },
+    )
+    return detail
 
 
 # =========================================================================
@@ -505,3 +615,251 @@ async def get_eduboard_reports_summary(
         raise HTTPException(status_code=403, detail="Students cannot access institute EduBoard analytics.")
     await EduBoardService.require_permission_or_403(db, current_user, "view")
     return await EduBoardService.get_reports_summary(db, institution_id, data_env, academic_year_id=academic_year_id)
+
+
+# =========================================================================
+# POP-OUT DETACHED WINDOW & MULTI-TAB WEBSOCKET SYNC
+# =========================================================================
+
+@router.post("/boards/{board_id}/popout-session")
+async def create_eduboard_popout_session(
+    board_id: int,
+    payload: EduBoardPopoutLaunchSchema,
+    institution_id: int = Depends(enforce_institution_access),
+    data_env: str = Depends(get_data_environment),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await EduBoardService.create_popout_session(
+        db, current_user, institution_id, data_env, board_id, payload.model_dump()
+    )
+
+
+@router.get("/popout/resolve")
+async def resolve_eduboard_popout_session(
+    launch: str = Query(..., min_length=16),
+    institution_id: int = Depends(enforce_institution_access),
+    data_env: str = Depends(get_data_environment),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    res = await EduBoardService.resolve_popout_session(db, current_user, institution_id, data_env, launch)
+    board_detail = _serialize_board_detail(res["board"])
+    board_detail["read_only"] = not res["permissions"]["can_edit"]
+    return {
+        "board": board_detail,
+        "effective_mode": res["effective_mode"],
+        "institution_name": res["institution_name"],
+        "teacher_name": res["teacher_name"],
+        "permissions": res["permissions"],
+        "ui_config": res["ui_config"],
+        "ws_token": res["ws_token"],
+    }
+
+
+@router.post("/boards/{board_id}/ws-ticket")
+async def create_eduboard_ws_ticket(
+    board_id: int,
+    institution_id: int = Depends(enforce_institution_access),
+    data_env: str = Depends(get_data_environment),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    is_demo = data_env == "TRAINING"
+    board = await EduBoardService.get_board_or_404(db, board_id, institution_id, is_demo=is_demo)
+    role = (getattr(current_user, "role", "") or "").lower()
+    if role == "student":
+        board = await EduBoardService.get_student_board_detail(db, current_user, institution_id, data_env, board_id)
+        ws_mode = "presentation"
+    else:
+        await EduBoardService.require_permission_or_403(db, current_user, "view", board=board)
+        can_edit = await EduBoardService.check_permission(db, current_user, "edit", board=board)
+        ws_mode = "teacher_edit" if can_edit else "presentation"
+
+    ws_token = EduBoardService.mint_ws_token(current_user, institution_id, data_env, board.id, ws_mode)
+    return {"ws_token": ws_token, "expires_in_seconds": 3600, "mode": ws_mode}
+
+
+async def _authenticate_eduboard_ws(
+    websocket: WebSocket,
+    board_id: int,
+    token: Optional[str],
+    client_id: Optional[str],
+    window_type: str,
+    surface: Optional[str],
+) -> Optional[Tuple[Tuple[int, bool, int], EduBoardWsClient]]:
+    """
+    Authenticates WebSocket connections using scoped ws_token or HttpOnly cookie,
+    validates multi-tenant & PRODUCTION/TRAINING isolation, and releases the DB session
+    immediately after handshake so pooled DB connections are never held open idle.
+    """
+    override_get_db = websocket.app.dependency_overrides.get(get_db)
+
+    async def _run_with_db(db: AsyncSession):
+        claims: Optional[Dict[str, Any]] = None
+        if token:
+            try:
+                claims = EduBoardService.decode_scoped_token(token, "eduboard_ws")
+            except HTTPException:
+                claims = None
+        if claims:
+            if int(claims.get("board_id", -1)) != int(board_id):
+                return None
+            user_id = int(claims["sub"])
+            inst_id = int(claims["inst"])
+            data_env = str(claims["env"])
+            mode = str(claims.get("mode") or "presentation")
+        else:
+            cookie_jwt = websocket.cookies.get(ACCESS_COOKIE_NAME)
+            if not cookie_jwt:
+                return None
+            try:
+                jwt_claims = decode_token(cookie_jwt)
+                if jwt_claims.get("type") != "access":
+                    return None
+                user_id = int(jwt_claims["sub"])
+            except Exception:
+                return None
+            qp_env = (websocket.query_params.get("env") or "PRODUCTION").strip().upper()
+            data_env = qp_env if qp_env in ("PRODUCTION", "TRAINING") else "PRODUCTION"
+            inst_id = None
+            mode = "teacher_edit"
+
+        user = (await db.execute(select(User).where(User.id == user_id, User.is_active == True))).scalar_one_or_none()
+        if not user:
+            return None
+
+        resolved_inst_id = await enforce_institution_access(
+            institution_id=inst_id,
+            data_env=data_env,
+            current_user=user,
+            db=db,
+        )
+        is_demo = data_env == "TRAINING"
+        try:
+            board = await EduBoardService.get_board_or_404(db, board_id, resolved_inst_id, is_demo=is_demo)
+        except HTTPException:
+            return None
+
+        role = (getattr(user, "role", "") or "").lower()
+        if role == "student":
+            try:
+                await EduBoardService.get_student_board_detail(db, user, resolved_inst_id, data_env, board_id)
+            except HTTPException:
+                return None
+            mode = "presentation"
+        elif mode == "collaborator":
+            inst_settings = await EduBoardService.get_settings(db, resolved_inst_id)
+            if not bool(inst_settings.get("allow_collaborator_mode", True)):
+                return None
+            if not await EduBoardService.check_permission(db, user, "collaborate", board=board):
+                return None
+            is_owner_or_admin = is_sysadmin(user) or role in {"admin", "principal", "coordinator"} or board.teacher_user_id == user.id
+            if not board.collaboration_enabled and not is_owner_or_admin:
+                return None
+        elif mode == "teacher_edit":
+            if not await EduBoardService.check_permission(db, user, "edit", board=board):
+                if not await EduBoardService.check_permission(db, user, "view", board=board):
+                    return None
+                mode = "presentation"
+        else:
+            if not await EduBoardService.check_permission(db, user, "view", board=board):
+                return None
+            mode = "presentation"
+
+        cid = (client_id or uuid.uuid4().hex[:12])[:64]
+        wtype = "detached" if window_type == "detached" else "main"
+        return (
+            (resolved_inst_id, is_demo, board.id),
+            EduBoardWsClient(
+                websocket=websocket,
+                client_id=cid,
+                user_id=user.id,
+                user_name=user.full_name,
+                role=user.role,
+                mode=mode,
+                window_type=wtype,
+                surface=surface,
+            ),
+        )
+
+    if override_get_db is not None:
+        agen = override_get_db()
+        db_sess = await agen.__anext__()
+        try:
+            return await _run_with_db(db_sess)
+        finally:
+            try:
+                await agen.aclose()
+            except Exception:
+                pass
+    else:
+        async with AsyncSessionLocal() as db_sess:
+            return await _run_with_db(db_sess)
+
+
+@router.websocket("/ws/boards/{board_id}")
+async def eduboard_realtime_websocket(
+    websocket: WebSocket,
+    board_id: int,
+    token: Optional[str] = Query(None),
+    client_id: Optional[str] = Query(None),
+    window_type: str = Query("main"),
+    surface: Optional[str] = Query(None),
+):
+    auth_result = await _authenticate_eduboard_ws(
+        websocket=websocket,
+        board_id=board_id,
+        token=token,
+        client_id=client_id,
+        window_type=window_type,
+        surface=surface,
+    )
+    if auth_result is None:
+        await websocket.close(code=4403)
+        return
+
+    room_key, client = auth_result
+    await websocket.accept()
+    await eduboard_realtime_manager.connect(room_key, client)
+
+    try:
+        while True:
+            msg = await websocket.receive_json()
+            if not isinstance(msg, dict):
+                continue
+            mtype = str(msg.get("type") or "")
+            if mtype == "ping":
+                await websocket.send_json({"type": "pong", "ts": msg.get("ts")})
+                continue
+
+            if mtype == "scene_patch":
+                if client.mode not in {"teacher_edit", "collaborator"}:
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "code": "READ_ONLY_MODE",
+                            "detail": "Presentation window cannot broadcast scene edits.",
+                        }
+                    )
+                    continue
+                await eduboard_realtime_manager.broadcast_room(
+                    room_key,
+                    {
+                        "type": "scene_sync",
+                        "board_id": board_id,
+                        "client_id": client.client_id,
+                        "actor_user_id": client.user_id,
+                        "actor_name": client.user_name,
+                        "active_page_uid": msg.get("active_page_uid"),
+                        "pages": msg.get("pages"),
+                        "base_revision_no": msg.get("base_revision_no"),
+                    },
+                    exclude_client_id=client.client_id,
+                )
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        await eduboard_realtime_manager.disconnect(room_key, client.client_id)

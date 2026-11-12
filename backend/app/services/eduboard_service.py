@@ -23,20 +23,24 @@ import os
 import re
 import tempfile
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import fitz  # PyMuPDF 1.24.5
+import jwt
 from fastapi import HTTPException, UploadFile, status
+from jwt.exceptions import InvalidTokenError as JWTError
 from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import settings
 from app.core.deps import get_user_permissions, is_sysadmin
 from app.models.academic_year import AcademicYear
 from app.models.communication import CommunicationLog
 from app.models.division import Division
+from app.models.institution import Institution
 from app.models.eduboard import (
     EduBoard,
     EduBoardAttachment,
@@ -72,6 +76,21 @@ EDUBOARD_PAGE_BACKGROUNDS: Set[str] = {
     "pdf_slide",
 }
 EDUBOARD_BOARD_STATUSES: Set[str] = {"draft", "active", "published", "closed", "archived"}
+EDUBOARD_WORKSPACE_MODES: Set[str] = {"standard", "focus", "fullscreen"}
+EDUBOARD_TOOLBAR_STATES: Set[str] = {"expanded", "compact", "hidden"}
+EDUBOARD_TOOLBAR_POSITIONS: Set[str] = {"top", "left", "right", "bottom", "floating"}
+EDUBOARD_POPOUT_MODES: Set[str] = {"teacher_edit", "presentation", "collaborator"}
+
+SYSTEM_DEFAULT_DISPLAY_PREFS: Dict[str, Any] = {
+    "default_workspace_mode": "standard",
+    "default_board_appearance": "white",
+    "toolbar_state": "expanded",
+    "toolbar_position": "top",
+    "pages_panel_open": True,
+    "saved_boards_panel_open": True,
+    "hide_app_header": False,
+    "hide_status_bar": False,
+}
 
 MAX_SCENE_JSON_BYTES = 5 * 1024 * 1024  # 5 MB per page safety cap
 MAX_AUTOSAVE_REVISIONS = 25
@@ -200,6 +219,10 @@ class EduBoardService:
             "pptx_conversion_enabled": False,
             "default_board_mode": "whiteboard",
             "notify_students_on_publish": True,
+            **SYSTEM_DEFAULT_DISPLAY_PREFS,
+            "allow_user_display_overrides": True,
+            "allow_collaborator_mode": True,
+            "allow_popout_window": True,
         }
         if row and row.value:
             try:
@@ -217,9 +240,36 @@ class EduBoardService:
         payload: Dict[str, Any],
     ) -> Dict[str, Any]:
         curr = await EduBoardService.get_settings(db, institution_id)
-        for k in ("max_file_size_mb", "allowed_extensions", "autosave_interval_ms", "default_board_mode", "notify_students_on_publish"):
+        allowed_keys = (
+            "max_file_size_mb",
+            "allowed_extensions",
+            "autosave_interval_ms",
+            "default_board_mode",
+            "notify_students_on_publish",
+            "default_workspace_mode",
+            "default_board_appearance",
+            "toolbar_state",
+            "toolbar_position",
+            "pages_panel_open",
+            "saved_boards_panel_open",
+            "hide_app_header",
+            "hide_status_bar",
+            "allow_user_display_overrides",
+            "allow_collaborator_mode",
+            "allow_popout_window",
+        )
+        for k in allowed_keys:
             if k in payload and payload[k] is not None:
-                curr[k] = payload[k]
+                val = payload[k]
+                if k == "default_workspace_mode" and val not in EDUBOARD_WORKSPACE_MODES:
+                    continue
+                if k == "default_board_appearance" and val not in EDUBOARD_PAGE_BACKGROUNDS:
+                    continue
+                if k == "toolbar_state" and val not in EDUBOARD_TOOLBAR_STATES:
+                    continue
+                if k == "toolbar_position" and val not in EDUBOARD_TOOLBAR_POSITIONS:
+                    continue
+                curr[k] = val
         # Force PPTX flag off cleanly unless backend has converter
         curr["pptx_conversion_enabled"] = False
         row = (
@@ -233,7 +283,7 @@ class EduBoardService:
         ).scalar_one_or_none()
         if row:
             row.value = json.dumps(curr)
-            row.updated_by = actor.id
+            row.updated_by_id = actor.id
         else:
             db.add(
                 InstitutionSetting(
@@ -243,7 +293,7 @@ class EduBoardService:
                     value=json.dumps(curr),
                     data_type="json",
                     description="PrathamOne EduBoard workspace & upload settings",
-                    updated_by=actor.id,
+                    updated_by_id=actor.id,
                 )
             )
         await EduBoardService.write_audit_log(
@@ -337,6 +387,7 @@ class EduBoardService:
         user: User,
         institution_id: int,
         academic_year_id: Optional[int] = None,
+        data_env: str = "PRODUCTION",
     ) -> Dict[str, Any]:
         """Returns authorized academic years, standards, divisions, subjects, and recent TeachingSessions."""
         ay_rows = (
@@ -408,6 +459,21 @@ class EduBoardService:
         sub_map = {s.id: s for s in sub_rows}
         std_map = {s.id: s for s in std_rows}
 
+        is_demo = (data_env or "PRODUCTION").upper() == "TRAINING"
+        tpl_rows = (
+            await db.execute(
+                select(EduBoard)
+                .where(
+                    EduBoard.institution_id == institution_id,
+                    EduBoard.is_demo == is_demo,
+                    EduBoard.is_template == True,
+                    EduBoard.is_deleted == False,
+                )
+                .order_by(EduBoard.updated_at.desc(), EduBoard.id.desc())
+                .limit(50)
+            )
+        ).scalars().all()
+
         return {
             "academic_years": [{"id": a.id, "name": a.name, "is_current": a.is_current} for a in ay_rows],
             "standards": [{"id": s.id, "name": s.name, "level": s.level} for s in std_rows],
@@ -438,6 +504,17 @@ class EduBoardService:
                     "linked_board_id": session_board_map.get(ts.id),
                 }
                 for ts in ts_rows
+            ],
+            "templates": [
+                {
+                    "id": tpl.id,
+                    "title": tpl.title,
+                    "topic": tpl.topic,
+                    "template_category": tpl.template_category,
+                    "board_mode_default": tpl.board_mode_default,
+                    "page_count": tpl.page_count,
+                }
+                for tpl in tpl_rows
             ],
         }
 
@@ -731,7 +808,36 @@ class EduBoardService:
         """
         is_demo = data_env == "TRAINING"
         board = await EduBoardService.get_board_or_404(db, board_id, institution_id, is_demo=is_demo)
-        await EduBoardService.require_permission_or_403(db, user, "edit", board=board)
+
+        popout_token = payload.get("popout_token")
+        if popout_token:
+            claims = EduBoardService.decode_scoped_token(str(popout_token), "eduboard_popout")
+            if (
+                str(claims.get("sub")) != str(user.id)
+                or int(claims.get("inst", -1)) != int(institution_id)
+                or claims.get("env") != data_env
+                or int(claims.get("board_id", -1)) != int(board_id)
+            ):
+                raise HTTPException(status_code=403, detail="Detached pop-out token scope mismatch.")
+            p_mode = str(claims.get("mode") or "presentation")
+            if p_mode == "presentation":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Presentation mode is strictly read-only and cannot mutate board state.",
+                )
+            elif p_mode == "collaborator":
+                inst_settings = await EduBoardService.get_settings(db, institution_id)
+                if not bool(inst_settings.get("allow_collaborator_mode", True)):
+                    raise HTTPException(status_code=403, detail="Collaborator mode is disabled by policy.")
+                await EduBoardService.require_permission_or_403(db, user, "collaborate", board=board)
+                role = (getattr(user, "role", "") or "").lower()
+                is_owner_or_admin = is_sysadmin(user) or role in ADMIN_ROLES or board.teacher_user_id == user.id
+                if not board.collaboration_enabled and not is_owner_or_admin:
+                    raise HTTPException(status_code=403, detail="Collaboration is currently disabled on this board.")
+            else:
+                await EduBoardService.require_permission_or_403(db, user, "edit", board=board)
+        else:
+            await EduBoardService.require_permission_or_403(db, user, "edit", board=board)
 
         if board.status == "closed":
             raise HTTPException(
@@ -1628,6 +1734,22 @@ class EduBoardService:
         published_boards = (
             await db.execute(select(func.count(EduBoard.id)).where(*base_cond, EduBoard.status == "published"))
         ).scalar() or 0
+        draft_boards = (
+            await db.execute(select(func.count(EduBoard.id)).where(*base_cond, EduBoard.status == "draft"))
+        ).scalar() or 0
+        templates_count = (
+            await db.execute(select(func.count(EduBoard.id)).where(*base_cond, EduBoard.is_template == True))
+        ).scalar() or 0
+        total_pages = int(
+            (await db.execute(select(func.coalesce(func.sum(EduBoard.page_count), 0)).where(*base_cond))).scalar() or 0
+        )
+        total_pdf_attachments = (
+            await db.execute(
+                select(func.count(EduBoardAttachment.id))
+                .join(EduBoard, EduBoard.id == EduBoardAttachment.board_id)
+                .where(*base_cond, EduBoardAttachment.extension == "pdf")
+            )
+        ).scalar() or 0
         lectures_linked = (
             await db.execute(select(func.count(EduBoard.id)).where(*base_cond, EduBoard.teaching_session_id.is_not(None)))
         ).scalar() or 0
@@ -1680,15 +1802,415 @@ class EduBoardService:
             )
         ).all()
 
+        mode_rows = (
+            await db.execute(
+                select(EduBoard.board_mode_default, func.count(EduBoard.id))
+                .where(*base_cond)
+                .group_by(EduBoard.board_mode_default)
+            )
+        ).all()
+        mode_breakdown = {str(m or "whiteboard"): int(cnt or 0) for m, cnt in mode_rows}
+
+        recent_board_rows = (
+            await db.execute(
+                select(EduBoard)
+                .where(*base_cond)
+                .order_by(EduBoard.updated_at.desc(), EduBoard.id.desc())
+                .limit(50)
+            )
+        ).scalars().all()
+
         return {
             "total_boards": total_boards,
             "published_boards": published_boards,
+            "draft_boards": draft_boards,
+            "total_pages": total_pages,
+            "total_pdf_attachments": total_pdf_attachments,
+            "templates_count": templates_count,
             "lectures_linked": lectures_linked,
             "student_views": student_views,
             "pdf_exports": pdf_exports,
+            "mode_breakdown": mode_breakdown,
+            "recent_boards": [
+                {
+                    "id": b.id,
+                    "board_code": b.board_code,
+                    "title": b.title,
+                    "status": b.status,
+                    "mode": b.board_mode_default,
+                    "page_count": int(b.page_count or 0),
+                    "updated_at": b.updated_at.isoformat() if b.updated_at else None,
+                }
+                for b in recent_board_rows
+            ],
             "by_teacher": [
                 {"teacher_id": r[0], "teacher_name": (r[1] or "").strip(), "boards": r[2], "pages": int(r[3] or 0)}
                 for r in by_teacher_rows
             ],
             "by_subject": [{"subject_id": r[0], "subject_name": r[1], "boards": r[2]} for r in by_subject_rows],
         }
+
+    # =========================================================================
+    # DISPLAY PREFERENCES (System Default -> Institution Default -> User)
+    # =========================================================================
+
+    @staticmethod
+    def _sanitize_display_prefs(raw: Dict[str, Any]) -> Dict[str, Any]:
+        cleaned: Dict[str, Any] = {}
+        if raw.get("default_workspace_mode") in EDUBOARD_WORKSPACE_MODES:
+            cleaned["default_workspace_mode"] = raw["default_workspace_mode"]
+        if raw.get("default_board_appearance") in EDUBOARD_PAGE_BACKGROUNDS:
+            cleaned["default_board_appearance"] = raw["default_board_appearance"]
+        if raw.get("toolbar_state") in EDUBOARD_TOOLBAR_STATES:
+            cleaned["toolbar_state"] = raw["toolbar_state"]
+        if raw.get("toolbar_position") in EDUBOARD_TOOLBAR_POSITIONS:
+            cleaned["toolbar_position"] = raw["toolbar_position"]
+        for bool_k in ("pages_panel_open", "saved_boards_panel_open", "hide_app_header", "hide_status_bar"):
+            if bool_k in raw and raw[bool_k] is not None:
+                cleaned[bool_k] = bool(raw[bool_k])
+        return cleaned
+
+    @staticmethod
+    async def get_display_preferences(
+        db: AsyncSession,
+        user: User,
+        institution_id: int,
+    ) -> Dict[str, Any]:
+        inst_settings = await EduBoardService.get_settings(db, institution_id)
+        inst_defaults = {k: inst_settings.get(k, v) for k, v in SYSTEM_DEFAULT_DISPLAY_PREFS.items()}
+        allow_overrides = bool(inst_settings.get("allow_user_display_overrides", True))
+        allow_collaborator = bool(inst_settings.get("allow_collaborator_mode", True))
+        allow_popout = bool(inst_settings.get("allow_popout_window", True))
+
+        pref_key = f"eduboard_user_pref:{user.id}"
+        row = (
+            await db.execute(
+                select(InstitutionSetting).where(
+                    InstitutionSetting.institution_id == institution_id,
+                    InstitutionSetting.category == "eduboard_user_pref",
+                    InstitutionSetting.key == pref_key,
+                )
+            )
+        ).scalar_one_or_none()
+
+        user_overrides: Dict[str, Any] = {}
+        if row and row.value:
+            try:
+                user_overrides = EduBoardService._sanitize_display_prefs(json.loads(row.value))
+            except json.JSONDecodeError:
+                user_overrides = {}
+
+        effective = dict(SYSTEM_DEFAULT_DISPLAY_PREFS)
+        effective.update(inst_defaults)
+        if allow_overrides or is_sysadmin(user) or (getattr(user, "role", "") or "").lower() in ADMIN_ROLES:
+            effective.update(user_overrides)
+
+        return {
+            "system_defaults": dict(SYSTEM_DEFAULT_DISPLAY_PREFS),
+            "institution_defaults": inst_defaults,
+            "user_overrides": user_overrides,
+            "effective": effective,
+            "allow_user_display_overrides": allow_overrides,
+            "allow_collaborator_mode": allow_collaborator,
+            "allow_popout_window": allow_popout,
+            "locked_by_institution": not allow_overrides
+            and not (is_sysadmin(user) or (getattr(user, "role", "") or "").lower() in ADMIN_ROLES),
+        }
+
+    @staticmethod
+    async def update_display_preferences(
+        db: AsyncSession,
+        user: User,
+        institution_id: int,
+        payload: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        inst_settings = await EduBoardService.get_settings(db, institution_id)
+        is_privileged = is_sysadmin(user) or (getattr(user, "role", "") or "").lower() in ADMIN_ROLES
+        if not bool(inst_settings.get("allow_user_display_overrides", True)) and not is_privileged:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Display layout preferences are locked by your institution administrator.",
+            )
+
+        pref_key = f"eduboard_user_pref:{user.id}"
+        row = (
+            await db.execute(
+                select(InstitutionSetting).where(
+                    InstitutionSetting.institution_id == institution_id,
+                    InstitutionSetting.category == "eduboard_user_pref",
+                    InstitutionSetting.key == pref_key,
+                )
+            )
+        ).scalar_one_or_none()
+
+        current_overrides: Dict[str, Any] = {}
+        if row and row.value:
+            try:
+                current_overrides = EduBoardService._sanitize_display_prefs(json.loads(row.value))
+            except json.JSONDecodeError:
+                current_overrides = {}
+
+        sanitized_patch = EduBoardService._sanitize_display_prefs(payload)
+        current_overrides.update(sanitized_patch)
+
+        if row:
+            row.value = json.dumps(current_overrides)
+            row.updated_by_id = user.id
+        else:
+            db.add(
+                InstitutionSetting(
+                    institution_id=institution_id,
+                    category="eduboard_user_pref",
+                    key=pref_key,
+                    value=json.dumps(current_overrides),
+                    data_type="json",
+                    scope="user",
+                    description=f"EduBoard personal display preferences for user {user.id}",
+                    updated_by_id=user.id,
+                )
+            )
+        await db.commit()
+        return await EduBoardService.get_display_preferences(db, user, institution_id)
+
+    @staticmethod
+    async def reset_display_preferences(
+        db: AsyncSession,
+        user: User,
+        institution_id: int,
+    ) -> Dict[str, Any]:
+        pref_key = f"eduboard_user_pref:{user.id}"
+        row = (
+            await db.execute(
+                select(InstitutionSetting).where(
+                    InstitutionSetting.institution_id == institution_id,
+                    InstitutionSetting.category == "eduboard_user_pref",
+                    InstitutionSetting.key == pref_key,
+                )
+            )
+        ).scalar_one_or_none()
+        if row:
+            await db.delete(row)
+            await db.commit()
+        return await EduBoardService.get_display_preferences(db, user, institution_id)
+
+    # =========================================================================
+    # POP-OUT SCOPED SESSION & WEBSOCKET TICKET AUTHORIZATION
+    # =========================================================================
+
+    @staticmethod
+    def _encode_scoped_token(payload: Dict[str, Any], ttl_minutes: int) -> str:
+        now = datetime.now(timezone.utc)
+        claims = {
+            **payload,
+            "iat": now,
+            "exp": now + timedelta(minutes=ttl_minutes),
+            "jti": uuid.uuid4().hex,
+        }
+        return jwt.encode(claims, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    @staticmethod
+    def decode_scoped_token(token: str, expected_type: str) -> Dict[str, Any]:
+        try:
+            claims = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        except JWTError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Pop-out / sync token is invalid or expired. Launch the board window again.",
+            )
+        if claims.get("type") != expected_type:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid scoped launch token type.",
+            )
+        return claims
+
+    @staticmethod
+    async def create_popout_session(
+        db: AsyncSession,
+        user: User,
+        institution_id: int,
+        data_env: str,
+        board_id: int,
+        payload: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        is_demo = data_env == "TRAINING"
+        board = await EduBoardService.get_board_or_404(db, board_id, institution_id, is_demo=is_demo)
+        inst_settings = await EduBoardService.get_settings(db, institution_id)
+
+        if not bool(inst_settings.get("allow_popout_window", True)):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Detached pop-out windows are disabled by institution policy.",
+            )
+
+        launch_mode = str(payload.get("launch_mode") or "teacher_edit").strip().lower()
+        if launch_mode not in EDUBOARD_POPOUT_MODES:
+            raise HTTPException(status_code=400, detail=f"Unsupported pop-out mode '{launch_mode}'.")
+
+        role = (getattr(user, "role", "") or "").lower()
+        if launch_mode == "teacher_edit":
+            if role == "student":
+                raise HTTPException(status_code=403, detail="Students cannot open Teacher Edit mode.")
+            await EduBoardService.require_permission_or_403(db, user, "edit", board=board)
+        elif launch_mode == "presentation":
+            if role == "student":
+                board = await EduBoardService.get_student_board_detail(db, user, institution_id, data_env, board_id)
+            else:
+                await EduBoardService.require_permission_or_403(db, user, "view", board=board)
+        elif launch_mode == "collaborator":
+            if not bool(inst_settings.get("allow_collaborator_mode", True)):
+                raise HTTPException(status_code=403, detail="Collaborator mode is disabled by institution policy.")
+            await EduBoardService.require_permission_or_403(db, user, "collaborate", board=board)
+            is_owner_or_admin = (
+                is_sysadmin(user)
+                or role in ADMIN_ROLES
+                or board.teacher_user_id == user.id
+            )
+            if not board.collaboration_enabled and not is_owner_or_admin:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Collaboration must be enabled on this board before opening Collaborator mode.",
+                )
+
+        surface = payload.get("surface")
+        if surface and surface not in EDUBOARD_PAGE_BACKGROUNDS:
+            surface = None
+
+        compact_tools = bool(payload.get("compact_tools", launch_mode != "presentation"))
+        show_branding = bool(payload.get("show_branding", True))
+        hide_toolbar = bool(payload.get("hide_toolbar", launch_mode == "presentation"))
+
+        ttl_minutes = 15
+        launch_token = EduBoardService._encode_scoped_token(
+            {
+                "type": "eduboard_popout",
+                "sub": str(user.id),
+                "inst": institution_id,
+                "env": data_env,
+                "board_id": board.id,
+                "mode": launch_mode,
+                "surface": surface,
+                "compact_tools": compact_tools,
+                "show_branding": show_branding,
+                "hide_toolbar": hide_toolbar,
+            },
+            ttl_minutes=ttl_minutes,
+        )
+
+        await EduBoardService.write_audit_log(
+            db,
+            user_id=user.id,
+            institution_id=institution_id,
+            action="EDUBOARD_POPOUT_LAUNCHED",
+            resource_id=board.id,
+            details=json.dumps({"mode": launch_mode, "surface": surface, "is_demo": is_demo}),
+        )
+        await db.commit()
+
+        return {
+            "launch_token": launch_token,
+            "expires_in_seconds": ttl_minutes * 60,
+            "launch_url": f"/eduboard/window?launch={launch_token}",
+            "mode": launch_mode,
+            "board_id": board.id,
+        }
+
+    @staticmethod
+    async def resolve_popout_session(
+        db: AsyncSession,
+        user: User,
+        institution_id: int,
+        data_env: str,
+        launch_token: str,
+    ) -> Dict[str, Any]:
+        claims = EduBoardService.decode_scoped_token(launch_token, "eduboard_popout")
+        if str(claims.get("sub")) != str(user.id):
+            raise HTTPException(status_code=403, detail="Launch token does not belong to the signed-in user.")
+        if int(claims.get("inst", -1)) != int(institution_id) or claims.get("env") != data_env:
+            raise HTTPException(
+                status_code=403,
+                detail="Environment or institution mismatch for detached EduBoard launch token.",
+            )
+
+        board_id = int(claims["board_id"])
+        is_demo = data_env == "TRAINING"
+        board = await EduBoardService.get_board_or_404(db, board_id, institution_id, is_demo=is_demo)
+        inst_settings = await EduBoardService.get_settings(db, institution_id)
+        if not bool(inst_settings.get("allow_popout_window", True)):
+            raise HTTPException(status_code=403, detail="Detached pop-out windows are disabled by policy.")
+
+        mode = str(claims.get("mode") or "presentation")
+        role = (getattr(user, "role", "") or "").lower()
+        can_edit = False
+
+        if mode == "teacher_edit":
+            if role == "student":
+                raise HTTPException(status_code=403, detail="Students cannot edit classroom boards.")
+            await EduBoardService.require_permission_or_403(db, user, "edit", board=board)
+            can_edit = board.status != "closed"
+        elif mode == "collaborator":
+            if not bool(inst_settings.get("allow_collaborator_mode", True)):
+                raise HTTPException(status_code=403, detail="Collaborator mode is disabled by policy.")
+            await EduBoardService.require_permission_or_403(db, user, "collaborate", board=board)
+            can_edit = board.status != "closed" and (
+                board.collaboration_enabled
+                or is_sysadmin(user)
+                or role in ADMIN_ROLES
+                or board.teacher_user_id == user.id
+            )
+            if not can_edit and board.status != "closed":
+                raise HTTPException(status_code=403, detail="Collaboration is currently disabled on this board.")
+        else:
+            mode = "presentation"
+            if role == "student":
+                board = await EduBoardService.get_student_board_detail(db, user, institution_id, data_env, board_id)
+            else:
+                await EduBoardService.require_permission_or_403(db, user, "view", board=board)
+            can_edit = False
+
+        inst_name = (
+            await db.execute(select(Institution.name).where(Institution.id == institution_id))
+        ).scalar_one_or_none() or "PrathamOne Academy"
+
+        ws_token = EduBoardService.mint_ws_token(user, institution_id, data_env, board.id, mode)
+        can_publish = can_edit and await EduBoardService.check_permission(db, user, "publish", board=board)
+        can_download = await EduBoardService.check_permission(db, user, "download", board=board)
+
+        return {
+            "board": board,
+            "effective_mode": mode,
+            "institution_name": inst_name,
+            "teacher_name": board.teacher.full_name if board.teacher else user.full_name,
+            "permissions": {
+                "can_edit": can_edit,
+                "can_publish": can_publish,
+                "can_download": can_download,
+            },
+            "ui_config": {
+                "surface": claims.get("surface"),
+                "compact_tools": bool(claims.get("compact_tools", mode != "presentation")),
+                "show_branding": bool(claims.get("show_branding", True)),
+                "hide_toolbar": bool(claims.get("hide_toolbar", mode == "presentation")),
+            },
+            "ws_token": ws_token,
+        }
+
+    @staticmethod
+    def mint_ws_token(
+        user: User,
+        institution_id: int,
+        data_env: str,
+        board_id: int,
+        mode: str = "teacher_edit",
+    ) -> str:
+        return EduBoardService._encode_scoped_token(
+            {
+                "type": "eduboard_ws",
+                "sub": str(user.id),
+                "inst": institution_id,
+                "env": data_env,
+                "board_id": board_id,
+                "mode": mode if mode in EDUBOARD_POPOUT_MODES else "presentation",
+            },
+            ttl_minutes=60,
+        )

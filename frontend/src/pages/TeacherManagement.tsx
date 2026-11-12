@@ -1820,17 +1820,29 @@ function TeacherManagementContent() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigate(`/homework/create?teaching_session_id=${s.id}&division_id=${s.division_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic || s.topic_taught || '')}`)
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-2xs font-bold bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg transition-colors"
-                            title="Assign Homework from this session"
-                          >
-                            <Plus className="w-3 h-3" />
-                            <span>Homework</span>
-                          </button>
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigate(`/homework/create?teaching_session_id=${s.id}&division_id=${s.division_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic || s.topic_taught || '')}`)
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-2xs font-bold bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg transition-colors"
+                              title="Assign Homework from this session"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Homework</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigate(`/eduboard?session_id=${s.id}&division_id=${s.division_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic || s.topic_taught || '')}`)
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-2xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200"
+                              title="Open EduBoard Classroom for this session"
+                            >
+                              <span>Open EduBoard</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

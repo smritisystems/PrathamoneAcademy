@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-05
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Official A5 portrait fee receipt document featuring compact header, transaction metadata,
  */
@@ -213,7 +213,10 @@ export default function PaymentReceiptView({
     if (!receipt?.receipt_number) return
     try {
       setDownloadingPdf(true)
-      const res = await paymentsApi.downloadReceiptPdf(receipt.receipt_number)
+      const res =
+        paperSize === 'A4'
+          ? await paymentsApi.downloadReceiptPdf(receipt.receipt_number, { paper_size: 'A4' })
+          : await paymentsApi.downloadReceiptPdf(receipt.receipt_number)
       const filename = sanitizeReceiptFilename(receipt.student_name, receipt.receipt_number)
       triggerBlobDownload(new Blob([res.data], { type: 'application/pdf' }), filename)
       setShareFeedback({
@@ -450,7 +453,8 @@ export default function PaymentReceiptView({
       {/* Printable Receipt Container */}
       <div
         id={containerId}
-        className={`bg-white border border-slate-300 rounded-[20px] p-4 sm:p-5 shadow-sm print:shadow-none print:border-none print:p-0 mx-auto relative overflow-hidden print:overflow-visible transition-all ${
+        data-paper-size={paperSize}
+        className={`bg-white border border-slate-300 rounded-[20px] p-4 sm:p-5 print:shadow-none print:border-none print:p-0 print:rounded-none shadow-sm mx-auto relative overflow-hidden transition-all ${
           paperSize === 'A5' ? 'w-full max-w-[144mm]' : 'w-full max-w-3xl'
         }`}
         style={{
@@ -461,12 +465,14 @@ export default function PaymentReceiptView({
       >
         {/* Subtle Decorative Top-Right Deep Blue Corner Arc */}
         <div
-          className="absolute -top-6 -right-6 w-28 h-28 pointer-events-none overflow-hidden print:overflow-hidden select-none z-0"
+          className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0 rounded-[20px] print:rounded-none"
           aria-hidden="true"
         >
-          <svg viewBox="0 0 100 100" className="w-full h-full text-[#0b4ea2] fill-current opacity-90">
-            <path d="M0,0 Q100,0 100,100 L100,0 Z" />
-          </svg>
+          <div className="absolute -top-6 -right-6 w-28 h-28 overflow-hidden">
+            <svg viewBox="0 0 100 100" className="w-full h-full text-[#0b4ea2] fill-current opacity-90">
+              <path d="M0,0 Q100,0 100,100 L100,0 Z" />
+            </svg>
+          </div>
         </div>
 
         {/* Reversal / Voided Stamp Notice (if applicable) */}
@@ -526,7 +532,7 @@ export default function PaymentReceiptView({
         )}
 
         {/* 1. Official Academy Header */}
-        <header className="receipt-header flex items-center justify-between gap-3 pt-2.5 pb-2 relative z-10">
+        <header className="receipt-header print-header flex items-center justify-between gap-3 pt-2.5 pb-2 relative z-10">
           <div className="flex items-center gap-3 min-w-0">
             {/* PA Royal Blue Monogram Emblem or Custom Uploaded Logo */}
             {branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? (
@@ -543,7 +549,7 @@ export default function PaymentReceiptView({
             ) : null}
             {/* Executive Dual-Ring Collegiate Crest */}
             <div
-              className={`w-12 h-12 bg-[#0a2540] rounded-2xl text-white font-black text-xl flex items-center justify-center shadow-xs shrink-0 select-none border-2 border-[#d4af37] ${
+              className={`w-12 h-12 bg-[#0a2540] rounded-2xl text-white font-black text-xl items-center justify-center shadow-xs shrink-0 select-none border-2 border-[#d4af37] ${
                 branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' ? 'hidden' : 'flex'
               }`}
             >
@@ -585,7 +591,7 @@ export default function PaymentReceiptView({
 
           {/* Top-Right: Official Institutional Verification Seal (Configurable - Default: Off) */}
           {showVerificationSeal && (
-            <div className="hidden sm:flex flex-col items-center justify-center w-12 h-12 rounded-full border border-slate-300 border-dashed text-center shrink-0 p-1 select-none opacity-85 bg-slate-50/50">
+            <div className="receipt-seal hidden sm:flex print:flex flex-col items-center justify-center w-12 h-12 rounded-full border border-slate-300 border-dashed text-center shrink-0 p-1 select-none opacity-85 bg-slate-50/50">
               <span className="text-[6px] font-black text-slate-500 tracking-wider">OFFICIAL</span>
               <span className="text-[10px] font-black text-blue-950 font-serif leading-none my-0.5">PA</span>
               <span className="text-[6px] font-bold text-slate-400 tracking-wider">VERIFIED</span>
@@ -597,7 +603,7 @@ export default function PaymentReceiptView({
         <div className="rounded-xl overflow-hidden flex items-stretch border border-slate-200 shadow-2xs my-2 relative z-10">
           {/* Left Navy Banner with Angled Polygon Cut */}
           <div
-            className="bg-[#0b2b5c] text-white px-4 py-2 font-black text-xs sm:text-sm tracking-wider uppercase flex items-center shrink-0 pr-6"
+            className="receipt-banner-title bg-[#0b2b5c] text-white px-4 py-2 font-black text-xs sm:text-sm tracking-wider uppercase flex items-center shrink-0 pr-6"
             style={{
               clipPath: 'polygon(0 0, 100% 0, 88% 100%, 0 100%)',
             }}
@@ -606,7 +612,7 @@ export default function PaymentReceiptView({
           </div>
 
           {/* Right Baby-Blue Ribbon with Receipt Number */}
-          <div className="bg-[#dbeafe] text-blue-950 flex-1 px-4 py-2 flex items-center justify-end font-mono text-xs sm:text-sm tracking-wide -ml-4 pl-6">
+          <div className="receipt-banner-no bg-[#dbeafe] text-blue-950 flex-1 px-4 py-2 flex items-center justify-end font-mono text-xs sm:text-sm tracking-wide -ml-4 pl-6">
             <span className="font-semibold text-primary-800 mr-2 text-[11px] sm:text-xs">
               RECEIPT NO.
             </span>
@@ -695,7 +701,7 @@ export default function PaymentReceiptView({
               <p className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider leading-none">
                 STUDENT DETAILS
               </p>
-              <p className="font-black text-slate-900 text-sm sm:text-base leading-tight mt-0.5 truncate">
+              <p className="receipt-student-name font-black text-slate-900 text-sm sm:text-base leading-tight mt-0.5 truncate">
                 {studentNameText}
               </p>
               <p className="text-[10px] text-slate-600 mt-0.5 truncate">
@@ -717,7 +723,7 @@ export default function PaymentReceiptView({
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <Wallet className="w-5 h-5 text-primary-600 shrink-0" />
-              <span className="font-bold text-primary-700 text-2xl sm:text-3xl tracking-normal leading-tight tabular-nums currency-inr">
+              <span className="receipt-amount-value font-bold text-primary-700 text-2xl sm:text-3xl tracking-normal leading-tight tabular-nums currency-inr">
                 {fmt(receipt.amount)}
               </span>
             </div>
@@ -1001,7 +1007,7 @@ export default function PaymentReceiptView({
           </div>
 
           {/* Right: Authorized Signatory (4 cols) */}
-          <div className="col-span-4 flex flex-col items-center sm:items-end text-center sm:text-right">
+          <div className="receipt-signatory col-span-4 flex flex-col items-center sm:items-end text-center sm:text-right">
             <div className="mb-0.5">
               <AuthorizedSignatureSVG />
             </div>
@@ -1019,14 +1025,15 @@ export default function PaymentReceiptView({
           @media print {
             #${containerId} {
               width: 100% !important;
-              max-width: 136mm !important;
+              max-width: ${paperSize === 'A4' ? '190mm' : '138mm'} !important;
               margin: 0 auto !important;
-              padding: 0 0 16mm 0 !important;
+              padding: 0 !important;
               border: none !important;
+              border-radius: 0 !important;
               box-shadow: none !important;
               visibility: visible !important;
               display: block !important;
-              overflow: visible !important;
+              overflow: hidden !important;
               box-sizing: border-box !important;
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
@@ -1034,9 +1041,31 @@ export default function PaymentReceiptView({
             #${containerId} * {
               visibility: visible !important;
             }
+            #${containerId} header,
             #${containerId} .receipt-header {
               display: flex !important;
               visibility: visible !important;
+              opacity: 1 !important;
+            }
+            #${containerId} .receipt-seal {
+              display: flex !important;
+            }
+            #${containerId} .receipt-banner-title,
+            #${containerId} .receipt-banner-no {
+              font-size: 14px !important;
+              line-height: 20px !important;
+            }
+            #${containerId} .receipt-student-name {
+              font-size: 16px !important;
+              line-height: 22px !important;
+            }
+            #${containerId} .receipt-amount-value {
+              font-size: 30px !important;
+              line-height: 36px !important;
+            }
+            #${containerId} .receipt-signatory {
+              align-items: flex-end !important;
+              text-align: right !important;
             }
             #${containerId} .receipt-history-table {
               display: table !important;
@@ -1048,7 +1077,7 @@ export default function PaymentReceiptView({
             }
             #${containerId} .pratham-print-footer-spacer {
               display: block !important;
-              height: 16mm !important;
+              height: 11mm !important;
               width: 100% !important;
             }
             #${containerId} .pratham-global-print-footer {
@@ -1060,14 +1089,15 @@ export default function PaymentReceiptView({
               z-index: 9999 !important;
               background: #ffffff !important;
               margin: 0 !important;
-              padding-top: 4px !important;
-              padding-bottom: 2mm !important;
+              padding-top: 3px !important;
+              padding-bottom: 1.5mm !important;
               border-top: 1px solid #cbd5e1 !important;
               box-sizing: border-box !important;
               visibility: visible !important;
               display: block !important;
             }
             #${containerId} .print-branding-footer {
+              display: block !important;
               visibility: visible !important;
             }
             #${containerId} .print-branding-footer p {

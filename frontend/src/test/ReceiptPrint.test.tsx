@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Unit and DOM integration tests for isolated fee receipt printing and container isolation.
  */
@@ -110,6 +110,92 @@ describe('Receipt Printing Specification & Container Isolation', () => {
     expect(receipt.textContent).toContain('Aarav Sharma');
     expect(receipt.textContent).toContain('₹25,000.00');
     expect(receipt.textContent).toContain('Authorized Signatory');
+  });
+
+  it('preserves academy header (logo, name, address, phone, email), QR, signature, and full-scale A5/A4 layout inside isolated print iframe', () => {
+    const receipt = document.createElement('div');
+    receipt.id = 'receipt-print-area';
+    receipt.setAttribute('data-paper-size', 'A4');
+    receipt.innerHTML = `
+      <header class="receipt-header print-header flex items-center justify-between">
+        <img src="/media/logo/prashant-academy-logo.svg" alt="PRASHANT ACADEMY" />
+        <h1>PRASHANT ACADEMY</h1>
+        <span>Shop No16, 14, 12, Aquarius Taurus Building, Malad West</span>
+        <span>+91-7021789907</span>
+        <span>tejam.prashnat@gmail.com</span>
+      </header>
+      <footer class="receipt-footer">Authorized Signatory</footer>
+    `;
+    document.body.appendChild(receipt);
+
+    const okA4 = printReceiptElement({ elementId: 'receipt-print-area', paperSize: 'A4' });
+    expect(okA4).toBe(true);
+
+    const iframeA4 = document.getElementById('receipt-isolated-print-frame') as HTMLIFrameElement;
+    expect(iframeA4).not.toBeNull();
+    expect(iframeA4.style.width).toBe('210mm');
+    expect(iframeA4.style.height).toBe('297mm');
+    const docA4 = iframeA4.contentDocument!;
+    expect(docA4.querySelector('base')?.getAttribute('href')).toContain(window.location.origin);
+    expect(docA4.getElementById('receipt-print-area')?.getAttribute('data-paper-size')).toBe('A4');
+    expect(docA4.querySelector('header.receipt-header.print-header')).not.toBeNull();
+    const cssA4 = Array.from(docA4.querySelectorAll('style')).map((s) => s.textContent || '').join('\n');
+    expect(cssA4).toContain('size: A4 portrait');
+    expect(cssA4).toContain('max-width: 190mm');
+    expect(cssA4).toContain('header.receipt-header');
+    expect(cssA4).toContain('display: flex !important');
+    expect(cssA4).toContain('font-size: 16px !important');
+    expect(cssA4).toContain('body:has(#receipt-print-area) > #print-root');
+    expect(cssA4).toContain('.hidden { display: none !important; }');
+
+    // Now test A5 Compact without shrink-to-fit width/padding overflow
+    receipt.setAttribute('data-paper-size', 'A5');
+    const okA5 = printReceiptElement('receipt-print-area', 'Fee Receipt A5');
+    expect(okA5).toBe(true);
+    const iframeA5 = document.getElementById('receipt-isolated-print-frame') as HTMLIFrameElement;
+    expect(iframeA5.style.width).toBe('148mm');
+    expect(iframeA5.style.height).toBe('210mm');
+    const docA5 = iframeA5.contentDocument!;
+    const cssA5 = Array.from(docA5.querySelectorAll('style')).map((s) => s.textContent || '').join('\n');
+    expect(cssA5).toContain('size: A5 portrait');
+    expect(cssA5).toContain('max-width: 136mm');
+  });
+
+  it('PaymentReceiptView marks header with .print-header and matches selected paper size on container & embedded print CSS', () => {
+    const sampleReceipt: DetailedPaymentReceipt = {
+      receipt_number: 'RCP-2026-0777',
+      payment_id: 777,
+      student_id: 101,
+      student_name: 'Neha Kulkarni',
+      admission_number: 'PA-2026-0777',
+      amount: 12000,
+      payment_date: '2026-11-12',
+      payment_method: 'upi',
+      status: 'completed',
+      fee_summary: {
+        total_fee_amount: 36000,
+        previous_payments_total: 0,
+        current_payment_amount: 12000,
+        total_paid_to_date: 12000,
+        outstanding_balance: 24000,
+      },
+    };
+    const { container } = render(<PaymentReceiptView receipt={sampleReceipt} initialPaperSize="A5" />);
+    const receiptArea = container.querySelector('#receipt-print-area') as HTMLElement;
+    expect(receiptArea).not.toBeNull();
+    expect(receiptArea.getAttribute('data-paper-size')).toBe('A5');
+    const hdr = container.querySelector('header.receipt-header');
+    expect(hdr).not.toBeNull();
+    expect(hdr?.classList.contains('print-header')).toBe(true);
+    const crestFallback = Array.from(hdr?.querySelectorAll('div') || []).find((d) => d.textContent?.trim() === 'PA');
+    if (crestFallback && crestFallback.classList.contains('hidden')) {
+      expect(crestFallback.classList.contains('flex')).toBe(false);
+    }
+
+    fireEvent.click(screen.getByText('A4 Portrait'));
+    expect(receiptArea.getAttribute('data-paper-size')).toBe('A4');
+    const embeddedStyle = receiptArea.querySelector('style')?.textContent || '';
+    expect(embeddedStyle).toContain('max-width: 190mm !important');
   });
 
   describe('PaymentReceiptView Component Specification', () => {

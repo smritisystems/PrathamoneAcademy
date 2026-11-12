@@ -54,28 +54,48 @@ vi.mock('pdfjs-dist', () => ({
   getDocument: vi.fn(),
 }))
 
-let mockEditScopes: Record<string, boolean> = {}
-const mockSetDirty = vi.fn()
-const mockEnableEdit = vi.fn((scope: string) => {
-  mockEditScopes[scope] = true
-  return { success: true }
-})
-const mockDisableEdit = vi.fn((scope: string) => {
-  delete mockEditScopes[scope]
+const {
+  mockAuthState,
+  mockDirtyScopes,
+  mockSetDirty,
+  mockEnableEdit,
+  mockDisableEdit,
+  mockIsDirty,
+  mockResetAll,
+  mockEnvState,
+} = vi.hoisted(() => {
+  const scopes: Record<string, boolean> = {}
+  return {
+    mockAuthState: {
+      user: {
+        id: 42,
+        role: 'teacher',
+        username: 'prof_sharma',
+        first_name: 'Rakesh',
+        last_name: 'Sharma',
+        institution_id: 1,
+        permissions: ['eduboard:view', 'eduboard:create', 'eduboard:edit', 'eduboard:publish'],
+      },
+    },
+    mockDirtyScopes: {} as Record<string, boolean>,
+    mockSetDirty: vi.fn(),
+    mockEnableEdit: vi.fn((scope: string) => {
+      scopes[scope] = true
+      return { success: true }
+    }),
+    mockDisableEdit: vi.fn((scope: string) => {
+      delete scopes[scope]
+    }),
+    mockIsDirty: vi.fn(() => false),
+    mockResetAll: vi.fn(),
+    mockEnvState: { dataEnvironment: 'PRODUCTION' },
+  }
 })
 
+let mockEditScopes: Record<string, boolean> = {}
+
 vi.mock('../store/authStore', () => ({
-  useAuthStore: () => ({
-    user: {
-      id: 42,
-      role: 'teacher',
-      username: 'prof_sharma',
-      first_name: 'Rakesh',
-      last_name: 'Sharma',
-      institution_id: 1,
-      permissions: ['eduboard:view', 'eduboard:create', 'eduboard:edit', 'eduboard:publish'],
-    },
-  }),
+  useAuthStore: () => mockAuthState,
   isUserSysAdmin: () => false,
 }))
 
@@ -84,17 +104,17 @@ vi.mock('../store/editModeStore', () => ({
   useEditModeStore: (selector: any) =>
     selector({
       scopes: mockEditScopes,
-      dirtyScopes: {},
+      dirtyScopes: mockDirtyScopes,
       enableEditMode: mockEnableEdit,
       disableEditMode: mockDisableEdit,
       setDirty: mockSetDirty,
-      isDirty: () => false,
-      resetAll: vi.fn(),
+      isDirty: mockIsDirty,
+      resetAll: mockResetAll,
     }),
 }))
 
 vi.mock('../store/environmentStore', () => ({
-  useEnvironmentStore: (selector: any) => selector({ dataEnvironment: 'PRODUCTION' }),
+  useEnvironmentStore: (selector: any) => selector(mockEnvState),
 }))
 
 vi.mock('../api/endpoints', () => ({
@@ -222,7 +242,7 @@ describe('PrathamOne EduBoard Suite', () => {
 
   it('enforces Rule 010 View-First lock until Edit Mode is enabled and supports multi-page addition', async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    render(
+    const firstRender = render(
       <QueryClientProvider client={qc}>
         <MemoryRouter initialEntries={['/eduboard/101']}>
           <EduBoardWorkspace />
@@ -238,6 +258,8 @@ describe('PrathamOne EduBoard Suite', () => {
     expect((screen.getByRole('button', { name: /Publish/i }) as HTMLButtonElement).disabled).toBe(true)
     expect((screen.getByRole('button', { name: /Add/i }) as HTMLButtonElement).disabled).toBe(true)
 
+    firstRender.unmount()
+
     // Now render in active Edit Mode
     mockEditScopes['eduboard:workspace'] = true
     const qc2 = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -250,10 +272,10 @@ describe('PrathamOne EduBoard Suite', () => {
     )
 
     await waitFor(() => {
-      const addBtns = screen.getAllByRole('button', { name: /Add/i })
-      expect((addBtns[1] as HTMLButtonElement).disabled).toBe(false)
-      fireEvent.click(addBtns[1])
+      expect((screen.getByRole('button', { name: /Add/i }) as HTMLButtonElement).disabled).toBe(false)
     })
+
+    fireEvent.click(screen.getByRole('button', { name: /Add/i }))
 
     await waitFor(() => {
       expect(screen.getByText('2. Page 2')).toBeTruthy()

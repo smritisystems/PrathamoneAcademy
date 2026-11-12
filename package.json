@@ -1,6 +1,6 @@
 {
   "name": "prashant-academy-workspace",
-  "version": "1.87.0",
+  "version": "1.88.0-rc.1",
   "private": true,
   "description": "Prashant Academy Coaching Institute Management System - Monorepo Workspace",
   "scripts": {

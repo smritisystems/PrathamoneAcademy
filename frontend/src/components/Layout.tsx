@@ -25,6 +25,7 @@ import Footer from './Footer'
 import { RouteErrorBoundary } from './RouteErrorBoundary'
 import { useAuthStore } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
+import { useEduBoardDisplayStore } from '../store/eduboardDisplayStore'
 import { useNavigationStore } from '../store/navigationStore'
 import { useNavigationTracker } from '../hooks/useNavigationTracker'
 import GlobalNavigationSearch from './navigation/GlobalNavigationSearch'
@@ -71,6 +72,23 @@ export default function Layout() {
 
   const { isInstalled } = usePWA()
   const location = useLocation()
+  const isEduBoardRoute =
+    location.pathname === '/eduboard' ||
+    (location.pathname.startsWith('/eduboard/') && !location.pathname.startsWith('/eduboard/window'))
+  const ebWorkspaceMode = useEduBoardDisplayStore((s) => s.workspaceMode)
+  const ebHideHeader = useEduBoardDisplayStore((s) => s.hideAppHeader)
+  const ebHideStatusBar = useEduBoardDisplayStore((s) => s.hideStatusBar)
+
+  const hideSidebarShell = isEduBoardRoute && ebWorkspaceMode !== 'standard'
+  const hideHeaderShell = isEduBoardRoute && (ebWorkspaceMode !== 'standard' || ebHideHeader)
+  const hideFooterShell = isEduBoardRoute && (ebWorkspaceMode !== 'standard' || ebHideStatusBar)
+
+  // Reset transient EduBoard immersive display chrome when navigating away from /eduboard
+  useEffect(() => {
+    if (!isEduBoardRoute) {
+      useEduBoardDisplayStore.getState().resetTransientChrome()
+    }
+  }, [isEduBoardRoute])
 
   // STRICT GOVERNANCE: Reset all workspace edit modes to View Mode on route or tab navigation
   useEffect(() => {
@@ -158,10 +176,11 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen h-[100dvh] bg-gray-50 overflow-hidden print:h-auto print:overflow-visible">
-      <Sidebar />
+      {!hideSidebarShell && <Sidebar />}
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden transition-all duration-300 ease-in-out print:h-auto print:overflow-visible">
         {/* Top Header */}
+        {!hideHeaderShell && (
         <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center gap-3 md:gap-4 shrink-0 z-30 shadow-xs print:hidden">
           {/* Mobile Navigation Drawer Toggle */}
           <button
@@ -294,19 +313,24 @@ export default function Layout() {
             {branding.academyName} {branding.tagline}
           </p>
         </header>
+        )}
 
         {/* Global Persistent Training Mode Banner */}
-        <TrainingModeBanner />
+        {!hideHeaderShell && <TrainingModeBanner />}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 min-h-0 min-w-0 print:h-auto print:overflow-visible print:p-0">
+        <main
+          className={`flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 print:h-auto print:overflow-visible print:p-0 ${
+            isEduBoardRoute && ebWorkspaceMode !== 'standard' ? 'p-2' : 'p-4 md:p-6'
+          }`}
+        >
           <RouteErrorBoundary>
             <Outlet />
           </RouteErrorBoundary>
         </main>
 
         {/* Application Fixed Bottom Footer */}
-        <Footer />
+        {!hideFooterShell && <Footer />}
       </div>
 
       {switchTarget && (

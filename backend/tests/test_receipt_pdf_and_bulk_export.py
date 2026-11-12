@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-10
+#  * @updated     2026-11-12
 #  *
 #  * @description Test suite for high-fidelity receipt PDF generation, PyMuPDF vector rendering, bulk ZIP export, and API endpoints.
 #  */
@@ -96,6 +96,17 @@ class TestReceiptPdfServiceGeneration:
         # Verify standard A5 portrait dimensions
         assert round(page.rect.width) == 420
         assert round(page.rect.height) == 595
+
+        # Also verify A4 portrait export preserves complete academy contact details & text
+        pdf_a4 = ReceiptPdfService.generate_receipt_pdf(receipt_data, inst_data, paper_size="A4")
+        doc_a4 = fitz.open(stream=pdf_a4, filetype="pdf")
+        assert round(doc_a4[0].rect.width) == 595
+        assert round(doc_a4[0].rect.height) == 842
+        a4_text = doc_a4[0].get_text()
+        assert "PRASHANT ACADEMY" in a4_text
+        assert "Plot 42, Sector 17, Vashi" in a4_text
+        assert "+91 98336 45512" in a4_text
+        assert "admin@prashantacademy.in" in a4_text
 
         # Verify extracted text content
         text = page.get_text()

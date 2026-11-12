@@ -5191,6 +5191,60 @@ export interface EduBoardContextResponse {
   }>
 }
 
+export type EduBoardWorkspaceMode = 'standard' | 'focus' | 'fullscreen'
+export type EduBoardToolbarState = 'expanded' | 'compact' | 'hidden'
+export type EduBoardToolbarPosition = 'top' | 'left' | 'right' | 'bottom' | 'floating'
+export type EduBoardPopoutMode = 'teacher_edit' | 'presentation' | 'collaborator'
+
+export interface EduBoardDisplayPrefsValues {
+  default_workspace_mode: EduBoardWorkspaceMode
+  default_board_appearance: EduBoardBackgroundStyle
+  toolbar_state: EduBoardToolbarState
+  toolbar_position: EduBoardToolbarPosition
+  pages_panel_open: boolean
+  saved_boards_panel_open: boolean
+  hide_app_header: boolean
+  hide_status_bar: boolean
+}
+
+export interface EduBoardPreferencesResponse {
+  system_defaults: EduBoardDisplayPrefsValues
+  institution_defaults: EduBoardDisplayPrefsValues
+  user_overrides: Partial<EduBoardDisplayPrefsValues>
+  effective: EduBoardDisplayPrefsValues
+  allow_user_display_overrides: boolean
+  allow_collaborator_mode: boolean
+  allow_popout_window: boolean
+  locked_by_institution: boolean
+}
+
+export interface EduBoardPopoutLaunchResponse {
+  launch_token: string
+  expires_in_seconds: number
+  launch_url: string
+  mode: EduBoardPopoutMode
+  board_id: number
+}
+
+export interface EduBoardPopoutResolveResponse {
+  board: EduBoardDetailItem
+  effective_mode: EduBoardPopoutMode
+  institution_name: string
+  teacher_name: string
+  permissions: {
+    can_edit: boolean
+    can_publish: boolean
+    can_download: boolean
+  }
+  ui_config: {
+    surface?: EduBoardBackgroundStyle | null
+    compact_tools: boolean
+    show_branding: boolean
+    hide_toolbar: boolean
+  }
+  ws_token: string
+}
+
 export interface EduBoardSettingsConfig {
   max_file_size_mb: number
   allowed_extensions: string[]
@@ -5198,6 +5252,17 @@ export interface EduBoardSettingsConfig {
   pptx_conversion_enabled: boolean
   default_board_mode: EduBoardMode
   notify_students_on_publish: boolean
+  default_workspace_mode?: EduBoardWorkspaceMode
+  default_board_appearance?: EduBoardBackgroundStyle
+  toolbar_state?: EduBoardToolbarState
+  toolbar_position?: EduBoardToolbarPosition
+  pages_panel_open?: boolean
+  saved_boards_panel_open?: boolean
+  hide_app_header?: boolean
+  hide_status_bar?: boolean
+  allow_user_display_overrides?: boolean
+  allow_collaborator_mode?: boolean
+  allow_popout_window?: boolean
 }
 
 export interface EduBoardReportsSummary {

@@ -73,6 +73,7 @@ const CrmSettingsPage = lazyWithRetry(() => import('./pages/crm/CrmSettingsPage'
 const TrainingManagementPage = lazyWithRetry(() => import('./pages/TrainingManagement'), 'TrainingManagement')
 const HomeworkWorkspacePage = lazyWithRetry(() => import('./pages/HomeworkWorkspace'), 'HomeworkWorkspace')
 const EduBoardWorkspacePage = lazyWithRetry(() => import('./pages/EduBoardWorkspace'), 'EduBoardWorkspace')
+const EduBoardWindowPage = lazyWithRetry(() => import('./pages/EduBoardWindowPage'), 'EduBoardWindowPage')
 
 function PageLoader() {
   return (
@@ -138,6 +139,18 @@ export default function App() {
             <Suspense fallback={<PageLoader />}>
               <LoginPage />
             </Suspense>
+          }
+        />
+        <Route
+          path="/eduboard/window"
+          element={
+            <PrivateRoute>
+              <ErrorBoundary fallbackTitle="EduBoard Detached Window Error">
+                <Suspense fallback={<PageLoader />}>
+                  <EduBoardWindowPage />
+                </Suspense>
+              </ErrorBoundary>
+            </PrivateRoute>
           }
         />
         <Route

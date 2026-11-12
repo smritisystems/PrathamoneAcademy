@@ -23,7 +23,7 @@ import {
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
   Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical,
-  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck, HardDrive, HelpCircle
+  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck, HardDrive, HelpCircle, Presentation
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin, isUserAdmin, hasPermission } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -182,6 +182,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/examinations', label: 'Tests & Results', icon: Award },
   { to: '/fees', label: 'Fees & Payments', icon: CreditCard },
   { to: '/homework', label: 'Homework & Assignments', icon: FileCheck },
+  { to: '/eduboard', label: 'EduBoard Classroom', icon: Presentation },
   { to: '/courses', label: 'Study Materials', icon: BookOpen },
   { to: '/reports', label: 'Reports', icon: BarChart2 },
   { to: '/forms', label: 'Print Forms & KYC', icon: Printer },

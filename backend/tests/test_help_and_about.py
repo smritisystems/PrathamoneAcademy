@@ -83,8 +83,8 @@ class TestHelpAndAboutCentre:
             by_section.setdefault(item["section"], []).append(item)
 
         assert len(by_section.get("getting_started", [])) == 9
-        assert len(by_section.get("module_guide", [])) == 19
-        assert len(by_section.get("tutorial", [])) == 13
+        assert len(by_section.get("module_guide", [])) == 20
+        assert len(by_section.get("tutorial", [])) == 14
         assert len(by_section.get("faq", [])) == 12
         assert len(by_section.get("legal", [])) == 7
 
@@ -162,6 +162,7 @@ class TestHelpAndAboutCentre:
             ("/attendance", "guide-attendance"),
             ("/courses", "guide-courses"),
             ("/homework", "guide-homework"),
+            ("/eduboard", "guide-eduboard"),
             ("/forms", "guide-forms"),
             ("/import-export", "guide-import-export"),
             ("/fees/import", "guide-import-export"),
@@ -183,7 +184,7 @@ class TestHelpAndAboutCentre:
 
         assert data["about_product"]["product_name"] == settings.PRODUCT_NAME
         assert data["about_product"]["product_category"] == "Education Management Operating System"
-        assert len(data["about_product"]["available_modules"]) == 19
+        assert len(data["about_product"]["available_modules"]) == 20
 
         company = data["about_company"]
         assert company["smriti_systems"]["company_name"] == "SMRITI Systems"
@@ -210,7 +211,7 @@ class TestHelpAndAboutCentre:
         body = admin_res.json()
         assert body["application_health"]["status"] in ("Healthy", "Degraded")
         assert body["database_connectivity"]["status"] == "Connected"
-        assert len(body["module_availability"]) == 19
+        assert len(body["module_availability"]) == 20
         assert "last_successful_backup" in body
         assert "deployment_information" in body
 

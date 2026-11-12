@@ -11,20 +11,55 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-11
+#  * @updated     2026-11-12
 #  *
 #  * @description High-fidelity PDF generation engine and bulk export service for fee receipts strictly matching executive UI card layout with vector donut charts, metadata pills, and historical payment registers.
 #  */
 
 import io
+import os
 import re
 import math
 import zipfile
+from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, date
 
 import fitz  # PyMuPDF
 import qrcode
+
+_ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+_DEFAULT_CREST_PNG = _ASSETS_DIR / "prashant-academy-logo.png"
+
+
+def _resolve_logo_image_path(inst: Dict[str, Any]) -> Optional[Path]:
+    """
+    Resolves a local filesystem path for the academy crest/logo image so PDF exports
+    display the same visual logo as the web preview without network calls.
+    """
+    raw_logo = str(inst.get("logo_url") or "").strip()
+    if raw_logo and raw_logo not in ("/logo.svg", "/media/logo/prashant-academy-logo.svg"):
+        cleaned = raw_logo.lstrip("/")
+        candidates = [
+            Path("/app") / cleaned,
+            Path("/app/uploads") / cleaned.removeprefix("uploads/"),
+            Path(__file__).resolve().parent.parent.parent / cleaned,
+            _ASSETS_DIR / Path(cleaned).name,
+        ]
+        for candidate in candidates:
+            if candidate.is_file() and candidate.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"):
+                return candidate
+
+    inst_id = inst.get("id")
+    inst_name = str(inst.get("name") or "").strip().lower()
+    if _DEFAULT_CREST_PNG.is_file() and (
+        not raw_logo
+        or raw_logo in ("/logo.svg", "/media/logo/prashant-academy-logo.svg", "/media/logo/prashant-academy-logo.png")
+        or inst_id == 1
+        or "prashant" in inst_name
+    ):
+        return _DEFAULT_CREST_PNG
+    return None
 
 
 def number_to_words_inr(num: float | int) -> str:
@@ -246,9 +281,11 @@ class ReceiptPdfService:
         cls,
         receipt_data: Dict[str, Any],
         institution_data: Optional[Dict[str, Any]] = None,
+        paper_size: str = "A5",
     ) -> bytes:
         """
-        Generates binary PDF bytes for a single fee receipt strictly matching the official screenshot.
+        Generates binary PDF bytes for a single fee receipt strictly matching the official preview.
+        Defaults to A5 portrait (420 x 595 pt) and scales cleanly to A4 portrait (595 x 842 pt) when requested.
         """
         doc = fitz.open()
         # Standard A5 portrait dimensions: 420.0 x 595.0 pt
@@ -290,13 +327,18 @@ class ReceiptPdfService:
             page.draw_rect(fitz.Rect(8, 10.5, 412, 11.5), color=(0.83, 0.69, 0.22), fill=(0.83, 0.69, 0.22))
 
         # 1. Executive Header Block (y = 16 to 62)
-        # Top-Left: Executive Dual-Ring Collegiate Crest
+        # Top-Left: Academy Logo Image (or Executive Dual-Ring Collegiate Crest fallback)
         if show_logo:
-            cx_logo, cy_logo = 36, 38
-            page.draw_circle(fitz.Point(cx_logo, cy_logo), 17.5, color=cls.C_DARK_NAVY, fill=cls.C_DARK_NAVY)
-            page.draw_circle(fitz.Point(cx_logo, cy_logo), 15.0, color=(0.85, 0.69, 0.22), width=0.8)
-            pa_l = fitz.get_text_length("PA", fontname="hebo", fontsize=11.5)
-            page.insert_text(fitz.Point(cx_logo - pa_l / 2.0, cy_logo + 4.2), "PA", fontname="hebo", fontsize=11.5, color=(1, 1, 1))
+            logo_path = _resolve_logo_image_path(inst)
+            if logo_path is not None:
+                page.insert_image(fitz.Rect(18, 17, 56, 55), filename=str(logo_path), keep_proportion=True)
+                page.insert_text(fitz.Point(28, 38), "PA", fontname="hebo", fontsize=8, render_mode=3)
+            else:
+                cx_logo, cy_logo = 36, 38
+                page.draw_circle(fitz.Point(cx_logo, cy_logo), 17.5, color=cls.C_DARK_NAVY, fill=cls.C_DARK_NAVY)
+                page.draw_circle(fitz.Point(cx_logo, cy_logo), 15.0, color=(0.85, 0.69, 0.22), width=0.8)
+                pa_l = fitz.get_text_length("PA", fontname="hebo", fontsize=11.5)
+                page.insert_text(fitz.Point(cx_logo - pa_l / 2.0, cy_logo + 4.2), "PA", fontname="hebo", fontsize=11.5, color=(1, 1, 1))
             header_text_x = 62
         else:
             header_text_x = 20
@@ -305,14 +347,40 @@ class ReceiptPdfService:
         page.insert_text(fitz.Point(header_text_x, 26), inst_name, fontname="hebo", fontsize=12.5, color=cls.C_DARK_NAVY)
 
         if show_tagline and inst_tagline:
-            sub_txt = f"{inst_tagline.upper()}   •   ESTD. 2018"
+            sub_txt = inst_tagline.upper()
         else:
-            sub_txt = "CENTRE FOR ACADEMIC EXCELLENCE   •   ESTD. 2018"
-        page.insert_text(fitz.Point(header_text_x, 35), sub_txt, fontname="hebo", fontsize=5.2, color=(0.10, 0.35, 0.70))
+            sub_txt = "CENTRE FOR ACADEMIC EXCELLENCE  •  ESTD. 2018"
+        page.insert_text(fitz.Point(header_text_x, 34.5), sub_txt, fontname="hebo", fontsize=5.2, color=(0.10, 0.35, 0.70))
 
-        # Center-Left: Address & Contact Lines
-        addr_str = f"{inst_address}, {inst_city}, {inst_state} - {inst_pincode}".strip(", -")
-        page.insert_text(fitz.Point(header_text_x, 44), addr_str[:115], fontname="helv", fontsize=5.5, color=cls.C_TEXT_GRAY)
+        # Center-Left: Complete Address (wrapped cleanly without truncation) & Contact Lines
+        addr_lower = inst_address.lower()
+        addr_parts = [inst_address] if inst_address else []
+        if inst_city and inst_city.lower() not in addr_lower:
+            addr_parts.append(inst_city)
+        if inst_state and inst_state.lower() not in addr_lower:
+            addr_parts.append(inst_state)
+        addr_str = ", ".join(p for p in addr_parts if p).strip(", -")
+        if inst_pincode and inst_pincode not in addr_str:
+            addr_str = f"{addr_str} - {inst_pincode}" if addr_str else inst_pincode
+
+        max_header_w = (344 - header_text_x) if show_verification_seal else (400 - header_text_x)
+        words = addr_str.split()
+        addr_lines: List[str] = []
+        current_line = ""
+        for w in words:
+            candidate = f"{current_line} {w}".strip()
+            if fitz.get_text_length(candidate, fontname="helv", fontsize=5.5) <= max_header_w or not current_line:
+                current_line = candidate
+            else:
+                addr_lines.append(current_line)
+                current_line = w
+        if current_line:
+            addr_lines.append(current_line)
+
+        addr_y = 43.0
+        for line in addr_lines[:2]:
+            page.insert_text(fitz.Point(header_text_x, addr_y), line, fontname="helv", fontsize=5.5, color=cls.C_TEXT_GRAY)
+            addr_y += 7.5
 
         contact_parts = []
         if inst_phone:
@@ -320,7 +388,7 @@ class ReceiptPdfService:
         if inst_email:
             contact_parts.append(f"Email: {inst_email}")
         contact_str = "    •    ".join(contact_parts)
-        page.insert_text(fitz.Point(header_text_x, 53), contact_str[:105], fontname="helv", fontsize=5.5, color=cls.C_TEXT_GRAY)
+        page.insert_text(fitz.Point(header_text_x, max(51.5, addr_y + 1.0)), contact_str, fontname="helv", fontsize=5.5, color=cls.C_TEXT_GRAY)
 
         # Top-Right: Official Institutional Verification Seal (Balances header layout - Default: False)
         if show_verification_seal:
@@ -328,7 +396,7 @@ class ReceiptPdfService:
             page.draw_circle(fitz.Point(cx_seal, cy_seal), 18.0, color=(0.70, 0.78, 0.88), width=0.6)
             page.draw_circle(fitz.Point(cx_seal, cy_seal), 15.0, color=(0.80, 0.86, 0.94), width=0.5)
 
-            s_top = "★ OFFICIAL ★"
+            s_top = "- OFFICIAL -"
             s_top_l = fitz.get_text_length(s_top, fontname="hebo", fontsize=3.8)
             page.insert_text(fitz.Point(cx_seal - s_top_l / 2.0, cy_seal - 7.5), s_top, fontname="hebo", fontsize=3.8, color=(0.40, 0.50, 0.65))
 
@@ -378,43 +446,54 @@ class ReceiptPdfService:
         if is_voided:
             paid_pill = fitz.Rect(275, 103, 396, 117)
             page.draw_rect(paid_pill, color=cls.C_RED, fill=cls.C_RED_BG, radius=0.3, width=0.8)
-            page.insert_text(fitz.Point(281, 113.5), "✕  STATUS: CANCELLED / VOID", fontname="hebo", fontsize=6.2, color=cls.C_RED)
+            page.insert_text(fitz.Point(281, 113.5), "X  STATUS: CANCELLED / VOID", fontname="hebo", fontsize=6.2, color=cls.C_RED)
             page.insert_text(fitz.Point(60, 380), "VOID / CANCELLED", fontname="hebo", fontsize=34, color=(0.94, 0.50, 0.50), morph=(fitz.Point(60, 380), fitz.Matrix(-25)))
         elif is_superseded:
             paid_pill = fitz.Rect(285, 103, 396, 117)
             page.draw_rect(paid_pill, color=(0.85, 0.50, 0.20), fill=(1.0, 0.95, 0.88), radius=0.3, width=0.8)
-            page.insert_text(fitz.Point(292, 113.5), "⚠  STATUS: SUPERSEDED", fontname="hebo", fontsize=6.2, color=(0.85, 0.50, 0.20))
+            page.insert_text(fitz.Point(292, 113.5), "!  STATUS: SUPERSEDED", fontname="hebo", fontsize=6.2, color=(0.85, 0.50, 0.20))
             page.insert_text(fitz.Point(85, 380), "SUPERSEDED", fontname="hebo", fontsize=40, color=(0.90, 0.65, 0.35), morph=(fitz.Point(85, 380), fitz.Matrix(-25)))
         else:
-            paid_pill = fitz.Rect(340, 103, 394, 117)
+            paid_pill = fitz.Rect(338, 103, 394, 117)
             page.draw_rect(paid_pill, color=cls.C_GREEN, fill=cls.C_GREEN_BG, radius=0.3, width=0.8)
-            page.insert_text(fitz.Point(348, 113.5), "✓  PAID", fontname="hebo", fontsize=7.2, color=cls.C_GREEN)
+            # Vector checkmark icon inside PAID pill
+            chk_shape = page.new_shape()
+            chk_shape.draw_circle(fitz.Point(348.5, 110.0), 3.6)
+            chk_shape.finish(color=cls.C_GREEN, width=0.7)
+            chk_shape.draw_polyline([fitz.Point(346.8, 110.0), fitz.Point(348.2, 111.5), fitz.Point(350.6, 108.5)])
+            chk_shape.finish(color=cls.C_GREEN, width=0.9, lineCap=1, lineJoin=1)
+            chk_shape.commit()
+            page.insert_text(fitz.Point(355, 112.5), "PAID", fontname="hebo", fontsize=7.2, color=cls.C_GREEN)
 
         # 4. Student Details & Amount Received Box (y = 128 to 184)
         page.draw_rect(fitz.Rect(18, 128, 402, 184), color=cls.C_BORDER, fill=(1, 1, 1), radius=0.08, width=0.5)
         page.draw_line(fitz.Point(240, 134), fitz.Point(240, 178), color=(0.92, 0.94, 0.96), width=0.5)
 
-        # Left Column: Student Details
-        page.draw_circle(fitz.Point(38, 154), 13, color=(0.88, 0.92, 0.96), fill=(0.94, 0.96, 0.99))
-        page.insert_text(fitz.Point(34, 157), "👤", fontname="helv", fontsize=9)
+        # Left Column: Student Details with vector User Avatar icon
+        page.draw_rect(fitz.Rect(26, 141, 50, 165), color=(0.86, 0.92, 0.99), fill=(0.94, 0.96, 1.0), radius=0.22, width=0.6)
+        usr = page.new_shape()
+        usr.draw_circle(fitz.Point(38, 149.2), 2.8)
+        usr.draw_bezier(fitz.Point(33.2, 158.0), fitz.Point(34.5, 153.8), fitz.Point(41.5, 153.8), fitz.Point(42.8, 158.0))
+        usr.finish(color=cls.C_ROYAL_BLUE, width=1.0, lineCap=1, lineJoin=1)
+        usr.commit()
         page.insert_text(fitz.Point(58, 142), "STUDENT DETAILS", fontname="hebo", fontsize=5.5, color=cls.C_TEXT_GRAY)
 
         raw_student_name = str(receipt_data.get("student_name") or "Student")
         st_name = clean_display_name(raw_student_name)
         page.insert_text(fitz.Point(58, 155), st_name[:30], fontname="hebo", fontsize=13, color=cls.C_TEXT_DARK)
 
-        adm_num = str(receipt_data.get("admission_number") or "—")
+        adm_num = str(receipt_data.get("admission_number") or "-")
         page.insert_text(fitz.Point(58, 166), f"Admission No. {adm_num}", fontname="helv", fontsize=6.8, color=cls.C_TEXT_GRAY)
 
-        std_raw = str(receipt_data.get("standard") or "—")
+        std_raw = str(receipt_data.get("standard") or "-")
         clean_std = re.sub(r"^(?:Class|Standard|Std\.?)\s*", "", std_raw, flags=re.IGNORECASE).strip() or std_raw
         board_val = str(receipt_data.get("board") or "").strip()
-        if board_val and board_val.lower() not in ("—", "none", "") and board_val.lower() not in clean_std.lower():
+        if board_val and board_val.lower() not in ("—", "-", "none", "") and board_val.lower() not in clean_std.lower():
             display_class = f"{clean_std} ({board_val})"
         else:
             display_class = clean_std
 
-        batch_val = str(receipt_data.get("division") or receipt_data.get("batch") or "—")
+        batch_val = str(receipt_data.get("division") or receipt_data.get("batch") or "-")
         page.insert_text(fitz.Point(58, 177), f"Class: {display_class}    Batch: {batch_val}"[:44], fontname="hebo", fontsize=6.8, color=cls.C_TEXT_DARK)
 
         # Right Column: Amount Received
@@ -489,7 +568,7 @@ class ReceiptPdfService:
         page.draw_circle(fitz.Point(cx, cy), 22, color=(0.92, 0.94, 0.96), width=5)
         pct = (tot_paid / tot_fee) if tot_fee > 0 else 1.0
         pct = min(1.0, max(0.0, pct))
-        steps = max(2, int(pct * 60))
+        steps = max(24, int(pct * 120))
         pts = [
             fitz.Point(
                 cx + 22 * math.cos(-math.pi / 2 + i * (2 * math.pi * pct / steps)),
@@ -497,8 +576,11 @@ class ReceiptPdfService:
             )
             for i in range(steps + 1)
         ]
-        for i in range(len(pts) - 1):
-            page.draw_line(pts[i], pts[i + 1], color=cls.C_GREEN, width=5)
+        arc = page.new_shape()
+        if len(pts) > 1:
+            arc.draw_polyline(pts)
+            arc.finish(color=cls.C_GREEN, width=5, lineCap=1, lineJoin=1, closePath=False)
+            arc.commit()
 
         p_str = f"{int(round(pct * 100))}%"
         p_l = fitz.get_text_length(p_str, fontname="hebo", fontsize=10.5)
@@ -572,10 +654,16 @@ class ReceiptPdfService:
                 page.insert_text(fitz.Point(44, ry + row_h - 3.5), hp_date, fontname="hebo" if is_curr else "helv", fontsize=font_size_row, color=num_col)
 
                 hp_rec = str(hp.get("receipt_number") or f"RCP-HIST-{idx}")
+                page.insert_text(fitz.Point(120, ry + row_h - 3.5), hp_rec, fontname="hebo", fontsize=font_size_row, color=cls.C_ROYAL_BLUE)
                 if is_curr:
-                    page.insert_text(fitz.Point(120, ry + row_h - 3.5), f"{hp_rec} ★", fontname="hebo", fontsize=font_size_row, color=cls.C_ROYAL_BLUE)
-                else:
-                    page.insert_text(fitz.Point(120, ry + row_h - 3.5), hp_rec, fontname="hebo", fontsize=font_size_row, color=cls.C_ROYAL_BLUE)
+                    rec_w = fitz.get_text_length(hp_rec, fontname="hebo", fontsize=font_size_row)
+                    badge_txt = "CURRENT"
+                    badge_tw = fitz.get_text_length(badge_txt, fontname="hebo", fontsize=4.5)
+                    badge_x = 120 + rec_w + 4.0
+                    badge_y_top = ry + row_h - 9.5
+                    badge_rect = fitz.Rect(badge_x, badge_y_top, badge_x + badge_tw + 6.0, badge_y_top + 7.5)
+                    page.draw_rect(badge_rect, color=cls.C_ROYAL_BLUE, fill=cls.C_ROYAL_BLUE, radius=0.18)
+                    page.insert_text(fitz.Point(badge_x + 3.0, badge_y_top + 5.5), badge_txt, fontname="hebo", fontsize=4.5, color=(1, 1, 1))
 
                 hp_met = cls.METHOD_NAMES.get(str(hp.get("payment_method") or "cash").lower(), str(hp.get("payment_method") or "Cash").capitalize())
                 page.insert_text(fitz.Point(210, ry + row_h - 3.5), hp_met, fontname="helv", fontsize=font_size_row, color=cls.C_TEXT_DARK)
@@ -610,8 +698,9 @@ class ReceiptPdfService:
         img.save(img_bytes, format="PNG")
         page.insert_image(fitz.Rect(22, footer_top + 4, 68, footer_top + 50), stream=img_bytes.getvalue())
 
+        disclaimer_txt = str(inst.get("disclaimer_text") or "").strip() or "This is a computer-generated receipt and does not require a physical signature."
         page.insert_text(fitz.Point(76, footer_top + 12), "Thank you for your payment.", fontname="hebo", fontsize=7.2, color=cls.C_TEXT_DARK)
-        page.insert_text(fitz.Point(76, footer_top + 21), "This is a computer-generated receipt and does not require a physical signature.", fontname="helv", fontsize=5.5, color=cls.C_TEXT_GRAY)
+        page.insert_text(fitz.Point(76, footer_top + 21), disclaimer_txt[:90], fontname="helv", fontsize=5.5, color=cls.C_TEXT_GRAY)
         page.insert_text(fitz.Point(76, footer_top + 29), "For any queries, contact the academy office.", fontname="helv", fontsize=5.5, color=cls.C_TEXT_GRAY)
 
         # Signature flourish on right
@@ -623,11 +712,11 @@ class ReceiptPdfService:
         for i in range(len(sig_pts) - 1):
             page.draw_line(sig_pts[i], sig_pts[i + 1], color=(0.15, 0.20, 0.30), width=0.8)
 
-        as_txt = "AUTHORIZED SIGNATORY"
+        as_txt = (str(inst.get("signatory_title") or "").strip() or "AUTHORIZED SIGNATORY").upper()
         as_l = fitz.get_text_length(as_txt, fontname="hebo", fontsize=6.8)
         page.insert_text(fitz.Point(335 - as_l / 2.0, sig_base_y + 16), as_txt, fontname="hebo", fontsize=6.8, color=cls.C_TEXT_DARK)
 
-        ao_txt = "Accounts Officer"
+        ao_txt = str(inst.get("signatory_name") or "").strip() or (str(inst.get("name") or "").strip() or "Accounts Officer")
         ao_l = fitz.get_text_length(ao_txt, fontname="helv", fontsize=5.8)
         page.insert_text(fitz.Point(335 - ao_l / 2.0, sig_base_y + 24), ao_txt, fontname="helv", fontsize=5.8, color=cls.C_TEXT_GRAY)
 
@@ -654,7 +743,13 @@ class ReceiptPdfService:
             b_l = fitz.get_text_length(brand_txt, fontname="helv", fontsize=5.2)
             page.insert_text(fitz.Point(402.0 - b_l, f_baseline_y), brand_txt, fontname="helv", fontsize=5.2, color=(0.58, 0.64, 0.72))
 
-        return doc.tobytes()
+        if str(paper_size or "A5").upper() == "A4":
+            a4_doc = fitz.open()
+            a4_page = a4_doc.new_page(width=595.0, height=842.0)
+            a4_page.show_pdf_page(fitz.Rect(14, 14, 581, 828), doc, 0)
+            return a4_doc.tobytes(deflate=True, garbage=3)
+
+        return doc.tobytes(deflate=True, garbage=3)
 
     @classmethod
     def generate_bulk_receipts_zip(

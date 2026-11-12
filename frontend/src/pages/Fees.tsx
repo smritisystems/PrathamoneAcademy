@@ -3518,7 +3518,7 @@ function FeesContent() {
                                       </td>
                                       <td className="py-1.5 px-2">
                                         <span className="font-semibold text-slate-800">{sw.concession_name}</span>
-                                        <span className="block text-[10px] uppercase text-indigo-600">{sw.benefit_type.replace(/_/g, ' ')}</span>
+                                        <span className="block text-[10px] uppercase text-indigo-600">{(sw.benefit_type || 'fee_concession').replace(/_/g, ' ')}</span>
                                       </td>
                                       <td className="py-1.5 px-2 text-right font-semibold">{fmt(sw.approved_amount)}</td>
                                       <td className="py-1.5 px-2 text-right font-bold text-emerald-700">{fmt(sw.posted_amount)}</td>
@@ -5243,7 +5243,7 @@ function FeesContent() {
                                 ? 'bg-amber-100 text-amber-800 border border-amber-200'
                                 : 'bg-rose-100 text-rose-800 border border-rose-200'
                             }`}>
-                              {c.status.replace(/_/g, ' ').toUpperCase()}
+                              {(c.status || 'submitted').replace(/_/g, ' ').toUpperCase()}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-right whitespace-nowrap">
@@ -5518,7 +5518,7 @@ function FeesContent() {
                             </td>
                             <td className="py-3 px-3">
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200/80 capitalize">
-                                {scheme.category.replace(/_/g, ' ')}
+                                {(scheme.category || 'general').replace(/_/g, ' ')}
                               </span>
                             </td>
                             <td className="py-3 px-3">
@@ -5566,7 +5566,7 @@ function FeesContent() {
                             <td className="py-3 px-3">
                               <div className="space-y-0.5">
                                 <span className="text-[11px] font-bold text-slate-700 capitalize block">
-                                  {scheme.funding_source.replace(/_/g, ' ')}
+                                  {(scheme.funding_source || 'institute_fund').replace(/_/g, ' ')}
                                 </span>
                                 {scheme.requires_documents ? (
                                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700">

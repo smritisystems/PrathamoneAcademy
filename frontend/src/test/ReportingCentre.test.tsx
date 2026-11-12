@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Comprehensive unit and integration test suite validating Central Reporting & Analytics Centre, 6-category navigation, search filter, favorite pins, and ExcelReportGrid rendering.
  */
@@ -148,7 +148,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
     )
 
     expect(screen.getByText('Reporting & Analytics Centre')).toBeDefined()
-    expect(screen.getByText(/48 Enterprise Reports/i)).toBeDefined()
+    expect(screen.getByText(/49 Enterprise Reports/i)).toBeDefined()
 
     // 7 Canonical category switcher tabs
     expect(screen.getByRole('button', { name: /Students & Admissions/i })).toBeDefined()
@@ -221,7 +221,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
       </QueryClientProvider>
     )
 
-    const searchInput = screen.getByPlaceholderText(/Search all 48 reports.../i)
+    const searchInput = screen.getByPlaceholderText(/Search all 49 reports.../i)
     fireEvent.change(searchInput, { target: { value: 'Defaulters' } })
 
     // Matching overlay should show matching count

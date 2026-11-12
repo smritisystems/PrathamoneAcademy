@@ -1029,7 +1029,7 @@ export default function TeacherPayroll() {
 
                               {/* Assign Homework for Session */}
                               <Link
-                                to={`/homework/create?session_id=${s.id}&division_id=${s.division_id || s.batch_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic_covered || '')}&teacher_id=${s.teacher_user_id || ''}`}
+                                to={`/homework/create?session_id=${s.id}&division_id=${s.division_id || s.batch_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic_taught || s.topic_covered || '')}&teacher_id=${s.teacher_user_id || ''}`}
                                 className="p-1.5 text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded-lg transition-colors border border-primary-200"
                                 title="Assign Homework for this Teaching Session"
                               >
@@ -1037,7 +1037,7 @@ export default function TeacherPayroll() {
                               </Link>
                               {/* Open EduBoard for Session */}
                               <Link
-                                to={`/eduboard?session_id=${s.id}&division_id=${s.division_id || s.batch_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic_covered || '')}`}
+                                to={`/eduboard?session_id=${s.id}&division_id=${s.division_id || s.batch_id || ''}&subject_id=${s.subject_id || ''}&topic=${encodeURIComponent(s.topic_taught || s.topic_covered || '')}`}
                                 className="px-2 py-1 text-[11px] font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200"
                                 title="Open PrathamOne EduBoard for this Teaching Session"
                               >

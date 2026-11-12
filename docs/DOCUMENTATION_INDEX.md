@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-12 16:14:19  
-**Total Indexed Items:** 423  
+**Last Reindexed:** 2026-11-12 20:27:19  
+**Total Indexed Items:** 448  
 
 ---
 
@@ -15,9 +15,9 @@
 | Module # | Module Directory | Registered Documents | Description |
 |---|---|---|---|
 | `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **8** | Product Overview & Vision |
-| `01` | [01_ARCHITECTURE](#01_architecture) | **6** | System Architecture & Workflows |
+| `01` | [01_ARCHITECTURE](#01_architecture) | **7** | System Architecture & Workflows |
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **6** | Installation & Deployment |
-| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **18** | Academic Structure & Courses |
+| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **23** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **20** | Student Directory & Admissions |
 | `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **7** | Teacher & Faculty Directory |
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
@@ -26,14 +26,14 @@
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **47** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **0** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **10** | Reports, Analytics & Data Grids |
-| `12` | [12_RBAC_SECURITY](#12_rbac_security) | **13** | RBAC, Security & Permissions |
+| `12` | [12_RBAC_SECURITY](#12_rbac_security) | **14** | RBAC, Security & Permissions |
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **15** | Sysadmin Center & System Settings |
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **12** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **5** | Integrations, Messaging & Importers |
-| `16` | [16_DATABASE_API](#16_database_api) | **7** | Database Schema & REST API Standards |
+| `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **10** | UI/UX Design, Components & Footer |
-| `18` | [18_TESTING_QA](#18_testing_qa) | **4** | Testing, Verification & Quality Assurance |
-| `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **9** | Releases, Versioning & Changelogs |
+| `18` | [18_TESTING_QA](#18_testing_qa) | **7** | Testing, Verification & Quality Assurance |
+| `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **11** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **65** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **3** | Troubleshooting, Runbooks & Recovery |
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **10** | User Manuals & Operating Guides |
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **109** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **121** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -70,6 +70,7 @@
 | **Global Data Inventory — Complete Software & Schema Census** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
 | **Global Duplicate Table Audit — Forensic Structural Consolidation Review** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 16_DATABASE_API |
 | **Global Field Deduplication Audit — Canonical Attributes & Snapshot Governance** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-FIELD-DEDUPLICATION-AUDIT_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-FIELD-DEDUPLICATION-AUDIT_V1.md) | 01_ARCHITECTURE, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
+| **PrathamOne EduBoard — System Architecture & Engineering Design** | `ARCHITECTURE` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ARCHITECTURE_SYSTEM-DESIGN_EDUBOARD-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-12_ARCHITECTURE_SYSTEM-DESIGN_EDUBOARD-ARCHITECTURE_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 06_TEACHER_PAYROLL, 12_RBAC_SECURITY, 16_DATABASE_API |
 | **System Architecture Document** | `ARCHITECTURE-DESIGN` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md) | - |
 
 
@@ -98,6 +99,11 @@
 | **Homework & Assignment Management System Implementation Report** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL |
 | **Homework & Assignment Management System — Software Audit & Architectural Blueprint** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION |
 | **Independent End-to-End Acceptance Audit Report: Academic Structure & Batch Management** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-04_ACADEMIC_MANAGEMENT_IMPLEMENTATION-REPORT_ACADEMIC-ACCEPTANCE-AUDIT-REPORT_V1.md) | - |
+| **PrathamOne EduBoard — Collapsible Workspace Modes, Greenboard Surface & Display Preferences Architecture** | `ARCHITECTURE` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ACADEMIC-MANAGEMENT_ARCHITECTURE-GUIDE_EDUBOARD-DISPLAY-MODES_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ARCHITECTURE-GUIDE_EDUBOARD-DISPLAY-MODES_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
+| **PrathamOne EduBoard — Detached Pop-Out Window & Real-Time Multi-Tab Sync Implementation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_EDUBOARD-POPOUT-WINDOW_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_EDUBOARD-POPOUT-WINDOW_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY, 16_DATABASE_API |
+| **PrathamOne EduBoard — Existing Functionality Audit & Baseline Verification** | `AUDIT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ACADEMIC-MANAGEMENT_AUDIT-REPORT_EDUBOARD-EXISTING-FUNCTIONALITY-AUDIT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_AUDIT-REPORT_EDUBOARD-EXISTING-FUNCTIONALITY-AUDIT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 12_RBAC_SECURITY |
+| **PrathamOne EduBoard — Implementation Plan** | `PLAN` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ACADEMIC-MANAGEMENT_IMPLEMENTATION-PLAN_EDUBOARD-IMPLEMENTATION-PLAN_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_IMPLEMENTATION-PLAN_EDUBOARD-IMPLEMENTATION-PLAN_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 16_DATABASE_API, 18_TESTING_QA |
+| **PrathamOne EduBoard — Workspace Layout, Surface & Multi-Window Pop-Out Audit** | `AUDIT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ACADEMIC-MANAGEMENT_AUDIT-REPORT_EDUBOARD-LAYOUT-AUDIT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_AUDIT-REPORT_EDUBOARD-LAYOUT-AUDIT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY, 17_UI_UX_DESIGN |
 | **Smart Subject Selection Modal — Search-First UX with Canonical Autocomplete & Duplicate Recommendations** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_FEATURE-REPORT_SMART-SUBJECT-SELECTION-MODAL_V1.md) | 03_ACADEMIC_MANAGEMENT, 16_DATABASE_API, 17_UI_UX_DESIGN |
 | **Standards & Divisions Developer Manual** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-DEVELOPER-MANUAL_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-DEVELOPER-MANUAL_V1.md) | - |
 | **Standards & Divisions User Manual** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-USER-MANUAL_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-USER-MANUAL_V1.md) | - |
@@ -265,6 +271,7 @@
 | **Financial Permissions and Approval Matrix** | `MATRIX` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md](12_RBAC_SECURITY/2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md) | 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING |
 | **Global Branding Multi-Tenant Isolation Report** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_RBAC-SECURITY_REPORT_GLOBAL-BRANDING-TENANT-ISOLATION-REPORT_V1.md](12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_GLOBAL-BRANDING-TENANT-ISOLATION-REPORT_V1.md) | 01_ARCHITECTURE, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
 | **Global View-First & Explicit Edit Mode Governance Architecture & Implementation Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md](12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 09_FEES_PAYMENTS, 13_SYSADMIN_SETTINGS |
+| **PrathamOne EduBoard — RBAC Permission & Isolation Matrix** | `SECURITY` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_RBAC-SECURITY_PERMISSION-MATRIX_EDUBOARD-PERMISSION-MATRIX_V1.md](12_RBAC_SECURITY/2026-11-12_RBAC-SECURITY_PERMISSION-MATRIX_EDUBOARD-PERMISSION-MATRIX_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 12_RBAC_SECURITY |
 | **RBAC Correction: CRM Permissions and Student Admission Separation Audit & Implementation Report** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md](12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md) | 04_STUDENT_MANAGEMENT, 12_RBAC_SECURITY, 09_FEES_PAYMENTS |
 | **Role and Permission Matrix** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md](12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md) | - |
 | **Rule 010 Global View-First Enforcement — Complete Software-Wide Coverage Implementation Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_RULE-010-COMPLETE-SOFTWARE-WIDE-COVERAGE_V1.md](12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_RULE-010-COMPLETE-SOFTWARE-WIDE-COVERAGE_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 14_PRINTING_DOCUMENTS, 15_INTEGRATIONS |
@@ -336,6 +343,7 @@
 | **Database Schema Evaluation & Zero-Migration Governance Plan for Student Receivables** | `PLAN` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_DATABASE-API_MIGRATION-PLAN_STUDENT-RECEIVABLES-GOVERNANCE_V1.md](16_DATABASE_API/2026-11-09_DATABASE-API_MIGRATION-PLAN_STUDENT-RECEIVABLES-GOVERNANCE_V1.md) | 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS |
 | **Frontend–Backend–Database Mapping Matrix — End-to-End Field Traceability Audit** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_DATABASE-API_REPORT_FRONTEND-BACKEND-DATABASE-MAPPING-MATRIX_V1.md](16_DATABASE_API/2026-11-09_DATABASE-API_REPORT_FRONTEND-BACKEND-DATABASE-MAPPING-MATRIX_V1.md) | 16_DATABASE_API, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS |
 | **PrathamOne Academy — Database & Data Model Optimization Audit** | `AUDIT-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md](16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md) | - |
+| **PrathamOne EduBoard — Database Impact & Migration Specification** | `DATABASE` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_DATABASE-API_SCHEMA-IMPACT_EDUBOARD-DATABASE-IMPACT_V1.md](16_DATABASE_API/2026-11-12_DATABASE-API_SCHEMA-IMPACT_EDUBOARD-DATABASE-IMPACT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY, 16_DATABASE_API |
 
 
 ### <a id="17_ui_ux_design"></a>17_UI_UX_DESIGN — UI/UX Design, Components & Footer
@@ -360,6 +368,9 @@
 |---|---|---|---|---|---|---|
 | **Automated Test Report: Financial Transaction Lifecycle** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_TESTING-QA_TEST-REPORT_FINANCIAL-TRANSACTION-AUTOMATION_V1.md](18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_FINANCIAL-TRANSACTION-AUTOMATION_V1.md) | 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING |
 | **Fee Receipt PDF Rendering & Export Test Report** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_TESTING-QA_TEST-REPORT_RECEIPT-PDF-RENDERING_V1.md](18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_RECEIPT-PDF-RENDERING_V1.md) | 09_FEES_PAYMENTS, 14_PRINTING_DOCUMENTS |
+| **PrathamOne EduBoard End-to-End Verification & QA Test Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-TEST-REPORT_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-TEST-REPORT_V1.md) | 03_ACADEMIC_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY |
+| **PrathamOne EduBoard — Greenboard, Display Modes & Pop-Out Test Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-GREENBOARD-AND-POPOUT_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-GREENBOARD-AND-POPOUT_V1.md) | 03_ACADEMIC_MANAGEMENT, 18_TESTING_QA |
+| **PrathamOne EduBoard — v1.88.0-rc.2 Regression Verification Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-REGRESSION-REPORT_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-REGRESSION-REPORT_V1.md) | 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 18_TESTING_QA |
 | **Student Outstanding & Former Receivables Test Suite Report** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md](18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_STUDENT-OUTSTANDING-GOVERNANCE_V1.md) | 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS |
 | **System Acceptance Criteria and Test Verification Matrix** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md](18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md) | - |
 
@@ -375,6 +386,8 @@
 | **Release Notes v1.76.0 — Homework Management & Universal Report Intelligence** | `CHANGELOG` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md](19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md) | 03_ACADEMIC_MANAGEMENT, 11_REPORTS_EXPORTS, 19_RELEASES_CHANGELOG |
 | **Release Notes v1.87.0 — Homework & Assignment Management Enhancement** | `CHANGELOG` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md](19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 11_REPORTS_EXPORTS, 19_RELEASES_CHANGELOG |
 | **Release Notes — Prashant Academy** | `CHANGELOG` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RELEASES_CHANGELOG_CHANGELOG_RELEASE-NOTES-HISTORICAL_V1.md](19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_CHANGELOG_RELEASE-NOTES-HISTORICAL_V1.md) | - |
+| **Release Notes — PrathamOne EduOS v1.88.0-rc.1 (EduBoard Interactive Teaching Engine)** | `RELEASE-NOTES` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES_EDUBOARD-RELEASE-NOTES_V1.md](19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES_EDUBOARD-RELEASE-NOTES_V1.md) | 03_ACADEMIC_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 11_REPORTS_EXPORTS, 18_TESTING_QA |
+| **Release Notes — PrathamOne EduOS v1.88.0-rc.2 (EduBoard Workspace Modes, Greenboard & Pop-Out Live Sync)** | `RELEASE-NOTES` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES_V1-88-0-RC2_V1.md](19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES_V1-88-0-RC2_V1.md) | 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY, 17_UI_UX_DESIGN, 18_TESTING_QA |
 | **Source Code Attribution, Header, and Versioning Policy** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RELEASES_CHANGELOG_POLICY-FRAMEWORK_CODE-ATTRIBUTION-POLICY_V1.md](19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_POLICY-FRAMEWORK_CODE-ATTRIBUTION-POLICY_V1.md) | - |
 | **Source-Code Attribution, Header, and Versioning System Implementation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md](19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md) | - |
 
@@ -578,6 +591,18 @@
 | `dashboard_view_drilldown_modal.png` | `assets/screenshots` | 500.9 KB | [dashboard_view_drilldown_modal.png](assets/screenshots/dashboard_view_drilldown_modal.png) |
 | `dashboard_view_middle.png` | `assets/screenshots` | 478.3 KB | [dashboard_view_middle.png](assets/screenshots/dashboard_view_middle.png) |
 | `dashboard_view_top.png` | `assets/screenshots` | 495.7 KB | [dashboard_view_top.png](assets/screenshots/dashboard_view_top.png) |
+| `eduboard_classic_greenboard.png` | `assets` | 176.5 KB | [eduboard_classic_greenboard.png](assets/eduboard_classic_greenboard.png) |
+| `eduboard_crash_recovery.png` | `assets` | 199.3 KB | [eduboard_crash_recovery.png](assets/eduboard_crash_recovery.png) |
+| `eduboard_pdf_presentation.png` | `assets` | 247.1 KB | [eduboard_pdf_presentation.png](assets/eduboard_pdf_presentation.png) |
+| `eduboard_reports_summary.png` | `assets` | 324.9 KB | [eduboard_reports_summary.png](assets/eduboard_reports_summary.png) |
+| `eduboard_student_portal.png` | `assets` | 239.8 KB | [eduboard_student_portal.png](assets/eduboard_student_portal.png) |
+| `eduboard_student_readonly_modal.png` | `assets` | 239.7 KB | [eduboard_student_readonly_modal.png](assets/eduboard_student_readonly_modal.png) |
+| `eduboard_v188_rc2_focus_mode.png` | `assets` | 554.7 KB | [eduboard_v188_rc2_focus_mode.png](assets/eduboard_v188_rc2_focus_mode.png) |
+| `eduboard_v188_rc2_greenboard_standard.png` | `assets` | 217.6 KB | [eduboard_v188_rc2_greenboard_standard.png](assets/eduboard_v188_rc2_greenboard_standard.png) |
+| `eduboard_v188_rc2_popout_detached.png` | `assets` | 107.7 KB | [eduboard_v188_rc2_popout_detached.png](assets/eduboard_v188_rc2_popout_detached.png) |
+| `eduboard_v188_rc2_tablet_layout.png` | `assets` | 144.2 KB | [eduboard_v188_rc2_tablet_layout.png](assets/eduboard_v188_rc2_tablet_layout.png) |
+| `eduboard_view_mode.png` | `assets` | 177.0 KB | [eduboard_view_mode.png](assets/eduboard_view_mode.png) |
+| `eduboard_whiteboard_shapes.png` | `assets` | 187.1 KB | [eduboard_whiteboard_shapes.png](assets/eduboard_whiteboard_shapes.png) |
 | `fix1_receipt_edit_modal.png` | `assets/screenshots` | 246.1 KB | [fix1_receipt_edit_modal.png](assets/screenshots/fix1_receipt_edit_modal.png) |
 | `fix1_receipts_with_edit_button.png` | `assets/screenshots` | 218.3 KB | [fix1_receipts_with_edit_button.png](assets/screenshots/fix1_receipts_with_edit_button.png) |
 | `fix2_fee_plan_edit_modal.png` | `assets/screenshots` | 218.9 KB | [fix2_fee_plan_edit_modal.png](assets/screenshots/fix2_fee_plan_edit_modal.png) |

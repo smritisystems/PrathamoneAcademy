@@ -1180,44 +1180,101 @@ Follow this verification checklist when preparing PrathamOne EduOS for live acad
         "category_slug": "module-guides",
         "section": "module_guide",
         "module_key": "homework",
+        "doc_version": "1.1",
         "title": "Homework and Assignments Module User Guide",
-        "summary": "Create batch assignments, record physical notebook checks, track digital submissions, reuse templates, and export daily registers.",
-        "tags": ["homework", "assignments", "checking register", "submissions", "templates"],
-        "required_permissions": ["homework:view", "homework:manage", "Teacher / Coordinator / Admin"],
+        "summary": "Assign batch, individual, or custom group tasks, attach study files, track late joiners, review versioned digital submissions, and run analytics.",
+        "tags": ["homework", "assignments", "checking register", "submissions", "templates", "analytics"],
+        "required_permissions": ["homework:view", "homework:manage", "homework:publish", "homework:evaluate", "homework:reports"],
         "related_routes": ["/homework", "/homework/create", "/homework/checking", "/homework/submissions", "/homework/templates", "/homework/reports"],
-        "related_slugs": ["guide-attendance", "guide-courses", "guide-students"],
+        "related_slugs": ["guide-eduboard", "guide-attendance", "guide-courses", "guide-students"],
         "sort_order": 25,
         "content_markdown": _module_guide_markdown(
             title="Homework and Assignments Module User Guide",
-            intro="The Homework & Assignment Studio allows teachers and coordinators to issue assignments to entire divisions or selected learners and track physical notebook checks or digital submissions.",
-            purpose="Standardize daily practice tracking across batches with per-student status visibility and daily homework registers.",
+            intro="The Homework & Assignment Studio enables teachers and coordinators to create targeted assignments for whole batches, selected learners, or student groups, manage late-joiner sync, and evaluate versioned submissions.",
+            purpose="Standardize daily practice tracking across batches with configurable assignment types, secure attachments, instant student portal notifications, and batch/institute completion analytics.",
             operations=[
-                "Review active assignments and completion counts in Overview (`/homework`).",
-                "Assign new homework with target Division, Subject, due date, and reusable templates (`/homework/create`, `/homework/templates`).",
-                "Record physical classroom notebook checking per learner in Checking Register (`/homework/checking`).",
-                "Review uploaded learner responses in Submissions (`/homework/submissions`) and generate Daily Register Reports (`/homework/reports`).",
+                "Review active assignments, draft status, and completion metrics in Overview (`/homework`), or launch directly from Teacher Workspace.",
+                "Create assignments targeting an entire Division, selected individual students, or custom groups (`/homework/create`) with estimated duration, custom due-date overrides, and reusable templates (`/homework/templates`).",
+                "Upload reference worksheets securely and preview recipient rosters before publishing, with automatic or manual synchronization for late-joining students.",
+                "Record physical notebook checks in Checking Register (`/homework/checking`) and evaluate uploaded learner responses with version history and feedback attachments in Submissions (`/homework/submissions`).",
+                "Track batch progress and institute completion rates in Reports (`/homework/reports`) and configure submission limits under Homework Settings.",
             ],
             steps=[
-                "Open Homework & Assignments (`/homework`) and switch to Assign New Homework (`/homework/create`).",
-                "Enable Edit Mode in the Homework & Assignment Governance bar before creating or grading records.",
-                "Select Standard, Division, Subject, due date, and instructions, then publish the assignment.",
-                "After class, open Checking Register (`/homework/checking`), choose the assignment, and mark each student's completion or review remarks.",
-                "Open Daily Register Reports (`/homework/reports`) to review batch completion trends.",
+                "Open Homework & Assignments (`/homework`) and activate Edit Mode in the governance bar.",
+                "Choose Create Assignment (`/homework/create`), select the Standard, Division or Individual Recipients, Subject, Assignment Type, and Due Date.",
+                "Attach optional worksheet files, review the Recipient Preview list, and Publish (or save as Draft).",
+                "Review learner uploads in Submissions (`/homework/submissions`) or mark notebook status in Checking Register (`/homework/checking`), attaching evaluation remarks or feedback files.",
+                "Open Reports (`/homework/reports`) to export formatted XLSX/CSV completion summaries.",
             ],
             permissions=[
-                "homework:view — Inspect assignments, checking registers, and completion statistics.",
-                "homework:manage — Create assignments, update checking statuses, and manage homework templates.",
+                "homework:view — Inspect assignments, checking registers, and student records.",
+                "homework:manage — Create drafts, edit templates, and upload attachments.",
+                "homework:publish — Publish assignments and sync late-joining batch students.",
+                "homework:evaluate — Grade student submissions, mark notebook checks, and return feedback.",
+                "homework:reports — Access batch reports, institute analytics, and XLSX/CSV exports.",
             ],
             workflows=[
-                "Class Lecture Conducted -> Homework Assigned -> Notebook / Submission Checked -> Daily Register Reviewed.",
+                "Class Lecture Conducted -> Draft/Published Homework -> Automatic Student Notification -> Versioned Student Submission -> Teacher Evaluation & Analytics.",
             ],
             mistakes=[
                 "Assigning homework to the wrong Academic Year or Division when multiple batches share the same subject.",
-                "Forgetting to save updated marks in the Checking Register before leaving the page.",
+                "Leaving overdue assignments in Draft state before publishing so learners cannot see them in My Homework.",
             ],
             troubleshooting=[
-                "If students do not appear in the Checking Register, verify active batch allocations under Students -> Batch Allocations.",
-                "Use filters by Standard, Division, and Subject at the top of the workspace to locate older assignments quickly.",
+                "If newly admitted students are missing from an active assignment, run Sync Late Joiners on the assignment card or verify active batch allocations.",
+                "If an attachment fails to upload, confirm the file format and maximum size configured in Homework Settings.",
+            ],
+        ),
+    },
+    {
+        "slug": "guide-eduboard",
+        "category_slug": "module-guides",
+        "section": "module_guide",
+        "module_key": "eduboard",
+        "doc_version": "1.0",
+        "title": "EduBoard Interactive Classroom User Guide",
+        "summary": "Conduct interactive classroom lectures using Digital Whiteboard, Classic Greenboard/Blackboard, PDF slide annotation, Focus/Full-Screen display modes, and detached pop-out windows.",
+        "tags": ["eduboard", "whiteboard", "greenboard", "blackboard", "pdf annotation", "pop-out", "teaching"],
+        "required_permissions": ["eduboard:view", "eduboard:create", "eduboard:edit", "eduboard:publish", "eduboard:download"],
+        "related_routes": ["/eduboard", "/eduboard/window", "/teachers", "/student-portal"],
+        "related_slugs": ["tutorial-eduboard-classroom", "guide-homework", "guide-timetable"],
+        "sort_order": 26,
+        "content_markdown": _module_guide_markdown(
+            title="EduBoard Interactive Classroom User Guide",
+            intro="PrathamOne EduBoard is the integrated digital classroom engine connected directly to Teaching Sessions, Subjects, Batches, and Academic Years.",
+            purpose="Provide distraction-free live lecture instruction across Digital Whiteboard, Classic Greenboard, Blackboard, and Ruled surfaces with PDF/image annotation, revision history, student portal publishing, and synchronized dual-window presentation.",
+            operations=[
+                "Launch lecture boards directly for an authorized Class, Batch, Subject, and Teaching Session from `/eduboard` or Teacher Workspace.",
+                "Draw and annotate with Pen, Highlighter, Eraser, Line, Arrow, Rectangle, Circle, Text, Undo/Redo, Zoom/Pan, and Fit-to-Screen.",
+                "Switch board surfaces (Whiteboard, Grid Whiteboard, Classroom Greenboard, Blackboard, Ruled Paper) with adaptive high-contrast chalk and ink palettes.",
+                "Toggle between Standard, Focus, and Immersive Full-Screen workspace modes, collapse Pages or Saved Lecture Boards drawers, and dock or minimize the floating toolbar.",
+                "Import PDF lecture slides or images for multi-page annotation, save immutable version revisions with conflict protection, export annotated lecture PDFs, and Publish read-only notes to the Student Portal.",
+                "Open synchronized Detached Pop-Out Windows (New Tab, Interactive Pop-Out, Projector Presentation Read-Only, Split Workspace) with live state sync.",
+            ],
+            steps=[
+                "Open EduBoard Classroom (`/eduboard`) from the sidebar or start directly from a Teaching Session in Teacher Management / Payroll.",
+                "Activate Edit Mode in the EduBoard Governance bar and choose an existing Lecture Board or create a new board linked to your Subject and Batch.",
+                "Select your preferred surface (e.g., Greenboard or Grid Whiteboard) and workspace mode (Standard, Focus, or Immersive Full-Screen).",
+                "Import optional PDF pages or add multi-page slides, annotate during the live class, and save revisions regularly.",
+                "Use Pop-Out Window -> Presentation Read-Only when casting to a classroom projector, and click Publish & Export PDF after the lecture to share clean notes with students.",
+            ],
+            permissions=[
+                "eduboard:view — Open lecture boards and read-only Student Portal classroom notes.",
+                "eduboard:create — Create new lecture boards linked to assigned batches and sessions.",
+                "eduboard:edit — Draw annotations, import slides, reorder pages, and save revisions in Edit Mode.",
+                "eduboard:publish — Publish finalized lecture boards to enrolled batch students.",
+                "eduboard:download — Export multi-page annotated lecture boards as PDF documents.",
+            ],
+            workflows=[
+                "Timetable / Teaching Session -> EduBoard Live Instruction (Greenboard / PDF Slides) -> Revision Snapshot -> Publish to Student Portal & Export PDF.",
+            ],
+            mistakes=[
+                "Drawing without activating View-First Edit Mode when reviewing an archived or student-scoped board.",
+                "Selecting the interactive pop-out link for a public student screen instead of Presentation Read-Only mode.",
+            ],
+            troubleshooting=[
+                "If a board displays a revision conflict warning after simultaneous edits, inspect Revision History before choosing Force Overwrite or reloading the latest snapshot.",
+                "If custom toolbar or panel preferences differ from your expectations, open Display Preferences and choose Reset to Institution Default.",
             ],
         ),
     },
@@ -1490,24 +1547,28 @@ Follow this procedure before invoicing students at the start of an academic term
         "category_slug": "tutorials",
         "section": "tutorial",
         "module_key": "fees",
-        "title": "Tutorial: Official Receipt Generation & Sharing",
-        "summary": "View, print, verify, or share official numbered fee receipts after payment collection.",
-        "tags": ["tutorial", "receipt", "print", "share", "payment"],
+        "doc_version": "1.1",
+        "title": "Tutorial: Official Receipt Generation, Printing & PDF Export",
+        "summary": "Preview, print in A5 Compact or A4 Portrait, download exact-parity PDF receipts, or share securely after payment collection.",
+        "tags": ["tutorial", "receipt", "print", "pdf", "a5", "a4", "share", "payment"],
         "required_permissions": ["fees:view", "payments:create"],
-        "related_routes": ["/payments", "/fees"],
+        "related_routes": ["/payments", "/receipts", "/fees"],
         "related_slugs": ["tutorial-fee-collection", "faq-fee-receipts", "faq-printing-problems"],
         "sort_order": 34,
-        "content_markdown": """# Tutorial: Official Receipt Generation & Sharing
+        "content_markdown": """# Tutorial: Official Receipt Generation, Printing & PDF Export
 
-Every posted fee payment generates an official numbered **Payment Receipt** showing institution branding, student identity, invoice items paid, payment method, and date.
+Every posted fee payment generates an official numbered **Payment Receipt** showing your Academy logo, institution name, complete address, contact details, student profile, Fee Account Summary chart, itemized Payment Installments History, verification QR code, and Authorized Signatory footer.
 
-## Printing or Downloading a Receipt
-1. Immediately after posting payment on the Collection Desk, click **View / Print Receipt** (or open **Payments** `/payments` -> click any receipt number).
-2. Review the itemized breakdown, applied concessions, and balance remaining.
-3. Click **Print Receipt** (choose browser *Save as PDF* to download a clean digital PDF, or send directly to an A4/A5 laser printer).
+## Choosing Paper Size & Printing
+1. Immediately after posting payment on the Collection Desk, click **View / Print Receipt** (or open **Payments** (`/payments`) -> click any receipt number).
+2. Use the **Print Paper Format** toggle at the top of the preview to choose **A5 Compact** (`148 × 210 mm`, recommended for standard compact vouchers) or **A4 Portrait** (`210 × 297 mm`, recommended when printing multi-installment histories on a single sheet).
+3. Click **Print Receipt (A5)** / **Print Receipt (A4)**. In your browser print dialog, ensure **Background graphics** is enabled, **Scale** is set to **100%** (*Actual Size*), and the matching **A5** or **A4** paper size is selected.
+
+## Downloading Official PDF Files
+- Click **Download PDF** while either **A5 Compact** or **A4 Portrait** is selected to generate a print-ready PDF (`StudentName_ReceiptNo.pdf`) matching the software preview with your Academy crest logo, wrapped address, phone, email, summary chart, QR code, and signature.
 
 ## Sharing with Parents
-- From **Communication Center** or the receipt share action, generate a secure expiring view link or send receipt details via WhatsApp Web / Email directly to the primary guardian's contact.
+- Click **Share PDF** (or open **Communication Center**) to attach the official PDF receipt or share a secure expiring view link via WhatsApp or Email.
 """,
     },
     {
@@ -1716,6 +1777,37 @@ Scholarships and sponsor-funded benefits follow the unified governance workflow 
 6. Click **Export XLSX** for formatted Excel workbooks or **Export CSV** for universal spreadsheet processing.
 """,
     },
+    {
+        "slug": "tutorial-eduboard-classroom",
+        "category_slug": "tutorials",
+        "section": "tutorial",
+        "module_key": "eduboard",
+        "doc_version": "1.0",
+        "title": "Tutorial: Teaching with EduBoard Greenboard, Focus Mode & Pop-Out Projector View",
+        "summary": "Step-by-step classroom workflow for switching board surfaces, maximizing canvas area, projecting a synchronized read-only window, and publishing PDF notes.",
+        "tags": ["tutorial", "eduboard", "greenboard", "focus mode", "fullscreen", "pop-out"],
+        "required_permissions": ["eduboard:view", "eduboard:edit", "eduboard:publish"],
+        "related_routes": ["/eduboard", "/eduboard/window"],
+        "related_slugs": ["guide-eduboard", "guide-homework"],
+        "sort_order": 43,
+        "content_markdown": """# Tutorial: Teaching with EduBoard Greenboard, Focus Mode & Pop-Out Projector View
+
+Follow this workflow during live classroom or hybrid sessions to get the maximum teaching area without distractions.
+
+## Step 1: Open & Switch Board Surface
+1. Open **EduBoard Classroom** (`/eduboard`), select your **Subject**, **Batch**, and **Teaching Session**, and enable **Edit Mode**.
+2. Choose **Greenboard** or **Blackboard** from the board surface selector for classic chalk styling (with high-contrast white, yellow, pink, blue, and green chalk), or **Grid Whiteboard** / **Ruled** for diagrams and worked solutions.
+
+## Step 2: Maximize Canvas with Focus & Immersive Modes
+- In **Standard Mode**, use the collapse toggles to tuck away the **Pages** or **Saved Lecture Boards** panels independently.
+- Switch to **Focus Mode** to hide navigation menus and access Pages/Boards via temporary slide-over drawers.
+- Click **Immersive Full-Screen** for edge-to-edge teaching (`Escape` returns safely), and dock the toolbar (**Expanded**, **Compact**, or **Hidden**) to Left, Right, Top, Bottom, or Floating.
+
+## Step 3: Project & Publish Lecture Notes
+1. Click **Pop-Out -> Presentation Read-Only** to open a clean student-facing projector window that mirrors page switches and drawings in real time without exposing editing tools.
+2. When the class finishes, click **Save** to record an immutable revision, click **Export PDF** for an annotated slide deck, or click **Publish** to notify enrolled students inside their Student Portal.
+""",
+    },
 
     # =========================================================================
     # D. FAQ & TROUBLESHOOTING (12 Categorized Topics)
@@ -1883,20 +1975,24 @@ Scholarships and sponsor-funded benefits follow the unified governance workflow 
         "category_slug": "faq-troubleshooting",
         "section": "faq",
         "module_key": "fees",
+        "doc_version": "1.1",
         "title": "FAQ & Troubleshooting: Printing Receipts, ID Cards & Report Cards",
-        "summary": "Fix clipped margins, missing institute headers/colors, blank pages, and PDF print layout settings.",
-        "tags": ["faq", "printing", "pdf", "receipt print", "report card", "id card"],
+        "summary": "Fix clipped margins, missing institute headers/logos/colors, shrunk scaling on A5/A4 receipts, and PDF export mismatches.",
+        "tags": ["faq", "printing", "pdf", "receipt print", "a5", "a4", "report card", "id card"],
         "required_permissions": ["Authenticated User"],
-        "related_routes": ["/payments", "/examinations/report-cards", "/students"],
+        "related_routes": ["/payments", "/receipts", "/examinations/report-cards", "/students"],
         "related_slugs": ["tutorial-receipt-generation", "guide-results"],
         "sort_order": 57,
         "content_markdown": """# Printing Problems — FAQ & Troubleshooting
 
-### Q: Colors, logos, or shaded table headers disappear when printing a Receipt or Report Card.
-- In your browser Print dialog (`Ctrl+P` / `Cmd+P`), expand **More settings** and enable **Background graphics**. Ensure browser **Headers and footers** is turned OFF so URL strings do not print at the top/bottom of official documents.
+### Q: Academy logo, name, address, or shaded colors disappear when printing a Receipt or Report Card.
+- Use the **Print Receipt (A5)** / **Print Receipt (A4)** button inside the receipt preview rather than pressing `Ctrl+P` on the surrounding application page. This launches an isolated sheet matching your selected **A5 Compact** or **A4 Portrait** format with the full academy header and footer intact.
+- In the browser Print dialog (`Ctrl+P` / `Cmd+P`), expand **More settings** and enable **Background graphics**, and turn **Headers and footers** OFF so browser URL bars do not print over official documents.
 
-### Q: Content spills onto a second blank page.
-- Select **Paper size: A4** (or the matching receipt paper format configured in **Settings -> Printing**) and set **Margins: Default** or **Minimum** with **Scale: 100%** (or *Fit to page width*).
+### Q: The printed receipt looks smaller than the software preview or spills onto a second page.
+- Confirm the **Print Paper Format** toggle (`A5 Compact` vs `A4 Portrait`) matches the paper size selected inside the browser/printer dialog, with **Scale: 100%** (*Default*) and **Margins: Default**.
+- Receipts with 6 or more historical payment installments naturally fit on **1 page** when switched to **A4 Portrait** (`210 × 297 mm`), whereas **A5 Compact** wraps longer payment tables across pages.
+- For guaranteed exact-page digital vouchers with embedded crest logo, QR code, and signatory, click **Download PDF** after selecting A5 or A4.
 """,
     },
     {
@@ -2140,6 +2236,7 @@ Scholarships and sponsor-funded benefits follow the unified governance workflow 
         "category_slug": "legal-compliance",
         "section": "legal",
         "module_key": "legal",
+        "doc_version": "1.1",
         "title": "Third-Party & Open-Source Software Acknowledgements",
         "summary": "Verified PrathamOne EduOS product credits, engineering ownership, and third-party open-source software component acknowledgements.",
         "tags": ["legal", "credits", "acknowledgements", "open-source", "third-party", "licenses"],
@@ -2171,6 +2268,9 @@ PrathamOne EduOS builds upon the following verified web technologies and librari
 | Tailwind CSS | Unified visual design system and responsive layouts | MIT |
 | Lucide Icons | Consistent application and navigation iconography | ISC |
 | Recharts | Academic and financial analytics visualizations | MIT |
+| Konva & `react-konva` | Hardware-accelerated EduBoard interactive canvas rendering | MIT |
+| `perfect-freehand` | Pressure-sensitive pen and chalk stroke smoothing | MIT |
+| PDF.js (`pdfjs-dist`) | Client-side lecture PDF page rendering for EduBoard | Apache-2.0 |
 | React Hook Form & Zod | Structured form handling and schema validation | MIT |
 | `write-excel-file` | Spreadsheet `.xlsx` export generation | MIT |
 | `date-fns`, `clsx`, `react-hot-toast` | Date formatting, styling helpers, and notifications | MIT |

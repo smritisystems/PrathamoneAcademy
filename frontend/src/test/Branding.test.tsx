@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-11
+ * @updated     2026-11-12
  *
  * @description Unit and integration tests verifying centralized branding configuration, AITDL parent organization, product ecosystem, and dynamic tenant resolution.
  */
@@ -32,7 +32,7 @@ describe('Centralized Application Branding & Identity System', () => {
   })
 
   it('exposes version, build number, and environment without leakage', () => {
-    expect(BRANDING_CONFIG.version).toMatch(/^\d+\.\d+\.\d+$/)
+    expect(BRANDING_CONFIG.version).toMatch(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/)
     expect(BRANDING_CONFIG.buildNumber).toBeDefined()
     expect(typeof BRANDING_CONFIG.buildNumber).toBe('string')
     expect(BRANDING_CONFIG.environment).toBeDefined()

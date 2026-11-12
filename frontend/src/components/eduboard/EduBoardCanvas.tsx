@@ -9,38 +9,21 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.0.0
+ * @version     1.1.0
  * @created     2026-11-12
  * @updated     2026-11-12
  *
- * @description Interactive Konva + React-Konva + perfect-freehand + PDF.js multi-mode classroom canvas supporting Classic Chalk/Greenboard, Digital Whiteboard, and non-destructive PDF Presentation annotations.
+ * @description Interactive Konva + React-Konva + PDF.js multi-mode classroom canvas supporting Classic Greenboard/Blackboard chalk rendering, Digital Whiteboard, Grid/Ruled surfaces, non-destructive PDF annotations, Fit-to-Screen, keyboard shortcuts, and collapsible/dockable/floating toolbar integration.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Stage, Layer, Rect, Line, Arrow, Ellipse, Text as KonvaText, Image as KonvaImage, Group, Transformer } from 'react-konva'
 import type Konva from 'konva'
-import { getStroke } from 'perfect-freehand'
+import { ChevronLeft, ChevronRight, Lock, ZoomIn, ZoomOut, Maximize } from 'lucide-react'
 import * as pdfjsLib from 'pdfjs-dist'
-import {
-  MousePointer,
-  PenTool,
-  Highlighter,
-  Eraser,
-  Minus,
-  ArrowUpRight,
-  Square,
-  Circle,
-  Type,
-  Trash2,
-  Undo2,
-  Redo2,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Hand,
-  FileImage,
-} from 'lucide-react'
 import { eduboardApi } from '../../api/endpoints'
+import { useEduBoardDisplayStore } from '../../store/eduboardDisplayStore'
+import EduBoardToolbar from './EduBoardToolbar'
 import type {
   EduBoardBackgroundStyle,
   EduBoardMode,
@@ -50,316 +33,438 @@ import type {
   EduBoardTool,
 } from '../../types'
 
-// Serve pdf.js worker from self origin to comply strictly with nginx CSP script-src 'self'
-try {
+export const EDUBOARD_LOGICAL_WIDTH = 1280
+export const EDUBOARD_LOGICAL_HEIGHT = 720
+
+if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url,
   ).toString()
-} catch {
-  // Handled cleanly by PyMuPDF PNG fallback in PDF slide loader
 }
-
-export const EDUBOARD_LOGICAL_WIDTH = 1280
-export const EDUBOARD_LOGICAL_HEIGHT = 720
 
 export function parseSceneJson(raw: string | EduBoardScenePayload | undefined | null): EduBoardScenePayload {
   if (!raw) return { schemaVersion: 1, elements: [] }
-  if (typeof raw === 'object') {
-    return {
-      schemaVersion: Number(raw.schemaVersion || 1),
-      elements: Array.isArray(raw.elements) ? raw.elements : [],
+  if (typeof raw === 'object' && Array.isArray(raw.elements)) {
+    return { schemaVersion: raw.schemaVersion || 1, elements: raw.elements }
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      if (parsed && Array.isArray(parsed.elements)) {
+        return { schemaVersion: parsed.schemaVersion || 1, elements: parsed.elements }
+      }
+    } catch {
+      // fall through
     }
   }
-  try {
-    const parsed = JSON.parse(raw)
-    return {
-      schemaVersion: Number(parsed?.schemaVersion || 1),
-      elements: Array.isArray(parsed?.elements) ? parsed.elements : [],
-    }
-  } catch {
-    return { schemaVersion: 1, elements: [] }
-  }
+  return { schemaVersion: 1, elements: [] }
 }
 
-function getSvgPathFlatPoints(rawPoints: number[], pressures: number[] | undefined, size: number, tool?: string): number[] {
-  const pts: Array<[number, number, number]> = []
-  for (let i = 0; i < rawPoints.length; i += 2) {
-    const pIdx = Math.floor(i / 2)
-    pts.push([rawPoints[i], rawPoints[i + 1], pressures?.[pIdx] ?? 0.5])
-  }
-  if (pts.length < 2) return rawPoints
-
-  const strokeOutline = getStroke(pts, {
-    size: tool === 'marker' ? size * 1.4 : tool === 'highlighter' ? size * 3 : size,
-    thinning: tool === 'chalk' ? 0.35 : tool === 'highlighter' ? 0.05 : 0.45,
-    smoothing: 0.55,
-    streamline: 0.45,
-    simulatePressure: !pressures || pressures.length === 0,
-  })
-  const flat: number[] = []
-  for (const [x, y] of strokeOutline) {
-    flat.push(x, y)
-  }
-  return flat
+function makeUid(): string {
+  return `el_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
 }
 
-function isNearPoint(px: number, py: number, el: EduBoardSceneElement, radius = 18): boolean {
-  if (el.type === 'stroke' || el.type === 'line' || el.type === 'arrow') {
-    const pts = el.points || []
-    for (let i = 0; i < pts.length; i += 2) {
-      const dx = pts[i] - px
-      const dy = pts[i + 1] - py
-      if (dx * dx + dy * dy <= radius * radius) return true
-    }
-    return false
-  }
-  const x = el.x || 0
-  const y = el.y || 0
-  const w = Math.abs(el.width || 120)
-  const h = Math.abs(el.height || 40)
-  return px >= x - radius && px <= x + w + radius && py >= y - radius && py <= y + h + radius
+function pointsDist(x1: number, y1: number, x2: number, y2: number): number {
+  return Math.hypot(x2 - x1, y2 - y1)
 }
 
-const CLASSIC_COLORS = ['#ffffff', '#fde047', '#f9a8d4', '#67e8f9', '#86efac']
-const WHITEBOARD_COLORS = ['#111827', '#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c']
+function pointNearPolyline(px: number, py: number, pts: number[], threshold: number): boolean {
+  for (let i = 0; i < pts.length; i += 2) {
+    if (pointsDist(px, py, pts[i], pts[i + 1]) <= threshold) return true
+  }
+  return false
+}
 
 export interface EduBoardCanvasProps {
   page: EduBoardPageItem
   readOnly?: boolean
+  readOnlyLabel?: string
+  hideToolbar?: boolean
+  fullscreenFill?: boolean
+  compactToolbar?: boolean
+  pageIndex?: number
+  totalPages?: number
+  onPrevPage?: () => void
+  onNextPage?: () => void
   onSceneChange?: (scene: EduBoardScenePayload) => void
   onModeOrBackgroundChange?: (mode: EduBoardMode, bg: EduBoardBackgroundStyle) => void
   onUploadInlineImage?: (file: File) => Promise<{ attachmentId: number; url: string } | null>
-  compactToolbar?: boolean
 }
 
 export default function EduBoardCanvas({
   page,
   readOnly = false,
+  readOnlyLabel = 'Read-Only Student Lecture View',
+  hideToolbar = false,
+  fullscreenFill = false,
+  compactToolbar = false,
+  pageIndex,
+  totalPages,
+  onPrevPage,
+  onNextPage,
   onSceneChange,
   onModeOrBackgroundChange,
   onUploadInlineImage,
-  compactToolbar = false,
 }: EduBoardCanvasProps) {
-  const mode = page.mode || 'whiteboard'
-  const backgroundStyle = page.background_style || 'white'
-  const scene = useMemo(() => parseSceneJson(page.scene_json), [page.scene_json])
-
-  const defaultTool: EduBoardTool = readOnly ? 'select' : mode === 'classic' ? 'chalk' : 'pen'
-  const [activeTool, setActiveTool] = useState<EduBoardTool>(defaultTool)
-  const [strokeColor, setStrokeColor] = useState<string>(mode === 'classic' ? '#ffffff' : '#111827')
-  const [strokeSize, setStrokeSize] = useState<number>(4)
-  const [stylusOnly, setStylusOnly] = useState<boolean>(false)
-  const [zoom, setZoom] = useState<number>(1)
-  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
-  const [isPanMode, setIsPanMode] = useState<boolean>(false)
-
-  // Undo / Redo per page UID
-  const [undoStack, setUndoStack] = useState<EduBoardSceneElement[][]>([])
-  const [redoStack, setRedoStack] = useState<EduBoardSceneElement[][]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [confirmClear, setConfirmClear] = useState<boolean>(false)
-
-  // Live drawing state
-  const [draftElement, setDraftElement] = useState<EduBoardSceneElement | null>(null)
-  const isDrawingRef = useRef(false)
-  const startPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const stageRef = useRef<Konva.Stage | null>(null)
   const transformerRef = useRef<Konva.Transformer | null>(null)
   const selectedNodeRef = useRef<Konva.Node | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const [containerWidth, setContainerWidth] = useState<number>(960)
+  const imageFileInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Text input overlay
-  const [textDraft, setTextDraft] = useState<{ x: number; y: number; value: string } | null>(null)
+  const [containerSize, setContainerSize] = useState<{ w: number; h: number }>({ w: 960, h: 540 })
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
 
-  // Background PDF slide or inline image cache
-  const [pdfSlideImage, setPdfSlideImage] = useState<HTMLImageElement | null>(null)
-  const [pdfLoading, setPdfLoading] = useState<boolean>(false)
-  const [pdfError, setPdfError] = useState<string | null>(null)
+  // Persistent shared toolbar & tool state across workspace mode switches
+  const storeActiveTool = useEduBoardDisplayStore((s) => s.activeTool)
+  const setStoreActiveTool = useEduBoardDisplayStore((s) => s.setActiveTool)
+  const storeActiveColor = useEduBoardDisplayStore((s) => s.activeColor)
+  const setStoreActiveColor = useEduBoardDisplayStore((s) => s.setActiveColor)
+  const strokeSize = useEduBoardDisplayStore((s) => s.strokeSize)
+  const setStrokeSize = useEduBoardDisplayStore((s) => s.setStrokeSize)
+  const isPanMode = useEduBoardDisplayStore((s) => s.isPanMode)
+  const setIsPanMode = useEduBoardDisplayStore((s) => s.setIsPanMode)
+  const toolbarState = useEduBoardDisplayStore((s) => s.toolbarState)
+  const setToolbarState = useEduBoardDisplayStore((s) => s.setToolbarState)
+  const toolbarPosition = useEduBoardDisplayStore((s) => s.toolbarPosition)
+  const setToolbarPosition = useEduBoardDisplayStore((s) => s.setToolbarPosition)
+  const floatingPos = useEduBoardDisplayStore((s) => s.floatingPos)
+  const setFloatingPos = useEduBoardDisplayStore((s) => s.setFloatingPos)
+
+  const [stylusOnly, setStylusOnly] = useState(false)
+  const [spacePanActive, setSpacePanActive] = useState(false)
+
+  const scene = useMemo(() => parseSceneJson(page.scene_json), [page.scene_json])
+  const [elements, setElements] = useState<EduBoardSceneElement[]>(scene.elements)
+  const [draftElement, setDraftElement] = useState<EduBoardSceneElement | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [undoStack, setUndoStack] = useState<EduBoardSceneElement[][]>([])
+  const [redoStack, setRedoStack] = useState<EduBoardSceneElement[][]>([])
+  const [textDraft, setTextDraft] = useState<{ x: number; y: number; value: string; existingId?: string } | null>(null)
+
+  const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null)
+  const [bgLoading, setBgLoading] = useState(false)
+  const [bgLoadError, setBgLoadError] = useState<string | null>(null)
   const [inlineImages, setInlineImages] = useState<Record<string, HTMLImageElement>>({})
-  const inlineImgInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Reset per-page stacks and color defaults when switching page or mode
+  const drawingRef = useRef(false)
+  const panStartRef = useRef<{ x: number; y: number; origX: number; origY: number } | null>(null)
+  const spacePrevPanRef = useRef<boolean | null>(null)
+  const activeBackground = page.background_style || (page.mode === 'classic' ? 'greenboard' : 'white')
+  const isDarkBoard = activeBackground === 'blackboard' || activeBackground === 'greenboard'
+
+  // Auto-align tool/color contrast when switching page into dark or light surface
   useEffect(() => {
+    const darkPalette = new Set(['#ffffff', '#fde047', '#f9a8d4', '#67e8f9', '#86efac'])
+    if (isDarkBoard && !darkPalette.has(storeActiveColor)) {
+      setStoreActiveColor('#ffffff')
+      if (storeActiveTool === 'pen') setStoreActiveTool('chalk')
+    } else if (!isDarkBoard && storeActiveColor === '#ffffff') {
+      setStoreActiveColor('#111827')
+      if (storeActiveTool === 'chalk') setStoreActiveTool('pen')
+    }
+  }, [isDarkBoard]) // intentionally scoped to surface polarity switch only
+
+  // Sync elements when switching pages or receiving remote updates
+  useEffect(() => {
+    const parsed = parseSceneJson(page.scene_json)
+    setElements(parsed.elements)
+    setDraftElement(null)
+    setSelectedId(null)
     setUndoStack([])
     setRedoStack([])
-    setSelectedId(null)
-    setConfirmClear(false)
     setTextDraft(null)
-    if (!readOnly) {
-      if (mode === 'classic') {
-        setActiveTool((prev) => (prev === 'pen' ? 'chalk' : prev))
-        setStrokeColor((prev) => (WHITEBOARD_COLORS.includes(prev) ? '#ffffff' : prev))
-      } else {
-        setActiveTool((prev) => (prev === 'chalk' ? 'pen' : prev))
-        setStrokeColor((prev) => (prev === '#ffffff' ? '#111827' : prev))
-      }
-    }
-  }, [page.page_uid, mode, readOnly])
+  }, [page.page_uid])
 
-  // Track responsive container width to scale logical 1280x720 stage cleanly
   useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const updateSize = () => {
-      const w = el.clientWidth || 960
-      setContainerWidth(Math.max(320, w))
+    if (!drawingRef.current) {
+      setElements(parseSceneJson(page.scene_json).elements)
     }
-    updateSize()
-    if (typeof ResizeObserver !== 'undefined') {
-      const obs = new ResizeObserver(updateSize)
-      obs.observe(el)
-      return () => obs.disconnect()
-    }
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  }, [page.scene_json])
 
   // Attach Konva Transformer when an element is selected
   useEffect(() => {
     if (!transformerRef.current) return
-    if (selectedId && selectedNodeRef.current && activeTool === 'select' && !readOnly) {
+    if (selectedId && selectedNodeRef.current && !readOnly) {
       transformerRef.current.nodes([selectedNodeRef.current])
       transformerRef.current.getLayer()?.batchDraw()
     } else {
       transformerRef.current.nodes([])
       transformerRef.current.getLayer()?.batchDraw()
     }
-  }, [selectedId, activeTool, readOnly, scene.elements.length])
+  }, [selectedId, elements, readOnly])
 
-  // Load PDF slide background when page has source_attachment_id
+  // Measure container dynamically for responsive fit-to-screen scaling
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const updateSize = () => {
+      const w = el.clientWidth || 960
+      const availH = el.clientHeight > 220 ? el.clientHeight - 8 : Math.round((w * 9) / 16)
+      const h = fullscreenFill ? availH : Math.max(360, Math.min(availH, Math.round((w * 9) / 16)))
+      setContainerSize({ w, h })
+    }
+    updateSize()
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(updateSize)
+      ro.observe(el)
+      return () => ro.disconnect()
+    }
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
+  }, [fullscreenFill, toolbarPosition, toolbarState])
+
+  // Load PDF slide or image background via authenticated API blobs
   useEffect(() => {
     let active = true
-    let objectUrlToRevoke: string | null = null
+    let createdUrl: string | null = null
+    setBgImage(null)
+    setBgLoadError(null)
 
-    async function loadPdfSlide() {
-      if (!page.source_attachment_id || !page.source_page_number) {
-        setPdfSlideImage(null)
-        setPdfError(null)
-        return
-      }
-      setPdfLoading(true)
-      setPdfError(null)
+    if (!page.source_attachment_id) return
 
-      // Attempt client-side PDF.js render first from authenticated blob; fallback cleanly to PyMuPDF PNG endpoint
+    const loadBg = async () => {
+      setBgLoading(true)
       try {
-        const res = await eduboardApi.fetchAttachmentBlob(page.source_attachment_id)
-        const buf = await res.data.arrayBuffer()
-        const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buf) })
-        const pdf = await loadingTask.promise
-        const pdfPage = await pdf.getPage(page.source_page_number)
-        const viewport = pdfPage.getViewport({ scale: 1.75 })
-        const offscreen = document.createElement('canvas')
-        offscreen.width = viewport.width
-        offscreen.height = viewport.height
-        const ctx = offscreen.getContext('2d')
-        if (ctx) {
-          await pdfPage.render({ canvasContext: ctx, viewport }).promise
+        if (page.source_page_number) {
+          try {
+            const blobRes = await eduboardApi.fetchAttachmentBlob(page.source_attachment_id!)
+            const buf = await blobRes.data.arrayBuffer()
+            const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buf) })
+            const pdf = await loadingTask.promise
+            const pdfPage = await pdf.getPage(page.source_page_number)
+            const vp = pdfPage.getViewport({ scale: 1.8 })
+            const offscreen = document.createElement('canvas')
+            offscreen.width = vp.width
+            offscreen.height = vp.height
+            const ctx = offscreen.getContext('2d')
+            if (ctx) {
+              await pdfPage.render({ canvasContext: ctx, viewport: vp, canvas: offscreen } as any).promise
+              const dataUrl = offscreen.toDataURL('image/png')
+              const img = new window.Image()
+              img.onload = () => {
+                if (active) setBgImage(img)
+              }
+              img.src = dataUrl
+              return
+            }
+          } catch {
+            const pngRes = await eduboardApi.fetchRenderedPdfPageBlob(
+              page.source_attachment_id!,
+              page.source_page_number!,
+            )
+            createdUrl = URL.createObjectURL(pngRes.data)
+            const img = new window.Image()
+            img.onload = () => {
+              if (active) setBgImage(img)
+            }
+            img.src = createdUrl
+          }
+        } else {
+          const blobRes = await eduboardApi.fetchAttachmentBlob(page.source_attachment_id!)
+          createdUrl = URL.createObjectURL(blobRes.data)
           const img = new window.Image()
           img.onload = () => {
-            if (active) setPdfSlideImage(img)
+            if (active) setBgImage(img)
           }
-          img.src = offscreen.toDataURL('image/png')
-          if (active) setPdfLoading(false)
-          return
+          img.src = createdUrl
         }
       } catch {
-        // Fallback to backend PyMuPDF rendered PNG page
-      }
-
-      try {
-        const pngRes = await eduboardApi.fetchRenderedPdfPageBlob(
-          page.source_attachment_id,
-          page.source_page_number,
-        )
-        const objUrl = URL.createObjectURL(pngRes.data)
-        objectUrlToRevoke = objUrl
-        const img = new window.Image()
-        img.onload = () => {
-          if (active) {
-            setPdfSlideImage(img)
-            setPdfLoading(false)
-          }
-        }
-        img.onerror = () => {
-          if (active) {
-            setPdfError('Unable to decode slide image')
-            setPdfLoading(false)
-          }
-        }
-        img.src = objUrl
-      } catch {
-        if (active) {
-          setPdfError('Slide preview unavailable')
-          setPdfLoading(false)
-        }
+        if (active) setBgLoadError('Could not load attached slide asset')
+      } finally {
+        if (active) setBgLoading(false)
       }
     }
 
-    void loadPdfSlide()
+    void loadBg()
+
     return () => {
       active = false
-      if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke)
+      if (createdUrl) URL.revokeObjectURL(createdUrl)
     }
   }, [page.source_attachment_id, page.source_page_number])
 
-  // Load any authenticated inline image attachments referenced in scene.elements
+  // Load inline board images dynamically via authenticated API blob fetch
   useEffect(() => {
-    const imgElements = scene.elements.filter((el) => el.type === 'image' && el.attachmentId)
-    imgElements.forEach((el) => {
-      const key = String(el.attachmentId)
-      if (inlineImages[key]) return
-      eduboardApi
-        .fetchAttachmentBlob(el.attachmentId!)
-        .then((res) => {
-          const url = URL.createObjectURL(res.data)
-          const img = new window.Image()
-          img.onload = () => {
-            setInlineImages((prev) => ({ ...prev, [key]: img }))
-          }
-          img.src = url
-        })
-        .catch(() => {
-          // Ignore broken image fetch
-        })
+    let active = true
+    const urlsToRevoke: string[] = []
+    elements.forEach((el) => {
+      if (el.type === 'image' && el.attachmentId && !inlineImages[el.id]) {
+        eduboardApi
+          .fetchAttachmentBlob(el.attachmentId)
+          .then((res) => {
+            if (!active) return
+            const url = URL.createObjectURL(res.data)
+            urlsToRevoke.push(url)
+            const img = new window.Image()
+            img.onload = () => {
+              if (active) setInlineImages((prev) => ({ ...prev, [el.id]: img }))
+            }
+            img.src = url
+          })
+          .catch(() => {})
+      }
     })
-  }, [scene.elements, inlineImages])
+    return () => {
+      active = false
+      urlsToRevoke.forEach((u) => URL.revokeObjectURL(u))
+    }
+  }, [elements, inlineImages])
 
   const commitElements = useCallback(
-    (nextElements: EduBoardSceneElement[], pushUndo = true) => {
-      if (readOnly || !onSceneChange) return
-      if (pushUndo) {
-        setUndoStack((prev) => [...prev.slice(-39), scene.elements])
+    (next: EduBoardSceneElement[], pushHistory = true) => {
+      if (readOnly) return
+      if (pushHistory) {
+        setUndoStack((prev) => [...prev.slice(-39), elements])
         setRedoStack([])
       }
-      onSceneChange({ schemaVersion: scene.schemaVersion || 1, elements: nextElements })
+      setElements(next)
+      onSceneChange?.({ schemaVersion: 1, elements: next })
     },
-    [readOnly, onSceneChange, scene.elements, scene.schemaVersion],
+    [elements, onSceneChange, readOnly],
   )
 
   const handleUndo = useCallback(() => {
-    if (readOnly || undoStack.length === 0 || !onSceneChange) return
-    const previous = undoStack[undoStack.length - 1]
-    setUndoStack((prev) => prev.slice(0, -1))
-    setRedoStack((prev) => [...prev, scene.elements])
-    onSceneChange({ schemaVersion: 1, elements: previous })
-    setSelectedId(null)
-  }, [readOnly, undoStack, onSceneChange, scene.elements])
+    if (readOnly || undoStack.length === 0) return
+    const prev = undoStack[undoStack.length - 1]
+    setUndoStack((s) => s.slice(0, -1))
+    setRedoStack((r) => [...r, elements])
+    setElements(prev)
+    onSceneChange?.({ schemaVersion: 1, elements: prev })
+  }, [elements, onSceneChange, readOnly, undoStack])
 
   const handleRedo = useCallback(() => {
-    if (readOnly || redoStack.length === 0 || !onSceneChange) return
+    if (readOnly || redoStack.length === 0) return
     const next = redoStack[redoStack.length - 1]
-    setRedoStack((prev) => prev.slice(0, -1))
-    setUndoStack((prev) => [...prev, scene.elements])
-    onSceneChange({ schemaVersion: 1, elements: next })
-    setSelectedId(null)
-  }, [readOnly, redoStack, onSceneChange, scene.elements])
+    setRedoStack((r) => r.slice(0, -1))
+    setUndoStack((u) => [...u, elements])
+    setElements(next)
+    onSceneChange?.({ schemaVersion: 1, elements: next })
+  }, [elements, onSceneChange, readOnly, redoStack])
 
-  const scaleToFit = containerWidth / EDUBOARD_LOGICAL_WIDTH
-  const effectiveScale = scaleToFit * zoom
-  const stageWidth = Math.round(containerWidth)
-  const stageHeight = Math.round(EDUBOARD_LOGICAL_HEIGHT * scaleToFit)
+  const handleFitToScreen = useCallback(() => {
+    setZoom(1)
+    setPan({ x: 0, y: 0 })
+    setIsPanMode(false)
+  }, [setIsPanMode])
+
+  const handleDeleteSelected = useCallback(() => {
+    if (readOnly || !selectedId) return
+    commitElements(elements.filter((item) => item.id !== selectedId))
+    setSelectedId(null)
+  }, [commitElements, elements, readOnly, selectedId])
+
+  // Keyboard Shortcuts (tools, undo/redo, zoom/fit, delete, space-to-pan)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (!readOnly) {
+          e.preventDefault()
+          if (e.shiftKey) handleRedo()
+          else handleUndo()
+        }
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        if (!readOnly) {
+          e.preventDefault()
+          handleRedo()
+        }
+        return
+      }
+
+      if (e.key === '+' || e.key === '=') {
+        setZoom((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))))
+        return
+      }
+      if (e.key === '-') {
+        setZoom((z) => Math.max(0.5, Number((z - 0.15).toFixed(2))))
+        return
+      }
+      if (e.key === '0') {
+        handleFitToScreen()
+        return
+      }
+
+      if (readOnly) return
+
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault()
+        spacePrevPanRef.current = isPanMode
+        setSpacePanActive(true)
+        setIsPanMode(true)
+        return
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        e.preventDefault()
+        handleDeleteSelected()
+        return
+      }
+
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const keyMap: Record<string, EduBoardTool> = {
+        v: 'select',
+        p: isDarkBoard ? 'chalk' : 'pen',
+        c: 'chalk',
+        h: 'highlighter',
+        e: 'eraser',
+        l: 'line',
+        a: 'arrow',
+        r: 'rect',
+        o: 'circle',
+        t: 'text',
+      }
+      const mapped = keyMap[e.key.toLowerCase()]
+      if (mapped) {
+        setStoreActiveTool(mapped)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && spacePrevPanRef.current !== null) {
+        setSpacePanActive(false)
+        setIsPanMode(spacePrevPanRef.current)
+        spacePrevPanRef.current = null
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [
+    readOnly,
+    handleUndo,
+    handleRedo,
+    handleFitToScreen,
+    handleDeleteSelected,
+    isPanMode,
+    setIsPanMode,
+    selectedId,
+    isDarkBoard,
+    setStoreActiveTool,
+  ])
+
+  const fitScale = Math.min(
+    containerSize.w / EDUBOARD_LOGICAL_WIDTH,
+    containerSize.h / EDUBOARD_LOGICAL_HEIGHT,
+  )
+  const effectiveScale = fitScale * zoom
 
   const toLogicalCoords = (stage: Konva.Stage): { x: number; y: number } | null => {
     const pos = stage.getPointerPosition()
@@ -371,224 +476,326 @@ export default function EduBoardCanvas({
   }
 
   const handlePointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
-    if (readOnly || isPanMode) return
-    const pointerType = (e.evt?.pointerType || 'mouse').toLowerCase()
-    if (stylusOnly && pointerType === 'touch') {
-      return
-    }
+    if (stylusOnly && e.evt.pointerType === 'touch') return
 
     const stage = e.target.getStage()
     if (!stage) return
+
+    if (isPanMode || spacePanActive || (readOnly && zoom > 1)) {
+      panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY, origX: pan.x, origY: pan.y }
+      return
+    }
+    if (readOnly) return
+
     const pt = toLogicalCoords(stage)
     if (!pt) return
 
-    if (activeTool === 'select') {
-      if (e.target === stage) {
+    if (storeActiveTool === 'select') {
+      if (e.target === stage || e.target.name() === 'eduboard-bg') {
         setSelectedId(null)
       }
       return
     }
 
-    if (activeTool === 'text') {
+    if (storeActiveTool === 'text') {
       setTextDraft({ x: pt.x, y: pt.y, value: '' })
       return
     }
 
-    if (activeTool === 'eraser') {
-      isDrawingRef.current = true
-      const filtered = scene.elements.filter((el) => !isNearPoint(pt.x, pt.y, el, Math.max(16, strokeSize * 3)))
-      if (filtered.length !== scene.elements.length) {
-        commitElements(filtered, true)
+    if (storeActiveTool === 'eraser') {
+      drawingRef.current = true
+      const filtered = elements.filter((el) => {
+        if (el.points && pointNearPolyline(pt.x, pt.y, el.points, 18)) return false
+        if (el.x !== undefined && el.y !== undefined) {
+          const w = el.width ?? 60
+          const h = el.height ?? 40
+          const minX = Math.min(el.x, el.x + w)
+          const maxX = Math.max(el.x, el.x + w)
+          const minY = Math.min(el.y, el.y + h)
+          const maxY = Math.max(el.y, el.y + h)
+          if (pt.x >= minX - 12 && pt.x <= maxX + 12 && pt.y >= minY - 12 && pt.y <= maxY + 12) return false
+        }
+        return true
+      })
+      if (filtered.length !== elements.length) {
+        commitElements(filtered)
       }
       return
     }
 
-    isDrawingRef.current = true
-    startPosRef.current = pt
-    const pressure = typeof e.evt?.pressure === 'number' && e.evt.pressure > 0 ? e.evt.pressure : 0.5
-    const id = `el_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+    drawingRef.current = true
+    const pressure = e.evt.pressure && e.evt.pressure > 0 ? e.evt.pressure : 0.5
+    const resolvedTool = isDarkBoard && storeActiveTool === 'pen' ? 'chalk' : storeActiveTool
 
-    if (activeTool === 'pen' || activeTool === 'marker' || activeTool === 'chalk' || activeTool === 'highlighter') {
+    if (resolvedTool === 'pen' || resolvedTool === 'marker' || resolvedTool === 'chalk' || resolvedTool === 'highlighter') {
+      const sz =
+        resolvedTool === 'highlighter'
+          ? Math.max(14, strokeSize * 3.5)
+          : resolvedTool === 'marker'
+            ? strokeSize * 1.8
+            : strokeSize
+      const op = resolvedTool === 'highlighter' ? 0.34 : 1
       setDraftElement({
-        id,
+        id: makeUid(),
         type: 'stroke',
-        tool: activeTool,
+        tool: resolvedTool,
         points: [pt.x, pt.y],
         pressures: [pressure],
-        color: strokeColor,
-        size: strokeSize,
-        opacity: activeTool === 'highlighter' ? 0.35 : activeTool === 'chalk' ? 0.92 : 1,
+        color: storeActiveColor,
+        size: sz,
+        opacity: op,
       })
-    } else if (activeTool === 'line' || activeTool === 'arrow') {
+    } else if (resolvedTool === 'line' || resolvedTool === 'arrow') {
       setDraftElement({
-        id,
-        type: activeTool,
+        id: makeUid(),
+        type: resolvedTool,
         points: [pt.x, pt.y, pt.x, pt.y],
-        color: strokeColor,
+        color: storeActiveColor,
         size: strokeSize,
-        opacity: 1,
       })
-    } else if (activeTool === 'rect' || activeTool === 'circle') {
+    } else if (resolvedTool === 'rect' || resolvedTool === 'circle') {
       setDraftElement({
-        id,
-        type: activeTool,
+        id: makeUid(),
+        type: resolvedTool,
         x: pt.x,
         y: pt.y,
-        width: 2,
-        height: 2,
-        color: strokeColor,
+        width: 0,
+        height: 0,
+        color: storeActiveColor,
         size: strokeSize,
-        opacity: 1,
       })
     }
   }
 
   const handlePointerMove = (e: Konva.KonvaEventObject<PointerEvent>) => {
-    if (readOnly || !isDrawingRef.current || isPanMode) return
-    const pointerType = (e.evt?.pointerType || 'mouse').toLowerCase()
-    if (stylusOnly && pointerType === 'touch') return
-
+    if (panStartRef.current) {
+      const dx = e.evt.clientX - panStartRef.current.x
+      const dy = e.evt.clientY - panStartRef.current.y
+      setPan({ x: panStartRef.current.origX + dx, y: panStartRef.current.origY + dy })
+      return
+    }
+    if (readOnly || !drawingRef.current) return
     const stage = e.target.getStage()
     if (!stage) return
     const pt = toLogicalCoords(stage)
     if (!pt) return
 
-    if (activeTool === 'eraser') {
-      const filtered = scene.elements.filter((el) => !isNearPoint(pt.x, pt.y, el, Math.max(16, strokeSize * 3)))
-      if (filtered.length !== scene.elements.length) {
-        commitElements(filtered, true)
+    if (storeActiveTool === 'eraser') {
+      const filtered = elements.filter((el) => {
+        if (el.points && pointNearPolyline(pt.x, pt.y, el.points, 18)) return false
+        return true
+      })
+      if (filtered.length !== elements.length) {
+        commitElements(filtered, false)
       }
       return
     }
 
     if (!draftElement) return
-    const pressure = typeof e.evt?.pressure === 'number' && e.evt.pressure > 0 ? e.evt.pressure : 0.5
-
     if (draftElement.type === 'stroke') {
-      setDraftElement({
-        ...draftElement,
-        points: [...(draftElement.points || []), pt.x, pt.y],
-        pressures: [...(draftElement.pressures || []), pressure],
-      })
+      const pressure = e.evt.pressure && e.evt.pressure > 0 ? e.evt.pressure : 0.5
+      setDraftElement((prev) =>
+        prev
+          ? {
+              ...prev,
+              points: [...(prev.points || []), pt.x, pt.y],
+              pressures: [...(prev.pressures || []), pressure],
+            }
+          : null,
+      )
     } else if (draftElement.type === 'line' || draftElement.type === 'arrow') {
-      setDraftElement({
-        ...draftElement,
-        points: [startPosRef.current.x, startPosRef.current.y, pt.x, pt.y],
-      })
+      const pts = draftElement.points || [0, 0, 0, 0]
+      setDraftElement({ ...draftElement, points: [pts[0], pts[1], pt.x, pt.y] })
     } else if (draftElement.type === 'rect' || draftElement.type === 'circle') {
-      const sx = startPosRef.current.x
-      const sy = startPosRef.current.y
-      setDraftElement({
-        ...draftElement,
-        x: Math.min(sx, pt.x),
-        y: Math.min(sy, pt.y),
-        width: Math.abs(pt.x - sx),
-        height: Math.abs(pt.y - sy),
-      })
+      const ox = draftElement.x ?? 0
+      const oy = draftElement.y ?? 0
+      setDraftElement({ ...draftElement, width: pt.x - ox, height: pt.y - oy })
     }
   }
 
   const handlePointerUp = () => {
-    if (!isDrawingRef.current) return
-    isDrawingRef.current = false
+    if (panStartRef.current) {
+      panStartRef.current = null
+      return
+    }
+    if (!drawingRef.current) return
+    drawingRef.current = false
     if (draftElement) {
-      commitElements([...scene.elements, draftElement], true)
+      commitElements([...elements, draftElement])
       setDraftElement(null)
     }
   }
 
-  const handleCommitText = () => {
-    if (!textDraft) return
-    const txt = textDraft.value.trim()
-    if (txt) {
-      const el: EduBoardSceneElement = {
-        id: `el_txt_${Date.now().toString(36)}`,
-        type: 'text',
-        x: textDraft.x,
-        y: textDraft.y,
-        text: txt,
-        fontSize: Math.max(18, strokeSize * 5),
-        color: strokeColor,
-      }
-      commitElements([...scene.elements, el], true)
-    }
-    setTextDraft(null)
-  }
-
-  const handleInsertImageFile = async (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const file = evt.target.files?.[0]
-    evt.target.value = ''
+  const handleInlineImagePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file || !onUploadInlineImage) return
     const uploaded = await onUploadInlineImage(file)
     if (!uploaded) return
-    const el: EduBoardSceneElement = {
-      id: `el_img_${Date.now().toString(36)}`,
+    const newEl: EduBoardSceneElement = {
+      id: makeUid(),
       type: 'image',
       x: 160,
-      y: 120,
+      y: 110,
       width: 360,
       height: 240,
       attachmentId: uploaded.attachmentId,
-      src: uploaded.url,
     }
-    commitElements([...scene.elements, el], true)
-    setActiveTool('select')
+    commitElements([...elements, newEl])
   }
 
-  const renderElement = (el: EduBoardSceneElement, isDraft = false) => {
-    const isSelected = !readOnly && activeTool === 'select' && selectedId === el.id
-    const commonInteractiveProps = readOnly
-      ? {}
-      : {
-          draggable: activeTool === 'select',
-          onClick: () => {
-            if (activeTool === 'select') setSelectedId(el.id)
-          },
-          onTap: () => {
-            if (activeTool === 'select') setSelectedId(el.id)
-          },
-          onDragEnd: (evt: Konva.KonvaEventObject<DragEvent>) => {
-            if (activeTool !== 'select') return
-            const node = evt.target
-            const dx = node.x()
-            const dy = node.y()
-            if (el.type === 'stroke' || el.type === 'line' || el.type === 'arrow') {
-              const shifted: number[] = []
-              const pts = el.points || []
-              for (let i = 0; i < pts.length; i += 2) {
-                shifted.push(pts[i] + dx, pts[i + 1] + dy)
-              }
-              node.position({ x: 0, y: 0 })
-              commitElements(
-                scene.elements.map((item) => (item.id === el.id ? { ...item, points: shifted } : item)),
-                true,
-              )
-            } else {
-              commitElements(
-                scene.elements.map((item) => (item.id === el.id ? { ...item, x: dx, y: dy } : item)),
-                true,
-              )
-            }
-          },
+  const handleAppearanceChange = (nextBg: EduBoardBackgroundStyle, nextMode: EduBoardMode) => {
+    onModeOrBackgroundChange?.(nextMode, nextBg)
+  }
+
+  const canvasBgHex =
+    activeBackground === 'blackboard'
+      ? '#131720'
+      : activeBackground === 'greenboard'
+        ? '#0f4c35'
+        : activeBackground === 'pdf_slide'
+          ? '#f1f5f9'
+          : '#ffffff'
+
+  const bgPatternElements = useMemo(() => {
+    const nodes: React.ReactNode[] = []
+    if (activeBackground === 'grid') {
+      for (let x = 32; x < EDUBOARD_LOGICAL_WIDTH; x += 32) {
+        nodes.push(
+          <Line
+            key={`gx_${x}`}
+            points={[x, 0, x, EDUBOARD_LOGICAL_HEIGHT]}
+            stroke="#e2e8f0"
+            strokeWidth={1}
+            listening={false}
+          />,
+        )
+      }
+      for (let y = 32; y < EDUBOARD_LOGICAL_HEIGHT; y += 32) {
+        nodes.push(
+          <Line
+            key={`gy_${y}`}
+            points={[0, y, EDUBOARD_LOGICAL_WIDTH, y]}
+            stroke="#e2e8f0"
+            strokeWidth={1}
+            listening={false}
+          />,
+        )
+      }
+    } else if (activeBackground === 'notebook') {
+      nodes.push(
+        <Line
+          key="nb_margin"
+          points={[96, 0, 96, EDUBOARD_LOGICAL_HEIGHT]}
+          stroke="#fda4af"
+          strokeWidth={1.5}
+          listening={false}
+        />,
+      )
+      for (let y = 44; y < EDUBOARD_LOGICAL_HEIGHT; y += 36) {
+        nodes.push(
+          <Line
+            key={`ny_${y}`}
+            points={[0, y, EDUBOARD_LOGICAL_WIDTH, y]}
+            stroke="#dbeafe"
+            strokeWidth={1}
+            listening={false}
+          />,
+        )
+      }
+    } else if (activeBackground === 'greenboard' || activeBackground === 'blackboard') {
+      // Classroom chalkboard border frame line
+      nodes.push(
+        <Rect
+          key="chalkboard-inner-frame"
+          x={6}
+          y={6}
+          width={EDUBOARD_LOGICAL_WIDTH - 12}
+          height={EDUBOARD_LOGICAL_HEIGHT - 12}
+          stroke={activeBackground === 'greenboard' ? '#1e6b4d' : '#263042'}
+          strokeWidth={2}
+          listening={false}
+        />,
+      )
+    }
+    return nodes
+  }, [activeBackground])
+
+  const renderElement = (el: EduBoardSceneElement) => {
+    const isSelectable = !readOnly && storeActiveTool === 'select'
+    const isSelected = el.id === selectedId
+    const commonInteractive = {
+      draggable: isSelectable,
+      onClick: () => {
+        if (isSelectable) setSelectedId(el.id)
+      },
+      onTap: () => {
+        if (isSelectable) setSelectedId(el.id)
+      },
+      onDragEnd: (evt: Konva.KonvaEventObject<DragEvent>) => {
+        const node = evt.target
+        const dx = node.x()
+        const dy = node.y()
+        if (dx === 0 && dy === 0) return
+        if (el.type === 'stroke' || el.type === 'line' || el.type === 'arrow') {
+          node.position({ x: 0, y: 0 })
+          const shifted = (el.points || []).map((v, idx) => (idx % 2 === 0 ? v + dx : v + dy))
+          commitElements(elements.map((item) => (item.id === el.id ? { ...item, points: shifted } : item)))
+        } else {
+          commitElements(
+            elements.map((item) => (item.id === el.id ? { ...item, x: dx, y: dy } : item)),
+          )
         }
+      },
+      ref: (node: Konva.Node | null) => {
+        if (isSelected && node) selectedNodeRef.current = node
+      },
+    }
 
     if (el.type === 'stroke') {
-      const pts = el.points || []
-      const poly = getSvgPathFlatPoints(pts, el.pressures, el.size || 4, el.tool)
+      const isChalkStroke = el.tool === 'chalk' || (isDarkBoard && el.tool !== 'highlighter')
+      const strokeColor = el.color || (isDarkBoard ? '#ffffff' : '#111827')
+      const baseW = el.size || 3
+      if (isChalkStroke) {
+        // Textured classroom chalk stroke: soft powdery outer aura + crisp inner chalk line
+        return (
+          <Group key={el.id} {...commonInteractive}>
+            <Line
+              points={el.points || []}
+              stroke={strokeColor}
+              strokeWidth={baseW * 1.45}
+              opacity={0.28}
+              tension={0.35}
+              lineCap="round"
+              lineJoin="round"
+              dash={[Math.max(2, baseW * 0.9), 0.75]}
+            />
+            <Line
+              points={el.points || []}
+              stroke={strokeColor}
+              strokeWidth={baseW}
+              opacity={0.96}
+              tension={0.4}
+              lineCap="round"
+              lineJoin="round"
+              shadowColor={strokeColor}
+              shadowBlur={1.8}
+              shadowOpacity={0.35}
+            />
+          </Group>
+        )
+      }
       return (
         <Line
           key={el.id}
-          ref={isSelected ? (node) => { selectedNodeRef.current = node } : undefined}
-          points={poly.length >= 6 ? poly : pts}
-          closed={poly.length >= 6}
-          fill={poly.length >= 6 ? el.color || '#111827' : undefined}
-          stroke={el.color || '#111827'}
-          strokeWidth={poly.length >= 6 ? 1 : el.size || 4}
+          {...commonInteractive}
+          points={el.points || []}
+          stroke={strokeColor}
+          strokeWidth={baseW}
+          opacity={el.opacity ?? 1}
+          tension={0.4}
           lineCap="round"
           lineJoin="round"
-          opacity={el.opacity ?? 1}
-          listening={!isDraft && activeTool === 'select'}
-          {...commonInteractiveProps}
         />
       )
     }
@@ -597,13 +804,11 @@ export default function EduBoardCanvas({
       return (
         <Line
           key={el.id}
-          ref={isSelected ? (node) => { selectedNodeRef.current = node } : undefined}
-          points={el.points || [0, 0, 50, 50]}
-          stroke={el.color || '#111827'}
-          strokeWidth={el.size || 4}
+          {...commonInteractive}
+          points={el.points || [0, 0, 100, 100]}
+          stroke={el.color || (isDarkBoard ? '#ffffff' : '#111827')}
+          strokeWidth={el.size || 3}
           lineCap="round"
-          listening={!isDraft && activeTool === 'select'}
-          {...commonInteractiveProps}
         />
       )
     }
@@ -612,54 +817,49 @@ export default function EduBoardCanvas({
       return (
         <Arrow
           key={el.id}
-          ref={isSelected ? (node) => { selectedNodeRef.current = node } : undefined}
-          points={el.points || [0, 0, 80, 40]}
-          stroke={el.color || '#2563eb'}
-          fill={el.color || '#2563eb'}
-          strokeWidth={el.size || 4}
+          {...commonInteractive}
+          points={el.points || [0, 0, 100, 100]}
+          stroke={el.color || (isDarkBoard ? '#ffffff' : '#111827')}
+          fill={el.color || (isDarkBoard ? '#ffffff' : '#111827')}
+          strokeWidth={el.size || 3}
           pointerLength={12}
           pointerWidth={10}
-          listening={!isDraft && activeTool === 'select'}
-          {...commonInteractiveProps}
         />
       )
     }
 
     if (el.type === 'rect') {
+      const rw = el.width ?? 0
+      const rh = el.height ?? 0
       return (
         <Rect
           key={el.id}
-          ref={isSelected ? (node) => { selectedNodeRef.current = node } : undefined}
-          x={el.x || 0}
-          y={el.y || 0}
-          width={Math.max(4, el.width || 40)}
-          height={Math.max(4, el.height || 40)}
-          stroke={el.color || '#2563eb'}
+          {...commonInteractive}
+          x={rw >= 0 ? el.x ?? 0 : (el.x ?? 0) + rw}
+          y={rh >= 0 ? el.y ?? 0 : (el.y ?? 0) + rh}
+          width={Math.abs(rw)}
+          height={Math.abs(rh)}
+          stroke={el.color || (isDarkBoard ? '#ffffff' : '#111827')}
           strokeWidth={el.size || 3}
-          fill={el.fill}
-          cornerRadius={4}
-          listening={!isDraft && activeTool === 'select'}
-          {...commonInteractiveProps}
         />
       )
     }
 
     if (el.type === 'circle') {
-      const w = Math.max(8, el.width || 40)
-      const h = Math.max(8, el.height || 40)
+      const cw = Math.abs(el.width ?? 0)
+      const ch = Math.abs(el.height ?? 0)
+      const cx = (el.x ?? 0) + (el.width ?? 0) / 2
+      const cy = (el.y ?? 0) + (el.height ?? 0) / 2
       return (
         <Ellipse
           key={el.id}
-          ref={isSelected ? (node) => { selectedNodeRef.current = node } : undefined}
-          x={(el.x || 0) + w / 2}
-          y={(el.y || 0) + h / 2}
-          radiusX={w / 2}
-          radiusY={h / 2}
-          stroke={el.color || '#16a34a'}
+          {...commonInteractive}
+          x={cx}
+          y={cy}
+          radiusX={cw / 2}
+          radiusY={ch / 2}
+          stroke={el.color || (isDarkBoard ? '#ffffff' : '#111827')}
           strokeWidth={el.size || 3}
-          fill={el.fill}
-          listening={!isDraft && activeTool === 'select'}
-          {...commonInteractiveProps}
         />
       )
     }
@@ -668,31 +868,39 @@ export default function EduBoardCanvas({
       return (
         <KonvaText
           key={el.id}
-          ref={isSelected ? (node) => { selectedNodeRef.current = node } : undefined}
-          x={el.x || 40}
-          y={el.y || 40}
+          {...commonInteractive}
+          x={el.x ?? 0}
+          y={el.y ?? 0}
           text={el.text || ''}
           fontSize={el.fontSize || 22}
-          fontFamily="Inter, system-ui, sans-serif"
-          fill={el.color || (mode === 'classic' ? '#ffffff' : '#111827')}
-          listening={!isDraft && activeTool === 'select'}
-          {...commonInteractiveProps}
+          fill={el.color || (isDarkBoard ? '#ffffff' : '#111827')}
+          fontFamily={isDarkBoard ? 'Georgia, serif' : 'Inter, system-ui, sans-serif'}
+          onDblClick={() => {
+            if (!readOnly) {
+              setTextDraft({
+                x: el.x ?? 0,
+                y: el.y ?? 0,
+                value: el.text || '',
+                existingId: el.id,
+              })
+            }
+          }}
         />
       )
     }
 
-    if (el.type === 'image' && el.attachmentId && inlineImages[String(el.attachmentId)]) {
+    if (el.type === 'image') {
+      const img = inlineImages[el.id]
+      if (!img) return null
       return (
         <KonvaImage
           key={el.id}
-          ref={isSelected ? (node) => { selectedNodeRef.current = node } : undefined}
-          image={inlineImages[String(el.attachmentId)]}
-          x={el.x || 100}
-          y={el.y || 100}
-          width={el.width || 320}
-          height={el.height || 220}
-          listening={!isDraft && activeTool === 'select'}
-          {...commonInteractiveProps}
+          {...commonInteractive}
+          image={img}
+          x={el.x ?? 100}
+          y={el.y ?? 100}
+          width={el.width ?? 320}
+          height={el.height ?? 220}
         />
       )
     }
@@ -700,366 +908,212 @@ export default function EduBoardCanvas({
     return null
   }
 
-  const canvasBgHex =
-    backgroundStyle === 'blackboard'
-      ? '#111827'
-      : backgroundStyle === 'greenboard'
-        ? '#14532d'
-        : backgroundStyle === 'pdf_slide'
-          ? '#f1f5f9'
-          : '#ffffff'
+  const effectiveToolbarState = hideToolbar
+    ? 'hidden'
+    : compactToolbar && toolbarState === 'expanded'
+      ? 'compact'
+      : toolbarState
 
-  const colorPalette = mode === 'classic' ? CLASSIC_COLORS : WHITEBOARD_COLORS
+  const flexWrapClass =
+    toolbarPosition === 'bottom'
+      ? 'flex-col-reverse'
+      : toolbarPosition === 'left'
+        ? 'flex-row'
+        : toolbarPosition === 'right'
+          ? 'flex-row-reverse'
+          : 'flex-col'
 
-  const toolButtons: Array<{ id: EduBoardTool; label: string; icon: React.ReactNode }> = [
-    { id: 'select', label: 'Select', icon: <MousePointer className="w-4 h-4" /> },
-    mode === 'classic'
-      ? { id: 'chalk', label: 'Chalk', icon: <PenTool className="w-4 h-4" /> }
-      : { id: 'pen', label: 'Pen', icon: <PenTool className="w-4 h-4" /> },
-    { id: 'highlighter', label: 'Highlighter', icon: <Highlighter className="w-4 h-4" /> },
-    { id: 'eraser', label: 'Eraser', icon: <Eraser className="w-4 h-4" /> },
-    { id: 'line', label: 'Line', icon: <Minus className="w-4 h-4" /> },
-    { id: 'arrow', label: 'Arrow', icon: <ArrowUpRight className="w-4 h-4" /> },
-    { id: 'rect', label: 'Rectangle', icon: <Square className="w-4 h-4" /> },
-    { id: 'circle', label: 'Circle', icon: <Circle className="w-4 h-4" /> },
-    { id: 'text', label: 'Text', icon: <Type className="w-4 h-4" /> },
-  ]
+  const stageOuterBezelClass =
+    activeBackground === 'greenboard'
+      ? 'border-4 border-emerald-950/90 shadow-inner bg-emerald-950'
+      : activeBackground === 'blackboard'
+        ? 'border-4 border-slate-900 shadow-inner bg-slate-950'
+        : 'border border-slate-300 bg-slate-100'
 
   return (
-    <div className="flex flex-col gap-2 w-full" data-testid="eduboard-canvas-shell">
-      {/* ── Canvas Drawing Toolbar (Hidden/Simplified in Student Read-Only Mode) ── */}
-      <div
-        className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-xl border ${
-          mode === 'classic'
-            ? 'bg-slate-900 border-slate-700 text-slate-100'
-            : 'bg-white border-slate-200 text-slate-700 shadow-2xs'
-        }`}
-      >
-        {!readOnly ? (
-          <div className="flex flex-wrap items-center gap-1">
-            {toolButtons.map((btn) => (
-              <button
-                key={btn.id}
-                type="button"
-                title={btn.label}
-                aria-label={btn.label}
-                onClick={() => {
-                  setIsPanMode(false)
-                  setActiveTool(btn.id)
-                }}
-                className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  activeTool === btn.id && !isPanMode
-                    ? 'bg-primary-600 text-white shadow-2xs'
-                    : mode === 'classic'
-                      ? 'hover:bg-slate-800 text-slate-200'
-                      : 'hover:bg-slate-100 text-slate-700'
-                }`}
-              >
-                {btn.icon}
-                {!compactToolbar && <span className="hidden xl:inline">{btn.label}</span>}
-              </button>
-            ))}
-
-            {onUploadInlineImage && (
-              <>
-                <input
-                  ref={inlineImgInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  className="hidden"
-                  onChange={handleInsertImageFile}
-                />
+    <div className={`relative flex ${flexWrapClass} gap-2 w-full ${fullscreenFill ? 'h-full' : ''}`}>
+      {/* Read-Only Banner for Student Portal or Presentation Projector View */}
+      {readOnly ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/95 text-white px-3 py-1.5 rounded-xl text-xs shadow-xs shrink-0">
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            {readOnlyLabel}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {totalPages && totalPages > 1 && (
+              <div className="inline-flex items-center gap-1 bg-slate-800 rounded-lg px-1.5 py-0.5 mr-1">
                 <button
                   type="button"
-                  title="Insert Image"
-                  aria-label="Insert Image"
-                  onClick={() => inlineImgInputRef.current?.click()}
-                  className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium ${
-                    mode === 'classic' ? 'hover:bg-slate-800 text-slate-200' : 'hover:bg-slate-100 text-slate-700'
-                  }`}
+                  disabled={!pageIndex || pageIndex <= 0}
+                  onClick={onPrevPage}
+                  aria-label="Previous Page"
+                  className="p-1 rounded hover:bg-slate-700 disabled:opacity-40"
                 >
-                  <FileImage className="w-4 h-4" />
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-              </>
-            )}
-
-            <div className="h-5 w-px bg-slate-300/40 mx-1" />
-
-            {/* Color Swatches */}
-            <div className="flex items-center gap-1">
-              {colorPalette.map((col) => (
+                <span className="text-[11px] font-mono px-1">
+                  {(pageIndex ?? 0) + 1}/{totalPages}
+                </span>
                 <button
-                  key={col}
                   type="button"
-                  aria-label={`Color ${col}`}
-                  onClick={() => setStrokeColor(col)}
-                  className={`w-5 h-5 rounded-full border transition-transform ${
-                    strokeColor === col ? 'scale-110 ring-2 ring-primary-500 border-white' : 'border-slate-400/50'
-                  }`}
-                  style={{ backgroundColor: col }}
-                />
-              ))}
-            </div>
-
-            <div className="h-5 w-px bg-slate-300/40 mx-1" />
-
-            {/* Thickness */}
-            <label className="flex items-center gap-1 text-[11px] font-medium">
-              <span>Size</span>
-              <select
-                value={strokeSize}
-                onChange={(e) => setStrokeSize(Number(e.target.value))}
-                className={`rounded-md border px-1.5 py-0.5 text-xs ${
-                  mode === 'classic'
-                    ? 'bg-slate-800 border-slate-600 text-white'
-                    : 'bg-slate-50 border-slate-200 text-slate-800'
-                }`}
-              >
-                <option value={2}>Fine</option>
-                <option value={4}>Medium</option>
-                <option value={8}>Bold</option>
-                <option value={14}>Heavy</option>
-              </select>
-            </label>
-
-            {/* Palm rejection toggle */}
+                  disabled={pageIndex === undefined || pageIndex >= totalPages - 1}
+                  onClick={onNextPage}
+                  aria-label="Next Page"
+                  className="p-1 rounded hover:bg-slate-700 disabled:opacity-40"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
             <button
               type="button"
-              onClick={() => setStylusOnly((v) => !v)}
-              className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition-colors ${
-                stylusOnly
-                  ? 'bg-amber-500/20 border-amber-400 text-amber-500'
-                  : 'border-transparent hover:bg-slate-500/10'
-              }`}
-              title="Ignore touch input so resting palm does not draw"
+              onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.15).toFixed(2))))}
+              aria-label="Zoom Out"
+              className="p-1 rounded hover:bg-slate-700"
+              title="Zoom Out (-)"
             >
-              {stylusOnly ? 'Stylus Only ON' : 'Touch + Pen'}
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <span className="font-mono text-[11px]">{Math.round(zoom * 100)}%</span>
+            <button
+              type="button"
+              onClick={() => setZoom((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
+              aria-label="Zoom In"
+              className="p-1 rounded hover:bg-slate-700"
+              title="Zoom In (+)"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleFitToScreen}
+              aria-label="Fit to Screen"
+              className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[11px]"
+              title="Fit to Screen (0)"
+            >
+              <Maximize className="w-3 h-3 inline mr-1" />
+              Fit
             </button>
           </div>
-        ) : (
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-            <span>Read-Only Student Lecture View</span>
-          </div>
-        )}
-
-        {/* Right Controls: Mode / Background / Undo / Redo / Zoom / Clear */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {!readOnly && onModeOrBackgroundChange && (
-            <select
-              aria-label="Board Surface"
-              value={`${mode}:${backgroundStyle}`}
-              onChange={(e) => {
-                const [nextMode, nextBg] = e.target.value.split(':') as [EduBoardMode, EduBoardBackgroundStyle]
-                onModeOrBackgroundChange(nextMode, nextBg)
-              }}
-              className={`rounded-lg border px-2 py-1 text-xs font-medium ${
-                mode === 'classic'
-                  ? 'bg-slate-800 border-slate-600 text-slate-100'
-                  : 'bg-slate-50 border-slate-200 text-slate-700'
-              }`}
-            >
-              <option value="classic:blackboard">Classic Blackboard</option>
-              <option value="classic:greenboard">Classic Greenboard</option>
-              <option value="whiteboard:white">Whiteboard Clean</option>
-              <option value="whiteboard:grid">Whiteboard Grid</option>
-              <option value="whiteboard:notebook">Whiteboard Ruled</option>
-              {page.source_attachment_id && <option value="presentation:pdf_slide">Presentation Slide</option>}
-            </select>
-          )}
-
-          {!readOnly && (
-            <>
-              <button
-                type="button"
-                aria-label="Undo"
-                title="Undo"
-                disabled={undoStack.length === 0}
-                onClick={handleUndo}
-                className="p-1.5 rounded-lg border border-transparent hover:bg-slate-500/10 disabled:opacity-40"
-              >
-                <Undo2 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="Redo"
-                title="Redo"
-                disabled={redoStack.length === 0}
-                onClick={handleRedo}
-                className="p-1.5 rounded-lg border border-transparent hover:bg-slate-500/10 disabled:opacity-40"
-              >
-                <Redo2 className="w-4 h-4" />
-              </button>
-            </>
-          )}
-
-          <button
-            type="button"
-            aria-label="Pan Canvas"
-            title="Pan Canvas"
-            onClick={() => setIsPanMode((v) => !v)}
-            className={`p-1.5 rounded-lg ${isPanMode ? 'bg-primary-600 text-white' : 'hover:bg-slate-500/10'}`}
-          >
-            <Hand className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Zoom Out"
-            onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.15).toFixed(2))))}
-            className="p-1.5 rounded-lg hover:bg-slate-500/10"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <span className="text-[11px] font-mono w-10 text-center">{Math.round(zoom * 100)}%</span>
-          <button
-            type="button"
-            aria-label="Zoom In"
-            onClick={() => setZoom((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
-            className="p-1.5 rounded-lg hover:bg-slate-500/10"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Reset Zoom"
-            onClick={() => {
-              setZoom(1)
-              setPan({ x: 0, y: 0 })
-            }}
-            className="p-1.5 rounded-lg hover:bg-slate-500/10"
-            title="Reset Zoom & Pan"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
-
-          {!readOnly && (
-            <>
-              {confirmClear ? (
-                <div className="flex items-center gap-1 ml-1 bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg text-xs">
-                  <span>Clear page?</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      commitElements([], true)
-                      setConfirmClear(false)
-                    }}
-                    className="font-bold underline"
-                  >
-                    Yes
-                  </button>
-                  <button type="button" onClick={() => setConfirmClear(false)} className="ml-1">
-                    No
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  aria-label="Clear Page"
-                  title="Clear current page annotations"
-                  onClick={() => setConfirmClear(true)}
-                  className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </>
-          )}
         </div>
-      </div>
+      ) : (
+        !hideToolbar && (
+          <EduBoardToolbar
+            backgroundStyle={activeBackground}
+            isDarkBoard={isDarkBoard}
+            activeTool={storeActiveTool}
+            activeColor={storeActiveColor}
+            strokeSize={strokeSize}
+            isPanMode={isPanMode || spacePanActive}
+            stylusOnly={stylusOnly}
+            zoom={zoom}
+            canUndo={undoStack.length > 0}
+            canRedo={redoStack.length > 0}
+            toolbarState={effectiveToolbarState}
+            toolbarPosition={toolbarPosition}
+            floatingPos={floatingPos}
+            hasSelection={!!selectedId}
+            onSelectTool={(t) => setStoreActiveTool(t)}
+            onSelectColor={(c) => setStoreActiveColor(c)}
+            onChangeStrokeSize={(sz) => setStrokeSize(sz)}
+            onTogglePanMode={() => setIsPanMode(!isPanMode)}
+            onToggleStylusOnly={() => setStylusOnly((s) => !s)}
+            onChangeAppearance={handleAppearanceChange}
+            onZoomIn={() => setZoom((z) => Math.min(2.5, Number((z + 0.15).toFixed(2))))}
+            onZoomOut={() => setZoom((z) => Math.max(0.5, Number((z - 0.15).toFixed(2))))}
+            onFitToScreen={handleFitToScreen}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onDeleteSelected={handleDeleteSelected}
+            onClearPage={() => commitElements([])}
+            onPickImage={() => imageFileInputRef.current?.click()}
+            onChangeToolbarState={(st) => setToolbarState(st)}
+            onChangeToolbarPosition={(pos) => setToolbarPosition(pos)}
+            onChangeFloatingPos={(pos) => setFloatingPos(pos)}
+          />
+        )
+      )}
 
-      {/* ── Main Logical 1280x720 Interactive Stage ── */}
+      {/* Hidden inline image upload input */}
+      <input
+        ref={imageFileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={handleInlineImagePicked}
+      />
+
+      {/* Responsive Konva Stage Wrapper */}
       <div
         ref={containerRef}
-        data-testid="eduboard-stage-wrapper"
-        className="relative w-full rounded-2xl overflow-hidden border border-slate-300 shadow-inner select-none"
+        data-testid="eduboard-stage-frame"
+        data-surface={activeBackground}
+        className={`relative flex-1 w-full rounded-xl overflow-hidden shadow-inner flex items-center justify-center select-none ${stageOuterBezelClass} ${
+          fullscreenFill ? 'min-h-[480px]' : ''
+        }`}
         style={{
-          backgroundColor: canvasBgHex,
           touchAction: 'none',
-          minHeight: '320px',
+          background:
+            activeBackground === 'greenboard'
+              ? 'radial-gradient(circle at 50% 42%, #155e42 0%, #0f4c35 65%, #093524 100%)'
+              : activeBackground === 'blackboard'
+                ? 'radial-gradient(circle at 50% 42%, #1c2230 0%, #131720 75%, #0b0e14 100%)'
+                : undefined,
         }}
       >
-        {pdfLoading && (
-          <div className="absolute top-3 right-3 z-20 px-3 py-1 rounded-full bg-slate-900/80 text-white text-xs">
-            Loading PDF slide...
+        {bgLoading && (
+          <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full bg-slate-900/80 text-white text-[11px] font-medium">
+            Rendering Slide...
           </div>
         )}
-        {pdfError && (
-          <div className="absolute top-3 right-3 z-20 px-3 py-1 rounded-full bg-amber-600 text-white text-xs">
-            {pdfError}
+        {bgLoadError && (
+          <div className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 text-xs font-medium border border-rose-200">
+            {bgLoadError}
           </div>
         )}
 
         <Stage
-          ref={(node) => {
-            stageRef.current = node
-          }}
-          width={stageWidth}
-          height={stageHeight}
+          ref={stageRef}
+          width={containerSize.w}
+          height={containerSize.h}
           scaleX={effectiveScale}
           scaleY={effectiveScale}
           x={pan.x}
           y={pan.y}
-          draggable={isPanMode}
-          onDragEnd={(evt) => {
-            if (isPanMode && evt.target === stageRef.current) {
-              setPan({ x: evt.target.x(), y: evt.target.y() })
-            }
-          }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          style={{
+            cursor:
+              isPanMode || spacePanActive
+                ? 'grab'
+                : readOnly
+                  ? 'default'
+                  : storeActiveTool === 'select'
+                    ? 'default'
+                    : storeActiveTool === 'text'
+                      ? 'text'
+                      : 'crosshair',
+          }}
         >
-          {/* Background & Pattern Layer */}
-          <Layer listening={false}>
+          <Layer>
+            {/* Base Board Surface */}
             <Rect
+              name="eduboard-bg"
               x={0}
               y={0}
               width={EDUBOARD_LOGICAL_WIDTH}
               height={EDUBOARD_LOGICAL_HEIGHT}
               fill={canvasBgHex}
             />
+            {bgPatternElements}
 
-            {backgroundStyle === 'grid' && (
-              <Group listening={false}>
-                {Array.from({ length: 32 }).map((_, idx) => (
-                  <Line
-                    key={`vg-${idx}`}
-                    points={[(idx + 1) * 40, 0, (idx + 1) * 40, EDUBOARD_LOGICAL_HEIGHT]}
-                    stroke="#e2e8f0"
-                    strokeWidth={1}
-                  />
-                ))}
-                {Array.from({ length: 18 }).map((_, idx) => (
-                  <Line
-                    key={`hg-${idx}`}
-                    points={[0, (idx + 1) * 40, EDUBOARD_LOGICAL_WIDTH, (idx + 1) * 40]}
-                    stroke="#e2e8f0"
-                    strokeWidth={1}
-                  />
-                ))}
-              </Group>
-            )}
-
-            {backgroundStyle === 'notebook' && (
-              <Group listening={false}>
-                <Line
-                  points={[110, 0, 110, EDUBOARD_LOGICAL_HEIGHT]}
-                  stroke="#fca5a5"
-                  strokeWidth={2}
-                />
-                {Array.from({ length: 18 }).map((_, idx) => (
-                  <Line
-                    key={`nb-${idx}`}
-                    points={[0, (idx + 1) * 38, EDUBOARD_LOGICAL_WIDTH, (idx + 1) * 38]}
-                    stroke="#dbeafe"
-                    strokeWidth={1.2}
-                  />
-                ))}
-              </Group>
-            )}
-
-            {pdfSlideImage && (
+            {/* Uploaded PDF Slide / Reference Image */}
+            {bgImage && (
               <KonvaImage
-                image={pdfSlideImage}
+                name="eduboard-bg"
+                image={bgImage}
                 x={0}
                 y={0}
                 width={EDUBOARD_LOGICAL_WIDTH}
@@ -1067,23 +1121,65 @@ export default function EduBoardCanvas({
                 listening={false}
               />
             )}
-          </Layer>
 
-          {/* Vector Annotation Layer */}
-          <Layer>
-            {scene.elements.map((el) => renderElement(el, false))}
-            {draftElement && renderElement(draftElement, true)}
-            {!readOnly && <Transformer ref={transformerRef} rotateEnabled={false} />}
+            {/* Vector Strokes, Chalk, Shapes, Text & Inline Images */}
+            {elements.map((el) => renderElement(el))}
+            {draftElement && renderElement(draftElement)}
+
+            <Transformer
+              ref={transformerRef}
+              rotateEnabled={false}
+              boundBoxFunc={(oldBox, newBox) => (newBox.width < 10 || newBox.height < 10 ? oldBox : newBox)}
+            />
           </Layer>
         </Stage>
 
-        {/* Floating Text Input Overlay */}
+        {/* Subtle Classroom Chalk Tray Trim on Greenboard / Blackboard */}
+        {(activeBackground === 'greenboard' || activeBackground === 'blackboard') && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-0 inset-x-6 h-2 rounded-t-md bg-gradient-to-b from-amber-700/80 via-amber-800/90 to-amber-950 shadow-md flex items-center justify-end pr-6 gap-2"
+          >
+            <span className="w-5 h-1 rounded-full bg-white/90" />
+            <span className="w-4 h-1 rounded-full bg-yellow-300/90" />
+            <span className="w-4 h-1 rounded-full bg-pink-300/85" />
+          </div>
+        )}
+
+        {/* Quick Page Overlay Stepper in Teacher Fullscreen / Focus View */}
+        {!readOnly && totalPages && totalPages > 1 && (
+          <div className="absolute bottom-3 right-3 z-20 inline-flex items-center gap-1 rounded-full bg-slate-900/80 text-white px-2.5 py-1 text-xs shadow-lg backdrop-blur-xs border border-slate-700/70">
+            <button
+              type="button"
+              disabled={!pageIndex || pageIndex <= 0}
+              onClick={onPrevPage}
+              aria-label="Previous Slide"
+              className="p-0.5 rounded-full hover:bg-slate-700 disabled:opacity-40"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="font-mono text-[11px] px-1">
+              Page {(pageIndex ?? 0) + 1} / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={pageIndex === undefined || pageIndex >= totalPages - 1}
+              onClick={onNextPage}
+              aria-label="Next Slide"
+              className="p-0.5 rounded-full hover:bg-slate-700 disabled:opacity-40"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Inline Text Input Overlay (Create or Edit Existing Text) */}
         {textDraft && !readOnly && (
           <div
-            className="absolute z-30 flex items-center gap-1 bg-white border border-primary-400 rounded-lg shadow-lg p-1.5"
+            className="absolute z-30 bg-white border-2 border-indigo-500 rounded-lg shadow-lg p-1.5 flex items-center gap-1.5"
             style={{
-              left: `${Math.min(Math.max(12, textDraft.x * effectiveScale + pan.x), Math.max(12, stageWidth - 260))}px`,
-              top: `${Math.min(Math.max(12, textDraft.y * effectiveScale + pan.y), Math.max(12, stageHeight - 56))}px`,
+              left: `${Math.min(Math.max(textDraft.x * effectiveScale + pan.x, 12), containerSize.w - 240)}px`,
+              top: `${Math.min(Math.max(textDraft.y * effectiveScale + pan.y, 12), containerSize.h - 60)}px`,
             }}
           >
             <input
@@ -1092,16 +1188,63 @@ export default function EduBoardCanvas({
               value={textDraft.value}
               onChange={(e) => setTextDraft({ ...textDraft, value: e.target.value })}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCommitText()
-                if (e.key === 'Escape') setTextDraft(null)
+                if (e.key === 'Enter' && textDraft.value.trim()) {
+                  if (textDraft.existingId) {
+                    commitElements(
+                      elements.map((item) =>
+                        item.id === textDraft.existingId ? { ...item, text: textDraft.value.trim() } : item,
+                      ),
+                    )
+                  } else {
+                    commitElements([
+                      ...elements,
+                      {
+                        id: makeUid(),
+                        type: 'text',
+                        x: textDraft.x,
+                        y: textDraft.y,
+                        text: textDraft.value.trim(),
+                        color: storeActiveColor,
+                        fontSize: Math.max(18, strokeSize * 4),
+                      },
+                    ])
+                  }
+                  setTextDraft(null)
+                } else if (e.key === 'Escape') {
+                  setTextDraft(null)
+                }
               }}
-              placeholder="Type annotation..."
-              className="px-2 py-1 text-sm text-slate-900 border border-slate-200 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 w-48"
+              placeholder="Type text & press Enter..."
+              className="text-sm px-2 py-1 border border-slate-200 rounded w-48 focus:outline-none"
             />
             <button
               type="button"
-              onClick={handleCommitText}
-              className="px-2 py-1 text-xs font-semibold bg-primary-600 text-white rounded hover:bg-primary-700"
+              onClick={() => {
+                if (textDraft.value.trim()) {
+                  if (textDraft.existingId) {
+                    commitElements(
+                      elements.map((item) =>
+                        item.id === textDraft.existingId ? { ...item, text: textDraft.value.trim() } : item,
+                      ),
+                    )
+                  } else {
+                    commitElements([
+                      ...elements,
+                      {
+                        id: makeUid(),
+                        type: 'text',
+                        x: textDraft.x,
+                        y: textDraft.y,
+                        text: textDraft.value.trim(),
+                        color: storeActiveColor,
+                        fontSize: Math.max(18, strokeSize * 4),
+                      },
+                    ])
+                  }
+                }
+                setTextDraft(null)
+              }}
+              className="px-2 py-1 bg-indigo-600 text-white text-xs rounded font-medium"
             >
               Add
             </button>
@@ -1111,4 +1254,3 @@ export default function EduBoardCanvas({
     </div>
   )
 }
-

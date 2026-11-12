@@ -6,6 +6,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.88.0] - 2026-11-12
+### Added
+- **PrathamOne EduBoard — Interactive Teaching & Digital Classroom Engine, Collapsible Workspace, Immersive Full-Screen Greenboard & Detached Pop-Out Live Sync**:
+  - **Three Workspace Display Modes (`Standard`, `Focus`, `Immersive Full-Screen`)**: Added `useEduBoardDisplayStore` + `Layout.tsx` shell chrome controls supporting independently collapsible `Pages` & `Saved Lecture Boards` panels, Focus slide-over drawers, native browser Fullscreen API + viewport fallback (`Escape` exit), and active tool retention across mode switches.
+  - **Classroom Greenboard, Blackboard & Collapsible/Dockable Toolbar (`EduBoardCanvas.tsx`, `EduBoardToolbar.tsx`)**: Added textured classroom Greenboard & Blackboard gradients with chalk ledge, readable chalk palette (`White`, `Yellow`, `Pink`, `Blue`, `Green`) with automatic light/dark polarity switching, dual-pass chalk strokes, Fit-to-Screen (`0`), keyboard shortcuts, and 3×5 toolbar states (`Expanded`, `Compact`, `Hidden` / `Top`, `Left`, `Right`, `Bottom`, `Floating`).
+  - **Preference Inheritance Hierarchy (`/api/v1/eduboard/preferences`)**: Implemented `System -> Institution -> Individual` display settings using `InstitutionSetting` (`eduboard_user_pref`) with Admin policy locks (`allow_user_display_overrides`, `allow_collaborator_mode`, `allow_popout_window`) and user Reset to Institution Default.
+  - **Detached Pop-Out Window & Real-Time Multi-Tab Sync (`EduBoardWindowPage.tsx`, `EduBoardPopoutMenu.tsx`, `useEduBoardSync.ts`, `eduboard_realtime.py`)**: Added chromeless `/eduboard/window` route, 6 launcher actions, short-lived scoped `eduboard_popout` / `eduboard_ws` tokens (never exposing login JWTs in URLs), Presentation Read-Only server/WS enforcement, tenant/env isolation, `nginx.conf` `ws: wss:` CSP allowlist, and bidirectional `BroadcastChannel` + WebSocket sync.
+- **Help & About Centre Coverage Update**:
+  - Added **EduBoard Interactive Classroom** (`eduboard`) to canonical product modules (`20` modules total) and contextual route resolution (`/eduboard` -> `guide-eduboard`).
+  - Added `guide-eduboard` (Module User Guide), `tutorial-eduboard-classroom` (Greenboard, Focus Mode & Projector Pop-Out Tutorial), updated `guide-homework` (`doc_version 1.1` for Phase 1–15 enhancements), updated `tutorial-receipt-generation` & `faq-printing-problems` (`doc_version 1.1` for A5 Compact / A4 Portrait Print & PDF export parity), added `Konva`, `perfect-freehand`, and `PDF.js` credits to `third-party-acknowledgements` (`doc_version 1.1`), and added automatic `is_system` `doc_version` baseline syncing in `HelpService.ensure_seeded`.
+
+### Fixed
+- **Fee Receipt Printing (`@media print`) & PDF Export Parity (`A5 Compact` / `A4 Portrait`)**:
+  - Fixed global `@media print` rules in `index.css`, `printReceipt.ts`, and `PaymentReceiptView.tsx` so `<header class="receipt-header print-header">` and `#print-root` remain visible inside the isolated print iframe, eliminated duplicate fallback `"PA"` crest visibility alongside the academy crest `<img>`, matched preview typography (`16px` root, `30px` hero amount) without shrinking, and respected `A5` (`148×210mm`) vs `A4` (`210×297mm`) sheet sizing.
+  - Updated `ReceiptPdfService` and `/api/v1/payments/receipts/{receipt_number}/pdf` (`payments.py`) to embed the Prashant Academy crest logo PNG and tagline by default matching the software preview, wrap complete multi-line addresses, render vector badges/donut arcs cleanly, and support `paper_size=A5|A4`.
+- **Fees Workspace & CSP Runtime Fixes**:
+  - Extracted pre-hydration brand theme initializer into external `/prehydrate-brand.js` (`frontend/public/prehydrate-brand.js`) for strict CSP compliance without inline script violations.
+  - Guarded potentially undefined enum fields (`benefit_type`, `status`, `category`, `funding_source`) before `.replace(...)` in `Fees.tsx` concession/scholarship tables.
+
+## [1.88.0-rc.1] - 2026-11-12
+### Added
+- **PrathamOne EduBoard — Interactive Teaching & Digital Classroom Engine (`046_create_eduboard_tables`)**:
+  - **Database Schema & RBAC (`edu_boards`, `edu_board_pages`, `edu_board_revisions`, `edu_board_attachments`)**: Added versioned multi-page lecture board models linked to `teaching_sessions`, `divisions`, `subjects`, `academic_years`, and `institutions` with strict `is_demo` (`PRODUCTION` vs `TRAINING`) isolation and seeded `eduboard` permissions (`view`, `create`, `edit`, `delete`, `publish`, `download`, `manage_templates`, `collaborate`).
+  - **Backend Domain Service & API (`/api/v1/eduboard/*`)**: Implemented `EduBoardService` and REST router with teacher/institution scope enforcement, optimistic concurrency (`409 Conflict` revision guard + force overwrite option), immutable revision snapshots & restore, authenticated PDF/image attachment storage (`25 MB` max, `.pptx`/non-allowlisted extension rejection), PyMuPDF slide rendering & non-destructive annotated PDF export, `CommunicationLog` publish alerts, `AuditLog` audit entries, and `/api/v1/eduboard/reports/summary` analytics (also exposed at `/api/v1/reports/eduboard-summary`).
+  - **Frontend Interactive Canvas & Workspace (`EduBoardCanvas.tsx`, `EduBoardWorkspace.tsx`, `eduboardRecovery.ts`)**: Built multi-surface canvas (`Classic Chalk/Greenboard`, `Digital Whiteboard`, `Presentation PDF Board`) powered by Konva, `react-konva`, `perfect-freehand`, and `pdfjs-dist` with touch/stylus pressure, Undo/Redo, shapes/text/eraser, Rule 010 View-First Edit Mode governance (`EditModeBar`), scoped IndexedDB crash recovery (purged on logout), and deep-link launch from `TeacherManagement`, `TeacherPayroll`, `Sidebar`, and read-only Student Portal (`StudentDashboard`).
+  - **PWA & Infrastructure Hardening**: Added `.mjs` (`application/javascript`) MIME handling in `frontend/nginx.conf` for `pdfjs-dist` worker scripts and bumped Service Worker cache bucket (`prathamone-cache-v1.3.0`) in `frontend/public/sw.js`. Note: native PPT/PPTX conversion remains deferred (requires `python-pptx`/LibreOffice).
+
 ## [1.87.0] - 2026-11-12
 ### Added
 - **Homework & Assignment Management Enhancement (Phases 1–15)**:

@@ -47,7 +47,6 @@ export function printReceiptElement(
 
   const elementId = options.elementId || 'receipt-print-area';
   const title = options.documentTitle || defaultTitle;
-  const paperSize = options.paperSize || 'A5';
 
   const receiptEl = document.getElementById(elementId);
   if (!receiptEl) {
@@ -56,6 +55,20 @@ export function printReceiptElement(
     return false;
   }
 
+  const detectedPaperSize = receiptEl.getAttribute('data-paper-size');
+  const explicitPaperSize =
+    typeof elementIdOrOptions === 'object' && elementIdOrOptions.paperSize && elementIdOrOptions.paperSize !== 'auto'
+      ? elementIdOrOptions.paperSize
+      : null;
+  const paperSize: 'A5' | 'A4' =
+    explicitPaperSize === 'A4'
+      ? 'A4'
+      : explicitPaperSize === 'A5'
+      ? 'A5'
+      : detectedPaperSize === 'A4'
+      ? 'A4'
+      : 'A5';
+
   try {
     // Remove existing print iframe if any
     const existingIframe = document.getElementById('receipt-isolated-print-frame');
@@ -63,16 +76,17 @@ export function printReceiptElement(
       existingIframe.parentNode.removeChild(existingIframe);
     }
 
-    // Create an isolated hidden iframe
+    // Create an isolated hidden iframe sized to the physical sheet so responsive layout & assets resolve cleanly
     const iframe = document.createElement('iframe');
     iframe.id = 'receipt-isolated-print-frame';
     iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
+    iframe.style.left = '-10000px';
+    iframe.style.top = '0';
+    iframe.style.width = paperSize === 'A5' ? '148mm' : '210mm';
+    iframe.style.height = paperSize === 'A5' ? '210mm' : '297mm';
     iframe.style.border = '0';
     iframe.style.opacity = '0';
+    iframe.style.visibility = 'hidden';
     iframe.style.pointerEvents = 'none';
     iframe.setAttribute('aria-hidden', 'true');
 
@@ -99,11 +113,13 @@ export function printReceiptElement(
       .map((el) => el.outerHTML)
       .join('\n');
 
-    // Exact A5 portrait (148 x 210mm) and A4 portrait dimensions
+    // Exact A5 portrait (148 x 210mm) and A4 portrait (210 x 297mm) dimensions matching software preview 1:1
+    const safeOrigin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
+    const baseTag = safeOrigin ? `<base href="${escapeHtml(safeOrigin)}/" />` : '';
     const pageSizeCss =
       paperSize === 'A5'
-        ? `@page { size: A5 portrait; margin: 6mm 8mm; } #print-root { width: 100%; max-width: 136mm; padding: 0; font-size: 10px; margin: 0 auto; border: none; }`
-        : `@page { size: A4 portrait; margin: 8mm 10mm; } #print-root { width: 100%; max-width: 185mm; padding: 0; font-size: 11px; margin: 0 auto; border: none; }`;
+        ? `@page { size: A5 portrait; margin: 5mm 6mm; } #print-root, .receipt-print-sheet { width: 100%; max-width: 136mm; padding: 0; margin: 0 auto; border: none; }`
+        : `@page { size: A4 portrait; margin: 8mm 10mm; } #print-root, .receipt-print-sheet { width: 100%; max-width: 190mm; padding: 0; margin: 0 auto; border: none; }`;
 
     iframeDoc.open();
     iframeDoc.write(`
@@ -111,6 +127,7 @@ export function printReceiptElement(
       <html lang="en">
       <head>
         <meta charset="UTF-8" />
+        ${baseTag}
         <title>${escapeHtml(title)}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -123,6 +140,9 @@ export function printReceiptElement(
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
+          html {
+            font-size: 16px !important;
+          }
           body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
@@ -131,33 +151,79 @@ export function printReceiptElement(
             color: #0f172a;
             -webkit-font-smoothing: antialiased;
           }
-          #print-root {
+          #print-root, .receipt-print-sheet {
             width: 100%;
             margin: 0 auto;
             background: #ffffff;
             border: none;
+            overflow: hidden;
             page-break-inside: avoid;
             break-inside: avoid;
           }
           @media print {
-            body {
+            html, body {
+              width: 100% !important;
               margin: 0 !important;
               padding: 0 !important;
               background: #ffffff !important;
+              font-size: 16px !important;
             }
-            #print-root {
+            body > #print-root,
+            body:has(#receipt-print-area) > #print-root,
+            #print-root,
+            .receipt-print-sheet {
+              display: block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+              width: 100% !important;
+              max-width: ${paperSize === 'A4' ? '190mm' : '136mm'} !important;
               box-shadow: none !important;
               border: none !important;
-              padding: 0 0 16mm 0 !important;
-              overflow: visible !important;
+              border-radius: 0 !important;
+              padding: 0 !important;
+              margin: 0 auto !important;
+              overflow: hidden !important;
               box-sizing: border-box !important;
+            }
+            #print-root .hidden {
+              display: none !important;
+            }
+            #print-root header,
+            #print-root .receipt-header,
+            header.receipt-header,
+            header.print-header {
+              display: flex !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            #print-root .receipt-seal {
+              display: flex !important;
+            }
+            #print-root .receipt-banner-title,
+            #print-root .receipt-banner-no {
+              font-size: 14px !important;
+              line-height: 20px !important;
+            }
+            #print-root .receipt-student-name {
+              font-size: 16px !important;
+              line-height: 22px !important;
+            }
+            #print-root .receipt-amount-value {
+              font-size: 30px !important;
+              line-height: 36px !important;
+            }
+            #print-root .receipt-signatory {
+              align-items: flex-end !important;
+              text-align: right !important;
             }
           }
 
           /* Global Print & Share Branding & Canonical Footer */
           .pratham-print-footer-spacer {
             display: block !important;
-            height: 16mm !important;
+            height: 11mm !important;
             width: 100% !important;
           }
           .pratham-global-print-footer {
@@ -220,6 +286,7 @@ export function printReceiptElement(
           }
 
           /* Comprehensive Layout & Utility Rules for Reliable Standalone Print */
+          .hidden { display: none !important; }
           .flex { display: flex !important; }
           .inline-flex { display: inline-flex !important; }
           .flex-col { flex-direction: column !important; }
@@ -437,9 +504,17 @@ export function printReceiptElement(
           }
 
           /* Page Break Controls */
-          header, .receipt-header, footer, .receipt-footer, .banner-ribbon {
+          header, .receipt-header, header.print-header, footer, .receipt-footer, .banner-ribbon {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+          }
+          header, .receipt-header, header.print-header {
+            display: flex !important;
+            visibility: visible !important;
+          }
+          footer.receipt-footer {
+            display: grid !important;
+            visibility: visible !important;
           }
 
           /* Positioning & Overflows */
@@ -456,8 +531,10 @@ export function printReceiptElement(
         </style>
       </head>
       <body>
-        <div id="print-root">
-          ${clonedReceipt.innerHTML}
+        <div id="print-root" data-paper-size="${paperSize}">
+          <div id="${escapeHtml(elementId)}" data-paper-size="${paperSize}" class="receipt-print-sheet">
+            ${clonedReceipt.innerHTML}
+          </div>
         </div>
       </body>
       </html>

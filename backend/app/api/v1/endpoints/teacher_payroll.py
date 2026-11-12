@@ -528,6 +528,8 @@ async def list_teaching_sessions(
             "teacher_name": t_name,
             "substitute_teacher_id": s.substitute_teacher_id,
             "substitute_name": sub_map.get(s.substitute_teacher_id),
+            "division_id": s.division_id,
+            "subject_id": s.subject_id,
             "batch_name": b_name,
             "subject_name": sub_name,
             "session_date": str(s.session_date),

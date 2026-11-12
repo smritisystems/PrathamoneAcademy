@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-10
+ * @updated     2026-11-12
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -136,7 +136,7 @@
   }
   .no-print,
   aside,
-  header:not(.print-header),
+  header:not(.print-header):not(.receipt-header),
   nav,
   footer:not(.pratham-global-print-footer):not(.receipt-footer),
   .print-controls-panel {
@@ -167,14 +167,14 @@
   /* RECEIPT-ONLY PRINTING RULES (#receipt-print-area)                         */
   /* Hide application shell and modal chrome while preserving receipt contents  */
   /* ────────────────────────────────────────────────────────────────────────── */
-  body:has(#receipt-print-area) > *:not(.fixed):not(#root),
+  body:has(#receipt-print-area) > *:not(.fixed):not(#root):not(#print-root),
   body:has(#receipt-print-area) #root > aside,
   body:has(#receipt-print-area) #root > header,
   body:has(#receipt-print-area) #root > nav,
   body:has(#receipt-print-area) #root > footer,
   body:has(#receipt-print-area) #root main > *:not(.fixed),
   body:has(#receipt-print-area) .modal-backdrop,
-  body.printing-receipt > *:not(.fixed):not(#root),
+  body.printing-receipt > *:not(.fixed):not(#root):not(#print-root),
   body.printing-receipt #root > aside,
   body.printing-receipt #root > header,
   body.printing-receipt #root > nav,
@@ -220,7 +220,7 @@
     left: auto !important;
     top: auto !important;
     width: 100% !important;
-    max-width: 136mm !important;
+    max-width: 100% !important;
     margin: 0 auto !important;
     padding: 0 !important;
     border: none !important;
@@ -234,6 +234,14 @@
     print-color-adjust: exact !important;
   }
 
+  #receipt-print-area[data-paper-size="A5"] {
+    max-width: 138mm !important;
+  }
+
+  #receipt-print-area[data-paper-size="A4"] {
+    max-width: 190mm !important;
+  }
+
   #receipt-print-area * {
     visibility: visible !important;
     -webkit-print-color-adjust: exact !important;
@@ -242,9 +250,14 @@
 
   /* Explicitly guarantee visibility of headers, tables, and footers in receipt */
   #receipt-print-area header,
-  #receipt-print-area .receipt-header {
+  #receipt-print-area .receipt-header,
+  #print-root header,
+  #print-root .receipt-header,
+  header.receipt-header,
+  header.print-header {
     display: flex !important;
     visibility: visible !important;
+    opacity: 1 !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }

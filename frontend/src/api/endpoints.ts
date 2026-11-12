@@ -73,6 +73,9 @@ import type {
   HelpSystemInfoResponse, SupportRequestItem,
   EduBoardContextResponse, EduBoardSettingsConfig, EduBoardSummaryItem,
   EduBoardDetailItem, EduBoardRevisionItem, EduBoardReportsSummary, EduBoardPageItem,
+  EduBoardPreferencesResponse, EduBoardDisplayPrefsValues,
+  EduBoardPopoutMode, EduBoardPopoutLaunchResponse, EduBoardPopoutResolveResponse,
+  EduBoardBackgroundStyle,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -868,6 +871,7 @@ export const paymentsApi = {
       print_software_branding?: boolean
       print_sovereign_trim?: boolean
       print_verification_seal?: boolean
+      paper_size?: 'A5' | 'A4'
     }
   ) =>
     apiClient.get(`/payments/receipts/${receiptNumber}/pdf`, { params, responseType: 'blob' }),
@@ -2589,6 +2593,13 @@ export const eduboardApi = {
   updateSettings: (payload: Partial<EduBoardSettingsConfig>) =>
     apiClient.put<EduBoardSettingsConfig>('/eduboard/settings', payload),
 
+  getPreferences: () => apiClient.get<EduBoardPreferencesResponse>('/eduboard/preferences'),
+
+  updatePreferences: (payload: Partial<EduBoardDisplayPrefsValues>) =>
+    apiClient.put<EduBoardPreferencesResponse>('/eduboard/preferences', payload),
+
+  resetPreferences: () => apiClient.delete<EduBoardPreferencesResponse>('/eduboard/preferences'),
+
   listBoards: (params?: {
     academic_year_id?: number
     division_id?: number
@@ -2633,6 +2644,8 @@ export const eduboardApi = {
       save_type?: 'autosave' | 'manual'
       note?: string
       replace_pages?: boolean
+      client_id?: string
+      popout_token?: string
       pages?: Array<{
         page_uid: string
         page_order: number
@@ -2717,6 +2730,27 @@ export const eduboardApi = {
     apiClient.get<EduBoardReportsSummary>('/eduboard/reports/summary', {
       params: academicYearId ? { academic_year_id: academicYearId } : undefined,
     }),
+
+  createPopoutSession: (
+    boardId: number,
+    payload: {
+      launch_mode: EduBoardPopoutMode
+      surface?: EduBoardBackgroundStyle
+      compact_tools?: boolean
+      show_branding?: boolean
+      hide_toolbar?: boolean
+    },
+  ) => apiClient.post<EduBoardPopoutLaunchResponse>(`/eduboard/boards/${boardId}/popout-session`, payload),
+
+  resolvePopoutSession: (launch: string) =>
+    apiClient.get<EduBoardPopoutResolveResponse>('/eduboard/popout/resolve', {
+      params: { launch },
+    }),
+
+  getWsTicket: (boardId: number) =>
+    apiClient.post<{ ws_token: string; expires_in_seconds: number; mode: EduBoardPopoutMode }>(
+      `/eduboard/boards/${boardId}/ws-ticket`,
+    ),
 }
 
 export type { EduBoardPageItem }
