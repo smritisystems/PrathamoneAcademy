@@ -449,7 +449,7 @@ def get_cover_html(title, subtitle, doc_type="USER MANUAL"):
                 </div>
                 <div class="meta-item">
                     <div class="meta-label">Release Version</div>
-                    <div class="meta-value">v1.88.0 (Build: 2026.11.12-REV-159-v1.88.0)</div>
+                    <div class="meta-value">v1.88.2 (Build: 2026.11.12-REV-161-v1.88.2)</div>
                 </div>
                 <div class="meta-item">
                     <div class="meta-label">Publication Date</div>

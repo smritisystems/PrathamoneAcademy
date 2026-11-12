@@ -181,7 +181,7 @@ def build_docx_manual():
         ("Author & Chief Architect", "Jawahar R Mallah"),
         ("Organization", "AITDL — AI Technology & Development Lab"),
         ("Official Website", "https://prathamone.com"),
-        ("Verified Release Version", "v1.88.0 (Build: 2026.11.12-REV-159-v1.88.0)"),
+        ("Verified Release Version", "v1.88.2 (Build: 2026.11.12-REV-161-v1.88.2)"),
         ("Manual Revision Date", "November 12, 2026"),
     ]
     for idx, (label, val) in enumerate(meta_rows):
@@ -207,7 +207,7 @@ def build_docx_manual():
     p_sup = doc.add_paragraph(
         "This official manual provides authoritative operational guidance for administrators, "
         "principals, accountants, teachers, and administrative staff using the PrathamOne EduOS platform. "
-        "All instructions reflect verified system behavior under production release v1.88.0."
+        "All instructions reflect verified system behavior under production release v1.88.2."
     )
 
     add_callout(

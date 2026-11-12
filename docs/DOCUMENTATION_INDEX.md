@@ -5,7 +5,7 @@
 **Version:** 1.0.0  
 **Organization:** AITDL — AI Technology & Development Lab  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-12 21:37:44  
+**Last Reindexed:** 2026-11-12 22:17:01  
 **Total Indexed Items:** 450  
 
 ---
@@ -478,7 +478,7 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **PrathamOne Academy — Complete User Manual Creation & Delivery Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md](22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md) | - |
-| **PrathamOne EduOS v1.88.0 — User Manuals & Documentation Refresh Report** | `REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md](22_USER_MANUALS/2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md) | 18_TESTING_QA, 22_USER_MANUALS, 24_AI_AGENT_KNOWLEDGE |
+| **PrathamOne EduOS v1.88.0 — User Manuals & Documentation Refresh Report** | `REPORT` | `1.1` | 2026-11-12 | `Approved` | [2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md](22_USER_MANUALS/2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md) | 18_TESTING_QA, 22_USER_MANUALS, 24_AI_AGENT_KNOWLEDGE |
 | **PrathamOne EduOS — Help & About Centre Implementation & Delivery Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md](22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md) | 13_SYSADMIN_SETTINGS, 12_RBAC_SECURITY, 17_UI_UX_DESIGN, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Teacher & Staff Workforce Management, Universal Print & CodeX User Manual** | `USER-MANUAL` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md](22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 14_PRINTING_DOCUMENTS, 12_RBAC_SECURITY |
 | **PrathamOne_Academy_Complete_User_Manual.docx** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.docx](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.docx) | - |
