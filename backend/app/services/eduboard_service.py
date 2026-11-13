@@ -1488,16 +1488,61 @@ class EduBoardService:
         scene_json: str,
         att_lookup: Dict[int, EduBoardAttachment],
     ) -> None:
-        """Draws Konva/freehand vector elements cleanly onto a PyMuPDF page."""
+        """Draws Konva/freehand vector elements cleanly onto a PyMuPDF page with auto-framing bounding box."""
         try:
             scene = json.loads(scene_json or "{}")
         except json.JSONDecodeError:
             return
         elements = scene.get("elements") or []
+        if not elements:
+            return
+
         rect = pdf_page.rect
-        sx = rect.width / LOGICAL_CANVAS_W
-        sy = rect.height / LOGICAL_CANVAS_H
-        scale_stroke = (sx + sy) / 2.0
+
+        # Calculate bounding box of all drawn elements to prevent any oversized or historical drawings from clipping
+        max_x = LOGICAL_CANVAS_W
+        max_y = LOGICAL_CANVAS_H
+        min_x = 0.0
+        min_y = 0.0
+        for el in elements:
+            pts = el.get("points") or []
+            if pts:
+                if isinstance(pts[0], (list, tuple)):
+                    for pair in pts:
+                        if len(pair) >= 2:
+                            max_x = max(max_x, float(pair[0]))
+                            max_y = max(max_y, float(pair[1]))
+                            min_x = min(min_x, float(pair[0]))
+                            min_y = min(min_y, float(pair[1]))
+                else:
+                    for i in range(0, len(pts) - 1, 2):
+                        max_x = max(max_x, float(pts[i]))
+                        max_y = max(max_y, float(pts[i + 1]))
+                        min_x = min(min_x, float(pts[i]))
+                        min_y = min(min_y, float(pts[i + 1]))
+            if el.get("x") is not None:
+                ex = float(el.get("x", 0))
+                ew = float(el.get("width", 0))
+                max_x = max(max_x, ex + abs(ew))
+                min_x = min(min_x, ex)
+            if el.get("y") is not None:
+                ey = float(el.get("y", 0))
+                eh = float(el.get("height", 0))
+                max_y = max(max_y, ey + abs(eh))
+                min_y = min(min_y, ey)
+
+        content_min_x = min(0.0, min_x)
+        content_min_y = min(0.0, min_y)
+        content_w = max(LOGICAL_CANVAS_W, max_x - content_min_x + 8.0)
+        content_h = max(LOGICAL_CANVAS_H, max_y - content_min_y + 8.0)
+
+        # Scale uniformly to maintain aspect ratio and prevent cropping
+        scale = min(rect.width / content_w, rect.height / content_h)
+        sx = scale
+        sy = scale
+        offset_x = (rect.width - (content_w * scale)) / 2.0 - (content_min_x * scale)
+        offset_y = (rect.height - (content_h * scale)) / 2.0 - (content_min_y * scale)
+        scale_stroke = scale
 
         for el in elements:
             kind = el.get("type")
@@ -1516,23 +1561,23 @@ class EduBoardService:
                     flat = [v for pair in pts for v in pair]
                 else:
                     flat = pts
-                p0 = fitz.Point(flat[0] * sx, flat[1] * sy)
-                shape.draw_polyline([fitz.Point(flat[i] * sx, flat[i + 1] * sy) for i in range(0, len(flat) - 1, 2)])
+                shape.draw_polyline([fitz.Point(offset_x + flat[i] * sx, offset_y + flat[i + 1] * sy) for i in range(0, len(flat) - 1, 2)])
                 shape.finish(color=color, width=width, stroke_opacity=opacity, lineCap=1, lineJoin=1)
                 shape.commit()
 
             elif kind == "line" or kind == "arrow":
                 pts = el.get("points") or []
                 if len(pts) >= 4:
-                    x1, y1, x2, y2 = float(pts[0]) * sx, float(pts[1]) * sy, float(pts[2]) * sx, float(pts[3]) * sy
+                    x1, y1 = offset_x + float(pts[0]) * sx, offset_y + float(pts[1]) * sy
+                    x2, y2 = offset_x + float(pts[2]) * sx, offset_y + float(pts[3]) * sy
                     shape = pdf_page.new_shape()
                     shape.draw_line(fitz.Point(x1, y1), fitz.Point(x2, y2))
                     shape.finish(color=color, width=width, stroke_opacity=opacity)
                     shape.commit()
 
             elif kind == "rect":
-                x = float(el.get("x", 0)) * sx
-                y = float(el.get("y", 0)) * sy
+                x = offset_x + float(el.get("x", 0)) * sx
+                y = offset_y + float(el.get("y", 0)) * sy
                 w = float(el.get("width", 0)) * sx
                 h = float(el.get("height", 0)) * sy
                 fill_col = _hex_to_rgb01(el["fill"]) if el.get("fill") and el.get("fill") != "transparent" else None
@@ -1542,8 +1587,8 @@ class EduBoardService:
                 shape.commit()
 
             elif kind == "circle":
-                cx = float(el.get("x", 0)) * sx
-                cy = float(el.get("y", 0)) * sy
+                cx = offset_x + float(el.get("x", 0)) * sx
+                cy = offset_y + float(el.get("y", 0)) * sy
                 r = float(el.get("radius", 20)) * scale_stroke
                 shape = pdf_page.new_shape()
                 shape.draw_circle(fitz.Point(cx, cy), max(1.0, r))
@@ -1553,8 +1598,8 @@ class EduBoardService:
             elif kind == "text":
                 txt = str(el.get("text") or "").strip()
                 if txt:
-                    tx = float(el.get("x", 40)) * sx
-                    ty = float(el.get("y", 40)) * sy + float(el.get("fontSize", 20)) * sy
+                    tx = offset_x + float(el.get("x", 40)) * sx
+                    ty = offset_y + float(el.get("y", 40)) * sy + float(el.get("fontSize", 20)) * sy
                     tcol = _hex_to_rgb01(el.get("fill") or el.get("color"))
                     fsize = max(8.0, float(el.get("fontSize", 20)) * scale_stroke)
                     pdf_page.insert_text(fitz.Point(tx, ty), txt, fontsize=fsize, color=tcol)
@@ -1564,8 +1609,8 @@ class EduBoardService:
                 if att_id and int(att_id) in att_lookup:
                     img_att = att_lookup[int(att_id)]
                     if os.path.isfile(img_att.storage_path):
-                        ix = float(el.get("x", 40)) * sx
-                        iy = float(el.get("y", 40)) * sy
+                        ix = offset_x + float(el.get("x", 40)) * sx
+                        iy = offset_y + float(el.get("y", 40)) * sy
                         iw = float(el.get("width", 240)) * sx
                         ih = float(el.get("height", 160)) * sy
                         try:
@@ -1607,8 +1652,8 @@ class EduBoardService:
                         EduBoardService._draw_scene_on_pdf_page(out_page, pg.scene_json, att_lookup)
                         continue
 
-                # Blank / Classic / Whiteboard page
-                out_page = out_doc.new_page(width=842, height=595)  # A4 Landscape
+                # Blank / Classic / Whiteboard page: 16:9 HD Presentation (842 x 473.6 pt)
+                out_page = out_doc.new_page(width=842, height=473.625)
                 if pg.background_style == "blackboard":
                     bg_col = (0.09, 0.10, 0.12)
                 elif pg.background_style == "greenboard":

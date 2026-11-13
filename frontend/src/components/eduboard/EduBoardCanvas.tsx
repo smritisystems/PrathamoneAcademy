@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-12
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Interactive Konva + React-Konva + PDF.js multi-mode classroom canvas supporting Classic Greenboard/Blackboard chalk rendering, Digital Whiteboard, Grid/Ruled surfaces, non-destructive PDF annotations, Fit-to-Screen, keyboard shortcuts, and collapsible/dockable/floating toolbar integration.
  */
@@ -196,15 +196,22 @@ export default function EduBoardCanvas({
     }
   }, [selectedId, elements, readOnly])
 
-  // Measure container dynamically for responsive fit-to-screen scaling
+  // Measure container dynamically for responsive fit-to-screen scaling without recursive shrinking loops
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
     const updateSize = () => {
       const w = el.clientWidth || 960
-      const availH = el.clientHeight > 220 ? el.clientHeight - 8 : Math.round((w * 9) / 16)
-      const h = fullscreenFill ? availH : Math.max(360, Math.min(availH, Math.round((w * 9) / 16)))
-      setContainerSize({ w, h })
+      let h: number
+      if (fullscreenFill) {
+        const parentH = el.parentElement?.clientHeight || el.clientHeight || 540
+        h = Math.max(360, parentH)
+      } else {
+        const ideal169H = Math.round((w * 9) / 16)
+        const maxStandardH = typeof window !== 'undefined' ? Math.max(450, window.innerHeight - 220) : 600
+        h = Math.max(400, Math.min(ideal169H, maxStandardH))
+      }
+      setContainerSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }))
     }
     updateSize()
     if (typeof ResizeObserver !== 'undefined') {
@@ -465,13 +472,17 @@ export default function EduBoardCanvas({
     containerSize.h / EDUBOARD_LOGICAL_HEIGHT,
   )
   const effectiveScale = fitScale * zoom
+  const boardPixelW = EDUBOARD_LOGICAL_WIDTH * effectiveScale
+  const boardPixelH = EDUBOARD_LOGICAL_HEIGHT * effectiveScale
+  const centerOffsetX = Math.max(0, (containerSize.w - boardPixelW) / 2)
+  const centerOffsetY = Math.max(0, (containerSize.h - boardPixelH) / 2)
 
   const toLogicalCoords = (stage: Konva.Stage): { x: number; y: number } | null => {
     const pos = stage.getPointerPosition()
     if (!pos) return null
     return {
-      x: (pos.x - pan.x) / effectiveScale,
-      y: (pos.y - pan.y) / effectiveScale,
+      x: (pos.x - pan.x - centerOffsetX) / effectiveScale,
+      y: (pos.y - pan.y - centerOffsetY) / effectiveScale,
     }
   }
 
@@ -487,8 +498,20 @@ export default function EduBoardCanvas({
     }
     if (readOnly) return
 
-    const pt = toLogicalCoords(stage)
-    if (!pt) return
+    const rawPt = toLogicalCoords(stage)
+    if (!rawPt) return
+    const pt = {
+      x: Math.max(0, Math.min(EDUBOARD_LOGICAL_WIDTH, rawPt.x)),
+      y: Math.max(0, Math.min(EDUBOARD_LOGICAL_HEIGHT, rawPt.y)),
+    }
+
+    // Confine drawing strictly within the logical whiteboard surface (no dead-margin spillage)
+    if (
+      storeActiveTool !== 'select' &&
+      (rawPt.x < 0 || rawPt.x > EDUBOARD_LOGICAL_WIDTH || rawPt.y < 0 || rawPt.y > EDUBOARD_LOGICAL_HEIGHT)
+    ) {
+      return
+    }
 
     if (storeActiveTool === 'select') {
       if (e.target === stage || e.target.name() === 'eduboard-bg') {
@@ -577,8 +600,12 @@ export default function EduBoardCanvas({
     if (readOnly || !drawingRef.current) return
     const stage = e.target.getStage()
     if (!stage) return
-    const pt = toLogicalCoords(stage)
-    if (!pt) return
+    const rawPt = toLogicalCoords(stage)
+    if (!rawPt) return
+    const pt = {
+      x: Math.max(0, Math.min(EDUBOARD_LOGICAL_WIDTH, rawPt.x)),
+      y: Math.max(0, Math.min(EDUBOARD_LOGICAL_HEIGHT, rawPt.y)),
+    }
 
     if (storeActiveTool === 'eraser') {
       const filtered = elements.filter((el) => {
@@ -1078,8 +1105,8 @@ export default function EduBoardCanvas({
           height={containerSize.h}
           scaleX={effectiveScale}
           scaleY={effectiveScale}
-          x={pan.x}
-          y={pan.y}
+          x={pan.x + centerOffsetX}
+          y={pan.y + centerOffsetY}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -1098,7 +1125,7 @@ export default function EduBoardCanvas({
           }}
         >
           <Layer>
-            {/* Base Board Surface */}
+            {/* Base Board Surface with professional bezel border and shadow */}
             <Rect
               name="eduboard-bg"
               x={0}
@@ -1106,25 +1133,34 @@ export default function EduBoardCanvas({
               width={EDUBOARD_LOGICAL_WIDTH}
               height={EDUBOARD_LOGICAL_HEIGHT}
               fill={canvasBgHex}
+              stroke={isDarkBoard ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)'}
+              strokeWidth={2}
+              shadowColor="rgba(0,0,0,0.22)"
+              shadowBlur={16}
+              shadowOffsetX={0}
+              shadowOffsetY={4}
             />
             {bgPatternElements}
 
-            {/* Uploaded PDF Slide / Reference Image */}
-            {bgImage && (
-              <KonvaImage
-                name="eduboard-bg"
-                image={bgImage}
-                x={0}
-                y={0}
-                width={EDUBOARD_LOGICAL_WIDTH}
-                height={EDUBOARD_LOGICAL_HEIGHT}
-                listening={false}
-              />
-            )}
+            {/* Clipping group ensures all drawings and annotations are strictly confined to the board */}
+            <Group clip={{ x: 0, y: 0, width: EDUBOARD_LOGICAL_WIDTH, height: EDUBOARD_LOGICAL_HEIGHT }}>
+              {/* Uploaded PDF Slide / Reference Image */}
+              {bgImage && (
+                <KonvaImage
+                  name="eduboard-bg"
+                  image={bgImage}
+                  x={0}
+                  y={0}
+                  width={EDUBOARD_LOGICAL_WIDTH}
+                  height={EDUBOARD_LOGICAL_HEIGHT}
+                  listening={false}
+                />
+              )}
 
-            {/* Vector Strokes, Chalk, Shapes, Text & Inline Images */}
-            {elements.map((el) => renderElement(el))}
-            {draftElement && renderElement(draftElement)}
+              {/* Vector Strokes, Chalk, Shapes, Text & Inline Images */}
+              {elements.map((el) => renderElement(el))}
+              {draftElement && renderElement(draftElement)}
+            </Group>
 
             <Transformer
               ref={transformerRef}
@@ -1178,8 +1214,8 @@ export default function EduBoardCanvas({
           <div
             className="absolute z-30 bg-white border-2 border-indigo-500 rounded-lg shadow-lg p-1.5 flex items-center gap-1.5"
             style={{
-              left: `${Math.min(Math.max(textDraft.x * effectiveScale + pan.x, 12), containerSize.w - 240)}px`,
-              top: `${Math.min(Math.max(textDraft.y * effectiveScale + pan.y, 12), containerSize.h - 60)}px`,
+              left: `${Math.min(Math.max(textDraft.x * effectiveScale + pan.x + centerOffsetX, 12), containerSize.w - 240)}px`,
+              top: `${Math.min(Math.max(textDraft.y * effectiveScale + pan.y + centerOffsetY, 12), containerSize.h - 60)}px`,
             }}
           >
             <input
