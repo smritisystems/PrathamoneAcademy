@@ -1277,10 +1277,92 @@ export const studentPortalApi = {
         present_days: number
         absent_days: number
         late_days: number
+        excused_days?: number
         attendance_percentage: number
+        monthly_present?: number
+        monthly_absent?: number
+        monthly_late?: number
+        monthly_excused?: number
+        monthly_working_days?: number
+        monthly_percentage?: number
       }
+      month?: number
+      year?: number
+      month_name?: string
+      calendar_days?: Array<{
+        day: number
+        date: string
+        day_name: string
+        is_weekend: boolean
+        status: string
+        remarks: string
+      }>
+      absentee_log?: Array<{
+        id: number
+        date: string
+        status: string
+        remarks: string
+        parent_acknowledged?: boolean
+      }>
       records: { id: number; date: string; status: string; remarks: string }[]
     }>('/student-portal/attendance', { params }),
+  getHomework: (params?: { student_id?: number | string; status?: string }) =>
+    apiClient.get<{ student_id: number; total: number; items: StudentPortalHomeworkItem[] }>('/student-portal/homework', { params }),
+  submitHomework: (
+    recordId: number | string,
+    data: { submission_text?: string; submission_file_url?: string; submission_files?: any[] },
+    student_id?: number | string
+  ) =>
+    apiClient.post<{
+      success: boolean
+      message: string
+      record_id: number
+      submission_status: string
+      submission_version: number
+      submitted_at?: string
+    }>(`/student-portal/homework/${recordId}/submit`, data, {
+      params: student_id ? { student_id } : undefined,
+    }),
+  getReportCards: (student_id?: number | string, scale?: string) =>
+    apiClient.get<{
+      student_id: number
+      total_report_cards: number
+      report_cards: StudentReportCardData[]
+    }>('/student-portal/report-cards', { params: { student_id, scale } }),
+  getReportCard: (exam_id: number | string, student_id?: number | string, scale?: string) =>
+    apiClient.get<StudentReportCardData>(`/student-portal/report-cards/${exam_id}`, {
+      params: { student_id, scale },
+    }),
+  payFeesOnline: (
+    payload: {
+      invoice_id: number
+      amount: number
+      payment_method?: string
+      transaction_reference?: string
+      notes?: string
+    },
+    student_id?: number | string
+  ) =>
+    apiClient.post<{
+      success: boolean
+      message: string
+      payment_id: number
+      receipt_number: string
+      amount: number
+      payment_method: string
+      transaction_reference: string
+      payment_date: string
+      invoice_id: number
+      invoice_number: string
+      invoice_status: string
+      remaining_outstanding: number
+    }>('/student-portal/fees/pay-online', payload, {
+      params: student_id ? { student_id } : undefined,
+    }),
+  getReceiptVoucher: (receiptIdentifier: string | number, student_id?: number | string) =>
+    apiClient.get<{ voucher: any }>(`/student-portal/fees/receipts/${receiptIdentifier}/voucher`, {
+      params: student_id ? { student_id } : undefined,
+    }),
   getTests: (student_id?: number | string) =>
     apiClient.get<{
       student_id: number

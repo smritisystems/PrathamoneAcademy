@@ -151,7 +151,6 @@ vi.mock('../api/endpoints', () => ({
     dispatchPaymentReceiptNotification: vi.fn().mockResolvedValue({ data: { status: 'success' } }),
     dispatchHomeworkNotification: vi.fn().mockResolvedValue({ data: { status: 'success' } }),
     dispatchExamScheduleNotification: vi.fn().mockResolvedValue({ data: { status: 'success' } }),
-    updateAutomationRules: vi.fn().mockResolvedValue({ data: { status: 'success' } }),
     previewFeeReminders: vi.fn().mockResolvedValue({
       data: {
         queue: [

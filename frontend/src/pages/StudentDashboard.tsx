@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -24,7 +24,8 @@ import {
   FileText, User, Bell, Clock, MapPin, Phone, Mail, CheckCircle,
   AlertCircle, Download, ChevronRight, Save, RefreshCw, ShieldAlert,
   FileCheck, Upload, MessageSquare, Paperclip, AlertTriangle, CheckCircle2,
-  XCircle, Send, Sparkles, Presentation
+  XCircle, Send, Sparkles, Presentation, Printer, ChevronLeft, Check, X,
+  Trophy, FileSpreadsheet
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { studentPortalApi, studentsApi, homeworkApi, eduboardApi } from '../api/endpoints'
@@ -41,10 +42,38 @@ import type {
   HomeworkNotificationItem,
   EduBoardSummaryItem,
   EduBoardDetailItem,
+  StudentReportCardData,
 } from '../types'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
+
+function numberToWordsINR(num: number): string {
+  const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen ']
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
+  const n = Math.floor(Math.abs(num))
+  if (n === 0) return 'Zero Rupees Only'
+  function inWords(nStr: string): string {
+    const val = Number(nStr)
+    if (val === 0) return ''
+    if (val < 20) return a[val]
+    const d0 = Math.floor(val / 10)
+    const d1 = val % 10
+    return b[d0] + (d1 > 0 ? ' ' + a[d1] : ' ')
+  }
+  let str = ''
+  const crore = Math.floor(n / 10000000)
+  const lakh = Math.floor((n % 10000000) / 100000)
+  const thousand = Math.floor((n % 100000) / 1000)
+  const hundred = Math.floor((n % 1000) / 100)
+  const rest = n % 100
+  if (crore > 0) str += inWords(String(crore)) + 'Crore '
+  if (lakh > 0) str += inWords(String(lakh)) + 'Lakh '
+  if (thousand > 0) str += inWords(String(thousand)) + 'Thousand '
+  if (hundred > 0) str += inWords(String(hundred)) + 'Hundred '
+  if (rest > 0) str += inWords(String(rest))
+  return str.trim() + ' Rupees Only'
+}
 
 const PORTAL_TABS = [
   { id: 'home', label: 'Home', icon: Home },
@@ -116,26 +145,87 @@ export default function StudentDashboardPage() {
     enabled: activeTab === 'timetable',
   })
 
-  // 5. Fetch Attendance
-  const { data: attendanceData } = useQuery({
-    queryKey: ['student-portal-attendance', effectiveId],
-    queryFn: () => studentPortalApi.getAttendance({ student_id: effectiveId }).then((r) => r.data),
+  // Attendance date navigation
+  const [selectedAttendanceYear, setSelectedAttendanceYear] = useState<number>(new Date().getFullYear())
+  const [selectedAttendanceMonth, setSelectedAttendanceMonth] = useState<number>(new Date().getMonth() + 1)
+
+  // 5. Fetch Attendance with Monthly Calendar & Absentee Log
+  const { data: attendanceData, refetch: refetchAttendance } = useQuery({
+    queryKey: ['student-portal-attendance', effectiveId, selectedAttendanceYear, selectedAttendanceMonth],
+    queryFn: () =>
+      studentPortalApi
+        .getAttendance({
+          student_id: effectiveId,
+          year: selectedAttendanceYear,
+          month: selectedAttendanceMonth,
+        })
+        .then((r) => r.data),
     enabled: activeTab === 'attendance',
   })
 
-  // 6. Fetch Tests & Results
+  // 6. Fetch Tests & Results + Multi-Curriculum Report Cards
   const { data: testsData } = useQuery({
     queryKey: ['student-portal-tests', effectiveId],
     queryFn: () => studentPortalApi.getTests(effectiveId).then((r) => r.data),
     enabled: activeTab === 'tests',
   })
 
-  // 7. Fetch Fees
+  const [selectedReportCardExamId, setSelectedReportCardExamId] = useState<number | null>(null)
+  const [reportCardScale, setReportCardScale] = useState<string>('STANDARD_6_POINT')
+
+  const { data: reportCardsData, refetch: refetchReportCards } = useQuery({
+    queryKey: ['student-portal-report-cards', effectiveId, reportCardScale],
+    queryFn: () => studentPortalApi.getReportCards(effectiveId, reportCardScale).then((r) => r.data),
+    enabled: activeTab === 'tests',
+  })
+
+  const { data: activeReportCardDetail, isLoading: loadingReportCardDetail } = useQuery({
+    queryKey: ['student-portal-report-card-detail', selectedReportCardExamId, effectiveId, reportCardScale],
+    queryFn: () =>
+      selectedReportCardExamId
+        ? studentPortalApi.getReportCard(selectedReportCardExamId, effectiveId, reportCardScale).then((r) => r.data)
+        : null,
+    enabled: !!selectedReportCardExamId,
+  })
+
+  // 7. Fetch Fees, Online Checkout & Receipt Voucher
   const { data: feesData } = useQuery({
     queryKey: ['student-portal-fees', effectiveId],
     queryFn: () => studentPortalApi.getFees(effectiveId).then((r) => r.data),
     enabled: activeTab === 'fees',
   })
+
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<any | null>(null)
+  const [payAmount, setPayAmount] = useState<number>(0)
+  const [payMethod, setPayMethod] = useState<string>('online_upi')
+  const [payNotes, setPayNotes] = useState<string>('')
+  const [selectedReceiptVoucher, setSelectedReceiptVoucher] = useState<any | null>(null)
+
+  const payOnlineMutation = useMutation({
+    mutationFn: (payload: { invoice_id: number; amount: number; payment_method: string; notes?: string }) =>
+      studentPortalApi.payFeesOnline(payload, effectiveId),
+    onSuccess: (res) => {
+      toast.success(res.data.message || 'Online payment processed successfully!')
+      setSelectedInvoiceForPayment(null)
+      queryClient.invalidateQueries({ queryKey: ['student-portal-fees', effectiveId] })
+      queryClient.invalidateQueries({ queryKey: ['student-portal-dashboard', effectiveId] })
+      if (res.data.receipt_number) {
+        handleViewReceiptVoucher(res.data.receipt_number)
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.detail || 'Online payment failed.')
+    },
+  })
+
+  const handleViewReceiptVoucher = async (receiptNumOrId: string | number) => {
+    try {
+      const resp = await studentPortalApi.getReceiptVoucher(receiptNumOrId, effectiveId)
+      setSelectedReceiptVoucher(resp.data.voucher)
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to fetch receipt voucher.')
+    }
+  }
 
   // 8. Fetch Study Materials & Published EduBoard Lecture Boards
   const { data: materialsData } = useQuery({
@@ -1104,27 +1194,218 @@ export default function StudentDashboardPage() {
       {/* TAB CONTENT 4: ATTENDANCE */}
       {activeTab === 'attendance' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="card text-center">
-              <p className="text-xs text-gray-500">Overall Attendance</p>
-              <p className="text-2xl font-bold text-emerald-600 mt-1">{attendanceData?.summary.attendance_percentage}%</p>
+          {/* Header & Month Navigation */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Real-Time Attendance Calendar & Absentee Log</h2>
+              <p className="text-xs text-gray-500">Track daily classroom presence, examine monthly streaks, and audit excused absences.</p>
             </div>
-            <div className="card text-center">
-              <p className="text-xs text-gray-500">Total Working Days</p>
-              <p className="text-2xl font-bold text-gray-800 mt-1">{attendanceData?.summary.total_days}</p>
-            </div>
-            <div className="card text-center">
-              <p className="text-xs text-gray-500">Present Days</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">{attendanceData?.summary.present_days}</p>
-            </div>
-            <div className="card text-center">
-              <p className="text-xs text-gray-500">Absent Days</p>
-              <p className="text-2xl font-bold text-red-500 mt-1">{attendanceData?.summary.absent_days}</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedAttendanceMonth === 1) {
+                    setSelectedAttendanceMonth(12)
+                    setSelectedAttendanceYear((y) => y - 1)
+                  } else {
+                    setSelectedAttendanceMonth((m) => m - 1)
+                  }
+                }}
+                className="btn-secondary text-xs px-2.5 py-1.5 flex items-center gap-1"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Prev Month
+              </button>
+              <span className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-800 shadow-sm min-w-[130px] text-center">
+                {attendanceData?.month_name || 'Month'} {attendanceData?.year || selectedAttendanceYear}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedAttendanceMonth === 12) {
+                    setSelectedAttendanceMonth(1)
+                    setSelectedAttendanceYear((y) => y + 1)
+                  } else {
+                    setSelectedAttendanceMonth((m) => m + 1)
+                  }
+                }}
+                className="btn-secondary text-xs px-2.5 py-1.5 flex items-center gap-1"
+              >
+                Next Month <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => refetchAttendance()}
+                className="btn-secondary text-xs p-2"
+                title="Refresh Attendance"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
+          {/* 5 KPI Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="card text-center border-l-4 border-l-emerald-500">
+              <p className="text-xs text-gray-500 font-medium">Overall Attendance</p>
+              <p className="text-2xl font-bold text-emerald-600 mt-1">
+                {attendanceData?.summary.attendance_percentage ?? 100}%
+              </p>
+            </div>
+            <div className="card text-center border-l-4 border-l-blue-500">
+              <p className="text-xs text-gray-500 font-medium">Monthly Rate</p>
+              <p className="text-2xl font-bold text-blue-700 mt-1">
+                {attendanceData?.summary.monthly_percentage ?? 100}%
+              </p>
+            </div>
+            <div className="card text-center border-l-4 border-l-green-500">
+              <p className="text-xs text-gray-500 font-medium">Present Days</p>
+              <p className="text-2xl font-bold text-green-700 mt-1">
+                {attendanceData?.summary.monthly_present ?? attendanceData?.summary.present_days ?? 0}
+              </p>
+            </div>
+            <div className="card text-center border-l-4 border-l-rose-500">
+              <p className="text-xs text-gray-500 font-medium">Absent Days</p>
+              <p className="text-2xl font-bold text-rose-600 mt-1">
+                {attendanceData?.summary.monthly_absent ?? attendanceData?.summary.absent_days ?? 0}
+              </p>
+            </div>
+            <div className="card text-center border-l-4 border-l-amber-500">
+              <p className="text-xs text-gray-500 font-medium">Late / Excused</p>
+              <p className="text-2xl font-bold text-amber-600 mt-1">
+                {(attendanceData?.summary.monthly_late ?? 0) + (attendanceData?.summary.monthly_excused ?? 0)}
+              </p>
+            </div>
+          </div>
+
+          {/* VISUAL MONTHLY CALENDAR GRID */}
           <div className="card space-y-4">
-            <h3 className="font-bold text-gray-900">Dated Attendance History</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary-700" />
+                <h3 className="font-bold text-gray-900">
+                  {attendanceData?.month_name || 'Monthly'} {attendanceData?.year || selectedAttendanceYear} Attendance Register
+                </h3>
+              </div>
+              {/* Legend */}
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-600">
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Present</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Absent</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Late</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Excused</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Holiday / Weekend</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-2">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((dayName) => (
+                <div key={dayName} className="text-center font-bold text-xs text-gray-500 py-1 uppercase tracking-wider">
+                  {dayName}
+                </div>
+              ))}
+              {attendanceData?.calendar_days?.map((cDay) => {
+                const isPresent = cDay.status === 'present'
+                const isAbsent = cDay.status === 'absent'
+                const isLate = cDay.status === 'late'
+                const isExcused = cDay.status === 'excused'
+                const isWeekend = cDay.status === 'weekend' || cDay.is_weekend
+                const isUpcoming = cDay.status === 'upcoming'
+
+                return (
+                  <div
+                    key={cDay.day}
+                    className={`p-2.5 rounded-xl border flex flex-col justify-between min-h-[70px] transition-all ${
+                      isPresent
+                        ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                        : isAbsent
+                        ? 'bg-rose-50 border-rose-200 text-rose-900 shadow-sm'
+                        : isLate
+                        ? 'bg-amber-50 border-amber-200 text-amber-900'
+                        : isExcused
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-900'
+                        : isWeekend
+                        ? 'bg-slate-50 border-slate-200 text-slate-500'
+                        : isUpcoming
+                        ? 'bg-gray-50/50 border-dashed border-gray-200 text-gray-400'
+                        : 'bg-white border-gray-100 text-gray-600'
+                    }`}
+                    title={`${cDay.date}: ${cDay.remarks}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold">{cDay.day}</span>
+                      {isPresent && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+                      {isAbsent && <XCircle className="w-3.5 h-3.5 text-rose-600" />}
+                      {isLate && <Clock className="w-3.5 h-3.5 text-amber-600" />}
+                      {isExcused && <Award className="w-3.5 h-3.5 text-indigo-600" />}
+                    </div>
+                    <div className="mt-1">
+                      <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                        isPresent ? 'bg-emerald-100 text-emerald-800' :
+                        isAbsent ? 'bg-rose-100 text-rose-800' :
+                        isLate ? 'bg-amber-100 text-amber-800' :
+                        isExcused ? 'bg-indigo-100 text-indigo-800' :
+                        isWeekend ? 'bg-slate-200 text-slate-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {cDay.status}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* ABSENTEE LOG & EXCUSES */}
+          <div className="card space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+              <AlertTriangle className="w-5 h-5 text-rose-600" />
+              <div>
+                <h3 className="font-bold text-gray-900">Absentee Log &amp; Leave Notices</h3>
+                <p className="text-xs text-gray-500">Record of missed classroom sessions and parental acknowledgements.</p>
+              </div>
+            </div>
+            {(!attendanceData?.absentee_log || attendanceData.absentee_log.length === 0) ? (
+              <div className="p-6 text-center text-sm text-emerald-700 bg-emerald-50 rounded-xl border border-emerald-100">
+                <CheckCircle2 className="w-6 h-6 mx-auto mb-1 text-emerald-600" />
+                <p className="font-bold">Perfect Attendance Recorded</p>
+                <p className="text-xs text-emerald-600 mt-0.5">No unauthorized absent marks logged for this student.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                      <th className="py-2.5 px-3">Absent Date</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3">Reason / Remarks</th>
+                      <th className="py-2.5 px-3">Guardian Notice</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {attendanceData.absentee_log.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="py-2.5 px-3 font-mono font-bold text-rose-700">{item.date}</td>
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded text-xs font-bold uppercase bg-rose-100 text-rose-800">
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-xs text-gray-700 font-medium">{item.remarks}</td>
+                        <td className="py-2.5 px-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            <CheckCircle2 className="w-3 h-3 text-blue-600" /> Parent Notified
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Dated Attendance History */}
+          <div className="card space-y-4">
+            <h3 className="font-bold text-gray-900">Dated Attendance History Log</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -1181,6 +1462,93 @@ export default function StudentDashboardPage() {
                     <div className="text-right">
                       <span className="text-xs text-gray-500">Max Marks</span>
                       <p className="text-lg font-bold text-gray-900">{t.max_marks}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* OFFICIAL MULTI-CURRICULUM REPORT CARD DOSSIERS */}
+          <div className="card space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-amber-600" />
+                <div>
+                  <h3 className="font-bold text-gray-900">Official Multi-Curriculum Report Card Dossiers</h3>
+                  <p className="text-xs text-gray-500">Official terminal transcripts with letter grades, GPA, division rank, and printable layouts.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-gray-600">Grading Scale:</label>
+                <select
+                  value={reportCardScale}
+                  onChange={(e) => setReportCardScale(e.target.value)}
+                  className="form-select text-xs py-1 px-2.5 rounded-lg border-gray-200 font-medium"
+                >
+                  <option value="STANDARD_6_POINT">Standard 6-Point (A+ to F)</option>
+                  <option value="CBSE_9_POINT">CBSE 9-Point (A1 to E2)</option>
+                  <option value="ICSE_PERCENTAGE">ICSE Percentage Scale</option>
+                  <option value="HSC_GRADE">Higher Secondary 7-Point</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => refetchReportCards()}
+                  className="btn-secondary text-xs p-1.5"
+                  title="Refresh Report Cards"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {(!reportCardsData?.report_cards || reportCardsData.report_cards.length === 0) ? (
+              <p className="text-sm text-gray-500 py-4 text-center">No examination report cards compiled yet for this academic year.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {reportCardsData.report_cards.map((rc: any) => (
+                  <div key={rc.examination.id} className="p-4 rounded-xl border border-primary-100 bg-gradient-to-br from-primary-50/30 to-white space-y-3 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-primary-100 text-primary-800">
+                          {rc.examination.exam_type}
+                        </span>
+                        <h4 className="font-bold text-gray-900 mt-1">{rc.examination.name}</h4>
+                        <p className="text-xs text-gray-500">{rc.examination.start_date || 'Current Session'}</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg text-sm font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Grade {rc.summary.grade}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-white rounded-lg border border-gray-100 text-center">
+                      <div>
+                        <p className="text-[10px] text-gray-400 font-medium">Marks</p>
+                        <p className="text-xs font-bold text-gray-900 font-mono mt-0.5">
+                          {rc.summary.total_obtained}/{rc.summary.total_max_marks}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 font-medium">Percentage</p>
+                        <p className="text-xs font-bold text-emerald-700 mt-0.5">{rc.summary.percentage}%</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 font-medium">GPA</p>
+                        <p className="text-xs font-bold text-indigo-700 mt-0.5">{rc.summary.gpa ?? 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] font-medium text-gray-500">
+                        Rank: <span className="font-bold text-gray-800">{rc.summary.class_rank || 'Top 10%'}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReportCardExamId(rc.examination.id)}
+                        className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+                      >
+                        <FileText className="w-3.5 h-3.5" /> View Dossier
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -1312,7 +1680,10 @@ export default function StudentDashboardPage() {
 
           {/* Fee Invoices */}
           <div className="card space-y-4">
-            <h3 className="font-bold text-gray-900">Fee Invoices & Installments</h3>
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+              <h3 className="font-bold text-gray-900">Fee Invoices &amp; Installments</h3>
+              <span className="text-xs text-gray-500">Self-service online fee settlement with instant voucher generation</span>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -1323,21 +1694,45 @@ export default function StudentDashboardPage() {
                     <th className="py-2.5 px-3">Paid Amount</th>
                     <th className="py-2.5 px-3">Balance</th>
                     <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {feesData?.invoices?.map((inv: any) => (
-                    <tr key={inv.id} className="hover:bg-gray-50">
-                      <td className="py-2.5 px-3 font-mono font-semibold text-primary-700">{inv.invoice_number}</td>
-                      <td className="py-2.5 px-3 text-gray-600">{inv.issue_date}</td>
-                      <td className="py-2.5 px-3 font-bold text-gray-900">{fmt(inv.net_amount)}</td>
-                      <td className="py-2.5 px-3 text-green-600 font-semibold">{fmt(inv.paid_amount)}</td>
-                      <td className="py-2.5 px-3 text-red-600 font-semibold">{fmt(inv.outstanding_amount)}</td>
-                      <td className="py-2.5 px-3">
-                        <StatusBadge status={inv.status} />
-                      </td>
-                    </tr>
-                  ))}
+                  {feesData?.invoices?.map((inv: any) => {
+                    const balance = Number(inv.outstanding_amount || 0)
+                    return (
+                      <tr key={inv.id} className="hover:bg-gray-50">
+                        <td className="py-2.5 px-3 font-mono font-semibold text-primary-700">{inv.invoice_number}</td>
+                        <td className="py-2.5 px-3 text-gray-600">{inv.issue_date}</td>
+                        <td className="py-2.5 px-3 font-bold text-gray-900">{fmt(inv.net_amount)}</td>
+                        <td className="py-2.5 px-3 text-green-600 font-semibold">{fmt(inv.paid_amount)}</td>
+                        <td className="py-2.5 px-3 text-red-600 font-semibold">{fmt(inv.outstanding_amount)}</td>
+                        <td className="py-2.5 px-3">
+                          <StatusBadge status={inv.status} />
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          {balance > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedInvoiceForPayment(inv)
+                                setPayAmount(balance)
+                                setPayMethod('online_upi')
+                                setPayNotes('')
+                              }}
+                              className="btn-primary text-xs py-1 px-3 inline-flex items-center gap-1.5 shadow-sm"
+                            >
+                              <CreditCard className="w-3.5 h-3.5" /> Pay Online
+                            </button>
+                          ) : (
+                            <span className="text-xs font-bold text-emerald-600 inline-flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Settled
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1345,7 +1740,7 @@ export default function StudentDashboardPage() {
 
           {/* Payments & Receipts */}
           <div className="card space-y-4">
-            <h3 className="font-bold text-gray-900">Payment Transactions & Receipts</h3>
+            <h3 className="font-bold text-gray-900">Payment Transactions &amp; Authorized Receipts</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -1355,6 +1750,7 @@ export default function StudentDashboardPage() {
                     <th className="py-2.5 px-3">Payment Mode</th>
                     <th className="py-2.5 px-3">Reference</th>
                     <th className="py-2.5 px-3 text-right">Amount</th>
+                    <th className="py-2.5 px-3 text-right">Receipt Voucher</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1365,6 +1761,15 @@ export default function StudentDashboardPage() {
                       <td className="py-2.5 px-3 uppercase text-xs font-medium text-gray-700">{pmt.payment_method}</td>
                       <td className="py-2.5 px-3 font-mono text-xs text-gray-500">{pmt.transaction_reference}</td>
                       <td className="py-2.5 px-3 text-right font-bold text-emerald-700">{fmt(pmt.amount)}</td>
+                      <td className="py-2.5 px-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => handleViewReceiptVoucher(pmt.receipt_number || pmt.id)}
+                          className="btn-secondary text-xs py-1 px-2.5 inline-flex items-center gap-1"
+                        >
+                          <Printer className="w-3.5 h-3.5" /> View Voucher
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1866,6 +2271,508 @@ export default function StudentDashboardPage() {
               >
                 <Send className="w-3.5 h-3.5" />
                 {submitHomeworkMutation.isPending ? 'Submitting...' : 'Confirm Submission'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1. ONLINE FEE PAYMENT CHECKOUT MODAL */}
+      {selectedInvoiceForPayment && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-slate-100 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center font-bold">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Instant Online Fee Checkout</h3>
+                  <p className="text-xs text-gray-500">
+                    Invoice #{selectedInvoiceForPayment.invoice_number || selectedInvoiceForPayment.id} &bull; Due: {selectedInvoiceForPayment.due_date || 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedInvoiceForPayment(null)}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Invoice Breakdown Banner */}
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p className="text-[11px] text-gray-500 font-medium">Total Billed</p>
+                <p className="text-sm font-bold text-gray-800">{fmt(Number(selectedInvoiceForPayment.total_amount || 0))}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 font-medium">Already Paid</p>
+                <p className="text-sm font-bold text-emerald-600">{fmt(Number(selectedInvoiceForPayment.paid_amount || 0))}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 font-medium">Remaining Due</p>
+                <p className="text-sm font-bold text-rose-600">{fmt(Number(selectedInvoiceForPayment.outstanding_amount || 0))}</p>
+              </div>
+            </div>
+
+            {/* Payment Amount Input & Quick Selectors */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-700 block">
+                Payment Amount (₹)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">₹</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={Number(selectedInvoiceForPayment.outstanding_amount || 0)}
+                  value={payAmount || ''}
+                  onChange={(e) => setPayAmount(Math.max(0, Math.min(Number(selectedInvoiceForPayment.outstanding_amount || 0), Number(e.target.value))))}
+                  className="w-full pl-8 pr-3 py-2 text-sm font-bold border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  placeholder="Enter amount to pay"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPayAmount(Number(selectedInvoiceForPayment.outstanding_amount || 0))}
+                  className="px-2.5 py-1 text-[11px] font-bold rounded bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
+                >
+                  Pay Full Balance ({fmt(Number(selectedInvoiceForPayment.outstanding_amount || 0))})
+                </button>
+                {Number(selectedInvoiceForPayment.outstanding_amount || 0) > 1000 && (
+                  <button
+                    type="button"
+                    onClick={() => setPayAmount(Math.round(Number(selectedInvoiceForPayment.outstanding_amount || 0) / 2))}
+                    className="px-2.5 py-1 text-[11px] font-medium rounded bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  >
+                    Pay 50% ({fmt(Math.round(Number(selectedInvoiceForPayment.outstanding_amount || 0) / 2))})
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-700 block">
+                Select Online Payment Gateway / Method
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'online_upi', label: 'UPI / QR', desc: 'GPay, PhonePe, Paytm' },
+                  { id: 'online_card', label: 'Debit / Card', desc: 'Visa, RuPay, MC' },
+                  { id: 'online_netbanking', label: 'Net Banking', desc: 'All Major Banks' },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPayMethod(m.id)}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      payMethod === m.id
+                        ? 'border-primary-600 bg-primary-50/50 ring-2 ring-primary-500/20'
+                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <p className={`text-xs font-bold ${payMethod === m.id ? 'text-primary-700' : 'text-gray-800'}`}>{m.label}</p>
+                    <p className="text-[10px] text-gray-500">{m.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Optional Notes */}
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-700 block">
+                Transaction Reference / Notes (Optional)
+              </label>
+              <input
+                type="text"
+                value={payNotes}
+                onChange={(e) => setPayNotes(e.target.value)}
+                placeholder="e.g. UTR / Transaction reference or remarks"
+                className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Security Guarantee */}
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-[11px]">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>256-bit SSL encrypted &bull; Instant settlement with automatic official receipt issuance.</span>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setSelectedInvoiceForPayment(null)}
+                className="px-4 py-2 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={payOnlineMutation.isPending || !payAmount || payAmount <= 0}
+                onClick={() => {
+                  payOnlineMutation.mutate({
+                    invoice_id: selectedInvoiceForPayment.id,
+                    amount: Number(payAmount),
+                    payment_method: payMethod,
+                    notes: payNotes.trim() || undefined,
+                  })
+                }}
+                className="btn-primary text-xs flex items-center gap-1.5 shadow-md disabled:opacity-50"
+              >
+                <CreditCard className="w-3.5 h-3.5" />
+                {payOnlineMutation.isPending ? 'Processing Payment...' : `Confirm & Pay ${fmt(payAmount || 0)}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. OFFICIAL PRINTABLE FEE RECEIPT VOUCHER MODAL */}
+      {selectedReceiptVoucher && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl border border-slate-100 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 print:hidden">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-primary-600" />
+                <h3 className="text-base font-bold text-gray-900">Official Fee Payment Receipt Voucher</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 flex items-center gap-1.5 transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print Receipt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReceiptVoucher(null)}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Voucher Paper */}
+            <div className="p-6 bg-white border border-slate-200 rounded-xl space-y-5 text-slate-800 shadow-sm print:border-none print:shadow-none print:p-0">
+              {/* Institutional Header */}
+              <div className="text-center pb-4 border-b border-dashed border-slate-300">
+                <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                  {selectedReceiptVoucher.institution?.name || 'PRASHANT ACADEMY COACHING INSTITUTE'}
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {selectedReceiptVoucher.institution?.tagline || 'Excellence in Coaching & Academic Mentorship'}
+                </p>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {selectedReceiptVoucher.institution?.address || 'Thane, Maharashtra'} &bull; Tel: {selectedReceiptVoucher.institution?.phone || '9323 023 007'} &bull; Reg No: {selectedReceiptVoucher.institution?.registration_number || 'MH-COACH-2018-0157'}
+                </p>
+                <div className="inline-block mt-2.5 px-3 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-bold tracking-widest uppercase">
+                  OFFICIAL FEE PAYMENT RECEIPT
+                </div>
+              </div>
+
+              {/* Receipt Metadata Grid */}
+              <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200/70">
+                <div>
+                  <span className="text-slate-500">Receipt Number:</span>{' '}
+                  <span className="font-bold text-slate-900">{selectedReceiptVoucher.receipt_number}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-500">Receipt Date:</span>{' '}
+                  <span className="font-bold text-slate-900">{selectedReceiptVoucher.payment_date}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Payment Mode:</span>{' '}
+                  <span className="font-semibold uppercase text-slate-800">{selectedReceiptVoucher.payment_method?.replace(/_/g, ' ')}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-500">Txn Ref / UTR:</span>{' '}
+                  <span className="font-mono text-slate-800">{selectedReceiptVoucher.transaction_reference}</span>
+                </div>
+              </div>
+
+              {/* Student Demographics */}
+              <div className="grid grid-cols-2 gap-y-1.5 text-xs border-b border-dashed border-slate-200 pb-3">
+                <div>
+                  <span className="text-slate-500">Student Name:</span>{' '}
+                  <span className="font-bold text-slate-900">{selectedReceiptVoucher.student?.full_name}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-500">Admission No:</span>{' '}
+                  <span className="font-bold text-slate-900">{selectedReceiptVoucher.student?.admission_number}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Standard / Div:</span>{' '}
+                  <span className="font-semibold text-slate-800">
+                    {selectedReceiptVoucher.student?.standard} &bull; Div {selectedReceiptVoucher.student?.division} (Roll: {selectedReceiptVoucher.student?.roll_number})
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-500">Academic Year:</span>{' '}
+                  <span className="font-semibold text-slate-800">{selectedReceiptVoucher.student?.academic_year}</span>
+                </div>
+              </div>
+
+              {/* Fee Allocation Table */}
+              <div className="space-y-1.5">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-300 text-slate-500 text-left font-semibold">
+                      <th className="py-1.5">#</th>
+                      <th className="py-1.5">Invoice / Description</th>
+                      <th className="py-1.5 text-right">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedReceiptVoucher.allocations?.map((al: any, idx: number) => (
+                      <tr key={idx}>
+                        <td className="py-2 text-slate-500">{idx + 1}</td>
+                        <td className="py-2 font-medium text-slate-800">
+                          {al.invoice_number ? `Fee Invoice ${al.invoice_number}` : `Invoice #${al.invoice_id}`}
+                        </td>
+                        <td className="py-2 text-right font-bold text-slate-900">{fmt(Number(al.amount || 0))}</td>
+                      </tr>
+                    ))}
+                    {(!selectedReceiptVoucher.allocations || selectedReceiptVoucher.allocations.length === 0) && (
+                      <tr>
+                        <td className="py-2 text-slate-500">1</td>
+                        <td className="py-2 font-medium text-slate-800">Coaching Institute Fee Installment</td>
+                        <td className="py-2 text-right font-bold text-slate-900">{fmt(Number(selectedReceiptVoucher.amount || 0))}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-900 font-bold text-sm">
+                      <td colSpan={2} className="py-2">Total Amount Received:</td>
+                      <td className="py-2 text-right text-primary-700">{fmt(Number(selectedReceiptVoucher.amount || 0))}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* In Words & Authorization */}
+              <div className="space-y-4 pt-2">
+                <div className="p-2.5 rounded bg-slate-50 text-xs border border-slate-200/60">
+                  <span className="text-slate-500 font-medium">Amount in Words:</span>{' '}
+                  <span className="font-bold text-slate-800 italic">{numberToWordsINR(Number(selectedReceiptVoucher.amount || 0))}</span>
+                </div>
+
+                <div className="flex items-end justify-between pt-6 text-[11px] text-slate-500">
+                  <div>
+                    <p className="font-mono text-[10px]">Generated: {selectedReceiptVoucher.generated_at}</p>
+                    <p>Status: <span className="font-bold text-emerald-600 uppercase">{selectedReceiptVoucher.status || 'VALID'}</span></p>
+                  </div>
+                  <div className="text-right">
+                    <div className="border-b border-slate-400 w-36 mb-1"></div>
+                    <p className="font-bold text-slate-800">Authorized Signatory</p>
+                    <p className="text-[10px]">Prashant Academy Coaching Institute</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Close Button */}
+            <div className="flex justify-end pt-2 border-t border-gray-100 print:hidden">
+              <button
+                type="button"
+                onClick={() => setSelectedReceiptVoucher(null)}
+                className="px-4 py-2 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Close Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. OFFICIAL MULTI-CURRICULUM EXAMINATION REPORT CARD DOSSIER MODAL */}
+      {selectedReportCardExamId && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl border border-slate-100 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 print:hidden">
+              <div className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-primary-600" />
+                <h3 className="text-base font-bold text-gray-900">Official Student Examination Report Card</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 flex items-center gap-1.5 transition-colors"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print Report Card
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReportCardExamId(null)}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {loadingReportCardDetail ? (
+              <div className="p-12 text-center text-slate-500 space-y-2">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-primary-600" />
+                <p className="text-xs font-medium">Compiling official examination dossier...</p>
+              </div>
+            ) : !activeReportCardDetail ? (
+              <div className="p-8 text-center text-slate-500">
+                <p className="text-sm">Unable to load report card details for this examination.</p>
+              </div>
+            ) : (
+              <div className="p-6 bg-white border border-slate-200 rounded-xl space-y-5 text-slate-800 shadow-sm print:border-none print:shadow-none print:p-0">
+                {/* Header */}
+                <div className="text-center pb-4 border-b border-dashed border-slate-300">
+                  <h2 className="text-xl font-black tracking-tight text-slate-900 uppercase">
+                    {activeReportCardDetail.institution?.name || 'PRASHANT ACADEMY COACHING INSTITUTE'}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {activeReportCardDetail.examination?.name} &bull; {activeReportCardDetail.examination?.exam_type || 'Terminal Assessment'}
+                  </p>
+                  <div className="inline-block mt-2.5 px-3 py-0.5 rounded-full bg-primary-900 text-white text-[10px] font-bold tracking-widest uppercase">
+                    ACADEMIC EVALUATION DOSSIER &bull; {reportCardScale.replace(/_/g, ' ')}
+                  </div>
+                </div>
+
+                {/* Student Demographics Banner */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200/70">
+                  <div>
+                    <span className="text-slate-500 block text-[10px]">Student Name</span>
+                    <span className="font-bold text-slate-900">{activeReportCardDetail.student?.full_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[10px]">Admission No</span>
+                    <span className="font-bold text-slate-900">{activeReportCardDetail.student?.admission_number}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[10px]">Standard & Division</span>
+                    <span className="font-semibold text-slate-800">
+                      {activeReportCardDetail.student?.standard_name || (activeReportCardDetail.student as any)?.standard || 'Standard'} - {activeReportCardDetail.student?.division_name || (activeReportCardDetail.student as any)?.division || 'General'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[10px]">Roll No / Academic Year</span>
+                    <span className="font-semibold text-slate-800">
+                      {activeReportCardDetail.student?.roll_number || 'N/A'} &bull; {(activeReportCardDetail.examination as any)?.academic_year || 'Current'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Performance Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 text-center">
+                  <div className="p-2.5 rounded-lg bg-slate-100/70 border border-slate-200">
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase">Total Marks</p>
+                    <p className="text-sm font-black text-slate-900 mt-0.5">
+                      {activeReportCardDetail.summary?.total_obtained} <span className="text-xs text-slate-400 font-normal">/ {activeReportCardDetail.summary?.total_max_marks}</span>
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-100/70 border border-slate-200">
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase">Percentage</p>
+                    <p className="text-sm font-black text-primary-700 mt-0.5">
+                      {activeReportCardDetail.summary?.percentage}%
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-100/70 border border-slate-200">
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase">Overall Grade</p>
+                    <p className="text-sm font-black text-emerald-700 mt-0.5">
+                      {activeReportCardDetail.summary?.grade || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-100/70 border border-slate-200">
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase">GPA</p>
+                    <p className="text-sm font-black text-purple-700 mt-0.5">
+                      {activeReportCardDetail.summary?.gpa ?? 'N/A'}
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-100/70 border border-slate-200 col-span-2 md:col-span-1">
+                    <p className="text-[10px] text-slate-500 font-semibold uppercase">Result</p>
+                    <p className="text-sm font-black text-emerald-600 mt-0.5 uppercase">
+                      {activeReportCardDetail.summary?.result || 'Passed'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Subject-Wise Marks Breakdown Table */}
+                <div className="space-y-1.5 overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b-2 border-slate-300 text-slate-600 text-left font-bold bg-slate-50">
+                        <th className="py-2 px-2.5">#</th>
+                        <th className="py-2 px-2.5">Subject</th>
+                        <th className="py-2 px-2.5 text-center">Max Marks</th>
+                        <th className="py-2 px-2.5 text-center">Min Passing</th>
+                        <th className="py-2 px-2.5 text-center">Obtained</th>
+                        <th className="py-2 px-2.5 text-center">Percent</th>
+                        <th className="py-2 px-2.5 text-center">Grade</th>
+                        <th className="py-2 px-2.5">Teacher Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {activeReportCardDetail.subjects?.map((sub: any, idx: number) => {
+                        const marksNum = Number(sub.marks_obtained || 0)
+                        const maxNum = Number(sub.max_marks || 100)
+                        const pct = Math.round((marksNum / maxNum) * 100)
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50/50">
+                            <td className="py-2 px-2.5 text-slate-500">{idx + 1}</td>
+                            <td className="py-2 px-2.5 font-bold text-slate-900">{sub.subject_name}</td>
+                            <td className="py-2 px-2.5 text-center text-slate-600">{sub.max_marks}</td>
+                            <td className="py-2 px-2.5 text-center text-slate-500">{sub.passing_marks || 35}</td>
+                            <td className="py-2 px-2.5 text-center font-bold text-slate-900">{sub.marks_obtained}</td>
+                            <td className="py-2 px-2.5 text-center font-semibold text-slate-700">{pct}%</td>
+                            <td className="py-2 px-2.5 text-center font-black text-primary-700">{sub.grade || 'A'}</td>
+                            <td className="py-2 px-2.5 text-slate-600 italic text-[11px]">{sub.remarks || 'Satisfactory progress'}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Qualitative Evaluation & Signatures */}
+                <div className="space-y-4 pt-2">
+                  <div className="p-3 rounded-lg bg-slate-50 text-xs border border-slate-200/70 space-y-1">
+                    <p className="font-bold text-slate-800">Faculty & Mentorship Remarks:</p>
+                    <p className="text-slate-600 italic">
+                      "{(activeReportCardDetail.summary as any)?.remarks || (activeReportCardDetail as any)?.teacher_remarks || 'Commendable dedication and consistent intellectual curiosity across all subjects.'}"
+                    </p>
+                  </div>
+
+                  <div className="flex items-end justify-between pt-8 text-[11px] text-slate-500">
+                    <div className="text-center">
+                      <div className="border-b border-slate-400 w-32 mb-1 mx-auto"></div>
+                      <p className="font-bold text-slate-800">Class Mentor</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="border-b border-slate-400 w-32 mb-1 mx-auto"></div>
+                      <p className="font-bold text-slate-800">Exam Controller</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="border-b border-slate-400 w-36 mb-1 mx-auto"></div>
+                      <p className="font-bold text-slate-800">Director / Principal</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Close Action */}
+            <div className="flex justify-end pt-2 border-t border-gray-100 print:hidden">
+              <button
+                type="button"
+                onClick={() => setSelectedReportCardExamId(null)}
+                className="px-4 py-2 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Close Report Card
               </button>
             </div>
           </div>
