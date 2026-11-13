@@ -46,6 +46,7 @@ import {
   SlidersHorizontal,
   Focus,
   Monitor,
+  Cpu,
   Wifi,
   WifiOff,
   ExternalLink,
@@ -63,6 +64,8 @@ import { EditModeBar, DeleteConfirmationModal, ContextualHelpButton } from '../c
 import Modal from '../components/Modal'
 import EduBoardCanvas, { parseSceneJson } from '../components/eduboard/EduBoardCanvas'
 import EduBoardPopoutMenu from '../components/eduboard/EduBoardPopoutMenu'
+import EduBoardDeviceDiagnosticsModal from '../components/eduboard/EduBoardDeviceDiagnosticsModal'
+import { useDeviceCapabilities } from '../utils/deviceCapabilities'
 import {
   clearRecoverySnapshot,
   loadRecoverySnapshot,
@@ -131,6 +134,8 @@ export default function EduBoardWorkspace() {
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false)
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false)
   const [showPrefsModal, setShowPrefsModal] = useState<boolean>(false)
+  const [showDeviceDiagnosticsModal, setShowDeviceDiagnosticsModal] = useState<boolean>(false)
+  const deviceProfile = useDeviceCapabilities()
   const [uploadingDoc, setUploadingDoc] = useState<boolean>(false)
   const [actionBanner, setActionBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [blockedPopoutFallback, setBlockedPopoutFallback] = useState<{ url: string; label: string } | null>(null)
@@ -1098,6 +1103,15 @@ export default function EduBoardWorkspace() {
             <SlidersHorizontal className="w-3.5 h-3.5" /> Display Prefs
           </button>
 
+          <button
+            type="button"
+            onClick={() => setShowDeviceDiagnosticsModal(true)}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            title="Universal Device & Browser Diagnostics (Screen, Touch, Stylus, Storage)"
+          >
+            <Cpu className="w-3.5 h-3.5 text-primary-600" /> Device Info
+          </button>
+
           {isAdmin && (
             <button
               type="button"
@@ -2022,6 +2036,15 @@ export default function EduBoardWorkspace() {
           </div>
         </div>
       </Modal>
+
+      {/* ── Universal Device Capability Diagnostics Modal ── */}
+      <EduBoardDeviceDiagnosticsModal
+        isOpen={showDeviceDiagnosticsModal}
+        onClose={() => setShowDeviceDiagnosticsModal(false)}
+        profile={deviceProfile}
+        wsState={wsState}
+        hasUnsavedChanges={isDirty}
+      />
     </div>
   )
 }
