@@ -78,7 +78,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.13-REV-174-v1.93.3-469D51A',
+  buildNumber: '2026.11.13-REV-175-v1.94.0-AE75B52',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-13',
@@ -134,9 +134,9 @@ export const BRANDING_CONFIG = {
     accent: '#0284c7',        // Cyan-600
     gold: '#f59e0b',          // Amber-500
     success: '#10b981',       // Emerald-500
-    prathamNavy: '#161C3B',   // PrathamOne Official Deep Navy (Official Artwork Spec)
-    prathamOrange: '#F47B20', // PrathamOne Official Vibrant Orange (Official Artwork Spec)
-    prathamGold: '#F89D2B',   // PrathamOne Official Gold / Amber Accent
+    prathamNavy: '#000064',   // PrathamOne Official Deep Navy (New Logo Specification)
+    prathamOrange: '#ff7f2a', // PrathamOne Official Vibrant Orange (New Logo Specification)
+    prathamGold: '#ffaa44',   // PrathamOne Official Gold / Amber Accent
   },
   assets: {
     // Tenant Coaching Academy Logo (Default Prashant Academy Crest)
@@ -149,7 +149,12 @@ export const BRANDING_CONFIG = {
     faviconIcoUrl: '/favicon.ico' as string,
     icon192Url: '/icons/icon-192x192.png' as string,
     icon512Url: '/icons/icon-512x512.png' as string,
-    // Official Circular Seal (Elephant 'P' Seal)
+    // Software Platform Direct Logo & Icon (frontend/public/logo)
+    softwareLogoSvgUrl: '/logo/logoone.svg' as string,
+    softwareLogoPngUrl: '/logo/logoone1080.png' as string,
+    softwareIconSvgUrl: '/logo/logo_rect2-7-9-1.svg' as string,
+    softwareIconPngUrl: '/logo/logo_rect2-7-9-1.png' as string,
+    // Official Circular Seal (Emblem Seal)
     sealMarkUrl: '/media/logo/prathamone-eduos-seal.png' as string,
     sealMarkTransparentUrl: '/media/logo/prathamone-eduos-seal-transparent.png' as string,
     // Parent Brand Master Logo
@@ -164,7 +169,7 @@ export const BRANDING_CONFIG = {
     horizontalLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
     horizontalLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
     horizontalLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
-    // Official Symbol Mark (Elephant 'P' Emblem)
+    // Official Symbol Mark (New Square Emblem)
     symbolMarkUrl: '/media/logo/prathamone-symbol-icon.png' as string,
     symbolMarkTransparentUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
     symbolMarkDarkUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,

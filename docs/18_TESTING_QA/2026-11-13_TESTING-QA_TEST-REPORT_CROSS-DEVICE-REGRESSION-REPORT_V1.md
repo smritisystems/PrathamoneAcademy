@@ -138,3 +138,4 @@ PrathamOne EduBoard successfully fulfills the mandate of a **hardware-independen
 1. It eliminates vendor lock-in and proprietary SDK dependencies.
 2. It delivers rock-solid stability, zero-crop PDF publishing, and real-time synchronization across displays.
 3. It guarantees complete architectural governance, Single Source of Truth, and strict View-First security.
+

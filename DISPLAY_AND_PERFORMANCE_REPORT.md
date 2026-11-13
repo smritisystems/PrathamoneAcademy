@@ -115,3 +115,4 @@ EduBoard's display adaptation and performance architecture delivers:
 - Zero aspect ratio distortion or edge cut-offs.
 - Rock-steady 60 FPS drawing frame rates.
 - Certified production-grade rendering performance.
+

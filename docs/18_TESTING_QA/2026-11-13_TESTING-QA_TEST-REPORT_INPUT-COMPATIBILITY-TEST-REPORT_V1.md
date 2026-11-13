@@ -159,3 +159,4 @@ EduBoard's Universal Input Engine satisfies all requirements of the Universal In
 - Graceful degradation on basic hardware.
 - Software palm rejection delivers a reliable teaching experience on affordable IR touchscreens.
 - Passed 100% of tested input scenarios.
+

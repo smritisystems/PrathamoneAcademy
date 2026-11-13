@@ -233,3 +233,4 @@ EduBoard adheres strictly to **RULE 001 — Single Source of Truth**:
 | **Graphics Tablets** | Wacom / Huion USB HID Digitizers | Architectural Standard Pass |
 
 *(Refer to `DEVICE_COMPATIBILITY_MATRIX.md` for full test logs and observations.)*
+

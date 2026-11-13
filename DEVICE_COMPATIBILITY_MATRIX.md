@@ -75,3 +75,4 @@ For each upcoming physical test on an untested compatible target, QA engineers m
 8. **PDF Lecture Cycle:** Upload a 20-page lecture PDF. Annotate slides 1, 5, and 10. Click **Publish & Export PDF**. Verify the downloaded PDF contains all annotations auto-framed without cropping.
 9. **Offline Crash Resilience:** Disconnect the network cable or disable Wi-Fi. Add 3 additional drawings. Close the browser tab. Reopen the browser and verify the local draft recovery banner restores all 3 drawings.
 10. **Result Recording:** Log results in this matrix, update status from `NOT TESTED` to `PASS` or `FAIL`, record exact firmware/browser build numbers, and commit to documentation registry.
+

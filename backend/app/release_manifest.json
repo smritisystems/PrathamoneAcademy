@@ -1,15 +1,15 @@
 {
   "product": "PrathamOne EduOS",
   "edition": "Coaching Institute Edition",
-  "version": "1.93.3",
-  "build_number": "2026.11.13-REV-174-v1.93.3-469D51A",
+  "version": "1.94.0",
+  "build_number": "2026.11.13-REV-175-v1.94.0-AE75B52",
   "build_date": "2026-11-13",
-  "latest_hash": "469D51A",
-  "revision_count": 174,
-  "feature_count": 93,
+  "latest_hash": "AE75B52",
+  "revision_count": 175,
+  "feature_count": 94,
   "patch_count": 81,
   "major_count": 0,
-  "generated_at": "2026-11-13T12:59:24.596321+00:00",
+  "generated_at": "2026-11-13T14:51:37.507518+00:00",
   "affected_modules": [
     "academic",
     "auth",
@@ -36,9 +36,12 @@
     "COMMUNICATION_SUBMENU_COMPLETION_MATRIX.md",
     "COURSES_SUBMENU_COMPLETION_MATRIX.md",
     "CRM_SUBMENU_COMPLETION_MATRIX.md",
+    "CROSS_DEVICE_REGRESSION_REPORT.md",
     "DASHBOARD_RECONCILIATION_REPORT.md",
     "DATABASE_SCHEMA_AUDIT.md",
     "DATA_MIGRATION_AND_INTEGRITY_REPORT.md",
+    "DEVICE_COMPATIBILITY_MATRIX.md",
+    "DISPLAY_AND_PERFORMANCE_REPORT.md",
     "EXAMINATIONS_SUBMENU_COMPLETION_MATRIX.md",
     "FEES_SUBMENU_COMPLETION_MATRIX.md",
     "FINANCIAL_INTEGRITY_AUDIT.md",
@@ -57,6 +60,7 @@
     "GLOBAL_DUPLICATE_TABLE_AUDIT.md",
     "GLOBAL_FIELD_DEDUPLICATION_AUDIT.md",
     "GLOBAL_HARDCODED_BRANDING_AUDIT.md",
+    "INPUT_COMPATIBILITY_TEST_REPORT.md",
     "INTEGRATION_INFRASTRUCTURE_AUDIT.md",
     "MODULE_INVENTORY.md",
     "PRINT_EXPORT_AUDIT.md",
@@ -69,6 +73,7 @@
     "STUDENT_SUBMENU_COMPLETION_MATRIX.md",
     "SUBJECT_MASTER_CANONICALIZATION_REPORT.md",
     "TEACHER_SUBMENU_COMPLETION_MATRIX.md",
+    "UNIVERSAL_SMART_BOARD_ARCHITECTURE.md",
     "add_39_students.ps1",
     "add_39_students.sh",
     "backend/Dockerfile",
@@ -118,16 +123,12 @@
     "backend/app/api/v1/endpoints/forms.py",
     "backend/app/api/v1/endpoints/governance.py",
     "backend/app/api/v1/endpoints/help.py",
-    "backend/app/api/v1/endpoints/homework.py",
-    "backend/app/api/v1/endpoints/housekeeping.py",
-    "backend/app/api/v1/endpoints/import_register.py",
-    "backend/app/api/v1/endpoints/institutions.py",
-    "backend/app/api/v1/endpoints/leads.py",
-    "backend/app/api/v1/endpoints/navigation.py"
+    "backend/app/api/v1/endpoints/homework.py"
   ],
   "structured_notes": {
     "security": [],
     "added": [
+      "[ae75b52] establish universal hardware-independent architecture, device capability diagnostics, and compatibility registry",
       "[1dfbc97] complete student & parent self-service portal implementation (Option 2)",
       "[a4d67bc] WhatsApp and SMS automation triggers for fee receipts, homework, and exam schedules",
       "[8142b8c] implement timetable and scheduling studio with weekly matrix grid, conflict prevention, and printable docket",
@@ -310,8 +311,17 @@
     "database": [],
     "deprecated": []
   },
-  "markdown_notes": "# Release Notes \u2014 PrathamOne EduOS v1.93.3\n**Release Title**: Release v1.93.3 \u2014 Academic & Financial Governance Baseline  \n**Release Date**: 2026-11-13  \n**Build Identifier**: `2026.11.13-REV-174-v1.93.3-469D51A`  \n**Target Environment**: `PRODUCTION`  \n\n### \u2728 Added Features & Capabilities\n- [1dfbc97] complete student & parent self-service portal implementation (Option 2)\n- [a4d67bc] WhatsApp and SMS automation triggers for fee receipts, homework, and exam schedules\n- [8142b8c] implement timetable and scheduling studio with weekly matrix grid, conflict prevention, and printable docket\n- [cc74d74] add multi-curriculum grading scales, batch report card dossier, and cumulative term tracking\n- [1536d82] add v1.88.0 full regression QA report and final selected PDF assets\n- [6a4a34f] add EduBoard display/pop-out, A5/A4 receipt print & PDF parity, /fees & CSP fixes, and Help & About updates\n- [0795f36] add backend and frontend implementation for eduboard and homework enhancements\n- [eb97155] harden Help & About Centre security, contextual coverage, and publish approved third-party acknowledgements\n- [4838251] implement comprehensive help and about centre module with documentation governance and support requests\n- [44a3639] extend module with log archival cleanup, storage/orphan cleanup, and health alert notifications\n- [df76883] add auto-zipped POeduOS_Date_Time.edu package format and isolate prashant_academy_drill sandbox\n- [c267718] add Housekeeping module with DB backup, restore drill, VACUUM & automated CLI scheduler\n- [f560eb5] implement centralized concessions, fee waivers and scholarship financial governance\n- [adae033] implement centralized concessions, waivers, scholarships, 20 reports, and SSOT ledger reconciliation\n- [774a06d] add select-existing, duplicate-recommendation, and create-new UX in AcademicWorkspace modal and consolidate unscoped subjects endpoint\n\n### \ud83d\udd04 Changed & Architectural Enhancements\n- [4cd8646] sync formatting in Examinations.tsx and reindex docs\n- [191dd81] synchronize v1.89.0 release manifest and build metadata\n- [0b45780] update user manuals to v1.88.2 (REV-161)\n- [ef07f80] wire auto_version --hook into .githooks/pre-commit\n- [557d0fd] synchronize v1.88.2 release manifest and build metadata\n- [0769980] regenerate v1.88.0 user manuals and publish full regression QA report\n- [6019ad7] synchronize v1.88.0 release manifest and build metadata\n- [390aa40] add feature report for housekeeping and automated database backup module\n- [bd845f2] verify pending/rejected/full concession/multibranch parity and complete 13-section Phase 11 delivery report\n- [602055e] add subject master deduplication and data consolidation audit report\n- [2e902ca] enhance update.ps1 with git auto-stash and dynamic release baseline sync\n- [413fb79] Publish Release Notes v1.76.0, CHANGELOG, and align version manifests\n- [4759020] align repository version sources to v1.73.0 baseline\n- [d28473b] add backend test suite for concession scheme settings and update documentation index\n- [cabcf35] add visual capture script for live concessions and khushi reconciliation\n\n### \ud83d\udc1b Fixed & Bug Remediations\n- [469d51a] prevent canvas shrinking feedback loop, center whiteboard, clip drawings, and auto-frame PDF export without cropping\n- [6459f16] deduplicate subjects, enforce is_active filter and cascading batch selector (Rule 011)\n- [8bdaf1f] add auto pre-update database snapshot and auto SECRET_KEY generation\n- [27c6faa] align admin Edit Mode authorization with backend RBAC and record live E2E verification\n- [6d5a839] resolve fresh install 500 error, harden migrations, update roster seed and domain to example.com\n- [f170c1a] resolve configuration load failure with decoupled RBAC audit fetching and diagnostic recovery\n- [f5e6c3d] eliminate asyncpg postgres syntax error in staff generated documents seeding\n- [4477e1f] resolve docker build failure and harmonize student academic register types\n- [5b1aa26] reconcile concession ledger transparency and add regression test suite\n- [3596b2f] update concession modal to 'Submit for Approval' with admin fast-track and auto-apply\n- [b39b9c7] reconcile Nethan receipt name spelling and legacy Excel typos across historical receipts\n- [9601afb] refine precision Indian Rupee vector glyph and currency typography across print preview, printout, and downloaded PDF\n- [e2a4220] isolate student id card printing from modal backdrop and page background\n- [8f15598] route View All Payments to Payments Ledger instead of Fee Collection\n- [fa20cbb] remove Guardian/Phone row from receipt and format symmetrical student metadata\n\n### \ud83d\udcca Change Metrics & Audit Attribution\n- **Total Commits Included**: 174\n- **Files Modified**: 1097\n- **Affected System Modules**: academic, auth, communication, database, fees, frontend_ui, payments, reports, settings, staff, students\n- **Verification**: Compliant with AITDL Enterprise Release Standards & DPDP Act 2023.",
+  "markdown_notes": "# Release Notes \u2014 PrathamOne EduOS v1.94.0\n**Release Title**: Release v1.94.0 \u2014 Academic & Financial Governance Baseline  \n**Release Date**: 2026-11-13  \n**Build Identifier**: `2026.11.13-REV-175-v1.94.0-AE75B52`  \n**Target Environment**: `PRODUCTION`  \n\n### \u2728 Added Features & Capabilities\n- [ae75b52] establish universal hardware-independent architecture, device capability diagnostics, and compatibility registry\n- [1dfbc97] complete student & parent self-service portal implementation (Option 2)\n- [a4d67bc] WhatsApp and SMS automation triggers for fee receipts, homework, and exam schedules\n- [8142b8c] implement timetable and scheduling studio with weekly matrix grid, conflict prevention, and printable docket\n- [cc74d74] add multi-curriculum grading scales, batch report card dossier, and cumulative term tracking\n- [1536d82] add v1.88.0 full regression QA report and final selected PDF assets\n- [6a4a34f] add EduBoard display/pop-out, A5/A4 receipt print & PDF parity, /fees & CSP fixes, and Help & About updates\n- [0795f36] add backend and frontend implementation for eduboard and homework enhancements\n- [eb97155] harden Help & About Centre security, contextual coverage, and publish approved third-party acknowledgements\n- [4838251] implement comprehensive help and about centre module with documentation governance and support requests\n- [44a3639] extend module with log archival cleanup, storage/orphan cleanup, and health alert notifications\n- [df76883] add auto-zipped POeduOS_Date_Time.edu package format and isolate prashant_academy_drill sandbox\n- [c267718] add Housekeeping module with DB backup, restore drill, VACUUM & automated CLI scheduler\n- [f560eb5] implement centralized concessions, fee waivers and scholarship financial governance\n- [adae033] implement centralized concessions, waivers, scholarships, 20 reports, and SSOT ledger reconciliation\n\n### \ud83d\udd04 Changed & Architectural Enhancements\n- [4cd8646] sync formatting in Examinations.tsx and reindex docs\n- [191dd81] synchronize v1.89.0 release manifest and build metadata\n- [0b45780] update user manuals to v1.88.2 (REV-161)\n- [ef07f80] wire auto_version --hook into .githooks/pre-commit\n- [557d0fd] synchronize v1.88.2 release manifest and build metadata\n- [0769980] regenerate v1.88.0 user manuals and publish full regression QA report\n- [6019ad7] synchronize v1.88.0 release manifest and build metadata\n- [390aa40] add feature report for housekeeping and automated database backup module\n- [bd845f2] verify pending/rejected/full concession/multibranch parity and complete 13-section Phase 11 delivery report\n- [602055e] add subject master deduplication and data consolidation audit report\n- [2e902ca] enhance update.ps1 with git auto-stash and dynamic release baseline sync\n- [413fb79] Publish Release Notes v1.76.0, CHANGELOG, and align version manifests\n- [4759020] align repository version sources to v1.73.0 baseline\n- [d28473b] add backend test suite for concession scheme settings and update documentation index\n- [cabcf35] add visual capture script for live concessions and khushi reconciliation\n\n### \ud83d\udc1b Fixed & Bug Remediations\n- [469d51a] prevent canvas shrinking feedback loop, center whiteboard, clip drawings, and auto-frame PDF export without cropping\n- [6459f16] deduplicate subjects, enforce is_active filter and cascading batch selector (Rule 011)\n- [8bdaf1f] add auto pre-update database snapshot and auto SECRET_KEY generation\n- [27c6faa] align admin Edit Mode authorization with backend RBAC and record live E2E verification\n- [6d5a839] resolve fresh install 500 error, harden migrations, update roster seed and domain to example.com\n- [f170c1a] resolve configuration load failure with decoupled RBAC audit fetching and diagnostic recovery\n- [f5e6c3d] eliminate asyncpg postgres syntax error in staff generated documents seeding\n- [4477e1f] resolve docker build failure and harmonize student academic register types\n- [5b1aa26] reconcile concession ledger transparency and add regression test suite\n- [3596b2f] update concession modal to 'Submit for Approval' with admin fast-track and auto-apply\n- [b39b9c7] reconcile Nethan receipt name spelling and legacy Excel typos across historical receipts\n- [9601afb] refine precision Indian Rupee vector glyph and currency typography across print preview, printout, and downloaded PDF\n- [e2a4220] isolate student id card printing from modal backdrop and page background\n- [8f15598] route View All Payments to Payments Ledger instead of Fee Collection\n- [fa20cbb] remove Guardian/Phone row from receipt and format symmetrical student metadata\n\n### \ud83d\udcca Change Metrics & Audit Attribution\n- **Total Commits Included**: 175\n- **Files Modified**: 1110\n- **Affected System Modules**: academic, auth, communication, database, fees, frontend_ui, payments, reports, settings, staff, students\n- **Verification**: Compliant with AITDL Enterprise Release Standards & DPDP Act 2023.",
   "all_commits": [
+    {
+      "hash": "ae75b52e7a5fc39808ae3e78518b0393fc609bff",
+      "short_hash": "ae75b52",
+      "author": "Jawahar R. Mallah",
+      "date": "2026-11-13T18:29:24+05:30",
+      "subject": "establish universal hardware-independent architecture, device capability diagnostics, and compatibility registry",
+      "category": "added",
+      "is_breaking": false
+    },
     {
       "hash": "469d51a94707fdb740db852949be0949e84bd31a",
       "short_hash": "469d51a",
