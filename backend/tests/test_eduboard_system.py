@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-12
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
 #  * @description Comprehensive backend test suite for PrathamOne EduBoard covering RBAC, teacher scope, PRODUCTION/TRAINING isolation, optimistic concurrency 409 guards, PDF attachment/export via PyMuPDF, CommunicationLog & AuditLog, student historical enrollment continuity, and analytics.
 #  */
@@ -766,3 +766,53 @@ async def test_eduboard_publish_student_historical_access_and_audit(
     assert rep.status_code == 200
     assert rep.json()["total_boards"] >= 1
     assert rep.json()["published_boards"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_eduboard_context_excludes_inactive_subjects_and_enriches_canonical(
+    client,
+    db: AsyncSession,
+    test_institution: Institution,
+    test_academic_year,
+):
+    """Enforces Rule 011: Context excludes inactive subjects and enriches canonical subject metadata."""
+    t_user, t_hdrs = await _create_user_with_token(
+        db, role_name="teacher", institution_id=test_institution.id
+    )
+
+    std = Standard(institution_id=test_institution.id, name="Test Standard C", level=7)
+    db.add(std)
+    await db.flush()
+
+    active_sub = Subject(standard_id=std.id, name="Robotics Active", code="ROB_ACT", is_active=True)
+    inactive_sub = Subject(standard_id=std.id, name="Robotics Inactive", code="ROB_INACT", is_active=False)
+    db.add_all([active_sub, inactive_sub])
+    await db.commit()
+
+    ctx_resp = await client.get("/api/v1/eduboard/context", headers=t_hdrs)
+    assert ctx_resp.status_code == 200
+    body = ctx_resp.json()
+
+    returned_sub_ids = [s["id"] for s in body["subjects"]]
+    assert active_sub.id in returned_sub_ids
+    assert inactive_sub.id not in returned_sub_ids
+
+    # Enforces standard_name enrichment
+    found = next(s for s in body["subjects"] if s["id"] == active_sub.id)
+    assert found["standard_name"] == "Test Standard C"
+    assert "canonical_name" in found
+
+    # Attempting to create a board with inactive subject fails with 400
+    bad_create = await client.post(
+        "/api/v1/eduboard/boards",
+        json={
+            "title": "Bad Inactive Board",
+            "academic_year_id": test_academic_year.id,
+            "standard_id": std.id,
+            "subject_id": inactive_sub.id,
+        },
+        headers=t_hdrs,
+    )
+    assert bad_create.status_code == 400
+    assert "inactive" in bad_create.json()["detail"].lower()
+

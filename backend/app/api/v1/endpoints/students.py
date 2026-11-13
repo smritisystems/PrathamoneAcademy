@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
 #  * @description API endpoints for student CRUD, profile editing, guardian details, and identity documents.
 #  */
@@ -878,7 +878,11 @@ async def get_student_admin_profile(
     # 3. Classes and subjects
     subjects_list = []
     if active_standard_id:
-        sub_stmt = select(Subject).where(Subject.standard_id == active_standard_id).order_by(Subject.name)
+        sub_stmt = (
+            select(Subject)
+            .where(Subject.standard_id == active_standard_id, Subject.is_active == True)
+            .order_by(Subject.name)
+        )
         subjects_list = [
             {
                 "id": s.id,

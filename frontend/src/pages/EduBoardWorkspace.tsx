@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Main interactive PrathamOne EduBoard workspace for Classic Chalk/Greenboard, Digital Whiteboard, and PDF Presentation teaching, with View-First governance, scoped IndexedDB crash recovery, debounced revision sync, conflict resolution, templates, and PDF export.
  */
@@ -193,6 +193,67 @@ export default function EduBoardWorkspace() {
     queryKey: ['eduboard-context', dataEnv],
     queryFn: async () => (await eduboardApi.getContext()).data,
   })
+
+  // Selected batch in modal
+  const selectedDiv = useMemo(
+    () => (contextData?.divisions || []).find((d) => String(d.id) === newDivisionId),
+    [contextData?.divisions, newDivisionId],
+  )
+
+  // Filtered subjects based on selected batch/division (Rule 011 Cascading SSOT)
+  const availableSubjects = useMemo(() => {
+    const list = contextData?.subjects || []
+    if (selectedDiv) {
+      return list.filter((s) => s.standard_id === selectedDiv.standard_id)
+    }
+    return list
+  }, [contextData?.subjects, selectedDiv])
+
+  const handleDivisionChange = (divId: string) => {
+    setNewDivisionId(divId)
+    if (divId) {
+      const div = (contextData?.divisions || []).find((d) => String(d.id) === divId)
+      if (div && newSubjectId) {
+        const stillValid = (contextData?.subjects || []).some(
+          (s) => String(s.id) === newSubjectId && s.standard_id === div.standard_id,
+        )
+        if (!stillValid) {
+          setNewSubjectId('')
+        }
+      }
+    }
+  }
+
+  const handleSubjectChange = (subjId: string) => {
+    setNewSubjectId(subjId)
+    if (subjId && !newDivisionId) {
+      const subj = (contextData?.subjects || []).find((s) => String(s.id) === subjId)
+      if (subj && subj.standard_id) {
+        const matchingDivs = (contextData?.divisions || []).filter((d) => d.standard_id === subj.standard_id)
+        if (matchingDivs.length === 1) {
+          setNewDivisionId(String(matchingDivs[0].id))
+        }
+      }
+    }
+  }
+
+  const handleSessionChange = (sessionId: string) => {
+    setNewSessionId(sessionId)
+    if (sessionId) {
+      const session = (contextData?.teaching_sessions || []).find((ts) => String(ts.id) === sessionId)
+      if (session) {
+        if (session.division_id) {
+          setNewDivisionId(String(session.division_id))
+        }
+        if (session.subject_id) {
+          setNewSubjectId(String(session.subject_id))
+        }
+        if (session.topic_taught && !newTitle.trim()) {
+          setNewTitle(session.topic_taught)
+        }
+      }
+    }
+  }
 
   const { data: settingsData, refetch: refetchSettings } = useQuery({
     queryKey: ['eduboard-settings', dataEnv],
@@ -601,12 +662,13 @@ export default function EduBoardWorkspace() {
     e.preventDefault()
     if (!newTitle.trim()) return
     try {
-      const selectedDiv = contextData?.divisions?.find((d) => String(d.id) === newDivisionId)
+      const selectedSubj = (contextData?.subjects || []).find((s) => String(s.id) === newSubjectId)
+      const standardId = selectedDiv?.standard_id || selectedSubj?.standard_id
       const res = await eduboardApi.createBoard({
         title: newTitle.trim(),
         topic: newTopic.trim() || undefined,
         division_id: newDivisionId ? Number(newDivisionId) : undefined,
-        standard_id: selectedDiv?.standard_id,
+        standard_id: standardId,
         subject_id: newSubjectId ? Number(newSubjectId) : undefined,
         teaching_session_id: newSessionId ? Number(newSessionId) : undefined,
         from_template_id: newTemplateId ? Number(newTemplateId) : undefined,
@@ -616,6 +678,9 @@ export default function EduBoardWorkspace() {
       setShowCreateModal(false)
       setNewTitle('')
       setNewTopic('')
+      setNewDivisionId('')
+      setNewSubjectId('')
+      setNewSessionId('')
       setNewTemplateId('')
       setNewIsTemplate(false)
       setSelectedBoardId(res.data.id)
@@ -1461,10 +1526,10 @@ export default function EduBoardWorkspace() {
               <label className="block text-xs font-semibold text-slate-700 mb-1">Batch / Division</label>
               <select
                 value={newDivisionId}
-                onChange={(e) => setNewDivisionId(e.target.value)}
+                onChange={(e) => handleDivisionChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
               >
-                <option value="">Select Batch</option>
+                <option value="">Select Batch (Optional if Standalone)</option>
                 {(contextData?.divisions || []).map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.standard_name ? `${d.standard_name} — ` : ''}{d.name}
@@ -1473,19 +1538,44 @@ export default function EduBoardWorkspace() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Subject</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Subject {selectedDiv ? `(${selectedDiv.standard_name || 'Selected Standard'})` : ''} *
+              </label>
               <select
+                required
                 value={newSubjectId}
-                onChange={(e) => setNewSubjectId(e.target.value)}
+                onChange={(e) => handleSubjectChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
               >
                 <option value="">Select Subject</option>
-                {(contextData?.subjects || []).map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
+                {selectedDiv ? (
+                  availableSubjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))
+                ) : (
+                  Object.entries(
+                    availableSubjects.reduce<Record<string, typeof availableSubjects>>((acc, s) => {
+                      const groupKey = s.standard_name || `Standard ${s.standard_id || 'General'}`
+                      if (!acc[groupKey]) acc[groupKey] = []
+                      acc[groupKey].push(s)
+                      return acc
+                    }, {})
+                  ).map(([stdName, subs]) => (
+                    <optgroup key={stdName} label={stdName}>
+                      {subs.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))
+                )}
               </select>
+              {selectedDiv && availableSubjects.length === 0 && (
+                <p className="text-[11px] text-amber-600 mt-1">No active subjects configured for this batch's standard.</p>
+              )}
             </div>
           </div>
 
@@ -1494,7 +1584,7 @@ export default function EduBoardWorkspace() {
               <label className="block text-xs font-semibold text-slate-700 mb-1">Teaching Session (Optional)</label>
               <select
                 value={newSessionId}
-                onChange={(e) => setNewSessionId(e.target.value)}
+                onChange={(e) => handleSessionChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
               >
                 <option value="">Unlinked / Standalone Lecture</option>

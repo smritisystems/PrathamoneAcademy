@@ -5271,7 +5271,20 @@ export interface EduBoardContextResponse {
     standard_id: number
     standard_name?: string | null
   }>
-  subjects: Array<{ id: number; name: string; code?: string | null; standard_id?: number | null }>
+  subjects: Array<{
+    id: number
+    name: string
+    code?: string | null
+    standard_id?: number | null
+    standard_name?: string | null
+    canonical_subject_id?: number | null
+    canonical_name?: string | null
+  }>
+  canonical_subjects?: Array<{
+    id: number
+    name: string
+    code?: string | null
+  }>
   teaching_sessions: Array<{
     id: number
     session_code: string

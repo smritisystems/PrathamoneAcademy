@@ -446,7 +446,7 @@ async def get_student_classes(
     if enrolled_standard_ids:
         subj_stmt = (
             select(Subject)
-            .where(Subject.standard_id.in_(list(enrolled_standard_ids)))
+            .where(Subject.standard_id.in_(list(enrolled_standard_ids)), Subject.is_active == True)
             .order_by(Subject.name)
         )
         subj_rows = (await db.execute(subj_stmt)).scalars().all()

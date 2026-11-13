@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-12
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
 #  * @description Domain service for PrathamOne EduBoard: RBAC & scope enforcement, PRODUCTION/TRAINING isolation, page & revision concurrency, attachment storage, PyMuPDF rendering/PDF export, notifications, and analytics.
 #  */
@@ -413,12 +413,20 @@ class EduBoardService:
             div_query = div_query.where(Division.id == -1)
         div_rows = (await db.execute(div_query)).scalars().all()
 
-        sub_query = select(Subject).order_by(Subject.name)
+        sub_query = select(Subject).where(Subject.is_active == True).order_by(Subject.name)
         if std_ids:
             sub_query = sub_query.where(Subject.standard_id.in_(std_ids))
         else:
             sub_query = sub_query.where(Subject.id == -1)
         sub_rows = (await db.execute(sub_query)).scalars().all()
+
+        # Query CanonicalSubject catalog for Rule 011 authoritative identity
+        cs_rows = (
+            await db.execute(
+                select(CanonicalSubject).where(CanonicalSubject.is_active == True).order_by(CanonicalSubject.name)
+            )
+        ).scalars().all()
+        cs_map = {cs.id: cs for cs in cs_rows}
 
         # Filter Teacher scope cleanly when role == 'teacher'
         role = (getattr(user, "role", "") or "").strip().lower()
@@ -486,7 +494,22 @@ class EduBoardService:
                 }
                 for d in div_rows
             ],
-            "subjects": [{"id": s.id, "name": s.name, "code": s.code, "standard_id": s.standard_id} for s in sub_rows],
+            "subjects": [
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "code": s.code,
+                    "standard_id": s.standard_id,
+                    "standard_name": std_map[s.standard_id].name if s.standard_id in std_map else "",
+                    "canonical_subject_id": s.canonical_subject_id,
+                    "canonical_name": cs_map[s.canonical_subject_id].name if (s.canonical_subject_id and s.canonical_subject_id in cs_map) else s.name,
+                }
+                for s in sub_rows
+            ],
+            "canonical_subjects": [
+                {"id": cs.id, "name": cs.name, "code": cs.code}
+                for cs in cs_rows
+            ],
             "teaching_sessions": [
                 {
                     "id": ts.id,
@@ -564,8 +587,23 @@ class EduBoardService:
             div = (await db.execute(select(Division).where(Division.id == division_id))).scalar_one_or_none()
             if div:
                 standard_id = div.standard_id
+        if subject_id and not standard_id:
+            subj_entry = (await db.execute(select(Subject).where(Subject.id == subject_id, Subject.is_active == True))).scalar_one_or_none()
+            if subj_entry:
+                standard_id = subj_entry.standard_id
         if not standard_id or not subject_id:
             raise HTTPException(status_code=400, detail="standard_id and subject_id are required to create an EduBoard.")
+
+        # Enforce subject validity: must be active and mapped to the target standard
+        subj_check = (
+            await db.execute(
+                select(Subject).where(Subject.id == subject_id, Subject.is_active == True)
+            )
+        ).scalar_one_or_none()
+        if not subj_check:
+            raise HTTPException(status_code=400, detail="The selected subject is inactive or does not exist.")
+        if subj_check.standard_id != standard_id:
+            raise HTTPException(status_code=400, detail="The selected subject does not belong to the selected standard/batch.")
 
         # Validate division belongs to standard in same institution
         if division_id:
@@ -579,8 +617,30 @@ class EduBoardService:
             if not div_check:
                 raise HTTPException(status_code=404, detail="Selected batch/division not found in this institution.")
 
-        # Validate subject mapping if supplied or resolve automatically
+        # Validate subject mapping if supplied or resolve automatically (Rule 011 Canonical Bridge)
         subject_mapping_id = payload.get("subject_mapping_id") or (session_obj.subject_mapping_id if session_obj else None)
+        if not subject_mapping_id and subject_id and standard_id:
+            sm_row = (
+                await db.execute(
+                    select(SubjectMapping)
+                    .where(
+                        SubjectMapping.standard_id == standard_id,
+                        or_(
+                            SubjectMapping.legacy_subject_id == subject_id,
+                            SubjectMapping.canonical_subject_id == (
+                                select(Subject.canonical_subject_id)
+                                .where(Subject.id == subject_id)
+                                .scalar_subquery()
+                            ),
+                        ),
+                        SubjectMapping.is_active == True,
+                    )
+                    .order_by(SubjectMapping.id.asc())
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if sm_row:
+                subject_mapping_id = sm_row.id
         mode_default = (payload.get("board_mode_default") or "whiteboard").lower()
         if mode_default not in EDUBOARD_BOARD_MODES:
             mode_default = "whiteboard"
