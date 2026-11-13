@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Comprehensive Vitest suite covering Help & About Centre navigation, unified search, contextual help routing, product/company/version/legal views, admin-only System Info, support ticketing, and Rule 010 EditMode governance.
  */
@@ -186,26 +186,26 @@ const mockProductInfo = {
     editions: [{ name: 'Coaching Institute Edition', status: 'Active Installed Edition', description: 'Built for coaching academies.' }],
   },
   about_company: {
-    developer_owner_label: 'AITDL & SMRITI Systems',
+    developer_owner_label: 'SmritiSys',
     smriti_systems: {
-      company_name: 'SMRITI Systems',
-      introduction: 'Co-developer and product owner for PrathamOne EduOS.',
+      company_name: 'SmritiSys',
+      introduction: 'Developer and product owner for PrathamOne EduOS.',
       technology_profile: 'Education operations software engineering.',
-      official_website: null,
+      official_website: 'https://smritisys.com',
       registered_office: null,
       leadership_note: null,
       verification_status: 'pending_management_verification',
     },
     aitdl: {
-      company_name: 'AITDL — AI Technology & Development Lab',
+      company_name: 'SmritiSys',
       product_architect: 'Jawahar R Mallah',
       introduction: 'Leads architecture and governance engineering.',
-      official_website: 'https://aitdl.com',
+      official_website: 'https://smritisys.com',
       product_website: 'https://prathamone.com',
       support_phones: ['9323 023 007', '9324 117 007'],
       support_email: 'support@prathamone.com',
       general_email: 'prathamone@outlook.com',
-      copyright_notice: 'Copyright © 2026 AITDL (AI Technology & Development Lab). All rights reserved.',
+      copyright_notice: 'Copyright © 2026 SmritiSys. All rights reserved.',
       product_portfolio: [
         { name: 'PrathamOne', tagline: 'Education Operating System', website: 'https://prathamone.com', description: 'Institute OS' },
       ],
@@ -213,7 +213,7 @@ const mockProductInfo = {
     subscribing_institution: {
       name: 'Prashant Academy Coaching Institute',
       code: 'PA001',
-      identity_separation_notice: 'Institute data remains strictly separate from software owners.',
+      identity_separation_notice: 'Institute data remains strictly separate from the software owner.',
     },
   },
   version_info: {
@@ -394,7 +394,7 @@ describe('Help & About Centre Suite', () => {
     })
   })
 
-  it('displays About PrathamOne EduOS, About SMRITI Systems with identity separation, and dynamic Version Info', async () => {
+  it('displays About PrathamOne EduOS, About SmritiSys with identity separation, and dynamic Version Info', async () => {
     renderHelpAt('/help/about-product')
     await waitFor(() => {
       expect(screen.getByText('Education Management Operating System')).toBeDefined()
@@ -404,9 +404,15 @@ describe('Help & About Centre Suite', () => {
     cleanup()
     renderHelpAt('/help/about-company')
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'SMRITI Systems' })).toBeDefined()
+      expect(screen.getByRole('heading', { name: 'SmritiSys' })).toBeDefined()
       expect(screen.getByText('Corporate Details Pending Management Verification')).toBeDefined()
-      expect(screen.getByText(/Institute data remains strictly separate from software owners/i)).toBeDefined()
+      expect(screen.getByText(/Institute data remains strictly separate from the software owner/i)).toBeDefined()
+      expect(
+        screen
+          .getAllByRole('link', { name: /smritisys\.com/i })
+          .some((link) => link.getAttribute('href') === 'https://smritisys.com'),
+      ).toBe(true)
+      expect(screen.getByText('Copyright © 2026 SmritiSys. All rights reserved.')).toBeDefined()
     })
 
     cleanup()
@@ -519,7 +525,7 @@ describe('Help & About Centre Suite', () => {
       '| Module | Route |',
       '| :--- | :--- |',
       '| Fees | [Fee Guide](/help/article/guide-fees) |',
-      '| Portal | [AITDL](https://aitdl.com) |',
+      '| Portal | [SmritiSys](https://smritisys.com) |',
       '',
       '---',
       '- Top bullet',
@@ -541,8 +547,8 @@ describe('Help & About Centre Suite', () => {
     const internalLink = screen.getByRole('link', { name: 'Fee Guide' })
     expect(internalLink.getAttribute('href')).toBe('/help/article/guide-fees')
 
-    const externalLink = screen.getByRole('link', { name: 'AITDL' })
-    expect(externalLink.getAttribute('href')).toBe('https://aitdl.com')
+    const externalLink = screen.getByRole('link', { name: 'SmritiSys' })
+    expect(externalLink.getAttribute('href')).toBe('https://smritisys.com')
     expect(externalLink.getAttribute('rel')).toBe('noopener noreferrer')
 
     // Unsafe javascript: scheme must render as harmless text span, NOT an anchor
@@ -562,7 +568,7 @@ describe('Help & About Centre Suite', () => {
     useEditModeStore.getState().enableEditMode('admin:help_centre', adminUser)
 
     renderHelpAt('/help/governance')
-    const metaTab = await screen.findByRole('button', { name: /Product, SMRITI Systems & License/i })
+    const metaTab = await screen.findByRole('button', { name: /Product, SmritiSys & License/i })
     fireEvent.click(metaTab)
 
     const licenseInput = (await screen.findByPlaceholderText(
@@ -580,7 +586,7 @@ describe('Help & About Centre Suite', () => {
     useEditModeStore.getState().enableEditMode('admin:help_centre', superUser)
 
     renderHelpAt('/help/governance')
-    fireEvent.click(await screen.findByRole('button', { name: /Product, SMRITI Systems & License/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /Product, SmritiSys & License/i }))
     const superLicenseInput = (await screen.findByPlaceholderText(
       /Active Institutional License/i,
     )) as HTMLInputElement

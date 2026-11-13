@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Admin-only Content Management & Governance console adhering strictly to Rule 010 View-First Edit Mode for articles, FAQs, categories, legal approvals, revision history, and product metadata.
  */
@@ -403,7 +403,7 @@ export default function HelpGovernanceSection({
           {[
             { id: 'articles', label: 'Articles, FAQs & Legal Docs' },
             { id: 'categories', label: 'Help Categories' },
-            { id: 'product_meta', label: 'Product, SMRITI Systems & License' },
+            { id: 'product_meta', label: 'Product, SmritiSys & License' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -663,16 +663,16 @@ export default function HelpGovernanceSection({
         </div>
       )}
 
-      {/* Product, SMRITI Systems & Commercial License Metadata */}
+      {/* Product, SmritiSys & Commercial License Metadata */}
       {subTab === 'product_meta' && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h3 className="text-sm font-bold text-slate-900">
-                Product, SMRITI Systems &amp; License Metadata
+                Product, SmritiSys &amp; License Metadata
               </h3>
               <p className="text-xs text-slate-500">
-                Update verified product overview, SMRITI Systems corporate profile, deployment model, and license posture.
+                Update verified product overview, SmritiSys corporate profile, deployment model, and license posture.
               </p>
             </div>
             <LockedButton
@@ -688,7 +688,7 @@ export default function HelpGovernanceSection({
 
           {!isSysAdmin && (
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
-              SMRITI Systems corporate profile, deployment model, and commercial license fields are managed by System Administration (SysAdmin / SuperAdmin).
+              SmritiSys corporate profile, deployment model, and commercial license fields are managed by System Administration (SysAdmin / SuperAdmin).
             </div>
           )}
 
@@ -747,7 +747,7 @@ export default function HelpGovernanceSection({
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">SMRITI Systems Introduction (SysAdmin only)</label>
+              <label className="block font-semibold text-slate-700 mb-1">SmritiSys Introduction (SysAdmin only)</label>
               <textarea
                 rows={2}
                 disabled={!editable || !isSysAdmin}
@@ -768,7 +768,7 @@ export default function HelpGovernanceSection({
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                SMRITI Systems Official Website (SysAdmin only)
+                SmritiSys Official Website (SysAdmin only)
               </label>
               <input
                 type="text"
@@ -781,7 +781,7 @@ export default function HelpGovernanceSection({
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                SMRITI Systems Leadership Info (SysAdmin only)
+                SmritiSys Leadership Info (SysAdmin only)
               </label>
               <input
                 type="text"
@@ -794,7 +794,7 @@ export default function HelpGovernanceSection({
             </div>
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                SMRITI Systems Registered Office (SysAdmin only)
+                SmritiSys Registered Office (SysAdmin only)
               </label>
               <input
                 type="text"

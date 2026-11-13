@@ -58,6 +58,11 @@ export const PRINT_SHARE_BRANDING = {
   url: 'https://prathamone.com',
 } as const
 
+const PRODUCT_BRAND_ASSET_ROOT = '/artwork/PrathamOne_EduOS_Brand_Assets'
+const PRODUCT_LOGO_URL = `${PRODUCT_BRAND_ASSET_ROOT}/PrathamOne_EduOS_Logo_Transparent.png`
+const PRODUCT_APP_ICON_URL = '/icons/icon-512x512.png'
+const PRODUCT_APP_ICON_192_URL = '/icons/icon-192x192.png'
+
 /**
  * Static baseline branding tokens for PrathamOne Academy suite
  */
@@ -78,20 +83,20 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.13-REV-179-v1.97.1-31444C7',
+  buildNumber: '2026.11.13-REV-180-v1.97.2-0469B23',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-13',
   productArchitect: 'Jawahar R Mallah',
   environment: (typeof import.meta !== 'undefined' && (import.meta as any).env?.MODE) || 'production',
-  copyright: 'Copyright © 2026 AITDL (AI Technology & Development Lab). All rights reserved.',
-  organization: 'AITDL — AI Technology & Development Lab',
+  copyright: 'Copyright © 2026 SmritiSys. All rights reserved.',
+  organization: 'SmritiSys',
   clientOrganization: 'Prashant Academy Coaching Institute',
   parentOrganization: {
-    name: 'AITDL — AI Technology & Development Lab',
-    shortName: 'AITDL',
-    website: 'https://aitdl.com',
-    websiteDisplay: 'aitdl.com',
+    name: 'SmritiSys',
+    shortName: 'SMRITISYS',
+    website: 'https://smritisys.com',
+    websiteDisplay: 'smritisys.com',
   } as ParentOrganization,
   products: [
     {
@@ -144,42 +149,46 @@ export const BRANDING_CONFIG = {
     academyLogoPngUrl: '/media/logo/prashant-academy-logo.png' as string,
     logoUrl: '/media/logo/prashant-academy-logo.svg' as string,
     logoDarkUrl: '/media/logo/prashant-academy-logo.svg' as string,
-    faviconUrl: '/favicon.svg' as string,
-    faviconPngUrl: '/favicon.png' as string,
+    faviconUrl: PRODUCT_APP_ICON_192_URL as string,
+    faviconPngUrl: PRODUCT_APP_ICON_192_URL as string,
     faviconIcoUrl: '/favicon.ico' as string,
-    icon192Url: '/icons/icon-192x192.png' as string,
-    icon512Url: '/icons/icon-512x512.png' as string,
+    icon192Url: PRODUCT_APP_ICON_192_URL as string,
+    icon512Url: PRODUCT_APP_ICON_URL as string,
+    appIconUrl: PRODUCT_APP_ICON_URL as string,
+    appIcon192Url: PRODUCT_APP_ICON_192_URL as string,
     // Software Platform Direct Logo & Icon (frontend/public/logo)
     softwareLogoSvgUrl: '/logo/logoone.svg' as string,
-    softwareLogoPngUrl: '/logo/logoone1080.png' as string,
+    softwareLogoUrl: PRODUCT_LOGO_URL as string,
+    softwareLogoPngUrl: PRODUCT_LOGO_URL as string,
     softwareIconSvgUrl: '/logo/logo_rect2-7-9-1.svg' as string,
-    softwareIconPngUrl: '/logo/logo_rect2-7-9-1.png' as string,
+    softwareIconUrl: PRODUCT_APP_ICON_URL as string,
+    softwareIconPngUrl: PRODUCT_APP_ICON_URL as string,
     // Official Circular Seal (Emblem Seal)
     sealMarkUrl: '/media/logo/prathamone-eduos-seal.png' as string,
     sealMarkTransparentUrl: '/media/logo/prathamone-eduos-seal-transparent.png' as string,
     // Parent Brand Master Logo
-    masterLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
-    masterLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
-    masterLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    masterLogoUrl: PRODUCT_LOGO_URL as string,
+    masterLogoTransparentUrl: PRODUCT_LOGO_URL as string,
+    masterLogoDarkUrl: PRODUCT_LOGO_URL as string,
     // Product Brand Primary Logo
-    primaryLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
-    primaryLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
-    primaryLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    primaryLogoUrl: PRODUCT_LOGO_URL as string,
+    primaryLogoTransparentUrl: PRODUCT_LOGO_URL as string,
+    primaryLogoDarkUrl: PRODUCT_LOGO_URL as string,
     // Horizontal Lockup Logo
-    horizontalLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
-    horizontalLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
-    horizontalLogoDarkUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
+    horizontalLogoUrl: PRODUCT_LOGO_URL as string,
+    horizontalLogoTransparentUrl: PRODUCT_LOGO_URL as string,
+    horizontalLogoDarkUrl: PRODUCT_LOGO_URL as string,
     // Official Symbol Mark (New Square Emblem)
-    symbolMarkUrl: '/media/logo/prathamone-symbol-icon.png' as string,
-    symbolMarkTransparentUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
-    symbolMarkDarkUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
+    symbolMarkUrl: PRODUCT_APP_ICON_URL as string,
+    symbolMarkTransparentUrl: PRODUCT_APP_ICON_URL as string,
+    symbolMarkDarkUrl: PRODUCT_APP_ICON_URL as string,
     // Legacy / Convenience aliases
-    prathamOneLogoUrl: '/media/logo/prathamone-eduos-horizontal.png' as string,
-    prathamOneLogoTransparentUrl: '/media/logo/prathamone-eduos-horizontal-transparent.png' as string,
-    prathamOneMarkUrl: '/media/logo/prathamone-symbol-icon.png' as string,
-    prathamOneMarkTransparentUrl: '/media/logo/prathamone-symbol-icon-transparent.png' as string,
-    prathamOneAppIcon512: '/media/logo/prathamone-app-icon-512.png' as string,
-    prathamOneAppIcon192: '/media/logo/prathamone-app-icon-192.png' as string,
+    prathamOneLogoUrl: PRODUCT_LOGO_URL as string,
+    prathamOneLogoTransparentUrl: PRODUCT_LOGO_URL as string,
+    prathamOneMarkUrl: PRODUCT_APP_ICON_URL as string,
+    prathamOneMarkTransparentUrl: PRODUCT_APP_ICON_URL as string,
+    prathamOneAppIcon512: PRODUCT_APP_ICON_URL as string,
+    prathamOneAppIcon192: PRODUCT_APP_ICON_192_URL as string,
   },
   support: {
     email: 'support@prathamone.com' as string,
@@ -314,7 +323,10 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
         : (!activeInstitution || activeInstitution.id === 1)
           ? BRANDING_CONFIG.assets.academyLogoUrl
           : '',
-      faviconUrl: activeInstitution?.favicon_url || BRANDING_CONFIG.assets.faviconUrl,
+      faviconUrl:
+        activeInstitution?.favicon_url && activeInstitution.favicon_url !== '/favicon.svg'
+          ? activeInstitution.favicon_url
+          : BRANDING_CONFIG.assets.faviconUrl,
     },
     support: {
       ...BRANDING_CONFIG.support,
@@ -483,6 +495,16 @@ export function applyGlobalBrandTheme(
         link.rel = 'icon'
         document.getElementsByTagName('head')[0].appendChild(link)
       }
+      const extension = logoUrl.split(/[?#]/, 1)[0].split('.').pop()?.toLowerCase()
+      const iconMimeType =
+        extension === 'svg'
+          ? 'image/svg+xml'
+          : extension === 'ico'
+            ? 'image/vnd.microsoft.icon'
+            : extension === 'png'
+              ? 'image/png'
+              : undefined
+      if (iconMimeType) link.type = iconMimeType
       if (link.href !== logoUrl) {
         link.href = logoUrl
       }

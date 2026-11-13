@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-12
+#  * @updated     2026-11-14
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -80,8 +80,8 @@ def apply_report_environment_filter(query, model, data_env: str):
     elif data_env == "PRODUCTION":
         return query.where(model.is_demo == False)
     return query
-from app.models.payment import Payment, Refund
-from app.models.fee import FeeInvoice, FeeInstallment
+from app.models.payment import Payment, PaymentReceipt, Refund
+from app.models.fee import FeeInvoice
 from app.models.student import Student
 from app.models.division import Division
 from app.models.standard import Standard
@@ -787,22 +787,21 @@ async def student_withdrawals_report(
             elif p_lower == "unpaid" and classification != "Unpaid":
                 continue
 
-        # 6. Installment-wise attrition estimation
+        # 6. Count invoice due dates; fee-item due dates are not persisted.
         effective_exit = enr.exit_date or std.exit_date or date.today()
-        inst_stmt = (
-            select(func.count(FeeInstallment.id))
-            .join(FeeInvoice, FeeInstallment.invoice_id == FeeInvoice.id)
+        due_invoice_stmt = (
+            select(func.count(FeeInvoice.id))
             .where(
                 FeeInvoice.student_id == std.id,
                 FeeInvoice.academic_year_id == enr.academic_year_id,
-                FeeInstallment.due_date <= effective_exit,
+                FeeInvoice.due_date <= effective_exit,
             )
         )
-        passed_installments = (await db.execute(inst_stmt)).scalar() or 0
-        installment_label = (
-            f"Installment #{passed_installments}"
-            if passed_installments > 0
-            else "Pre-Installment"
+        due_invoice_count = (await db.execute(due_invoice_stmt)).scalar() or 0
+        invoice_label = (
+            f"Invoice #{due_invoice_count}"
+            if due_invoice_count > 0
+            else "No invoice due by exit"
         )
 
         duration_days = (
@@ -829,7 +828,7 @@ async def student_withdrawals_report(
             "exit_notes": enr.exit_notes or std.exit_notes or "",
             "exited_by_name": f"{user.first_name} {user.last_name}" if user else "Administration",
             "paid_classification": classification,
-            "installment_at_exit": installment_label,
+            "installment_at_exit": invoice_label,
             "total_invoiced": invoiced_amount,
             "gross_paid": gross_paid,
             "refund_amount": refund_amount,
@@ -857,6 +856,9 @@ async def withdrawal_analytics_report(
         academic_year_id=academic_year_id,
         standard_id=standard_id,
         division_id=division_id,
+        paid_status=None,
+        reason=None,
+        search=None,
         effective_inst_id=effective_inst_id,
         db=db,
         current_user=current_user,
@@ -1005,6 +1007,9 @@ async def export_student_withdrawals_report(
         academic_year_id=academic_year_id,
         standard_id=standard_id,
         division_id=division_id,
+        paid_status=None,
+        reason=None,
+        search=None,
         effective_inst_id=effective_inst_id,
         db=db,
         current_user=current_user,
@@ -1535,10 +1540,20 @@ async def daily_payment_collection_report(
     s_date = start_date or date_val or today
     e_date = end_date or date_val or today
 
+    latest_receipt_id = (
+        select(PaymentReceipt.id)
+        .where(PaymentReceipt.payment_id == Payment.id)
+        .order_by(PaymentReceipt.version.desc(), PaymentReceipt.id.desc())
+        .limit(1)
+        .correlate(Payment)
+        .scalar_subquery()
+    )
+
     query = (
-        select(Payment, Student, User)
+        select(Payment, Student, User, PaymentReceipt)
         .join(Student, Payment.student_id == Student.id)
         .outerjoin(User, Payment.collected_by_id == User.id)
+        .outerjoin(PaymentReceipt, PaymentReceipt.id == latest_receipt_id)
         .where(
             Student.institution_id == inst_id,
             Payment.status.in_(["completed", "posted"]),
@@ -1553,10 +1568,13 @@ async def daily_payment_collection_report(
     res = await db.execute(query.order_by(Payment.payment_date.desc(), Payment.id.desc()))
     rows = res.all()
 
-    records = [
-        {
+    records = []
+    for p, s, u, receipt in rows:
+        receipt_is_valid = receipt is not None and receipt.status == "valid"
+        records.append({
             "payment_id": p.id,
-            "receipt_number": getattr(p, "receipt_number", None) or f"REC-{p.id:06d}",
+            "receipt_number": receipt.receipt_number if receipt_is_valid else None,
+            "receipt_status": receipt.status if receipt else "missing",
             "payment_date": p.payment_date.isoformat() if p.payment_date else None,
             "admission_number": s.admission_number,
             "student_name": f"{s.first_name} {s.last_name}",
@@ -1565,9 +1583,7 @@ async def daily_payment_collection_report(
             "transaction_reference": p.transaction_reference or "N/A",
             "collector_name": f"{u.first_name} {u.last_name}" if u else "Self/Online",
             "status": p.status,
-        }
-        for p, s, u in rows
-    ]
+        })
 
     return await CodeXService.mask_records_list(
         db=db,
@@ -1776,7 +1792,5 @@ async def get_eduboard_summary_report(
     return await EduBoardService.get_reports_summary(
         db, institution_id, data_env, academic_year_id=academic_year_id
     )
-
-
 
 

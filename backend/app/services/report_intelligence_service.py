@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
 #  * @description Universal Report Calculation & Intelligence Engine providing mathematical provenance,
 #  */
@@ -915,8 +915,30 @@ class ReportIntelligenceService:
     ) -> Dict[str, Any]:
         stmt = select(
             func.count(Student.id).label("total_students"),
-            func.sum(case((Student.status == "active", 1), else_=0)).label("active_students"),
-            func.sum(case((Student.status == "withdrawn", 1), else_=0)).label("withdrawn_students"),
+            func.sum(
+                case(
+                    (
+                        and_(Student.is_active.is_(True), Student.exit_date.is_(None)),
+                        1,
+                    ),
+                    else_=0,
+                )
+            ).label("active_students"),
+            func.sum(
+                case(
+                    (
+                        or_(
+                            Student.enrollments.any(StudentEnrollment.status == "withdrawn"),
+                            and_(
+                                Student.is_active.is_(False),
+                                Student.exit_date.isnot(None),
+                            ),
+                        ),
+                        1,
+                    ),
+                    else_=0,
+                )
+            ).label("withdrawn_students"),
         ).where(Student.institution_id == institution_id)
         res = await db.execute(stmt)
         row = res.one_or_none()

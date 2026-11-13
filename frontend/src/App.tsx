@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -201,10 +201,14 @@ export default function App() {
           {/* SysAdmin-Only Control Plane & Legacy Cluster Endpoints */}
           <Route element={<RoleOutlet sysadminOnly />}>
             <Route path="sysadmin" element={<Suspense fallback={<PageLoader />}><SysAdminWorkspacePage /></Suspense>} />
-            <Route path="housekeeping" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
-            <Route path="housekeeping/:tab" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
             <Route path="fees/import" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
             <Route path="import/fee-register" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
+          </Route>
+
+          {/* Institution Admins can view housekeeping telemetry and create database backups. */}
+          <Route element={<RoleOutlet roles={['admin']} />}>
+            <Route path="housekeeping" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
+            <Route path="housekeeping/:tab" element={<Suspense fallback={<PageLoader />}><HousekeepingPage /></Suspense>} />
           </Route>
 
           {/* Institution Administrator & Principal Governance Routes */}

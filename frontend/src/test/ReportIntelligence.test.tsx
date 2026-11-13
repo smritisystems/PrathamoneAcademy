@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-11
+ * @updated     2026-11-14
  *
  * @description Comprehensive test suite validating the Universal Report Calculation & Intelligence Engine,
  */
@@ -179,6 +179,57 @@ describe('Universal Report Intelligence Engine Suite', () => {
 
     await waitFor(() => {
       expect(screen.queryByText('Calculation Formula & Provenance')).toBeNull()
+    })
+  })
+
+  it('supports legacy intelligence payloads without crashing the calculation inspector', async () => {
+    vi.mocked(reportIntelligenceApi.getMetrics).mockResolvedValue({
+      data: {
+        report_id: 'withdrawal-analytics',
+        kpis: [{
+          id: 'active_enrollments',
+          label: 'Active Students',
+          value: '12',
+          raw_value: 12,
+          unit: 'Students',
+          status: 'positive',
+          explanation: {
+            formula: 'Active Students / Total Students',
+            numerator: { label: 'Active Students', value: 12 },
+            denominator: { label: 'Total Students', value: 15 },
+            plain_text: '12 active students out of 15.',
+          },
+        }],
+        insights: [{
+          id: 'lifecycle',
+          title: 'Cohort Retention Diagnostic',
+          severity: 'positive',
+          message: '12 students are active.',
+          impact: 'Retention matters.',
+          action_label: 'Inspect report',
+          action_route: '/reports',
+        }],
+      },
+    } as any)
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <ReportIntelligenceBanner reportId="student-master" />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Active Students')).toBeDefined()
+    })
+    fireEvent.click(screen.getByTitle('Inspect How It Was Calculated'))
+
+    await waitFor(() => {
+      expect(screen.getAllByText('12').length).toBeGreaterThan(1)
+      expect(screen.getByText('15')).toBeDefined()
+      expect(screen.getByText('12 active students out of 15.')).toBeDefined()
+      expect(screen.getByText('12 students are active.')).toBeDefined()
     })
   })
 

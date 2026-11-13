@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-12
+#  * @updated     2026-11-14
 #  *
 #  * @description Automated backend tests for Help & About Centre: seeding completeness, exclusion enforcement, search, contextual routing, support ticketing, RBAC, and CMS governance.
 #  */
@@ -187,9 +187,11 @@ class TestHelpAndAboutCentre:
         assert len(data["about_product"]["available_modules"]) == 20
 
         company = data["about_company"]
-        assert company["smriti_systems"]["company_name"] == "SMRITI Systems"
+        assert company["smriti_systems"]["company_name"] == "SmritiSys"
         assert company["smriti_systems"]["verification_status"] == "pending_management_verification"
-        assert company["aitdl"]["official_website"] == "https://aitdl.com"
+        assert company["smriti_systems"]["official_website"] == "https://smritisys.com"
+        assert company["aitdl"]["official_website"] == "https://smritisys.com"
+        assert company["developer_owner_label"] == "SmritiSys"
         assert "support@prathamone.com" == company["aitdl"]["support_email"]
         assert "identity_separation_notice" in company["subscribing_institution"]
 

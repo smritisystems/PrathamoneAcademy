@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Official customer-facing Help & About Centre portal unifying Getting Started, Module Guides, Tutorials, FAQs, Support Centre, About Product, About Company, Version Info, Legal & Compliance, Admin System Info, and Content Governance.
  */
@@ -569,7 +569,7 @@ export default function HelpCentre() {
                   {
                     title: 'Product, Company & Legal',
                     count: 'Identity & Version',
-                    desc: 'About PrathamOne EduOS, SMRITI Systems & AITDL, Version details, and Legal & Compliance documents.',
+                    desc: 'About PrathamOne EduOS and SmritiSys, version details, and Legal & Compliance documents.',
                     icon: Info,
                     color: 'bg-slate-100 text-slate-700',
                     path: '/help/about-product',
@@ -624,7 +624,7 @@ export default function HelpCentre() {
                     className="p-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-left space-y-1"
                   >
                     <Building2 className="w-4 h-4 text-indigo-600" />
-                    <div className="text-xs font-bold text-slate-900">About SMRITI Systems</div>
+                    <div className="text-xs font-bold text-slate-900">About SmritiSys</div>
                     <div className="text-[11px] text-slate-500">Developer &amp; contacts</div>
                   </button>
                   <button

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-11
+ * @updated     2026-11-14
  *
  * @description Universal Report Calculation & Intelligence Engine component.
  */
@@ -43,10 +43,99 @@ import { reportIntelligenceApi } from '../../api/endpoints'
 import { useAuthStore } from '../../store/authStore'
 import type {
   ReportKPIItem,
+  ReportKPIExplanation,
   ReportInsightItem,
-  ReportComparisonItem,
   ReportIntelligencePayload,
 } from '../../types'
+
+type DisplayReportKPI = Omit<ReportKPIItem, 'explanation'> & {
+  explanation: Omit<ReportKPIExplanation, 'numerator_value' | 'denominator_value'> & {
+    numerator_value?: number
+    denominator_value?: number
+  }
+}
+
+interface LegacyReportKPI extends Partial<Omit<ReportKPIItem, 'explanation'>> {
+  label?: string
+  raw_value?: number
+  explanation?: Partial<ReportKPIExplanation> & {
+    numerator?: { label?: string; value?: number }
+    denominator?: { label?: string; value?: number }
+    plain_text?: string
+  }
+}
+
+interface LegacyReportInsight extends Partial<ReportInsightItem> {
+  message?: string
+  impact?: string
+  action_route?: string
+}
+
+interface LegacyReportIntelligencePayload
+  extends Omit<Partial<ReportIntelligencePayload>, 'kpis' | 'insights'> {
+  kpis?: LegacyReportKPI[]
+  insights?: LegacyReportInsight[]
+}
+
+const normalizeKPI = (kpi: LegacyReportKPI): DisplayReportKPI => {
+  const explanation = kpi.explanation ?? {}
+  const numeratorValue = explanation.numerator_value ?? explanation.numerator?.value
+  const denominatorValue = explanation.denominator_value ?? explanation.denominator?.value
+  const value = kpi.formatted_value ?? kpi.value ?? kpi.raw_value ?? ''
+  const status: ReportKPIItem['status'] =
+    kpi.status === 'critical' || kpi.status === 'warning' || kpi.status === 'positive' || kpi.status === 'neutral'
+      ? kpi.status
+      : 'neutral'
+
+  return {
+    id: kpi.id ?? kpi.label ?? 'unknown-metric',
+    name: kpi.name ?? kpi.label ?? kpi.id ?? 'Metric',
+    value,
+    formatted_value: String(value),
+    unit: kpi.unit ?? '',
+    status,
+    badge_label: kpi.badge_label,
+    target: typeof kpi.target === 'number' ? kpi.target : undefined,
+    variance: typeof kpi.variance === 'number' ? kpi.variance : undefined,
+    trend: kpi.trend,
+    explanation: {
+      formula: explanation.formula ?? '',
+      latex_formula: explanation.latex_formula,
+      numerator_name: explanation.numerator_name ?? explanation.numerator?.label ?? 'Numerator',
+      numerator_value: typeof numeratorValue === 'number' ? numeratorValue : undefined,
+      denominator_name: explanation.denominator_name ?? explanation.denominator?.label,
+      denominator_value: typeof denominatorValue === 'number' ? denominatorValue : undefined,
+      multiplier: explanation.multiplier,
+      included_count: explanation.included_count,
+      excluded_count: explanation.excluded_count,
+      rounding_rule: explanation.rounding_rule ?? '',
+      filter_context: explanation.filter_context ?? '',
+      plain_english_breakdown: explanation.plain_english_breakdown ?? explanation.plain_text ?? '',
+    },
+  }
+}
+
+const normalizeInsight = (insight: LegacyReportInsight): ReportInsightItem => {
+  const severity: ReportInsightItem['severity'] =
+    insight.severity === 'critical' ||
+    insight.severity === 'warning' ||
+    insight.severity === 'positive' ||
+    insight.severity === 'info'
+      ? insight.severity
+      : 'info'
+
+  return {
+    id: insight.id ?? insight.title ?? 'report-insight',
+    title: insight.title ?? 'Report insight',
+    severity,
+    what_happened: insight.what_happened ?? insight.message ?? '',
+    why_it_matters: insight.why_it_matters ?? insight.impact ?? '',
+    action_required: insight.action_required ?? insight.action_label ?? '',
+    action_url: insight.action_url ?? insight.action_route,
+    action_label: insight.action_label,
+    metric_key: insight.metric_key,
+  }
+}
 
 interface ReportIntelligenceBannerProps {
   reportId: string
@@ -64,7 +153,7 @@ export default function ReportIntelligenceBanner({
   const { user } = useAuthStore()
 
   // Modal states
-  const [selectedKPI, setSelectedKPI] = useState<ReportKPIItem | null>(null)
+  const [selectedKPI, setSelectedKPI] = useState<DisplayReportKPI | null>(null)
   const [showThresholdModal, setShowThresholdModal] = useState<boolean>(false)
   const [isEditMode, setIsEditMode] = useState<boolean>(false)
   const [thresholdDraft, setThresholdDraft] = useState<Record<string, number>>({})
@@ -78,7 +167,7 @@ export default function ReportIntelligenceBanner({
     data: intelligence,
     isLoading,
     isError,
-  } = useQuery<ReportIntelligencePayload>({
+  } = useQuery<LegacyReportIntelligencePayload>({
     queryKey: ['report-intelligence', reportId, filters],
     queryFn: () => reportIntelligenceApi.getMetrics(reportId, filters).then((res) => res.data),
     staleTime: 30000,
@@ -134,7 +223,9 @@ export default function ReportIntelligenceBanner({
     return null
   }
 
-  const { kpis = [], insights = [], comparisons } = intelligence
+  const kpis = (intelligence.kpis ?? []).map(normalizeKPI)
+  const insights = (intelligence.insights ?? []).map(normalizeInsight)
+  const comparisons = intelligence.comparisons
 
   const getStatusBadge = (status: ReportKPIItem['status'], badge?: string) => {
     switch (status) {
@@ -412,7 +503,7 @@ export default function ReportIntelligenceBanner({
                   <div className="text-[10px] font-bold text-slate-500 uppercase">Numerator</div>
                   <div className="font-semibold text-slate-900">{selectedKPI.explanation.numerator_name}</div>
                   <div className="text-sm font-black text-indigo-700">
-                    {selectedKPI.explanation.numerator_value.toLocaleString()}
+                    {selectedKPI.explanation.numerator_value?.toLocaleString() ?? '—'}
                   </div>
                 </div>
 
@@ -423,7 +514,7 @@ export default function ReportIntelligenceBanner({
                       {selectedKPI.explanation.denominator_name}
                     </div>
                     <div className="text-sm font-black text-indigo-700">
-                      {(selectedKPI.explanation.denominator_value ?? 0).toLocaleString()}
+                      {selectedKPI.explanation.denominator_value?.toLocaleString() ?? '—'}
                     </div>
                   </div>
                 )}

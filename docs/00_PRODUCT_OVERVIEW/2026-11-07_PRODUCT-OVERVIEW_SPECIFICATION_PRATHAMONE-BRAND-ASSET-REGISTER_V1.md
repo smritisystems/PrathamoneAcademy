@@ -8,11 +8,11 @@ edition: "Coaching Institute Edition"
 version: "1.0.0"
 doc_version: "1.0"
 created_date: "2026-11-07"
-updated_date: "2026-11-07"
+updated_date: "2026-11-14"
 author: "Jawahar R Mallah"
 organization: "AITDL — AI Technology & Development Lab"
 status: "Approved"
-tags: ["branding", "asset-register", "logo-specifications", "pwa-icons"]
+tags: ["branding", "asset-register", "logo-specifications", "pwa-icons", "eduos-brand-refresh"]
 entities: ["PrathamOne", "PrathamOne EduOS", "AITDL"]
 api_routes: ["/media/logo/*", "/icons/*"]
 related_modules: ["frontend.config", "frontend.components", "17_UI_UX_DESIGN"]
@@ -135,3 +135,23 @@ export const BRAND_COLORS = {
 } as const;
 ```
 
+---
+
+## 4. PrathamOne EduOS Software Branding Refresh
+
+The software shell and installable application now use the supplied EduOS artwork in
+`frontend/public/artwork/PrathamOne_EduOS_Brand_Assets/`. These product assets do not replace
+the PrathamOne corporate master artwork above or an institute's tenant-specific academy logo.
+
+| Asset | Dimensions | Purpose |
+| :--- | :--- | :--- |
+| `PrathamOne_EduOS_Logo_Transparent.png` | 1128 × 454 px | Horizontal product lockup for the software shell and product identity surfaces |
+| `PrathamOne_EduOS_App_Icon.png` | 1024 × 1024 px | Canonical square app-symbol source |
+| `frontend/public/icons/icon-192x192.png` | 192 × 192 px | Standard PWA icon and browser favicon |
+| `frontend/public/icons/icon-512x512.png` | 512 × 512 px | High-resolution PWA icon |
+| `frontend/public/icons/icon-maskable-512x512.png` | 512 × 512 px | Maskable Android PWA icon |
+| `frontend/public/icons/apple-touch-icon.png` | 180 × 180 px | iOS home-screen icon |
+
+Use the horizontal transparent lockup for product branding and the square app icon for browser,
+PWA, and home-screen identity. Continue to show institution-provided logos in tenant-specific
+branding areas; do not substitute the product mark for an institute's own identity.

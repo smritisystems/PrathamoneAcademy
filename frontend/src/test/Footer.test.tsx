@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-11
+ * @updated     2026-11-14
  *
  * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, versioning, and AITDL parent branding.
  */
@@ -120,16 +120,16 @@ describe('Application Footer Specifications', () => {
     expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
   })
 
-  it('renders AITDL parent organization and products section in the DOM', () => {
+  it('renders SmritiSys parent organization and products section in the DOM', () => {
     renderFooter()
 
     const orgSection = screen.getByTestId('organization-branding')
     expect(orgSection).toBeDefined()
 
     // Parent organization
-    expect(within(orgSection).getByText(/AITDL — AI Technology & Development Lab/i)).toBeDefined()
-    const aitdlLink = within(orgSection).getByRole('link', { name: /aitdl\.com/i })
-    expect(aitdlLink.getAttribute('href')).toBe('https://aitdl.com')
+    expect(within(orgSection).getByText('SmritiSys')).toBeDefined()
+    const companyLink = within(orgSection).getByTitle('Visit SmritiSys website')
+    expect(companyLink.getAttribute('href')).toBe('https://smritisys.com')
 
     // 3 Products inside organization branding
     const prathamLink = within(orgSection).getByRole('link', { name: /^PrathamOne/i })
@@ -138,7 +138,7 @@ describe('Application Footer Specifications', () => {
     const smritiBooksLink = within(orgSection).getByRole('link', { name: /^SmritiBooks/i })
     expect(smritiBooksLink.getAttribute('href')).toBe('https://smritibooks.com')
 
-    const smritiSysLink = within(orgSection).getByRole('link', { name: /^SmritiSys/i })
+    const smritiSysLink = within(orgSection).getByTitle('SmritiSys — E-commerce, Inventory & Warehouse Management')
     expect(smritiSysLink.getAttribute('href')).toBe('https://smritisys.com')
 
     // Sales & Support phone numbers
@@ -149,17 +149,17 @@ describe('Application Footer Specifications', () => {
     expect(phone2.getAttribute('href')).toBe('tel:9324117007')
   })
 
-  it('opens and closes the AITDL Ecosystem modal dialog on user interaction', () => {
+  it('opens and closes the SmritiSys Ecosystem modal dialog on user interaction', () => {
     renderFooter()
 
     // Trigger button
-    const ecosystemBtn = screen.getByRole('button', { name: /AITDL Ecosystem/i })
+    const ecosystemBtn = screen.getByRole('button', { name: /SMRITISYS Ecosystem/i })
     expect(ecosystemBtn).toBeDefined()
 
     // Open modal
     fireEvent.click(ecosystemBtn)
     expect(screen.getByRole('dialog')).toBeDefined()
-    expect(screen.getByText(/AITDL Parent Organization & Product Ecosystem/i)).toBeDefined()
+    expect(screen.getByText(/SmritiSys Parent Organization & Product Ecosystem/i)).toBeDefined()
 
     // Close modal
     const closeBtn = screen.getByRole('button', { name: /Close dialog/i })

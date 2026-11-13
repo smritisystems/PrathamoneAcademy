@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-13
+#  * @updated     2026-11-14
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -83,7 +83,7 @@ async def list_institutions(
             "website": i.website,
             "address": i.address,
             "logo_url": i.logo_url or "/logo.svg",
-            "favicon_url": i.favicon_url or "/favicon.svg",
+            "favicon_url": i.favicon_url or "/icons/icon-192x192.png",
             "primary_color": i.primary_color or "#0B2D6B",
             "secondary_color": i.secondary_color or "#071C44",
             "accent_color": i.accent_color or "#F57C00",
@@ -145,7 +145,7 @@ async def get_public_institution_branding(
         "short_name": inst.short_name or "PA",
         "tagline": inst.tagline or "Learn • Practice • Achieve",
         "logo_url": inst.logo_url,
-        "favicon_url": inst.favicon_url or "/favicon.svg",
+        "favicon_url": inst.favicon_url or "/icons/icon-192x192.png",
         "primary_color": inst.primary_color or "#0B2D6B",
         "secondary_color": inst.secondary_color or "#071C44",
         "accent_color": inst.accent_color or "#F57C00",
@@ -196,7 +196,7 @@ async def get_institution(
         "email": institution.email,
         "website": institution.website,
         "logo_url": institution.logo_url or "/logo.svg",
-        "favicon_url": institution.favicon_url or "/favicon.svg",
+        "favicon_url": institution.favicon_url or "/icons/icon-192x192.png",
         "primary_color": institution.primary_color or "#0B2D6B",
         "secondary_color": institution.secondary_color or "#071C44",
         "accent_color": institution.accent_color or "#F57C00",
@@ -222,4 +222,3 @@ async def update_institution(
     await db.commit()
     await db.refresh(institution)
     return {"id": institution.id, "name": institution.name}
-

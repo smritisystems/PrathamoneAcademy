@@ -11,13 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
 
 import { useState, useMemo, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import {
   reportsApi,
   academicReportsApi,
@@ -595,10 +596,15 @@ const CATEGORIES: { key: ReportCategoryKey; label: string; icon: any; count: num
 export default function Reports() {
   const branding = useBranding()
   const { user, selectedAcademicYearId, selectedInstitutionId } = useAuthStore()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedReport = REPORT_CATALOG.find((report) => report.id === searchParams.get('report'))
+  const requestedCategory = CATEGORIES.find((category) => category.key === searchParams.get('category'))?.key
+  const initialCategory = requestedReport?.category || requestedCategory || 'students'
+  const initialReportId = requestedReport?.id || REPORT_CATALOG.find((report) => report.category === initialCategory)?.id || 'student-master'
 
   // ── Navigation & Catalog State ──
-  const [activeCategory, setActiveCategory] = useState<ReportCategoryKey>('students')
-  const [activeReportId, setActiveReportId] = useState<string>('student-master')
+  const [activeCategory, setActiveCategory] = useState<ReportCategoryKey>(initialCategory)
+  const [activeReportId, setActiveReportId] = useState<string>(initialReportId)
   const [globalSearch, setGlobalSearch] = useState<string>('')
   const [pinnedReports, setPinnedReports] = useState<string[]>(() => {
     try {
@@ -645,6 +651,27 @@ export default function Reports() {
   const activeReport = useMemo(() => {
     return REPORT_CATALOG.find((r) => r.id === activeReportId) || REPORT_CATALOG[0]
   }, [activeReportId])
+
+  const selectReport = (report: ReportMeta) => {
+    setActiveCategory(report.category)
+    setActiveReportId(report.id)
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('category', report.category)
+      next.set('report', report.id)
+      return next
+    }, { replace: true })
+  }
+
+  useEffect(() => {
+    const report = REPORT_CATALOG.find((item) => item.id === searchParams.get('report'))
+    const category = report?.category ||
+      CATEGORIES.find((item) => item.key === searchParams.get('category'))?.key ||
+      'students'
+    const reportId = report?.id || REPORT_CATALOG.find((item) => item.category === category)?.id || 'student-master'
+    setActiveCategory(category)
+    setActiveReportId(reportId)
+  }, [searchParams])
 
   // Filtered Catalog by search
   const filteredCatalog = useMemo(() => {
@@ -953,6 +980,43 @@ export default function Reports() {
     enabled: isConcessionReportActive && hasAccess,
   })
 
+  const reportQueryClient = useQueryClient()
+  const reportQueryPrefix = isConcessionReportActive
+    ? 'report-concession-governance'
+    : activeReportId.startsWith('payroll-')
+      ? 'teacher-payroll-report'
+      : ({
+          'student-master': 'report-student-master',
+          'student-attendance': 'report-attendance-summary',
+          withdrawals: 'report-withdrawals',
+          'withdrawal-analytics': 'report-withdrawal-analytics',
+          'batch-capacity': 'report-batch-capacity',
+          'academic-distribution': 'report-distribution',
+          'curriculum-matrix': 'report-curriculum-matrix',
+          'timetable-utilization': 'report-timetable-utilization',
+          collection: 'report-collection',
+          outstanding: 'report-outstanding',
+          'fee-defaulters': 'report-fee-defaulters',
+          'daily-collection': 'report-daily-collection',
+          summary: 'report-summary',
+          'fee-reconciliation': 'report-fee-overview',
+          'faculty-load': 'report-faculty-load',
+          'exam-merit': 'report-exam-merit',
+          'exam-analytics': 'report-exam-analytics',
+          'audit-logs': 'report-audit-logs',
+          'comm-logs': 'report-comm-logs',
+          'import-history': 'report-import-history',
+          'homework-register': 'report-homework-register',
+          'eduboard-summary': 'report-eduboard-summary',
+          'crm-enquiries': 'report-crm-enquiries',
+        } as Record<string, string>)[activeReportId]
+  const activeReportQueryError = reportQueryPrefix
+    ? reportQueryClient
+        .getQueryCache()
+        .findAll({ queryKey: [reportQueryPrefix] })
+        .find((query) => query.isActive() && query.state.status === 'error')?.state.error
+    : undefined
+
   const handleDownloadConcessionExport = async (format: 'csv' | 'xlsx') => {
     try {
       const res = await reportsApi.exportConcessionReport(activeReportId, {
@@ -1068,7 +1132,8 @@ export default function Reports() {
 
   // 5. Daily Collection Columns
   const dailyCollectionColumns = useMemo<ColumnConfig<any>[]>(() => [
-    { id: 'receipt_number', header: 'Receipt #', accessorKey: 'receipt_number', type: 'text', width: 140, sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
+    { id: 'receipt_number', header: 'Receipt #', accessorKey: 'receipt_number', type: 'text', width: 160, sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val || '—'}</span> },
+    { id: 'receipt_status', header: 'Receipt Status', accessorKey: 'receipt_status', type: 'text', width: 130, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'valid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>{val === 'valid' ? 'Issued' : val === 'missing' ? 'Not issued' : val}</span> },
     { id: 'payment_date', header: 'Date', accessorKey: 'payment_date', type: 'date', width: 110, sortable: true },
     { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 180, sortable: true },
     { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 120 },
@@ -1165,10 +1230,9 @@ export default function Reports() {
               <div
                 key={r.id}
                 onClick={() => {
-                  setActiveCategory(r.category)
-                  setActiveReportId(r.id)
-                  setGlobalSearch('')
-                }}
+                    selectReport(r)
+                    setGlobalSearch('')
+                  }}
                 className="p-2.5 hover:bg-primary-50 rounded-lg cursor-pointer flex items-center justify-between transition-colors"
               >
                 <div className="space-y-0.5">
@@ -1194,9 +1258,8 @@ export default function Reports() {
             <button
               key={cat.key}
               onClick={() => {
-                setActiveCategory(cat.key)
                 const firstInCat = REPORT_CATALOG.find((r) => r.category === cat.key)
-                if (firstInCat) setActiveReportId(firstInCat.id)
+                if (firstInCat) selectReport(firstInCat)
               }}
               className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${
                 isActive
@@ -1229,7 +1292,7 @@ export default function Reports() {
             return (
               <button
                 key={r.id}
-                onClick={() => setActiveReportId(r.id)}
+                onClick={() => selectReport(r)}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
                   isSelected
                     ? 'bg-slate-900 text-white shadow-xs'
@@ -1439,6 +1502,15 @@ export default function Reports() {
       </div>
 
       {/* ── Security Authorization Gate ─────────────────────────────────────── */}
+      {hasAccess && activeReportQueryError && (
+        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+          <p className="font-bold">Could not load {activeReport.name}.</p>
+          <p className="mt-1">{activeReportQueryError instanceof Error ? activeReportQueryError.message : String(activeReportQueryError)}</p>
+          <button type="button" onClick={handleRefetch} className="mt-2 font-bold underline">
+            Retry
+          </button>
+        </div>
+      )}
       {!hasAccess ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center space-y-3">
           <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center mx-auto font-bold">
@@ -1670,10 +1742,10 @@ export default function Reports() {
                 columns={[
                   { id: 'batch_name', header: 'Batch / Course', accessorKey: 'batch_name', type: 'text', width: 220, sortable: true },
                   { id: 'student_count', header: 'Students', accessorKey: 'student_count', type: 'number', width: 110, align: 'center', sortable: true },
-                  { id: 'total_obligation', header: 'Invoiced (₹)', accessorKey: 'total_obligation', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                  { id: 'total_collected', header: 'Collected (₹)', accessorKey: 'total_collected', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                  { id: 'total_outstanding', header: 'Outstanding (₹)', accessorKey: 'total_outstanding', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span className="font-bold text-rose-600">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
-                  { id: 'collection_rate', header: 'Collection Rate', accessorKey: 'collection_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}%</span> },
+                  { id: 'total_fees', header: 'Invoiced (₹)', accessorKey: 'total_fees', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'collected', header: 'Collected (₹)', accessorKey: 'collected', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'outstanding', header: 'Outstanding (₹)', accessorKey: 'outstanding', type: 'currency', width: 160, align: 'right', sortable: true, render: (val) => <span className="font-bold text-rose-600">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+                  { id: 'rate', header: 'Collection Rate', accessorKey: 'rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}%</span> },
                 ]}
                 data={overviewData.batch_breakdown || []}
                 loading={loadingOverview}
@@ -1693,10 +1765,10 @@ export default function Reports() {
                 { id: 'batch_name', header: 'Batch / Division', accessorKey: 'batch_name', type: 'text', width: 180, sortable: true, render: (val, r: any) => <span className="font-semibold text-slate-900">{val} {r.batch_code ? `[${r.batch_code}]` : ''}</span> },
                 { id: 'standard_name', header: 'Standard', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true },
                 { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
-                { id: 'total_capacity', header: 'Capacity', accessorKey: 'total_capacity', type: 'number', width: 110, align: 'center', sortable: true },
-                { id: 'enrolled_count', header: 'Enrolled', accessorKey: 'enrolled_count', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-primary-700">{val}</span> },
+                { id: 'capacity', header: 'Capacity', accessorKey: 'capacity', type: 'number', width: 110, align: 'center', sortable: true },
+                { id: 'enrolled', header: 'Enrolled', accessorKey: 'enrolled', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className="font-bold text-primary-700">{val}</span> },
                 { id: 'available_seats', header: 'Vacant', accessorKey: 'available_seats', type: 'number', width: 110, align: 'center', sortable: true, render: (val) => <span className={`font-bold ${val <= 5 ? 'text-amber-600' : 'text-emerald-700'}`}>{val}</span> },
-                { id: 'occupancy_rate', header: 'Occupancy %', accessorKey: 'occupancy_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-800">{val}%</span> },
+                { id: 'occupancy_percentage', header: 'Occupancy %', accessorKey: 'occupancy_percentage', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-800">{val}%</span> },
               ]}
               data={batchCapacityData}
               loading={loadingBatchCapacity}
@@ -1735,7 +1807,7 @@ export default function Reports() {
                   { id: 'batches_count', header: 'Batches', accessorKey: 'batches_count', type: 'number', width: 110, align: 'center', sortable: true },
                   { id: 'total_capacity', header: 'Capacity', accessorKey: 'total_capacity', type: 'number', width: 120, align: 'center', sortable: true },
                   { id: 'enrolled_count', header: 'Enrolled', accessorKey: 'enrolled_count', type: 'number', width: 120, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
-                  { id: 'occupancy_rate', header: 'Occupancy %', accessorKey: 'occupancy_rate', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-800">{val}%</span> },
+                  { id: 'occupancy_percentage', header: 'Occupancy %', accessorKey: 'occupancy_percentage', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-primary-800">{val}%</span> },
                 ]}
                 data={distributionData}
                 loading={loadingDistribution}
@@ -1798,10 +1870,10 @@ export default function Reports() {
               columns={[
                 { id: 'teacher_name', header: 'Faculty Member', accessorKey: 'teacher_name', type: 'text', width: 190, sortable: true, render: (val) => <span className="font-bold text-slate-900">{val}</span> },
                 { id: 'staff_code', header: 'Staff Code', accessorKey: 'staff_code', type: 'text', width: 130, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
-                { id: 'department', header: 'Department', accessorKey: 'department', type: 'text', width: 140 },
+                { id: 'designation', header: 'Designation', accessorKey: 'designation', type: 'text', width: 140 },
                 { id: 'assigned_batches_count', header: 'Active Batches', accessorKey: 'assigned_batches_count', type: 'number', width: 130, align: 'center', sortable: true },
-                { id: 'total_weekly_hours', header: 'Weekly Hours', accessorKey: 'total_weekly_hours', type: 'number', width: 130, align: 'center', sortable: true, render: (val) => <span className="font-bold text-primary-700">{val} hrs</span> },
-                { id: 'total_students_supervised', header: 'Supervised Students', accessorKey: 'total_students_supervised', type: 'number', width: 160, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-800">{val}</span> },
+                { id: 'weekly_sessions_count', header: 'Weekly Sessions', accessorKey: 'weekly_sessions_count', type: 'number', width: 130, align: 'center', sortable: true },
+                { id: 'total_students', header: 'Supervised Students', accessorKey: 'total_students', type: 'number', width: 160, align: 'center', sortable: true, render: (val) => <span className="font-bold text-emerald-800">{val}</span> },
               ]}
               data={facultyLoadData}
               loading={loadingFacultyLoad}
@@ -1908,9 +1980,10 @@ export default function Reports() {
               columns={[
                 { id: 'created_at', header: 'Sent At', accessorKey: 'created_at', type: 'date', width: 150, sortable: true, render: (val) => <span className="font-mono text-xs">{val ? new Date(val).toLocaleString('en-IN') : 'N/A'}</span> },
                 { id: 'recipient_name', header: 'Recipient', accessorKey: 'recipient_name', type: 'text', width: 160 },
-                { id: 'recipient_contact', header: 'Contact #', accessorKey: 'recipient_contact', type: 'text', width: 130 },
+                { id: 'recipient_destination', header: 'Contact #', accessorKey: 'recipient_destination', type: 'text', width: 150 },
                 { id: 'channel', header: 'Channel', accessorKey: 'channel', type: 'text', width: 100, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
-                { id: 'template_title', header: 'Message Type', accessorKey: 'template_title', type: 'text', width: 160 },
+                { id: 'template_code', header: 'Message Type', accessorKey: 'template_code', type: 'text', width: 160 },
+                { id: 'subject', header: 'Subject', accessorKey: 'subject', type: 'text', width: 200 },
                 { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 110, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'delivered' || val === 'sent' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{val}</span> },
               ]}
               data={commLogsData}
@@ -1931,8 +2004,8 @@ export default function Reports() {
                 { id: 'file_name', header: 'File Name', accessorKey: 'file_name', type: 'text', width: 200 },
                 { id: 'entity_type', header: 'Target Entity', accessorKey: 'entity_type', type: 'text', width: 140, render: (val) => <span className="font-bold text-primary-700 capitalize">{val}</span> },
                 { id: 'total_rows', header: 'Rows', accessorKey: 'total_rows', type: 'number', width: 100, align: 'center' },
-                { id: 'success_rows', header: 'Imported', accessorKey: 'success_rows', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
-                { id: 'error_rows', header: 'Errors', accessorKey: 'error_rows', type: 'number', width: 100, align: 'center', render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{val}</span> },
+                { id: 'successful_rows', header: 'Imported', accessorKey: 'successful_rows', type: 'number', width: 110, align: 'center', render: (val) => <span className="font-bold text-emerald-700">{val}</span> },
+                { id: 'failed_rows', header: 'Errors', accessorKey: 'failed_rows', type: 'number', width: 100, align: 'center', render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{val}</span> },
                 { id: 'status', header: 'Status', accessorKey: 'status', type: 'text', width: 120, render: (val) => <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-bold uppercase">{val}</span> },
               ]}
               data={importHistoryData}
@@ -1973,19 +2046,19 @@ export default function Reports() {
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="bg-white p-4 rounded-xl border border-slate-200">
                   <div className="text-xs text-slate-500 font-semibold uppercase">Total Exits</div>
-                  <div className="text-2xl font-black text-rose-700 mt-1">{analyticsData.summary?.withdrawn_students || 0}</div>
+                  <div className="text-2xl font-black text-rose-700 mt-1">{analyticsData.summary?.total_withdrawn || 0}</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200">
                   <div className="text-xs text-slate-500 font-semibold uppercase">Total Paid at Exit</div>
-                  <div className="text-xl font-bold text-slate-900 mt-1">₹{Number(analyticsData.summary?.gross_paid || 0).toLocaleString('en-IN')}</div>
+                  <div className="text-xl font-bold text-slate-900 mt-1">₹{Number(analyticsData.summary?.total_gross_paid || 0).toLocaleString('en-IN')}</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200">
                   <div className="text-xs text-slate-500 font-semibold uppercase">Total Refunded</div>
-                  <div className="text-xl font-bold text-amber-700 mt-1">₹{Number(analyticsData.summary?.refund_amount || 0).toLocaleString('en-IN')}</div>
+                  <div className="text-xl font-bold text-amber-700 mt-1">₹{Number(analyticsData.summary?.total_refunds || 0).toLocaleString('en-IN')}</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-slate-200">
                   <div className="text-xs text-slate-500 font-semibold uppercase">Net Retained</div>
-                  <div className="text-xl font-bold text-primary-700 mt-1">₹{Number(analyticsData.summary?.net_retained || 0).toLocaleString('en-IN')}</div>
+                  <div className="text-xl font-bold text-primary-700 mt-1">₹{Number(analyticsData.summary?.total_net_retained || 0).toLocaleString('en-IN')}</div>
                 </div>
               </div>
 

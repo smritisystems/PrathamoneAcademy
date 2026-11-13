@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
 #  * @description CLI & scheduled automation utility for PrathamOne EduOS Housekeeping:
 #  */
@@ -21,6 +21,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shutil
 import subprocess
 import sys
@@ -122,7 +123,10 @@ def _extract_edu_payload(edu_path: Path, dest_dir: Path) -> Tuple[Path, bool, Di
                 manifest = {}
         inner_sha_ok = True
         if "checksum.sha256" in members:
-            rec = zf.read(members["checksum.sha256"]).decode("utf-8", errors="replace").strip().split()[0]
+            checksum_parts = zf.read(members["checksum.sha256"]).decode("utf-8", errors="replace").strip().split()
+            if not checksum_parts or not re.fullmatch(r"[a-fA-F0-9]{64}", checksum_parts[0]):
+                raise ValueError("Invalid or empty checksum.sha256 in .edu archive.")
+            rec = checksum_parts[0]
             inner_sha_ok = rec.lower() == _sha256(payload_out).lower()
         return payload_out, inner_sha_ok, manifest
 
@@ -235,9 +239,12 @@ def _verify_raw_payload(payload_path: Path) -> Tuple[bool, int]:
         fmt_ok = res.returncode == 0
         toc_entries = len([ln for ln in (res.stdout or b"").decode("utf-8", errors="replace").splitlines() if ln.strip() and not ln.strip().startswith(";")])
         return fmt_ok, toc_entries
-    txt = payload_path.read_text(encoding="utf-8", errors="replace")
-    fmt_ok = "PostgreSQL database dump" in txt[:2048] or "CREATE TABLE" in txt[:4096]
-    return fmt_ok, txt.count("CREATE TABLE ")
+    create_table_pattern = re.compile(r"\bCREATE\s+TABLE\b", re.IGNORECASE)
+    with payload_path.open("r", encoding="utf-8", errors="replace") as payload:
+        fmt_ok = "PostgreSQL database dump" in payload.read(2048)
+        payload.seek(0)
+        toc_entries = sum(1 for line in payload if create_table_pattern.search(line))
+    return fmt_ok or toc_entries > 0, toc_entries
 
 
 def verify_file(target: Path) -> bool:
@@ -245,8 +252,13 @@ def verify_file(target: Path) -> bool:
     sha_file = Path(str(target) + ".sha256")
     sha_match = True
     if sha_file.exists():
-        recorded = sha_file.read_text(encoding="utf-8", errors="replace").strip().split()[0]
-        sha_match = recorded.lower() == computed.lower()
+        checksum_parts = sha_file.read_text(encoding="utf-8", errors="replace").strip().split()
+        recorded = checksum_parts[0] if checksum_parts else None
+        sha_match = bool(
+            recorded
+            and re.fullmatch(r"[a-fA-F0-9]{64}", recorded)
+            and recorded.lower() == computed.lower()
+        )
     else:
         sha_file.write_text(f"{computed}  {target.name}\n", encoding="utf-8")
 
@@ -275,6 +287,8 @@ def verify_file(target: Path) -> bool:
         "verified": verified,
         "verified_at": datetime.now(timezone.utc).isoformat(),
         "toc_entries": toc_entries,
+        "verified_size_bytes": target.stat().st_size,
+        "verified_mtime_ns": target.stat().st_mtime_ns,
     })
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"[VERIFY] {target.name}: sha_match={sha_match}, format_valid={fmt_ok}, objects={toc_entries}")
@@ -299,7 +313,13 @@ def cmd_list(_args: argparse.Namespace) -> int:
             verified = "?"
             if meta_p.exists():
                 try:
-                    verified = "VERIFIED" if json.loads(meta_p.read_text(encoding="utf-8")).get("verified") else "UNVERIFIED"
+                    meta = json.loads(meta_p.read_text(encoding="utf-8"))
+                    stat = f.stat()
+                    verified = "VERIFIED" if (
+                        meta.get("verified")
+                        and meta.get("verified_size_bytes") == stat.st_size
+                        and meta.get("verified_mtime_ns") == stat.st_mtime_ns
+                    ) else "UNVERIFIED"
                 except Exception:
                     pass
             print(f"  {f.name:<58} {f.stat().st_size:>10,} B  [{verified}]")
@@ -314,9 +334,9 @@ def prune_backups(retain_daily: int, retain_weekly: int, retain_monthly: int) ->
         return 0, len(files)
     now = datetime.now(timezone.utc)
     keep = {files[0]}
-    daily = 0
-    weeks = set()
-    months = set()
+    daily_slots = set()
+    weekly_slots = set()
+    monthly_slots = set()
     for p in files:
         mt = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
         meta_lbl = ""
@@ -328,20 +348,39 @@ def prune_backups(retain_daily: int, retain_weekly: int, retain_monthly: int) ->
                 meta_lbl = ""
         if ("pre_restore_" in p.name or meta_lbl == "pre_restore") and (now - mt) < timedelta(hours=48):
             keep.add(p)
+    for p in keep:
+        mt = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
+        daily_slots.add((mt.year, mt.month, mt.day))
+    for p in files:
+        if p in keep:
             continue
-        if daily < retain_daily:
+        mt = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
+        day = (mt.year, mt.month, mt.day)
+        if day not in daily_slots and len(daily_slots) < retain_daily:
             keep.add(p)
-            daily += 1
+            daily_slots.add(day)
+    for p in keep:
+        mt = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
+        weekly_slots.add((mt.isocalendar().year, mt.isocalendar().week))
+    for p in files:
+        if p in keep:
             continue
+        mt = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
         wk = (mt.isocalendar().year, mt.isocalendar().week)
-        if wk not in weeks and len(weeks) < retain_weekly:
-            weeks.add(wk)
+        if wk not in weekly_slots and len(weekly_slots) < retain_weekly:
             keep.add(p)
+            weekly_slots.add(wk)
+    for p in keep:
+        mt = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
+        monthly_slots.add((mt.year, mt.month))
+    for p in files:
+        if p in keep:
             continue
+        mt = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
         mk = (mt.year, mt.month)
-        if mk not in months and len(months) < retain_monthly:
-            months.add(mk)
+        if mk not in monthly_slots and len(monthly_slots) < retain_monthly:
             keep.add(p)
+            monthly_slots.add(mk)
     deleted = 0
     for p in files:
         if p not in keep:
@@ -360,6 +399,10 @@ def cmd_prune(args: argparse.Namespace) -> int:
 
 
 def _restore_into_db(target_path: Path, user: str, dbname: str) -> None:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,62}", dbname or ""):
+        raise ValueError(f"Unsafe target database identifier: {dbname!r}")
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,62}", user or ""):
+        raise ValueError(f"Unsafe PostgreSQL user identifier: {user!r}")
     term_sql = f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{dbname}' AND pid <> pg_backend_pid();"
     _docker_exec(["psql", "-U", user, "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", term_sql])
     _docker_exec(["psql", "-U", user, "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", f'DROP DATABASE IF EXISTS "{dbname}";'])
@@ -383,20 +426,32 @@ def cmd_drill(args: argparse.Namespace) -> int:
     target = _resolve_input_file(args.file)
     if not verify_file(target):
         raise RuntimeError(f"Drill aborted: integrity verification failed for {target.name}")
-    sandbox_db = args.sandbox_db
-    if sandbox_db in ("prashant_academy", "prashant_academy_test"):
-        raise ValueError("Sandbox drill cannot target live production DB or pytest test DB.")
+    sandbox_prefix = args.sandbox_db
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,62}", sandbox_prefix or ""):
+        raise ValueError(f"Unsafe sandbox database prefix: {sandbox_prefix!r}")
+    if sandbox_prefix in (args.database, "prashant_academy_test"):
+        raise ValueError("Sandbox database prefix must not be the live production or pytest database name.")
+    sandbox_db = f"{sandbox_prefix[:38]}_{datetime.now(timezone.utc):%Y%m%d%H%M%S}_{secrets.token_hex(4)}"
     print(f"[DRILL] Running non-destructive sandbox restore of {target.name} -> {sandbox_db}...")
+    drill_error: Optional[BaseException] = None
     try:
         _restore_into_db(target, args.user, sandbox_db)
         res = _docker_exec(["psql", "-U", args.user, "-d", sandbox_db, "-tAc", "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';"])
         tbls = (res.stdout or b"").decode("utf-8", errors="replace").strip()
         _append_history({"action": "CLI_RESTORE_DRILL", "status": "success", "filename": target.name, "sandbox_db": sandbox_db, "tables": tbls})
         print(f"[PASS] Sandbox restore drill succeeded on '{sandbox_db}' ({tbls} tables restored).")
-    finally:
+    except BaseException as exc:
+        drill_error = exc
+    try:
         term_sql = f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '{sandbox_db}' AND pid <> pg_backend_pid();"
-        _docker_exec(["psql", "-U", args.user, "-d", "postgres", "-c", term_sql], check=False)
-        _docker_exec(["psql", "-U", args.user, "-d", "postgres", "-c", f'DROP DATABASE IF EXISTS "{sandbox_db}";'], check=False)
+        _docker_exec(["psql", "-U", args.user, "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", term_sql])
+        _docker_exec(["psql", "-U", args.user, "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", f'DROP DATABASE IF EXISTS "{sandbox_db}";'])
+    except BaseException as cleanup_error:
+        if drill_error:
+            raise RuntimeError(f"Restore drill failed: {drill_error}. Sandbox cleanup also failed: {cleanup_error}") from drill_error
+        raise RuntimeError(f"Restore drill completed, but temporary database '{sandbox_db}' could not be removed: {cleanup_error}") from cleanup_error
+    if drill_error:
+        raise drill_error
     return 0
 
 
@@ -490,6 +545,7 @@ def main() -> int:
 
     p_dr = sub.add_parser("drill", help="Run non-destructive sandbox restore verification")
     p_dr.add_argument("--file", required=True)
+    p_dr.add_argument("--database", default="prashant_academy")
     p_dr.add_argument("--user", default="postgres")
     p_dr.add_argument("--sandbox-db", default="prashant_academy_drill")
     p_dr.set_defaults(func=cmd_drill)
@@ -514,4 +570,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-13
+ * @updated     2026-11-14
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -439,6 +439,31 @@ export interface MonthlyTrend {
   transaction_count?: number
   is_current_month?: boolean
   cumulative?: number
+}
+
+export interface DashboardCollectionTrendRecord {
+  period_key: string
+  label: string
+  collected: number | null
+  collected_coded?: string
+  transaction_count: number
+  is_masked?: boolean
+}
+
+export interface DashboardCollectionTrendsResponse {
+  granularity: 'month' | 'year' | 'day'
+  month?: string | null
+  academic_year_id?: number | null
+  records: DashboardCollectionTrendRecord[]
+  total_collected: number | null
+  total_collected_coded?: string
+  total_transactions: number
+  is_masked?: boolean
+  _codex?: {
+    is_enabled: boolean
+    visibility_mode: string
+    is_masked: boolean
+  }
 }
 
 export interface RecentPayment {
@@ -3174,15 +3199,15 @@ export interface WithdrawalReportItem {
 export interface WithdrawalAnalyticsResponse {
   summary: {
     total_enrolled: number
-    active_students: number
-    withdrawn_students: number
+    total_active: number
+    total_withdrawn: number
     attrition_rate: number
-    paid_withdrawn_count: number
-    unpaid_withdrawn_count: number
-    gross_paid: number
-    refund_amount: number
-    net_retained: number
-    outstanding_at_exit: number
+    paid_withdrawals: number
+    unpaid_withdrawals: number
+    total_gross_paid: number
+    total_refunds: number
+    total_net_retained: number
+    total_outstanding_at_exit: number
   }
   by_reason: {
     reason: string
@@ -3193,21 +3218,20 @@ export interface WithdrawalAnalyticsResponse {
   by_class_batch: {
     standard_name: string
     division_name: string
-    total_enrolled: number
-    withdrawn_count: number
-    attrition_rate: number
+    withdrawals: number
     net_retained: number
   }[]
   by_installment: {
-    installment_at_exit: string
+    installment: string
     count: number
+    gross_collected: number
     net_retained: number
   }[]
   trends_monthly: {
     month: string
-    month_label: string
     count: number
-    refund_amount: number
+    gross_collected: number
+    refunds: number
     net_retained: number
   }[]
 }
@@ -5396,5 +5420,3 @@ export interface EduBoardReportsSummary {
     updated_at?: string | null
   }>
 }
-
-

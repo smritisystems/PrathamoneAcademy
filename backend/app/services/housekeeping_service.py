@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-12
+#  * @updated     2026-11-14
 #  *
 #  * @description Domain service for database backup, SHA-256 verification, GFS retention pruning,
 #  */
@@ -22,6 +22,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shutil
 import tempfile
 import zipfile
@@ -165,7 +166,10 @@ def _extract_edu_payload(edu_path: Path, dest_dir: Path) -> Tuple[Path, bool, Di
 
         internal_sha_ok = True
         if "checksum.sha256" in safe_members:
-            recorded = zf.read(safe_members["checksum.sha256"]).decode("utf-8", errors="replace").strip().split()[0]
+            checksum_parts = zf.read(safe_members["checksum.sha256"]).decode("utf-8", errors="replace").strip().split()
+            if not checksum_parts or not re.fullmatch(r"[a-fA-F0-9]{64}", checksum_parts[0]):
+                raise ValueError("Invalid or empty checksum.sha256 in .edu package.")
+            recorded = checksum_parts[0]
             computed_inner = compute_sha256(extracted_payload)
             internal_sha_ok = recorded.lower() == computed_inner.lower()
 
@@ -386,7 +390,7 @@ class HousekeepingService:
 
     @classmethod
     def list_backups(cls) -> List[Dict[str, Any]]:
-        results: List[Dict[str, Any]] = []
+        results_with_timestamp: List[Tuple[float, Dict[str, Any]]] = []
         for source, directory in (("backups", resolve_backups_dir()), ("legacy_data", resolve_legacy_backups_dir())):
             if not directory.exists():
                 continue
@@ -404,32 +408,50 @@ class HousekeepingService:
                         meta_data = {}
                 stored_sha = None
                 if sha_path.exists():
-                    stored_sha = sha_path.read_text(encoding="utf-8", errors="replace").strip().split()[0]
+                    checksum_parts = sha_path.read_text(encoding="utf-8", errors="replace").strip().split()
+                    stored_sha = checksum_parts[0] if checksum_parts else None
                 elif meta_data.get("sha256"):
                     stored_sha = meta_data.get("sha256")
+
+                created_at = meta_data.get("created_at") or datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
+                try:
+                    created_dt = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
+                    if created_dt.tzinfo is None:
+                        created_dt = created_dt.replace(tzinfo=timezone.utc)
+                    sort_timestamp = created_dt.timestamp()
+                except (TypeError, ValueError, OverflowError):
+                    sort_timestamp = stat.st_mtime
 
                 fmt_label = (
                     "edu_zip"
                     if entry.suffix == ".edu"
                     else ("custom_dump" if entry.suffix == ".dump" else "plain_sql")
                 )
-                results.append({
+                result = {
                     "filename": entry.name,
                     "source": source,
                     "format": fmt_label,
                     "size_bytes": stat.st_size,
                     "size_human": f"{stat.st_size / (1024 * 1024):.2f} MB" if stat.st_size >= 1024 * 1024 else f"{stat.st_size / 1024:.1f} KB",
-                    "created_at": meta_data.get("created_at") or datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+                    "created_at": created_at,
                     "label": meta_data.get("label") or ("legacy_snapshot" if source == "legacy_data" else "manual"),
                     "created_by": meta_data.get("created_by") or ("pre-migration" if source == "legacy_data" else "system"),
                     "database": meta_data.get("database") or "prashant_academy",
                     "sha256": stored_sha,
                     "has_checksum": bool(stored_sha),
-                    "verified": bool(meta_data.get("verified", False)),
+                    "verified": bool(
+                        meta_data.get("verified", False)
+                        and meta_data.get("verified_size_bytes") == stat.st_size
+                        and meta_data.get("verified_mtime_ns") == stat.st_mtime_ns
+                    ),
                     "verified_at": meta_data.get("verified_at"),
                     "notes": meta_data.get("notes"),
-                })
-        return results
+                }
+                results_with_timestamp.append((sort_timestamp, result))
+        return [
+            item
+            for _, item in sorted(results_with_timestamp, key=lambda entry: entry[0], reverse=True)
+        ]
 
     @classmethod
     async def _verify_raw_payload(cls, payload_path: Path, pg: Dict[str, str]) -> Tuple[bool, int, str]:
@@ -444,9 +466,13 @@ class HousekeepingService:
             detail_msg = f"Archive TOC verified ({toc_entries} database objects)" if format_valid else err.strip()
             return format_valid, toc_entries, detail_msg
 
-        head = payload_path.read_text(encoding="utf-8", errors="replace")[:2048]
-        format_valid = ("PostgreSQL database dump" in head) or ("CREATE TABLE" in head)
-        toc_entries = payload_path.read_text(encoding="utf-8", errors="replace").count("CREATE TABLE ")
+        create_table_pattern = re.compile(r"\bCREATE\s+TABLE\b", re.IGNORECASE)
+        with payload_path.open("r", encoding="utf-8", errors="replace") as payload:
+            head = payload.read(2048)
+            format_valid = "PostgreSQL database dump" in head
+            payload.seek(0)
+            toc_entries = sum(1 for line in payload if create_table_pattern.search(line))
+        format_valid = format_valid or toc_entries > 0
         detail_msg = f"Plain SQL header verified ({toc_entries} CREATE TABLE statements)" if format_valid else "Invalid SQL dump header"
         return format_valid, toc_entries, detail_msg
 
@@ -462,8 +488,13 @@ class HousekeepingService:
         sha_match = True
         recorded_sha = None
         if sha_path.exists():
-            recorded_sha = sha_path.read_text(encoding="utf-8", errors="replace").strip().split()[0]
-            sha_match = recorded_sha.lower() == computed_sha.lower()
+            checksum_parts = sha_path.read_text(encoding="utf-8", errors="replace").strip().split()
+            recorded_sha = checksum_parts[0] if checksum_parts else None
+            sha_match = bool(
+                recorded_sha
+                and re.fullmatch(r"[a-fA-F0-9]{64}", recorded_sha)
+                and recorded_sha.lower() == computed_sha.lower()
+            )
         else:
             sha_path.write_text(f"{computed_sha}  {target.name}\n", encoding="utf-8")
             recorded_sha = computed_sha
@@ -508,6 +539,8 @@ class HousekeepingService:
             "verified": verified,
             "verified_at": now_iso,
             "toc_entries": toc_entries,
+            "verified_size_bytes": target.stat().st_size,
+            "verified_mtime_ns": target.stat().st_mtime_ns,
         })
         meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
@@ -761,9 +794,9 @@ class HousekeepingService:
 
         now = datetime.now(timezone.utc)
         keep_paths: set[Path] = {candidates[0]}  # Always keep latest backup
-        daily_kept = 0
-        weeks_seen: set[Tuple[int, int]] = set()
-        months_seen: set[Tuple[int, int]] = set()
+        daily_slots: set[Tuple[int, int, int]] = set()
+        weekly_slots: set[Tuple[int, int]] = set()
+        monthly_slots: set[Tuple[int, int]] = set()
 
         for p in candidates:
             mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
@@ -776,20 +809,42 @@ class HousekeepingService:
                     meta_label = ""
             if ("pre_restore_" in p.name or meta_label == "pre_restore") and (now - mtime) < timedelta(hours=48):
                 keep_paths.add(p)
+
+        for p in keep_paths:
+            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
+            daily_slots.add((mtime.year, mtime.month, mtime.day))
+        for p in candidates:
+            if p in keep_paths:
                 continue
-            if daily_kept < retain_daily:
+            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
+            day = (mtime.year, mtime.month, mtime.day)
+            if day not in daily_slots and len(daily_slots) < retain_daily:
                 keep_paths.add(p)
-                daily_kept += 1
+                daily_slots.add(day)
+
+        for p in keep_paths:
+            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
+            weekly_slots.add((mtime.isocalendar().year, mtime.isocalendar().week))
+        for p in candidates:
+            if p in keep_paths:
                 continue
+            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
             wk = (mtime.isocalendar().year, mtime.isocalendar().week)
-            if wk not in weeks_seen and len(weeks_seen) < retain_weekly:
-                weeks_seen.add(wk)
+            if wk not in weekly_slots and len(weekly_slots) < retain_weekly:
                 keep_paths.add(p)
+                weekly_slots.add(wk)
+
+        for p in keep_paths:
+            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
+            monthly_slots.add((mtime.year, mtime.month))
+        for p in candidates:
+            if p in keep_paths:
                 continue
+            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc)
             mk = (mtime.year, mtime.month)
-            if mk not in months_seen and len(months_seen) < retain_monthly:
-                months_seen.add(mk)
+            if mk not in monthly_slots and len(monthly_slots) < retain_monthly:
                 keep_paths.add(p)
+                monthly_slots.add(mk)
 
         deleted: List[str] = []
         freed_bytes = 0
@@ -905,65 +960,117 @@ class HousekeepingService:
                 raise RuntimeError(f"psql restore failed on '{target_db}': {err.strip()}")
 
     @classmethod
+    async def _drop_pg_database(cls, pg: Dict[str, str], target_db: str) -> None:
+        if not VALID_PG_IDENTIFIER_RE.fullmatch(target_db or ""):
+            raise ValueError(f"Unsafe target database identifier: {target_db!r}")
+        if not VALID_PG_IDENTIFIER_RE.fullmatch(pg.get("user", "")):
+            raise ValueError(f"Unsafe PostgreSQL user identifier: {pg.get('user')!r}")
+
+        env = {"PGPASSWORD": pg["password"]}
+        terminate_sql = (
+            f"SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+            f"WHERE datname = '{target_db}' AND pid <> pg_backend_pid();"
+        )
+        rc, _, err = await _run_subprocess(
+            ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", terminate_sql],
+            env_extra=env,
+            timeout=60,
+        )
+        if rc != 0:
+            raise RuntimeError(f"Failed terminating sessions on restore drill database '{target_db}': {err.strip()}")
+        rc, _, err = await _run_subprocess(
+            ["psql", "-h", pg["host"], "-p", pg["port"], "-U", pg["user"], "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", f'DROP DATABASE IF EXISTS "{target_db}";'],
+            env_extra=env,
+            timeout=60,
+        )
+        if rc != 0:
+            raise RuntimeError(f"Failed dropping restore drill database '{target_db}': {err.strip()}")
+
+    @classmethod
     async def run_restore_drill(cls, filename: str, source: str, user: User) -> Dict[str, Any]:
-        """Non-destructive sandbox verification restore into prashant_academy_test."""
+        """Restore into a uniquely named temporary database and always attempt to drop it."""
         pg = parse_pg_connection()
-        sandbox_db = os.getenv("HOUSEKEEPING_DRILL_DB", f"{pg['dbname']}_test")
-        if sandbox_db == pg["dbname"]:
-            raise ValueError("Sandbox drill database must differ from live production database.")
+        configured_prefix = os.getenv("HOUSEKEEPING_DRILL_DB", f"{pg['dbname']}_drill")
+        if not VALID_PG_IDENTIFIER_RE.fullmatch(configured_prefix):
+            raise ValueError("HOUSEKEEPING_DRILL_DB must be a valid PostgreSQL identifier prefix.")
+        if configured_prefix == pg["dbname"]:
+            raise ValueError("Restore drill database prefix must differ from the live production database.")
+        sandbox_db = f"{configured_prefix[:38]}_{datetime.now(timezone.utc):%Y%m%d%H%M%S}_{secrets.token_hex(4)}"
+        if not VALID_PG_IDENTIFIER_RE.fullmatch(sandbox_db) or sandbox_db == pg["dbname"]:
+            raise ValueError("Could not generate a safe restore drill database name.")
 
         verify_res = await cls.verify_backup(filename, source, user=user)
         if not verify_res["verified"]:
             raise ValueError(f"Backup verification failed before drill: {verify_res['detail']}")
 
         backup_path = cls.resolve_safe_path(filename, source)
-        await cls._recreate_and_restore_pg_db(pg, sandbox_db, backup_path)
-
-        # Verify Alembic + Ledger Reconciliation on Sandbox DB
-        sandbox_url = f"postgresql+asyncpg://{pg['user']}:{pg['password']}@{pg['host']}:{pg['port']}/{sandbox_db}"
-        alembic_cwd = "/app" if Path("/app/alembic.ini").exists() else str(Path(__file__).resolve().parents[2])
-        rc_alb, out_alb, err_alb = await _run_subprocess(
-            ["alembic", "upgrade", "head"],
-            env_extra={"DATABASE_URL": sandbox_url},
-            timeout=180,
-        ) if alembic_cwd == "/app" else (0, "Host drill skipped alembic cwd", "")
-        if rc_alb != 0:
-            raise RuntimeError(f"Sandbox alembic upgrade check failed: {err_alb.strip()}")
-
-        sb_engine = create_async_engine(sandbox_url, echo=False, poolclass=NullPool)
-        sb_session_factory = async_sessionmaker(sb_engine, expire_on_commit=False, class_=AsyncSession)
+        drill_result: Optional[Dict[str, Any]] = None
+        drill_error: Optional[BaseException] = None
         try:
-            async with sb_session_factory() as sdb:
-                tbl_count = (await sdb.execute(
-                    text("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'")
-                )).scalar() or 0
-                stu_count = (await sdb.execute(text("SELECT COUNT(*) FROM students"))).scalar() or 0
-                rec = await FinancialGovernanceService.reconcile_financial_ledgers(
-                    sdb, FinancialFilter(institution_id=1, is_demo=False)
-                )
-        finally:
-            await sb_engine.dispose()
+            await cls._recreate_and_restore_pg_db(pg, sandbox_db, backup_path)
 
+            sandbox_url = f"postgresql+asyncpg://{pg['user']}:{pg['password']}@{pg['host']}:{pg['port']}/{sandbox_db}"
+            alembic_cwd = "/app" if Path("/app/alembic.ini").exists() else str(Path(__file__).resolve().parents[2])
+            rc_alb, _, err_alb = await _run_subprocess(
+                ["alembic", "upgrade", "head"],
+                env_extra={"DATABASE_URL": sandbox_url},
+                timeout=180,
+            ) if alembic_cwd == "/app" else (0, "Host drill skipped alembic cwd", "")
+            if rc_alb != 0:
+                raise RuntimeError(f"Sandbox alembic upgrade check failed: {err_alb.strip()}")
+
+            sb_engine = create_async_engine(sandbox_url, echo=False, poolclass=NullPool)
+            sb_session_factory = async_sessionmaker(sb_engine, expire_on_commit=False, class_=AsyncSession)
+            try:
+                async with sb_session_factory() as sdb:
+                    tbl_count = (await sdb.execute(
+                        text("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public'")
+                    )).scalar() or 0
+                    stu_count = (await sdb.execute(text("SELECT COUNT(*) FROM students"))).scalar() or 0
+                    rec = await FinancialGovernanceService.reconcile_financial_ledgers(
+                        sdb, FinancialFilter(institution_id=user.institution_id or 1, is_demo=False)
+                    )
+            finally:
+                await sb_engine.dispose()
+
+            drill_result = {
+                "sandbox_db": sandbox_db,
+                "filename": filename,
+                "tables_restored": int(tbl_count),
+                "students_restored": int(stu_count),
+                "is_reconciled": rec["is_reconciled"],
+                "variance": rec["ledger_audit"]["variance"],
+                "verified_at": datetime.now(timezone.utc).isoformat(),
+            }
+        except BaseException as exc:
+            drill_error = exc
+
+        try:
+            await cls._drop_pg_database(pg, sandbox_db)
+        except BaseException as cleanup_error:
+            if drill_error:
+                raise RuntimeError(
+                    f"Restore drill failed: {drill_error}. Sandbox cleanup also failed: {cleanup_error}"
+                ) from drill_error
+            raise RuntimeError(
+                f"Restore drill completed, but temporary database '{sandbox_db}' could not be removed: {cleanup_error}"
+            ) from cleanup_error
+        if drill_error:
+            raise drill_error
+
+        assert drill_result is not None
         _append_history_event({
             "action": "RESTORE_DRILL_PASSED",
-            "status": "success" if rec["is_reconciled"] else "warning",
+            "status": "success" if drill_result["is_reconciled"] else "warning",
             "filename": filename,
             "source": source,
             "sandbox_db": sandbox_db,
             "actor": user.username,
-            "tables": tbl_count,
-            "students": stu_count,
-            "variance": rec["ledger_audit"]["variance"],
+            "tables": drill_result["tables_restored"],
+            "students": drill_result["students_restored"],
+            "variance": drill_result["variance"],
         })
-        return {
-            "sandbox_db": sandbox_db,
-            "filename": filename,
-            "tables_restored": int(tbl_count),
-            "students_restored": int(stu_count),
-            "is_reconciled": rec["is_reconciled"],
-            "variance": rec["ledger_audit"]["variance"],
-            "verified_at": datetime.now(timezone.utc).isoformat(),
-        }
+        return drill_result
 
     @classmethod
     async def restore_backup(
@@ -1050,7 +1157,13 @@ class HousekeepingService:
         }
 
     @classmethod
-    async def run_vacuum_analyze(cls, db: AsyncSession, user: User, tables: Optional[List[str]] = None) -> Dict[str, Any]:
+    async def run_vacuum_analyze(
+        cls,
+        db: AsyncSession,
+        user: User,
+        tables: Optional[List[str]] = None,
+        institution_id: int = 1,
+    ) -> Dict[str, Any]:
         pg = parse_pg_connection()
         env = {"PGPASSWORD": pg["password"]}
         safe_tables: List[str] = []
@@ -1078,7 +1191,7 @@ class HousekeepingService:
             raise RuntimeError(f"PostgreSQL VACUUM ANALYZE failed: {err.strip()}")
 
         now_iso = datetime.now(timezone.utc).isoformat()
-        await cls._upsert_internal_meta(db, 1, user.id, {"last_vacuum_at": now_iso})
+        await cls._upsert_internal_meta(db, institution_id, user.id, {"last_vacuum_at": now_iso})
         db.add(AuditLog(
             user_id=user.id,
             action="HOUSEKEEPING_VACUUM_ANALYZE",
@@ -1386,6 +1499,19 @@ class HousekeepingService:
             },
         }
 
+    @staticmethod
+    def _select_log_cleanup_categories(
+        specs: Dict[str, Dict[str, Any]],
+        categories: Optional[List[str]],
+    ) -> List[str]:
+        selected = list(specs) if categories is None else list(dict.fromkeys(categories))
+        if not selected:
+            raise ValueError("Select at least one valid log category for cleanup.")
+        invalid = sorted(set(selected) - set(specs))
+        if invalid:
+            raise ValueError(f"Unknown log cleanup category(ies): {', '.join(invalid)}.")
+        return selected
+
     @classmethod
     async def preview_log_cleanup(
         cls,
@@ -1400,7 +1526,7 @@ class HousekeepingService:
             raise ValueError("Retention floor violation: retention_days must be at least 7 days.")
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         specs = cls._build_log_cleanup_specs(institution_id, cutoff)
-        selected = [c for c in (categories or list(specs.keys())) if c in specs]
+        selected = cls._select_log_cleanup_categories(specs, categories)
 
         breakdown: List[Dict[str, Any]] = []
         total_eligible = 0
@@ -1442,9 +1568,7 @@ class HousekeepingService:
 
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         specs = cls._build_log_cleanup_specs(institution_id, cutoff)
-        selected = [c for c in (categories or list(specs.keys())) if c in specs]
-        if not selected:
-            raise ValueError("Select at least one valid log category for cleanup.")
+        selected = cls._select_log_cleanup_categories(specs, categories)
 
         archives_dir = resolve_backups_dir() / "archives"
         archives_dir.mkdir(parents=True, exist_ok=True)
@@ -1471,9 +1595,22 @@ class HousekeepingService:
                     arch_name = f"logs_{key}_{ts}_{seq:02d}.jsonl.gz"
                     arch_path = archives_dir / arch_name
                     seq += 1
-                with gzip.open(arch_path, "wt", encoding="utf-8") as gz:
-                    for row in rows:
-                        gz.write(json.dumps(spec["serializer"](row), default=str) + "\n")
+                try:
+                    with gzip.open(arch_path, "wt", encoding="utf-8") as gz:
+                        for row in rows:
+                            gz.write(json.dumps(spec["serializer"](row), default=str) + "\n")
+                    archived_count = 0
+                    with gzip.open(arch_path, "rt", encoding="utf-8") as gz:
+                        for line in gz:
+                            json.loads(line)
+                            archived_count += 1
+                    if archived_count != len(rows):
+                        raise RuntimeError(
+                            f"Log archive '{arch_name}' contains {archived_count} row(s); expected {len(rows)}."
+                        )
+                except Exception:
+                    arch_path.unlink(missing_ok=True)
+                    raise
                 sha = compute_sha256(arch_path)
                 Path(str(arch_path) + ".sha256").write_text(f"{sha}  {arch_name}\n", encoding="utf-8")
                 archived_files.append({
@@ -1712,4 +1849,3 @@ class HousekeepingService:
             "health_status": alerts["health_status"],
             "alert_count": alerts["total_alerts"],
         }
-

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-12
+#  * @updated     2026-11-14
 #  *
 #  * @description Protected REST API endpoints for the Housekeeping Module: DB backups, verification, retention pruning, sandbox restore drills, guarded production restore, vacuum maintenance, and backup schedules.
 #  */
@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import check_institution_access, require_sysadmin
+from app.core.deps import check_institution_access, is_sysadmin, require_role, require_sysadmin
 from app.models.user import User
 from app.services.financial_governance_service import FinancialFilter, FinancialGovernanceService
 from app.services.housekeeping_service import HousekeepingService, read_history_events
@@ -36,7 +36,14 @@ MAX_BACKUP_UPLOAD_BYTES = 500 * 1024 * 1024  # 500 MB hard upload cap
 async def _require_housekeeping_access(
     current_user: User = Depends(require_sysadmin),
 ) -> User:
-    """Cluster-wide database backup, restore, vacuum, and archival controls require SysAdmin."""
+    """Privileged database restore, download, maintenance, and archival controls require SysAdmin."""
+    return current_user
+
+
+async def _require_housekeeping_view_or_backup_access(
+    current_user: User = Depends(require_role("admin")),
+) -> User:
+    """Admins may view housekeeping telemetry and create backups; SysAdmins retain full access."""
     return current_user
 
 
@@ -114,7 +121,7 @@ class AlertNotifyRequest(BaseModel):
 async def get_housekeeping_overview(
     institution_id: Optional[int] = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(_require_housekeeping_access),
+    current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     return await HousekeepingService.get_overview_telemetry(db, inst_id)
@@ -122,7 +129,7 @@ async def get_housekeeping_overview(
 
 @router.get("/backups")
 async def list_database_backups(
-    _current_user: User = Depends(_require_housekeeping_access),
+    _current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     return {"backups": HousekeepingService.list_backups()}
 
@@ -132,14 +139,18 @@ async def create_database_backup(
     payload: CreateBackupRequest,
     institution_id: Optional[int] = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(_require_housekeeping_access),
+    current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     if payload.backup_format not in ("edu", "edu_sql", "custom", "plain_sql"):
         raise HTTPException(status_code=400, detail="backup_format must be 'edu', 'edu_sql', 'custom', or 'plain_sql'")
     inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     try:
         policy = await HousekeepingService.get_housekeeping_policy(db, inst_id)
-        mirror = payload.mirror_dir if payload.mirror_dir is not None else policy.get("offsite_mirror_path")
+        mirror = (
+            payload.mirror_dir
+            if is_sysadmin(current_user) and payload.mirror_dir is not None
+            else policy.get("offsite_mirror_path")
+        )
         return await HousekeepingService.create_backup(
             db=db,
             user=current_user,
@@ -271,7 +282,10 @@ async def run_database_vacuum(
     current_user: User = Depends(_require_housekeeping_access),
 ):
     try:
-        return await HousekeepingService.run_vacuum_analyze(db, user=current_user, tables=payload.tables)
+        inst_id = _resolve_housekeeping_inst_id(None, current_user)
+        return await HousekeepingService.run_vacuum_analyze(
+            db, user=current_user, tables=payload.tables, institution_id=inst_id
+        )
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except ValueError as e:
@@ -296,7 +310,7 @@ async def run_housekeeping_reconciliation(
 async def get_housekeeping_policy(
     institution_id: Optional[int] = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(_require_housekeeping_access),
+    current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     return await HousekeepingService.get_housekeeping_policy(db, inst_id)
@@ -329,14 +343,14 @@ async def update_housekeeping_policy(
 @router.get("/history")
 async def get_housekeeping_history(
     limit: int = Query(default=50, ge=1, le=200),
-    _current_user: User = Depends(_require_housekeeping_access),
+    _current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     return {"events": read_history_events(limit=limit)}
 
 
 @router.get("/storage")
 async def get_housekeeping_storage(
-    _current_user: User = Depends(_require_housekeeping_access),
+    _current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     return HousekeepingService.get_storage_telemetry()
 
@@ -355,7 +369,7 @@ async def preview_housekeeping_log_cleanup(
     categories: Optional[List[str]] = Query(default=None),
     institution_id: Optional[int] = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(_require_housekeeping_access),
+    current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     try:
@@ -405,7 +419,7 @@ async def download_log_archive(
 async def get_housekeeping_alerts(
     institution_id: Optional[int] = Query(default=None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(_require_housekeeping_access),
+    current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
     inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
     return await HousekeepingService.evaluate_health_alerts(db, institution_id=inst_id)
@@ -425,4 +439,3 @@ async def dispatch_housekeeping_alert_email(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-

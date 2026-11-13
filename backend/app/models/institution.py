@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-13
+#  * @updated     2026-11-14
 #  *
 #  * @description SQLAlchemy model defining coaching institute branch entities and institutional settings.
 #  */
@@ -46,7 +46,7 @@ class Institution(Base):
     primary_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#0B2D6B")
     secondary_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#071C44")
     accent_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#F57C00")
-    favicon_url: Mapped[str | None] = mapped_column(Text, nullable=True, default="/favicon.svg")
+    favicon_url: Mapped[str | None] = mapped_column(Text, nullable=True, default="/icons/icon-192x192.png")
     timezone: Mapped[str] = mapped_column(String(50), nullable=True, default="Asia/Kolkata")
     default_language: Mapped[str] = mapped_column(String(20), nullable=True, default="en")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -83,4 +83,3 @@ class Institution(Base):
     communication_logs: Mapped[list["CommunicationLog"]] = relationship(
         "CommunicationLog", back_populates="institution", cascade="all, delete-orphan"
     )
-

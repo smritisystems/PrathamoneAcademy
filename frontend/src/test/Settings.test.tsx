@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-13
+ * @updated     2026-11-14
  *
  * @description Vitest test suite for Institute Settings workspace, live branding preview, sub-tabs, lookups CRUD, and category persistence.
  */
@@ -56,7 +56,7 @@ const mockProfile = {
   email: 'info@prathamoneacademy.in',
   website: 'https://prathamone.com',
   logo_url: '/logo.svg',
-  favicon_url: '/favicon.svg',
+  favicon_url: '/icons/icon-192x192.png',
   primary_color: '#0B2D6B',
   secondary_color: '#071C44',
   accent_color: '#F57C00',

@@ -11,9 +11,9 @@
  *
  * @version     1.2.0
  * @created     2026-11-04
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
- * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and AITDL parent branding.
+ * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and parent organization branding.
  */
 
 import { useState, useEffect, useMemo } from 'react'
@@ -87,7 +87,7 @@ export function resolvePageTitle(pathname: string, search: string): string {
     '/help': 'Help & About Centre',
     '/help/support': 'Support Centre',
     '/help/about-product': 'About PrathamOne EduOS',
-    '/help/about-company': 'About SMRITI Systems',
+    '/help/about-company': 'About SmritiSys',
     '/help/version': 'Product & Version Information',
     '/help/legal': 'Legal & Compliance',
     '/help/system-info': 'System Information',
@@ -346,11 +346,11 @@ export default function Footer() {
                   type="button"
                   onClick={() => setShowAboutModal(true)}
                   className="inline-flex items-center gap-1 text-[10px] text-primary-700 hover:text-primary-900 bg-primary-50 hover:bg-primary-100 px-1.5 py-0.5 rounded border border-blue-200/80 transition-colors font-semibold"
-                  title="View AITDL Parent Organization & Product Ecosystem"
+                  title={`View ${APP_CONFIG.parentOrganization.name} Parent Organization & Product Ecosystem`}
                   aria-haspopup="dialog"
                 >
                   <Building2 className="w-2.5 h-2.5 text-primary-600" aria-hidden="true" />
-                  <span>AITDL Ecosystem</span>
+                  <span>{APP_CONFIG.parentOrganization.shortName} Ecosystem</span>
                 </button>
               </div>
 
@@ -406,7 +406,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Row 2: Accessible Semantic AITDL Parent Organization, Products & Support Contact Bar */}
+          {/* Row 2: Accessible Semantic Parent Organization, Products & Support Contact Bar */}
           <OrganizationBranding variant="footer" />
         </div>
       )}
@@ -416,7 +416,7 @@ export default function Footer() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="aitdl-about-dialog-title"
+          aria-labelledby="parent-org-about-dialog-title"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
           onClick={() => setShowAboutModal(false)}
         >
@@ -425,9 +425,9 @@ export default function Footer() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-slate-50 rounded-t-2xl">
-              <h2 id="aitdl-about-dialog-title" className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <h2 id="parent-org-about-dialog-title" className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-primary-600" aria-hidden="true" />
-                <span>AITDL Parent Organization & Product Ecosystem</span>
+                <span>{APP_CONFIG.parentOrganization.name} Parent Organization & Product Ecosystem</span>
               </h2>
               <button
                 type="button"
@@ -453,7 +453,7 @@ export default function Footer() {
                   onClick={() => setShowAboutModal(false)}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700"
                 >
-                  About SMRITI Systems
+                  About SmritiSys
                 </Link>
                 <Link
                   to="/help/legal"

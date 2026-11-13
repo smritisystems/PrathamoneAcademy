@@ -819,7 +819,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
               <div className="flex items-center gap-2 truncate">
                 <div className="w-4 h-4 rounded bg-white/10 border border-white/10 flex items-center justify-center p-0.5 shrink-0">
                   <img
-                    src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
+                    src={branding.assets.appIconUrl}
                     alt="PrathamOne EduOS"
                     className="w-full h-full object-contain filter brightness-125"
                   />
@@ -831,7 +831,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
           ) : (
             <div className="py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-center" title={`${branding.suiteName} ${branding.versionDisplay}`}>
               <img
-                src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
+                src={branding.assets.appIconUrl}
                 alt="PrathamOne EduOS"
                 className="w-4 h-4 object-contain opacity-80 hover:opacity-100 transition-opacity"
               />
@@ -2632,7 +2632,7 @@ if (item.to === '/staff') {
             <div className="flex items-center gap-1.5 truncate">
               <div className="w-4 h-4 rounded bg-white/10 border border-white/10 flex items-center justify-center p-0.5 shrink-0">
                 <img
-                  src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
+                  src={branding.assets.appIconUrl}
                   alt="PrathamOne EduOS"
                   className="w-full h-full object-contain filter brightness-125"
                 />
@@ -2644,7 +2644,7 @@ if (item.to === '/staff') {
         ) : (
           <div className="py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-center" title={`${branding.suiteName} ${branding.versionDisplay}`}>
             <img
-              src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
+              src={branding.assets.appIconUrl}
               alt="PrathamOne EduOS"
               className="w-4 h-4 object-contain opacity-80 hover:opacity-100 transition-opacity"
             />

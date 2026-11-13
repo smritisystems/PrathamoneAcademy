@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-10
+#  * @updated     2026-11-14
 #  *
 #  * @description Comprehensive test suite verifying student exit workflows, reactivation, refunds, and withdrawal analytics.
 #  */
@@ -398,6 +398,12 @@ async def test_withdrawal_and_analytics_reports(client: AsyncClient, setup_lifec
     admin = data["admin"]
     inst = data["institution"]
     ay = data["academic_year"]
+    data["student2"].is_active = False
+    data["student2"].exit_date = date.today()
+    data["student2"].exit_reason = "Financial difficulties"
+    data["enrollment2"].status = "withdrawn"
+    data["enrollment2"].exit_date = date.today()
+    await db.commit()
 
     token = create_access_token({"sub": str(admin.id), "institution_id": inst.id})
     headers = {"Authorization": f"Bearer {token}"}
@@ -407,6 +413,9 @@ async def test_withdrawal_and_analytics_reports(client: AsyncClient, setup_lifec
     assert rep_res.status_code == 200, rep_res.text
     rep_data = rep_res.json()
     assert isinstance(rep_data, list)
+    withdrawn_report = next(item for item in rep_data if item["student_id"] == data["student2"].id)
+    assert withdrawn_report["paid_classification"] == "Unpaid"
+    assert withdrawn_report["installment_at_exit"] == "No invoice due by exit"
 
     # 2. Test Analytics aggregation endpoint
     analytics_res = await client.get(f"/api/v1/reports/withdrawal-analytics?academic_year_id={ay.id}", headers=headers)
@@ -421,6 +430,10 @@ async def test_withdrawal_and_analytics_reports(client: AsyncClient, setup_lifec
 
     summary = analytics["summary"]
     assert summary["total_enrolled"] >= 2
+    assert summary["total_withdrawn"] == 1
+    assert summary["total_gross_paid"] == 0
+    assert summary["total_refunds"] == 0
+    assert summary["total_net_retained"] == 0
     assert summary["attrition_rate"] >= 0.0
 
     # 3. Test CSV export endpoint

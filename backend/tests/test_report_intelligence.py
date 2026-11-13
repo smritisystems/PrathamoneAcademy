@@ -11,15 +11,17 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
 #  * @description Pytest test suite for Universal Report Calculation & Intelligence Engine,
 #  */
 
 import pytest
+from datetime import date
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.report_intelligence_service import SafeMath, ReportIntelligenceService
+from app.models.student import Student
 
 
 def test_safe_math_primitives():
@@ -118,6 +120,48 @@ async def test_compute_fees_and_homework_intelligence(db: AsyncSession):
 
 
 @pytest.mark.asyncio
+async def test_student_master_intelligence_uses_student_lifecycle_fields(
+    client: AsyncClient,
+    auth_headers: dict,
+    db: AsyncSession,
+    admin_user,
+    test_institution,
+    test_student,
+):
+    """Student lifecycle metrics use canonical student and enrollment status fields."""
+    admin_user.institution_id = test_institution.id
+    db.add(admin_user)
+    withdrawn_student = Student(
+        institution_id=test_institution.id,
+        admission_number=f"WITHDRAWN-{test_student.id}",
+        first_name="Former",
+        last_name="Student",
+        date_of_birth=date(2010, 1, 1),
+        gender="female",
+        admission_date=date(2024, 6, 1),
+        is_active=False,
+        exit_date=date.today(),
+        exit_reason="withdrawn",
+    )
+    db.add(withdrawn_student)
+    await db.commit()
+
+    response = await client.get(
+        "/api/v1/reports/intelligence/metrics/student-master",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["report_id"] == "withdrawal-analytics"
+    assert len(data["kpis"]) == 2
+    active_metric = next(kpi for kpi in data["kpis"] if kpi["id"] == "active_enrollments")
+    withdrawn_metric = next(kpi for kpi in data["kpis"] if kpi["id"] == "attrition_rate")
+    assert active_metric["explanation"]["numerator"]["value"] == 1
+    assert withdrawn_metric["explanation"]["numerator"]["value"] == 1
+
+
+@pytest.mark.asyncio
 async def test_intelligence_api_endpoints(client: AsyncClient, auth_headers: dict):
     """Verify REST API endpoints for calculation registry, metrics, and thresholds."""
     # 1. Definitions endpoint
@@ -153,4 +197,3 @@ async def test_intelligence_api_endpoints(client: AsyncClient, auth_headers: dic
     assert updated_data["success"] is True
     assert updated_data["thresholds"]["attendance_target"] == 80.0
     assert updated_data["thresholds"]["fee_collection_target"] == 90.0
-

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
 #  * @description Service managing the Central Training Dataset (CRM-STAFF-TRAINING-V1), isolated demo tenant seeding, and dependency-aware training reset engine with strict production safety locks.
 #  */
@@ -70,7 +70,7 @@ async def get_or_create_training_institution(db: AsyncSession) -> Institution:
             primary_color="#D97706",
             secondary_color="#F59E0B",
             accent_color="#B45309",
-            favicon_url="/favicon.svg",
+            favicon_url="/icons/icon-192x192.png",
             timezone="Asia/Kolkata",
             default_language="en",
             is_active=True,

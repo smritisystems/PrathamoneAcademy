@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-04
+#  * @updated     2026-11-14
 #  *
 #  * @description Pytest suite validating dashboard KPI metrics calculations and active student counters.
 #  */
@@ -22,6 +22,74 @@ from datetime import date
 
 
 class TestDashboardStats:
+    @pytest.mark.asyncio
+    async def test_dashboard_collection_trends_support_calendar_periods(
+        self, client, auth_headers, test_fee_invoice, test_institution, test_academic_year
+    ):
+        """Collection trends group the same posted payment by day, month, and year."""
+        invoice = test_fee_invoice["invoice"]
+        student = test_fee_invoice["student"]
+        payment_date = date.today()
+        payment_response = await client.post(
+            "/api/v1/payments/",
+            headers=auth_headers,
+            json={
+                "student_id": student.id,
+                "academic_year_id": test_academic_year.id,
+                "amount": 1234.0,
+                "payment_date": str(payment_date),
+                "payment_method": "upi",
+                "allocations": [
+                    {
+                        "invoice_id": invoice.id,
+                        "installment_id": test_fee_invoice["installment"].id,
+                        "amount": 1234.0,
+                    }
+                ],
+            },
+        )
+        assert payment_response.status_code == 201, payment_response.text
+
+        params = {
+            "academic_year_id": test_academic_year.id,
+            "institution_id": test_institution.id,
+        }
+        daily_response = await client.get(
+            "/api/v1/dashboard/collection-trends",
+            params={**params, "granularity": "day", "month": payment_date.strftime("%Y-%m")},
+            headers=auth_headers,
+        )
+        monthly_response = await client.get(
+            "/api/v1/dashboard/collection-trends",
+            params={**params, "granularity": "month"},
+            headers=auth_headers,
+        )
+        yearly_response = await client.get(
+            "/api/v1/dashboard/collection-trends",
+            params={**params, "granularity": "year"},
+            headers=auth_headers,
+        )
+
+        assert daily_response.status_code == 200, daily_response.text
+        assert monthly_response.status_code == 200, monthly_response.text
+        assert yearly_response.status_code == 200, yearly_response.text
+        for response, key in [
+            (daily_response, payment_date.strftime("%Y-%m-%d")),
+            (monthly_response, payment_date.strftime("%Y-%m")),
+            (yearly_response, payment_date.strftime("%Y")),
+        ]:
+            data = response.json()
+            matching_period = next(record for record in data["records"] if record["period_key"] == key)
+            assert matching_period["collected"] >= 1234.0
+            assert matching_period["transaction_count"] >= 1
+
+        missing_month = await client.get(
+            "/api/v1/dashboard/collection-trends",
+            params={**params, "granularity": "day"},
+            headers=auth_headers,
+        )
+        assert missing_month.status_code == 422
+
     @pytest.mark.asyncio
     async def test_dashboard_stats_endpoint(
         self, client, auth_headers, test_fee_invoice, test_institution, test_academic_year
@@ -93,4 +161,3 @@ class TestDashboardStats:
         assert len(updated["monthly_trends"]) > 0
         trend_months = [t["month"] for t in updated["monthly_trends"]]
         assert any(t["collected"] >= 10000.0 for t in updated["monthly_trends"])
-

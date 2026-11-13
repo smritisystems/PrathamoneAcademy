@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-12
+#  * @updated     2026-11-14
 #  *
 #  * @description Service layer for PrathamOne EduOS Help & About Centre: seeding, unified search, contextual routing, support ticketing, CMS governance, product/company info, and restricted system health telemetry.
 #  */
@@ -151,10 +151,10 @@ STATIC_PORTAL_SEARCH_TOPICS: List[Dict[str, Any]] = [
         "type": "portal",
         "slug": "about-company",
         "section": "about_company",
-        "title": "About SMRITI Systems & AITDL — Developer Profile",
-        "summary": "Software developer and product ownership information for AITDL & SMRITI Systems, portfolio, and official contact channels.",
+        "title": "About SmritiSys — Company Profile",
+        "summary": "Software developer and product ownership information, portfolio, and official contact channels.",
         "route": "/help/about-company",
-        "keywords": ["smriti", "smriti systems", "aitdl", "developer", "company", "jawahar", "contact", "portfolio"],
+        "keywords": ["smritisys", "developer", "company", "jawahar", "contact", "portfolio"],
     },
     {
         "type": "portal",
@@ -677,7 +677,7 @@ async def search_help(
         "Attendance",
         "Report Cards",
         "Receipt Printing",
-        "About SMRITI Systems",
+        "About SmritiSys",
     ]
     if ql:
         matched_titles = [r["title"] for r in results[:6]]
@@ -1187,35 +1187,31 @@ async def get_product_and_version_info(
             ],
         },
         "about_company": {
-            "developer_owner_label": "AITDL & SMRITI Systems",
+            "developer_owner_label": "SmritiSys",
             "smriti_systems": {
-                "company_name": "SMRITI Systems",
+                "company_name": "SmritiSys",
                 "introduction": custom.get("smriti_introduction") or (
-                    "SMRITI Systems serves alongside AITDL as co-developer and product owner for "
-                    "PrathamOne EduOS institutional software solutions."
+                    "SmritiSys develops and owns PrathamOne EduOS, an education operating system for "
+                    "coaching institutes and other learning organizations."
                 ),
                 "technology_profile": custom.get("smriti_tech_profile") or (
-                    "Focused on practical education operations software, institutional governance "
-                    "automation, and long-term desktop/web reliability for Indian coaching academies."
+                    "Focused on connected software products and practical business operations."
                 ),
-                "official_website": custom.get("smriti_website") or None,
+                "official_website": custom.get("smriti_website") or "https://smritisys.com",
                 "registered_office": custom.get("smriti_office") or None,
                 "leadership_note": custom.get("smriti_leadership") or None,
                 "verification_status": custom.get("smriti_verification_status") or "pending_management_verification",
             },
             "aitdl": {
-                "company_name": "AITDL — AI Technology & Development Lab",
+                "company_name": "SmritiSys",
                 "product_architect": settings.AUTHOR,
-                "introduction": (
-                    "AITDL (AI Technology & Development Lab) leads system architecture, governance "
-                    "engineering, and education operating system development for the PrathamOne ecosystem."
-                ),
-                "official_website": "https://aitdl.com",
+                "introduction": "SmritiSys develops software products for education and business operations.",
+                "official_website": "https://smritisys.com",
                 "product_website": "https://prathamone.com",
                 "support_phones": ["9323 023 007", "9324 117 007"],
                 "support_email": "support@prathamone.com",
                 "general_email": "prathamone@outlook.com",
-                "copyright_notice": "Copyright © 2026 AITDL (AI Technology & Development Lab). All rights reserved.",
+                "copyright_notice": "Copyright © 2026 SmritiSys. All rights reserved.",
                 "product_portfolio": [
                     {
                         "name": "PrathamOne",
@@ -1242,7 +1238,7 @@ async def get_product_and_version_info(
                 "code": inst.code if inst else None,
                 "identity_separation_notice": (
                     "Institutional profile branding, student rosters, and financial ledgers belong exclusively "
-                    "to the subscribing academy above, distinct from the software owners (AITDL & SMRITI Systems)."
+                    "to the subscribing academy above, distinct from the software owner (SmritiSys)."
                 ),
             },
         },

@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Unit and integration tests verifying centralized branding configuration, AITDL parent organization, product ecosystem, and dynamic tenant resolution.
  */
@@ -36,16 +36,17 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(BRANDING_CONFIG.buildNumber).toBeDefined()
     expect(typeof BRANDING_CONFIG.buildNumber).toBe('string')
     expect(BRANDING_CONFIG.environment).toBeDefined()
-    expect(BRANDING_CONFIG.copyright).toContain('AITDL')
+    expect(BRANDING_CONFIG.copyright).toContain('SmritiSys')
   })
 
-  it('defines AITDL parent organization structure and product ecosystem', () => {
+  it('defines SmritiSys parent organization structure and product ecosystem', () => {
     const { parentOrganization, products, salesSupport } = BRANDING_CONFIG
 
     // Parent Organization
-    expect(parentOrganization.name).toBe('AITDL — AI Technology & Development Lab')
-    expect(parentOrganization.website).toBe('https://aitdl.com')
-    expect(parentOrganization.websiteDisplay).toBe('aitdl.com')
+    expect(parentOrganization.name).toBe('SmritiSys')
+    expect(parentOrganization.shortName).toBe('SMRITISYS')
+    expect(parentOrganization.website).toBe('https://smritisys.com')
+    expect(parentOrganization.websiteDisplay).toBe('smritisys.com')
 
     // Products hierarchy
     expect(products).toHaveLength(3)
@@ -80,6 +81,26 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(colors.success).toMatch(/^#[0-9a-fA-F]{6}$/)
   })
 
+  it('uses the supplied EduOS logo and app icon as software branding', () => {
+    expect(BRANDING_CONFIG.assets.horizontalLogoTransparentUrl).toBe(
+      '/artwork/PrathamOne_EduOS_Brand_Assets/PrathamOne_EduOS_Logo_Transparent.png'
+    )
+    expect(BRANDING_CONFIG.assets.appIconUrl).toBe('/icons/icon-512x512.png')
+    expect(BRANDING_CONFIG.assets.faviconUrl).toBe('/icons/icon-192x192.png')
+    expect(BRANDING_CONFIG.assets.academyLogoUrl).toBe('/media/logo/prashant-academy-logo.svg')
+
+    const resolved = resolveBranding({
+      id: 1,
+      logo_url: '/media/logo/prashant-academy-logo.svg',
+      favicon_url: '/favicon.svg',
+    })
+    expect(resolved.assets.logoUrl).toBe('/media/logo/prashant-academy-logo.svg')
+    expect(resolved.assets.horizontalLogoTransparentUrl).toBe(
+      '/artwork/PrathamOne_EduOS_Brand_Assets/PrathamOne_EduOS_Logo_Transparent.png'
+    )
+    expect(resolved.assets.faviconUrl).toBe('/icons/icon-192x192.png')
+  })
+
   it('provides official support contact information', () => {
     const { support } = BRANDING_CONFIG
     expect(support.email).toBe('support@prathamone.com')
@@ -105,7 +126,7 @@ describe('Centralized Application Branding & Identity System', () => {
       expect(resolved.academyCode).toBe('PA001')
       expect(resolved.monogram).toBe('PA')
       expect(resolved.appName).toBe('PrathamOne EduOS')
-      expect(resolved.parentOrganization.name).toBe('AITDL — AI Technology & Development Lab')
+      expect(resolved.parentOrganization.name).toBe('SmritiSys')
       expect(resolved.products).toHaveLength(3)
     })
 
@@ -137,7 +158,7 @@ describe('Centralized Application Branding & Identity System', () => {
       expect(resolved.appName).toBe('PrathamOne EduOS')
       expect(resolved.suiteName).toBe('PrathamOne EduOS')
       expect(resolved.version).toBe(BRANDING_CONFIG.version)
-      expect(resolved.parentOrganization.name).toBe('AITDL — AI Technology & Development Lab')
+      expect(resolved.parentOrganization.name).toBe('SmritiSys')
       expect(resolved.salesSupport.displayPhones).toContain('9323 023 007')
     })
 

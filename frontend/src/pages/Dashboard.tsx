@@ -11,9 +11,9 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
- * @description Executive management & financial analytics dashboard featuring 8 multi-tab workspaces: Overview, Fee Collection, Outstanding Analysis, Student Analysis, Admissions & CRM, Academic Analysis, Transactions & Reconciliation, and Operations.
+ * @description Executive management & financial analytics dashboard featuring collection trends and 8 multi-tab workspaces: Overview, Fee Collection, Outstanding Analysis, Student Analysis, Admissions & CRM, Academic Analysis, Transactions & Reconciliation, and Operations.
  */
 
 import { useState, useEffect, useMemo } from 'react'
@@ -44,7 +44,11 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { encodeCodexNumber } from '../utils/codexFormatter'
 import QuickDecoderModal from '../components/codex/QuickDecoderModal'
 import { ConcessionTraceModal, ContextualHelpButton } from '../components/common'
-import type { OutstandingDrilldownRecord, DashboardAnalyticsData } from '../types'
+import type {
+  OutstandingDrilldownRecord,
+  DashboardAnalyticsData,
+  DashboardCollectionTrendRecord,
+} from '../types'
 
 const fmt = (n: number | null | undefined) =>
   n == null ? '—' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n)
@@ -103,6 +107,10 @@ export default function DashboardPage() {
     standardId: null,
     divisionId: null,
   })
+  const [trendGranularity, setTrendGranularity] = useState<'month' | 'year' | 'day'>('month')
+  const [trendMonth, setTrendMonth] = useState(() => new Date().toISOString().slice(0, 7))
+  const [trendChartType, setTrendChartType] = useState<'bar' | 'line' | 'area' | 'pie' | 'donut'>('bar')
+  const [trendMetric, setTrendMetric] = useState<'collected' | 'transaction_count'>('collected')
 
   // Sync year filter when global academic year changes
   useEffect(() => {
@@ -135,6 +143,37 @@ export default function DashboardPage() {
         .then((r) => r.data),
   })
 
+  const {
+    data: collectionTrendData,
+    isLoading: isCollectionTrendLoading,
+    isError: isCollectionTrendError,
+    refetch: refetchCollectionTrends,
+  } = useQuery({
+    queryKey: [
+      'dashboard-collection-trends',
+      trendGranularity,
+      trendGranularity === 'day' ? trendMonth : undefined,
+      filters.academicYearId,
+      selectedInstitutionId,
+      filters.boardId,
+      filters.standardId,
+      filters.divisionId,
+    ],
+    queryFn: () =>
+      dashboardApi
+        .getCollectionTrends({
+          granularity: trendGranularity,
+          month: trendGranularity === 'day' ? trendMonth : undefined,
+          academic_year_id: filters.academicYearId ?? undefined,
+          institution_id: selectedInstitutionId ?? undefined,
+          board_id: filters.boardId ?? undefined,
+          standard_id: filters.standardId ?? undefined,
+          division_id: filters.divisionId ?? undefined,
+        })
+        .then((r) => r.data),
+    enabled: activeTab === 'overview',
+  })
+
   // Fetch Comprehensive Multi-Tab Analytics
   const { data: analytics, isLoading: isAnalyticsLoading, refetch: refetchAnalytics } = useQuery({
     queryKey: [
@@ -160,6 +199,7 @@ export default function DashboardPage() {
   const handleRefreshAll = () => {
     refetchStats()
     refetchAnalytics()
+    refetchCollectionTrends()
   }
 
   const collectionRate = stats?.collection_rate ?? 0
@@ -197,6 +237,23 @@ export default function DashboardPage() {
 
   const rawOutstanding = stats?.total_outstanding
   const codeOutstanding = (stats as any)?.total_outstanding_coded || (isCodexActive && rawOutstanding != null ? encodeCodexNumber(rawOutstanding) : undefined)
+
+  const collectionStatusData = [
+    { name: 'Collected', value: Math.max(0, rawCollected ?? 0), color: '#10b981' },
+    { name: 'Outstanding', value: Math.max(0, rawOutstanding ?? 0), color: '#f59e0b' },
+  ].filter((item) => item.value > 0)
+  const collectionStatusTotal = collectionStatusData.reduce((total, item) => total + item.value, 0)
+  const isCollectionTrendMasked = Boolean(collectionTrendData?._codex?.is_masked)
+  const collectionTrendRecords = collectionTrendData?.records ?? []
+  const collectionTrendChartData = collectionTrendRecords.map((record: DashboardCollectionTrendRecord) => ({
+    ...record,
+    value: trendMetric === 'collected' ? record.collected ?? 0 : record.transaction_count,
+  }))
+  const collectionTrendMetricLabel = trendMetric === 'collected' ? 'Collected' : 'Transactions'
+  const collectionTrendMetricValue = (value: number) =>
+    trendMetric === 'collected'
+      ? fmt(value)
+      : new Intl.NumberFormat('en-IN').format(value)
 
   // Outstanding Drilldown Modal State
   const [isDrilldownOpen, setIsDrilldownOpen] = useState(false)
@@ -1101,70 +1158,242 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Monthly Collection Trends Chart */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-2xs p-4 sm:p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-              <div>
-                <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  <span>Monthly Fee Collection Trends</span>
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Authoritative monthly cash inflow with transaction volumes and net collections
-                </p>
+          {/* Collection Trends and Status Charts */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-2xs p-4 sm:p-5">
+              <div className="flex flex-col gap-3 mb-4">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4 text-emerald-600" />
+                    <span>
+                      {trendGranularity === 'year'
+                        ? 'Yearly Fee Collection Trends'
+                        : trendGranularity === 'day'
+                          ? 'Daily Fee Collection Trends'
+                          : 'Monthly Fee Collection Trends'}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    Applies the Academic Year, board, class, and batch filters above
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-end gap-2">
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold text-gray-600">
+                    Period
+                    <select
+                      aria-label="Collection trend period"
+                      value={trendGranularity}
+                      onChange={(event) => setTrendGranularity(event.target.value as 'month' | 'year' | 'day')}
+                      className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-800"
+                    >
+                      <option value="month">Monthly</option>
+                      <option value="year">Yearly</option>
+                      <option value="day">Daily by month</option>
+                    </select>
+                  </label>
+                  {trendGranularity === 'day' && (
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold text-gray-600">
+                      Month
+                      <input
+                        aria-label="Collection trend month"
+                        type="month"
+                        value={trendMonth}
+                        max={new Date().toISOString().slice(0, 7)}
+                        onChange={(event) => setTrendMonth(event.target.value)}
+                        className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-800"
+                      />
+                    </label>
+                  )}
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold text-gray-600">
+                    Measure
+                    <select
+                      aria-label="Collection trend measure"
+                      value={trendMetric}
+                      onChange={(event) => setTrendMetric(event.target.value as 'collected' | 'transaction_count')}
+                      className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-800"
+                    >
+                      <option value="collected">Amount collected</option>
+                      <option value="transaction_count">Transaction count</option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold text-gray-600">
+                    Chart
+                    <select
+                      aria-label="Collection trend chart type"
+                      value={trendChartType}
+                      onChange={(event) => setTrendChartType(event.target.value as typeof trendChartType)}
+                      className="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs text-gray-800"
+                    >
+                      <option value="bar">Bar</option>
+                      <option value="line">Line</option>
+                      <option value="area">Area</option>
+                      <option value="pie">Pie</option>
+                      <option value="donut">Donut</option>
+                    </select>
+                  </label>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <span>Ledger Data</span>
+                  </span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  <span>Authoritative Ledger Data</span>
-                </span>
+              <div className="h-64 sm:h-72 w-full">
+                {isCollectionTrendError ? (
+                  <div className="flex h-full flex-col items-center justify-center text-center text-sm text-red-600">
+                    <AlertCircle className="mb-2 h-7 w-7" />
+                    <p>Collection trends could not be loaded.</p>
+                    <button
+                      type="button"
+                      onClick={() => refetchCollectionTrends()}
+                      className="mt-2 text-xs font-semibold text-primary-700 underline"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : isCollectionTrendLoading ? (
+                  <div className="flex h-full items-center justify-center text-sm text-gray-500" role="status">
+                    Loading collection trends…
+                  </div>
+                ) : isCollectionTrendMasked ? (
+                  <div className="flex h-full flex-col items-center justify-center text-center text-sm text-violet-700">
+                    <Lock className="mb-2 h-7 w-7" />
+                    <p>Chart values are hidden in CodeX coded-only mode.</p>
+                  </div>
+                ) : collectionTrendChartData.length > 0 ? trendChartType === 'pie' || trendChartType === 'donut' ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={collectionTrendChartData}
+                        dataKey="value"
+                        nameKey="label"
+                        cx="50%"
+                        cy="48%"
+                        innerRadius={trendChartType === 'donut' ? 48 : 0}
+                        outerRadius={88}
+                        paddingAngle={trendChartType === 'donut' ? 2 : 0}
+                      >
+                        {collectionTrendChartData.map((record, index) => (
+                          <Cell key={record.period_key} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => [collectionTrendMetricValue(value), collectionTrendMetricLabel]} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : trendChartType === 'line' ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={collectionTrendChartData} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 10 }} angle={-30} textAnchor="end" />
+                      <YAxis
+                        tick={{ fill: '#64748b', fontSize: 10 }}
+                        tickFormatter={(value) => trendMetric === 'collected' ? `₹${(value / 1000).toFixed(0)}k` : String(value)}
+                      />
+                      <Tooltip formatter={(value: number) => [collectionTrendMetricValue(value), collectionTrendMetricLabel]} />
+                      <Line type="monotone" dataKey="value" name={collectionTrendMetricLabel} stroke="#10b981" strokeWidth={3} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : trendChartType === 'area' ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={collectionTrendChartData} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 10 }} angle={-30} textAnchor="end" />
+                      <YAxis
+                        tick={{ fill: '#64748b', fontSize: 10 }}
+                        tickFormatter={(value) => trendMetric === 'collected' ? `₹${(value / 1000).toFixed(0)}k` : String(value)}
+                      />
+                      <Tooltip formatter={(value: number) => [collectionTrendMetricValue(value), collectionTrendMetricLabel]} />
+                      <Area type="monotone" dataKey="value" name={collectionTrendMetricLabel} stroke="#059669" fill="#6ee7b7" fillOpacity={0.45} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={collectionTrendChartData} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="label" tick={{ fill: '#64748b', fontSize: 10 }} angle={-30} textAnchor="end" />
+                      <YAxis
+                        tick={{ fill: '#64748b', fontSize: 10 }}
+                        tickFormatter={(value) => trendMetric === 'collected' ? `₹${(value / 1000).toFixed(0)}k` : String(value)}
+                      />
+                      <Tooltip formatter={(value: number) => [collectionTrendMetricValue(value), collectionTrendMetricLabel]} />
+                      <Bar dataKey="value" name={collectionTrendMetricLabel} fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={45}>
+                        {collectionTrendChartData.map((record, index) => (
+                          <Cell key={record.period_key} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center text-gray-400">
+                    <FileText className="mb-2 h-8 w-8 opacity-50" />
+                    <p className="text-xs">No fee collection data available for the selected filters</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="h-64 sm:h-72 w-full">
-              {stats?.monthly_trends && stats.monthly_trends.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.monthly_trends} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="month"
-                      tick={{ fill: '#64748b', fontSize: 11 }}
-                      axisLine={{ stroke: '#cbd5e1' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: '#64748b', fontSize: 11 }}
-                      axisLine={{ stroke: '#cbd5e1' }}
-                      tickLine={false}
-                      tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      formatter={(val: any, _name: any, item: any) => [
-                        `${fmt(val)} (${item.payload.transaction_count} txns)`,
-                        'Collected Fees',
-                      ]}
-                      labelFormatter={(label) => `Month: ${label}`}
-                      contentStyle={{
-                        borderRadius: '0.5rem',
-                        border: '1px solid #e2e8f0',
-                        fontSize: '0.75rem',
-                      }}
-                    />
-                    <Bar
-                      dataKey="collected"
-                      fill="#10b981"
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={45}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <FileText className="w-8 h-8 mb-2 opacity-50" />
-                  <p className="text-xs">No fee collection data available for current filter selection</p>
-                </div>
-              )}
+            <div className="bg-white border border-gray-200 rounded-xl shadow-2xs p-4 sm:p-5">
+              <div className="mb-4">
+                <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
+                  <PieChartIcon className="w-4 h-4 text-amber-600" />
+                  <span>Fee Collection Status</span>
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Collected and outstanding balance for the selected filters
+                </p>
+              </div>
+
+              <div className="h-64 flex flex-col sm:flex-row items-center justify-center gap-4">
+                {isCodexActive && codexMode === 'coded_only' ? (
+                  <div className="text-center text-xs text-gray-500">
+                    <Lock className="w-6 h-6 mx-auto mb-2 text-violet-500" />
+                    <p>Fee breakdown is hidden in CodeX coded-only mode.</p>
+                  </div>
+                ) : collectionStatusTotal > 0 ? (
+                  <>
+                    <div className="h-52 w-52 shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={collectionStatusData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={76}
+                            paddingAngle={3}
+                          >
+                            {collectionStatusData.map((item) => (
+                              <Cell key={item.name} fill={item.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: number) => fmt(value)} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex flex-col gap-3 text-xs">
+                      {collectionStatusData.map((item) => (
+                        <div key={item.name} className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="font-semibold text-gray-800">{item.name}:</span>
+                          <span className="text-gray-600">{fmt(item.value)}</span>
+                          <span className="text-[10px] text-gray-400">
+                            ({((item.value / collectionStatusTotal) * 100).toFixed(1)}%)
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-gray-400">
+                    <FileText className="w-8 h-8 mb-2 opacity-50" />
+                    <p className="text-xs">No fee collection data available for current filter selection</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

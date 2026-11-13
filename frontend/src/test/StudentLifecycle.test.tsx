@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-14
  *
  * @description Vitest test suite validating student lifecycle workflows, withdrawal analytics calculations, and status transitions.
  */
@@ -117,15 +117,15 @@ describe('Student Lifecycle & Withdrawal Analytics Specification', () => {
     const mockAnalytics: WithdrawalAnalyticsResponse = {
       summary: {
         total_enrolled: 40,
-        active_students: 36,
-        withdrawn_students: 4,
+        total_active: 36,
+        total_withdrawn: 4,
         attrition_rate: 10.0,
-        paid_withdrawn_count: 3,
-        unpaid_withdrawn_count: 1,
-        gross_paid: 60000,
-        refund_amount: 10000,
-        net_retained: 50000,
-        outstanding_at_exit: 70000,
+        paid_withdrawals: 3,
+        unpaid_withdrawals: 1,
+        total_gross_paid: 60000,
+        total_refunds: 10000,
+        total_net_retained: 50000,
+        total_outstanding_at_exit: 70000,
       },
       by_reason: [
         { reason: 'Relocated / Moved Away', count: 2, percentage: 50.0, net_retained: 25000 },
@@ -136,35 +136,33 @@ describe('Student Lifecycle & Withdrawal Analytics Specification', () => {
         {
           standard_name: 'Class 10',
           division_name: 'Division A',
-          total_enrolled: 20,
-          withdrawn_count: 2,
-          attrition_rate: 10.0,
+          withdrawals: 2,
           net_retained: 25000,
         },
       ],
       by_installment: [
-        { installment_at_exit: 'Installment 1', count: 2, net_retained: 30000 },
-        { installment_at_exit: 'Installment 2', count: 1, net_retained: 20000 },
-        { installment_at_exit: 'Unpaid', count: 1, net_retained: 0 },
+        { installment: 'Invoice #1', count: 2, gross_collected: 30000, net_retained: 30000 },
+        { installment: 'Invoice #2', count: 1, gross_collected: 20000, net_retained: 20000 },
+        { installment: 'No invoice due by exit', count: 1, gross_collected: 0, net_retained: 0 },
       ],
       trends_monthly: [
-        { month: '2026-11', month_label: 'Nov 2026', count: 4, refund_amount: 10000, net_retained: 50000 },
+        { month: '2026-11', count: 4, gross_collected: 60000, refunds: 10000, net_retained: 50000 },
       ],
     }
 
     // Mathematical verification of aggregate summary metrics
     const expectedAttritionRate = Number(
-      ((mockAnalytics.summary.withdrawn_students / mockAnalytics.summary.total_enrolled) * 100).toFixed(1)
+      ((mockAnalytics.summary.total_withdrawn / mockAnalytics.summary.total_enrolled) * 100).toFixed(1)
     )
     expect(mockAnalytics.summary.attrition_rate).toBe(expectedAttritionRate)
     expect(mockAnalytics.summary.total_enrolled).toBe(
-      mockAnalytics.summary.active_students + mockAnalytics.summary.withdrawn_students
+      mockAnalytics.summary.total_active + mockAnalytics.summary.total_withdrawn
     )
-    expect(mockAnalytics.summary.net_retained).toBe(
-      mockAnalytics.summary.gross_paid - mockAnalytics.summary.refund_amount
+    expect(mockAnalytics.summary.total_net_retained).toBe(
+      mockAnalytics.summary.total_gross_paid - mockAnalytics.summary.total_refunds
     )
-    expect(mockAnalytics.summary.withdrawn_students).toBe(
-      mockAnalytics.summary.paid_withdrawn_count + mockAnalytics.summary.unpaid_withdrawn_count
+    expect(mockAnalytics.summary.total_withdrawn).toBe(
+      mockAnalytics.summary.paid_withdrawals + mockAnalytics.summary.unpaid_withdrawals
     )
   })
 
@@ -186,4 +184,3 @@ describe('Student Lifecycle & Withdrawal Analytics Specification', () => {
     expect(inactiveFilter.status).toBe('withdrawn')
   })
 })
-

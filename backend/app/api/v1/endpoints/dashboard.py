@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
 #  * @description API endpoints for administrative executive dashboard, financial accuracy, status-wise outstanding breakdown, aging recovery, multi-tab analytics, and operational intelligence.
 #  */
@@ -108,6 +108,135 @@ def get_student_category_case(enrollment_model=None):
             "active",
         ),
         else_="active",
+    )
+
+
+@router.get("/collection-trends")
+async def get_dashboard_collection_trends(
+    granularity: str = Query(default="month", pattern="^(month|year|day)$"),
+    month: Optional[str] = Query(default=None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$"),
+    academic_year_id: Optional[int] = None,
+    institution_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    board_id: Optional[int] = None,
+    data_env: str = Depends(get_data_environment),
+    effective_inst_id: Optional[int] = Depends(enforce_institution_access),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(
+        require_role(
+            "superadmin", "sysadmin", "super_admin", "admin", "principal", "accountant", "staff", "teacher"
+        )
+    ),
+):
+    """Return filtered posted collections grouped by month, calendar year, or day within a month."""
+    if granularity == "day" and not month:
+        raise HTTPException(status_code=422, detail="A YYYY-MM month is required for daily trends.")
+    if granularity != "day" and month:
+        raise HTTPException(status_code=422, detail="The month parameter is only valid for daily trends.")
+
+    month_start = None
+    next_month_start = None
+    if month:
+        try:
+            month_start = datetime.strptime(month, "%Y-%m").date().replace(day=1)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Month must be a valid YYYY-MM value.") from exc
+        next_month_start = (
+            month_start.replace(year=month_start.year + 1, month=1)
+            if month_start.month == 12
+            else month_start.replace(month=month_start.month + 1)
+        )
+
+    if granularity == "year":
+        period_key = func.to_char(Payment.payment_date, "YYYY")
+        period_label = period_key
+    elif granularity == "day":
+        period_key = func.to_char(Payment.payment_date, "YYYY-MM-DD")
+        period_label = func.to_char(Payment.payment_date, "DD Mon")
+    else:
+        period_key = func.to_char(Payment.payment_date, "YYYY-MM")
+        period_label = func.to_char(Payment.payment_date, "Mon YYYY")
+
+    query = (
+        select(
+            period_key.label("period_key"),
+            period_label.label("label"),
+            func.count(Payment.id).label("transaction_count"),
+            func.coalesce(func.sum(Payment.amount), 0).label("collected"),
+        )
+        .select_from(Payment)
+        .join(Student, Payment.student_id == Student.id)
+        .where(Payment.status.in_(["posted", "completed"]))
+    )
+
+    if effective_inst_id:
+        query = query.where(Student.institution_id == effective_inst_id)
+    if academic_year_id:
+        query = query.where(Payment.academic_year_id == academic_year_id)
+    if data_env == "TRAINING":
+        query = query.where(Payment.is_demo == True)
+    elif data_env == "PRODUCTION":
+        query = query.where(Payment.is_demo == False)
+    if month_start and next_month_start:
+        query = query.where(
+            Payment.payment_date >= month_start,
+            Payment.payment_date < next_month_start,
+        )
+
+    if board_id or standard_id or division_id:
+        latest_enrollment = get_latest_enrollment_subquery()
+        query = query.join(
+            latest_enrollment,
+            (Payment.student_id == latest_enrollment.c.student_id)
+            & (Payment.academic_year_id == latest_enrollment.c.academic_year_id),
+        )
+        if standard_id:
+            query = query.where(latest_enrollment.c.standard_id == standard_id)
+        if division_id or board_id:
+            query = query.join(Division, latest_enrollment.c.division_id == Division.id)
+            if division_id:
+                query = query.where(Division.id == division_id)
+            if board_id:
+                query = query.where(Division.board_id == board_id)
+
+    rows = (await db.execute(
+        query.group_by(period_key, period_label).order_by(period_key.asc())
+    )).all()
+
+    institution_scope = effective_inst_id or getattr(current_user, "institution_id", None) or 1
+    records = [
+        {
+            "period_key": row.period_key,
+            "label": row.label,
+            "collected": float(row.collected),
+            "transaction_count": int(row.transaction_count),
+        }
+        for row in rows
+    ]
+    records = await CodeXService.mask_records_list(
+        db=db,
+        institution_id=institution_scope,
+        user=current_user,
+        records=records,
+        numeric_fields=["collected"],
+        module="dashboard",
+    )
+    payload = {
+        "granularity": granularity,
+        "month": month,
+        "academic_year_id": academic_year_id,
+        "records": records,
+        "total_collected": sum(float(row.collected) for row in rows),
+        "total_transactions": sum(int(row.transaction_count) for row in rows),
+    }
+    return await CodeXService.apply_financial_masking(
+        db=db,
+        institution_id=institution_scope,
+        user=current_user,
+        data=payload,
+        numeric_fields=["total_collected"],
+        module="dashboard",
     )
 
 

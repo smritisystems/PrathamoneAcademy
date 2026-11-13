@@ -11,13 +11,13 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-11
+ * @updated     2026-11-14
  *
  * @description Vitest component & governance tests for the Housekeeping workspace, Rule 010 View-First enforcement, Guarded Restore phrase confirmation, and Sidebar navigation access.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import Housekeeping from '../pages/Housekeeping'
 import { useAuthStore } from '../store/authStore'
@@ -347,6 +347,57 @@ describe('Housekeeping Workspace & Module Governance', () => {
     expect(screen.getByText(/Edit Mode Active/i)).toBeDefined()
   })
 
+  it('lets institute admins create backups while locking SysAdmin-only archive actions', async () => {
+    useAuthStore.setState({
+      user: {
+        ...adminUser,
+        id: 3,
+        username: 'institute-admin',
+        role: 'admin',
+        permissions: ['students:view'],
+      },
+      token: 'mock-token',
+    })
+    vi.mocked(housekeepingApi.createBackup).mockResolvedValue({
+      data: {
+        filename: 'admin-created.edu',
+        source: 'backups',
+        format: 'edu_zip',
+        size_bytes: 100,
+        sha256: 'abc123',
+        verified: true,
+        toc_entries: 4,
+        created_at: '2026-11-11T12:00:00Z',
+        mirror_copied: null,
+      },
+    } as any)
+
+    renderHousekeeping('/housekeeping/backups')
+    await screen.findByText('Create On-Demand Verified Backup')
+    fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
+
+    const createButton = screen.getByRole('button', { name: /Create Verified Backup/i }) as HTMLButtonElement
+    const uploadButton = screen.getByRole('button', { name: /Upload .edu \/ .dump \/ .sql Backup/i }) as HTMLButtonElement
+    const pruneButton = screen.getByRole('button', { name: /Prune Expired Backups/i }) as HTMLButtonElement
+    const verifyButton = screen.getByRole('button', { name: /Verify/i }) as HTMLButtonElement
+    const downloadButton = screen.getByRole('button', { name: /Download/i }) as HTMLButtonElement
+
+    expect(createButton.disabled).toBe(false)
+    expect(uploadButton.getAttribute('aria-disabled')).toBe('true')
+    expect(pruneButton.getAttribute('aria-disabled')).toBe('true')
+    expect(verifyButton.getAttribute('aria-disabled')).toBe('true')
+    expect(downloadButton.disabled).toBe(true)
+
+    fireEvent.click(createButton)
+    await waitFor(() => {
+      expect(housekeepingApi.createBackup).toHaveBeenCalledTimes(1)
+    })
+    expect(housekeepingApi.uploadBackup).not.toHaveBeenCalled()
+    expect(housekeepingApi.pruneBackups).not.toHaveBeenCalled()
+    expect(housekeepingApi.verifyBackup).not.toHaveBeenCalled()
+    expect(housekeepingApi.downloadBackup).not.toHaveBeenCalled()
+  })
+
   it('displays proactive health alerts and disk storage on Overview and runs dry-run + confirmed log archival cleanup', async () => {
     vi.mocked(housekeepingApi.previewLogCleanup).mockResolvedValue({
       data: {
@@ -356,6 +407,8 @@ describe('Housekeeping Workspace & Module Governance', () => {
         categories: [
           { category: 'navigation_activity', label: 'Navigation Telemetry', eligible_count: 200 },
           { category: 'expired_tokens', label: 'Expired Tokens', eligible_count: 40 },
+          { category: 'communication_logs', label: 'Communication Logs', eligible_count: 0 },
+          { category: 'routine_audit_logs', label: 'Routine Audit Logs', eligible_count: 0 },
         ],
         protected_guarantee: 'Financial ledgers are permanently exempt.',
       },
@@ -405,7 +458,9 @@ describe('Housekeeping Workspace & Module Governance', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Archive & Purge Eligible Logs/i }))
     await waitFor(() => {
+      expect(housekeepingApi.previewLogCleanup).toHaveBeenCalledTimes(2)
       expect(screen.getByText('Confirm Log Archival & Retention Cleanup')).toBeDefined()
+      expect(screen.getByText(/Total Eligible Rows/i)).toBeDefined()
     })
     fireEvent.click(screen.getByRole('button', { name: /Confirm Archive & Purge/i }))
     await waitFor(() => {
@@ -413,5 +468,44 @@ describe('Housekeeping Workspace & Module Governance', () => {
         expect.objectContaining({ confirm: true })
       )
     })
+  })
+
+  it('waits for a fresh cleanup preview before opening the purge confirmation', async () => {
+    let resolvePreview!: (result: { data: any }) => void
+    vi.mocked(housekeepingApi.previewLogCleanup).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePreview = resolve
+      }) as any
+    )
+
+    renderHousekeeping('/housekeeping/maintenance')
+    await screen.findByText('Log Archival & Retention Cleanup')
+    fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Archive & Purge Eligible Logs/i }))
+
+    expect(screen.queryByRole('dialog', { name: /Confirm Log Archival & Retention Cleanup/i })).toBeNull()
+    await waitFor(() => expect(housekeepingApi.previewLogCleanup).toHaveBeenCalledTimes(1))
+
+    await act(async () => {
+      resolvePreview({
+        data: {
+          retention_days: 90,
+          cutoff_at: '2026-08-13T19:00:00Z',
+          total_eligible: 12,
+          categories: [
+            { category: 'navigation_activity', label: 'Navigation Telemetry', eligible_count: 12 },
+            { category: 'expired_tokens', label: 'Expired Tokens', eligible_count: 0 },
+            { category: 'communication_logs', label: 'Communication Logs', eligible_count: 0 },
+            { category: 'routine_audit_logs', label: 'Routine Audit Logs', eligible_count: 0 },
+          ],
+          protected_guarantee: 'Financial ledgers are permanently exempt.',
+        },
+      })
+    })
+
+    await waitFor(() => expect(screen.getByText(/Dry-Run Preview: 12 row\(s\)/i)).toBeDefined())
+    const dialog = await screen.findByRole('dialog', { name: /Confirm Log Archival & Retention Cleanup/i })
+    expect(dialog.textContent).toContain('12')
+    expect(housekeepingApi.executeLogCleanup).not.toHaveBeenCalled()
   })
 })

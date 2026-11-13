@@ -11,9 +11,9 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-08
+ * @updated     2026-11-14
  *
- * @description Responsive organization branding and product ecosystem component displaying AITDL parent identity, product portfolio, and verified sales/support contact details.
+ * @description Responsive organization branding and product ecosystem component displaying the SmritiSys parent identity, product portfolio, and sales/support contact details.
  */
 
 import React from 'react'
@@ -58,7 +58,7 @@ export default function OrganizationBranding({
   if (variant === 'footer') {
     return (
       <section
-        aria-label="AITDL Organization & Products"
+        aria-label={`${parentOrganization.name} Organization & Products`}
         data-testid="organization-branding"
         className={`w-full border-t border-slate-200/80 pt-1 mt-1 text-[10px] sm:text-[10.5px] leading-tight text-slate-500 transition-colors ${className}`}
       >
@@ -150,7 +150,7 @@ export default function OrganizationBranding({
   if (variant === 'compact' || variant === 'inline') {
     return (
       <section
-        aria-label="AITDL Organization & Products"
+        aria-label={`${parentOrganization.name} Organization & Products`}
         data-testid="organization-branding"
         className={`bg-slate-50 border border-slate-200/90 rounded-xl p-3 text-xs text-slate-600 ${className}`}
       >
@@ -199,7 +199,7 @@ export default function OrganizationBranding({
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <section
-      aria-label="AITDL Organization & Products"
+      aria-label={`${parentOrganization.name} Organization & Products`}
       data-testid="organization-branding"
       className={`bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-5 ${className}`}
     >
@@ -217,7 +217,7 @@ export default function OrganizationBranding({
               {parentOrganization.name}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Enterprise Artificial Intelligence, Cloud Infrastructure & Educational Technology Solutions
+              Software products and digital business systems
             </p>
           </div>
         </div>
@@ -229,7 +229,7 @@ export default function OrganizationBranding({
           className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 font-semibold rounded-xl text-xs transition border border-blue-200/80 shrink-0 shadow-2xs"
           title={`Visit ${parentOrganization.name}`}
         >
-          <span>Visit aitdl.com</span>
+          <span>Visit {parentOrganization.websiteDisplay}</span>
           <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
         </a>
       </header>
@@ -238,7 +238,7 @@ export default function OrganizationBranding({
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            AITDL Product Ecosystem & Platforms
+            {parentOrganization.name} Product Ecosystem & Platforms
           </h4>
           <span className="text-[11px] text-slate-400 font-mono">3 Core Products</span>
         </div>
@@ -267,7 +267,7 @@ export default function OrganizationBranding({
                       >
                         {product.id === 'prathamone' ? (
                           <img
-                            src={branding.assets.symbolMarkTransparentUrl || branding.assets.prathamOneMarkTransparentUrl}
+                            src={branding.assets.appIconUrl}
                             alt="PrathamOne"
                             className="w-5 h-5 object-contain"
                           />
@@ -355,4 +355,3 @@ export default function OrganizationBranding({
     </section>
   )
 }
-

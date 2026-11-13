@@ -8,7 +8,7 @@ edition: "Coaching Institute Edition"
 version: "1.0.0"
 doc_version: "1.0"
 created_date: "2026-11-11"
-updated_date: "2026-11-11"
+updated_date: "2026-11-14"
 author: "Jawahar R Mallah"
 organization: "AITDL — AI Technology & Development Lab"
 status: "Approved"
@@ -54,7 +54,7 @@ related_modules: ["12_RBAC_SECURITY", "13_SYSADMIN_SETTINGS", "16_DATABASE_API",
 
 Implemented the **Housekeeping** module (`Housekeeping` menu and workspace under `/housekeeping`) combining **both**:
 
-1. **Automated CLI & Host Scheduler Utility (`scripts/db_backup.py`)** supporting auto-zipped **`POeduOS_YYYYMMDD_HHMMSS.edu`** packages (defaulting to compressed PostgreSQL `pg_dump -Fc -Z 6` or `plain_sql` bundled with `manifest.json` + `checksum.sha256`), legacy `.dump`/`.sql` formats, SHA-256 + `pg_restore --list` verification, GFS retention pruning, isolated sandbox restore drills into ephemeral `prashant_academy_drill`, guarded production restores, and Windows Task Scheduler (`schtasks`) / Linux cron registration.
+1. **Automated CLI & Host Scheduler Utility (`scripts/db_backup.py`)** supporting auto-zipped **`POeduOS_YYYYMMDD_HHMMSS.edu`** packages (defaulting to compressed PostgreSQL `pg_dump -Fc -Z 6` or `plain_sql` bundled with `manifest.json` + `checksum.sha256`), legacy `.dump`/`.sql` formats, SHA-256 + `pg_restore --list` verification, GFS retention pruning, uniquely named temporary restore drills with explicit cleanup, guarded production restores, and Windows Task Scheduler (`schtasks`) / Linux cron registration.
 2. **In-App Housekeeping Backend & Frontend Workspace** providing live database telemetry, on-demand verified `.edu`/`.dump`/`.sql` backups, archive upload & Zip-Slip-guarded verification, GFS pruning, isolated sandbox restore drills, guarded live restoration with automatic pre-restore `.edu` safety snapshot, PostgreSQL `VACUUM (ANALYZE)`, live SSOT financial ledger parity verification via `FinancialGovernanceService.reconcile_financial_ledgers`, and persisted policy management in `InstitutionSetting` (`category='housekeeping'`).
 
 Both surfaces read and maintain one shared archive catalog across `backups/` and legacy `data/backups/`, with `.sha256`, `.meta.json`, and `backups/housekeeping_history.jsonl` persisted on mounted storage so restore history remains intact even across full database replacement.
@@ -66,8 +66,8 @@ Both surfaces read and maintain one shared archive catalog across `backups/` and
 ### 2.1 SSOT & Data Persistence Alignment
 - **Zero Duplicate Settings Tables (Rule 001–009):** Retention rules (`backup_frequency`, `backup_time`, `backup_format`, `backup_destination`, `offsite_mirror_path`, `retain_daily`, `retain_weekly`, `retain_monthly`, `auto_vacuum_enabled`, `log_retention_days`) and latest operation metadata persist in `InstitutionSetting` (`category='housekeeping'`) with `SettingAuditLog` change history and `AuditLog` security entries.
 - **Dynamic Settings Synchronization:** Extended `GET /api/v1/settings/all` in `backend/app/api/v1/endpoints/settings.py` to enrich `maintenance.last_backup_date`, `maintenance.backup_status`, `maintenance.last_backup_file`, `integrations.backup_destination`, and `integrations.backup_frequency` dynamically from `HousekeepingService.list_backups()` and `housekeeping` settings instead of static hardcoded defaults.
-- **Rule 010 View-First Edit Mode:** All mutations in [Housekeeping.tsx](file:///f:/PrashantAcademy/frontend/src/pages/Housekeeping.tsx) are gated behind `scope="system:housekeeping"`, `<EditModeBar />`, and `<LockedButton />`.
-- **RBAC Enforcement:** All backend endpoints require `_require_housekeeping_access` (`superadmin`, `admin`, `sysadmin`, or `system:housekeeping` permission), verified via 403 checks against `teacher`, `student`, and `accountant` roles.
+- **Rule 010 View-First Edit Mode:** Backup creation and SysAdmin operations in [Housekeeping.tsx](../../frontend/src/pages/Housekeeping.tsx) require explicit Edit Mode; SysAdmin-only controls also require a SysAdmin role.
+- **RBAC Enforcement:** Institute Admins may view housekeeping telemetry, backup catalog, history, storage, policy, alerts, and cleanup previews, and may create backups. Admin-provided mirror path overrides are ignored; any configured mirror path is still validated against approved roots. Only SysAdmins may verify or download archives, upload or prune backups, restore, run maintenance, change policy, clean orphans, execute cleanup, or dispatch alerts. Non-Admin roles are denied.
 - **Guarded Production Restore:** Live restore requires exact confirmation phrase `RESTORE PRASHANT_ACADEMY`, an audit reason (`>= 10` chars), integrity verification of the target archive, automatic capture of a `pre_restore` safety `POeduOS_*.edu` archive, clean SQLAlchemy pool disposal, `alembic upgrade head`, `AuditLog` insertion, and post-restore SSOT financial reconciliation.
 
 ---
@@ -80,7 +80,7 @@ Both surfaces read and maintain one shared archive catalog across `backups/` and
 - `scripts/db_backup.py` — Host CLI & OS scheduler tool (`backup`, `verify`, `list`, `prune`, `drill`, `restore`, `install-schedule`) defaulting to `POeduOS_YYYYMMDD_HHMMSS.edu` auto-zipped bundles.
 
 ### 3.2 Backend Service & Router
-- `backend/app/services/housekeeping_service.py` — `HousekeepingService`, `VALID_FILENAME_RE` (`.edu|dump|sql`), `_extract_edu_payload` (Zip-Slip & Zip-Bomb protected extractor), `RESTORE_CONFIRMATION_PHRASE`, `DEFAULT_HOUSEKEEPING_POLICY` (`backup_format='edu'`), SHA-256 + TOC verification, GFS retention pruning (preserving newest snapshot, legacy `data/backups/`, and `<48h` `pre_restore` safety snapshots), isolated `prashant_academy_drill` sandbox drill (auto-dropped in `finally:`), guarded live restore, `VACUUM (ANALYZE)`, and `pg_stat_user_tables` telemetry.
+- `backend/app/services/housekeeping_service.py` — `HousekeepingService`, `VALID_FILENAME_RE` (`.edu|dump|sql`), `_extract_edu_payload` (Zip-Slip & Zip-Bomb protected extractor), `RESTORE_CONFIRMATION_PHRASE`, `DEFAULT_HOUSEKEEPING_POLICY` (`backup_format='edu'`), SHA-256 + TOC verification, GFS retention by distinct day/week/month (preserving newest snapshot, legacy `data/backups/`, and `<48h` `pre_restore` safety snapshots), unique temporary restore drills with explicit cleanup, guarded live restore, `VACUUM (ANALYZE)`, and `pg_stat_user_tables` telemetry.
 - `backend/app/api/v1/endpoints/housekeeping.py` — 19 route paths / 21 HTTP operations mounted at `/api/v1/housekeeping` in `backend/app/api/v1/router.py`:
   - `GET /api/v1/housekeeping/overview`
   - `GET /api/v1/housekeeping/backups`, `POST /api/v1/housekeeping/backups`
@@ -100,7 +100,7 @@ Both surfaces read and maintain one shared archive catalog across `backups/` and
 ### 3.3 Frontend Workspace & Navigation
 - `frontend/src/types/index.ts` & `frontend/src/api/endpoints.ts` — Strongly typed contracts and `housekeepingApi`.
 - `frontend/src/config/modules.ts`, `frontend/src/store/sidebarStore.ts`, `frontend/src/components/Sidebar.tsx`, `frontend/src/App.tsx` — Added `Housekeeping` menu with 5 collapsible sub-routes (`/housekeeping`, `/housekeeping/backups`, `/housekeeping/restore`, `/housekeeping/maintenance`, `/housekeeping/schedules`), visible exclusively to authorized Admin/SysAdmin/permitted users.
-- `frontend/src/pages/Housekeeping.tsx` — 5-tab interactive Workspace with live KPI & disk telemetry, proactive health alert panel + digest dispatch, backup catalog supporting `.edu`, `.dump`, and `.sql` archives, SHA-256 verification, GFS pruning, isolated `prashant_academy_drill` sandbox drill card, guarded restore modal, `VACUUM (ANALYZE)`, SSOT reconciliation card, storage/orphan sidecar cleanup, dry-run & `.jsonl.gz` log archival retention cleanup, operations log, and scheduler command generator.
+- `frontend/src/pages/Housekeeping.tsx` — 5-tab interactive Workspace with live KPI & disk telemetry, proactive health alert panel + digest dispatch, backup catalog supporting `.edu`, `.dump`, and `.sql` archives, SHA-256 verification, GFS pruning, temporary isolated sandbox drill card, guarded restore modal, `VACUUM (ANALYZE)`, SSOT reconciliation card, storage/orphan sidecar cleanup, dry-run & `.jsonl.gz` log archival retention cleanup, operations log, and scheduler command generator.
 - `frontend/src/pages/Settings.tsx` — Added direct link banner inside the Maintenance tab opening `/housekeeping`.
 
 ---
@@ -122,3 +122,22 @@ All verification suites, builds, and live smoke checks ran cleanly after final e
 | Live OpenAPI Discovery | `GET http://localhost:8000/openapi.json` | Confirmed **19** `/api/v1/housekeeping/*` route paths registered live |
 | Corporate Header Audit | `python scripts/manage_headers.py check` | **538 passed, 0 failed** (`100%` compliance) |
 
+## 5. HOUSEKEEPING SAFETY AUDIT FOLLOW-UP — 2026-11-14
+
+The follow-up review found correctness and data-safety gaps in the earlier implementation. The backend and CLI now use distinct, random-suffixed database names for restore drills; they attempt cleanup on success and failure, and report cleanup failures instead of silently ignoring them. The old fixed-name drill behavior could overwrite a pre-existing database with that name; the historical live-drill result above must not be treated as evidence that a pre-existing drill database was protected.
+
+Additional corrections:
+- GFS pruning now retains snapshots by distinct calendar day, ISO week, and month, while preserving the newest archive and recent pre-restore snapshots.
+- The backup catalog is globally newest-first across managed and legacy folders. A backup only remains marked verified while its size and modification timestamp match the values recorded at verification; older metadata without these markers must be explicitly re-verified.
+- Plain SQL inspection is line-streamed rather than loaded into memory multiple times. Empty or malformed embedded checksum files are rejected clearly.
+- Log cleanup requires known, non-empty category selections. The confirmation dialog opens only after a fresh preview succeeds, and the archive is decompressed and row-count checked before database rows are deleted.
+- CLI restore identifiers are validated before they are interpolated into PostgreSQL statements.
+- VACUUM operation metadata is now stored against the active institution instead of always using institution `1`.
+
+No live pruning, restore drill, production restore, or log purge was run during this follow-up. Focused non-destructive regression tests and environment-specific validation results are recorded in the task completion response.
+
+## 6. ADMIN BACKUP-ONLY ACCESS FOLLOW-UP — 2026-11-14
+
+The Housekeeping workspace is now available to Institute Admins as a read-only telemetry/catalog view with one approved mutation: on-demand backup creation in Edit Mode. Backend dependencies enforce the same boundary: Admins can read operational summaries and create backups, while verification, download, restore, pruning, upload, maintenance, policy edits, cleanup execution, and alert dispatch remain SysAdmin-only. The React route and locked controls mirror the API policy.
+
+The host CLI restore-drill parser now defines its production database option, allowing the existing guard against using the live or test database name as the sandbox prefix to execute under the real parser. Regression coverage was added for both the Admin access boundary and parser-level drill argument handling.

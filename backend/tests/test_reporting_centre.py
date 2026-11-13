@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-10
+#  * @updated     2026-11-14
 #  *
 #  * @description Comprehensive test suite validating Central Reporting & Analytics Centre API endpoints, data aggregations, and CodeX financial masking.
 #  */
@@ -24,7 +24,7 @@ from app.models.board import Board
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.fee import FeeCategory, FeeStructure, StudentFeeAssignment, FeeInvoice, FeeInstallment
-from app.models.payment import Payment
+from app.models.payment import Payment, PaymentReceipt
 from app.models.user import AuditLog
 
 
@@ -138,15 +138,74 @@ class TestReportingCentre:
         assert "overdue_amount_coded" in record or "overdue_amount" in record
 
     @pytest.mark.asyncio
-    async def test_fees_daily_collection_endpoint(self, client, auth_headers):
-        """Validates GET /reports/fees/daily-collection desk register endpoint."""
+    async def test_fees_daily_collection_uses_actual_receipts_and_reports_missing_receipts(
+        self, client, auth_headers, db, test_fee_invoice, test_academic_year
+    ):
+        """The daily register must not invent receipt numbers for payments."""
+        import uuid
+
+        student = test_fee_invoice["student"]
+        today = date.today()
+        suffix = uuid.uuid4().hex[:8]
+        payments = [
+            Payment(
+                student_id=student.id,
+                academic_year_id=test_academic_year.id,
+                amount=Decimal("1000.00"),
+                payment_date=today,
+                payment_method="cash",
+                status="completed",
+            )
+            for _ in range(3)
+        ]
+        db.add_all(payments)
+        await db.flush()
+        db.add_all([
+            PaymentReceipt(
+                receipt_number=f"RCP-REPORT-OLD-{suffix}",
+                payment_id=payments[0].id,
+                student_id=student.id,
+                amount=Decimal("900.00"),
+                payment_date=today,
+                payment_method=payments[0].payment_method,
+                version=1,
+                status="superseded",
+            ),
+            PaymentReceipt(
+                receipt_number=f"RCP-REPORT-{suffix}",
+                payment_id=payments[0].id,
+                student_id=student.id,
+                amount=payments[0].amount,
+                payment_date=today,
+                payment_method=payments[0].payment_method,
+                version=2,
+                status="valid",
+            ),
+            PaymentReceipt(
+                receipt_number=f"RCP-REPORT-VOID-{suffix}",
+                payment_id=payments[2].id,
+                student_id=student.id,
+                amount=payments[2].amount,
+                payment_date=today,
+                payment_method=payments[2].payment_method,
+                status="cancelled",
+            ),
+        ])
+        await db.commit()
+
         response = await client.get(
-            f"/api/v1/reports/fees/daily-collection?collection_date={str(date.today())}",
+            f"/api/v1/reports/fees/daily-collection?date={today}",
             headers=auth_headers,
         )
         assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
+        records = {record["payment_id"]: record for record in response.json()}
+
+        assert records[payments[0].id]["receipt_number"] == f"RCP-REPORT-{suffix}"
+        assert records[payments[0].id]["receipt_status"] == "valid"
+        assert records[payments[1].id]["receipt_number"] is None
+        assert records[payments[1].id]["receipt_status"] == "missing"
+        assert records[payments[2].id]["receipt_number"] is None
+        assert records[payments[2].id]["receipt_status"] == "cancelled"
 
     @pytest.mark.asyncio
     async def test_system_audit_summary_endpoint(self, client, auth_headers, db, admin_user):
