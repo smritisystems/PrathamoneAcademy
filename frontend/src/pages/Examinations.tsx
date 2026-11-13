@@ -564,11 +564,10 @@ function ExaminationsContent() {
             <button
               key={tab.id}
               onClick={() => setTab(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                isActive
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive
                   ? 'bg-primary-600 text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-              }`}
+                }`}
             >
               <TabIcon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
               <span>{tab.label}</span>
@@ -587,11 +586,10 @@ function ExaminationsContent() {
             <button
               key={s.id}
               onClick={() => setSelectedStandardId(String(s.id))}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                currentStandardId === String(s.id)
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${currentStandardId === String(s.id)
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+                }`}
             >
               {s.name}
             </button>
@@ -935,15 +933,14 @@ function ExaminationsContent() {
                                         [key]: { ...prev[key], marks: val },
                                       }))
                                     }}
-                                    className={`w-16 h-7 text-center rounded border text-xs font-bold transition ${
-                                      cell.is_absent
+                                    className={`w-16 h-7 text-center rounded border text-xs font-bold transition ${cell.is_absent
                                         ? 'bg-gray-100 text-gray-400 border-gray-200'
                                         : cell.marks !== '' && Number(cell.marks) >= sub.pass_marks
-                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                                        : cell.marks !== ''
-                                        ? 'bg-rose-50 text-rose-800 border-rose-300'
-                                        : 'bg-white text-gray-800 border-gray-300'
-                                    }`}
+                                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                          : cell.marks !== ''
+                                            ? 'bg-rose-50 text-rose-800 border-rose-300'
+                                            : 'bg-white text-gray-800 border-gray-300'
+                                      }`}
                                   />
                                   <label className="flex items-center gap-0.5 text-[10px] text-gray-500 cursor-pointer">
                                     <input
@@ -1077,9 +1074,8 @@ function ExaminationsContent() {
                           <div className="text-lg font-bold text-gray-900 my-1">{count}</div>
                           <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
                             <div
-                              className={`h-1.5 rounded-full ${
-                                grade === 'F' ? 'bg-rose-500' : 'bg-emerald-500'
-                              }`}
+                              className={`h-1.5 rounded-full ${grade === 'F' ? 'bg-rose-500' : 'bg-emerald-500'
+                                }`}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -1170,15 +1166,14 @@ function ExaminationsContent() {
                             <tr key={lead.student_id} className="hover:bg-slate-50/60">
                               <td className="py-2.5 px-3">
                                 <span
-                                  className={`inline-flex items-center justify-center w-6 h-6 rounded-full font-black text-xs ${
-                                    lead.rank === 1
+                                  className={`inline-flex items-center justify-center w-6 h-6 rounded-full font-black text-xs ${lead.rank === 1
                                       ? 'bg-amber-100 text-amber-800 border border-amber-300'
                                       : lead.rank === 2
-                                      ? 'bg-slate-200 text-slate-700 border border-slate-300'
-                                      : lead.rank === 3
-                                      ? 'bg-orange-100 text-orange-800 border border-orange-300'
-                                      : 'bg-gray-100 text-gray-600'
-                                  }`}
+                                        ? 'bg-slate-200 text-slate-700 border border-slate-300'
+                                        : lead.rank === 3
+                                          ? 'bg-orange-100 text-orange-800 border border-orange-300'
+                                          : 'bg-gray-100 text-gray-600'
+                                    }`}
                                 >
                                   #{lead.rank}
                                 </span>
@@ -1846,11 +1841,10 @@ function ExaminationsContent() {
                             <td className="py-2.5 px-2 text-center font-black">{rc.summary.grade}</td>
                             <td className="py-2.5 px-3 text-center">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                                  rc.summary.result === 'PASS' || rc.summary.result === 'PASSED'
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${rc.summary.result === 'PASS' || rc.summary.result === 'PASSED'
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : 'bg-rose-100 text-rose-800'
-                                }`}
+                                  }`}
                               >
                                 {rc.summary.result}
                               </span>

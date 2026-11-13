@@ -134,3 +134,4 @@ flowchart TD
   - `npm --prefix frontend run build` (`tsc && vite build`) passed with `0 errors`.
 - **Corporate Header Compliance:**
   - `python scripts/manage_headers.py check` verified 590/590 files (100% compliance).
+
