@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -54,10 +54,10 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "website": "https://prathamone.com",
     },
     "branding": {
-        "primary_color": "#1E40AF",
-        "secondary_color": "#3B82F6",
-        "accent_color": "#8B5CF6",
-        "theme_preset": "Royal Blue & Indigo",
+        "primary_color": "#0B2D6B",
+        "secondary_color": "#071C44",
+        "accent_color": "#F57C00",
+        "theme_preset": "Pratham Navy & Saffron",
         "logo_url": "/logo.svg",
         "favicon_url": "/favicon.svg",
         "login_bg_style": "wave_gradient",
@@ -299,9 +299,9 @@ async def get_institute_profile(
         "website": inst.website or "https://prathamone.com",
         "logo_url": inst.logo_url or "/logo.svg",
         "favicon_url": inst.favicon_url or "/favicon.svg",
-        "primary_color": inst.primary_color or "#1E40AF",
-        "secondary_color": inst.secondary_color or "#3B82F6",
-        "accent_color": inst.accent_color or "#8B5CF6",
+        "primary_color": inst.primary_color or "#0B2D6B",
+        "secondary_color": inst.secondary_color or "#071C44",
+        "accent_color": inst.accent_color or "#F57C00",
     }
 
 

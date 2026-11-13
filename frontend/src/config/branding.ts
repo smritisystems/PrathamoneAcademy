@@ -78,7 +78,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.13-REV-176-v1.95.0-5E2EB6D',
+  buildNumber: '2026.11.13-REV-177-v1.96.0-BA957E7',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-13',
@@ -126,17 +126,17 @@ export const BRANDING_CONFIG = {
     alternateEmail: 'prathamone@outlook.com',
   } as SalesSupportInfo,
   colors: {
-    primary: '#1e40af',       // Deep Royal Blue
-    primaryHover: '#1d4ed8',  // Blue-700
-    primaryLight: '#3b82f6',  // Blue-500
-    primaryDark: '#0f172a',   // Slate-900
-    secondary: '#071739',     // Midnight Navy
-    accent: '#0284c7',        // Cyan-600
-    gold: '#f59e0b',          // Amber-500
+    primary: '#0B2D6B',       // PrathamOne Navy Blue (Official Artwork Brand)
+    primaryHover: '#082354',  // Navy Hover State
+    primaryLight: '#16428F',  // Navy Light Accent
+    primaryDark: '#051535',   // Deepest Prussian Navy
+    secondary: '#071C44',     // Prussian Blue Shell / Gradient Pair
+    accent: '#F57C00',        // PrathamOne Saffron Orange (Official Artwork Accent)
+    gold: '#FFA726',          // Warm Amber Gold
     success: '#10b981',       // Emerald-500
-    prathamNavy: '#000064',   // PrathamOne Official Deep Navy (New Logo Specification)
-    prathamOrange: '#ff7f2a', // PrathamOne Official Vibrant Orange (New Logo Specification)
-    prathamGold: '#ffaa44',   // PrathamOne Official Gold / Amber Accent
+    prathamNavy: '#0B2D6B',   // PrathamOne Official Deep Navy (New Logo Specification)
+    prathamOrange: '#F57C00', // PrathamOne Official Vibrant Orange (New Logo Specification)
+    prathamGold: '#FFA726',   // PrathamOne Official Gold / Amber Accent
   },
   assets: {
     // Tenant Coaching Academy Logo (Default Prashant Academy Crest)
@@ -370,7 +370,7 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } {
     clean = clean.split('').map((c) => c + c).join('')
   }
   if (clean.length !== 6) {
-    return { r: 30, g: 64, b: 175 } // Fallback to Royal Blue (#1e40af)
+    return { r: 11, g: 45, b: 107 } // Fallback to Pratham Navy (#0B2D6B)
   }
   const num = parseInt(clean, 16)
   return {
@@ -423,9 +423,9 @@ export function applyGlobalBrandTheme(
   if (typeof document === 'undefined') return
   try {
     const root = document.documentElement
-    const primary = colors.primary || '#1E40AF'
-    const secondary = colors.secondary || adjustBrightness(primary, 20)
-    const accent = colors.accent || adjustBrightness(secondary, 30)
+    const primary = colors.primary || '#0B2D6B'
+    const secondary = colors.secondary || '#071C44'
+    const accent = colors.accent || '#F57C00'
 
     const pRgb = hexToRgb(primary)
     const sRgb = hexToRgb(secondary)

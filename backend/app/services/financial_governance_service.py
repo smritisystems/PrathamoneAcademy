@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-11
+#  * @updated     2026-11-13
 #  *
 #  * @description Centralized Single Source of Truth (SSOT) Financial Governance Engine unifying Concessions, Fee Waivers, Scholarships, Sponsor Funding, Collections, Refunds, Reversals, 7 Dashboards, 20 Governed Reports, Reconciliation, and Drill-Down Traceability.
 #  */
@@ -1872,7 +1872,7 @@ class FinancialGovernanceService:
 
         cols = report_data.get("columns", [])
         ws.append([c["label"] for c in cols])
-        header_fill = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
+        header_fill = PatternFill(start_color="0B2D6B", end_color="0B2D6B", fill_type="solid")
         header_font = Font(color="FFFFFF", bold=True)
         for cell in ws[4]:
             cell.fill = header_fill

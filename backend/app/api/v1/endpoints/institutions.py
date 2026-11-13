@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-12
+#  * @updated     2026-11-13
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -84,9 +84,9 @@ async def list_institutions(
             "address": i.address,
             "logo_url": i.logo_url or "/logo.svg",
             "favicon_url": i.favicon_url or "/favicon.svg",
-            "primary_color": i.primary_color or "#1E40AF",
-            "secondary_color": i.secondary_color or "#3B82F6",
-            "accent_color": i.accent_color or "#8B5CF6",
+            "primary_color": i.primary_color or "#0B2D6B",
+            "secondary_color": i.secondary_color or "#071C44",
+            "accent_color": i.accent_color or "#F57C00",
         }
         for i in institutions
     ]
@@ -146,9 +146,9 @@ async def get_public_institution_branding(
         "tagline": inst.tagline or "Learn • Practice • Achieve",
         "logo_url": inst.logo_url,
         "favicon_url": inst.favicon_url or "/favicon.svg",
-        "primary_color": inst.primary_color or "#1E40AF",
-        "secondary_color": inst.secondary_color or "#3B82F6",
-        "accent_color": inst.accent_color or "#8B5CF6",
+        "primary_color": inst.primary_color or "#0B2D6B",
+        "secondary_color": inst.secondary_color or "#071C44",
+        "accent_color": inst.accent_color or "#F57C00",
         "phone": inst.phone,
         "email": inst.email,
         "website": inst.website,
@@ -197,9 +197,9 @@ async def get_institution(
         "website": institution.website,
         "logo_url": institution.logo_url or "/logo.svg",
         "favicon_url": institution.favicon_url or "/favicon.svg",
-        "primary_color": institution.primary_color or "#1E40AF",
-        "secondary_color": institution.secondary_color or "#3B82F6",
-        "accent_color": institution.accent_color or "#8B5CF6",
+        "primary_color": institution.primary_color or "#0B2D6B",
+        "secondary_color": institution.secondary_color or "#071C44",
+        "accent_color": institution.accent_color or "#F57C00",
     }
 
 

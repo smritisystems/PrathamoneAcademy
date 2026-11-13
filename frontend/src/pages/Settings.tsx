@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-12
+ * @updated     2026-11-13
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -115,9 +115,9 @@ export default function Settings() {
     website: 'https://prathamone.com',
     logo_url: '/logo.svg',
     favicon_url: '/favicon.svg',
-    primary_color: '#1E40AF',
-    secondary_color: '#3B82F6',
-    accent_color: '#8B5CF6',
+    primary_color: '#0B2D6B',
+    secondary_color: '#071C44',
+    accent_color: '#F57C00',
   })
   const [originalProfile, setOriginalProfile] = useState<InstituteProfile | null>(null)
 
@@ -187,9 +187,9 @@ export default function Settings() {
     return () => {
       if (originalProfileRef.current) {
         applyGlobalBrandTheme({
-          primary: originalProfileRef.current.primary_color || '#1E40AF',
-          secondary: originalProfileRef.current.secondary_color || '#3B82F6',
-          accent: originalProfileRef.current.accent_color || '#8B5CF6',
+          primary: originalProfileRef.current.primary_color || '#0B2D6B',
+          secondary: originalProfileRef.current.secondary_color || '#071C44',
+          accent: originalProfileRef.current.accent_color || '#F57C00',
         }, originalProfileRef.current.logo_url)
       }
     }
@@ -229,9 +229,9 @@ export default function Settings() {
       const next = { ...prev, [field]: value }
       if (field === 'primary_color' || field === 'secondary_color' || field === 'accent_color') {
         applyGlobalBrandTheme({
-          primary: next.primary_color || '#1E40AF',
-          secondary: next.secondary_color || '#3B82F6',
-          accent: next.accent_color || '#8B5CF6',
+          primary: next.primary_color || '#0B2D6B',
+          secondary: next.secondary_color || '#071C44',
+          accent: next.accent_color || '#F57C00',
         }, next.logo_url)
       }
       return next
@@ -255,9 +255,9 @@ export default function Settings() {
       if (originalProfile) {
         setProfile(originalProfile)
         applyGlobalBrandTheme({
-          primary: originalProfile.primary_color || '#1E40AF',
-          secondary: originalProfile.secondary_color || '#3B82F6',
-          accent: originalProfile.accent_color || '#8B5CF6',
+          primary: originalProfile.primary_color || '#0B2D6B',
+          secondary: originalProfile.secondary_color || '#071C44',
+          accent: originalProfile.accent_color || '#F57C00',
         }, originalProfile.logo_url)
       }
     }
@@ -291,9 +291,9 @@ export default function Settings() {
           }))
         }
         applyGlobalBrandTheme({
-          primary: res.data.profile.primary_color || '#1E40AF',
-          secondary: res.data.profile.secondary_color || '#3B82F6',
-          accent: res.data.profile.accent_color || '#8B5CF6',
+          primary: res.data.profile.primary_color || '#0B2D6B',
+          secondary: res.data.profile.secondary_color || '#071C44',
+          accent: res.data.profile.accent_color || '#F57C00',
         }, res.data.profile.logo_url)
         try {
           const cached = JSON.parse(localStorage.getItem(BRANDING_STORAGE_KEY) || '{}')
@@ -302,9 +302,9 @@ export default function Settings() {
             ...cached,
             colors: {
               ...(cached.colors || {}),
-              primary: res.data.profile.primary_color || '#1E40AF',
-              secondary: res.data.profile.secondary_color || '#3B82F6',
-              accent: res.data.profile.accent_color || '#8B5CF6',
+              primary: res.data.profile.primary_color || '#0B2D6B',
+              secondary: res.data.profile.secondary_color || '#071C44',
+              accent: res.data.profile.accent_color || '#F57C00',
             },
             academyName: res.data.profile.name || cached.academyName,
             monogram: res.data.profile.short_name || cached.monogram,
@@ -1040,13 +1040,13 @@ export default function Settings() {
                             {/* Dynamic Live Banner Card matching Screenshot */}
                             <div
                               style={{
-                                background: `linear-gradient(135deg, ${profile.primary_color || '#1E40AF'} 0%, ${profile.secondary_color || '#3B82F6'} 100%)`,
+                                background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
                               }}
                               className="rounded-xl p-4 text-white shadow-md flex items-center gap-3.5 relative overflow-hidden"
                             >
                               {/* Background ambient lighting element */}
                               <div
-                                style={{ backgroundColor: profile.accent_color || '#8B5CF6' }}
+                                style={{ backgroundColor: profile.accent_color || '#F57C00' }}
                                 className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
                               />
 
@@ -1075,7 +1075,7 @@ export default function Settings() {
                             <div className="pt-2 flex items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
                                 <div
-                                  style={{ backgroundColor: profile.primary_color || '#1E40AF' }}
+                                  style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
                                   className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-xs"
                                 >
                                   {profile.short_name || 'PA'}
@@ -1106,7 +1106,7 @@ export default function Settings() {
                             <div className="pt-2 flex items-center justify-between gap-3 border-t border-gray-100">
                               <div className="flex items-center gap-3">
                                 <div
-                                  style={{ backgroundColor: profile.secondary_color || '#3B82F6' }}
+                                  style={{ backgroundColor: profile.secondary_color || '#071C44' }}
                                   className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-xs"
                                 >
                                   {profile.short_name || 'PA'}
@@ -1141,13 +1141,13 @@ export default function Settings() {
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="color"
-                                    value={profile.primary_color || '#1E40AF'}
+                                    value={profile.primary_color || '#0B2D6B'}
                                     onChange={(e) => handleProfileChange('primary_color', e.target.value)}
                                     className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                                   />
                                   <input
                                     type="text"
-                                    value={profile.primary_color || '#1E40AF'}
+                                    value={profile.primary_color || '#0B2D6B'}
                                     onChange={(e) => handleProfileChange('primary_color', e.target.value)}
                                     className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                                   />
@@ -1160,13 +1160,13 @@ export default function Settings() {
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="color"
-                                    value={profile.secondary_color || '#3B82F6'}
+                                    value={profile.secondary_color || '#071C44'}
                                     onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
                                     className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                                   />
                                   <input
                                     type="text"
-                                    value={profile.secondary_color || '#3B82F6'}
+                                    value={profile.secondary_color || '#071C44'}
                                     onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
                                     className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                                   />
@@ -1179,13 +1179,13 @@ export default function Settings() {
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="color"
-                                    value={profile.accent_color || '#8B5CF6'}
+                                    value={profile.accent_color || '#F57C00'}
                                     onChange={(e) => handleProfileChange('accent_color', e.target.value)}
                                     className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                                   />
                                   <input
                                     type="text"
-                                    value={profile.accent_color || '#8B5CF6'}
+                                    value={profile.accent_color || '#F57C00'}
                                     onChange={(e) => handleProfileChange('accent_color', e.target.value)}
                                     className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                                   />
@@ -1395,12 +1395,12 @@ export default function Settings() {
                       {/* 1. Dynamic Live Banner Card */}
                       <div
                         style={{
-                          background: `linear-gradient(135deg, ${profile.primary_color || '#1E40AF'} 0%, ${profile.secondary_color || '#3B82F6'} 100%)`,
+                          background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
                         }}
                         className="rounded-xl p-4 text-white shadow-md flex items-center gap-3.5 relative overflow-hidden"
                       >
                         <div
-                          style={{ backgroundColor: profile.accent_color || '#8B5CF6' }}
+                          style={{ backgroundColor: profile.accent_color || '#F57C00' }}
                           className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
                         />
                         <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-bold text-lg text-white border border-white/30 shadow-xs flex-shrink-0">
@@ -1434,7 +1434,7 @@ export default function Settings() {
                           <div className="space-y-1.5">
                             <button
                               type="button"
-                              style={{ backgroundColor: profile.primary_color || '#1E40AF' }}
+                              style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
                               className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold text-white shadow-2xs hover:brightness-105 transition-all text-center"
                             >
                               Primary Action
@@ -1442,8 +1442,8 @@ export default function Settings() {
                             <button
                               type="button"
                               style={{
-                                color: profile.primary_color || '#1E40AF',
-                                borderColor: profile.primary_color || '#1E40AF',
+                                color: profile.primary_color || '#0B2D6B',
+                                borderColor: profile.primary_color || '#0B2D6B',
                               }}
                               className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-white border hover:bg-slate-50 transition-all text-center"
                             >
@@ -1459,7 +1459,7 @@ export default function Settings() {
                           </div>
                           <div className="space-y-1">
                             <div
-                              style={{ backgroundColor: profile.primary_color || '#1E40AF' }}
+                              style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
                               className="py-1.5 px-2.5 rounded-lg text-xs font-semibold text-white shadow-xs flex items-center justify-between"
                             >
                               <span>Active Menu Tab</span>
@@ -1479,7 +1479,7 @@ export default function Settings() {
                           <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5">
                             <div
                               style={{
-                                background: `linear-gradient(135deg, ${profile.primary_color || '#1E40AF'} 0%, ${profile.secondary_color || '#3B82F6'} 100%)`,
+                                background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
                               }}
                               className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-serif font-black text-white shrink-0"
                             >
@@ -1495,7 +1495,7 @@ export default function Settings() {
                             </div>
                           </div>
                           <div
-                            style={{ backgroundColor: profile.accent_color || '#8B5CF6' }}
+                            style={{ backgroundColor: profile.accent_color || '#F57C00' }}
                             className="text-[9px] font-bold text-white px-2 py-0.5 rounded text-center"
                           >
                             Accent Status Badge
@@ -1514,6 +1514,7 @@ export default function Settings() {
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {[
+                            { name: 'Pratham Navy & Saffron (Official)', primary: '#0B2D6B', secondary: '#071C44', accent: '#F57C00' },
                             { name: 'Royal Blue & Indigo', primary: '#1E40AF', secondary: '#3B82F6', accent: '#8B5CF6' },
                             { name: 'Emerald Forest', primary: '#065F46', secondary: '#10B981', accent: '#059669' },
                             { name: 'Midnight Slate', primary: '#0F172A', secondary: '#38BDF8', accent: '#6366F1' },
@@ -1827,13 +1828,13 @@ export default function Settings() {
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
-                                value={profile.primary_color || '#1E40AF'}
+                                value={profile.primary_color || '#0B2D6B'}
                                 onChange={(e) => handleProfileChange('primary_color', e.target.value)}
                                 className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                               />
                               <input
                                 type="text"
-                                value={profile.primary_color || '#1E40AF'}
+                                value={profile.primary_color || '#0B2D6B'}
                                 onChange={(e) => handleProfileChange('primary_color', e.target.value)}
                                 className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                               />
@@ -1848,13 +1849,13 @@ export default function Settings() {
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
-                                value={profile.secondary_color || '#3B82F6'}
+                                value={profile.secondary_color || '#071C44'}
                                 onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
                                 className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                               />
                               <input
                                 type="text"
-                                value={profile.secondary_color || '#3B82F6'}
+                                value={profile.secondary_color || '#071C44'}
                                 onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
                                 className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                               />
@@ -1869,13 +1870,13 @@ export default function Settings() {
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
-                                value={profile.accent_color || '#8B5CF6'}
+                                value={profile.accent_color || '#F57C00'}
                                 onChange={(e) => handleProfileChange('accent_color', e.target.value)}
                                 className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                               />
                               <input
                                 type="text"
-                                value={profile.accent_color || '#8B5CF6'}
+                                value={profile.accent_color || '#F57C00'}
                                 onChange={(e) => handleProfileChange('accent_color', e.target.value)}
                                 className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                               />

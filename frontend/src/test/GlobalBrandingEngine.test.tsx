@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-08
+ * @updated     2026-11-13
  *
  * @description Comprehensive test suite validating color parsing, dynamic theme variable injection, multi-tenant branding resolution, and localStorage persistence.
  */
@@ -52,7 +52,7 @@ describe('Global Branding Engine & Resolver', () => {
 
     it('hexToRgb handles 3-digit shorthand and invalid input gracefully', () => {
       expect(hexToRgb('#FFF')).toEqual({ r: 255, g: 255, b: 255 })
-      expect(hexToRgb('invalid')).toEqual({ r: 30, g: 64, b: 175 }) // fallback
+      expect(hexToRgb('invalid')).toEqual({ r: 11, g: 45, b: 107 }) // fallback
     })
 
     it('adjustBrightness darkens and lightens correctly', () => {

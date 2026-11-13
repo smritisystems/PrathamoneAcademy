@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-05
+ * @updated     2026-11-13
  *
  * @description Secure, once-only startup console branding banner logging AITDL parent identity, product ecosystem, and contacts without sensitive credential leakage.
  */
@@ -45,7 +45,7 @@ export function printConsoleBrandingBanner(branding = BRANDING_CONFIG): boolean 
 
   // Colors and typography styles for console rendering
   const titleStyle = [
-    'background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #06b6d4 100%)',
+    'background: linear-gradient(135deg, #0B2D6B 0%, #071C44 50%, #F57C00 100%)',
     'color: #ffffff',
     'font-size: 14px',
     'font-weight: 900',
@@ -62,7 +62,7 @@ export function printConsoleBrandingBanner(branding = BRANDING_CONFIG): boolean 
     'font-size: 11px',
     'font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
     'padding: 6px 16px',
-    'border-left: 3px solid #3b82f6',
+    'border-left: 3px solid #071C44',
     'display: block',
     'line-height: 1.5',
   ].join(';')

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-10
+ * @updated     2026-11-13
  *
  * @description Vitest test suite for Institute Settings workspace, live branding preview, sub-tabs, lookups CRUD, and category persistence.
  */
@@ -57,9 +57,9 @@ const mockProfile = {
   website: 'https://prathamone.com',
   logo_url: '/logo.svg',
   favicon_url: '/favicon.svg',
-  primary_color: '#1E40AF',
-  secondary_color: '#3B82F6',
-  accent_color: '#8B5CF6',
+  primary_color: '#0B2D6B',
+  secondary_color: '#071C44',
+  accent_color: '#F57C00',
 }
 
 const mockAllSettings = {

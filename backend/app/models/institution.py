@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-05
+#  * @updated     2026-11-13
 #  *
 #  * @description SQLAlchemy model defining coaching institute branch entities and institutional settings.
 #  */
@@ -43,9 +43,9 @@ class Institution(Base):
     registration_number: Mapped[str] = mapped_column(String(100), nullable=True, default="MH-COACH-2018-0157")
     tax_id: Mapped[str] = mapped_column(String(100), nullable=True, default="AABCP1234K")
     description: Mapped[str] = mapped_column(Text, nullable=True)
-    primary_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#1E40AF")
-    secondary_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#3B82F6")
-    accent_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#8B5CF6")
+    primary_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#0B2D6B")
+    secondary_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#071C44")
+    accent_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#F57C00")
     favicon_url: Mapped[str | None] = mapped_column(Text, nullable=True, default="/favicon.svg")
     timezone: Mapped[str] = mapped_column(String(50), nullable=True, default="Asia/Kolkata")
     default_language: Mapped[str] = mapped_column(String(20), nullable=True, default="en")

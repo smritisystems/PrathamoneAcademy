@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-13
 #  *
 #  * @description Service generating digital student ID cards with high-contrast vector SVG QR codes and batch export support.
 #  */
@@ -168,7 +168,7 @@ async def get_student_id_card_data(
             "city": inst.city if inst else "",
             "phone": inst.phone if inst else "",
             "logo_url": getattr(inst, "logo_url", None),
-            "primary_color": getattr(inst, "primary_color", "#1E40AF") or "#1E40AF",
+            "primary_color": getattr(inst, "primary_color", "#0B2D6B") or "#0B2D6B",
         },
         "qr_payload": qr_payload,
         "qr_svg": qr_svg,

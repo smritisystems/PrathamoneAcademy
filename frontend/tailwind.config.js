@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-08
+ * @updated     2026-11-13
  *
  * @description Tailwind CSS theme configuration, responsive breakpoints, and custom animation utilities.
  */
@@ -35,13 +35,13 @@ export default {
           900: 'var(--brand-primary-dark, #1e3a8a)',
         },
         brand: {
-          DEFAULT: 'var(--brand-primary, #1E40AF)',
-          primary: 'var(--brand-primary, #1E40AF)',
-          hover: 'var(--brand-primary-hover, #1D4ED8)',
-          light: 'var(--brand-primary-light, #3B82F6)',
-          dark: 'var(--brand-primary-dark, #0F172A)',
-          secondary: 'var(--brand-secondary, #3B82F6)',
-          accent: 'var(--brand-accent, #8B5CF6)',
+          DEFAULT: 'var(--brand-primary, #0B2D6B)',
+          primary: 'var(--brand-primary, #0B2D6B)',
+          hover: 'var(--brand-primary-hover, #082354)',
+          light: 'var(--brand-primary-light, #16428F)',
+          dark: 'var(--brand-primary-dark, #051535)',
+          secondary: 'var(--brand-secondary, #071C44)',
+          accent: 'var(--brand-accent, #F57C00)',
           50: 'var(--brand-primary-50, #eff6ff)',
           100: 'var(--brand-primary-100, #dbeafe)',
           200: 'var(--brand-primary-200, #bfdbfe)',
