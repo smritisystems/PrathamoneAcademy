@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -688,8 +688,10 @@ const isStaffActive = location.pathname.startsWith('/staff')
             )}
           </div>
 
-          {/* Student Nav */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+          {/* Student Nav Container with Scroll Guard */}
+          <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="pointer-events-none absolute top-0 inset-x-0 h-3 bg-gradient-to-b from-[#0f172a] to-transparent z-10" />
+            <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto custom-scrollbar scroll-pt-3">
             <div className={`relative group ${isCollapsed ? 'flex justify-center' : ''}`}>
               <NavLink
                 to="/student-portal"
@@ -747,18 +749,18 @@ const isStaffActive = location.pathname.startsWith('/staff')
                   isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
                 } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   location.pathname === '/sysadmin'
-                    ? 'bg-primary-600 text-white shadow-md'
-                    : 'text-indigo-400 bg-indigo-950/40 hover:bg-indigo-900/60 hover:text-white border border-indigo-800/40'
+                    ? 'bg-white/10 text-white font-semibold shadow-sm border-l-4 border-[#F57C00]'
+                    : 'text-violet-400 bg-violet-950/40 hover:bg-violet-900/60 hover:text-white border border-violet-800/40'
                 }`}
               >
-                <Terminal className="w-4 h-4 flex-shrink-0 text-indigo-400" />
+                <Terminal className="w-4 h-4 flex-shrink-0 text-violet-400" />
                 {!isCollapsed && <span className="truncate">SysAdmin Center</span>}
               </NavLink>
 
               {isCollapsed && (
                 <div
                   role="tooltip"
-                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-indigo-950 text-indigo-200 text-xs font-semibold rounded-lg shadow-xl border border-indigo-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-violet-950 text-violet-200 text-xs font-semibold rounded-lg shadow-xl border border-violet-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
                 >
                   SysAdmin Center
                 </div>
@@ -766,6 +768,9 @@ const isStaffActive = location.pathname.startsWith('/staff')
             </div>
           )}
         </nav>
+        {/* Bottom smooth scroll fade mask */}
+        <div className="pointer-events-none absolute bottom-0 inset-x-0 h-3 bg-gradient-to-t from-[#0f172a] to-transparent z-10" />
+      </div>
 
           {/* Footer User Card */}
           <div className="px-3 py-4 border-t border-slate-800 bg-slate-950/40">
@@ -787,8 +792,8 @@ const isStaffActive = location.pathname.startsWith('/staff')
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/60 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white shadow flex-shrink-0">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md flex-shrink-0">
                   {user?.first_name?.[0]}{user?.last_name?.[0]}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -811,12 +816,14 @@ const isStaffActive = location.pathname.startsWith('/staff')
           {/* PrathamOne EduOS Platform Footnote */}
           {!isCollapsed ? (
             <div className="px-4 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
-              <div className="flex items-center gap-1.5 truncate">
-                <img
-                  src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
-                  alt="PrathamOne EduOS"
-                  className="w-3.5 h-3.5 object-contain"
-                />
+              <div className="flex items-center gap-2 truncate">
+                <div className="w-4 h-4 rounded bg-white/10 border border-white/10 flex items-center justify-center p-0.5 shrink-0">
+                  <img
+                    src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
+                    alt="PrathamOne EduOS"
+                    className="w-full h-full object-contain filter brightness-125"
+                  />
+                </div>
                 <span className="font-medium text-slate-300 truncate">{branding.suiteName}</span>
               </div>
               <span className="font-mono text-slate-400 text-[9.5px]">{branding.versionDisplay}</span>
@@ -945,12 +952,16 @@ const isStaffActive = location.pathname.startsWith('/staff')
           )}
         </div>
 
-        {/* Navigation Items List */}
-        <nav
-          className={`flex-1 px-3 py-4 space-y-1.5 overflow-y-auto custom-scrollbar text-sm ${
-            isCollapsed ? 'flex flex-col items-center' : ''
-          }`}
-        >
+        {/* Navigation Items List with Boundary Scroll Guard */}
+        <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Top smooth scroll fade mask: prevents text slicing against header line */}
+          <div className="pointer-events-none absolute top-0 inset-x-0 h-3 bg-gradient-to-b from-[#0f172a] to-transparent z-10" />
+
+          <nav
+            className={`flex-1 px-3 py-3 space-y-1.5 overflow-y-auto custom-scrollbar text-sm scroll-pt-3 ${
+              isCollapsed ? 'flex flex-col items-center' : ''
+            }`}
+          >
           {/* Quick Search & Menu Customization Control Bar */}
           {!isCollapsed ? (
             <div className="pb-2 space-y-1.5 border-b border-slate-800/80 mb-2">
@@ -971,7 +982,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
 
               <div className="flex items-center justify-between px-1 text-[11px]">
                 <div className="flex items-center gap-1.5 text-slate-400">
-                  <Compass className="w-3.5 h-3.5 text-primary-400" />
+                  <Compass className="w-3.5 h-3.5 text-amber-400" />
                   <span className="capitalize font-bold text-slate-300">
                     {navigationMode === 'my_menu_only'
                       ? 'My Menu Only'
@@ -983,7 +994,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                 <button
                   type="button"
                   onClick={() => openCustomizer()}
-                  className="text-primary-400 hover:text-primary-300 font-bold hover:underline flex items-center gap-1"
+                  className="text-amber-400 hover:text-amber-300 font-bold hover:underline flex items-center gap-1"
                   title="Customize My Menu"
                 >
                   <Sliders className="w-3 h-3" />
@@ -999,7 +1010,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                     onClick={() => setActiveHybridTab('my_menu')}
                     className={`flex-1 py-1 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
                       activeHybridTab === 'my_menu'
-                        ? 'bg-primary-600 text-white shadow-xs'
+                        ? 'bg-white/15 text-white shadow-xs'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
@@ -1011,7 +1022,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                     onClick={() => setActiveHybridTab('all')}
                     className={`flex-1 py-1 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
                       activeHybridTab === 'all'
-                        ? 'bg-primary-600 text-white shadow-xs'
+                        ? 'bg-white/15 text-white shadow-xs'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
@@ -1053,7 +1064,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                     className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-bold transition-colors shadow-2xs"
                     title="Restore Standard Menu"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-primary-400" />
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
                     <span>Restore Standard Menu</span>
                   </button>
                 </div>
@@ -1077,7 +1088,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
                   } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isActive
-                      ? 'text-white shadow-md'
+                      ? 'bg-white/10 text-white font-semibold shadow-sm border-l-4 border-[#F57C00]'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`
                 }
@@ -1106,7 +1117,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                 <NavLink
                   to="/academic"
                   aria-label="Academic Workspace"
-                  style={isAcademicActive ? { backgroundColor: branding.colors.primary } : undefined}
+                  
                   className={({ isActive }) =>
                     `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       isAcademicActive
@@ -1146,7 +1157,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                           to={sub.to}
                           className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
                             isSubActive
-                              ? 'bg-primary-600 text-white shadow-sm'
+                              ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                               : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                           }`}
                         >
@@ -1167,12 +1178,12 @@ const isStaffActive = location.pathname.startsWith('/staff')
                   aria-expanded={academicOpen}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isAcademicActive
-                      ? 'bg-primary-600/20 text-primary-300 border border-primary-500/30'
+                      ? 'bg-white/10 text-white font-semibold shadow-sm border-l-4 border-[#F57C00]'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <GraduationCap className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                    <GraduationCap className={`w-4 h-4 flex-shrink-0 ${isAcademicActive ? "text-[#F57C00]" : "text-sky-400"}`} />
                     <span className="truncate">Academic</span>
                   </div>
                   {academicOpen ? (
@@ -1202,8 +1213,8 @@ const isStaffActive = location.pathname.startsWith('/staff')
                           to={sub.to}
                           className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isSubActive
-                              ? 'bg-primary-600 text-white shadow-sm'
-                              : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                              ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
+                              : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                           }`}
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
@@ -1225,7 +1236,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                 <NavLink
                   to="/students"
                   aria-label="Students"
-                  style={isStudentsActive ? { backgroundColor: branding.colors.primary } : undefined}
+                  
                   className={({ isActive }) =>
                     `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       isStudentsActive
@@ -1263,11 +1274,11 @@ const isStaffActive = location.pathname.startsWith('/staff')
                           to={sub.to}
                           className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                             isSubActive
-                              ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                              ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                               : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                           }`}
                         >
-                          <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                          <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                           <span className="truncate">{sub.label}</span>
                         </NavLink>
                       )
@@ -1290,7 +1301,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                     aria-label="Students"
                     className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                   >
-                    <Users className={`w-4 h-4 flex-shrink-0 ${isStudentsActive ? 'text-white' : 'text-blue-400'}`} />
+                    <Users className={`w-4 h-4 flex-shrink-0 ${isStudentsActive ? 'text-[#F57C00]' : 'text-cyan-400'}`} />
                     <span className="truncate">Students</span>
                   </NavLink>
                   <button
@@ -1318,11 +1329,11 @@ const isStaffActive = location.pathname.startsWith('/staff')
                           to={sub.to}
                           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isSubActive
-                              ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                              ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                               : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                           }`}
                         >
-                          <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                          <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                           <span className="truncate">{sub.label}</span>
                         </NavLink>
                       )
@@ -1341,7 +1352,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                 <NavLink
                   to="/leads"
                   aria-label="Lead Management & CRM"
-                  style={isCrmActive ? { backgroundColor: branding.colors.primary } : undefined}
+                  
                     className={({ isActive }) =>
                     `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       isCrmActive
@@ -1371,11 +1382,11 @@ const isStaffActive = location.pathname.startsWith('/staff')
                           to={sub.to}
                           className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                             isSubActive
-                              ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                              ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                               : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                           }`}
                         >
-                          <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                          <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                           <span className="truncate">{sub.label}</span>
                         </NavLink>
                       )
@@ -1392,12 +1403,12 @@ const isStaffActive = location.pathname.startsWith('/staff')
                   aria-expanded={crmOpen}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isCrmActive
-                      ? 'bg-primary-600 text-white shadow-md font-semibold'
+                      ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <Layers className={`w-4 h-4 flex-shrink-0 ${isCrmActive ? 'text-white' : 'text-blue-400'}`} />
+                    <Layers className={`w-4 h-4 flex-shrink-0 ${isCrmActive ? 'text-[#F57C00]' : 'text-sky-400'}`} />
                     <span className="truncate text-xs font-semibold">Lead Management & CRM</span>
                   </div>
                   {crmOpen ? (
@@ -1417,11 +1428,11 @@ const isStaffActive = location.pathname.startsWith('/staff')
                           to={sub.to}
                           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isSubActive
-                              ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                              ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                               : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                           }`}
                         >
-                          <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                          <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                           <span className="truncate">{sub.label}</span>
                         </NavLink>
                       )
@@ -1445,7 +1456,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                       <NavLink
                         to="/teachers"
                         aria-label="Teachers"
-                        style={isTeachersActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={({ isActive }) =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isTeachersActive
@@ -1483,11 +1494,11 @@ const isStaffActive = location.pathname.startsWith('/staff')
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1501,7 +1512,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isTeachersActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -1510,7 +1521,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                           aria-label="Teachers"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isTeachersActive ? 'text-white' : 'text-indigo-400'}`} />
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isTeachersActive ? 'text-[#F57C00]' : 'text-indigo-400'}`} />
                           <span className="truncate text-xs font-semibold">Teachers</span>
                         </NavLink>
                         <button
@@ -1538,11 +1549,11 @@ const isStaffActive = location.pathname.startsWith('/staff')
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1564,7 +1575,7 @@ if (item.to === '/staff') {
                       <NavLink
                         to="/staff"
                         aria-label="Staff Directory"
-                        style={isStaffActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={({ isActive }) =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isStaffActive
@@ -1602,11 +1613,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1620,7 +1631,7 @@ if (item.to === '/staff') {
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isStaffActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -1629,7 +1640,7 @@ if (item.to === '/staff') {
                           aria-label="Staff Directory"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isStaffActive ? 'text-white' : 'text-amber-400'}`} />
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isStaffActive ? 'text-[#F57C00]' : 'text-amber-400'}`} />
                           <span className="truncate text-xs font-semibold">Staff Directory</span>
                         </NavLink>
                         <button
@@ -1657,11 +1668,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1683,7 +1694,7 @@ if (item.to === '/staff') {
                       <NavLink
                         to="/attendance"
                         aria-label="Attendance"
-                        style={isAttendanceActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={({ isActive }) =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isAttendanceActive
@@ -1721,11 +1732,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1739,7 +1750,7 @@ if (item.to === '/staff') {
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isAttendanceActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -1748,7 +1759,7 @@ if (item.to === '/staff') {
                           aria-label="Attendance"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isAttendanceActive ? 'text-white' : 'text-emerald-400'}`} />
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isAttendanceActive ? 'text-[#F57C00]' : 'text-emerald-400'}`} />
                           <span className="truncate text-xs font-semibold">Attendance</span>
                         </NavLink>
                         <button
@@ -1776,11 +1787,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1802,7 +1813,7 @@ if (item.to === '/staff') {
                       <NavLink
                         to="/examinations"
                         aria-label="Tests & Results"
-                        style={isExaminationsActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={({ isActive }) =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isExaminationsActive
@@ -1840,11 +1851,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1858,7 +1869,7 @@ if (item.to === '/staff') {
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isExaminationsActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -1867,7 +1878,7 @@ if (item.to === '/staff') {
                           aria-label="Tests & Results"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <Award className={`w-4 h-4 flex-shrink-0 ${isExaminationsActive ? 'text-white' : 'text-purple-400'}`} />
+                          <Award className={`w-4 h-4 flex-shrink-0 ${isExaminationsActive ? 'text-[#F57C00]' : 'text-purple-400'}`} />
                           <span className="truncate text-xs font-semibold">Tests & Results</span>
                         </NavLink>
                         <button
@@ -1895,11 +1906,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1921,7 +1932,7 @@ if (item.to === '/staff') {
                       <NavLink
                         to="/fees"
                         aria-label="Fees & Payments"
-                        style={isFeesActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={({ isActive }) =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isFeesActive
@@ -1959,11 +1970,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -1977,7 +1988,7 @@ if (item.to === '/staff') {
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isFeesActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -1986,7 +1997,7 @@ if (item.to === '/staff') {
                           aria-label="Fees & Payments"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <CreditCard className={`w-4 h-4 flex-shrink-0 ${isFeesActive ? 'text-white' : 'text-amber-400'}`} />
+                          <CreditCard className={`w-4 h-4 flex-shrink-0 ${isFeesActive ? 'text-[#F57C00]' : 'text-amber-400'}`} />
                           <span className="truncate text-xs font-semibold">Fees & Payments</span>
                         </NavLink>
                         <button
@@ -2014,11 +2025,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2040,7 +2051,7 @@ if (item.to === '/staff') {
                       <NavLink
                         to="/courses"
                         aria-label="Study Materials"
-                        style={isCoursesActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={({ isActive }) =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isCoursesActive
@@ -2078,11 +2089,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2096,7 +2107,7 @@ if (item.to === '/staff') {
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isCoursesActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -2105,7 +2116,7 @@ if (item.to === '/staff') {
                           aria-label="Study Materials"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isCoursesActive ? 'text-white' : 'text-sky-400'}`} />
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isCoursesActive ? 'text-[#F57C00]' : 'text-sky-400'}`} />
                           <span className="truncate text-xs font-semibold">Study Materials</span>
                         </NavLink>
                         <button
@@ -2133,11 +2144,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2159,7 +2170,7 @@ if (item.to === '/staff') {
                       <NavLink
                         to="/communication"
                         aria-label="Communication Center"
-                        style={isCommunicationActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={({ isActive }) =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isCommunicationActive
@@ -2197,11 +2208,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2215,7 +2226,7 @@ if (item.to === '/staff') {
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isCommunicationActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -2224,7 +2235,7 @@ if (item.to === '/staff') {
                           aria-label="Communication Center"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isCommunicationActive ? 'text-white' : 'text-violet-400'}`} />
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isCommunicationActive ? 'text-[#F57C00]' : 'text-violet-400'}`} />
                           <span className="truncate text-xs font-semibold">Communication Center</span>
                         </NavLink>
                         <button
@@ -2252,11 +2263,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2278,7 +2289,7 @@ if (item.to === '/staff') {
                       <NavLink
                         to="/forms"
                         aria-label="Print Forms & KYC"
-                        style={isFormsActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={({ isActive }) =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isFormsActive
@@ -2316,11 +2327,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2334,7 +2345,7 @@ if (item.to === '/staff') {
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isFormsActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -2343,7 +2354,7 @@ if (item.to === '/staff') {
                           aria-label="Print Forms & KYC"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isFormsActive ? 'text-white' : 'text-emerald-400'}`} />
+                          <item.icon className={`w-4 h-4 flex-shrink-0 ${isFormsActive ? 'text-[#F57C00]' : 'text-emerald-400'}`} />
                           <span className="truncate text-xs font-semibold">Print Forms & KYC</span>
                         </NavLink>
                         <button
@@ -2371,11 +2382,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2397,7 +2408,7 @@ if (item.to === '/staff') {
                       <NavLink
                         to="/housekeeping"
                         aria-label="Housekeeping"
-                        style={isHousekeepingActive ? { backgroundColor: branding.colors.primary } : undefined}
+                        
                         className={() =>
                           `w-11 h-11 flex items-center justify-center rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                             isHousekeepingActive
@@ -2433,11 +2444,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-medium transition-all ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white shadow-sm font-semibold'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3 h-3 flex-shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2450,7 +2461,7 @@ if (item.to === '/staff') {
                       <div
                         className={`w-full flex items-center justify-between rounded-xl font-medium transition-all ${
                           isHousekeepingActive
-                            ? 'bg-primary-600 text-white shadow-md font-semibold'
+                            ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                             : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
@@ -2459,7 +2470,7 @@ if (item.to === '/staff') {
                           aria-label="Housekeeping"
                           className="flex-1 flex items-center gap-3 px-3 py-2 min-w-0 focus:outline-none"
                         >
-                          <HardDrive className={`w-4 h-4 flex-shrink-0 ${isHousekeepingActive ? 'text-white' : 'text-emerald-400'}`} />
+                          <HardDrive className={`w-4 h-4 flex-shrink-0 ${isHousekeepingActive ? 'text-[#F57C00]' : 'text-emerald-400'}`} />
                           <span className="truncate text-xs font-semibold">Housekeeping</span>
                         </NavLink>
                         <button
@@ -2487,11 +2498,11 @@ if (item.to === '/staff') {
                                 to={sub.to}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                                   isSubActive
-                                    ? 'bg-primary-600 text-white font-semibold shadow-sm'
+                                    ? 'bg-white/10 text-white font-semibold shadow-xs border-l-2 border-[#F57C00]'
                                     : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                                 }`}
                               >
-                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-500'}`} />
+                                <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isSubActive ? 'text-white font-bold' : 'text-slate-400'}`} />
                                 <span className="truncate">{sub.label}</span>
                               </NavLink>
                             )
@@ -2514,12 +2525,12 @@ if (item.to === '/staff') {
                 <NavLink
                   to={item.to}
                   aria-label={item.label}
-                  style={isItemActive ? { backgroundColor: branding.colors.primary } : undefined}
+                  
                   className={`flex items-center ${
                     isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
                   } rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isItemActive
-                      ? 'bg-primary-600 text-white shadow-md'
+                      ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
                       : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                   }`}
                 >
@@ -2551,18 +2562,18 @@ if (item.to === '/staff') {
                   isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
                 } rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   location.pathname === '/sysadmin'
-                    ? 'bg-primary-600 text-white shadow-md'
-                    : 'text-indigo-400 bg-indigo-950/40 hover:bg-indigo-900/60 hover:text-white border border-indigo-800/40'
+                    ? 'bg-white/10 text-white font-semibold shadow-sm border-l-4 border-[#F57C00]'
+                    : 'text-violet-400 bg-violet-950/40 hover:bg-violet-900/60 hover:text-white border border-violet-800/40'
                 }`}
               >
-                <Terminal className="w-4 h-4 flex-shrink-0 text-indigo-400" />
+                <Terminal className="w-4 h-4 flex-shrink-0 text-violet-400" />
                 {!isCollapsed && <span className="truncate">SysAdmin Center</span>}
               </NavLink>
 
               {isCollapsed && (
                 <div
                   role="tooltip"
-                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-indigo-950 text-indigo-200 text-xs font-semibold rounded-lg shadow-xl border border-indigo-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-violet-950 text-violet-200 text-xs font-semibold rounded-lg shadow-xl border border-violet-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
                 >
                   SysAdmin Center
                 </div>
@@ -2570,6 +2581,9 @@ if (item.to === '/staff') {
             </div>
           )}
         </nav>
+        {/* Bottom smooth scroll fade mask */}
+        <div className="pointer-events-none absolute bottom-0 inset-x-0 h-3 bg-gradient-to-t from-[#0f172a] to-transparent z-10" />
+      </div>
 
         {/* User Profile Footer Card */}
         <div className="px-3 py-4 border-t border-slate-800 bg-slate-950/40">
@@ -2591,8 +2605,8 @@ if (item.to === '/staff') {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/60 border border-slate-700/50">
-              <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white shadow flex-shrink-0">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/80 border border-slate-700/60 shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md flex-shrink-0">
                 {user?.first_name?.[0] || 'A'}{user?.last_name?.[0] || 'U'}
               </div>
               <div className="flex-1 min-w-0">
@@ -2616,11 +2630,13 @@ if (item.to === '/staff') {
         {!isCollapsed ? (
           <div className="px-4 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
             <div className="flex items-center gap-1.5 truncate">
-              <img
-                src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
-                alt="PrathamOne EduOS"
-                className="w-3.5 h-3.5 object-contain"
-              />
+              <div className="w-4 h-4 rounded bg-white/10 border border-white/10 flex items-center justify-center p-0.5 shrink-0">
+                <img
+                  src={branding.assets.sealMarkTransparentUrl || branding.assets.symbolMarkTransparentUrl}
+                  alt="PrathamOne EduOS"
+                  className="w-full h-full object-contain filter brightness-125"
+                />
+              </div>
               <span className="font-medium text-slate-300 truncate">{branding.suiteName}</span>
             </div>
             <span className="font-mono text-slate-400 text-[9.5px]">{branding.versionDisplay}</span>

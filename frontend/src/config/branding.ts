@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-13
+ * @updated     2026-11-14
  *
  * @description Master branding configuration and dynamic identity resolver for PrathamOne Academy and tenant institutions.
  */
@@ -78,7 +78,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.13-REV-178-v1.97.0-6BBD721',
+  buildNumber: '2026.11.13-REV-179-v1.97.1-31444C7',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-13',
@@ -432,13 +432,13 @@ export function applyGlobalBrandTheme(
     const aRgb = hexToRgb(accent)
 
     const primaryHover = adjustBrightness(primary, -12)
-    const primaryLight = adjustBrightness(primary, 25)
+    const primaryLight = adjustBrightness(primary, 35)
     const primaryDark = adjustBrightness(primary, -25)
     const primary50 = hexToRgba(primary, 0.06)
     const primary100 = hexToRgba(primary, 0.12)
     const primary200 = hexToRgba(primary, 0.22)
-    const primary300 = hexToRgba(primary, 0.38)
-    const primary400 = hexToRgba(primary, 0.55)
+    const primary300 = adjustBrightness(primary, 62)
+    const primary400 = adjustBrightness(primary, 46)
     const primaryShadow = hexToRgba(primary, 0.28)
 
     // Standard CSS Custom Properties
