@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-14
+ * @updated     2026-11-15
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -77,6 +77,7 @@ import type {
   EduBoardPreferencesResponse, EduBoardDisplayPrefsValues,
   EduBoardPopoutMode, EduBoardPopoutLaunchResponse, EduBoardPopoutResolveResponse,
   EduBoardBackgroundStyle,
+  LicenseActivationResponse, LicenseStatusResponse,
 } from '../types'
 import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../types/forms'
 
@@ -1814,6 +1815,43 @@ export const sysadminApi = {
     apiClient.put<{ success: boolean; message: string; data: Partial<SystemSettings> }>(
       '/sysadmin/system-settings',
       data
+    ),
+}
+
+export const licenseApi = {
+  getStatus: (institution_id?: number) =>
+    apiClient.get<LicenseStatusResponse>('/license/status', {
+      params: institution_id ? { institution_id } : undefined,
+    }),
+  activate: (
+    activation: {
+      license_key?: string
+      serial_number?: string
+      activation_key?: string
+      registration?: NonNullable<LicenseStatusResponse['registration']>
+    },
+    institution_id?: number,
+  ) =>
+    apiClient.post<LicenseActivationResponse>(
+      '/license/activate',
+      activation,
+      { params: institution_id ? { institution_id } : undefined },
+    ),
+  createOfflineRequest: (
+    serial_number: string,
+    registration: NonNullable<LicenseStatusResponse['registration']>,
+    institution_id?: number,
+  ) =>
+    apiClient.post<Record<string, unknown>>(
+      '/license/offline-request',
+      { serial_number, registration },
+      { params: institution_id ? { institution_id } : undefined },
+    ),
+  importOfflineArtifact: (artifact: Record<string, unknown>, institution_id?: number) =>
+    apiClient.post<LicenseActivationResponse>(
+      '/license/offline-import',
+      { artifact },
+      { params: institution_id ? { institution_id } : undefined },
     ),
 }
 

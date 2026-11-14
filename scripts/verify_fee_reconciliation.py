@@ -11,17 +11,20 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-15
 #  *
 #  * @description Verification audit script asserting all client ledger reconciliation requirements.
 #  */
 
 import asyncio
+import os
 from decimal import Decimal
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
-DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy"
+DB_URL = os.environ.get("DATABASE_URL")
+if not DB_URL:
+    raise RuntimeError("Set DATABASE_URL explicitly before running this fee verification.")
 
 async def verify():
     engine = create_async_engine(DB_URL)

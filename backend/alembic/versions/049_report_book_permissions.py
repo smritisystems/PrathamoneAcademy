@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-14
-#  * @updated     2026-11-14
+#  * @updated     2026-11-15
 #  *
 #  * @description Seeds distinct report-book viewing, template, generation, download, and print permissions.
 #  */
@@ -59,12 +59,13 @@ def upgrade() -> None:
             text(
                 """
                 INSERT INTO permissions (role_id, resource, action, created_at)
-                SELECT r.id, 'reports', :action, NOW()
+                SELECT r.id, 'reports', CAST(:action AS VARCHAR(20)), NOW()
                 FROM roles r
                 WHERE r.name = :role_name
                 AND NOT EXISTS (
                     SELECT 1 FROM permissions p
-                    WHERE p.role_id = r.id AND p.resource = 'reports' AND p.action = :action
+                    WHERE p.role_id = r.id AND p.resource = 'reports'
+                    AND p.action = CAST(:action AS VARCHAR(20))
                 );
                 """
             ),

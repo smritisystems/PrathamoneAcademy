@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-14
+#  * @updated     2026-11-15
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
@@ -32,7 +32,7 @@ PRODUCT_APP_ICON_URL = "/artwork/14112026/batch_rect1-1-8-6_10802.png"
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy"
+    DATABASE_URL: str
     SECRET_KEY: str = _INSECURE_DEFAULT
     ALGORITHM: str = "HS256"
     # Shortened from 24 h to 60 min for security; use refresh tokens for long sessions
@@ -43,13 +43,17 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.100.0"
-    BUILD_NUMBER: str = "2026.11.14-REV-183-v1.100.0-FFCFFA6"
+    VERSION: str = "1.101.0"
+    BUILD_NUMBER: str = "2026.11.14-REV-184-v1.101.0-073B7BF"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-14"
     AUTHOR: str = "Jawahar R Mallah"
     ORGANIZATION: str = "AITDL — AI Technology & Development Lab"
+    LICENSE_AUTHORITY_URL: str = ""
+    LICENSE_PRODUCT_CODE: str = "prathamone-eduos"
+    LICENSE_PUBLIC_KEYS_JSON: str = "{}"
+    LICENSE_ENFORCEMENT_STAGE: str = "shadow"
     DEBUG: bool = False
 
     # PRATHAMONE CodeX — Mandatory Default Directives (Opt-in only, System Default: DISABLED)

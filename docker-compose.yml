@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a unique POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-prashant_academy}
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
@@ -27,10 +27,14 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-prashant_academy}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Set a unique POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-prashant_academy}
       SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env before starting backend}
       ALLOWED_ORIGINS: '["http://localhost:5173","http://localhost:80","http://localhost:3000","http://localhost"]'
       ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      LICENSE_AUTHORITY_URL: ${LICENSE_AUTHORITY_URL:-}
+      LICENSE_PRODUCT_CODE: ${LICENSE_PRODUCT_CODE:-prathamone-eduos}
+      LICENSE_PUBLIC_KEYS_JSON: ${LICENSE_PUBLIC_KEYS_JSON:-}
+      LICENSE_ENFORCEMENT_STAGE: ${LICENSE_ENFORCEMENT_STAGE:-shadow}
     ports:
       - "8000:8000"
     volumes:

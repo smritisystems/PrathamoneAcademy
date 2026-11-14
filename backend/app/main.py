@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-06
+#  * @updated     2026-11-15
 #  *
 #  * @description FastAPI application entry point, CORS middleware, exception handlers, and v1 router mounting.
 #  */
@@ -23,7 +23,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from app.core.config import settings
 from app.core.limiter import limiter
-from app.api.v1.router import api_router
+from app.api.v1.router import api_router, auth_router
 
 app = FastAPI(
     title=f"{settings.PRODUCT_NAME} — {settings.EDITION}",
@@ -47,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router, prefix="/api/v1")
 app.include_router(api_router, prefix="/api/v1")
 
 

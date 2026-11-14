@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-14
+#  * @updated     2026-11-15
 #  *
 #  * @description Comprehensive system acceptance audit script validating database entities and API routes.
 #  */
@@ -31,10 +31,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy import select, func, text
 
 API_BASE = os.getenv("API_BASE", "http://localhost:8000/api/v1")
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy"
-)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("Set DATABASE_URL explicitly before running this acceptance audit.")
 
 results_summary = []
 

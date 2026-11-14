@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-15
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -38,6 +38,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useState } from 'react'
 import { useEnvironmentStore, DataEnvironment } from '../store/environmentStore'
 import TrainingModeBanner from './common/TrainingModeBanner'
+import LicenseModeBanner from './common/LicenseModeBanner'
 import EnvironmentSwitchModal from './common/EnvironmentSwitchModal'
 import ContextualHelpButton from './common/ContextualHelpButton'
 import { FlaskConical, ShieldCheck } from 'lucide-react'
@@ -317,6 +318,7 @@ export default function Layout() {
 
         {/* Global Persistent Training Mode Banner */}
         {!hideHeaderShell && <TrainingModeBanner />}
+        {!hideHeaderShell && <LicenseModeBanner />}
 
         {/* Page Content */}
         <main

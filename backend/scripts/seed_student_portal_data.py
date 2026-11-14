@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-11
+#  * @updated     2026-11-15
 #  *
 #  * @description Database seeding utility creating test student accounts, credentials, and academic history.
 #  */
@@ -52,7 +52,9 @@ from app.models.attendance import Attendance
 from app.models.portal import TimetableEntry, StudyMaterial, Announcement, StudentDocument
 from app.models.user import User
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("Set DATABASE_URL explicitly before running this data seeding script.")
 
 
 async def seed_data():

@@ -68,10 +68,14 @@ git clone https://github.com/smritisystems/PrathamoneAcademy.git
 cd PrathamoneAcademy
 cp .env.example .env
 # Prefer install.sh or install.ps1 for the secure interactive password prompts.
-# For a manual first install, set INITIAL_ADMIN_PASSWORD in the current shell
-# through a hidden prompt (do not put it in .env or a command-line literal).
+# For manual setup, first configure a unique PostgreSQL password in .env and
+# set its matching DATABASE_URL. Prefer install.sh/install.ps1 for this step.
+# Then enter the application bootstrap password using a hidden prompt:
+read -r -s -p "Set administrator password: " INITIAL_ADMIN_PASSWORD; echo
+export INITIAL_ADMIN_PASSWORD
 docker compose build backend
-# Set INITIAL_ADMIN_PASSWORD using a hidden prompt, then run:
+# If an accountant account already exists, read its replacement password
+# through a hidden prompt and export INITIAL_ACCOUNTANT_PASSWORD as well.
 docker compose run --rm -e INITIAL_ADMIN_PASSWORD -e INITIAL_ACCOUNTANT_PASSWORD backend sh -c "alembic upgrade head && python seed.py --bootstrap-only"
 # If an accountant account already exists, also set INITIAL_ACCOUNTANT_PASSWORD
 # to rotate it. Clear both variables before starting the application.
@@ -92,7 +96,7 @@ The commands above are Bash examples; on Windows, use `install.ps1` or clear the
 | **Backend REST API** | [http://localhost:8000](http://localhost:8000) | FastAPI Core API Engine |
 | **Interactive API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Swagger OpenAPI Specification |
 | **Administrator Account** | `admin` | Password is chosen securely during initial setup |
-| **PostgreSQL Database** | `localhost:5432` | User: `postgres`, Pass: `postgres`, DB: `prashant_academy` |
+| **PostgreSQL Database** | `localhost:5432` | User: `postgres`, password configured uniquely in `.env`, DB: `prashant_academy` |
 
 ---
 

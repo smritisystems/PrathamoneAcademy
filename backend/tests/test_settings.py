@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-11
+#  * @updated     2026-11-15
 #  *
 #  * @description Test suite for Institute Settings workspace, profile updates, batch configuration, and lookups CRUD.
 #  */
@@ -120,6 +120,48 @@ async def test_get_and_update_batch_settings(client: AsyncClient, admin_user: Us
     updated_settings = verify_res.json()
     assert updated_settings["fees"]["receipt_prefix"] == "TEST-RCP"
     assert updated_settings["fees"]["next_receipt_number"] == 999
+
+
+@pytest.mark.asyncio
+async def test_license_refresh_private_key_is_hidden_and_generic_settings_cannot_modify_license(
+    client: AsyncClient,
+    db: AsyncSession,
+    admin_user: User,
+    test_institution: Institution,
+):
+    token = create_access_token({"sub": str(admin_user.id), "institution_id": test_institution.id})
+    headers = {"Authorization": f"Bearer {token}"}
+    db.add(InstitutionSetting(
+        institution_id=test_institution.id,
+        category="licensing",
+        key="license.refresh_private_key",
+        value="v1.encrypted-test-key",
+        data_type="string",
+        is_secret=True,
+    ))
+    await db.commit()
+
+    read_response = await client.get("/api/v1/settings/all", headers=headers)
+    assert read_response.status_code == 200
+    assert "license.refresh_private_key" not in read_response.text
+    assert "v1.encrypted-test-key" not in read_response.text
+
+    write_response = await client.put(
+        "/api/v1/settings/batch",
+        headers=headers,
+        json={
+            "category": "licensing",
+            "settings": {"license.refresh_private_key": "attacker-value"},
+        },
+    )
+    assert write_response.status_code == 403
+    stored_key = (await db.execute(
+        select(InstitutionSetting).where(
+            InstitutionSetting.institution_id == test_institution.id,
+            InstitutionSetting.key == "license.refresh_private_key",
+        )
+    )).scalar_one()
+    assert stored_key.value == "v1.encrypted-test-key"
 
 
 @pytest.mark.asyncio

@@ -11,17 +11,21 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-15
 #  *
 #  * @description Inspect subjects and their dependencies across exam_marks, timetable, etc.
 #  */
 
 import asyncio
+import os
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
 async def main():
-    engine = create_async_engine('postgresql+asyncpg://postgres:postgres@db:5432/prashant_academy')
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError("Set DATABASE_URL explicitly before running this subject inspection.")
+    engine = create_async_engine(database_url)
     async with engine.connect() as conn:
         res = await conn.execute(text('''
             SELECT s.id, s.name, s.standard_id, s.canonical_subject_id,

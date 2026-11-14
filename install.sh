@@ -69,16 +69,30 @@ echo -e "${GREEN}[OK] Workspace confirmed at: $SCRIPT_DIR${NC}"
 echo -e "\n${CYAN}[3/5] Initializing environment configuration (.env)...${NC}"
 if [ ! -f ".env" ]; then
     if [ -f ".env.example" ]; then
+        if ! command -v openssl >/dev/null 2>&1; then
+            echo -e "${RED}[ERROR] OpenSSL is required to generate secure installation secrets.${NC}"
+            exit 1
+        fi
         cp .env.example .env
-        RANDOM_SECRET=$(openssl rand -hex 32 2>/dev/null || date +%s%N | sha256sum | head -c 64)
-        sed -i.bak "s/SECRET_KEY=.*/SECRET_KEY=${RANDOM_SECRET}/" .env && rm -f .env.bak
-        echo -e "${GREEN}[OK] Created .env with secure random SECRET_KEY.${NC}"
+        RANDOM_SECRET=$(openssl rand -hex 32)
+        RANDOM_DB_PASSWORD=$(openssl rand -hex 32)
+        sed -i.bak \
+            -e "s/^SECRET_KEY=.*/SECRET_KEY=${RANDOM_SECRET}/" \
+            -e "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=${RANDOM_DB_PASSWORD}/" \
+            -e "s|^DATABASE_URL=.*|DATABASE_URL=postgresql+asyncpg://postgres:${RANDOM_DB_PASSWORD}@localhost:5432/prashant_academy|" \
+            .env && rm -f .env.bak
+        chmod 600 .env
+        unset RANDOM_SECRET RANDOM_DB_PASSWORD
+        echo -e "${GREEN}[OK] Created .env with secure random application and database secrets.${NC}"
     else
         echo -e "${RED}[ERROR] .env.example template missing.${NC}"
         exit 1
     fi
 else
     echo -e "${GREEN}[OK] Existing .env preserved without modification.${NC}"
+    if grep -qx 'POSTGRES_PASSWORD=postgres' .env; then
+        echo -e "${YELLOW}[WARN] Existing .env uses the published PostgreSQL default. Rotate it with a database-aware maintenance procedure before production use.${NC}"
+    fi
 fi
 
 # 4. Bootstrap administrator and start containers

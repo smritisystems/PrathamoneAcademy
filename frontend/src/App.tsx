@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-14
+ * @updated     2026-11-15
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -54,6 +54,7 @@ const TeacherProfilePage = lazyWithRetry(() => import('./pages/TeacherProfilePag
 const StaffProfilePage = lazyWithRetry(() => import('./pages/StaffProfilePage'), 'StaffProfilePage')
 const TeacherPayrollPage = lazyWithRetry(() => import('./pages/TeacherPayroll'), 'TeacherPayroll')
 const SysAdminWorkspacePage = lazyWithRetry(() => import('./pages/SysAdminWorkspace'), 'SysAdminWorkspace')
+const LicenseActivationPage = lazyWithRetry(() => import('./pages/LicenseActivation'), 'LicenseActivation')
 const HousekeepingPage = lazyWithRetry(() => import('./pages/Housekeeping'), 'Housekeeping')
 const SettingsPage = lazyWithRetry(() => import('./pages/Settings'), 'Settings')
 const CommunicationPage = lazyWithRetry(() => import('./pages/Communication'), 'Communication')
@@ -203,6 +204,10 @@ export default function App() {
             <Route path="sysadmin" element={<Suspense fallback={<PageLoader />}><SysAdminWorkspacePage /></Suspense>} />
             <Route path="fees/import" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
             <Route path="import/fee-register" element={<Suspense fallback={<PageLoader />}><ImportFeeRegisterPage /></Suspense>} />
+          </Route>
+
+          <Route element={<RoleOutlet roles={['admin']} />}>
+            <Route path="license-activation" element={<Suspense fallback={<PageLoader />}><LicenseActivationPage /></Suspense>} />
           </Route>
 
           {/* Institution Admins can view housekeeping telemetry and create database backups. */}

@@ -231,17 +231,28 @@ if (-not (Test-Path $envFile)) {
         $bytes = New-Object byte[] 32
         $rng.GetBytes($bytes)
         $secretKey = -join ($bytes | ForEach-Object { "{0:x2}" -f $_ })
+        $rng.GetBytes($bytes)
+        $databasePassword = -join ($bytes | ForEach-Object { "{0:x2}" -f $_ })
 
         $envContent = Get-Content $envFile -Raw
         $envContent = $envContent -replace "SECRET_KEY=.*", "SECRET_KEY=$secretKey"
+        $envContent = $envContent -replace "(?m)^POSTGRES_PASSWORD=.*$", "POSTGRES_PASSWORD=$databasePassword"
+        $envContent = $envContent -replace "(?m)^DATABASE_URL=.*$", "DATABASE_URL=postgresql+asyncpg://postgres:$databasePassword@localhost:5432/prashant_academy"
         Set-Content -Path $envFile -Value $envContent -NoNewline
-        Write-Success "Generated secure random SECRET_KEY in .env."
+        $secretKey = $null
+        $databasePassword = $null
+        $bytes = $null
+        $rng.Dispose()
+        Write-Success "Generated secure random application and database secrets in .env."
     } else {
         Write-Err ".env.example template missing. Cannot initialize environment configuration."
         exit 1
     }
 } else {
     Write-Success "Existing .env file preserved without modification."
+    if (Select-String -Path $envFile -Pattern '^POSTGRES_PASSWORD=postgres$' -Quiet) {
+        Write-Warn "Existing .env uses the published PostgreSQL default. Rotate it with a database-aware maintenance procedure before production use."
+    }
 }
 
 # ------------------------------------------------------------------------------
@@ -275,6 +286,8 @@ if ($accountantPassword.Length -gt 0) {
     $accountantPasswordConfirm = $null
 }
 if ($accountantPassword.Length -gt 0 -and $accountantPassword.Length -lt 14) {
+    $initialAdminPassword = $null
+    $accountantPassword = $null
     Write-Err "The accountant password must contain at least 14 characters."
     exit 1
 }

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-15
 #  *
 #  * @description Database maintenance script migrating standards to new multi-board relational schema.
 #  */
@@ -34,7 +34,6 @@ from sqlalchemy import select, update
 # Add parent dir to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.core.config import settings
 from app.models.institution import Institution
 from app.models.academic_year import AcademicYear
 from app.models.board import Board
@@ -44,7 +43,9 @@ from app.models.student import Student
 from app.models.enrollment import StudentEnrollment
 from app.models.fee import FeeStructure
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("Set DATABASE_URL explicitly before running this database maintenance script.")
 
 # User-approved Board and Class mapping and Student Data
 MAPPING_DATA = [

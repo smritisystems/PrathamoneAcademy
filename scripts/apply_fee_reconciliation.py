@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-05
+#  * @updated     2026-11-15
 #  *
 #  * @description Authoritative, transaction-safe forensic fee reconciliation script resolving staff audit queries.
 #  */
@@ -27,7 +27,9 @@ from sqlalchemy import select, update, insert, delete, text, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-DB_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy"
+DB_URL = os.environ.get("DATABASE_URL")
+if not DB_URL:
+    raise RuntimeError("Set DATABASE_URL explicitly before running this fee reconciliation.")
 
 async def run_reconciliation():
     engine = create_async_engine(DB_URL, echo=False)

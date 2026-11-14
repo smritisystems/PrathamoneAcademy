@@ -11,12 +11,12 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-12
+#  * @updated     2026-11-15
 #  *
 #  * @description Central v1 API router registering all domain endpoint routers.
 #  */
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from app.api.v1.endpoints import (
     auth,
     institutions,
@@ -57,11 +57,13 @@ from app.api.v1.endpoints import (
     housekeeping,
     help as help_endpoint,
     eduboard,
+    license as license_endpoint,
 )
 
-api_router = APIRouter()
+auth_router = APIRouter()
+auth_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 
-api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_router = APIRouter(dependencies=[Depends(license_endpoint.enforce_license_request)])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(
     institutions.router, prefix="/institutions", tags=["institutions"]
@@ -121,4 +123,5 @@ api_router.include_router(homework.router, prefix="/homework", tags=["homework"]
 api_router.include_router(housekeeping.router, prefix="/housekeeping", tags=["housekeeping"])
 api_router.include_router(help_endpoint.router, prefix="/help", tags=["help"])
 api_router.include_router(eduboard.router, prefix="/eduboard", tags=["eduboard"])
+api_router.include_router(license_endpoint.router, prefix="/license", tags=["license"])
 

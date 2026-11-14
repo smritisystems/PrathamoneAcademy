@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-11
+ * @updated     2026-11-15
  *
  * @description Source component for Sysadminworkspace in the src.pages module.
  */
@@ -30,7 +30,7 @@ import toast from 'react-hot-toast'
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-16
  *
  * @description Dedicated System Administrator governance workspace with protected security audits, universal records editor, and system controls.
  */
@@ -49,6 +49,7 @@ import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton } from '../components/common'
 import type { SecurityAuditLogItem, UniversalEditPayload } from '../types'
 import OrganizationBranding from '../components/OrganizationBranding'
+import LicenseActivationPanel from '../components/LicenseActivationPanel'
 import { useBranding } from '../config/branding'
 
 const MODEL_ALLOWLISTS: Record<string, string[]> = {
@@ -89,15 +90,15 @@ const MODEL_ALLOWLISTS: Record<string, string[]> = {
 
 
 export default function SysAdminWorkspace() {
-  const { user } = useAuthStore()
+  const { user, selectedInstitutionId } = useAuthStore()
   const editScope = 'sysadmin:workspace'
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const queryClient = useQueryClient()
   const isSysAdmin = isUserSysAdmin(user)
   const branding = useBranding()
 
-  // Active Tab: 'overview' | 'audits' | 'universal-edit' | 'settings'
-  const [activeTab, setActiveTab] = useState<'overview' | 'audits' | 'universal-edit' | 'settings'>('overview')
+  // Active Tab: 'overview' | 'audits' | 'universal-edit' | 'settings' | 'license'
+  const [activeTab, setActiveTab] = useState<'overview' | 'audits' | 'universal-edit' | 'settings' | 'license'>('overview')
 
   // Security Audit Log Filters
   const [auditSearch, setAuditSearch] = useState('')
@@ -260,6 +261,7 @@ export default function SysAdminWorkspace() {
           { key: 'audits', label: 'Security Audit Log', icon: Shield, badge: overview?.security_audit_summary?.security_audits },
           { key: 'universal-edit', label: 'Universal Data Editor', icon: Edit3 },
           { key: 'settings', label: 'System Configuration', icon: Server },
+          { key: 'license', label: 'Software License', icon: KeyRound },
         ].map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.key
@@ -691,6 +693,13 @@ export default function SysAdminWorkspace() {
             </button>
           </div>
         </div>
+      )}
+
+      {activeTab === 'license' && (
+        <LicenseActivationPanel
+          institutionId={selectedInstitutionId ?? undefined}
+          editScope={editScope}
+        />
       )}
 
       {/* ─── MODAL: AUDIT LOG DIFF INSPECTOR ───────────────────────────────── */}

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-14
+#  * @updated     2026-11-15
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -387,6 +387,8 @@ async def get_all_settings(
 
     stored: Dict[str, Dict[str, Any]] = {}
     for r in rows:
+        if r.is_secret:
+            continue
         stored.setdefault(r.category, {})
         val = r.value
         if r.data_type == "boolean":
@@ -449,6 +451,11 @@ async def update_settings_batch(
     target_id = institution_id or current_user.institution_id or 1
     check_institution_access(target_id, current_user)
     category = payload.category
+    if category == "licensing" or any(key.startswith("license.") for key in payload.settings):
+        raise HTTPException(
+            status_code=403,
+            detail="License settings can only be changed through the license management API.",
+        )
 
     for k, v in payload.settings.items():
         # Determine data_type

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-14
+ * @updated     2026-11-15
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -28,6 +28,46 @@ export interface User {
   institution_id?: number
   is_active?: boolean
   permissions?: string[]
+}
+
+export interface LicenseRegistration {
+  institution_name: string
+  contact_name: string
+  contact_email: string
+  phone: string | null
+  address: string | null
+  city: string | null
+  state: string | null
+  pincode: string | null
+  tax_id: string | null
+  website: string | null
+}
+
+export interface LicenseStatusResponse {
+  product: string
+  mode: 'active' | 'grace' | 'evaluation' | 'unactivated' | 'invalid'
+  rollout_stage: 'shadow' | 'enforced'
+  document_id: string | null
+  serial_number: string | null
+  license_model: string | null
+  edition: string | null
+  expires_at: string | null
+  issued_at: string | null
+  offline_validity_days: number | null
+  registration: LicenseRegistration | null
+  refresh_status: 'not_activated' | 'manual_required' | 'up_to_date' | 'retry_scheduled' | 'unavailable' | 'refreshed'
+  evaluation_policy: Record<string, unknown> | null
+  error: string | null
+}
+
+export interface LicenseActivationResponse {
+  ok: boolean
+  mode: LicenseStatusResponse['mode']
+  document_id: string
+  serial_number?: string | null
+  license_model: string
+  edition: string | null
+  expires_at: string | null
 }
 
 export interface PaymentPermissions {

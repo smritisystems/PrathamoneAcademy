@@ -11,7 +11,7 @@ created_date: "2026-11-14"
 updated_date: "2026-11-14"
 author: "Jawahar R Mallah"
 organization: "AITDL — AI Technology & Development Lab"
-status: "Draft"
+status: "In Progress"
 tags: ["licensing", "security-audit", "ip-protection", "activation", "threat-model"]
 entities: ["License", "Activation", "Entitlement", "LicenseEvent", "User"]
 api_routes: []
@@ -29,7 +29,7 @@ related_modules: ["01_ARCHITECTURE", "12_RBAC_SECURITY", "13_SYSADMIN_SETTINGS",
 
 The repositories contain license metadata, activation/entitlement records, and permission-scoped management APIs, but the reviewed product code does not demonstrate a product-side connection that verifies licenses issued by the proposed control plane. PrathamOne EduOS exposes license status and validity as Help & About metadata. SMRITI Retail OS accepts license-related setup values, but the reviewed paths do not establish general product or module enforcement from those values. This is a material gap against the requested centralized licensing and IP-protection objective.
 
-The review also confirmed two concrete security issues: fixed administrator credentials are included in PrathamOne installation paths, and SMRITI Retail OS initial setup does not require SYSADMIN authorization before accepting company and license configuration.
+The review also confirmed concrete security issues: fixed administrator credentials were included in PrathamOne installation paths; SMRITI Retail OS initial setup did not require SYSADMIN authorization before accepting company and license configuration; and the PrathamOne Compose/template path supplied a published database credential.
 
 The `smritisys-ui` repository is a plausible control-plane starting point, with license, customer, entitlement, activation, and event data structures and permission-scoped APIs. Its presence does not establish that it is deployed, that its data is authoritative in production, or that its product integrations and signing infrastructure exist.
 
@@ -68,7 +68,7 @@ The following could not be established:
 
 ### F-02 — Initial Retail OS setup lacks a SYSADMIN authorization check
 
-**Severity:** Medium  
+**Severity:** Medium
 **Confidence:** 8/10
 
 `backend/app/api/v1/system.py` requires an authenticated user for `/company/setup`, but the SYSADMIN role check is only applied when setup is already marked complete. Before that marker exists, an authenticated non-SYSADMIN can run setup. The request accepts license status/type and expiry and persists them as system configuration; the schema validates allowed string values and date syntax, not that those values were issued by an authorized licensing authority.
@@ -91,6 +91,17 @@ The control-plane candidate has license-related tables in `migrations/0003_licen
 **Impact:** Control-plane license records are not shown to prevent a modified or unlicensed product installation from operating. Metadata displayed to an administrator is not a cryptographic entitlement.
 
 **Recommended containment:** Add server-side verification and entitlement enforcement to both products, after designing a migration-safe rollout and offline/grace behavior. Client-side checks alone are insufficient.
+
+### F-04 — Fresh-install PostgreSQL credentials use a published default
+
+**Severity:** Medium
+**Confidence:** 9/10
+
+The Compose configuration and `.env.example` supplied a fixed PostgreSQL password, and the README documented it. Although the database port is bound to loopback by default, the backend uses the same database credential and local installations inherit the predictable value unless changed.
+
+**Impact:** A local user or process that can reach the database or read its connection configuration can authenticate with a known credential. The default also encourages unsafe reuse across installations.
+
+**Recommended containment:** Require a database password in Compose, generate a unique random password for fresh installations, remove published values from templates and user-facing documentation, and rotate existing installations using a database-aware maintenance procedure.
 
 ## 4. Existing controls and candidate reuse
 
@@ -155,16 +166,16 @@ The control-plane candidate has license-related tables in `migrations/0003_licen
 6. **Protect release distribution:** sign installers and update manifests/artifacts; verify signatures before installation/update. Treat this as a separate pipeline workstream because repository review did not establish the hosted release pipeline.
 7. **Migrate incrementally:** inventory existing customer/license metadata, issue signed licenses, run shadow verification, monitor anomalies, offer recovery/export, then enable enforcement by product and tenant cohort.
 
-### Approval required before structural implementation
+### Decision status for implementation and production
 
-Obtain product-owner approval for:
+The product owner approved continuing in **PrathamOne EduOS + SMRITISYS website only**, reusing the website as the control plane, an isolated KMS/HSM signing boundary, installation-ID binding with audited recovery, a seven-day subscription grace period, shadow/warn before staged enforcement, and non-destructive Evaluation Mode. SMRITI Retail OS changes and deployment are out of scope.
 
-- The existing website as the system of record and the selected hosting/runtime boundaries.
-- Signing-key provider, key custody/rotation operators, and incident-recovery authority.
-- Installation identity and activation-transfer policy.
-- Entitlement schema, commercial model semantics, grace periods, and perpetual/offline behavior.
-- Customer migration cohort, enforcement rollout, and non-destructive expired/suspended behavior.
-- New database migrations, product API changes, and update-signing pipeline changes.
+Still pending before production issuance or enforcement:
+
+- Select and provision the signing-service/KMS/HSM provider; key custody, rotation, revocation, and incident-recovery operators.
+- Complete and rehearse audited license transfer/recovery and customer offline-file workflows.
+- Complete signed installer/update verification and define the customer migration cohort.
+- Rehearse outage, key-compromise, recovery/export, and shadow-to-enforcement procedures.
 
 ## 7. Recommended validation plan
 
@@ -179,12 +190,14 @@ These are planned test cases; no such tests were run in this audit.
 | F-01 | `F:\PrashantAcademy\docker-compose.yml:41-44`; `backend/seed.py:113-136`; `install.sh:119-120`; `install.ps1:281-282` |
 | F-02 | `F:\SMRITRretailNX\backend\app\api\v1\system.py:600-629,653-658,680-714,816-820`; `backend/app/schemas/system.py:70-120` |
 | F-03 | `F:\PrashantAcademy\backend\app\services\help_service.py:1245-1258`; `frontend/src/components/help/ProductVersionSection.tsx:110-120`; `F:\SMRITRretailNX\backend\app\api\v1\system.py:653-658,816-820`; `F:\SMRITI\websites\smritisys-ui\migrations\0003_license_control_plane.sql:17-90`; `functions/api/[[path]].js:289-313,449-657` |
+| F-04 | `F:\PrashantAcademy\docker-compose.yml:6-7,25`; `.env.example:8-15`; `backend/app/core/config.py:25`; `backend/scripts/clean_production_data.py:34-36`; `README.md:64-80` |
 
 ## 9. Remediation status after the user selected "Fix all issues"
 
 - **F-01 — Remediated in source, not verified in deployed installations:** new installations no longer receive a shared accountant account or hardcoded passwords. Installers require a unique administrator password (minimum 14 characters), optionally request an accountant replacement, pass credentials only to the one-time seed container, and clear them afterward. Existing seeded administrator/accountant accounts are rotated when the installer is rerun. Backend startup no longer runs the seed script, and `--bootstrap-only` avoids demo academic data during installation. Targeted source scans found no remaining published bootstrap credentials in executable paths. Existing customer installations still require an operator to run the updated installer and provide new passwords; do not assume a source-code update changed deployed credentials.
 - **F-02 — Remediated in source:** the company setup endpoint now rejects non-SYSADMIN users before provisioning; a focused unit test covers this authorization boundary.
-- **F-03 — Not implemented:** central signed-license issuance, activation, verifier integration, entitlement gates, signed releases, and offline behavior remain gated on approving the architecture and operational choices in Section 6. No deployment was performed.
+- **F-03 — Partially remediated in source; not deployed:** PrathamOne now verifies Ed25519 license artifacts server-side, exposes activation/status handling, enforces configured license and module policy on business APIs, maps every registered v1 business router to a module, and fails closed if an enforced route lacks a module mapping. DRAFT, suspended, and cancelled snapshots cannot grant perpetual or one-time access. The SMRITISYS control plane requires an exact company-binding entitlement for license creation and activation, hides DRAFT keys from customer list responses, rejects DRAFT activation before signing, and provides a super-admin workspace for license issuance, edition policy, renewals, suspension, activation revocation, and inspection. The concrete signer/KMS/HSM, protected key lifecycle, full offline activation/recovery and transfer workflows, Retail OS integration, and signed installer/update pipeline are not implemented or deployed. `LICENSE_SIGNER` must be configured before production artifact issuance; no private key is stored in either repository.
+- **F-04 — Fresh-install path remediated in source; existing installations remain unverified:** Compose and the application settings now require explicit database configuration; new installer-generated `.env` files receive a random password and matching local database URL, with restrictive Linux file permissions. Database maintenance/audit scripts no longer fall back to a published connection string; the test fixture retains an isolated test-only URL. Templates and the README no longer publish a database password. Existing `.env` files are preserved to avoid disconnecting a persistent database; the installers warn when an existing file contains the published default. Rotate those installations through a database-aware maintenance procedure.
 
 ### Remediation verification
 
@@ -195,3 +208,12 @@ These are planned test cases; no such tests were run in this audit.
 - Corporate source-header check passed: **611/611** files.
 - `git diff --check` passed in both product repositories.
 - The normal repository pytest setup was not used for these focused tests because its global fixtures require a local PostgreSQL service. No deployment or production credential rotation was performed.
+
+### Scoped signed-license integration verification (2026-11-14)
+
+- SMRITISYS Node staging and contract tests: **73 passed**. Coverage includes Ed25519 artifact verification, rejection of missing/wrong company bindings, DRAFT-key confidentiality and activation rejection, unique/non-empty binding on license creation, and existing organization/permission isolation.
+- SMRITISYS Worker JavaScript syntax checks: **passed**.
+- PrathamOne license-service tests: **5 passed**. Focused cases prove DRAFT perpetual/one-time artifacts are non-active, `module.students=false` denies `/api/v1/students`, and an unmapped enforced API route fails closed.
+- PrathamOne frontend production build: **passed**. Existing CSS escaped-selector and large-chunk warnings remain.
+- The scoped security review's two medium-severity findings were fixed in source and covered by focused regression tests; the review was not rerun after remediation.
+- No production credentials, signing keys, KMS/HSM resources, or deployment services were accessed or provisioned. No deployment was performed.

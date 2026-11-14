@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-15
 #  *
 #  * @description Centralized documentation management, auto-organization, indexing, search, and validation engine.
 #  */
@@ -807,7 +807,7 @@ def cmd_reindex(args):
     # Build DOCUMENTATION_INDEX.md
     index_md = []
     index_md.append(f"# {PRODUCT_NAME} — Centralized Documentation Index")
-    index_md.append(f"\n**Product:** {PRODUCT_NAME}  \n**Edition:** {PRODUCT_EDITION}  \n**Version:** {PRODUCT_VERSION}  \n**Organization:** {ORGANIZATION_NAME}  \n**Product Architect:** {PRODUCT_ARCHITECT}  \n**Last Reindexed:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  \n**Total Indexed Items:** {len(documents)}  \n")
+    index_md.append(f"\n**Product:** {PRODUCT_NAME}  \n**Edition:** {PRODUCT_EDITION}  \n**Version:** {PRODUCT_VERSION}  \n**Organization:** {ORGANIZATION_NAME}  \n**Product Architect:** {PRODUCT_ARCHITECT}  \n**Last Reindexed:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br>\n**Total Indexed Items:** {len(documents)}  \n")
     index_md.append("---\n")
     index_md.append("## Quick Jump Directory\n")
     index_md.append("| Module # | Module Directory | Registered Documents | Description |")

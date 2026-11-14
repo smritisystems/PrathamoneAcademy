@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-15
 #  *
 #  * @description Comprehensive forensic audit of all financial tables, schemas, constraints, and ledger sums.
 #  */
@@ -21,7 +21,9 @@ import asyncpg
 import json
 import os
 
-DB_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/prashant_academy")
+DB_URL = os.environ.get("DATABASE_URL")
+if not DB_URL:
+    raise RuntimeError("Set DATABASE_URL explicitly before running this financial audit.")
 
 async def run_audit():
     conn = await asyncpg.connect(DB_URL)

@@ -11,17 +11,21 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-15
 #  *
 #  * @description Verify fee consolidation results and ledger sum immutability.
 #  */
 
 import asyncio
+import os
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
 async def check():
-    engine = create_async_engine('postgresql+asyncpg://postgres:postgres@db:5432/prashant_academy')
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError("Set DATABASE_URL explicitly before running this fee verification.")
+    engine = create_async_engine(database_url)
     async with engine.connect() as conn:
         res = await conn.execute(text("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"))
         total = res.scalar()

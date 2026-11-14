@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-12
+#  * @updated     2026-11-15
 #  *
 #  * @description Pytest configuration fixtures providing test database session, test client, and auth helpers.
 #  */
@@ -28,6 +28,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 # Configure isolated dev/test defaults prior to importing application settings
 os.environ.setdefault("DEBUG", "True")
 os.environ.setdefault("SECRET_KEY", "pytest_ephemeral_signing_secret_not_for_production_deployment_2026")
+os.environ.setdefault(
+    "DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy_test",
+)
 
 from app.main import app
 from app.core.database import Base, get_db

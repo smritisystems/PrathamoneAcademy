@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-14
+ * @updated     2026-11-15
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -23,7 +23,7 @@ import {
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
   Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical,
-  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck, HardDrive, HelpCircle, Presentation
+  Search, Sliders, Pin, RotateCcw, Folder, Compass, Star, Eye, Plus, FileCheck, HardDrive, HelpCircle, Presentation, KeyRound
 } from 'lucide-react'
 import { useAuthStore, isUserSysAdmin, isUserAdmin, hasPermission } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
@@ -199,6 +199,7 @@ const secondaryNavItems: NavItem[] = [
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
+  const isInstitutionAdmin = (user?.role || '').toLowerCase() === 'admin'
   const branding = useBranding()
   const {
     desktopState,
@@ -739,6 +740,33 @@ const isStaffActive = location.pathname.startsWith('/staff')
                 {!isCollapsed && <span>Help &amp; About</span>}
               </NavLink>
             </div>
+            {isInstitutionAdmin && (
+              <div className={`relative group mt-2 pt-2 border-t border-slate-800 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+                <NavLink
+                  to="/license-activation"
+                  aria-label="Software License"
+                  className={`flex items-center ${
+                    isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                  } rounded-xl font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                    location.pathname === '/license-activation'
+                      ? 'bg-white/10 text-white font-semibold shadow-sm border-l-4 border-[#F57C00]'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  <KeyRound className="w-4 h-4 flex-shrink-0" />
+                  {!isCollapsed && <span className="truncate">Software License</span>}
+                </NavLink>
+
+                {isCollapsed && (
+                  <div
+                    role="tooltip"
+                    className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                  >
+                    Software License
+                  </div>
+                )}
+              </div>
+            )}
             {/* SysAdmin Superuser Link (only for sysadmin / superadmin) */}
           {isUserSysAdmin(user) && (
             <div className={`relative group mt-2 pt-2 border-t border-slate-800 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
@@ -2551,6 +2579,33 @@ if (item.to === '/staff') {
             )
           })}
           </>
+          )}
+          {isInstitutionAdmin && (
+            <div className={`relative group mt-2 pt-2 border-t border-slate-800 ${isCollapsed ? 'w-full flex justify-center' : ''}`}>
+              <NavLink
+                to="/license-activation"
+                aria-label="Software License"
+                className={`flex items-center ${
+                  isCollapsed ? 'w-11 h-11 justify-center' : 'gap-3 px-3 py-2'
+                } rounded-xl font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                  location.pathname === '/license-activation'
+                    ? 'bg-white/10 text-white font-semibold shadow-sm border-l-4 border-[#F57C00]'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700'
+                }`}
+              >
+                <KeyRound className="w-4 h-4 flex-shrink-0" />
+                {!isCollapsed && <span className="truncate">Software License</span>}
+              </NavLink>
+
+              {isCollapsed && (
+                <div
+                  role="tooltip"
+                  className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-xl border border-slate-700 whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50"
+                >
+                  Software License
+                </div>
+              )}
+            </div>
           )}
           {/* SysAdmin Superuser Link (only for sysadmin / superadmin) */}
           {isUserSysAdmin(user) && (

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-15
 #  *
 #  * @description Comprehensive forensic introspector for PostgreSQL database schema, tables, foreign keys, columns, and records.
 #  */
@@ -22,10 +22,12 @@ import json
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@db:5432/prashant_academy")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("Set DATABASE_URL explicitly before running this database audit.")
 
 async def run_audit():
-    print(f"Connecting to database: {DATABASE_URL}")
+    print("Connecting to the configured database.")
     engine = create_async_engine(DATABASE_URL)
     async with engine.connect() as conn:
         # 1. Get all tables and row counts
