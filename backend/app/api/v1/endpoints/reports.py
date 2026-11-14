@@ -23,11 +23,21 @@ from sqlalchemy import select, func, or_, and_, desc
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from decimal import Decimal
+import json
 import io
 import csv
+import re
+import math
+from uuid import UUID
+from pydantic import BaseModel, Field
 from app.core.database import get_db
 from app.services.settings_service import get_institution_setting
 from app.models.institution import Institution
+from app.models.report_book import (
+    ReportBookGeneration,
+    ReportBookGenerationEvent,
+    ReportBookTemplate,
+)
 from app.core.deps import (
     get_current_active_user,
     require_role,
@@ -53,6 +63,7 @@ REPORT_STAFF_ROLES = (
     "receptionist",
 )
 AUDIT_REPORT_ROLES = ("superadmin", "sysadmin", "super_admin", "admin", "principal")
+REPORT_BOOK_TEMPLATE_ROLES = ("superadmin", "sysadmin", "super_admin", "admin", "principal")
 from app.services.financial_governance_service import (
     FinancialGovernanceService,
     FinancialFilter,
@@ -1794,3 +1805,340 @@ async def get_eduboard_summary_report(
     )
 
 
+class ReportBookTemplatePayload(BaseModel):
+    name: str = Field(min_length=1, max_length=160)
+    configuration: Dict[str, Any]
+
+
+class ReportBookGenerationPayload(BaseModel):
+    document_id: str
+    title: str = Field(min_length=1, max_length=200)
+    academic_year_id: Optional[int] = None
+    academic_year_label: Optional[str] = Field(default=None, max_length=160)
+    examination_id: Optional[int] = None
+    examination_label: Optional[str] = Field(default=None, max_length=160)
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    standard_id: Optional[int] = None
+    standard_label: Optional[str] = Field(default=None, max_length=160)
+    division_id: Optional[int] = None
+    division_label: Optional[str] = Field(default=None, max_length=160)
+    filter_scope: Optional[str] = Field(default=None, max_length=1000)
+    report_ids: List[str] = Field(max_length=100)
+    report_row_counts: Dict[str, int]
+    page_size: str
+    book_configuration: Dict[str, Any]
+
+
+class ReportBookEventPayload(BaseModel):
+    document_id: str
+    action: str
+
+
+def _validate_report_book_configuration(configuration: Dict[str, Any]) -> str:
+    title = configuration.get("title")
+    chapters = configuration.get("chapters")
+    if not isinstance(title, str) or not title.strip() or len(title) > 200:
+        raise HTTPException(status_code=422, detail="A book title of 1-200 characters is required.")
+    if not isinstance(chapters, list) or not chapters or len(chapters) > 100:
+        raise HTTPException(status_code=422, detail="A book must contain between 1 and 100 sections.")
+    page_size = configuration.get("pageSize")
+    if not isinstance(page_size, str) or page_size not in {"A4", "A5", "Letter", "Custom"}:
+        raise HTTPException(status_code=422, detail="Unsupported page size.")
+    margin_mm = configuration.get("marginMm")
+    if (
+        isinstance(margin_mm, bool)
+        or not isinstance(margin_mm, (int, float))
+        or not math.isfinite(margin_mm)
+        or not 5 <= margin_mm <= 30
+    ):
+        raise HTTPException(status_code=422, detail="Page margins must be between 5mm and 30mm.")
+    total_reports = 0
+    section_ids: set[str] = set()
+    all_report_ids: list[str] = []
+    for chapter in chapters:
+        if (
+            not isinstance(chapter, dict)
+            or not isinstance(chapter.get("kind"), str)
+            or chapter.get("kind") not in {"reports", "title", "divider", "note", "appendix"}
+            or not isinstance(chapter.get("id"), str)
+            or chapter["id"] in section_ids
+            or not isinstance(chapter.get("title"), str)
+            or not chapter["title"].strip()
+            or len(chapter["title"]) > 200
+        ):
+            raise HTTPException(status_code=422, detail="Book section configuration is invalid.")
+        section_ids.add(chapter["id"])
+        chapter_report_ids = chapter.get("reportIds", [])
+        if not isinstance(chapter_report_ids, list) or any(
+            not isinstance(report_id, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,79}", report_id)
+            for report_id in chapter_report_ids
+        ):
+            raise HTTPException(status_code=422, detail="Report identifiers are invalid.")
+        total_reports += len(chapter_report_ids)
+        if chapter.get("kind") != "reports" and chapter_report_ids:
+            raise HTTPException(status_code=422, detail="Only report sections can contain report identifiers.")
+        excluded_report_ids = chapter.get("excludedReportIds", [])
+        if (
+            not isinstance(excluded_report_ids, list)
+            or any(not isinstance(report_id, str) for report_id in excluded_report_ids)
+            or len(set(excluded_report_ids)) != len(excluded_report_ids)
+            or any(report_id not in chapter_report_ids for report_id in excluded_report_ids)
+        ):
+            raise HTTPException(status_code=422, detail="Excluded reports must be unique report references in their section.")
+        if chapter.get("included") is not None and not isinstance(chapter.get("included"), bool):
+            raise HTTPException(status_code=422, detail="Section inclusion must be a boolean.")
+        orientation = chapter.get("orientation", "auto")
+        if not isinstance(orientation, str) or orientation not in {"auto", "portrait", "landscape"}:
+            raise HTTPException(status_code=422, detail="Section orientation is invalid.")
+        all_report_ids.extend(chapter_report_ids)
+        parent_id = chapter.get("parentId")
+        if parent_id is not None:
+            if not isinstance(parent_id, str):
+                raise HTTPException(status_code=422, detail="Subchapter parent is invalid.")
+            parent = next((item for item in chapters if isinstance(item, dict) and item.get("id") == parent_id), None)
+            if (
+                parent is None
+                or parent.get("kind") != "reports"
+                or parent.get("parentId") is not None
+                or parent_id == chapter["id"]
+            ):
+                raise HTTPException(status_code=422, detail="Subchapter parent must be a top-level report chapter.")
+        notes = chapter.get("notes")
+        if notes is not None and (not isinstance(notes, str) or len(notes) > 10000):
+            raise HTTPException(status_code=422, detail="Section notes must be 10,000 characters or fewer.")
+    if total_reports > 100 or len(set(all_report_ids)) != total_reports:
+        raise HTTPException(status_code=422, detail="A book can contain at most 100 report sections.")
+    if page_size == "Custom":
+        for key in ("customWidthMm", "customHeightMm"):
+            value = configuration.get(key)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or not 100 <= value <= 1000
+            ):
+                raise HTTPException(status_code=422, detail="Custom page dimensions must be between 100mm and 1000mm.")
+    for key in ("startDate", "endDate"):
+        value = configuration.get(key)
+        if value is not None:
+            try:
+                parsed_date = date.fromisoformat(value)
+            except (TypeError, ValueError) as exc:
+                raise HTTPException(status_code=422, detail=f"{key} must be an ISO calendar date.") from exc
+            if parsed_date.isoformat() != value:
+                raise HTTPException(status_code=422, detail=f"{key} must use YYYY-MM-DD format.")
+    if configuration.get("startDate") and configuration.get("endDate"):
+        if configuration["startDate"] > configuration["endDate"]:
+            raise HTTPException(status_code=422, detail="The report-book start date must not follow its end date.")
+    serialized = json.dumps(configuration, ensure_ascii=False, separators=(",", ":"))
+    if len(serialized) > 100000:
+        raise HTTPException(status_code=422, detail="Book configuration exceeds the 100KB limit.")
+    return serialized
+
+
+def _report_book_institution_id(institution_id: Optional[int], current_user) -> int:
+    effective_id = institution_id if institution_id is not None else getattr(current_user, "institution_id", None)
+    if effective_id is None or effective_id <= 0:
+        raise HTTPException(status_code=422, detail="An institution must be selected.")
+    if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None) != effective_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access forbidden: report books are restricted to your assigned institution.",
+        )
+    check_institution_access(effective_id, current_user)
+    return effective_id
+
+
+async def _require_report_book_permission(db: AsyncSession, current_user, action: str) -> None:
+    if not await has_permission(db, current_user, "reports", action):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Insufficient permissions: requires 'reports:{action}' privilege.",
+        )
+
+
+@router.get("/books/templates")
+async def list_report_book_templates(
+    institution_id: Optional[int] = None,
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    await _require_report_book_permission(db, current_user, "view")
+    effective_id = _report_book_institution_id(institution_id, current_user)
+    result = await db.execute(
+        select(ReportBookTemplate)
+        .where(ReportBookTemplate.institution_id == effective_id)
+        .order_by(ReportBookTemplate.name)
+    )
+    return [
+        {
+            "id": item.id,
+            "name": item.name,
+            "configuration": json.loads(item.configuration_json),
+            "created_at": item.created_at.isoformat(),
+            "updated_at": item.updated_at.isoformat(),
+        }
+        for item in result.scalars().all()
+    ]
+
+
+@router.put("/books/templates")
+async def save_report_book_template(
+    payload: ReportBookTemplatePayload,
+    institution_id: Optional[int] = None,
+    current_user=Depends(require_role(*REPORT_BOOK_TEMPLATE_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    await _require_report_book_permission(db, current_user, "manage_templates")
+    effective_id = _report_book_institution_id(institution_id, current_user)
+    configuration_json = _validate_report_book_configuration(payload.configuration)
+    result = await db.execute(
+        select(ReportBookTemplate).where(
+            ReportBookTemplate.institution_id == effective_id,
+            ReportBookTemplate.name == payload.name.strip(),
+        )
+    )
+    template = result.scalar_one_or_none()
+    if template is None:
+        template = ReportBookTemplate(
+            institution_id=effective_id,
+            name=payload.name.strip(),
+            configuration_json=configuration_json,
+            created_by_id=current_user.id,
+        )
+        db.add(template)
+    else:
+        template.configuration_json = configuration_json
+    await db.commit()
+    await db.refresh(template)
+    return {
+        "id": template.id,
+        "name": template.name,
+        "configuration": json.loads(template.configuration_json),
+        "created_at": template.created_at.isoformat(),
+        "updated_at": template.updated_at.isoformat(),
+    }
+
+
+@router.post("/books/generations", status_code=201)
+async def record_report_book_generation(
+    payload: ReportBookGenerationPayload,
+    institution_id: Optional[int] = None,
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    await _require_report_book_permission(db, current_user, "generate_books")
+    effective_id = _report_book_institution_id(institution_id, current_user)
+    try:
+        document_id = str(UUID(payload.document_id))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Document ID must be a UUID.") from exc
+    if payload.page_size not in {"A4", "A5", "Letter", "Custom"}:
+        raise HTTPException(status_code=422, detail="Unsupported page size.")
+    _validate_report_book_configuration(payload.book_configuration)
+    if payload.book_configuration.get("title") != payload.title or payload.book_configuration.get("pageSize") != payload.page_size:
+        raise HTTPException(status_code=422, detail="Generation snapshot does not match the book configuration.")
+    for config_key, payload_value in (
+        ("academicYearId", payload.academic_year_id),
+        ("examinationId", payload.examination_id),
+        ("startDate", payload.start_date),
+        ("endDate", payload.end_date),
+        ("standardId", payload.standard_id),
+        ("divisionId", payload.division_id),
+    ):
+        if payload.book_configuration.get(config_key) != payload_value:
+            raise HTTPException(status_code=422, detail="Generation filters do not match the book configuration.")
+    if any(count < 0 for count in payload.report_row_counts.values()):
+        raise HTTPException(status_code=422, detail="Report row counts cannot be negative.")
+    if set(payload.report_row_counts) != set(payload.report_ids):
+        raise HTTPException(status_code=422, detail="Report IDs and row-count snapshot must match.")
+    if len(set(payload.report_ids)) != len(payload.report_ids):
+        raise HTTPException(status_code=422, detail="Report IDs must be unique in a generation snapshot.")
+    configuration_report_ids = {
+        report_id
+        for chapter in payload.book_configuration["chapters"]
+        if chapter.get("included", True)
+        for report_id in chapter.get("reportIds", [])
+        if report_id not in chapter.get("excludedReportIds", [])
+    }
+    if configuration_report_ids != set(payload.report_ids):
+        raise HTTPException(status_code=422, detail="Generation report IDs do not match the selected book configuration.")
+    if any(not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,79}", report_id) for report_id in payload.report_ids):
+        raise HTTPException(status_code=422, detail="Report identifiers are invalid.")
+    snapshot = payload.model_dump(exclude={"document_id"})
+    generation = ReportBookGeneration(
+        document_id=document_id,
+        institution_id=effective_id,
+        generated_by_id=current_user.id,
+        title=payload.title,
+        snapshot_json=json.dumps(snapshot, ensure_ascii=False, separators=(",", ":")),
+    )
+    db.add(generation)
+    await db.commit()
+    await db.refresh(generation)
+    return {
+        "document_id": generation.document_id,
+        "generated_at": generation.generated_at.isoformat(),
+    }
+
+
+@router.get("/books/generations")
+async def list_report_book_generations(
+    institution_id: Optional[int] = None,
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    await _require_report_book_permission(db, current_user, "view")
+    effective_id = _report_book_institution_id(institution_id, current_user)
+    result = await db.execute(
+        select(ReportBookGeneration)
+        .where(ReportBookGeneration.institution_id == effective_id)
+        .order_by(desc(ReportBookGeneration.generated_at))
+        .limit(100)
+    )
+    return [
+        {
+            "document_id": item.document_id,
+            "title": item.title,
+            "snapshot": json.loads(item.snapshot_json),
+            "generated_at": item.generated_at.isoformat(),
+        }
+        for item in result.scalars().all()
+    ]
+
+
+@router.post("/books/events", status_code=201)
+async def record_report_book_event(
+    payload: ReportBookEventPayload,
+    institution_id: Optional[int] = None,
+    current_user=Depends(require_role(*REPORT_STAFF_ROLES)),
+    db: AsyncSession = Depends(get_db),
+):
+    if payload.action not in {"DOWNLOAD", "PRINT"}:
+        raise HTTPException(status_code=422, detail="Book event must be DOWNLOAD or PRINT.")
+    await _require_report_book_permission(db, current_user, "download" if payload.action == "DOWNLOAD" else "print")
+    effective_id = _report_book_institution_id(institution_id, current_user)
+    try:
+        document_id = str(UUID(payload.document_id))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Document ID must be a UUID.") from exc
+    result = await db.execute(
+        select(ReportBookGeneration).where(
+            ReportBookGeneration.document_id == document_id,
+            ReportBookGeneration.institution_id == effective_id,
+        )
+    )
+    generation = result.scalar_one_or_none()
+    if generation is None:
+        raise HTTPException(status_code=404, detail="Report book generation was not found.")
+    db.add(
+        ReportBookGenerationEvent(
+            generation_id=generation.id,
+            institution_id=effective_id,
+            user_id=current_user.id,
+            action=payload.action,
+        )
+    )
+    await db.commit()
+    return {"recorded": True}

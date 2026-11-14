@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-12
+#  * @updated     2026-11-14
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -76,6 +76,9 @@ from app.models.eduboard import (
 from app.models.help import (
     HelpCategory, HelpArticle, HelpArticleRevision,
     SupportRequest, SupportRequestComment
+)
+from app.models.report_book import (
+    ReportBookTemplate, ReportBookGeneration, ReportBookGenerationEvent
 )
 
 
@@ -169,7 +172,8 @@ __all__ = [
     "HelpArticleRevision",
     "SupportRequest",
     "SupportRequestComment",
+    "ReportBookTemplate",
+    "ReportBookGeneration",
+    "ReportBookGenerationEvent",
 ]
-
-
 

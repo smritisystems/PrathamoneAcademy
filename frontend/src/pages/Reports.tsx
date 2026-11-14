@@ -59,6 +59,7 @@ import {
   Lock,
   ArrowUpRight,
   Presentation,
+  BookOpen,
 } from 'lucide-react'
 import {
   BarChart,
@@ -76,6 +77,8 @@ import {
   Line,
 } from 'recharts'
 import toast from 'react-hot-toast'
+import ReportBookBuilder from '../components/reports/ReportBookBuilder'
+import type { ReportBookReport } from '../components/reports/reportBookTypes'
 
 // ── Types & Metadata ──────────────────────────────────────────────────────────
 
@@ -585,7 +588,7 @@ const REPORT_CATALOG: ReportMeta[] = [
 
 const CATEGORIES: { key: ReportCategoryKey; label: string; icon: any; count: number }[] = [
   { key: 'students', label: 'Students & Admissions', icon: Users, count: 5 },
-  { key: 'academics', label: 'Academics & Batches', icon: GraduationCap, count: 5 },
+  { key: 'academics', label: 'Academics & Batches', icon: GraduationCap, count: 6 },
   { key: 'fees', label: 'Fees & Financials', icon: DollarSign, count: 6 },
   { key: 'concessions', label: 'Concessions & Scholarships', icon: Award, count: 20 },
   { key: 'workforce', label: 'Teachers & Payroll', icon: Briefcase, count: 7 },
@@ -594,6 +597,36 @@ const CATEGORIES: { key: ReportCategoryKey; label: string; icon: any; count: num
 ]
 
 export default function Reports() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { user, selectedAcademicYearId, selectedInstitutionId } = useAuthStore()
+  if (searchParams.get('view') === 'books') {
+    const bookReports: ReportBookReport[] = REPORT_CATALOG.map((report) => ({
+      id: report.id,
+      name: report.name,
+      category: report.category,
+      categoryLabel: report.categoryLabel,
+      description: report.description,
+      requiresFinancialRole: report.requiresFinancialRole,
+      requiresSysAdminRole: report.requiresSysAdminRole,
+    }))
+    return (
+      <ReportBookBuilder
+        reports={bookReports}
+        institutionId={selectedInstitutionId || undefined}
+        selectedAcademicYearId={selectedAcademicYearId || undefined}
+        userRole={user?.role}
+        onBack={() => setSearchParams((current) => {
+          const next = new URLSearchParams(current)
+          next.delete('view')
+          return next
+        }, { replace: true })}
+      />
+    )
+  }
+  return <ReportsWorkspace />
+}
+
+function ReportsWorkspace() {
   const branding = useBranding()
   const { user, selectedAcademicYearId, selectedInstitutionId } = useAuthStore()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -1204,6 +1237,18 @@ export default function Reports() {
         {/* Global Search Bar & Contextual Help */}
         <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
           <ContextualHelpButton moduleKey="reports" variant="pill" label="Reports Help" />
+          <button
+            type="button"
+            onClick={() => setSearchParams((current) => {
+              const next = new URLSearchParams(current)
+              next.set('view', 'books')
+              return next
+            }, { replace: true })}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-700 px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-800"
+          >
+            <BookOpen className="h-4 w-4" />
+            Report Book Builder
+          </button>
           <div className="relative flex-1 md:w-80">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
             <input

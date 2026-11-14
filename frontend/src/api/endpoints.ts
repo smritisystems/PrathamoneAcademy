@@ -1095,6 +1095,51 @@ export const reportsApi = {
       search?: string
     }
   ) => apiClient.get(`/reports/concessions/${reportId}/export`, { params, responseType: 'blob' }),
+  listBookTemplates: (institutionId?: number | string) =>
+    apiClient.get<ReportBookTemplateRecord[]>('/reports/books/templates', { params: { institution_id: institutionId } }),
+  saveBookTemplate: (name: string, configuration: object, institutionId?: number | string) =>
+    apiClient.put<ReportBookTemplateRecord>('/reports/books/templates', { name, configuration }, { params: { institution_id: institutionId } }),
+  recordBookGeneration: (snapshot: ReportBookGenerationPayload, institutionId?: number | string) =>
+    apiClient.post<{ document_id: string; generated_at: string }>('/reports/books/generations', snapshot, { params: { institution_id: institutionId } }),
+  listBookGenerations: (institutionId?: number | string) =>
+    apiClient.get<ReportBookGenerationRecord[]>('/reports/books/generations', { params: { institution_id: institutionId } }),
+  recordBookEvent: (documentId: string, action: 'DOWNLOAD' | 'PRINT', institutionId?: number | string) =>
+    apiClient.post<{ recorded: boolean }>('/reports/books/events', { document_id: documentId, action }, { params: { institution_id: institutionId } }),
+}
+
+export interface ReportBookTemplateRecord {
+  id: number
+  name: string
+  configuration: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface ReportBookGenerationPayload {
+  document_id: string
+  title: string
+  academic_year_id?: number
+  academic_year_label?: string
+  examination_id?: number
+  examination_label?: string
+  start_date?: string
+  end_date?: string
+  standard_id?: number
+  standard_label?: string
+  division_id?: number
+  division_label?: string
+  filter_scope?: string
+  report_ids: string[]
+  report_row_counts: Record<string, number>
+  page_size: 'A4' | 'A5' | 'Letter' | 'Custom'
+  book_configuration: object
+}
+
+export interface ReportBookGenerationRecord {
+  document_id: string
+  title: string
+  snapshot: Omit<ReportBookGenerationPayload, 'document_id' | 'title'>
+  generated_at: string
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -2890,7 +2935,3 @@ export const eduboardApi = {
 }
 
 export type { EduBoardPageItem }
-
-
-
-
