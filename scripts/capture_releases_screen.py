@@ -11,12 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
 #  * @description Visual capture verification script for Release & Change Governance dashboard.
 #  */
 
 import asyncio
+import os
 from playwright.async_api import async_playwright
 
 async def main():
@@ -26,7 +27,7 @@ async def main():
         await page.goto("http://localhost/login")
         await page.wait_for_timeout(1000)
         await page.fill("input[name='username']", "admin@example.com")
-        await page.fill("input[type='password']", "admin123")
+        await page.fill("input[type='password']", os.environ["TEST_ADMIN_PASSWORD"])
         await page.click("button[type='submit']")
         await page.wait_for_timeout(2000)
         

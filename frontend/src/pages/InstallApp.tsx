@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-08
+ * @updated     2026-11-14
  *
  * @description Dedicated Progressive Web App installation portal with platform-specific setup guides and launch actions.
  */
@@ -77,7 +77,7 @@ export default function InstallApp() {
           <div className="flex items-start sm:items-center gap-5">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white p-2.5 shadow-lg shrink-0 flex items-center justify-center border-2 border-blue-400/40">
               <img
-                src="/icons/icon-192x192.png"
+                src={branding.assets.appIconUrl}
                 alt="PrathamOne EduOS Logo"
                 className="w-full h-full object-contain rounded-xl"
                 onError={(e) => {

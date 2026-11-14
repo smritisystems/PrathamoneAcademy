@@ -81,24 +81,34 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(colors.success).toMatch(/^#[0-9a-fA-F]{6}$/)
   })
 
-  it('uses the supplied EduOS logo and app icon as software branding', () => {
+  it('uses the supplied 14112026 artwork for software branding', () => {
+    const artworkRoot = '/artwork/14112026'
     expect(BRANDING_CONFIG.assets.horizontalLogoTransparentUrl).toBe(
-      '/artwork/PrathamOne_EduOS_Brand_Assets/PrathamOne_EduOS_Logo_Transparent.png'
+      `${artworkRoot}/batch_g1-4_1080.png`
     )
-    expect(BRANDING_CONFIG.assets.appIconUrl).toBe('/icons/icon-512x512.png')
-    expect(BRANDING_CONFIG.assets.faviconUrl).toBe('/icons/icon-192x192.png')
+    expect(BRANDING_CONFIG.assets.softwareLogoSvgUrl).toBe(`${artworkRoot}/batch_g1-4_1080.svg`)
+    expect(BRANDING_CONFIG.assets.appIconUrl).toBe(
+      `${artworkRoot}/batch_rect1-1-8-6_10802.png`
+    )
+    expect(BRANDING_CONFIG.assets.softwareIconSvgUrl).toBe(
+      `${artworkRoot}/batch_rect1-1-8-6_10802.svg`
+    )
+    expect(BRANDING_CONFIG.assets.faviconUrl).toBe(BRANDING_CONFIG.assets.appIconUrl)
     expect(BRANDING_CONFIG.assets.academyLogoUrl).toBe('/media/logo/prashant-academy-logo.svg')
 
     const resolved = resolveBranding({
       id: 1,
       logo_url: '/media/logo/prashant-academy-logo.svg',
-      favicon_url: '/favicon.svg',
+      favicon_url: '/icons/icon-192x192.png',
     })
     expect(resolved.assets.logoUrl).toBe('/media/logo/prashant-academy-logo.svg')
     expect(resolved.assets.horizontalLogoTransparentUrl).toBe(
-      '/artwork/PrathamOne_EduOS_Brand_Assets/PrathamOne_EduOS_Logo_Transparent.png'
+      `${artworkRoot}/batch_g1-4_1080.png`
     )
-    expect(resolved.assets.faviconUrl).toBe('/icons/icon-192x192.png')
+    expect(resolved.assets.faviconUrl).toBe(BRANDING_CONFIG.assets.appIconUrl)
+
+    expect(resolveBranding({ favicon_url: '/tenant/favicon.png' }).assets.faviconUrl)
+      .toBe('/tenant/favicon.png')
   })
 
   it('provides official support contact information', () => {

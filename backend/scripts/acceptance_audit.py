@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-14
 #  *
 #  * @description Comprehensive system acceptance audit script validating database entities and API routes.
 #  */
@@ -58,7 +58,11 @@ async def run_audit():
 
     # 2. Authenticate as Administrator
     client = httpx.AsyncClient(base_url=API_BASE, timeout=30.0)
-    login_resp = await client.post("/auth/login", data={"username": "admin", "password": "admin123"})
+    admin_password = os.getenv("INITIAL_ADMIN_PASSWORD")
+    if not admin_password:
+        record("Admin Login", False, "Set INITIAL_ADMIN_PASSWORD to the administrator password for this audit run.")
+        return
+    login_resp = await client.post("/auth/login", data={"username": "admin", "password": admin_password})
     if login_resp.status_code != 200:
         record("Admin Login", False, f"Failed to authenticate: {login_resp.status_code} {login_resp.text}")
         return

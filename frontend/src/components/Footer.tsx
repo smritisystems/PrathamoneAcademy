@@ -22,7 +22,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Building2, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { institutionsApi } from '../api/endpoints'
-import { APP_CONFIG } from '../config/appConfig'
+import { APP_CONFIG, BRANDING_CONFIG } from '../config/appConfig'
 import OrganizationBranding from './OrganizationBranding'
 
 export const FOOTER_COLLAPSED_KEY = 'pratham_footer_collapsed'
@@ -236,39 +236,65 @@ export default function Footer() {
           data-testid="footer-collapsed-bar"
           className="flex items-center justify-between gap-2 w-full min-w-0"
         >
-          {/* Left summary indicators */}
+          {/* Tenant summary and grouped product/system context */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 text-slate-500 font-medium">
             <span className="font-semibold text-slate-800 tracking-tight">{tenantName}</span>
             <span className="text-slate-300 select-none">·</span>
-            <div className="flex items-center gap-1 min-w-0">
-              <span className="text-slate-400">Workspace:</span>
-              <span
-                data-testid="footer-page-title"
-                className="font-semibold text-primary-700 bg-primary-50/80 px-1.5 py-0.2 rounded border border-blue-200/60"
+            <div
+              data-testid="footer-product-system-group"
+              className="flex items-center gap-1.5 flex-wrap min-w-0 rounded-lg border border-blue-100 bg-primary-50/40 px-1.5 py-0.5"
+            >
+              <div
+                className="flex items-center gap-1 min-w-0"
+                title={`Active Workspace: ${currentPageTitle}`}
               >
-                {currentPageTitle}
+                <span className="text-slate-500">Workspace:</span>
+                <span
+                  data-testid="footer-page-title"
+                  className="font-semibold text-primary-700 bg-white/80 px-1.5 py-0.2 rounded border border-blue-200/60"
+                >
+                  {currentPageTitle}
+                </span>
+              </div>
+              <span className="hidden md:inline text-slate-300 select-none">·</span>
+              <div className="hidden md:flex items-center gap-1">
+                <img
+                  src={BRANDING_CONFIG.assets.softwareIconUrl}
+                  alt="PrathamOne EduOS"
+                  className="w-4 h-4 object-contain"
+                />
+                <span className="text-slate-700 font-semibold">{APP_CONFIG.edition}</span>
+              </div>
+              <span className="hidden md:inline text-slate-300 select-none">·</span>
+              <Link
+                to="/help/version"
+                aria-label="Software license details"
+                title="View license status, validity, and deployment details"
+                className="text-primary-700 hover:text-primary-900 hover:underline font-semibold"
+              >
+                License details
+              </Link>
+              <span className="hidden sm:inline text-slate-300 select-none">·</span>
+              <span
+                className="hidden sm:inline-flex items-center gap-1"
+                title={isOnline ? 'Cloud Sync: Connected' : 'Cloud Sync: Offline'}
+                aria-label={`Connection status: ${isOnline ? 'Online' : 'Offline'}`}
+              >
+                <span
+                  className={`inline-block w-1.5 h-1.5 rounded-full ${
+                    isOnline ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
+                  }`}
+                  aria-hidden="true"
+                />
+                <span className={isOnline ? 'text-emerald-700' : 'text-rose-700'}>
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+              </span>
+              <span className="hidden md:inline text-slate-300 select-none">·</span>
+              <span className="hidden md:inline font-mono text-[10px] text-slate-700">
+                {APP_CONFIG.versionDisplay}
               </span>
             </div>
-            <span className="hidden sm:inline text-slate-300 select-none">·</span>
-            <span
-              className="hidden sm:inline-flex items-center gap-1"
-              title={isOnline ? 'Cloud Sync: Connected' : 'Cloud Sync: Offline'}
-              aria-label={`Connection status: ${isOnline ? 'Online' : 'Offline'}`}
-            >
-              <span
-                className={`inline-block w-1.5 h-1.5 rounded-full ${
-                  isOnline ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
-                }`}
-                aria-hidden="true"
-              />
-              <span className={isOnline ? 'text-emerald-700' : 'text-rose-700'}>
-                {isOnline ? 'Online' : 'Offline'}
-              </span>
-            </span>
-            <span className="hidden md:inline text-slate-300 select-none">·</span>
-            <span className="hidden md:inline font-mono text-[10px] text-slate-700">
-              {APP_CONFIG.versionDisplay}
-            </span>
           </div>
 
           {/* Right: Expand Toggle Button */}
@@ -290,49 +316,82 @@ export default function Footer() {
       ) : (
         /* Full Expanded Footer Content */
         <div data-testid="footer-expanded-content" className="flex flex-col gap-1.5 w-full min-w-0">
-          {/* Row 1: Context, Page & Primary Operational Status */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-x-4 gap-y-1 w-full min-w-0">
-            {/* Left & Center Context Group */}
+          {/* Row 1: Tenant context and grouped product/system information */}
+          <div className="flex flex-col gap-y-1 w-full min-w-0">
+            {/* Tenant and branch identity remains distinct from software branding */}
             <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap min-w-0">
-              {/* Left: Institute Name, Tenant Code, Branch Name & Code */}
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="font-semibold text-slate-900 tracking-tight">{tenantName}</span>
-                <span className="text-slate-300 select-none">·</span>
-                <span className="text-slate-500 font-mono text-[10px]" title="Tenant Code">
-                  [{tenantCode}]
-                </span>
-                <span className="text-slate-300 select-none">·</span>
-                <span className="text-slate-600">Branch: {branchName}</span>
-                <span className="text-slate-500 font-mono text-[10px]" title="Branch Code">
-                  ({branchCode})
-                </span>
-              </div>
-
-              <span className="hidden sm:inline text-slate-300 select-none">|</span>
-
-              {/* Center: Dynamic Active Page / Workspace Name */}
-              <div
-                className="flex items-center gap-1 min-w-0 text-slate-600"
-                title={`Active Workspace: ${currentPageTitle}`}
-              >
-                <span className="text-slate-400 font-medium">Workspace:</span>
-                <span
-                  data-testid="footer-page-title"
-                  className="font-semibold text-primary-700 bg-primary-50/80 px-1.5 py-0.2 rounded border border-blue-200/60"
-                >
-                  {currentPageTitle}
-                </span>
-              </div>
+              <span className="font-semibold text-slate-900 tracking-tight">{tenantName}</span>
+              <span className="text-slate-300 select-none">·</span>
+              <span className="text-slate-500 font-mono text-[10px]" title="Tenant Code">
+                [{tenantCode}]
+              </span>
+              <span className="text-slate-300 select-none">·</span>
+              <span className="text-slate-600">Branch: {branchName}</span>
+              <span className="text-slate-500 font-mono text-[10px]" title="Branch Code">
+                ({branchCode})
+              </span>
             </div>
 
-            {/* Product & Right System Group */}
-            <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap lg:justify-end min-w-0">
-              {/* Product: PrathamOne Academy Management System · Enterprise Edition · prathamone.com */}
-              <div className="flex items-center gap-1.5 min-w-0 text-slate-500">
-                <span className="text-slate-700 font-medium">{APP_CONFIG.productName}</span>
-                <span className="text-slate-300 select-none">·</span>
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 min-w-0">
+              <div
+                data-testid="footer-product-system-group"
+                className="flex items-center gap-x-1.5 gap-y-1 flex-wrap min-w-0 rounded-lg border border-blue-100 bg-primary-50/40 px-2 py-1 text-slate-600"
+              >
+                <div
+                  className="flex items-center gap-1 min-w-0"
+                  title={`Active Workspace: ${currentPageTitle}`}
+                >
+                  <span className="text-slate-500 font-medium">Workspace:</span>
+                  <span
+                    data-testid="footer-page-title"
+                    className="font-semibold text-primary-700 bg-white/80 px-1.5 py-0.2 rounded border border-blue-200/60"
+                  >
+                    {currentPageTitle}
+                  </span>
+                </div>
+                <span className="text-blue-200 select-none">·</span>
+                <img
+                  src={BRANDING_CONFIG.assets.softwareLogoSvgUrl}
+                  alt="PrathamOne EduOS"
+                  className="h-4 w-auto max-w-[88px] object-contain shrink-0"
+                />
                 <span className="text-slate-700 font-semibold">{APP_CONFIG.edition}</span>
-                <span className="text-slate-300 select-none">·</span>
+                <span className="text-blue-200 select-none">·</span>
+                <Link
+                  to="/help/version"
+                  aria-label="Software license details"
+                  title="View license status, validity, and deployment details"
+                  className="text-primary-700 hover:text-primary-900 hover:underline font-semibold"
+                >
+                  License details
+                </Link>
+                <span className="text-blue-200 select-none">·</span>
+                <span
+                  className="inline-flex items-center gap-1"
+                  title={isOnline ? 'Cloud Sync: Connected' : 'Cloud Sync: Offline'}
+                  aria-label={`Connection status: ${isOnline ? 'Online' : 'Offline'}`}
+                >
+                  <span
+                    className={`inline-block w-1.5 h-1.5 rounded-full ${
+                      isOnline ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span className={isOnline ? 'text-emerald-700' : 'text-rose-700'}>
+                    {isOnline ? 'Online' : 'Offline'}
+                  </span>
+                </span>
+                <span className="text-blue-200 select-none">·</span>
+                <Link
+                  to="/releases"
+                  className="font-semibold text-slate-800 hover:text-primary-600 hover:underline font-mono text-[10px] transition-colors"
+                  title="System Version & Release Management"
+                >
+                  {APP_CONFIG.versionDisplay}
+                </Link>
+              </div>
+
+              <div className="flex items-center gap-x-2 gap-y-1 flex-wrap min-w-0 text-slate-500 font-medium">
                 <a
                   href={APP_CONFIG.websiteUrl}
                   target="_blank"
@@ -352,12 +411,7 @@ export default function Footer() {
                   <Building2 className="w-2.5 h-2.5 text-primary-600" aria-hidden="true" />
                   <span>{APP_CONFIG.parentOrganization.shortName} Ecosystem</span>
                 </button>
-              </div>
-
-              <span className="hidden sm:inline text-slate-300 select-none">|</span>
-
-              {/* Right: User ID, Role, Live Connection Status, Version, Collapse Button */}
-              <div className="flex items-center gap-1.5 min-w-0 text-slate-500 font-medium">
+                <span className="hidden sm:inline text-slate-300 select-none">|</span>
                 <span className="font-mono text-slate-700" title="Logged-in User ID">
                   UID: #{user?.id ?? 1}
                 </span>
@@ -365,30 +419,6 @@ export default function Footer() {
                 <span className="text-slate-700" title="User Access Role">
                   Role: {userRole}
                 </span>
-                <span className="text-slate-300 select-none">·</span>
-                <span
-                  className="inline-flex items-center gap-1"
-                  title={isOnline ? 'Cloud Sync: Connected' : 'Cloud Sync: Offline'}
-                  aria-label={`Connection status: ${isOnline ? 'Online' : 'Offline'}`}
-                >
-                  <span
-                    className={`inline-block w-1.5 h-1.5 rounded-full ${
-                      isOnline ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <span className={isOnline ? 'text-emerald-700' : 'text-rose-700'}>
-                    {isOnline ? 'Online' : 'Offline'}
-                  </span>
-                </span>
-                <span className="text-slate-300 select-none">·</span>
-                <Link
-                  to="/releases"
-                  className="font-semibold text-slate-800 hover:text-primary-600 hover:underline font-mono text-[10px] transition-colors"
-                  title="System Version & Release Management"
-                >
-                  {APP_CONFIG.versionDisplay}
-                </Link>
                 <span className="text-slate-300 select-none">·</span>
                 <button
                   type="button"

@@ -25,6 +25,7 @@ from datetime import datetime
 import json
 
 from app.core.database import get_db
+from app.core.config import PRODUCT_APP_ICON_URL
 from app.core.deps import get_current_active_user, require_role, check_institution_access, is_sysadmin
 from app.models.institution import Institution
 from app.models.settings import InstitutionSetting, LookupItem, SettingAuditLog
@@ -59,7 +60,7 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "accent_color": "#F57C00",
         "theme_preset": "Pratham Navy & Saffron",
         "logo_url": "/logo.svg",
-        "favicon_url": "/icons/icon-192x192.png",
+        "favicon_url": PRODUCT_APP_ICON_URL,
         "login_bg_style": "wave_gradient",
         "document_monogram": "PA",
         "custom_css": "",
@@ -298,7 +299,7 @@ async def get_institute_profile(
         "email": inst.email or "info@prathamoneacademy.in",
         "website": inst.website or "https://prathamone.com",
         "logo_url": inst.logo_url or "/logo.svg",
-        "favicon_url": inst.favicon_url or "/icons/icon-192x192.png",
+        "favicon_url": inst.favicon_url or PRODUCT_APP_ICON_URL,
         "primary_color": inst.primary_color or "#0B2D6B",
         "secondary_color": inst.secondary_color or "#071C44",
         "accent_color": inst.accent_color or "#F57C00",

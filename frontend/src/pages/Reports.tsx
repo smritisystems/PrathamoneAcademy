@@ -19,6 +19,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
+import { PrintBrandingFooter } from '../components/PrintDocumentBranding'
 import {
   reportsApi,
   academicReportsApi,
@@ -2387,6 +2388,7 @@ function ReportsWorkspace() {
         entityId={traceTarget?.id ?? null}
         onClose={() => setTraceTarget(null)}
       />
+      <PrintBrandingFooter className="hidden" fixedBottom showDivider />
     </div>
   )
 }

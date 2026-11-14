@@ -36,7 +36,13 @@ import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { downloadBlob } from '../utils/reportExport'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
-import { useBranding, applyGlobalBrandTheme, BRANDING_STORAGE_KEY } from '../config/branding'
+import {
+  BRANDING_CONFIG,
+  normalizeInstitutionFaviconUrl,
+  useBranding,
+  applyGlobalBrandTheme,
+  BRANDING_STORAGE_KEY,
+} from '../config/branding'
 import OrganizationBranding from '../components/OrganizationBranding'
 
 // Definition of 15 settings workspace categories matching system architecture
@@ -114,7 +120,7 @@ export default function Settings() {
     email: 'info@prathamoneacademy.in',
     website: 'https://prathamone.com',
     logo_url: '/logo.svg',
-    favicon_url: '/icons/icon-192x192.png',
+    favicon_url: BRANDING_CONFIG.assets.faviconUrl,
     primary_color: '#0B2D6B',
     secondary_color: '#071C44',
     accent_color: '#F57C00',
@@ -159,8 +165,12 @@ export default function Settings() {
         settingsApi.getAuditLogs({ limit: 50 }),
       ])
 
-      setProfile(profRes.data)
-      setOriginalProfile(profRes.data)
+      const profileData = {
+        ...profRes.data,
+        favicon_url: normalizeInstitutionFaviconUrl(profRes.data.favicon_url),
+      }
+      setProfile(profileData)
+      setOriginalProfile(profileData)
 
       setAllSettings(setRes.data)
       setOriginalSettings(setRes.data)
@@ -276,8 +286,12 @@ export default function Settings() {
       setSaving(true)
       if (activeCategory === 'profile' || activeCategory === 'branding') {
         const res = await settingsApi.updateProfile(profile)
-        setProfile(res.data.profile)
-        setOriginalProfile(res.data.profile)
+        const profileData = {
+          ...res.data.profile,
+          favicon_url: normalizeInstitutionFaviconUrl(res.data.profile.favicon_url),
+        }
+        setProfile(profileData)
+        setOriginalProfile(profileData)
         if (activeCategory === 'branding') {
           const categoryData = allSettings[activeCategory] || {}
           await settingsApi.updateBatch(

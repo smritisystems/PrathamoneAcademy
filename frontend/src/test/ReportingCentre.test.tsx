@@ -154,6 +154,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
 
     expect(screen.getByText('Reporting & Analytics Centre')).toBeDefined()
     expect(screen.getByText(/49 Enterprise Reports/i)).toBeDefined()
+    expect(screen.getByTestId('pratham-software-footer-logo')).toBeDefined()
 
     // 7 Canonical category switcher tabs
     expect(screen.getByRole('button', { name: /Students & Admissions/i })).toBeDefined()

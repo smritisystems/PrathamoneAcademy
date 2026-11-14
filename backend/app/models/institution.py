@@ -19,6 +19,7 @@
 from sqlalchemy import String, Text, Boolean, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
+from app.core.config import PRODUCT_APP_ICON_URL
 from app.core.database import Base
 
 
@@ -46,7 +47,7 @@ class Institution(Base):
     primary_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#0B2D6B")
     secondary_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#071C44")
     accent_color: Mapped[str] = mapped_column(String(20), nullable=True, default="#F57C00")
-    favicon_url: Mapped[str | None] = mapped_column(Text, nullable=True, default="/icons/icon-192x192.png")
+    favicon_url: Mapped[str | None] = mapped_column(Text, nullable=True, default=PRODUCT_APP_ICON_URL)
     timezone: Mapped[str] = mapped_column(String(50), nullable=True, default="Asia/Kolkata")
     default_language: Mapped[str] = mapped_column(String(20), nullable=True, default="en")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

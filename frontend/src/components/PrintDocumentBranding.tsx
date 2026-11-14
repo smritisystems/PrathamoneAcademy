@@ -11,14 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-10
+ * @updated     2026-11-14
  *
  * @description Canonical document branding header, statutory compliance notices, and authorized signatory layout for printable documents.
  */
 
 import React, { useState } from 'react'
 import { ShieldCheck, FileCheck2 } from 'lucide-react'
-import { useBranding, BRANDING_CONFIG, PRINT_SHARE_BRANDING } from '../config/branding'
+import { useBranding, BRANDING_CONFIG, PRINT_FOOTER_BRANDING_TEXT } from '../config/branding'
 import type { Institution } from '../types'
 import PrintFooter, { PrintFooterProps } from './printing/PrintFooter'
 
@@ -315,8 +315,8 @@ export interface PrintBrandingFooterProps extends Partial<PrintFooterProps> {
 }
 
 /**
- * Consistent, understated PrathamOne branding footer for printable and shareable outputs.
- * Designed with a thin, light, low-contrast font (8-9pt print) that remains readable in grayscale.
+ * Consistent, understated PrathamOne logo footer for printable and shareable outputs.
+ * Designed with a thin, light, low-contrast label (8-9pt print) that remains readable in grayscale.
  * Integrates directly with the Canonical Two-Row Print Standard when document metadata is provided.
  */
 export function PrintBrandingFooter({
@@ -329,7 +329,9 @@ export function PrintBrandingFooter({
   pageNumber = 1,
   totalPages = 1,
   classification,
-  softwareBrandingText,
+  softwareBrandingText = PRINT_FOOTER_BRANDING_TEXT,
+  showSoftwareLogo = true,
+  softwareLogoUrl = BRANDING_CONFIG.assets.softwareLogoSvgUrl,
   showSoftwareBranding = true,
   showPagination,
   showDocumentId,
@@ -345,8 +347,10 @@ export function PrintBrandingFooter({
         totalPages={totalPages}
         fixedBottom={fixedBottom}
         showDivider={showDivider}
-        softwareBrandingText={customText || softwareBrandingText || PRINT_SHARE_BRANDING.text}
+        softwareBrandingText={customText || softwareBrandingText || PRINT_FOOTER_BRANDING_TEXT}
         showSoftwareBranding={showSoftwareBranding}
+        showSoftwareLogo={showSoftwareLogo}
+        softwareLogoUrl={softwareLogoUrl}
         showPagination={showPagination}
         showDocumentId={showDocumentId}
         layoutMode={layoutMode}
@@ -380,13 +384,21 @@ export function PrintBrandingFooter({
         } ${alignmentClass} ${className}`}
       >
         <p
-          className="font-light tracking-wide text-[8pt] text-slate-400 print:text-slate-500 print:font-normal leading-normal"
+          className="inline-flex items-center gap-1.5 font-light tracking-wide text-[8pt] text-slate-400 print:text-slate-500 print:font-normal leading-normal"
           style={{
             fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
             letterSpacing: '0.025em',
           }}
         >
-          {customText || PRINT_SHARE_BRANDING.text}
+          {showSoftwareBranding && (customText || softwareBrandingText || PRINT_FOOTER_BRANDING_TEXT)}
+          {showSoftwareBranding && showSoftwareLogo && (
+            <img
+              data-testid="pratham-software-footer-logo"
+              src={softwareLogoUrl}
+              alt="PrathamOne EduOS logo"
+              className="h-[8pt] w-auto max-w-[48pt] shrink-0 object-contain"
+            />
+          )}
         </p>
       </div>
     </>

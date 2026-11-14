@@ -11,12 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
 #  * @description Automated visual and API verification script for CodeX Studio and dashboard endpoints.
 #  */
 
 import asyncio
+import os
 from playwright.async_api import async_playwright
 
 async def test_codex_page():
@@ -31,7 +32,7 @@ async def test_codex_page():
         await page.goto("http://localhost/login")
         await page.wait_for_timeout(1000)
         await page.fill("input[name='username']", "admin@example.com")
-        await page.fill("input[name='password']", "admin123")
+        await page.fill("input[name='password']", os.environ["TEST_ADMIN_PASSWORD"])
         await page.click("button[type='submit']")
         await page.wait_for_timeout(2000)
         

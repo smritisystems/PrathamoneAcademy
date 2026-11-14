@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional
+from app.core.config import PRODUCT_APP_ICON_URL
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access
 from app.models.institution import Institution
@@ -83,7 +84,7 @@ async def list_institutions(
             "website": i.website,
             "address": i.address,
             "logo_url": i.logo_url or "/logo.svg",
-            "favicon_url": i.favicon_url or "/icons/icon-192x192.png",
+            "favicon_url": i.favicon_url or PRODUCT_APP_ICON_URL,
             "primary_color": i.primary_color or "#0B2D6B",
             "secondary_color": i.secondary_color or "#071C44",
             "accent_color": i.accent_color or "#F57C00",
@@ -145,7 +146,7 @@ async def get_public_institution_branding(
         "short_name": inst.short_name or "PA",
         "tagline": inst.tagline or "Learn • Practice • Achieve",
         "logo_url": inst.logo_url,
-        "favicon_url": inst.favicon_url or "/icons/icon-192x192.png",
+        "favicon_url": inst.favicon_url or PRODUCT_APP_ICON_URL,
         "primary_color": inst.primary_color or "#0B2D6B",
         "secondary_color": inst.secondary_color or "#071C44",
         "accent_color": inst.accent_color or "#F57C00",
@@ -196,7 +197,7 @@ async def get_institution(
         "email": institution.email,
         "website": institution.website,
         "logo_url": institution.logo_url or "/logo.svg",
-        "favicon_url": institution.favicon_url or "/icons/icon-192x192.png",
+        "favicon_url": institution.favicon_url or PRODUCT_APP_ICON_URL,
         "primary_color": institution.primary_color or "#0B2D6B",
         "secondary_color": institution.secondary_color or "#071C44",
         "accent_color": institution.accent_color or "#F57C00",

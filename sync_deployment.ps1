@@ -242,6 +242,5 @@ Write-Host "  - Study Materials:         $postMaterials curriculum packages" -Fo
 Write-Host "  - Announcements:           $postAnnouncements official academy notices" -ForegroundColor White
 Write-Host "----------------------------------------------------------------------" -ForegroundColor Gray
 Write-Host "Web Application:             http://localhost:80" -ForegroundColor Cyan
-Write-Host "Default Superadmin:          admin@example.com / admin123" -ForegroundColor Yellow
 Write-Host "Safety Backup Stored At:     $backupFile" -ForegroundColor Gray
 Write-Host "======================================================================`n" -ForegroundColor Blue

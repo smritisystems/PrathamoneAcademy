@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-07
+ * @updated     2026-11-14
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
@@ -315,7 +315,7 @@ describe('Layout Integration & Mobile Drawer', () => {
 
     // Product and right sections: Product, edition, system, version, and website
     expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
-    expect(screen.getByText('PrathamOne EduOS — Education Operating System')).toBeDefined()
+    expect(within(footer).getByRole('img', { name: 'PrathamOne EduOS' })).toBeDefined()
     expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
 
     const websiteLink = screen.getByRole('link', { name: 'prathamone.com' })

@@ -16,27 +16,15 @@
   ],
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
+      "src": "/artwork/14112026/batch_rect1-1-8-6_10802.png",
+      "sizes": "337x337",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/artwork/14112026/batch_rect1-1-8-6_10802.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ],
@@ -46,28 +34,28 @@
       "short_name": "Students",
       "description": "View and manage active student admissions and profiles",
       "url": "/students",
-      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/artwork/14112026/batch_rect1-1-8-6_10802.png", "sizes": "337x337", "type": "image/png" }]
     },
     {
       "name": "Fees & Payments",
       "short_name": "Fees",
       "description": "Fee collection, receipts register, and payment tracking",
       "url": "/fees",
-      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/artwork/14112026/batch_rect1-1-8-6_10802.png", "sizes": "337x337", "type": "image/png" }]
     },
     {
       "name": "Attendance Register",
       "short_name": "Attendance",
       "description": "Mark and monitor daily student and batch attendance",
       "url": "/attendance",
-      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/artwork/14112026/batch_rect1-1-8-6_10802.png", "sizes": "337x337", "type": "image/png" }]
     },
     {
       "name": "Academic Structure",
       "short_name": "Academic",
       "description": "Manage boards, standards, subjects, batches, and timetable",
       "url": "/academic",
-      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/artwork/14112026/batch_rect1-1-8-6_10802.png", "sizes": "337x337", "type": "image/png" }]
     }
   ]
 }

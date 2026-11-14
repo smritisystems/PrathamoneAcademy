@@ -78,6 +78,5 @@ echo "             39 STUDENTS ADDED & VERIFIED SUCCESSFULLY                "
 echo "======================================================================"
 docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c "SELECT 'Students: ' || count(*) FROM students UNION ALL SELECT 'Active Enrollments: ' || count(*) FROM student_enrollments WHERE status = 'active' UNION ALL SELECT 'Batches: ' || count(*) FROM divisions UNION ALL SELECT 'Invoices: ' || count(*) FROM fee_invoices UNION ALL SELECT 'Payments: ' || count(*) FROM payments;"
 echo -e "\nWeb Application: http://localhost:80"
-echo "Login:           admin@example.com / admin123"
 echo "======================================================================"
 

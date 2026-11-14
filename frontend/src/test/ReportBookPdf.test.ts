@@ -69,12 +69,20 @@ describe('Report book PDF layout', () => {
     const fontDirectory = `${process.cwd()}/node_modules/@fontsource/noto-sans-devanagari/files`
     const latinFont = await readFile(`${fontDirectory}/noto-sans-devanagari-latin-400-normal.woff`)
     const indicFont = await readFile(`${fontDirectory}/noto-sans-devanagari-devanagari-400-normal.woff`)
-    vi.stubGlobal('fetch', async (url: string | URL | Request) => {
-      const bytes = String(url).includes('devanagari-400') ? indicFont : latinFont
+    const softwareLogo = await readFile(`${process.cwd()}/public/logo/logoone256.png`)
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      const urlString = String(url)
+      const bytes = urlString.includes('logoone256')
+        ? softwareLogo
+        : urlString.includes('devanagari-400') ? indicFont : latinFont
       const buffer = new ArrayBuffer(bytes.byteLength)
       new Uint8Array(buffer).set(bytes)
-      return new Response(buffer, { status: 200 })
+      return new Response(buffer, {
+        status: 200,
+        headers: urlString.includes('logoone256') ? { 'content-type': 'image/png' } : undefined,
+      })
     })
+    vi.stubGlobal('fetch', fetchMock)
 
     const book = configuration('A5')
     book.chapters = [
@@ -98,7 +106,7 @@ describe('Report book PDF layout', () => {
           { key: 'student', label: 'Student' }, { key: 'admission', label: 'Admission' },
         ], rows: rows.slice(0, 3), summary: [], charts: [], orientation: 'landscape' },
       ],
-      { institutionName: 'Prashant Academy' },
+      { institutionName: 'Prashant Academy', softwareLogoUrl: '/logo/logoone256.png' },
       {
         documentId: '123e4567-e89b-42d3-a456-426614174000',
         title: 'Test Book',
@@ -110,6 +118,7 @@ describe('Report book PDF layout', () => {
     )
 
     const output = await PDFDocument.load(bytes)
+    expect(fetchMock).toHaveBeenCalledWith('/logo/logoone256.png')
     const pageSizes = output.getPages().map((page) => page.getSize())
     expect(pageSizes.length).toBeGreaterThan(5)
     const firstReportPage = pageSizes.findIndex((size, index) => index >= 2 && size.width < size.height)

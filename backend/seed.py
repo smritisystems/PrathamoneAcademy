@@ -11,16 +11,16 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
-#  * @description Database master seeder initializing superadmin account, demo batches, and curriculum subjects.
+#  * @description Database master seeder initializing the bootstrap administrator, batches, and curriculum subjects.
 #  */
 
 """
 Seed script for Prashant Academy development data.
 
 Usage:
-    python seed.py
+    INITIAL_ADMIN_PASSWORD=<unique-password> python seed.py --bootstrap-only
     python seed.py --database-url postgresql+asyncpg://user:pass@host/db
 """
 import asyncio
@@ -37,7 +37,18 @@ if len(sys.argv) > 1 and sys.argv[1].startswith("--database-url="):
     DATABASE_URL = sys.argv[1].split("=", 1)[1]
 
 
-async def seed():
+def validate_bootstrap_password(password: str | None, account_label: str) -> str:
+    if not password or password.isspace():
+        raise RuntimeError(
+            f"An initial {account_label} password is required for one-time bootstrap. "
+            "Pass it only to the installer seed command."
+        )
+    if len(password) < 14:
+        raise ValueError(f"The {account_label} password must contain at least 14 characters.")
+    return password
+
+
+async def seed(bootstrap_only: bool = False):
     from app.core.security import get_password_hash
     from app.models.institution import Institution
     from app.models.academic_year import AcademicYear
@@ -61,13 +72,35 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session() as session:
-        # Check if already seeded with admin user
+        # Bootstrap credentials are supplied only to the one-time installer command.
         from sqlalchemy import select
         admin_check = await session.execute(
             select(User).where(User.username == "admin")
         )
-        if admin_check.scalar_one_or_none():
-            print("[INFO] Database already seeded. Skipping seed.")
+        existing_admin = admin_check.scalar_one_or_none()
+        accountant_check = await session.execute(
+            select(User).where(User.username == "accountant")
+        )
+        existing_accountant = accountant_check.scalar_one_or_none()
+        initial_admin_password = validate_bootstrap_password(
+            os.getenv("INITIAL_ADMIN_PASSWORD"),
+            "administrator",
+        )
+        accountant_password = os.getenv("INITIAL_ACCOUNTANT_PASSWORD")
+
+        if existing_accountant:
+            accountant_password = validate_bootstrap_password(
+                accountant_password,
+                "existing accountant",
+            )
+            existing_accountant.hashed_password = get_password_hash(accountant_password)
+
+        if existing_admin:
+            existing_admin.hashed_password = get_password_hash(initial_admin_password)
+            await session.commit()
+            print("[SECURITY] Existing administrator credentials updated from installer input.")
+            if existing_accountant:
+                print("[SECURITY] Existing accountant credentials updated from installer input.")
             return
 
         # Check existing institution or create
@@ -115,26 +148,20 @@ async def seed():
             institution_id=institution.id,
             username="admin",
             email="admin@example.com",
-            hashed_password=get_password_hash("admin123"),
+            hashed_password=get_password_hash(initial_admin_password),
             first_name="Admin",
             last_name="User",
             role="admin",
             role_id=roles["admin"].id,
         )
         session.add(admin_user)
-
-        accountant_user = User(
-            institution_id=institution.id,
-            username="accountant",
-            email="accountant@example.com",
-            hashed_password=get_password_hash("account123"),
-            first_name="Rajesh",
-            last_name="Sharma",
-            role="accountant",
-            role_id=roles["accountant"].id,
-        )
-        session.add(accountant_user)
         await session.flush()
+
+        if bootstrap_only:
+            await session.commit()
+            print("[SUCCESS] Initial administrator account created.")
+            await engine.dispose()
+            return
 
         # --- Academic Years (Current 2026-27, Historical 2025-26 & 2024-25) ---
         academic_year = AcademicYear(
@@ -470,12 +497,13 @@ async def seed():
     print("    Total paid:        Rs. 16,000")
     print("    Outstanding:       Rs.  8,000")
     print()
-    print("  Default credentials:")
-    print("    Admin:      admin / admin123")
-    print("    Accountant: accountant / account123")
+    print("  Initial administrator: admin")
+    if existing_accountant:
+        print("  Existing accountant password was rotated from installer input.")
+    print("  Passwords were provided interactively and not written to logs.")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    asyncio.run(seed(bootstrap_only="--bootstrap-only" in sys.argv))
 

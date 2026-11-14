@@ -67,6 +67,5 @@ SELECT 'Study Materials: ' || count(*) FROM study_materials UNION ALL
 SELECT 'Announcements: ' || count(*) FROM announcements;
 "
 echo -e "\nWeb Application: http://localhost:80"
-echo "Default Login:   admin@example.com / admin123"
 echo "======================================================================"
 

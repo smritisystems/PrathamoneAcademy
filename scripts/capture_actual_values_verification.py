@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-14
 #  *
 #  * @description Verify that actual raw financial and student values are visible across the software when CodeX is disabled.
 #  */
@@ -44,7 +44,7 @@ def run():
         page.wait_for_selector('input[type="text"], input[name="username"]', timeout=10000)
         time.sleep(1)
         page.fill('input[type="text"], input[name="username"]', "sysadmin")
-        page.fill('input[type="password"]', "7)Yaw1dC_uQEfmYqmT")
+        page.fill('input[type="password"]', os.environ["TEST_ADMIN_PASSWORD"])
         page.click('button[type="submit"]')
         page.wait_for_url("**/dashboard", timeout=15000)
         time.sleep(2)
@@ -80,7 +80,7 @@ def run():
 
         print("Authenticating as Accountant (Rajesh Sharma)...")
         page.fill('input[type="text"], input[name="username"]', "accountant")
-        page.fill('input[type="password"]', "account123")
+        page.fill('input[type="password"]', os.environ["TEST_ACCOUNTANT_PASSWORD"])
         page.click('button[type="submit"]')
         page.wait_for_url("**/dashboard", timeout=15000)
         time.sleep(2)

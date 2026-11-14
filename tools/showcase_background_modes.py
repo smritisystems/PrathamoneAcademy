@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-08
-#  * @updated     2026-11-11
+#  * @updated     2026-11-14
 #  *
 #  * @description Comprehensive showcase capturing screenshots for all Login Canvas Background Modes and Overlay Controls.
 #  */
@@ -58,7 +58,7 @@ def main():
         page.wait_for_selector('input[name="username"]', timeout=10000)
         
         page.fill('input[name="username"]', "admin@example.com")
-        page.fill('input[name="password"]', "admin123")
+        page.fill('input[name="password"]', os.environ["TEST_ADMIN_PASSWORD"])
         page.click('button[type="submit"]')
         page.wait_for_timeout(3000)
 

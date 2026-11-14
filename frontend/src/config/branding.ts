@@ -58,10 +58,14 @@ export const PRINT_SHARE_BRANDING = {
   url: 'https://prathamone.com',
 } as const
 
-const PRODUCT_BRAND_ASSET_ROOT = '/artwork/PrathamOne_EduOS_Brand_Assets'
-const PRODUCT_LOGO_URL = `${PRODUCT_BRAND_ASSET_ROOT}/PrathamOne_EduOS_Logo_Transparent.png`
-const PRODUCT_APP_ICON_URL = '/icons/icon-512x512.png'
-const PRODUCT_APP_ICON_192_URL = '/icons/icon-192x192.png'
+export const PRINT_FOOTER_BRANDING_TEXT = 'Created by' as const
+
+const PRODUCT_BRAND_ASSET_ROOT = '/artwork/14112026'
+const PRODUCT_LOGO_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g1-4_1080.png`
+const PRODUCT_LOGO_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g1-4_1080.svg`
+const PRODUCT_APP_ICON_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_rect1-1-8-6_10802.png`
+const PRODUCT_APP_ICON_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_rect1-1-8-6_10802.svg`
+const PRODUCT_APP_ICON_192_URL = PRODUCT_APP_ICON_URL
 
 /**
  * Static baseline branding tokens for PrathamOne Academy suite
@@ -83,7 +87,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.14-REV-181-v1.98.0-6AC17B3',
+  buildNumber: '2026.11.14-REV-182-v1.99.0-21714A3',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-14',
@@ -157,10 +161,10 @@ export const BRANDING_CONFIG = {
     appIconUrl: PRODUCT_APP_ICON_URL as string,
     appIcon192Url: PRODUCT_APP_ICON_192_URL as string,
     // Software Platform Direct Logo & Icon (frontend/public/logo)
-    softwareLogoSvgUrl: '/logo/logoone.svg' as string,
+    softwareLogoSvgUrl: PRODUCT_LOGO_SVG_URL as string,
     softwareLogoUrl: PRODUCT_LOGO_URL as string,
     softwareLogoPngUrl: PRODUCT_LOGO_URL as string,
-    softwareIconSvgUrl: '/logo/logo_rect2-7-9-1.svg' as string,
+    softwareIconSvgUrl: PRODUCT_APP_ICON_SVG_URL as string,
     softwareIconUrl: PRODUCT_APP_ICON_URL as string,
     softwareIconPngUrl: PRODUCT_APP_ICON_URL as string,
     // Official Circular Seal (Emblem Seal)
@@ -249,6 +253,18 @@ export interface ResolvedBranding {
   background: LoginBackgroundConfig
 }
 
+const LEGACY_DEFAULT_FAVICON_URLS = new Set([
+  '/favicon.svg',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+])
+
+export function normalizeInstitutionFaviconUrl(faviconUrl?: string | null): string {
+  return faviconUrl && !LEGACY_DEFAULT_FAVICON_URLS.has(faviconUrl)
+    ? faviconUrl
+    : BRANDING_CONFIG.assets.faviconUrl
+}
+
 /**
  * Pure function resolving tenant-specific overrides merged with baseline branding.
  */
@@ -323,10 +339,7 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
         : (!activeInstitution || activeInstitution.id === 1)
           ? BRANDING_CONFIG.assets.academyLogoUrl
           : '',
-      faviconUrl:
-        activeInstitution?.favicon_url && activeInstitution.favicon_url !== '/favicon.svg'
-          ? activeInstitution.favicon_url
-          : BRANDING_CONFIG.assets.faviconUrl,
+      faviconUrl: normalizeInstitutionFaviconUrl(activeInstitution?.favicon_url),
     },
     support: {
       ...BRANDING_CONFIG.support,

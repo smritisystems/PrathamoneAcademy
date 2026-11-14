@@ -56,7 +56,7 @@ const mockProfile = {
   email: 'info@prathamoneacademy.in',
   website: 'https://prathamone.com',
   logo_url: '/logo.svg',
-  favicon_url: '/icons/icon-192x192.png',
+  favicon_url: '/artwork/14112026/batch_rect1-1-8-6_10802.png',
   primary_color: '#0B2D6B',
   secondary_color: '#071C44',
   accent_color: '#F57C00',

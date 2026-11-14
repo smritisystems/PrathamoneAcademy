@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-06
+#  * @updated     2026-11-14
 #  *
 #  * @description Source component for Verify Api Authorization in the scripts module.
 #  */
@@ -21,6 +21,7 @@
 Tests unauthorized direct API requests by unauthenticated callers & ordinary users (accountant) vs Sysadmin.
 Verifies HTTP 401/403 protections on academic writes, universal edit, security logs, and forms.
 """
+import os
 import sys
 import json
 import urllib.request
@@ -93,7 +94,7 @@ def test_authorization():
         })
 
     # 2. Accountant (non-sysadmin / non-academic-admin) testing
-    accountant_token = get_token("accountant", "account123")
+    accountant_token = get_token("accountant", os.environ["TEST_ACCOUNTANT_PASSWORD"])
     print(f"Accountant token acquired: {bool(accountant_token)}")
     if accountant_token:
         acc_headers = {"Authorization": f"Bearer {accountant_token}"}

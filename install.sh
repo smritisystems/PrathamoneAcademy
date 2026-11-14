@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-04
+#  * @updated     2026-11-14
 #  *
 #  * @description Automated one-command deployment script for Linux and macOS environments.
 #  */
@@ -81,7 +81,69 @@ else
     echo -e "${GREEN}[OK] Existing .env preserved without modification.${NC}"
 fi
 
-# 4. Build & Start Containers
+# 4. Bootstrap administrator and start containers
+echo -e "\n${CYAN}[4/5] Preparing the initial administrator account...${NC}"
+read -r -s -p "Set the administrator password: " INITIAL_ADMIN_PASSWORD
+echo
+read -r -s -p "Confirm the administrator password: " INITIAL_ADMIN_PASSWORD_CONFIRM
+echo
+if [ "$INITIAL_ADMIN_PASSWORD" != "$INITIAL_ADMIN_PASSWORD_CONFIRM" ]; then
+    unset INITIAL_ADMIN_PASSWORD INITIAL_ADMIN_PASSWORD_CONFIRM
+    echo -e "${RED}[ERROR] The administrator passwords did not match.${NC}"
+    exit 1
+fi
+unset INITIAL_ADMIN_PASSWORD_CONFIRM
+if [ -z "$INITIAL_ADMIN_PASSWORD" ] || [ "${#INITIAL_ADMIN_PASSWORD}" -lt 14 ]; then
+    echo -e "${RED}[ERROR] The administrator password must contain at least 14 characters.${NC}"
+    unset INITIAL_ADMIN_PASSWORD
+    exit 1
+fi
+read -r -s -p "New password for an existing accountant account (leave blank if none exists): " INITIAL_ACCOUNTANT_PASSWORD
+echo
+if [ -n "$INITIAL_ACCOUNTANT_PASSWORD" ]; then
+    read -r -s -p "Confirm the accountant password: " INITIAL_ACCOUNTANT_PASSWORD_CONFIRM
+    echo
+    if [ "$INITIAL_ACCOUNTANT_PASSWORD" != "$INITIAL_ACCOUNTANT_PASSWORD_CONFIRM" ]; then
+        unset INITIAL_ADMIN_PASSWORD INITIAL_ACCOUNTANT_PASSWORD INITIAL_ACCOUNTANT_PASSWORD_CONFIRM
+        echo -e "${RED}[ERROR] The accountant passwords did not match.${NC}"
+        exit 1
+    fi
+    unset INITIAL_ACCOUNTANT_PASSWORD_CONFIRM
+fi
+if [ -n "$INITIAL_ACCOUNTANT_PASSWORD" ] && [ "${#INITIAL_ACCOUNTANT_PASSWORD}" -lt 14 ]; then
+    echo -e "${RED}[ERROR] The accountant password must contain at least 14 characters.${NC}"
+    unset INITIAL_ADMIN_PASSWORD INITIAL_ACCOUNTANT_PASSWORD
+    exit 1
+fi
+
+if ! docker compose build backend; then
+    unset INITIAL_ADMIN_PASSWORD INITIAL_ACCOUNTANT_PASSWORD
+    echo -e "${RED}[ERROR] Backend image build failed.${NC}"
+    exit 1
+fi
+export INITIAL_ADMIN_PASSWORD
+if [ -n "$INITIAL_ACCOUNTANT_PASSWORD" ]; then
+    export INITIAL_ACCOUNTANT_PASSWORD
+    if docker compose run --rm -e INITIAL_ADMIN_PASSWORD -e INITIAL_ACCOUNTANT_PASSWORD backend sh -c "alembic upgrade head && python seed.py --bootstrap-only"; then
+        SEED_STATUS=0
+    else
+        SEED_STATUS=$?
+    fi
+    unset INITIAL_ACCOUNTANT_PASSWORD
+else
+    if docker compose run --rm -e INITIAL_ADMIN_PASSWORD backend sh -c "alembic upgrade head && python seed.py --bootstrap-only"; then
+        SEED_STATUS=0
+    else
+        SEED_STATUS=$?
+    fi
+fi
+unset INITIAL_ADMIN_PASSWORD
+unset INITIAL_ACCOUNTANT_PASSWORD
+if [ "$SEED_STATUS" -ne 0 ]; then
+    echo -e "${RED}[ERROR] Administrator bootstrap failed. Check the password and database, then rerun the installer.${NC}"
+    exit "$SEED_STATUS"
+fi
+
 echo -e "\n${CYAN}[4/5] Building and launching PrathamOne Academy containers...${NC}"
 docker compose up -d --build
 
@@ -116,8 +178,8 @@ echo -e "${BLUE}================================================================
 echo -e "Web Application:     http://localhost (or http://localhost:5173)"
 echo -e "Backend API:         http://localhost:8000"
 echo -e "API Documentation:   http://localhost:8000/docs"
-echo -e "Default Superadmin:  admin@example.com / admin123"
-echo -e "Default Accountant:  accountant@example.com / account123"
+echo -e "Administrator: admin (password entered securely during setup)"
+echo -e "Create additional users after signing in."
 echo -e "${BLUE}----------------------------------------------------------------------${NC}"
 echo -e "${CYAN}Useful Operational Commands:${NC}"
 echo -e "  View logs:          docker compose logs -f"

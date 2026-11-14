@@ -330,6 +330,7 @@ export default function ReportBookBuilder({
         {
           institutionName: branding.academyName,
           logoUrl: branding.assets.academyLogoPngUrl,
+          softwareLogoUrl: branding.assets.softwareLogoSvgUrl,
           primaryColor: branding.colors.primary,
         },
         snapshot,

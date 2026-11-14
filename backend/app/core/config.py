@@ -28,6 +28,8 @@ _INSECURE_SECRETS = {
     "REPLACE_WITH_RANDOM_64_CHAR_HEX_SECRET",
 }
 
+PRODUCT_APP_ICON_URL = "/artwork/14112026/batch_rect1-1-8-6_10802.png"
+
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/prashant_academy"
@@ -41,8 +43,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.98.0"
-    BUILD_NUMBER: str = "2026.11.14-REV-181-v1.98.0-6AC17B3"
+    VERSION: str = "1.99.0"
+    BUILD_NUMBER: str = "2026.11.14-REV-182-v1.99.0-21714A3"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-14"

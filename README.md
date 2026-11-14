@@ -1,3 +1,23 @@
+---
+title: "PrathamOne EduOS Installation and Quickstart"
+module: "02_INSTALLATION_DEPLOYMENT"
+category: "INSTALLATION-GUIDE"
+document_type: "GUIDE"
+product: "PrathamOne EduOS"
+edition: "Coaching Institute Edition"
+version: "1.0.0"
+doc_version: "1.0"
+created_date: "2026-11-14"
+updated_date: "2026-11-14"
+author: "Jawahar R Mallah"
+organization: "AITDL — AI Technology & Development Lab"
+status: "Approved"
+tags: ["installation", "quickstart", "docker", "bootstrap-security"]
+entities: ["User"]
+api_routes: []
+related_modules: ["01_ARCHITECTURE", "12_RBAC_SECURITY"]
+---
+
 # PrathamOne Academy — Coaching Institute Management System
 **Enterprise Edition · Client Deployment: Prashant Academy**
 
@@ -25,8 +45,8 @@ git clone https://github.com/smritisystems/PrathamoneAcademy.git; cd PrathamoneA
 > 1. Verifies Windows version, virtualization, and WSL 2 prerequisites.
 > 2. Detects or installs Docker Desktop via `winget` and starts the daemon.
 > 3. Generates a secure, cryptographically random `SECRET_KEY` in `.env`.
-> 4. Builds production images and launches containers via Docker Compose.
-> 5. Runs database migrations, seeds default institutional records, and verifies service health.
+> 4. Prompts securely for the initial administrator password; it is passed only to a one-time seed command.
+> 5. Runs migrations and one-time account seeding with the supplied password, then launches containers and verifies service health.
 > 6. Displays live container status and application access URLs.
 
 ---
@@ -47,8 +67,20 @@ If you already have Docker installed and running:
 git clone https://github.com/smritisystems/PrathamoneAcademy.git
 cd PrathamoneAcademy
 cp .env.example .env
+# Prefer install.sh or install.ps1 for the secure interactive password prompts.
+# For a manual first install, set INITIAL_ADMIN_PASSWORD in the current shell
+# through a hidden prompt (do not put it in .env or a command-line literal).
+docker compose build backend
+# Set INITIAL_ADMIN_PASSWORD using a hidden prompt, then run:
+docker compose run --rm -e INITIAL_ADMIN_PASSWORD -e INITIAL_ACCOUNTANT_PASSWORD backend sh -c "alembic upgrade head && python seed.py --bootstrap-only"
+# If an accountant account already exists, also set INITIAL_ACCOUNTANT_PASSWORD
+# to rotate it. Clear both variables before starting the application.
+unset INITIAL_ADMIN_PASSWORD INITIAL_ACCOUNTANT_PASSWORD
 docker compose up -d --build
 ```
+
+The one-time seed command requires an administrator password of at least 14 characters. If an accountant account exists from an older install, its password must also be rotated. The installer scripts perform this bootstrap interactively, pass secrets only to the temporary seed container, and clear them before starting the application.
+The commands above are Bash examples; on Windows, use `install.ps1` or clear the variables with `Remove-Item Env:\INITIAL_ADMIN_PASSWORD, Env:\INITIAL_ACCOUNTANT_PASSWORD`.
 
 ---
 
@@ -59,8 +91,7 @@ docker compose up -d --build
 | **Web Application** | [http://localhost](http://localhost) (or `:5173`) | Production Single Page Application |
 | **Backend REST API** | [http://localhost:8000](http://localhost:8000) | FastAPI Core API Engine |
 | **Interactive API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Swagger OpenAPI Specification |
-| **Superadmin Account** | `admin@example.com` | Password: `admin123` |
-| **Accountant Account** | `accountant@example.com` | Password: `account123` |
+| **Administrator Account** | `admin` | Password is chosen securely during initial setup |
 | **PostgreSQL Database** | `localhost:5432` | User: `postgres`, Pass: `postgres`, DB: `prashant_academy` |
 
 ---

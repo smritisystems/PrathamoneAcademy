@@ -15,6 +15,7 @@
     Copyright:   Copyright (c) 2026 AITDL
     License:     Proprietary
     Version:     1.0.0
+    Modified:    2026-11-14
 #>
 
 [CmdletBinding()]
@@ -48,6 +49,22 @@ function Write-Warn {
 function Write-Err {
     param([string]$Message)
     Write-Host "[ERROR] $Message" -ForegroundColor Red
+}
+
+function ConvertTo-PlainText {
+    param([Security.SecureString]$SecureString)
+    if ($SecureString.Length -eq 0) {
+        $SecureString.Dispose()
+        return ""
+    }
+
+    $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureString)
+    try {
+        return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer)
+    } finally {
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
+        $SecureString.Dispose()
+    }
 }
 
 Clear-Host
@@ -230,6 +247,64 @@ if (-not (Test-Path $envFile)) {
 # ------------------------------------------------------------------------------
 # 6. Build & Launch Docker Services
 # ------------------------------------------------------------------------------
+Write-Step "Preparing administrator credentials..."
+$initialAdminPassword = ConvertTo-PlainText (Read-Host "Set the administrator password" -AsSecureString)
+$initialAdminPasswordConfirm = ConvertTo-PlainText (Read-Host "Confirm the administrator password" -AsSecureString)
+if ($initialAdminPassword -cne $initialAdminPasswordConfirm) {
+    $initialAdminPassword = $null
+    $initialAdminPasswordConfirm = $null
+    Write-Err "The administrator passwords did not match."
+    exit 1
+}
+$initialAdminPasswordConfirm = $null
+if ($initialAdminPassword.Length -lt 14) {
+    $initialAdminPassword = $null
+    Write-Err "The administrator password must contain at least 14 characters."
+    exit 1
+}
+$accountantPassword = ConvertTo-PlainText (Read-Host "New password for an existing accountant account (leave blank if none exists)" -AsSecureString)
+if ($accountantPassword.Length -gt 0) {
+    $accountantPasswordConfirm = ConvertTo-PlainText (Read-Host "Confirm the accountant password" -AsSecureString)
+    if ($accountantPassword -cne $accountantPasswordConfirm) {
+        $initialAdminPassword = $null
+        $accountantPassword = $null
+        $accountantPasswordConfirm = $null
+        Write-Err "The accountant passwords did not match."
+        exit 1
+    }
+    $accountantPasswordConfirm = $null
+}
+if ($accountantPassword.Length -gt 0 -and $accountantPassword.Length -lt 14) {
+    Write-Err "The accountant password must contain at least 14 characters."
+    exit 1
+}
+
+docker compose build backend
+if ($LASTEXITCODE -ne 0) {
+    $initialAdminPassword = $null
+    $accountantPassword = $null
+    Write-Err "Backend image build failed."
+    exit 1
+}
+
+$env:INITIAL_ADMIN_PASSWORD = $initialAdminPassword
+if ($accountantPassword.Length -gt 0) {
+    $env:INITIAL_ACCOUNTANT_PASSWORD = $accountantPassword
+    docker compose run --rm -e INITIAL_ADMIN_PASSWORD -e INITIAL_ACCOUNTANT_PASSWORD backend sh -c "alembic upgrade head && python seed.py --bootstrap-only"
+    $seedExitCode = $LASTEXITCODE
+    Remove-Item Env:\INITIAL_ACCOUNTANT_PASSWORD -ErrorAction SilentlyContinue
+} else {
+    docker compose run --rm -e INITIAL_ADMIN_PASSWORD backend sh -c "alembic upgrade head && python seed.py --bootstrap-only"
+    $seedExitCode = $LASTEXITCODE
+}
+Remove-Item Env:\INITIAL_ADMIN_PASSWORD -ErrorAction SilentlyContinue
+$initialAdminPassword = $null
+$accountantPassword = $null
+if ($seedExitCode -ne 0) {
+    Write-Err "Administrator bootstrap failed. Check the password and database, then rerun the installer."
+    exit $seedExitCode
+}
+
 Write-Step "Building and starting PrathamOne Academy containers via Docker Compose..."
 docker compose up -d --build
 if ($LASTEXITCODE -ne 0) {
@@ -278,8 +353,8 @@ Write-Host "====================================================================
 Write-Host "Web Application:     $frontendUrl  (or http://localhost:5173)" -ForegroundColor White
 Write-Host "Backend API:         http://localhost:8000" -ForegroundColor White
 Write-Host "API Documentation:   http://localhost:8000/docs" -ForegroundColor White
-Write-Host "Default Superadmin:  admin@example.com / admin123" -ForegroundColor Yellow
-Write-Host "Default Accountant:  accountant@example.com / account123" -ForegroundColor Yellow
+Write-Host "Administrator: admin (password entered securely during setup)" -ForegroundColor Yellow
+Write-Host "Create additional users after signing in." -ForegroundColor White
 Write-Host "----------------------------------------------------------------------" -ForegroundColor Gray
 Write-Host "Useful Operational Commands:" -ForegroundColor Cyan
 Write-Host "  View live logs:      docker compose logs -f" -ForegroundColor White

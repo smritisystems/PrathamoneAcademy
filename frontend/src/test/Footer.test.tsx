@@ -22,7 +22,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Footer, { resolvePageTitle, FOOTER_COLLAPSED_KEY } from '../components/Footer'
 import { useAuthStore } from '../store/authStore'
-import { APP_CONFIG } from '../config/appConfig'
+import { APP_CONFIG, BRANDING_CONFIG } from '../config/appConfig'
 
 describe('Application Footer Specifications', () => {
   let queryClient: QueryClient
@@ -99,16 +99,41 @@ describe('Application Footer Specifications', () => {
     expect(resolvePageTitle('/custom-analytics-overview', '')).toBe('Custom Analytics Overview')
   })
 
-  it('renders Product section with system name, Enterprise Edition, and verified prathamone.com link', () => {
+  it('renders the software logo, edition, license details link, and verified website', () => {
     renderFooter()
 
-    expect(screen.getByText('PrathamOne EduOS — Education Operating System')).toBeDefined()
-    expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
+    const footer = screen.getByRole('contentinfo', { name: 'Application Footer' })
+    const systemGroup = within(footer).getByTestId('footer-product-system-group')
+    const logo = within(systemGroup).getByRole('img', { name: 'PrathamOne EduOS' })
+    expect(logo.getAttribute('src')).toBe(BRANDING_CONFIG.assets.softwareLogoSvgUrl)
+    expect(within(systemGroup).getByTestId('footer-page-title')).toBeDefined()
+    expect(within(systemGroup).getByText('Coaching Institute Edition')).toBeDefined()
+    expect(within(systemGroup).getByLabelText('Connection status: Online')).toBeDefined()
+    expect(within(systemGroup).getByText(APP_CONFIG.versionDisplay)).toBeDefined()
+
+    const licenseLink = within(systemGroup).getByRole('link', { name: 'Software license details' })
+    expect(licenseLink.getAttribute('href')).toBe('/help/version')
 
     const link = screen.getByRole('link', { name: 'prathamone.com' })
     expect(link).toBeDefined()
     expect(link.getAttribute('href')).toBe('https://prathamone.com')
     expect(link.getAttribute('target')).toBe('_blank')
+  })
+
+  it('shows compact product branding and a license details link in the collapsed footer', () => {
+    localStorage.setItem(FOOTER_COLLAPSED_KEY, 'true')
+    renderFooter()
+
+    const footer = screen.getByRole('contentinfo', { name: 'Application Footer' })
+    const systemGroup = within(footer).getByTestId('footer-product-system-group')
+    expect(within(systemGroup).getByRole('img', { name: 'PrathamOne EduOS' })).toBeDefined()
+    expect(within(systemGroup).getByTestId('footer-page-title')).toBeDefined()
+    expect(within(systemGroup).getByText('Coaching Institute Edition')).toBeDefined()
+    expect(within(systemGroup).getByLabelText('Connection status: Online')).toBeDefined()
+    expect(within(systemGroup).getByText(APP_CONFIG.versionDisplay)).toBeDefined()
+    expect(
+      within(systemGroup).getByRole('link', { name: 'Software license details' }).getAttribute('href')
+    ).toBe('/help/version')
   })
 
   it('renders Right section with user ID, user role, live status, and actual version v1.0.0', () => {

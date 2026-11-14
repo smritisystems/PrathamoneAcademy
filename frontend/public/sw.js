@@ -11,12 +11,12 @@
  *
  * @version     1.3.0
  * @created     2026-11-04
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Production service worker with strategic caching, network-only API security, robust offline fallback, and guaranteed Response resolution.
  */
 
-const CACHE_VERSION = 'prathamone-cache-v1.3.1';
+const CACHE_VERSION = 'prathamone-cache-v1.3.2';
 const STATIC_CACHE_NAME = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `dynamic-${CACHE_VERSION}`;
 
@@ -26,11 +26,10 @@ const PRECACHE_ASSETS = [
   '/offline.html',
   '/manifest.json',
   '/manifest.webmanifest',
-  '/favicon.svg',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/icons/icon-maskable-512x512.png',
-  '/icons/apple-touch-icon.png'
+  '/artwork/14112026/batch_g1-4_1080.svg',
+  '/artwork/14112026/batch_g1-4_1080.png',
+  '/artwork/14112026/batch_rect1-1-8-6_10802.svg',
+  '/artwork/14112026/batch_rect1-1-8-6_10802.png'
 ];
 
 // Install: precache app shell & immediate activation

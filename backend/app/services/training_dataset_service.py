@@ -23,6 +23,7 @@ from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete, and_, or_
 
+from app.core.config import PRODUCT_APP_ICON_URL
 from app.models.institution import Institution
 from app.models.academic_year import AcademicYear
 from app.models.board import Board
@@ -70,7 +71,7 @@ async def get_or_create_training_institution(db: AsyncSession) -> Institution:
             primary_color="#D97706",
             secondary_color="#F59E0B",
             accent_color="#B45309",
-            favicon_url="/icons/icon-192x192.png",
+            favicon_url=PRODUCT_APP_ICON_URL,
             timezone="Asia/Kolkata",
             default_language="en",
             is_active=True,

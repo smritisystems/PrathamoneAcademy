@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-06
+ * @updated     2026-11-14
  *
  * @description Integration tests verifying reusable printable document branding headers, seals, and authorized signatories.
  */
@@ -25,7 +25,7 @@ import {
   PrintDocumentSignatory,
   PrintBrandingFooter,
 } from '../components/PrintDocumentBranding'
-import { PRINT_SHARE_BRANDING } from '../config/branding'
+import { BRANDING_CONFIG, PRINT_FOOTER_BRANDING_TEXT } from '../config/branding'
 
 function renderWithQueryClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -137,13 +137,15 @@ describe('Printable Document Branding Components', () => {
   })
 
   describe('PrintBrandingFooter Component', () => {
-    it('renders canonical understated branding text at the bottom', () => {
+    it('renders the Created by label and full logo lockup at the bottom', () => {
       renderWithQueryClient(<PrintBrandingFooter />)
 
       const footer = screen.getByTestId('print-share-branding-footer')
       expect(footer).toBeDefined()
-      expect(screen.getByText(PRINT_SHARE_BRANDING.text)).toBeDefined()
-      expect(screen.getByText(/PrathamOne EduOS · Coaching Institute Edition · prathamone.com/i)).toBeDefined()
+      expect(screen.getByText(PRINT_FOOTER_BRANDING_TEXT)).toBeDefined()
+      expect(screen.getByTestId('pratham-software-footer-logo').getAttribute('src')).toBe(
+        BRANDING_CONFIG.assets.softwareLogoSvgUrl,
+      )
     })
 
     it('defaults to center alignment and low-contrast 8pt font styling', () => {
@@ -186,7 +188,7 @@ describe('Printable Document Branding Components', () => {
     it('is included automatically inside PrintDocumentSignatory', () => {
       renderWithQueryClient(<PrintDocumentSignatory />)
       expect(screen.getByTestId('print-share-branding-footer')).toBeDefined()
-      expect(screen.getByText(PRINT_SHARE_BRANDING.text)).toBeDefined()
+      expect(screen.getByText(PRINT_FOOTER_BRANDING_TEXT)).toBeDefined()
     })
   })
 })

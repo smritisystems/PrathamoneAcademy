@@ -118,5 +118,4 @@ foreach ($line in $counts) {
     }
 }
 Write-Host "`nWeb Application: http://localhost:80" -ForegroundColor Cyan
-Write-Host "Login:           admin@example.com / admin123" -ForegroundColor Cyan
 Write-Host "======================================================================`n" -ForegroundColor Blue

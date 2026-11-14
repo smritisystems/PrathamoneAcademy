@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-14
  *
  * @description Premium user authentication page featuring abstract educational wave aesthetics, secure credential validation, and role redirection.
  */
@@ -72,7 +72,6 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
@@ -93,11 +92,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const fillCredentials = (user: string, pass: string) => {
-    setValue('username', user, { shouldValidate: true })
-    setValue('password', pass, { shouldValidate: true })
   }
 
   return (
@@ -453,36 +447,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-
-            {/* Quick Demo Credentials Assistant (Development Mode Only) */}
-            {(import.meta as any).env?.DEV && (
-              <div className="mt-6 p-3.5 bg-slate-50/90 rounded-xl border border-slate-200/80">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Quick Access Profiles
-                  </span>
-                  <span className="text-[10px] text-slate-400">Click to fill</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => fillCredentials('admin', 'admin123')}
-                    className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-primary-400 hover:bg-primary-50/40 transition-colors text-left group"
-                  >
-                    <span className="font-semibold text-slate-800 group-hover:text-primary-700">Administrator</span>
-                    <span className="text-[11px] text-slate-500 font-mono">admin / admin123</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillCredentials('accountant', 'account123')}
-                    className="flex flex-col items-start p-2 rounded-lg bg-white border border-slate-200 hover:border-primary-400 hover:bg-primary-50/40 transition-colors text-left group"
-                  >
-                    <span className="font-semibold text-slate-800 group-hover:text-primary-700">Accountant</span>
-                    <span className="text-[11px] text-slate-500 font-mono">accountant / •••</span>
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* First-Time Login & Support Help */}
             <div className="mt-4">
