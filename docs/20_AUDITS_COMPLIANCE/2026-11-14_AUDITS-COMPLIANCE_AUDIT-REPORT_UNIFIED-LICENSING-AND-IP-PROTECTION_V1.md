@@ -182,6 +182,16 @@ These are planned test cases; no such tests were run in this audit.
 
 ## 9. Remediation status after the user selected "Fix all issues"
 
-- **F-01 — Partially remediated in source:** new installations no longer receive a shared accountant account or hardcoded passwords. Seeded administrator passwords are entered interactively and passed only to a one-time seed container; existing seeded administrator/accountant accounts are rotated when the installer is rerun. Existing customer installations still require an operator to run the updated installer and provide new passwords. Do not assume a source-code update has changed deployed credentials.
+- **F-01 — Remediated in source, not verified in deployed installations:** new installations no longer receive a shared accountant account or hardcoded passwords. Installers require a unique administrator password (minimum 14 characters), optionally request an accountant replacement, pass credentials only to the one-time seed container, and clear them afterward. Existing seeded administrator/accountant accounts are rotated when the installer is rerun. Backend startup no longer runs the seed script, and `--bootstrap-only` avoids demo academic data during installation. Targeted source scans found no remaining published bootstrap credentials in executable paths. Existing customer installations still require an operator to run the updated installer and provide new passwords; do not assume a source-code update changed deployed credentials.
 - **F-02 — Remediated in source:** the company setup endpoint now rejects non-SYSADMIN users before provisioning; a focused unit test covers this authorization boundary.
 - **F-03 — Not implemented:** central signed-license issuance, activation, verifier integration, entitlement gates, signed releases, and offline behavior remain gated on approving the architecture and operational choices in Section 6. No deployment was performed.
+
+### Remediation verification
+
+- PrathamOne bootstrap credential tests: **3 passed** (`pytest --noconftest`, with a test-only `SECRET_KEY` supplied in the process environment).
+- Retail OS initial setup authorization test: **1 passed** (`pytest --noconftest`).
+- Bash and PowerShell installer syntax checks passed.
+- Docker Compose configuration validation passed.
+- Corporate source-header check passed: **611/611** files.
+- `git diff --check` passed in both product repositories.
+- The normal repository pytest setup was not used for these focused tests because its global fixtures require a local PostgreSQL service. No deployment or production credential rotation was performed.

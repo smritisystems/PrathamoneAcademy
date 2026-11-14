@@ -31,7 +31,7 @@ def test_initial_admin_password_requires_a_value():
 
 def test_initial_admin_password_requires_minimum_length():
     with pytest.raises(ValueError, match="at least 14 characters"):
-        validate_bootstrap_password("short-password", "administrator")
+        validate_bootstrap_password("short-pass", "administrator")
 
 
 def test_initial_admin_password_accepts_long_unique_value():

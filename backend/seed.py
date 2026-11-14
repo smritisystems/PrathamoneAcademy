@@ -91,7 +91,7 @@ async def seed(bootstrap_only: bool = False):
         if existing_accountant:
             accountant_password = validate_bootstrap_password(
                 accountant_password,
-                "existing accountant",
+                "accountant",
             )
             existing_accountant.hashed_password = get_password_hash(accountant_password)
 
