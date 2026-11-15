@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-14
+ * @updated     2026-11-15
  *
  * @description Admin-only Content Management & Governance console adhering strictly to Rule 010 View-First Edit Mode for articles, FAQs, categories, legal approvals, revision history, and product metadata.
  */
@@ -112,8 +112,6 @@ export default function HelpGovernanceSection({
     smriti_office: '',
     smriti_leadership: '',
     smriti_verification_status: 'pending_management_verification',
-    license_status: '',
-    license_validity: '',
     deployment_type: '',
     change_note: '',
   }
@@ -156,8 +154,6 @@ export default function HelpGovernanceSection({
       smriti_leadership: productInfo.about_company.smriti_systems.leadership_note || '',
       smriti_verification_status:
         productInfo.about_company.smriti_systems.verification_status || 'pending_management_verification',
-      license_status: productInfo.version_info.license_status || '',
-      license_validity: productInfo.version_info.license_validity || '',
       deployment_type: productInfo.version_info.deployment_type || '',
       change_note: '',
     }
@@ -321,8 +317,6 @@ export default function HelpGovernanceSection({
     'smriti_office',
     'smriti_leadership',
     'smriti_verification_status',
-    'license_status',
-    'license_validity',
     'deployment_type',
   ])
 
@@ -818,27 +812,8 @@ export default function HelpGovernanceSection({
                 <option value="verified">Verified Corporate Profile</option>
               </select>
             </div>
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">Commercial License Status (SysAdmin only)</label>
-              <input
-                type="text"
-                disabled={!editable || !isSysAdmin}
-                value={metaForm.license_status}
-                onChange={(e) => setMetaForm({ ...metaForm, license_status: e.target.value })}
-                placeholder="e.g., Active Institutional License"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">License Validity Date (SysAdmin only)</label>
-              <input
-                type="text"
-                disabled={!editable || !isSysAdmin}
-                value={metaForm.license_validity}
-                onChange={(e) => setMetaForm({ ...metaForm, license_validity: e.target.value })}
-                placeholder="e.g., Valid through 31 Mar 2027"
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 disabled:bg-slate-100"
-              />
+            <div className="md:col-span-2 rounded-xl border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-900">
+              License status and validity are derived from the verified signed license snapshot and are managed through License Activation.
             </div>
             <div className="md:col-span-2">
               <label className="block font-semibold text-slate-700 mb-1">Governance Change Note</label>

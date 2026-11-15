@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-14
+#  * @updated     2026-11-15
 #  *
 #  * @description Service layer for PrathamOne EduOS Help & About Centre: seeding, unified search, contextual routing, support ticketing, CMS governance, product/company info, and restricted system health telemetry.
 #  */
@@ -47,6 +47,7 @@ from app.services.help_seed_data import (
     validate_customer_safe_content,
 )
 from app.services.housekeeping_service import HousekeepingService
+from app.services.license_service import LicenseArtifactError, calculate_license_mode, verify_signed_license_artifact
 from app.services.release_service import ReleaseService
 
 
@@ -59,8 +60,6 @@ SYSTEM_ONLY_PRODUCT_KEYS = {
     "smriti_office",
     "smriti_leadership",
     "smriti_verification_status",
-    "license_status",
-    "license_validity",
     "deployment_type",
 }
 
@@ -1088,6 +1087,75 @@ async def _get_product_about_settings(db: AsyncSession, institution_id: Optional
     return parsed
 
 
+async def _get_runtime_license_display(
+    db: AsyncSession,
+    institution_id: int | None,
+) -> Dict[str, str | None]:
+    if not institution_id:
+        return {
+            "license_status": "Not activated",
+            "license_validity": "No active license snapshot",
+            "license_verification_status": "not_activated",
+        }
+    setting = (
+        await db.execute(
+            select(InstitutionSetting).where(
+                InstitutionSetting.institution_id == institution_id,
+                InstitutionSetting.key == "license.artifact",
+            )
+        )
+    ).scalar_one_or_none()
+    if not setting or not setting.value:
+        return {
+            "license_status": "Not activated",
+            "license_validity": "No active license snapshot",
+            "license_verification_status": "not_activated",
+        }
+    try:
+        envelope = json.loads(setting.value)
+        payload = verify_signed_license_artifact(envelope, settings.LICENSE_PUBLIC_KEYS_JSON)
+    except (json.JSONDecodeError, LicenseArtifactError, TypeError):
+        return {
+            "license_status": "Invalid signed license",
+            "license_validity": "Unable to verify license validity",
+            "license_verification_status": "invalid",
+        }
+
+    mode = calculate_license_mode(payload)
+    status = str(payload.get("status") or "").upper()
+    if status == "SUSPENDED":
+        license_status = "Suspended"
+    elif mode == "active":
+        license_status = "Active"
+    elif mode == "grace":
+        license_status = "Grace period"
+    elif status == "EXPIRED":
+        license_status = "Expired (evaluation mode)"
+    elif status == "DRAFT":
+        license_status = "Evaluation"
+    else:
+        license_status = "Re-verification required (evaluation mode)"
+
+    expires_at = payload.get("expires_at")
+    if isinstance(expires_at, str) and expires_at:
+        try:
+            expiry_date = datetime.fromisoformat(expires_at[:10]).date()
+            label = "Valid through" if expiry_date >= datetime.now(timezone.utc).date() else "Expired on"
+            license_validity = f"{label} {expiry_date.strftime('%d %b %Y')}"
+        except ValueError:
+            license_validity = "Invalid expiry date in signed license"
+    elif payload.get("license_model") == "on_premise_perpetual":
+        license_validity = "Perpetual"
+    else:
+        license_validity = "No expiry date in signed license"
+
+    return {
+        "license_status": license_status,
+        "license_validity": license_validity,
+        "license_verification_status": mode,
+    }
+
+
 async def get_product_and_version_info(
     db: AsyncSession,
     institution_id: Optional[int] = None,
@@ -1122,6 +1190,7 @@ async def get_product_and_version_info(
         inst = (await db.execute(select(Institution).where(Institution.id == institution_id))).scalar_one_or_none()
     if not inst:
         inst = (await db.execute(select(Institution).limit(1))).scalar_one_or_none()
+    runtime_license = await _get_runtime_license_display(db, inst.id if inst else institution_id)
 
     env_val = str(getattr(settings, "RELEASE_CHANNEL", "stable") or "stable").lower()
     default_deployment = "Institutional Dedicated Deployment (Desktop / Local Web Portal)"
@@ -1252,9 +1321,7 @@ async def get_product_and_version_info(
             "release_status": (
                 current_release.get("status") if current_release else settings.RELEASE_STATUS
             ),
-            "license_status": custom.get("license_status") or "Pending Management License Registration",
-            "license_validity": custom.get("license_validity") or None,
-            "license_verification_status": "configured" if custom.get("license_validity") else "pending_management_approval",
+            **runtime_license,
             "deployment_type": custom.get("deployment_type") or default_deployment,
             "available_modules_count": len(GENUINE_MODULES_META),
             "available_modules": GENUINE_MODULES_META,
@@ -1285,8 +1352,6 @@ async def update_product_about_metadata(
         "smriti_office",
         "smriti_leadership",
         "smriti_verification_status",
-        "license_status",
-        "license_validity",
         "deployment_type",
     }
     if not institution_id:

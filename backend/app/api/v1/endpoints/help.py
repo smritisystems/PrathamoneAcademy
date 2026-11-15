@@ -11,14 +11,14 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-12
+#  * @updated     2026-11-15
 #  *
 #  * @description REST API endpoints for the customer-facing Help & About Centre, contextual guides, unified search, support ticketing, CMS governance, and restricted system info.
 #  */
 
 from typing import List, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -100,6 +100,8 @@ class HelpArticlePublishToggle(BaseModel):
 
 
 class ProductInfoUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     product_introduction: Optional[str] = None
     product_vision: Optional[str] = None
     product_mission: Optional[str] = None
@@ -110,8 +112,6 @@ class ProductInfoUpdate(BaseModel):
     smriti_office: Optional[str] = None
     smriti_leadership: Optional[str] = None
     smriti_verification_status: Optional[str] = None
-    license_status: Optional[str] = None
-    license_validity: Optional[str] = None
     deployment_type: Optional[str] = None
     change_note: Optional[str] = None
 

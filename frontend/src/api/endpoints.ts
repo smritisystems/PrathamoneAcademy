@@ -1828,6 +1828,9 @@ export const licenseApi = {
       license_key?: string
       serial_number?: string
       activation_key?: string
+      email?: string
+      email_challenge_id?: string
+      license_id?: number
       registration?: NonNullable<LicenseStatusResponse['registration']>
     },
     institution_id?: number,
@@ -1835,6 +1838,38 @@ export const licenseApi = {
     apiClient.post<LicenseActivationResponse>(
       '/license/activate',
       activation,
+      { params: institution_id ? { institution_id } : undefined },
+    ),
+  requestEmailCode: (
+    request: {
+      purpose: 'activation' | 'email_change'
+      email: string
+      target_email?: string
+      serial_number?: string
+    },
+    institution_id?: number,
+  ) =>
+    apiClient.post<{ ok: boolean; challenge_id: string; message: string }>(
+      '/license/email/request',
+      request,
+      { params: institution_id ? { institution_id } : undefined },
+    ),
+  verifyEmailCode: (challenge_id: string, code: string, institution_id?: number) =>
+    apiClient.post<{
+      ok: boolean
+      stage: 'target_email' | 'complete'
+      registered_email?: string
+      licenses?: Array<{ license_id: number; serial_number: string | null; seats: number; activation_count: number }>
+      message?: string
+    }>(
+      '/license/email/verify',
+      { challenge_id, code },
+      { params: institution_id ? { institution_id } : undefined },
+    ),
+  deactivate: (institution_id?: number) =>
+    apiClient.post<{ ok: boolean; deactivated: boolean }>(
+      '/license/deactivate',
+      {},
       { params: institution_id ? { institution_id } : undefined },
     ),
   createOfflineRequest: (

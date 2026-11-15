@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-14
+#  * @updated     2026-11-15
 #  *
 #  * @description Automated backend tests for Help & About Centre: seeding completeness, exclusion enforcement, search, contextual routing, support ticketing, RBAC, and CMS governance.
 #  */
@@ -200,6 +200,9 @@ class TestHelpAndAboutCentre:
         assert vinfo["product_edition"] == settings.EDITION
         assert vinfo["version_number"]  # dynamically sourced, non-empty
         assert vinfo["build_number"]
+        assert vinfo["license_status"] == "Not activated"
+        assert vinfo["license_validity"] == "No active license snapshot"
+        assert vinfo["license_verification_status"] == "not_activated"
 
     async def test_system_info_strictly_admin_only_and_secret_safe(
         self, client: AsyncClient, db: AsyncSession, auth_headers: dict, test_institution
@@ -548,15 +551,15 @@ class TestHelpAndAboutCentre:
         assert edited_by_admin.json()["approval_status"] == "pending_approval"
         assert edited_by_admin.json()["status"] == "pending_approval"
 
-        # Non-sysadmin cannot alter license_* or smriti_* commercial fields
+        # License status and validity are derived from the verified signed license snapshot.
         commercial_denied = await client.put(
             "/api/v1/help/product-info",
             json={"license_status": "Unauthorized License Claim"},
             headers=admin_headers,
         )
-        assert commercial_denied.status_code == 403
+        assert commercial_denied.status_code == 422
 
-        # Non-sysadmin CAN update institution product intro; superadmin CAN update license status
+        # Non-sysadmin CAN update institution-specific product introduction metadata
         intro_ok = await client.put(
             "/api/v1/help/product-info",
             json={"product_introduction": "Customized verified overview for Prashant Academy."},

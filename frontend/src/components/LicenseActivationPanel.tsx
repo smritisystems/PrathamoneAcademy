@@ -18,7 +18,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, KeyRound, RefreshCw, Upload } from 'lucide-react'
+import { Download, KeyRound, Mail, RefreshCw, ShieldOff, Upload } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { licenseApi } from '../api/endpoints'
 import { useEditModeStore } from '../store/editModeStore'
@@ -41,6 +41,16 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   const [serialNumber, setSerialNumber] = useState('')
   const [activationKey, setActivationKey] = useState('')
   const [legacyLicenseKey, setLegacyLicenseKey] = useState('')
+  const [licenseEmail, setLicenseEmail] = useState('')
+  const [targetEmail, setTargetEmail] = useState('')
+  const [emailCode, setEmailCode] = useState('')
+  const [emailChallengeId, setEmailChallengeId] = useState('')
+  const [emailPurpose, setEmailPurpose] = useState<'activation' | 'email_change'>('activation')
+  const [emailChangeTargetStep, setEmailChangeTargetStep] = useState(false)
+  const [emailLicenseChoices, setEmailLicenseChoices] = useState<
+    Array<{ license_id: number; serial_number: string | null; seats: number; activation_count: number }>
+  >([])
+  const [selectedEmailLicenseId, setSelectedEmailLicenseId] = useState<number | null>(null)
   const [registration, setRegistration] = useState<NonNullable<LicenseStatusResponse['registration']>>({
     institution_name: '',
     contact_name: '',
@@ -59,6 +69,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   const {
     data: licenseStatus,
     isLoading: isLicenseLoading,
+    isError: isLicenseStatusError,
     refetch: refetchLicenseStatus,
   } = useQuery({
     queryKey: ['license-status', institutionId],
@@ -66,6 +77,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     enabled: !isTrainingMode,
     retry: false,
   })
+  const hasVerifiedLicense = Boolean(licenseStatus?.document_id)
+  const hasRegisteredLicenseEmail = Boolean(licenseStatus?.registered_email)
 
   useEffect(() => {
     if (licenseStatus?.registration && !registrationInitialized.current) {
@@ -77,7 +90,17 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   useEffect(() => {
     registrationInitialized.current = false
     setRegistrationConfirmed(false)
+    setEmailChallengeId('')
+    setEmailCode('')
+    setEmailLicenseChoices([])
+    setSelectedEmailLicenseId(null)
   }, [institutionId])
+
+  useEffect(() => {
+    if (!licenseEmail) {
+      setLicenseEmail(licenseStatus?.registered_email || licenseStatus?.registration?.contact_email || '')
+    }
+  }, [licenseEmail, licenseStatus?.registered_email, licenseStatus?.registration?.contact_email])
 
   const updateRegistration = (field: keyof NonNullable<LicenseStatusResponse['registration']>, value: string) => {
     setRegistration((current) => ({ ...current, [field]: value }))
@@ -92,7 +115,13 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
 
   const activateLicenseMutation = useMutation({
     mutationFn: () => licenseApi.activate(
-      serialNumber.trim() && activationKey.trim()
+      emailPurpose === 'activation' && emailChallengeId && selectedEmailLicenseId
+        ? {
+            email: licenseEmail.trim(),
+            email_challenge_id: emailChallengeId,
+            license_id: selectedEmailLicenseId,
+          }
+        : serialNumber.trim() && activationKey.trim()
         ? { serial_number: serialNumber.trim(), activation_key: activationKey.trim(), registration }
         : { license_key: legacyLicenseKey.trim() },
       institutionId,
@@ -101,6 +130,10 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
       setSerialNumber('')
       setActivationKey('')
       setLegacyLicenseKey('')
+      setEmailChallengeId('')
+      setEmailCode('')
+      setEmailLicenseChoices([])
+      setSelectedEmailLicenseId(null)
       queryClient.invalidateQueries({ queryKey: ['license-status', institutionId] })
       toast.success(licenseStatus?.document_id
         ? 'Signed license snapshot refreshed.'
@@ -108,6 +141,74 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     },
     onError: (error: any) => {
       toast.error(`License activation or refresh failed: ${error.response?.data?.detail || error.message}`)
+    },
+  })
+
+  const requestEmailCodeMutation = useMutation({
+    mutationFn: (purpose: 'activation' | 'email_change') => licenseApi.requestEmailCode({
+      purpose,
+      email: licenseEmail.trim(),
+      ...(purpose === 'email_change'
+        ? { target_email: targetEmail.trim(), serial_number: licenseStatus?.serial_number || '' }
+        : {}),
+    }, institutionId),
+    onSuccess: (response, purpose) => {
+      setEmailPurpose(purpose)
+      setEmailChallengeId(response.data.challenge_id)
+      setEmailCode('')
+      setEmailLicenseChoices([])
+      setSelectedEmailLicenseId(null)
+      setEmailChangeTargetStep(false)
+      toast.success(purpose === 'email_change'
+        ? 'If the license matches, a confirmation code was sent to the registered email.'
+        : 'If the license matches, a verification code was sent to the registered email.')
+    },
+    onError: (error: any) => {
+      toast.error(`Could not request an email verification code: ${error.response?.data?.detail || error.message}`)
+    },
+  })
+
+  const verifyEmailCodeMutation = useMutation({
+    mutationFn: () => licenseApi.verifyEmailCode(emailChallengeId, emailCode.trim(), institutionId),
+    onSuccess: (response) => {
+      if (emailPurpose === 'email_change' && response.data.stage === 'target_email') {
+        setEmailChangeTargetStep(true)
+        setEmailCode('')
+        toast.success(response.data.message || 'A confirmation code was sent to the new email address.')
+        return
+      }
+      if (emailPurpose === 'email_change' && response.data.registered_email) {
+        setLicenseEmail(response.data.registered_email)
+        setTargetEmail('')
+        setEmailChallengeId('')
+        setEmailCode('')
+        setEmailChangeTargetStep(false)
+        queryClient.invalidateQueries({ queryKey: ['license-status', institutionId] })
+        toast.success('Registered license email updated after verifying both addresses.')
+        return
+      }
+      const choices = response.data.licenses || []
+      setEmailLicenseChoices(choices)
+      setSelectedEmailLicenseId(choices.length === 1 ? choices[0].license_id : null)
+      if (choices.length === 0) {
+        toast.error('No eligible license was found for this verified email and institution.')
+      } else {
+        toast.success('Email verified. Select the license to activate on this installation.')
+      }
+    },
+    onError: (error: any) => {
+      toast.error(`Email verification failed: ${error.response?.data?.detail || error.message}`)
+    },
+  })
+
+  const deactivateLicenseMutation = useMutation({
+    mutationFn: () => licenseApi.deactivate(institutionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['license-status', institutionId] })
+      toast.success('This installation was deactivated. Use the registered email to activate it on another machine.')
+    },
+    onError: (error: any) => {
+      toast.error(`License deactivation failed: ${error.response?.data?.detail || error.message}`)
     },
   })
 
@@ -164,6 +265,9 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
     serialNumber.trim() && activationKey.trim() && isRegistrationComplete && registrationConfirmed,
   )
   const canActivateLegacy = Boolean(legacyLicenseKey.trim() && !serialNumber.trim() && !activationKey.trim())
+  const canActivateEmail = Boolean(
+    emailPurpose === 'activation' && emailChallengeId && emailLicenseChoices.length > 0 && selectedEmailLicenseId,
+  )
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -175,7 +279,11 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
               PrathamOne EduOS License
             </h3>
             <p className="mt-1 text-sm text-slate-600">
-              Activation and refresh are bound to this institution and installation. Re-enter the license key to request a fresh signed snapshot; the key is sent to the authority and is not saved by this application.
+              {isLicenseLoading
+                ? 'Checking the license linked to this institution…'
+                : hasVerifiedLicense
+                  ? 'This verified license is linked to this installation. Registration and activation credentials are not needed again.'
+                  : 'Activate the license for this institution. Registration and activation are bound to this installation.'}
             </p>
           </div>
           <button
@@ -234,12 +342,12 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
             )}
             {['unavailable', 'retry_scheduled'].includes(licenseStatus?.refresh_status || '') && (
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                The authority could not be reached.                 This verified snapshot remains usable for up to {licenseStatus?.offline_validity_days || 7} days after its issue time.
+                The authority could not be reached. This signed snapshot is usable offline for up to {licenseStatus?.offline_validity_days || 7} days, followed by a 7-day grace period before Evaluation Mode.
               </p>
             )}
             {licenseStatus?.refresh_status === 'manual_required' && (
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                Automatic refresh is not configured for this installation. Enter the license key to activate or refresh it.
+                Automatic license refresh is unavailable for this installation. Contact your system administrator or licensing support; do not re-enter your activation credentials.
               </p>
             )}
             {licenseStatus?.error && (
@@ -247,8 +355,207 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                 Signature status: {licenseStatus.error}
               </p>
             )}
+            {hasVerifiedLicense && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-bold text-amber-950">Release this installation</p>
+                <p className="mt-1 text-xs text-amber-900">
+                  Deactivation requires an internet connection. It releases this device binding; your issued license and history remain unchanged.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('Deactivate this installation and release its device binding? This requires internet access.')) {
+                      deactivateLicenseMutation.mutate()
+                    }
+                  }}
+                  disabled={!isEditMode || deactivateLicenseMutation.isPending || isTrainingMode}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ShieldOff className="h-4 w-4" />
+                  {deactivateLicenseMutation.isPending ? 'Deactivating…' : 'Deactivate this device'}
+                </button>
+              </div>
+            )}
 
-            <div className="mt-6 border-t border-slate-100 pt-5">
+            {hasVerifiedLicense ? (
+              <>
+                <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <h4 className="text-sm font-bold text-emerald-950">License registration complete</h4>
+                  <p className="mt-1 text-sm text-emerald-900">
+                    This signed license is already linked to this institution and installation. You do not need to register again or re-enter the serial number or activation key.
+                  </p>
+                  <p className="mt-2 text-sm text-emerald-900">
+                    Registered license email: <span className="font-semibold">{licenseStatus?.registered_email || 'Not available'}</span>
+                  </p>
+                </div>
+                <div className="mt-4 rounded-xl border border-slate-200 p-4">
+                  <h5 className="text-sm font-bold text-slate-800">Change registered license email</h5>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Verify a code sent to the current address, then verify a second code sent to the new address. Edit Mode is required.
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <input
+                      type="email"
+                      maxLength={254}
+                      value={licenseEmail}
+                      onChange={(event) => setLicenseEmail(event.target.value)}
+                      disabled={!isEditMode}
+                      aria-label="Current registered license email"
+                      placeholder="Current registered email"
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50"
+                    />
+                    <input
+                      type="email"
+                      maxLength={254}
+                      value={targetEmail}
+                      onChange={(event) => setTargetEmail(event.target.value)}
+                      disabled={!isEditMode}
+                      aria-label="New registered license email"
+                      placeholder="New registered email"
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50"
+                    />
+                  </div>
+                  {emailChallengeId && emailPurpose === 'email_change' && (
+                    <p className="mt-2 text-xs text-slate-600">
+                      {emailChangeTargetStep ? 'Enter the code sent to the new email address.' : 'Enter the code sent to the current email address.'}
+                    </p>
+                  )}
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    {emailChallengeId && emailPurpose === 'email_change' ? (
+                      <>
+                        <input
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          maxLength={8}
+                          value={emailCode}
+                          onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, '').slice(0, 8))}
+                          disabled={!isEditMode}
+                          aria-label="Email change verification code"
+                          placeholder="8-digit email code"
+                          className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => verifyEmailCodeMutation.mutate()}
+                          disabled={!isEditMode || emailCode.length !== 8 || verifyEmailCodeMutation.isPending}
+                          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {verifyEmailCodeMutation.isPending ? 'Verifying…' : 'Verify code'}
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => requestEmailCodeMutation.mutate('email_change')}
+                        disabled={!isEditMode || !licenseStatus?.serial_number ||
+                          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(licenseEmail.trim()) ||
+                          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail.trim()) ||
+                          requestEmailCodeMutation.isPending}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {requestEmailCodeMutation.isPending ? 'Sending…' : 'Start email change'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : isLicenseLoading ? (
+              <p role="status" className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                Checking the current license before showing activation options…
+              </p>
+            ) : isLicenseStatusError ? (
+              <div role="alert" className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+                <p>Could not verify the current license status. Activation and registration are hidden until the status check succeeds.</p>
+                <button
+                  type="button"
+                  onClick={() => refetchLicenseStatus()}
+                  className="mt-3 rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm font-semibold"
+                >
+                  Retry license status check
+                </button>
+              </div>
+            ) : hasRegisteredLicenseEmail ? (
+              <div className="mt-6 rounded-xl border border-slate-200 p-4">
+                <h4 className="text-sm font-bold text-slate-800">Activate this existing license</h4>
+                <p className="mt-1 text-xs text-slate-600">
+                  This installation was previously linked to a registered license. Verify the account email to reactivate it; registration details and serial or activation keys are not needed.
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="email"
+                    maxLength={254}
+                    value={licenseEmail}
+                    onChange={(event) => setLicenseEmail(event.target.value)}
+                    disabled={!isEditMode}
+                    aria-label="Registered license email"
+                    placeholder="Registered license email"
+                    className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => requestEmailCodeMutation.mutate('activation')}
+                    disabled={!isEditMode || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(licenseEmail.trim()) || requestEmailCodeMutation.isPending}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {requestEmailCodeMutation.isPending ? 'Sending…' : 'Send verification code'}
+                  </button>
+                </div>
+                {emailChallengeId && emailPurpose === 'activation' && (
+                  <div className="mt-3 space-y-3">
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={8}
+                        value={emailCode}
+                        onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, '').slice(0, 8))}
+                        disabled={!isEditMode}
+                        aria-label="Email verification code"
+                        placeholder="8-digit email code"
+                        className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => verifyEmailCodeMutation.mutate()}
+                        disabled={!isEditMode || emailCode.length !== 8 || verifyEmailCodeMutation.isPending}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {verifyEmailCodeMutation.isPending ? 'Verifying…' : 'Verify code'}
+                      </button>
+                    </div>
+                    {emailLicenseChoices.length > 0 && (
+                      <>
+                        <label className="block text-xs font-semibold text-slate-700">
+                          License to activate
+                          <select
+                            value={selectedEmailLicenseId || ''}
+                            onChange={(event) => setSelectedEmailLicenseId(event.target.value ? Number(event.target.value) : null)}
+                            disabled={!isEditMode}
+                            className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal disabled:bg-slate-50"
+                          >
+                            <option value="">Select a license</option>
+                            {emailLicenseChoices.map((choice) => (
+                              <option key={choice.license_id} value={choice.license_id}>
+                                {choice.serial_number || `License ${choice.license_id}`} · {choice.activation_count}/{choice.seats} devices
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => activateLicenseMutation.mutate()}
+                          disabled={!isEditMode || !canActivateEmail || activateLicenseMutation.isPending}
+                          className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {activateLicenseMutation.isPending ? 'Activating…' : 'Activate this installation'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-6 border-t border-slate-100 pt-5">
               <h4 className="text-sm font-bold text-slate-800">Customer registration details</h4>
               <p className="mt-1 text-xs text-slate-500">
                 These details are registered with the license authority. Values are prefilled from this institution profile and your account; correct them here if needed.
@@ -269,6 +576,75 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                 <input type="checkbox" checked={registrationConfirmed} onChange={(event) => setRegistrationConfirmed(event.target.checked)} className="mt-0.5" />
                 I confirm the institution, contact name, email, and phone are correct.
               </label>
+              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <h5 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                  <Mail className="h-4 w-4" />
+                  Activate with registered email
+                </h5>
+                <p className="mt-1 text-xs text-slate-600">
+                  Request a one-time code to activate an existing license on this installation without re-entering the serial or activation key.
+                </p>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="email"
+                    maxLength={254}
+                    value={licenseEmail}
+                    onChange={(event) => setLicenseEmail(event.target.value)}
+                    aria-label="Registered license email"
+                    placeholder="Registered license email"
+                    className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => requestEmailCodeMutation.mutate('activation')}
+                    disabled={!isEditMode || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(licenseEmail.trim()) || requestEmailCodeMutation.isPending}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {requestEmailCodeMutation.isPending ? 'Sending…' : 'Send code'}
+                  </button>
+                </div>
+                {emailChallengeId && emailPurpose === 'activation' && (
+                  <div className="mt-3 space-y-3">
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={8}
+                        value={emailCode}
+                        onChange={(event) => setEmailCode(event.target.value.replace(/\D/g, '').slice(0, 8))}
+                        aria-label="Email verification code"
+                        placeholder="8-digit email code"
+                        className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => verifyEmailCodeMutation.mutate()}
+                        disabled={!isEditMode || emailCode.length !== 8 || verifyEmailCodeMutation.isPending}
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {verifyEmailCodeMutation.isPending ? 'Verifying…' : 'Verify code'}
+                      </button>
+                    </div>
+                    {emailLicenseChoices.length > 0 && (
+                      <label className="block text-xs font-semibold text-slate-700">
+                        License to activate
+                        <select
+                          value={selectedEmailLicenseId || ''}
+                          onChange={(event) => setSelectedEmailLicenseId(event.target.value ? Number(event.target.value) : null)}
+                          className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal"
+                        >
+                          <option value="">Select a license</option>
+                          {emailLicenseChoices.map((choice) => (
+                            <option key={choice.license_id} value={choice.license_id}>
+                              {choice.serial_number || `License ${choice.license_id}`} · {choice.activation_count}/{choice.seats} devices
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <input
                   id="license-serial-number"
@@ -276,7 +652,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                   autoComplete="off"
                   value={serialNumber}
                   onChange={(event) => setSerialNumber(event.target.value)}
-                  placeholder="Serial number"
+                  placeholder="9-digit numeric serial"
                   aria-label="License serial number"
                   className="min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -286,7 +662,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                   autoComplete="off"
                   value={activationKey}
                   onChange={(event) => setActivationKey(event.target.value)}
-                  placeholder="Activation key"
+                  placeholder="16-character alphanumeric key"
                   aria-label="License activation key"
                   className="min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
@@ -295,7 +671,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                 <button
                   type="button"
                   onClick={() => activateLicenseMutation.mutate()}
-                  disabled={!isEditMode || !(canActivateCode || canActivateLegacy) || activateLicenseMutation.isPending}
+                  disabled={!isEditMode || !(canActivateCode || canActivateLegacy || canActivateEmail) || activateLicenseMutation.isPending}
                   title={!isEditMode ? 'Enable Edit Mode before activating' : undefined}
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-bold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
@@ -342,7 +718,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
               <p className="mt-2 text-xs text-slate-500">
                 Registration details are taken from this institution profile and your signed-in account. Online activation requires internet access. For offline activation, download the request file, use it with the activation key on the licensing website from an internet-connected device, then import the signed response here. Both flows require Institution Admin or SysAdmin access and explicit Edit Mode.
               </p>
-            </div>
+              </div>
+            )}
           </>
         )}
       </section>

@@ -49,6 +49,7 @@ export interface LicenseStatusResponse {
   rollout_stage: 'shadow' | 'enforced'
   document_id: string | null
   serial_number: string | null
+  registered_email: string | null
   license_model: string | null
   edition: string | null
   expires_at: string | null

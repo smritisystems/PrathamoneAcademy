@@ -40,10 +40,13 @@ from app.api.v1.endpoints.license import (
 from app.services.license_service import (
     LicenseArtifactError,
     calculate_license_mode,
+    create_license_clock_checkpoint,
     create_refresh_keypair,
     decrypt_refresh_private_key,
     encrypt_refresh_private_key,
+    sign_license_management_request,
     sign_refresh_request,
+    verify_license_clock_checkpoint,
     verify_signed_license_artifact,
 )
 
@@ -161,17 +164,135 @@ def test_stale_snapshot_enters_evaluation_and_refresh_key_is_encrypted_and_bound
     )
     assert len(public_key_bytes) == 32
 
+    management_nonce = "7fe3d2c8-f389-44d4-bcf1-302db11d3c41"
+    management_timestamp = 1794787200000
+    management_signature = sign_license_management_request(
+        private_key,
+        "deactivate",
+        "prathamone-eduos",
+        "PA001",
+        "installation-001",
+        "activation-001",
+        management_timestamp,
+        management_nonce,
+    )
+    Ed25519PublicKey.from_public_bytes(public_key_bytes).verify(
+        base64.urlsafe_b64decode(management_signature + "=" * (-len(management_signature) % 4)),
+        "\n".join((
+            "license-management-v1",
+            "deactivate",
+            "prathamone-eduos",
+            "PA001",
+            "installation-001",
+            "activation-001",
+            str(management_timestamp),
+            management_nonce,
+        )).encode("utf-8"),
+    )
+    with pytest.raises(LicenseArtifactError, match="Unsupported license management action"):
+        sign_license_management_request(
+            private_key, "activate", "prathamone-eduos", "PA001",
+            "installation-001", "activation-001", management_timestamp, management_nonce,
+        )
+
     stale = {
         "license_model": "on_premise_perpetual",
         "status": "ACTIVE",
         "starts_at": "2020-01-01",
         "expires_at": None,
-        "issued_at": "2026-11-08T00:00:00+00:00",
+        "issued_at": "2026-10-30T00:00:00+00:00",
     }
     assert calculate_license_mode(stale, datetime(2026, 11, 16, tzinfo=timezone.utc)) == "evaluation"
 
 
-def test_offline_snapshot_validity_is_per_artifact_and_legacy_snapshots_keep_seven_days():
+def test_signed_clock_checkpoint_detects_tampering_and_is_institution_bound():
+    issued_at = datetime(2026, 11, 15, 12, 0, tzinfo=timezone.utc)
+    checkpoint = create_license_clock_checkpoint(41, issued_at, "stable-application-secret")
+
+    assert verify_license_clock_checkpoint(41, checkpoint, "stable-application-secret") == issued_at
+    with pytest.raises(LicenseArtifactError, match="clock checkpoint is invalid"):
+        verify_license_clock_checkpoint(42, checkpoint, "stable-application-secret")
+    with pytest.raises(LicenseArtifactError, match="clock checkpoint is invalid"):
+        verify_license_clock_checkpoint(41, checkpoint, "different-application-secret")
+    with pytest.raises(LicenseArtifactError, match="clock checkpoint is invalid"):
+        verify_license_clock_checkpoint(41, f"{checkpoint}x", "stable-application-secret")
+
+
+@pytest.mark.asyncio
+async def test_license_clock_checkpoint_blocks_rollback_and_advances_on_trusted_time(monkeypatch):
+    previous_time = datetime(2026, 11, 15, 12, 0, tzinfo=timezone.utc)
+    checkpoint = create_license_clock_checkpoint(41, previous_time, "stable-application-secret")
+    saved_settings = []
+
+    class FakeDatabase:
+        async def commit(self):
+            return None
+
+    async def get_setting(_db, _institution_id, _key):
+        return SimpleNamespace(value=checkpoint)
+
+    async def save_setting(_db, institution_id, _user, key, value, description):
+        saved_settings.append((institution_id, key, value, description))
+
+    monkeypatch.setattr(license_endpoint.settings, "SECRET_KEY", "stable-application-secret")
+    monkeypatch.setattr(license_endpoint, "_get_setting", get_setting)
+    monkeypatch.setattr(license_endpoint, "_save_setting", save_setting)
+    rollback = await license_endpoint._check_license_clock_checkpoint(
+        FakeDatabase(), 41, previous_time - timedelta(hours=1),
+    )
+    assert rollback and "moved backwards" in rollback
+    assert saved_settings == []
+
+    trusted_time = previous_time + timedelta(minutes=16)
+    accepted = await license_endpoint._check_license_clock_checkpoint(
+        FakeDatabase(), 41, trusted_time,
+    )
+    assert accepted is None
+    assert saved_settings[0][0:2] == (41, "license.clock_checkpoint")
+    assert verify_license_clock_checkpoint(
+        41, saved_settings[0][2], "stable-application-secret",
+    ) == trusted_time
+
+
+@pytest.mark.asyncio
+async def test_invalid_clock_checkpoint_puts_verified_license_in_evaluation_mode(monkeypatch):
+    settings_by_key = {
+        "license.artifact": SimpleNamespace(value='{"document_id":"artifact-001"}'),
+        "license.installation_id": SimpleNamespace(value="installation-001"),
+        "license.activation_identifier": SimpleNamespace(value="activation-001"),
+        "license.clock_checkpoint": SimpleNamespace(value="tampered-checkpoint"),
+    }
+
+    async def get_setting(_db, _institution_id, key):
+        return settings_by_key.get(key)
+
+    monkeypatch.setattr(license_endpoint, "_get_setting", get_setting)
+    monkeypatch.setattr(
+        license_endpoint,
+        "verify_signed_license_artifact",
+        lambda _artifact, _keys: {
+            "document_id": "artifact-001",
+            "product_code": "prathamone-eduos",
+            "installation_id": "installation-001",
+            "company_binding": "ACADEMY-41",
+            "rollout_stage": "enforced",
+        },
+    )
+    monkeypatch.setattr(license_endpoint.settings, "LICENSE_ENFORCEMENT_STAGE", "enforced")
+    monkeypatch.setattr(license_endpoint.settings, "LICENSE_PRODUCT_CODE", "prathamone-eduos")
+    monkeypatch.setattr(license_endpoint.settings, "LICENSE_PUBLIC_KEYS_JSON", '{"test-key":"public"}')
+    monkeypatch.setattr(license_endpoint.settings, "SECRET_KEY", "stable-application-secret")
+
+    context = await license_endpoint._load_license_context(
+        SimpleNamespace(), 41, "ACADEMY-41",
+    )
+
+    assert context["mode"] == "evaluation"
+    assert context["payload"]["document_id"] == "artifact-001"
+    assert "time-integrity check failed" in context["error"]
+
+
+def test_offline_snapshot_validity_is_per_artifact_with_fourteen_days_and_seven_day_grace():
     now = datetime(2026, 11, 16, tzinfo=timezone.utc)
     base = {
         "license_model": "on_premise_perpetual",
@@ -179,25 +300,59 @@ def test_offline_snapshot_validity_is_per_artifact_and_legacy_snapshots_keep_sev
         "starts_at": "2020-01-01",
         "expires_at": None,
     }
-    recent_90_day = {
+    recent_14_day = {
         **base,
-        "issued_at": (now - timedelta(days=89)).isoformat(),
-        "offline_validity_days": 90,
+        "issued_at": (now - timedelta(days=13)).isoformat(),
+        "offline_validity_days": 14,
     }
-    stale_90_day = {
+    boundary_14_day = {
         **base,
-        "issued_at": (now - timedelta(days=91)).isoformat(),
-        "offline_validity_days": 90,
+        "issued_at": (now - timedelta(days=14)).isoformat(),
+        "offline_validity_days": 14,
+    }
+    grace_14_day = {
+        **base,
+        "issued_at": (now - timedelta(days=16)).isoformat(),
+        "offline_validity_days": 14,
+    }
+    stale_14_day = {
+        **base,
+        "issued_at": (now - timedelta(days=22)).isoformat(),
+        "offline_validity_days": 14,
+    }
+    boundary_21_day = {
+        **base,
+        "issued_at": (now - timedelta(days=21)).isoformat(),
+        "offline_validity_days": 14,
+    }
+    past_21_day = {
+        **base,
+        "issued_at": (now - timedelta(days=21, seconds=1)).isoformat(),
+        "offline_validity_days": 14,
+    }
+    recent_legacy = {
+        **base,
+        "issued_at": (now - timedelta(days=6)).isoformat(),
+    }
+    grace_legacy = {
+        **base,
+        "issued_at": (now - timedelta(days=10)).isoformat(),
     }
     stale_legacy = {
         **base,
-        "issued_at": (now - timedelta(days=8)).isoformat(),
+        "issued_at": (now - timedelta(days=15)).isoformat(),
     }
-    assert calculate_license_mode(recent_90_day, now) == "active"
-    assert calculate_license_mode(stale_90_day, now) == "evaluation"
+    assert calculate_license_mode(recent_14_day, now) == "active"
+    assert calculate_license_mode(boundary_14_day, now) == "active"
+    assert calculate_license_mode(grace_14_day, now) == "grace"
+    assert calculate_license_mode(boundary_21_day, now) == "grace"
+    assert calculate_license_mode(past_21_day, now) == "evaluation"
+    assert calculate_license_mode(stale_14_day, now) == "evaluation"
+    assert calculate_license_mode(recent_legacy, now) == "active"
+    assert calculate_license_mode(grace_legacy, now) == "grace"
     assert calculate_license_mode(stale_legacy, now) == "evaluation"
     with pytest.raises(LicenseArtifactError, match="freshness"):
-        calculate_license_mode({**recent_90_day, "offline_validity_days": 0}, now)
+        calculate_license_mode({**recent_14_day, "offline_validity_days": 0}, now)
 
 
 def test_activation_registration_requires_contact_and_institution_details():
@@ -370,6 +525,64 @@ async def test_institution_admin_cannot_select_another_institution():
 
 
 @pytest.mark.asyncio
+async def test_deactivation_preserves_authority_transfer_cooldown_response(monkeypatch):
+    class FakeDatabase:
+        async def get(self, _model, _key):
+            return SimpleNamespace(code="ACADEMY-41", is_active=True)
+
+    class FakeResponse:
+        status_code = 429
+
+        def json(self):
+            return {"error": "Self-service transfer is available after 2026-12-15."}
+
+    class FakeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, _exc_type, _exc_value, _traceback):
+            return None
+
+        async def post(self, _url, json):
+            assert json["action"] == "deactivate"
+            return FakeResponse()
+
+    settings_by_key = {
+        "license.installation_id": SimpleNamespace(value="installation-001"),
+        "license.activation_identifier": SimpleNamespace(value="activation-001"),
+        "license.refresh_private_key": SimpleNamespace(value="encrypted-private-key"),
+    }
+
+    async def get_setting(_db, _institution_id, key):
+        return settings_by_key.get(key)
+
+    async def load_context(_db, _institution_id, _company_binding):
+        return {"payload": {"status": "ACTIVE"}}
+
+    monkeypatch.setattr(license_endpoint, "_get_setting", get_setting)
+    monkeypatch.setattr(license_endpoint, "_load_license_context", load_context)
+    monkeypatch.setattr(license_endpoint, "decrypt_refresh_private_key", lambda *_args: b"private-key")
+    monkeypatch.setattr(license_endpoint, "sign_license_management_request", lambda *_args: "signature")
+    monkeypatch.setattr(license_endpoint.httpx, "AsyncClient", FakeClient)
+    monkeypatch.setattr(license_endpoint.settings, "LICENSE_AUTHORITY_URL", "https://license.example")
+    monkeypatch.setattr(license_endpoint.settings, "LICENSE_PRODUCT_CODE", "prathamone-eduos")
+
+    with pytest.raises(HTTPException) as error:
+        await license_endpoint.deactivate_license(
+            current_user=SimpleNamespace(role="admin", institution_id=41),
+            db=FakeDatabase(),
+            institution_id=None,
+            data_environment="PRODUCTION",
+        )
+
+    assert error.value.status_code == 429
+    assert "available after 2026-12-15" in error.value.detail
+
+
+@pytest.mark.asyncio
 async def test_reactivation_refreshes_snapshot_without_changing_installation_identity(monkeypatch):
     stored_settings = {}
     authority_calls = []
@@ -478,7 +691,7 @@ async def test_reactivation_refreshes_snapshot_without_changing_installation_ide
 async def test_batch_activation_forwards_registration_and_never_persists_activation_key(monkeypatch):
     stored_settings = {}
     authority_calls = []
-    activation_key = "ACT-" + "A" * 48
+    activation_key = "A1B2C3D4E5F6G7H8"
 
     class FakeDatabase:
         async def get(self, model, key):
@@ -548,7 +761,7 @@ async def test_batch_activation_forwards_registration_and_never_persists_activat
     )
     response = await license_endpoint.activate_license(
         body=LicenseActivationRequest(
-            serial_number="SMR-LIC-" + "B" * 20,
+            serial_number="123456789",
             activation_key=activation_key,
             registration=registration,
         ),
@@ -559,12 +772,12 @@ async def test_batch_activation_forwards_registration_and_never_persists_activat
     )
 
     assert response["mode"] == "active"
-    assert authority_calls[0]["body"]["serial_number"] == "SMR-LIC-" + "B" * 20
+    assert authority_calls[0]["body"]["serial_number"] == "123456789"
     assert authority_calls[0]["body"]["activation_key"] == activation_key
     assert authority_calls[0]["body"]["registration"]["contact_email"] == "contact@example.test"
     assert "license_key" not in authority_calls[0]["body"]
     assert activation_key not in repr(stored_settings)
-    assert stored_settings[_SETTING_SERIAL_NUMBER := "license.serial_number"] == "SMR-LIC-" + "B" * 20
+    assert stored_settings[_SETTING_SERIAL_NUMBER := "license.serial_number"] == "123456789"
 
 
 @pytest.mark.asyncio
@@ -595,7 +808,7 @@ async def test_offline_request_and_import_are_bound_to_the_pending_installation(
     monkeypatch.setattr(license_endpoint, "_save_setting", save_setting)
     challenge = await license_endpoint.create_offline_activation_request(
         body=OfflineActivationRequest(
-            serial_number="SMR-LIC-" + "C" * 20,
+            serial_number="987654321",
             registration=registration,
         ),
         current_user=SimpleNamespace(id=9, full_name="Admin", role="admin", institution_id=41),
@@ -612,7 +825,7 @@ async def test_offline_request_and_import_are_bound_to_the_pending_installation(
     settings = {
         "license.installation_id": "installation-001",
         "license.activation_identifier": "activation-001",
-        "license.serial_number": "SMR-LIC-" + "C" * 20,
+        "license.serial_number": "987654321",
     }
 
     async def get_setting(db, institution_id, key):
@@ -643,7 +856,7 @@ async def test_offline_request_and_import_are_bound_to_the_pending_installation(
             "document_id": "offline-artifact",
             "installation_id": "installation-001",
             "activation_identifier": "activation-001",
-            "serial_number": "SMR-LIC-" + "C" * 20,
+            "serial_number": "987654321",
         }),
         current_user=SimpleNamespace(id=9, full_name="Admin", role="admin", institution_id=41),
         db=FakeDatabase(),
@@ -659,7 +872,7 @@ async def test_offline_request_and_import_are_bound_to_the_pending_installation(
                 "document_id": "wrong-install",
                 "installation_id": "other-installation",
                 "activation_identifier": "activation-001",
-                "serial_number": "SMR-LIC-" + "C" * 20,
+                "serial_number": "987654321",
             }),
             current_user=SimpleNamespace(id=9, full_name="Admin", role="admin", institution_id=41),
             db=FakeDatabase(),

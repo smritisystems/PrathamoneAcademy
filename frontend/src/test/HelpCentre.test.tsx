@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-14
+ * @updated     2026-11-15
  *
  * @description Comprehensive Vitest suite covering Help & About Centre navigation, unified search, contextual help routing, product/company/version/legal views, admin-only System Info, support ticketing, and Rule 010 EditMode governance.
  */
@@ -224,9 +224,9 @@ const mockProductInfo = {
     release_date: '2026-11-10T20:21:02Z',
     release_channel: 'production',
     release_status: 'published',
-    license_status: 'Pending Management License Registration',
-    license_validity: null,
-    license_verification_status: 'pending_management_approval',
+    license_status: 'Not activated',
+    license_validity: 'No active license snapshot',
+    license_verification_status: 'not_activated',
     deployment_type: 'Institutional Dedicated Deployment',
     available_modules_count: 14,
     available_modules: [
@@ -419,7 +419,7 @@ describe('Help & About Centre Suite', () => {
     renderHelpAt('/help/version')
     await waitFor(() => {
       expect(screen.getByText('2026.11.10-REV-137-v1.76.0')).toBeDefined()
-      expect(screen.getByText('Not Configured (Requires Management Registration)')).toBeDefined()
+      expect(screen.getByText('No active license snapshot')).toBeDefined()
     })
   })
 
@@ -556,7 +556,7 @@ describe('Help & About Centre Suite', () => {
     expect(screen.getByText('BadLink')).toBeDefined()
   })
 
-  it('restricts commercial license and SMRITI corporate fields to SysAdmin roles in Governance', async () => {
+  it('derives license status from the signed snapshot and restricts corporate fields to SysAdmin', async () => {
     const adminUser = {
       id: 1,
       username: 'admin',
@@ -571,15 +571,16 @@ describe('Help & About Centre Suite', () => {
     const metaTab = await screen.findByRole('button', { name: /Product, SmritiSys & License/i })
     fireEvent.click(metaTab)
 
-    const licenseInput = (await screen.findByPlaceholderText(
-      /Active Institutional License/i,
-    )) as HTMLInputElement
+    expect(await screen.findByText(/License status and validity are derived from the verified signed license snapshot/i)).toBeDefined()
     const introLabel = screen.getByText('Product Introduction')
     const introTextarea = introLabel.parentElement?.querySelector('textarea') as HTMLTextAreaElement
-    expect(licenseInput.disabled).toBe(true)
+    const corporateStatusLabel = screen.getByText(/SMRITI Corporate Verification Status/i)
+    const corporateStatusSelect = corporateStatusLabel.parentElement?.querySelector('select') as HTMLSelectElement
+    expect(screen.queryByPlaceholderText(/Active Institutional License/i)).toBeNull()
     expect(introTextarea.disabled).toBe(false)
+    expect(corporateStatusSelect.disabled).toBe(true)
 
-    // Switch to superadmin -> license field becomes editable in Edit Mode
+    // Switch to superadmin -> corporate metadata becomes editable in Edit Mode
     cleanup()
     const superUser = { ...adminUser, id: 2, username: 'superadmin', role: 'superadmin' }
     useAuthStore.setState({ user: superUser, token: 'test-token' })
@@ -587,10 +588,9 @@ describe('Help & About Centre Suite', () => {
 
     renderHelpAt('/help/governance')
     fireEvent.click(await screen.findByRole('button', { name: /Product, SmritiSys & License/i }))
-    const superLicenseInput = (await screen.findByPlaceholderText(
-      /Active Institutional License/i,
-    )) as HTMLInputElement
-    expect(superLicenseInput.disabled).toBe(false)
+    const superCorporateStatusLabel = screen.getByText(/SMRITI Corporate Verification Status/i)
+    const superCorporateStatusSelect = superCorporateStatusLabel.parentElement?.querySelector('select') as HTMLSelectElement
+    expect(superCorporateStatusSelect.disabled).toBe(false)
   })
 
   it('renders Back to Module navigation in LegalComplianceSection when opened from a module route', async () => {

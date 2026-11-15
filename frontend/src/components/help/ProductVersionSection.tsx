@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-12
+ * @updated     2026-11-15
  *
  * @description Dynamically populated Product & Version Information view showing edition, build, release date, license posture, available modules, and customer-safe release notes.
  */
@@ -54,6 +54,8 @@ export default function ProductVersionSection({ data }: ProductVersionSectionPro
         day: 'numeric',
       })
     : 'Not specified'
+  const licenseVerified = !['not_activated', 'invalid'].includes(v.license_verification_status)
+  const licenseActive = ['Active', 'Grace period'].includes(v.license_status)
 
   return (
     <div className="space-y-6">
@@ -114,17 +116,12 @@ export default function ProductVersionSection({ data }: ProductVersionSectionPro
             <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               License Validity
             </div>
-            {v.license_validity ? (
-              <div className="text-sm font-bold text-emerald-700 mt-1 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{v.license_validity}</span>
-              </div>
-            ) : (
-              <div className="text-xs font-semibold text-amber-700 mt-1 flex items-start gap-1.5">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>Not Configured (Requires Management Registration)</span>
-              </div>
-            )}
+            <div className={`text-xs font-semibold mt-1 flex items-start gap-1.5 ${licenseVerified && licenseActive ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {licenseVerified && licenseActive
+                ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+              <span>{v.license_validity || 'No active license snapshot'}</span>
+            </div>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">

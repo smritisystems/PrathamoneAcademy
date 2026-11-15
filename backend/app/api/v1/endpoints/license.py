@@ -46,12 +46,17 @@ from app.services.license_service import (
     LICENSE_REFRESH_INTERVAL,
     LICENSE_REFRESH_RETRY_INTERVAL,
     LicenseArtifactError,
+    LICENSE_CLOCK_CHECKPOINT_INTERVAL,
+    LICENSE_CLOCK_ROLLBACK_TOLERANCE,
     calculate_license_mode,
+    create_license_clock_checkpoint,
     create_refresh_keypair,
     decrypt_refresh_private_key,
     encrypt_refresh_private_key,
     refresh_public_key,
+    sign_license_management_request,
     sign_refresh_request,
+    verify_license_clock_checkpoint,
     verify_signed_license_artifact,
 )
 
@@ -62,8 +67,12 @@ _SETTING_ARTIFACT = "license.artifact"
 _SETTING_INSTALLATION_ID = "license.installation_id"
 _SETTING_ACTIVATION_ID = "license.activation_identifier"
 _SETTING_SERIAL_NUMBER = "license.serial_number"
+_SETTING_REGISTERED_EMAIL = "license.registered_email"
 _SETTING_REFRESH_PRIVATE_KEY = "license.refresh_private_key"
 _SETTING_REFRESH_ATTEMPTED_AT = "license.refresh_attempted_at"
+_SETTING_CLOCK_CHECKPOINT = "license.clock_checkpoint"
+_SERIAL_NUMBER_PATTERN = re.compile(r"(?:[0-9]{1,9}|SMR-LIC-(?:[0-9]{8}|[A-Fa-f0-9]{20}))")
+_ACTIVATION_KEY_PATTERN = re.compile(r"(?:[A-Za-z0-9]{16}|ACT-[A-Fa-f0-9]{48})")
 _ROUTE_MODULES = (
     ("/reports/intelligence", "premium_analytics"),
     ("/academic-years", "academic_management"),
@@ -129,13 +138,28 @@ class LicenseRegistrationRequest(BaseModel):
 
 class LicenseActivationRequest(BaseModel):
     license_key: str | None = Field(default=None, min_length=8, max_length=200)
-    serial_number: str | None = Field(default=None, min_length=8, max_length=80)
+    serial_number: str | None = Field(default=None, min_length=1, max_length=80)
     activation_key: str | None = Field(default=None, min_length=8, max_length=100)
+    email: str | None = Field(default=None, min_length=3, max_length=254)
+    email_challenge_id: str | None = Field(default=None, min_length=36, max_length=36)
+    license_id: int | None = Field(default=None, ge=1)
     registration: LicenseRegistrationRequest | None = None
 
 
+class LicenseEmailCodeRequest(BaseModel):
+    purpose: str = Field(default="activation", max_length=20)
+    email: str = Field(min_length=3, max_length=254)
+    target_email: str | None = Field(default=None, min_length=3, max_length=254)
+    serial_number: str | None = Field(default=None, min_length=1, max_length=80)
+
+
+class LicenseEmailCodeVerificationRequest(BaseModel):
+    challenge_id: str = Field(min_length=36, max_length=36)
+    code: str = Field(min_length=8, max_length=8)
+
+
 class OfflineActivationRequest(BaseModel):
-    serial_number: str = Field(min_length=8, max_length=80)
+    serial_number: str = Field(min_length=1, max_length=80)
     registration: LicenseRegistrationRequest
 
 
@@ -156,7 +180,7 @@ async def _get_setting(db: AsyncSession, institution_id: int, key: str) -> Insti
 def _audit_value(key: str, value: str | None) -> str | None:
     if value is None:
         return None
-    if key == _SETTING_REFRESH_PRIVATE_KEY:
+    if key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT}:
         return "[redacted]"
     if key != _SETTING_ARTIFACT:
         return value
@@ -185,7 +209,7 @@ async def _save_setting(
     if setting:
         setting.value = value
         setting.data_type = "json" if key == _SETTING_ARTIFACT else "string"
-        setting.is_secret = key == _SETTING_REFRESH_PRIVATE_KEY
+        setting.is_secret = key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT}
         setting.description = description
         setting.updated_by_id = user.id if user else None if user else None
     else:
@@ -195,10 +219,10 @@ async def _save_setting(
             key=key,
             value=value,
             data_type="json" if key == _SETTING_ARTIFACT else "string",
-            is_secret=key == _SETTING_REFRESH_PRIVATE_KEY,
+            is_secret=key in {_SETTING_REFRESH_PRIVATE_KEY, _SETTING_CLOCK_CHECKPOINT},
             scope="institute",
             description=description,
-            updated_by_id=user.id,
+            updated_by_id=user.id if user else None,
         )
         db.add(setting)
     db.add(SettingAuditLog(
@@ -211,6 +235,41 @@ async def _save_setting(
         changed_by_name=user.full_name if user else "License Authority",
         reason="License activation or signed snapshot refresh",
     ))
+
+
+async def _check_license_clock_checkpoint(
+    db: AsyncSession,
+    institution_id: int,
+    now: datetime | None = None,
+) -> str | None:
+    current_time = now or datetime.now(timezone.utc)
+    checkpoint_setting = await _get_setting(db, institution_id, _SETTING_CLOCK_CHECKPOINT)
+    previous_time = None
+    if checkpoint_setting and checkpoint_setting.value:
+        try:
+            previous_time = verify_license_clock_checkpoint(
+                institution_id,
+                checkpoint_setting.value,
+                settings.SECRET_KEY,
+            )
+        except LicenseArtifactError:
+            return "The license time-integrity check failed. Reactivate the license or contact support."
+        if current_time + LICENSE_CLOCK_ROLLBACK_TOLERANCE < previous_time:
+            return "The application server clock moved backwards. Correct the system date and time to continue."
+        if current_time < previous_time + LICENSE_CLOCK_CHECKPOINT_INTERVAL:
+            return None
+
+    await _save_setting(
+        db,
+        institution_id,
+        None,
+        _SETTING_CLOCK_CHECKPOINT,
+        create_license_clock_checkpoint(institution_id, current_time, settings.SECRET_KEY),
+        "Protected checkpoint for detecting local system-clock rollback.",
+    )
+    await db.commit()
+    return None
+
 
 async def _prepare_installation_identity(
     db: AsyncSession,
@@ -460,14 +519,15 @@ async def _load_license_context(
         stage = payload.get("rollout_stage")
         if stage not in {"shadow", "enforced"}:
             raise LicenseArtifactError("License rollout stage is invalid.")
-        mode = calculate_license_mode(payload)
+        clock_error = await _check_license_clock_checkpoint(db, institution_id)
+        mode = "evaluation" if clock_error else calculate_license_mode(payload)
         return {
             "mode": mode,
             "rollout_stage": stage,
             "payload": payload,
             "installation_id": installation_setting.value if installation_setting else None,
             "activation_identifier": activation_setting.value if activation_setting else None,
-            "error": None,
+            "error": clock_error,
         }
     except (LicenseArtifactError, json.JSONDecodeError) as exc:
         return {
@@ -620,12 +680,14 @@ async def get_license_status(
     context = await _load_license_context(db, institution_id, institution.code)
     payload = context["payload"]
     serial_setting = await _get_setting(db, institution_id, _SETTING_SERIAL_NUMBER)
+    registered_email_setting = await _get_setting(db, institution_id, _SETTING_REGISTERED_EMAIL)
     return {
         "product": settings.PRODUCT_NAME,
         "mode": context["mode"],
         "rollout_stage": context["rollout_stage"],
         "document_id": payload.get("document_id") if payload else None,
         "serial_number": payload.get("serial_number") if payload else (serial_setting.value if serial_setting else None),
+        "registered_email": registered_email_setting.value if registered_email_setting else None,
         "license_model": payload.get("license_model") if payload else None,
         "edition": payload.get("edition") if payload else None,
         "expires_at": payload.get("expires_at") if payload else None,
@@ -671,16 +733,21 @@ async def activate_license(
     serial_number = body.serial_number.strip().upper() if body.serial_number else None
     activation_key = body.activation_key.strip() if body.activation_key else None
     uses_activation_code = bool(serial_number or activation_key)
-    if (uses_activation_code and (not serial_number or not activation_key or license_key)) or (
-        not uses_activation_code and not license_key
+    uses_email_verification = bool(body.email or body.email_challenge_id or body.license_id)
+    if (uses_activation_code and (not serial_number or not activation_key or license_key or uses_email_verification)) or (
+        uses_email_verification and (not body.email or not body.email_challenge_id or not body.license_id or license_key)
+    ) or (
+        not uses_activation_code and not uses_email_verification and not license_key
     ):
         raise HTTPException(
             status_code=400,
-            detail="Provide either a license key or both a serial number and activation key.",
+            detail="Provide a license key, serial and activation key, or verified email activation details.",
         )
-    if serial_number and not re.fullmatch(r"SMR-LIC-[A-Fa-f0-9]{20}", serial_number):
+    if uses_email_verification and not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", body.email or ""):
+        raise HTTPException(status_code=400, detail="A valid registered email is required for activation.")
+    if serial_number and not _SERIAL_NUMBER_PATTERN.fullmatch(serial_number):
         raise HTTPException(status_code=400, detail="The serial number format is invalid.")
-    if activation_key and not re.fullmatch(r"ACT-[A-Fa-f0-9]{48}", activation_key):
+    if activation_key and not _ACTIVATION_KEY_PATTERN.fullmatch(activation_key):
         raise HTTPException(status_code=400, detail="The activation key format is invalid.")
     registration = body.registration.dict() if body.registration else None
     if uses_activation_code and registration is None:
@@ -719,6 +786,12 @@ async def activate_license(
             "serial_number": serial_number,
             "activation_key": activation_key,
             "registration": registration,
+        })
+    elif uses_email_verification:
+        activation_payload.update({
+            "email": body.email.strip().lower(),
+            "email_challenge_id": body.email_challenge_id,
+            "license_id": body.license_id,
         })
     else:
         activation_payload["license_key"] = license_key
@@ -762,15 +835,235 @@ async def activate_license(
             payload["serial_number"], "Serial number bound to this signed license snapshot.",
         )
     await db.commit()
+    registered_email = response_body.get("registered_email")
+    if isinstance(registered_email, str):
+        await _save_setting(
+            db, target_institution_id, current_user, _SETTING_REGISTERED_EMAIL,
+            registered_email, "Email verified as the license account contact.",
+        )
+        await db.commit()
     mode = calculate_license_mode(payload)
     return {
         "ok": True,
         "mode": mode,
         "document_id": payload["document_id"],
+        "registered_email": registered_email,
         "license_model": payload["license_model"],
         "edition": payload.get("edition"),
         "expires_at": payload.get("expires_at"),
     }
+
+
+@router.post("/email/request")
+async def request_license_email_code(
+    body: LicenseEmailCodeRequest,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    if data_environment != "PRODUCTION":
+        raise HTTPException(status_code=409, detail="License email verification is available only for the production institution.")
+    if is_sysadmin(current_user):
+        target_institution_id = institution_id or current_user.institution_id
+    else:
+        if institution_id is not None and institution_id != current_user.institution_id:
+            raise HTTPException(status_code=403, detail="Administrators can only manage their own institution license.")
+        target_institution_id = current_user.institution_id
+    if target_institution_id is None:
+        raise HTTPException(status_code=400, detail="An institution must be selected.")
+    institution = await db.get(Institution, target_institution_id)
+    if not institution or not institution.is_active:
+        raise HTTPException(status_code=404, detail="Active institution not found.")
+    email = body.email.strip().lower()
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+        raise HTTPException(status_code=400, detail="A valid email address is required.")
+    if body.purpose not in {"activation", "email_change"}:
+        raise HTTPException(status_code=400, detail="Unsupported email verification purpose.")
+    if body.purpose == "email_change":
+        serial_number = (body.serial_number or "").strip().upper()
+        if not _SERIAL_NUMBER_PATTERN.fullmatch(serial_number) or not body.target_email:
+            raise HTTPException(status_code=400, detail="A valid license serial and new email address are required.")
+        expected_serial = await _get_setting(db, target_institution_id, _SETTING_SERIAL_NUMBER)
+        if not expected_serial or expected_serial.value != serial_number:
+            raise HTTPException(status_code=409, detail="The serial number does not match this institution's license.")
+        target_email = body.target_email.strip().lower()
+        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", target_email) or target_email == email:
+            raise HTTPException(status_code=400, detail="A different valid new email address is required.")
+    else:
+        serial_number = None
+        target_email = None
+
+    authority_url = settings.LICENSE_AUTHORITY_URL.strip().rstrip("/")
+    if not authority_url:
+        raise HTTPException(status_code=503, detail="License authority URL is not configured.")
+    request_payload = {
+        "purpose": body.purpose,
+        "email": email,
+        "target_email": target_email,
+        "serial_number": serial_number,
+        "product_code": settings.LICENSE_PRODUCT_CODE,
+        "company_binding": institution.code,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+            response = await client.post(f"{authority_url}/api/license/email/request", json=request_payload)
+    except httpx.RequestError as exc:
+        logger.warning("License email verification request failed: %s", exc)
+        raise HTTPException(status_code=503, detail="License authority is temporarily unavailable.") from exc
+    if response.status_code >= 400:
+        raise HTTPException(status_code=503, detail="License authority could not process email verification.")
+    try:
+        response_body = response.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail="License authority returned an invalid verification response.") from exc
+    return {
+        "ok": True,
+        "challenge_id": response_body.get("challenge_id"),
+        "message": response_body.get("message"),
+    }
+
+
+@router.post("/email/verify")
+async def verify_license_email_code(
+    body: LicenseEmailCodeVerificationRequest,
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    if data_environment != "PRODUCTION":
+        raise HTTPException(status_code=409, detail="License email verification is available only for the production institution.")
+    if is_sysadmin(current_user):
+        target_institution_id = institution_id or current_user.institution_id
+    else:
+        if institution_id is not None and institution_id != current_user.institution_id:
+            raise HTTPException(status_code=403, detail="Administrators can only manage their own institution license.")
+        target_institution_id = current_user.institution_id
+    if target_institution_id is None:
+        raise HTTPException(status_code=400, detail="An institution must be selected.")
+    institution = await db.get(Institution, target_institution_id)
+    if not institution or not institution.is_active:
+        raise HTTPException(status_code=404, detail="Active institution not found.")
+    authority_url = settings.LICENSE_AUTHORITY_URL.strip().rstrip("/")
+    if not authority_url:
+        raise HTTPException(status_code=503, detail="License authority URL is not configured.")
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+            response = await client.post(
+                f"{authority_url}/api/license/email/verify",
+                json={"challenge_id": body.challenge_id, "code": body.code},
+            )
+    except httpx.RequestError as exc:
+        logger.warning("License email verification failed: %s", exc)
+        raise HTTPException(status_code=503, detail="License authority is temporarily unavailable.") from exc
+    if response.status_code >= 400:
+        raise HTTPException(status_code=400, detail="The email verification code is invalid or expired.")
+    try:
+        response_body = response.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail="License authority returned an invalid verification response.") from exc
+    if response_body.get("stage") == "complete" and isinstance(response_body.get("registered_email"), str):
+        await _save_setting(
+            db, target_institution_id, current_user, _SETTING_REGISTERED_EMAIL,
+            response_body["registered_email"], "Email verified as the license account contact.",
+        )
+        await db.commit()
+    return response_body
+
+
+@router.post("/deactivate")
+async def deactivate_license(
+    current_user: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+    institution_id: int | None = Query(None, ge=1),
+    data_environment: str = Depends(get_data_environment),
+):
+    if data_environment != "PRODUCTION":
+        raise HTTPException(status_code=409, detail="License deactivation is available only for the production institution.")
+    if is_sysadmin(current_user):
+        target_institution_id = institution_id or current_user.institution_id
+    else:
+        if institution_id is not None and institution_id != current_user.institution_id:
+            raise HTTPException(status_code=403, detail="Administrators can only deactivate their own institution license.")
+        target_institution_id = current_user.institution_id
+    if target_institution_id is None:
+        raise HTTPException(status_code=400, detail="An institution must be selected.")
+    institution = await db.get(Institution, target_institution_id)
+    if not institution or not institution.is_active:
+        raise HTTPException(status_code=404, detail="Active institution not found.")
+    context = await _load_license_context(db, target_institution_id, institution.code)
+    payload = context["payload"]
+    if not payload:
+        raise HTTPException(status_code=409, detail="A verified active license is required for deactivation.")
+    installation_setting = await _get_setting(db, target_institution_id, _SETTING_INSTALLATION_ID)
+    activation_setting = await _get_setting(db, target_institution_id, _SETTING_ACTIVATION_ID)
+    refresh_key_setting = await _get_setting(db, target_institution_id, _SETTING_REFRESH_PRIVATE_KEY)
+    if not installation_setting or not activation_setting or not refresh_key_setting or not refresh_key_setting.value:
+        raise HTTPException(status_code=409, detail="Installation management credentials are not available.")
+    try:
+        private_key = decrypt_refresh_private_key(
+            refresh_key_setting.value, settings.SECRET_KEY, target_institution_id,
+        )
+    except LicenseArtifactError as exc:
+        raise HTTPException(status_code=409, detail="Installation management credentials cannot be verified.") from exc
+    authority_url = settings.LICENSE_AUTHORITY_URL.strip().rstrip("/")
+    if not authority_url:
+        raise HTTPException(status_code=503, detail="License authority URL is not configured.")
+    timestamp = int(time.time() * 1000)
+    nonce = str(uuid4())
+    signature = sign_license_management_request(
+        private_key,
+        "deactivate",
+        settings.LICENSE_PRODUCT_CODE,
+        institution.code,
+        installation_setting.value,
+        activation_setting.value,
+        timestamp,
+        nonce,
+    )
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+            response = await client.post(
+                f"{authority_url}/api/license/manage",
+                json={
+                    "action": "deactivate",
+                    "product_code": settings.LICENSE_PRODUCT_CODE,
+                    "company_binding": institution.code,
+                    "installation_id": installation_setting.value,
+                    "activation_identifier": activation_setting.value,
+                    "timestamp": timestamp,
+                    "nonce": nonce,
+                    "signature": signature,
+                },
+            )
+    except httpx.RequestError as exc:
+        logger.warning("License deactivation request failed: %s", exc)
+        raise HTTPException(status_code=503, detail="License authority is temporarily unavailable; this installation remains activated.") from exc
+    if response.status_code == 429:
+        try:
+            response_body = response.json()
+        except ValueError:
+            response_body = {}
+        detail = response_body.get("error") if isinstance(response_body, dict) else None
+        raise HTTPException(
+            status_code=429,
+            detail=detail if isinstance(detail, str) else "License transfer is temporarily rate-limited.",
+        )
+    if response.status_code >= 400:
+        raise HTTPException(status_code=409, detail="License authority rejected the deactivation request.")
+
+    for key, description in (
+        (_SETTING_ARTIFACT, "Cleared after verified online license deactivation."),
+        (_SETTING_INSTALLATION_ID, "Cleared after verified online license deactivation."),
+        (_SETTING_ACTIVATION_ID, "Cleared after verified online license deactivation."),
+        (_SETTING_REFRESH_PRIVATE_KEY, "Cleared after verified online license deactivation."),
+        (_SETTING_REFRESH_ATTEMPTED_AT, "Cleared after verified online license deactivation."),
+        (_SETTING_CLOCK_CHECKPOINT, "Cleared after verified online license deactivation."),
+    ):
+        await _save_setting(db, target_institution_id, current_user, key, "", description)
+    await db.commit()
+    return {"ok": True, "deactivated": True}
 
 
 @router.post("/offline-request")
@@ -796,7 +1089,7 @@ async def create_offline_activation_request(
         raise HTTPException(status_code=404, detail="Active institution not found.")
 
     serial_number = body.serial_number.strip().upper()
-    if not re.fullmatch(r"SMR-LIC-[A-Fa-f0-9]{20}", serial_number):
+    if not _SERIAL_NUMBER_PATTERN.fullmatch(serial_number):
         raise HTTPException(status_code=400, detail="The serial number format is invalid.")
     registration = body.registration.dict()
     if (

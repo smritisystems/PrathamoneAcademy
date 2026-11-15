@@ -19,6 +19,7 @@
 import base64
 import binascii
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -33,7 +34,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 LICENSE_REFRESH_INTERVAL = timedelta(hours=24)
 LICENSE_REFRESH_RETRY_INTERVAL = timedelta(hours=1)
 LICENSE_OFFLINE_GRACE = timedelta(days=7)
+LICENSE_DEFAULT_OFFLINE_VALIDITY_DAYS = 14
+LICENSE_LEGACY_OFFLINE_VALIDITY_DAYS = 7
+LICENSE_CLOCK_ROLLBACK_TOLERANCE = timedelta(minutes=5)
+LICENSE_CLOCK_CHECKPOINT_INTERVAL = timedelta(minutes=15)
 _REFRESH_KEY_VERSION = "v1"
+_CLOCK_CHECKPOINT_PREFIX = "prathamone-license-clock-v1"
 
 class LicenseArtifactError(ValueError):
     """Raised when a signed license artifact cannot be trusted."""
@@ -128,6 +134,65 @@ def sign_refresh_request(
         raise LicenseArtifactError("Installation refresh private key is invalid.") from exc
 
 
+def sign_license_management_request(
+    private_key_bytes: bytes,
+    action: str,
+    product_code: str,
+    company_binding: str,
+    installation_id: str,
+    activation_identifier: str,
+    timestamp: int,
+    nonce: str,
+) -> str:
+    if action != "deactivate":
+        raise LicenseArtifactError("Unsupported license management action.")
+    message = "\n".join((
+        "license-management-v1",
+        action,
+        product_code,
+        company_binding,
+        installation_id,
+        activation_identifier,
+        str(timestamp),
+        nonce,
+    )).encode("utf-8")
+    try:
+        return _encode_base64url(Ed25519PrivateKey.from_private_bytes(private_key_bytes).sign(message))
+    except ValueError as exc:
+        raise LicenseArtifactError("Installation refresh private key is invalid.") from exc
+
+
+def create_license_clock_checkpoint(
+    institution_id: int,
+    timestamp: datetime,
+    application_secret: str,
+) -> str:
+    if institution_id < 1 or timestamp.tzinfo is None or not application_secret:
+        raise LicenseArtifactError("License clock checkpoint inputs are invalid.")
+    normalized_time = timestamp.astimezone(timezone.utc).isoformat()
+    message = f"{_CLOCK_CHECKPOINT_PREFIX}\n{institution_id}\n{normalized_time}".encode("utf-8")
+    signature = hmac.new(application_secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+    return f"{normalized_time}.{signature}"
+
+
+def verify_license_clock_checkpoint(
+    institution_id: int,
+    checkpoint: str,
+    application_secret: str,
+) -> datetime:
+    try:
+        normalized_time, signature = checkpoint.rsplit(".", 1)
+        timestamp = datetime.fromisoformat(normalized_time)
+        if timestamp.tzinfo is None:
+            raise ValueError("Checkpoint time must include a timezone.")
+        expected = create_license_clock_checkpoint(institution_id, timestamp, application_secret).rsplit(".", 1)[1]
+        if not hmac.compare_digest(signature, expected):
+            raise ValueError("Checkpoint signature does not match.")
+        return timestamp.astimezone(timezone.utc)
+    except (AttributeError, TypeError, ValueError, UnicodeEncodeError) as exc:
+        raise LicenseArtifactError("License clock checkpoint is invalid.") from exc
+
+
 def verify_signed_license_artifact(
     artifact: dict[str, Any],
     public_keys_json: str,
@@ -176,7 +241,7 @@ def verify_signed_license_artifact(
         raise LicenseArtifactError("License artifact payload is incomplete.")
     if "serial_number" in payload and not isinstance(payload["serial_number"], str):
         raise LicenseArtifactError("License artifact serial number is invalid.")
-    offline_validity_days = payload.get("offline_validity_days", LICENSE_OFFLINE_GRACE.days)
+    offline_validity_days = payload.get("offline_validity_days", LICENSE_LEGACY_OFFLINE_VALIDITY_DAYS)
     if type(offline_validity_days) is not int or not 1 <= offline_validity_days <= 365:
         raise LicenseArtifactError("License artifact offline validity is invalid.")
     try:
@@ -203,11 +268,13 @@ def calculate_license_mode(
             raise ValueError("Issue time must include a timezone.")
         if issued_time > current_time + timedelta(minutes=5):
             raise ValueError("Issue time is in the future.")
-        offline_validity_days = payload.get("offline_validity_days", LICENSE_OFFLINE_GRACE.days)
+        offline_validity_days = payload.get("offline_validity_days", LICENSE_LEGACY_OFFLINE_VALIDITY_DAYS)
         if type(offline_validity_days) is not int or not 1 <= offline_validity_days <= 365:
             raise LicenseArtifactError("License snapshot offline validity is invalid.")
-        if current_time - issued_time > timedelta(days=offline_validity_days):
+        snapshot_age = current_time - issued_time
+        if snapshot_age > timedelta(days=offline_validity_days) + LICENSE_OFFLINE_GRACE:
             return "evaluation"
+        offline_grace = snapshot_age > timedelta(days=offline_validity_days)
     except (AttributeError, TypeError, ValueError) as exc:
         raise LicenseArtifactError("License snapshot freshness is invalid.") from exc
     starts_at = payload.get("starts_at")
@@ -219,12 +286,14 @@ def calculate_license_mode(
     if status in {"DRAFT", "SUSPENDED", "CANCELLED"}:
         return "evaluation"
     if model in {"on_premise_perpetual", "cloud_one_time"}:
-        return "active" if status == "ACTIVE" else "evaluation"
+        if status != "ACTIVE":
+            return "evaluation"
+        return "grace" if offline_grace else "active"
 
     expires_at = payload.get("expires_at")
     try:
         if not expires_at or date.fromisoformat(expires_at) >= today:
-            return "active"
+            return "grace" if offline_grace else "active"
         expiry_day = date.fromisoformat(expires_at)
     except (TypeError, ValueError) as exc:
         raise LicenseArtifactError("License validity dates are invalid.") from exc

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-12
+#  * @updated     2026-11-15
 #  *
 #  * @description Verified customer-facing seed catalog and content-exclusion guardrails for PrathamOne EduOS Help & About Centre.
 #  */
@@ -2179,7 +2179,7 @@ Follow this workflow during live classroom or hybrid sessions to get the maximum
 ## Verified Licensing Facts
 - **Software:** PrathamOne EduOS
 - **License Model:** Proprietary software owned by AITDL — AI Technology & Development Lab & SMRITI Systems.
-- **License Validity & Entitlements:** Live subscription/license status and authorized modules are displayed dynamically under **Product & Version Information** once configured by product administration.
+- **License Validity & Entitlements:** Subscription status and validity are derived from the locally stored, cryptographically verified signed license snapshot; the view reports **Not activated** when no verified snapshot is present.
 """,
     },
     {
