@@ -16,8 +16,11 @@
 #  * @description FastAPI application entry point, CORS middleware, exception handlers, and v1 router mounting.
 #  */
 
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -51,8 +54,24 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(api_router, prefix="/api/v1")
 
 
+# ------------------------------------------------------------------------------
+# Single Page Application (SPA) Static Serving (Standalone Windows / Desktop)
+# ------------------------------------------------------------------------------
+STATIC_DIR = os.getenv(
+    "STATIC_DIR",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend", "dist"),
+)
+if not os.path.isdir(STATIC_DIR):
+    alt_static = os.path.join(os.path.dirname(__file__), "static")
+    if os.path.isdir(alt_static):
+        STATIC_DIR = alt_static
+
+
 @app.get("/")
 async def root():
+    index_file = os.path.join(STATIC_DIR, "index.html")
+    if os.path.isdir(STATIC_DIR) and os.path.isfile(index_file):
+        return FileResponse(index_file)
     return {
         "product": settings.PRODUCT_NAME,
         "description": settings.PRODUCT_DESCRIPTION,
@@ -69,3 +88,18 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+if os.path.isdir(STATIC_DIR) and os.path.isfile(os.path.join(STATIC_DIR, "index.html")):
+    assets_dir = os.path.join(STATIC_DIR, "assets")
+    if os.path.isdir(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="spa_assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(request: Request, full_path: str):
+        if full_path.startswith("api/") or full_path == "health":
+            return None
+        candidate = os.path.join(STATIC_DIR, full_path)
+        if os.path.isfile(candidate):
+            return FileResponse(candidate)
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))

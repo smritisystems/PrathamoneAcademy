@@ -9,6 +9,7 @@ venv/
 ENV/
 .venv/
 build/
+build_staging/
 develop-eggs/
 dist/
 downloads/

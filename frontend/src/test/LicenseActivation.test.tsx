@@ -109,7 +109,18 @@ describe('LicenseActivation', () => {
         expires_at: null,
         issued_at: '2026-11-15T12:00:00+00:00',
         offline_validity_days: 14,
-        registration: null,
+        registration: {
+          institution_name: 'Prashant Academy',
+          contact_name: 'Admin User',
+          contact_email: 'profile@example.test',
+          phone: '1234567890',
+          address: null,
+          city: null,
+          state: null,
+          pincode: null,
+          tax_id: null,
+          website: null,
+        },
         refresh_status: 'up_to_date',
         evaluation_policy: null,
         error: null,
@@ -125,6 +136,7 @@ describe('LicenseActivation', () => {
     expect(screen.queryByLabelText('License activation key')).toBeNull()
     expect(screen.getByText('Change registered license email')).toBeTruthy()
     expect(screen.getByText('license@example.test')).toBeTruthy()
+    expect((screen.getByLabelText('Current registered license email') as HTMLInputElement).value).toBe('license@example.test')
     expect(screen.getByRole('button', { name: 'Deactivate this device' })).toBeTruthy()
   })
 
@@ -155,6 +167,28 @@ describe('LicenseActivation', () => {
     expect(screen.queryByText('Customer registration details')).toBeNull()
     expect(screen.queryByLabelText('License serial number')).toBeNull()
     expect(screen.queryByLabelText('License activation key')).toBeNull()
+  })
+
+  it('does not present institution profile email as the registered license email', async () => {
+    getStatusMock.mockResolvedValueOnce({
+      data: {
+        mode: 'active',
+        document_id: 'signed-license-002',
+        registered_email: null,
+        registration: {
+          institution_name: 'Prashant Academy',
+          contact_name: 'Admin User',
+          contact_email: 'profile@example.test',
+          phone: '1234567890',
+        },
+      },
+    })
+
+    renderLicenseActivationPage()
+
+    expect(await screen.findByText('License registration complete')).toBeTruthy()
+    expect((screen.getByLabelText('Current registered license email') as HTMLInputElement).value).toBe('')
+    expect(screen.queryByText('profile@example.test')).toBeNull()
   })
 
   it('does not show activation or registration fields when license status cannot be checked', async () => {

@@ -90,6 +90,8 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   useEffect(() => {
     registrationInitialized.current = false
     setRegistrationConfirmed(false)
+    setLicenseEmail('')
+    setTargetEmail('')
     setEmailChallengeId('')
     setEmailCode('')
     setEmailLicenseChoices([])
@@ -97,10 +99,10 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
   }, [institutionId])
 
   useEffect(() => {
-    if (!licenseEmail) {
-      setLicenseEmail(licenseStatus?.registered_email || licenseStatus?.registration?.contact_email || '')
-    }
-  }, [licenseEmail, licenseStatus?.registered_email, licenseStatus?.registration?.contact_email])
+    setLicenseEmail((current) => hasVerifiedLicense
+      ? licenseStatus?.registered_email || ''
+      : current || licenseStatus?.registered_email || licenseStatus?.registration?.contact_email || '')
+  }, [institutionId, hasVerifiedLicense, licenseStatus?.registered_email, licenseStatus?.registration?.contact_email])
 
   const updateRegistration = (field: keyof NonNullable<LicenseStatusResponse['registration']>, value: string) => {
     setRegistration((current) => ({ ...current, [field]: value }))

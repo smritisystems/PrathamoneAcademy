@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-06
+#  * @updated     2026-11-15
 #  *
 #  * @description Source code attribution, header enforcement, and verification automation tool.
 #  */
@@ -55,7 +55,7 @@ TODAY = datetime.date.today().strftime("%Y-%m-%d")
 
 EXCLUDE_DIRS = {
     'node_modules', '.git', '__pycache__', '.pytest_cache', '.vitest_cache',
-    'dist', 'dist-ssr', 'build', 'venv', '.venv', 'env', 'develop-eggs', 'eggs', '.eggs',
+    'dist', 'dist-ssr', 'build', 'build_staging', 'venv', '.venv', 'env', 'develop-eggs', 'eggs', '.eggs',
     '.pytest_cache', '.idea', '.vscode'
 }
 

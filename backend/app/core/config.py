@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
     VERSION: str = "1.103.0"
-    BUILD_NUMBER: str = "2026.11.15-REV-186-v1.103.0-1C46273"
+    BUILD_NUMBER: str = "2026.11.15-REV-186-v1.103.0-325C87B"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-15"
@@ -100,7 +100,7 @@ class Settings(BaseSettings):
                 )
                 sys.exit(1)
 
-    model_config = {"env_file": ".env", "extra": "ignore"}
+    model_config = {"env_file": (".env", "../.env"), "extra": "ignore"}
 
 
 settings = Settings()

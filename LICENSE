@@ -1,0 +1,38 @@
+PRATHAMONE EduOS — SOFTWARE LICENSE AGREEMENT
+Edition: Coaching Institute Edition
+Baseline Version: 1.0.0
+Product Architect: Jawahar R. Mallah
+Organization: AITDL (AI Technology & Development Lab)
+Copyright (c) 2026 AITDL. All rights reserved.
+
+IMPORTANT: PLEASE READ THIS SOFTWARE LICENSE AGREEMENT CAREFULLY BEFORE INSTALLING
+OR USING PRATHAMONE EduOS. BY CLICKING "I ACCEPT" OR BY INSTALLING, COPYING, OR
+OTHERWISE USING THIS SOFTWARE, YOU AGREE TO BE BOUND BY THE TERMS OF THIS AGREEMENT.
+
+1. GRANT OF LICENSE
+AITDL grants to the Licensee a non-exclusive, non-transferable license to install
+and operate PrathamOne EduOS (Coaching Institute Edition) solely for internal
+academic, student management, and coaching administration purposes within the
+designated coaching institute.
+
+2. PROPRIETARY RIGHTS & INTELLECTUAL PROPERTY
+PrathamOne EduOS, including its source code, compiled binaries, documentation,
+architecture, database schemas, and graphic assets, constitutes proprietary trade
+secrets and copyrighted works of AITDL and Jawahar R. Mallah. The Licensee shall
+not reverse-engineer, decompile, disassemble, or derive source code from any
+distributed binary components.
+
+3. SINGLE-SOURCE-OF-TRUTH & DATA PROTECTION
+The software is engineered with strict audit trails, historical ledger immutability,
+and compliance with the Digital Personal Data Protection (DPDP) Act 2023. The
+Licensee is solely responsible for maintaining local database backups and adhering
+to institute data governance policies.
+
+4. WARRANTY DISCLAIMER
+PRATHAMONE EduOS IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY
+OR FITNESS FOR A PARTICULAR PURPOSE.
+
+5. TERMINATION
+This Agreement is effective until terminated. Failure to comply with any provision
+of this Agreement automatically terminates your license rights without notice.

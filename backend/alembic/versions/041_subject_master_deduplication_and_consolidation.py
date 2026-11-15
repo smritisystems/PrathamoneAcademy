@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-11
+#  * @updated     2026-11-15
 #  *
 #  * @description Database migration establishing reversible legacy subject mapping table, canonical alternate codes, normalized uniqueness constraints, and curriculum mapping reconciliations.
 #  */
@@ -139,7 +139,7 @@ def upgrade():
         SET subject_mapping_id = sm.id
         FROM subject_mappings sm
         WHERE sm.legacy_subject_id = ta.subject_id 
-          AND sm.standard_id = ta.standard_id
+          AND sm.standard_id = (SELECT d.standard_id FROM divisions d WHERE d.id = ta.division_id)
           AND ta.subject_mapping_id IS NULL
     """))
 
