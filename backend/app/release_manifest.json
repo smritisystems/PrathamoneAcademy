@@ -1,15 +1,15 @@
 {
   "product": "PrathamOne EduOS",
   "edition": "Coaching Institute Edition",
-  "version": "1.105.1",
-  "build_number": "2026.11.16-REV-189-v1.105.1-E95A5E8",
+  "version": "1.106.0",
+  "build_number": "2026.11.16-REV-190-v1.106.0-31B47BC",
   "build_date": "2026-11-16",
-  "latest_hash": "E95A5E8",
-  "revision_count": 189,
-  "feature_count": 105,
+  "latest_hash": "31B47BC",
+  "revision_count": 190,
+  "feature_count": 106,
   "patch_count": 84,
   "major_count": 0,
-  "generated_at": "2026-11-16T03:57:44.996129+00:00",
+  "generated_at": "2026-11-16T04:17:27.404908+00:00",
   "affected_modules": [
     "academic",
     "auth",
@@ -114,20 +114,21 @@
     "backend/alembic/versions/047_official_brand_colors.py",
     "backend/alembic/versions/048_report_book_publishing.py",
     "backend/alembic/versions/049_report_book_permissions.py",
+    "backend/alembic/versions/050_chat_and_doubt_engine.py",
     "backend/app/api/v1/endpoints/academic_years.py",
     "backend/app/api/v1/endpoints/attendance.py",
     "backend/app/api/v1/endpoints/auth.py",
     "backend/app/api/v1/endpoints/boards.py",
+    "backend/app/api/v1/endpoints/chat.py",
     "backend/app/api/v1/endpoints/codex.py",
     "backend/app/api/v1/endpoints/communication.py",
     "backend/app/api/v1/endpoints/concessions.py",
-    "backend/app/api/v1/endpoints/dashboard.py",
-    "backend/app/api/v1/endpoints/divisions.py",
-    "backend/app/api/v1/endpoints/eduboard.py"
+    "backend/app/api/v1/endpoints/dashboard.py"
   ],
   "structured_notes": {
     "security": [],
     "added": [
+      "[31b47bc] implement Full Hybrid Real-Time Chat & Academic Doubt Resolution Engine with night curfew and anti-abuse safeguards",
       "[cd43ee0] refine login portal, fix layout overflow, enhance sidebar branding with fl3.svg, and update v1.0.0 installer",
       "[4a22457] add zero-knowledge windows installer, database migration, and frontend license panel",
       "[325c87b] implement air-gapped offline activation workflow, activation payload transfer, and license governance integration",
@@ -325,8 +326,17 @@
     "database": [],
     "deprecated": []
   },
-  "markdown_notes": "# Release Notes \u2014 PrathamOne EduOS v1.105.1\n**Release Title**: Release v1.105.1 \u2014 Academic & Financial Governance Baseline  \n**Release Date**: 2026-11-16  \n**Build Identifier**: `2026.11.16-REV-189-v1.105.1-E95A5E8`  \n**Target Environment**: `PRODUCTION`  \n\n### \u2728 Added Features & Capabilities\n- [cd43ee0] refine login portal, fix layout overflow, enhance sidebar branding with fl3.svg, and update v1.0.0 installer\n- [4a22457] add zero-knowledge windows installer, database migration, and frontend license panel\n- [325c87b] implement air-gapped offline activation workflow, activation payload transfer, and license governance integration\n- [538835c] implement signed license control plane, online/offline activation, and audit-ready verification suite\n- [073b7bf] add database seed script and credentials test suite\n- [ffcffa6] enforce unified licensing and IP protection, footer edition links, and software-branded print layouts\n- [21714a3] implement institutional report book publishing engine, templates, and multi-report compilation\n- [6ac17b3] update official brand assets, PWA icons, institutional books architecture, report intelligence, and dashboard visual parity\n- [6bbd721] upgrade application theme to official PrathamOne Navy & Saffron brand palette\n- [ba957e7] add new artwork assets and logo files\n- [5e2eb6d] integrate new PrathamOne logo and icon artwork across software suite\n- [ae75b52] establish universal hardware-independent architecture, device capability diagnostics, and compatibility registry\n- [1dfbc97] complete student & parent self-service portal implementation (Option 2)\n- [a4d67bc] WhatsApp and SMS automation triggers for fee receipts, homework, and exam schedules\n- [8142b8c] implement timetable and scheduling studio with weekly matrix grid, conflict prevention, and printable docket\n\n### \ud83d\udd04 Changed & Architectural Enhancements\n- [e95a5e8] update organization to Smritisys & AITDL Networks across repository and documentation\n- [31444c7] reindex manifest following v1.96.0 release\n- [4cd8646] sync formatting in Examinations.tsx and reindex docs\n- [191dd81] synchronize v1.89.0 release manifest and build metadata\n- [0b45780] update user manuals to v1.88.2 (REV-161)\n- [ef07f80] wire auto_version --hook into .githooks/pre-commit\n- [557d0fd] synchronize v1.88.2 release manifest and build metadata\n- [0769980] regenerate v1.88.0 user manuals and publish full regression QA report\n- [6019ad7] synchronize v1.88.0 release manifest and build metadata\n- [390aa40] add feature report for housekeeping and automated database backup module\n- [bd845f2] verify pending/rejected/full concession/multibranch parity and complete 13-section Phase 11 delivery report\n- [602055e] add subject master deduplication and data consolidation audit report\n- [2e902ca] enhance update.ps1 with git auto-stash and dynamic release baseline sync\n- [413fb79] Publish Release Notes v1.76.0, CHANGELOG, and align version manifests\n- [4759020] align repository version sources to v1.73.0 baseline\n\n### \ud83d\udc1b Fixed & Bug Remediations\n- [0469b23] resolve sidebar icon contrast, active state illumination, and scroll clipping\n- [469d51a] prevent canvas shrinking feedback loop, center whiteboard, clip drawings, and auto-frame PDF export without cropping\n- [6459f16] deduplicate subjects, enforce is_active filter and cascading batch selector (Rule 011)\n- [8bdaf1f] add auto pre-update database snapshot and auto SECRET_KEY generation\n- [27c6faa] align admin Edit Mode authorization with backend RBAC and record live E2E verification\n- [6d5a839] resolve fresh install 500 error, harden migrations, update roster seed and domain to example.com\n- [f170c1a] resolve configuration load failure with decoupled RBAC audit fetching and diagnostic recovery\n- [f5e6c3d] eliminate asyncpg postgres syntax error in staff generated documents seeding\n- [4477e1f] resolve docker build failure and harmonize student academic register types\n- [5b1aa26] reconcile concession ledger transparency and add regression test suite\n- [3596b2f] update concession modal to 'Submit for Approval' with admin fast-track and auto-apply\n- [b39b9c7] reconcile Nethan receipt name spelling and legacy Excel typos across historical receipts\n- [9601afb] refine precision Indian Rupee vector glyph and currency typography across print preview, printout, and downloaded PDF\n- [e2a4220] isolate student id card printing from modal backdrop and page background\n- [8f15598] route View All Payments to Payments Ledger instead of Fee Collection\n\n### \ud83d\udcca Change Metrics & Audit Attribution\n- **Total Commits Included**: 189\n- **Files Modified**: 1387\n- **Affected System Modules**: academic, auth, communication, database, fees, frontend_ui, payments, reports, settings, staff, students\n- **Verification**: Compliant with AITDL Enterprise Release Standards & DPDP Act 2023.",
+  "markdown_notes": "# Release Notes \u2014 PrathamOne EduOS v1.106.0\n**Release Title**: Release v1.106.0 \u2014 Academic & Financial Governance Baseline  \n**Release Date**: 2026-11-16  \n**Build Identifier**: `2026.11.16-REV-190-v1.106.0-31B47BC`  \n**Target Environment**: `PRODUCTION`  \n\n### \u2728 Added Features & Capabilities\n- [31b47bc] implement Full Hybrid Real-Time Chat & Academic Doubt Resolution Engine with night curfew and anti-abuse safeguards\n- [cd43ee0] refine login portal, fix layout overflow, enhance sidebar branding with fl3.svg, and update v1.0.0 installer\n- [4a22457] add zero-knowledge windows installer, database migration, and frontend license panel\n- [325c87b] implement air-gapped offline activation workflow, activation payload transfer, and license governance integration\n- [538835c] implement signed license control plane, online/offline activation, and audit-ready verification suite\n- [073b7bf] add database seed script and credentials test suite\n- [ffcffa6] enforce unified licensing and IP protection, footer edition links, and software-branded print layouts\n- [21714a3] implement institutional report book publishing engine, templates, and multi-report compilation\n- [6ac17b3] update official brand assets, PWA icons, institutional books architecture, report intelligence, and dashboard visual parity\n- [6bbd721] upgrade application theme to official PrathamOne Navy & Saffron brand palette\n- [ba957e7] add new artwork assets and logo files\n- [5e2eb6d] integrate new PrathamOne logo and icon artwork across software suite\n- [ae75b52] establish universal hardware-independent architecture, device capability diagnostics, and compatibility registry\n- [1dfbc97] complete student & parent self-service portal implementation (Option 2)\n- [a4d67bc] WhatsApp and SMS automation triggers for fee receipts, homework, and exam schedules\n\n### \ud83d\udd04 Changed & Architectural Enhancements\n- [e95a5e8] update organization to Smritisys & AITDL Networks across repository and documentation\n- [31444c7] reindex manifest following v1.96.0 release\n- [4cd8646] sync formatting in Examinations.tsx and reindex docs\n- [191dd81] synchronize v1.89.0 release manifest and build metadata\n- [0b45780] update user manuals to v1.88.2 (REV-161)\n- [ef07f80] wire auto_version --hook into .githooks/pre-commit\n- [557d0fd] synchronize v1.88.2 release manifest and build metadata\n- [0769980] regenerate v1.88.0 user manuals and publish full regression QA report\n- [6019ad7] synchronize v1.88.0 release manifest and build metadata\n- [390aa40] add feature report for housekeeping and automated database backup module\n- [bd845f2] verify pending/rejected/full concession/multibranch parity and complete 13-section Phase 11 delivery report\n- [602055e] add subject master deduplication and data consolidation audit report\n- [2e902ca] enhance update.ps1 with git auto-stash and dynamic release baseline sync\n- [413fb79] Publish Release Notes v1.76.0, CHANGELOG, and align version manifests\n- [4759020] align repository version sources to v1.73.0 baseline\n\n### \ud83d\udc1b Fixed & Bug Remediations\n- [0469b23] resolve sidebar icon contrast, active state illumination, and scroll clipping\n- [469d51a] prevent canvas shrinking feedback loop, center whiteboard, clip drawings, and auto-frame PDF export without cropping\n- [6459f16] deduplicate subjects, enforce is_active filter and cascading batch selector (Rule 011)\n- [8bdaf1f] add auto pre-update database snapshot and auto SECRET_KEY generation\n- [27c6faa] align admin Edit Mode authorization with backend RBAC and record live E2E verification\n- [6d5a839] resolve fresh install 500 error, harden migrations, update roster seed and domain to example.com\n- [f170c1a] resolve configuration load failure with decoupled RBAC audit fetching and diagnostic recovery\n- [f5e6c3d] eliminate asyncpg postgres syntax error in staff generated documents seeding\n- [4477e1f] resolve docker build failure and harmonize student academic register types\n- [5b1aa26] reconcile concession ledger transparency and add regression test suite\n- [3596b2f] update concession modal to 'Submit for Approval' with admin fast-track and auto-apply\n- [b39b9c7] reconcile Nethan receipt name spelling and legacy Excel typos across historical receipts\n- [9601afb] refine precision Indian Rupee vector glyph and currency typography across print preview, printout, and downloaded PDF\n- [e2a4220] isolate student id card printing from modal backdrop and page background\n- [8f15598] route View All Payments to Payments Ledger instead of Fee Collection\n\n### \ud83d\udcca Change Metrics & Audit Attribution\n- **Total Commits Included**: 190\n- **Files Modified**: 1396\n- **Affected System Modules**: academic, auth, communication, database, fees, frontend_ui, payments, reports, settings, staff, students\n- **Verification**: Compliant with AITDL Enterprise Release Standards & DPDP Act 2023.",
   "all_commits": [
+    {
+      "hash": "31b47bc48b744e8cf238d363201ccc0d802505a3",
+      "short_hash": "31b47bc",
+      "author": "Jawahar R. Mallah",
+      "date": "2026-11-16T09:27:44+05:30",
+      "subject": "implement Full Hybrid Real-Time Chat & Academic Doubt Resolution Engine with night curfew and anti-abuse safeguards",
+      "category": "added",
+      "is_breaking": false
+    },
     {
       "hash": "e95a5e84d6c9141da25d4a3690196be2f8a97521",
       "short_hash": "e95a5e8",

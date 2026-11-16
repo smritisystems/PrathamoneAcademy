@@ -29,6 +29,9 @@ from app.models.student import Student
 from app.models.division import Division
 from app.models.standard import Standard
 from app.models.enrollment import StudentEnrollment
+from app.models.payment import PaymentReceipt
+from app.models.homework import HomeworkAssignment
+from app.models.portal import StudyMaterial
 
 
 # Basic educational profanity and abuse filter list
@@ -436,3 +439,177 @@ class ChatService:
             "description": room.description,
             "is_curfew_enabled": room.is_curfew_enabled,
         }
+
+    @classmethod
+    async def get_mentionable_entities(
+        cls,
+        session: AsyncSession,
+        query: str,
+        room_id: int,
+        user: Optional[User] = None,
+        student: Optional[Student] = None,
+        limit: int = 8,
+    ) -> List[Dict[str, Any]]:
+        """Retrieve cross-module records accessible to the user for instant @-mention, view, and download."""
+        clean_q = query.strip().lstrip("@")
+        if not clean_q:
+            return []
+
+        room = (await session.execute(
+            select(ChatRoom).where(ChatRoom.id == room_id)
+        )).scalar_one_or_none()
+        if not room:
+            return []
+
+        is_staff = user is not None
+        user_role = (user.role or "").lower() if user else ""
+        is_batch_room = room.room_type == "BATCH_DOUBT"
+
+        # RBAC permissions determination
+        can_view_finance = (
+            is_staff
+            and (user_role in ("superadmin", "super_admin", "sysadmin", "admin", "principal", "accountant"))
+            and not is_batch_room
+        )
+        can_view_students = is_staff and not is_batch_room
+        can_view_academic = True
+
+        results = []
+
+        # 1. Students (Staff channels only)
+        if can_view_students:
+            st_query = (
+                select(Student)
+                .where(
+                    Student.is_active == True,
+                    or_(
+                        Student.first_name.ilike(f"%{clean_q}%"),
+                        Student.last_name.ilike(f"%{clean_q}%"),
+                        Student.admission_number.ilike(f"%{clean_q}%"),
+                    ),
+                )
+                .limit(4)
+            )
+            students = (await session.execute(st_query)).scalars().all()
+            for s in students:
+                results.append({
+                    "id": f"student_{s.id}",
+                    "entity_type": "STUDENT",
+                    "entity_id": s.id,
+                    "title": f"{s.first_name} {s.last_name}".strip(),
+                    "subtitle": f"Adm #{s.admission_number}",
+                    "badge": "Student",
+                    "badge_color": "emerald",
+                    "view_url": f"/students/{s.id}",
+                    "download_url": f"/api/v1/students/{s.id}/id-card",
+                    "chip_text": f"@{s.first_name} {s.last_name} (Adm #{s.admission_number})",
+                })
+
+        # 2. Financial Receipts (Finance staff in internal rooms only)
+        if can_view_finance:
+            rc_query = (
+                select(PaymentReceipt)
+                .where(
+                    PaymentReceipt.status == "valid",
+                    PaymentReceipt.receipt_number.ilike(f"%{clean_q}%"),
+                )
+                .order_by(desc(PaymentReceipt.payment_date))
+                .limit(4)
+            )
+            receipts = (await session.execute(rc_query)).scalars().all()
+            for r in receipts:
+                results.append({
+                    "id": f"receipt_{r.id}",
+                    "entity_type": "RECEIPT",
+                    "entity_id": r.id,
+                    "title": f"Receipt #{r.receipt_number}",
+                    "subtitle": f"₹{r.amount:,.0f} • {r.payment_method} ({r.payment_date})",
+                    "badge": "Fee Receipt",
+                    "badge_color": "blue",
+                    "view_url": f"/receipts/{r.receipt_number}",
+                    "download_url": f"/api/v1/payments/receipts/{r.receipt_number}/pdf",
+                    "chip_text": f"@{r.receipt_number} (₹{r.amount:,.0f})",
+                })
+
+        # 3. Homework & Assignments
+        if can_view_academic:
+            hw_query = (
+                select(HomeworkAssignment)
+                .where(HomeworkAssignment.title.ilike(f"%{clean_q}%"))
+                .order_by(desc(HomeworkAssignment.id))
+                .limit(3)
+            )
+            if is_batch_room and room.division_id:
+                hw_query = hw_query.where(HomeworkAssignment.division_id == room.division_id)
+            hws = (await session.execute(hw_query)).scalars().all()
+            for hw in hws:
+                results.append({
+                    "id": f"hw_{hw.id}",
+                    "entity_type": "HOMEWORK",
+                    "entity_id": hw.id,
+                    "title": hw.title,
+                    "subtitle": f"Due: {hw.due_date}",
+                    "badge": "Homework",
+                    "badge_color": "amber",
+                    "view_url": "/homework",
+                    "download_url": None,
+                    "chip_text": f"@{hw.title}",
+                })
+
+        # 4. Study Materials
+        if can_view_academic:
+            mat_query = (
+                select(StudyMaterial)
+                .where(StudyMaterial.title.ilike(f"%{clean_q}%"))
+                .order_by(desc(StudyMaterial.id))
+                .limit(3)
+            )
+            if is_batch_room and room.division_id:
+                mat_query = mat_query.where(
+                    or_(StudyMaterial.division_id == room.division_id, StudyMaterial.division_id == None)
+                )
+            materials = (await session.execute(mat_query)).scalars().all()
+            for m in materials:
+                results.append({
+                    "id": f"mat_{m.id}",
+                    "entity_type": "STUDY_MATERIAL",
+                    "entity_id": m.id,
+                    "title": m.title,
+                    "subtitle": f"{m.file_type} Document",
+                    "badge": "Study Material",
+                    "badge_color": "indigo",
+                    "view_url": m.file_url,
+                    "download_url": m.file_url,
+                    "chip_text": f"@{m.title}",
+                })
+
+        # 5. Staff & Faculty
+        staff_query = (
+            select(User)
+            .where(
+                User.is_active == True,
+                or_(
+                    User.first_name.ilike(f"%{clean_q}%"),
+                    User.last_name.ilike(f"%{clean_q}%"),
+                    User.username.ilike(f"%{clean_q}%"),
+                ),
+            )
+            .limit(3)
+        )
+        staff_members = (await session.execute(staff_query)).scalars().all()
+        for st in staff_members:
+            role_title = (st.role.title() if st.role else "Staff")
+            results.append({
+                "id": f"staff_{st.id}",
+                "entity_type": "STAFF",
+                "entity_id": st.id,
+                "title": st.full_name or st.username,
+                "subtitle": f"Faculty ({role_title})",
+                "badge": "Faculty",
+                "badge_color": "purple",
+                "view_url": f"/staff/{st.id}",
+                "download_url": None,
+                "chip_text": f"@{st.full_name or st.username}",
+            })
+
+        return results[:limit]

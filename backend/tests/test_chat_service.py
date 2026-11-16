@@ -130,6 +130,22 @@ async def test_academic_doubt_resolution(client: AsyncClient, auth_headers: dict
     assert resolve_data["resolved_at"] is not None
 
 
+@pytest.mark.asyncio
+async def test_get_mentionable_entities(client: AsyncClient, auth_headers: dict, db: AsyncSession, setup_chat_rooms, test_student):
+    """Verify @-mention entities search returns students and faculty."""
+    room = (await db.execute(select(ChatRoom).where(ChatRoom.code == "staff_general"))).scalar_one()
+
+    # Search by student's first name
+    res = await client.get(
+        f"/api/v1/chat/mentionable-entities?room_id={room.id}&q={test_student.first_name[:3]}",
+        headers=auth_headers,
+    )
+    assert res.status_code == 200
+    entities = res.json()
+    assert isinstance(entities, list)
+    assert any(e["entity_type"] == "STUDENT" for e in entities)
+
+
 def test_curfew_schedule_evaluation():
     """Verify unit logic of overnight curfew calculation."""
     room = ChatRoom(

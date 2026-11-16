@@ -238,6 +238,24 @@ async def get_curfew_status(
     }
 
 
+@router.get("/mentionable-entities")
+async def get_mentionable_entities(
+    room_id: int = Query(...),
+    q: str = Query("", min_length=1),
+    limit: int = Query(8, ge=1, le=25),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve cross-module records accessible to the user for instant @-mention, view, and download."""
+    return await ChatService.get_mentionable_entities(
+        session=db,
+        query=q,
+        room_id=room_id,
+        user=current_user,
+        limit=limit,
+    )
+
+
 # ------------------------------------------------------------------------------
 # WebSocket Real-Time Stream
 # ------------------------------------------------------------------------------

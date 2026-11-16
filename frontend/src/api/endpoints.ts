@@ -18,7 +18,7 @@
 
 import apiClient from './client'
 import type {
-  ChatRoomItem, ChatMessageItem, SendChatMessagePayload, CreateChatRoomPayload,
+  ChatRoomItem, ChatMessageItem, SendChatMessagePayload, CreateChatRoomPayload, MentionableEntityItem,
   PaymentPermissions,
   Institution, AcademicYear, Board, Standard, Division,
   Student, FeeCategory, FeeStructure, FeeInvoice,
@@ -3029,6 +3029,10 @@ export const chatApi = {
       curfew_end_time: string
       is_curfew_active: boolean
     }>(`/chat/rooms/${roomId}/curfew-status`),
+  getMentionableEntities: (roomId: number, q: string, limit = 8) =>
+    apiClient.get<MentionableEntityItem[]>('/chat/mentionable-entities', {
+      params: { room_id: roomId, q, limit },
+    }),
 }
 
 export type { EduBoardPageItem }

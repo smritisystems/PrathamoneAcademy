@@ -5520,3 +5520,17 @@ export interface CreateChatRoomPayload {
   is_curfew_enabled?: boolean
 }
 
+export interface MentionableEntityItem {
+  id: string
+  entity_type: 'STUDENT' | 'RECEIPT' | 'HOMEWORK' | 'STUDY_MATERIAL' | 'STAFF'
+  entity_id: number
+  title: string
+  subtitle: string
+  badge: string
+  badge_color: string
+  view_url: string
+  download_url?: string | null
+  chip_text: string
+}
+
+

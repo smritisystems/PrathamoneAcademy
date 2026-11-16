@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-16 09:27:25<br>
-**Total Indexed Items:** 490  
+**Last Reindexed:** 2026-11-16 09:47:13<br>
+**Total Indexed Items:** 491  
 
 ---
 
@@ -29,7 +29,7 @@
 | `12` | [12_RBAC_SECURITY](#12_rbac_security) | **14** | RBAC, Security & Permissions |
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **16** | Sysadmin Center & System Settings |
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **13** | Document Generation & Print Engine |
-| `15` | [15_INTEGRATIONS](#15_integrations) | **7** | Integrations, Messaging & Importers |
+| `15` | [15_INTEGRATIONS](#15_integrations) | **8** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **15** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **11** | Testing, Verification & Quality Assurance |
@@ -357,6 +357,7 @@
 | **Prashant Academy — Data Reset & Authoritative Excel Import Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md](15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md) | - |
 | **PrathamOne EduOS — Full Hybrid Real-Time Chat & Academic Doubt Resolution Engine Implementation Report** | `REPORT` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_FULL-HYBRID-CHAT-AND-DOUBT-RESOLUTION_V1.md](15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_FULL-HYBRID-CHAT-AND-DOUBT-RESOLUTION_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 15_INTEGRATIONS |
 | **Real-Time WhatsApp & SMS Automation Engine Implementation Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md](15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md) | 07_ATTENDANCE, 09_FEES_PAYMENTS, 12_RBAC_SECURITY |
+| **Smart @ Entity Mention Picker & Role-Governed Record Access Engine** | `REPORT` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_SMART-MENTION-ENTITY-PICKER-AND-RECORD-ACCESS_V1.md](15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_SMART-MENTION-ENTITY-PICKER-AND-RECORD-ACCESS_V1.md) | 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY |
 
 
 ### <a id="16_database_api"></a>16_DATABASE_API — Database Schema & REST API Standards

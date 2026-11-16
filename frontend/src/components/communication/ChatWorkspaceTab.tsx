@@ -20,10 +20,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react'
 import {
   MessageSquare, Send, Users, Shield, Clock, CheckCircle2,
   AlertTriangle, Search, Plus, Moon, HelpCircle, Check,
-  Sparkles, RefreshCw, X, Radio, ArrowRight, Lock, BookOpen
+  Sparkles, RefreshCw, X, Radio, ArrowRight, Lock, BookOpen,
+  AtSign, Download, Eye, FileText, UserCheck, Receipt, GraduationCap
 } from 'lucide-react'
 import { chatApi } from '../../api/endpoints'
-import type { ChatRoomItem, ChatMessageItem } from '../../types'
+import type { ChatRoomItem, ChatMessageItem, MentionableEntityItem } from '../../types'
 import { useAuthStore, isUserSysAdmin } from '../../store/authStore'
 import { useBranding } from '../../config/branding'
 
@@ -53,9 +54,14 @@ export function ChatWorkspaceTab() {
   const [newRoomDesc, setNewRoomDesc] = useState('')
   const [isCreatingRoom, setIsCreatingRoom] = useState(false)
   const [wsConnected, setWsConnected] = useState(false)
+  const [showMentionPopover, setShowMentionPopover] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionEntities, setMentionEntities] = useState<MentionableEntityItem[]>([])
+  const [isLoadingEntities, setIsLoadingEntities] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Fetch accessible rooms on mount
   const fetchRooms = async () => {
@@ -250,6 +256,231 @@ export function ChatWorkspaceTab() {
     } finally {
       setIsCreatingRoom(false)
     }
+  }
+
+  // Action: View entity details
+  const handleViewEntity = (viewUrl: string) => {
+    if (!viewUrl) return
+    window.open(viewUrl, '_blank')
+  }
+
+  // Action: Download authorized document / PDF
+  const handleDownloadEntity = async (downloadUrl: string, title: string) => {
+    if (!downloadUrl) return
+    try {
+      const token = localStorage.getItem('prashant_access_token') || ''
+      const fullUrl = downloadUrl.startsWith('http') ? downloadUrl : `${window.location.origin}${downloadUrl}`
+      const response = await fetch(fullUrl, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`)
+      const blob = await response.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      const ext = downloadUrl.endsWith('.pdf') ? '.pdf' : '.pdf'
+      a.download = `${title.replace(/[^a-zA-Z0-9_\-]/g, '_')}${ext}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (e) {
+      console.warn('Falling back to direct window open for download:', e)
+      window.open(downloadUrl, '_blank')
+    }
+  }
+
+  // Handle typing in composer input with @ mention detection
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setInputText(val)
+
+    // Trigger @ mention popover when @ is typed
+    const match = val.match(/@([a-zA-Z0-9_\-\s]{0,30})$/)
+    if (match !== null) {
+      setMentionQuery(match[1])
+      setShowMentionPopover(true)
+    } else {
+      setShowMentionPopover(false)
+    }
+  }
+
+  // Fetch mentionable entities when query changes
+  useEffect(() => {
+    if (!showMentionPopover || !activeRoomId) return
+
+    let isMounted = true
+    setIsLoadingEntities(true)
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await chatApi.getMentionableEntities(activeRoomId, mentionQuery.trim(), 8)
+        if (isMounted) {
+          setMentionEntities(res.data)
+        }
+      } catch (err) {
+        console.error('Failed to search mentionable entities:', err)
+      } finally {
+        if (isMounted) setIsLoadingEntities(false)
+      }
+    }, 150)
+
+    return () => {
+      isMounted = false
+      clearTimeout(timeout)
+    }
+  }, [mentionQuery, showMentionPopover, activeRoomId])
+
+  // Insert entity chip into composer
+  const handleInsertEntity = (entity: MentionableEntityItem) => {
+    const replaced = inputText.replace(
+      /@([a-zA-Z0-9_\-\s]{0,30})$/,
+      `[[entity:${entity.entity_type}:${entity.entity_id}:${encodeURIComponent(entity.title)}:${encodeURIComponent(entity.subtitle)}:${encodeURIComponent(entity.view_url)}:${encodeURIComponent(entity.download_url || '')}]] `
+    )
+    setInputText(replaced)
+    setShowMentionPopover(false)
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }
+
+  // Render message content with interactive cards for entity mentions
+  const renderMessageContent = (content: string, isMe: boolean) => {
+    const entityRegex = /\[\[entity:([A-Z_]+):(\d+):([^:]+):([^:]+):([^:]+):([^\]]*)\]\]/g
+    const parts: React.ReactNode[] = []
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+
+    while ((match = entityRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={`text-${lastIndex}`} className="whitespace-pre-wrap">
+            {content.substring(lastIndex, match.index)}
+          </span>
+        )
+      }
+
+      const entityType = match[1]
+      const title = decodeURIComponent(match[3])
+      const subtitle = decodeURIComponent(match[4])
+      const viewUrl = decodeURIComponent(match[5])
+      const downloadUrl = decodeURIComponent(match[6])
+
+      const isStudent = entityType === 'STUDENT'
+      const isReceipt = entityType === 'RECEIPT'
+      const isHomework = entityType === 'HOMEWORK'
+      const isMaterial = entityType === 'STUDY_MATERIAL'
+
+      parts.push(
+        <div
+          key={`entity-${match.index}`}
+          className={`my-2 p-2.5 rounded-lg border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-shadow ${
+            isMe
+              ? 'bg-emerald-700/90 border-emerald-500 text-white shadow-sm'
+              : 'bg-slate-50 border-slate-200 text-slate-800 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div
+              className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${
+                isStudent
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : isReceipt
+                  ? 'bg-blue-100 text-blue-700'
+                  : isHomework
+                  ? 'bg-amber-100 text-amber-700'
+                  : isMaterial
+                  ? 'bg-indigo-100 text-indigo-700'
+                  : 'bg-purple-100 text-purple-700'
+              }`}
+            >
+              {isStudent ? (
+                <GraduationCap className="w-4 h-4" />
+              ) : isReceipt ? (
+                <Receipt className="w-4 h-4" />
+              ) : isHomework ? (
+                <BookOpen className="w-4 h-4" />
+              ) : isMaterial ? (
+                <FileText className="w-4 h-4" />
+              ) : (
+                <Users className="w-4 h-4" />
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-bold text-xs truncate">{title}</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.2 rounded font-semibold uppercase ${
+                    isMe
+                      ? 'bg-emerald-800 text-emerald-200'
+                      : isStudent
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : isReceipt
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {entityType.replace('_', ' ')}
+                </span>
+              </div>
+              {subtitle && (
+                <p
+                  className={`text-[10px] truncate ${
+                    isMe ? 'text-emerald-200' : 'text-slate-500'
+                  }`}
+                >
+                  {subtitle}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+            <button
+              type="button"
+              onClick={() => handleViewEntity(viewUrl)}
+              className={`px-2 py-1 text-[11px] font-medium rounded flex items-center gap-1 transition-colors ${
+                isMe
+                  ? 'bg-emerald-800 hover:bg-emerald-900 text-white'
+                  : 'bg-white border border-slate-200 hover:bg-slate-100 text-slate-700'
+              }`}
+              title="View Record Details"
+            >
+              <Eye className="w-3 h-3" />
+              <span>View</span>
+            </button>
+
+            {downloadUrl && (
+              <button
+                type="button"
+                onClick={() => handleDownloadEntity(downloadUrl, title)}
+                className={`px-2 py-1 text-[11px] font-medium rounded flex items-center gap-1 transition-colors ${
+                  isMe
+                    ? 'bg-white hover:bg-slate-100 text-emerald-800 font-semibold'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+                title="Download Official Record / PDF"
+              >
+                <Download className="w-3 h-3" />
+                <span>Download PDF</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )
+
+      lastIndex = entityRegex.lastIndex
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(
+        <span key={`text-${lastIndex}`} className="whitespace-pre-wrap">
+          {content.substring(lastIndex)}
+        </span>
+      )
+    }
+
+    return parts.length > 0 ? parts : <span className="whitespace-pre-wrap">{content}</span>
   }
 
   return (
@@ -529,7 +760,7 @@ export function ChatWorkspaceTab() {
 
                         {/* Content text */}
                         <div className="whitespace-pre-wrap leading-relaxed">
-                          {m.content}
+                          {renderMessageContent(m.content, isMe)}
                         </div>
 
                         {/* Quarantined alert */}
@@ -558,39 +789,154 @@ export function ChatWorkspaceTab() {
                   </span>
                 </div>
               ) : (
-                <form onSubmit={handleSendMessage} className="space-y-2">
-                  {/* Doubt Tag Toggle for Academic Rooms */}
-                  {activeRoom.room_type === 'BATCH_DOUBT' && (
-                    <div className="flex items-center justify-between text-xs px-1">
-                      <button
-                        type="button"
-                        onClick={() => setIsDoubtMode(!isDoubtMode)}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
-                          isDoubtMode
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }`}
-                      >
-                        <HelpCircle className="w-3.5 h-3.5" />
-                        {isDoubtMode ? 'Tagged as Academic Doubt' : 'Tag as Academic Doubt'}
-                      </button>
+                <form onSubmit={handleSendMessage} className="space-y-2 relative">
+                  {/* Floating @ Mention Popover */}
+                  {showMentionPopover && (
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-20 max-h-72 flex flex-col">
+                      <div className="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600">
+                        <span className="font-semibold flex items-center gap-1.5 text-slate-800">
+                          <AtSign className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Mention or Quick Access Record</span>
+                          {mentionQuery && (
+                            <span className="font-normal text-slate-500">for &ldquo;{mentionQuery}&rdquo;</span>
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowMentionPopover(false)}
+                          className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
 
-                      <span className="text-[11px] text-slate-400">
-                        Supports LaTeX math & code snippets
-                      </span>
+                      <div className="overflow-y-auto divide-y divide-slate-100 flex-1">
+                        {isLoadingEntities ? (
+                          <div className="p-4 text-center text-xs text-slate-400">Searching records...</div>
+                        ) : mentionEntities.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-slate-400">
+                            No matching records found or restricted by room permissions.
+                          </div>
+                        ) : (
+                          mentionEntities.map((item) => (
+                            <div
+                              key={item.id}
+                              className="p-2.5 hover:bg-slate-50 flex items-center justify-between gap-3 transition-colors text-xs"
+                            >
+                              <div
+                                onClick={() => handleInsertEntity(item)}
+                                className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
+                              >
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${
+                                    item.entity_type === 'STUDENT'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : item.entity_type === 'RECEIPT'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : item.entity_type === 'HOMEWORK'
+                                      ? 'bg-amber-100 text-amber-800'
+                                      : item.entity_type === 'STUDY_MATERIAL'
+                                      ? 'bg-indigo-100 text-indigo-800'
+                                      : 'bg-purple-100 text-purple-800'
+                                  }`}
+                                >
+                                  {item.badge}
+                                </span>
+                                <div className="truncate">
+                                  <p className="font-semibold text-slate-900 truncate">{item.title}</p>
+                                  <p className="text-[11px] text-slate-500 truncate">{item.subtitle}</p>
+                                </div>
+                              </div>
+
+                              {/* Direct Action buttons: View, Download, Insert */}
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewEntity(item.view_url)}
+                                  className="px-2 py-1 text-[11px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded flex items-center gap-1 transition-colors"
+                                  title="View Record Details"
+                                >
+                                  <Eye className="w-3 h-3 text-slate-500" />
+                                  <span>View</span>
+                                </button>
+
+                                {item.download_url && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadEntity(item.download_url!, item.title)}
+                                    className="px-2 py-1 text-[11px] font-medium bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded flex items-center gap-1 transition-colors"
+                                    title="Download Official Record / PDF"
+                                  >
+                                    <Download className="w-3 h-3 text-emerald-600" />
+                                    <span>Download</span>
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleInsertEntity(item)}
+                                  className="px-2 py-1 text-[11px] font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded flex items-center gap-1 transition-colors"
+                                  title="Insert Link into Message"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  <span>Insert</span>
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
                   )}
 
+                  {/* Toolbar Row */}
+                  <div className="flex items-center justify-between text-xs px-1 gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMentionPopover(true)
+                          setMentionQuery('')
+                        }}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                        title="Search and link student KYC, receipts, or study materials"
+                      >
+                        <AtSign className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Mention Record</span>
+                      </button>
+
+                      {activeRoom.room_type === 'BATCH_DOUBT' && (
+                        <button
+                          type="button"
+                          onClick={() => setIsDoubtMode(!isDoubtMode)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                            isDoubtMode
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          <HelpCircle className="w-3.5 h-3.5" />
+                          {isDoubtMode ? 'Tagged as Academic Doubt' : 'Tag as Academic Doubt'}
+                        </button>
+                      )}
+                    </div>
+
+                    <span className="text-[11px] text-slate-400">
+                      Type <strong className="text-slate-600 font-mono">@</strong> to search records &bull; Supports LaTeX math
+                    </span>
+                  </div>
+
                   <div className="flex items-center gap-2">
                     <input
+                      ref={inputRef}
                       type="text"
                       placeholder={
                         isDoubtMode
-                          ? 'State your academic problem or question clearly...'
-                          : 'Type your message...'
+                          ? 'State your academic problem or question clearly... (Type @ to link records)'
+                          : 'Type your message... (Type @ to search & link students, receipts, notes)'
                       }
                       value={inputText}
-                      onChange={(e) => setInputText(e.target.value)}
+                      onChange={handleInputChange}
                       className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                     />
 

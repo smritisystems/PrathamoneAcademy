@@ -30,6 +30,7 @@ vi.mock('../api/endpoints', () => ({
     sendMessage: vi.fn(),
     resolveDoubt: vi.fn(),
     createRoom: vi.fn(),
+    getMentionableEntities: vi.fn(),
   },
 }))
 
@@ -94,11 +95,39 @@ const MOCK_MESSAGES = [
   },
 ]
 
+const MOCK_MENTION_ENTITIES = [
+  {
+    id: 'student_14',
+    entity_type: 'STUDENT',
+    entity_id: 14,
+    title: 'Aarav Patel',
+    subtitle: 'Adm #2026-014',
+    badge: 'Student',
+    badge_color: 'emerald',
+    view_url: '/students/14',
+    download_url: '/api/v1/students/14/id-card',
+    chip_text: '@Aarav Patel (Adm #2026-014)',
+  },
+  {
+    id: 'receipt_42',
+    entity_type: 'RECEIPT',
+    entity_id: 42,
+    title: 'Receipt #REC-2026-0042',
+    subtitle: '₹12,500 • Cash (2026-11-15)',
+    badge: 'Fee Receipt',
+    badge_color: 'blue',
+    view_url: '/receipts/REC-2026-0042',
+    download_url: '/api/v1/payments/receipts/REC-2026-0042/pdf',
+    chip_text: '@REC-2026-0042 (₹12,500)',
+  },
+]
+
 describe('Full Hybrid Chat & Academic Doubt Workspace Suite', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(chatApi.getRooms).mockResolvedValue({ data: MOCK_ROOMS } as any)
     vi.mocked(chatApi.getMessages).mockResolvedValue({ data: MOCK_MESSAGES } as any)
+    vi.mocked(chatApi.getMentionableEntities).mockResolvedValue({ data: MOCK_MENTION_ENTITIES } as any)
   })
 
   it('renders channels explorer and displays accessible rooms', async () => {
@@ -150,6 +179,71 @@ describe('Full Hybrid Chat & Academic Doubt Workspace Suite', () => {
 
     await waitFor(() => {
       expect(chatApi.resolveDoubt).toHaveBeenCalledWith(102)
+    })
+  })
+
+  it('opens mention popover when typing @ and allows record view or insert', async () => {
+    render(
+      <MemoryRouter>
+        <ChatWorkspaceTab />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/Type your message/i)).toBeTruthy()
+    })
+
+    const input = screen.getByPlaceholderText(/Type your message/i)
+    fireEvent.change(input, { target: { value: '@Aarav' } })
+
+    await waitFor(() => {
+      expect(screen.getByText('Mention or Quick Access Record')).toBeTruthy()
+      expect(screen.getByText('Aarav Patel')).toBeTruthy()
+      expect(screen.getByText('Adm #2026-014')).toBeTruthy()
+      expect(screen.getByText('Receipt #REC-2026-0042')).toBeTruthy()
+    })
+
+    // Test inserting entity
+    const insertButtons = screen.getAllByText('Insert')
+    fireEvent.click(insertButtons[0])
+
+    // Popover should close
+    await waitFor(() => {
+      expect(screen.queryByText('Mention or Quick Access Record')).toBeNull()
+    })
+  })
+
+  it('renders rich interactive entity card with View and Download buttons in chat messages', async () => {
+    const messagesWithEntity = [
+      {
+        id: 103,
+        room_id: 1,
+        sender_user_id: 1,
+        sender_display_name: 'Accountant Staff',
+        sender_role: 'ADMIN',
+        message_type: 'TEXT',
+        content:
+          'Please verify payment details [[entity:RECEIPT:42:Receipt%20%23REC-2026-0042:%E2%82%B912%2C500%20%E2%80%A2%20Cash:/receipts/REC-2026-0042:/api/v1/payments/receipts/REC-2026-0042/pdf]] issued today.',
+        is_doubt_resolved: false,
+        is_quarantined: false,
+        created_at: '2026-11-16T09:15:00Z',
+      },
+    ]
+
+    vi.mocked(chatApi.getMessages).mockResolvedValue({ data: messagesWithEntity } as any)
+
+    render(
+      <MemoryRouter>
+        <ChatWorkspaceTab />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Please verify payment details/i)).toBeTruthy()
+      expect(screen.getByText('Receipt #REC-2026-0042')).toBeTruthy()
+      expect(screen.getByText('₹12,500 • Cash')).toBeTruthy()
+      expect(screen.getByText('Download PDF')).toBeTruthy()
+      expect(screen.getByText('View')).toBeTruthy()
     })
   })
 })
