@@ -343,31 +343,16 @@ export default function LoginPage() {
           }}
         />
 
-        {/* Subtle Mumbai Skyline Silhouette in Lower Background */}
-        <div className="hidden lg:block absolute bottom-0 left-0 right-0 h-28 pointer-events-none select-none opacity-[0.06] text-slate-400 z-0 overflow-hidden">
-          <svg viewBox="0 0 600 160" className="w-full h-full" fill="currentColor" preserveAspectRatio="xMidYMax meet">
-            <g opacity="0.8">
-              <rect x="20" y="65" width="26" height="95" />
-              <rect x="50" y="50" width="34" height="110" />
-              <rect x="88" y="75" width="28" height="85" />
-              <rect x="120" y="55" width="38" height="105" />
-              <rect x="162" y="40" width="35" height="120" />
-              <rect x="201" y="68" width="30" height="92" />
-              <rect x="235" y="78" width="32" height="82" />
-              <rect x="270" y="105" width="90" height="55" />
-            </g>
-            <g stroke="currentColor" strokeWidth="0.8">
-              <polygon points="475,15 485,15 498,120 488,120 480,45 472,120 462,120" fill="currentColor" />
-              <rect x="468" y="70" width="24" height="4" fill="currentColor" />
-              <line x1="480" y1="30" x2="370" y2="120" strokeWidth="0.8" />
-              <line x1="480" y1="38" x2="420" y2="120" strokeWidth="0.8" />
-              <line x1="480" y1="48" x2="465" y2="120" strokeWidth="0.8" />
-              <line x1="480" y1="48" x2="495" y2="120" strokeWidth="0.8" />
-              <line x1="480" y1="38" x2="540" y2="120" strokeWidth="0.8" />
-              <line x1="480" y1="30" x2="590" y2="120" strokeWidth="0.8" />
-              <rect x="350" y="120" width="250" height="6" rx="1" fill="currentColor" />
-            </g>
-          </svg>
+        {/* Chhatrapati Shivaji Maharaj Equestrian Statue Ambient Watermark */}
+        <div
+          className="hidden lg:block absolute bottom-0 -right-[75px] h-[95%] pointer-events-none select-none z-0 overflow-hidden opacity-[0.075]"
+          aria-hidden="true"
+        >
+          <img
+            src="/artwork/CSM/path1.svg"
+            alt=""
+            className="h-full w-auto max-w-none object-contain object-right-bottom"
+          />
         </div>
 
         {/* Top Status Bar within the Right Pane */}
