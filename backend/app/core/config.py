@@ -6,7 +6,7 @@
 #  * @author      Jawahar R. Mallah
 #  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
-#  * @copyright   Copyright (c) 2026 AITDL
+#  * @copyright   Copyright (c) 2026 PrathamOne EduOS
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.107.1"
-    BUILD_NUMBER: str = "2026.11.16-REV-192-v1.107.1-019CA26"
+    VERSION: str = "1.107.2"
+    BUILD_NUMBER: str = "2026.11.16-REV-193-v1.107.2-C688FB1A"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-16"

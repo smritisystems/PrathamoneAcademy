@@ -24,7 +24,7 @@ related_modules: []
 **Author:** Jawahar R. Mallah  
 **Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
-**Copyright:** Copyright (c) 2026 AITDL  
+**Copyright:** Copyright (c) 2026 PrathamOne EduOS  
 **License:** Proprietary  
 **Current System Version:** 1.0.0  
 
@@ -51,7 +51,7 @@ Every first-party source file must begin with the standard attribution header us
  * @author      Jawahar R. Mallah
  * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
- * @copyright   Copyright (c) 2026 AITDL
+ * @copyright   Copyright (c) 2026 PrathamOne EduOS
  * @license     Proprietary
  *
  * @version     1.0.0
@@ -81,7 +81,7 @@ Every first-party source file must begin with the standard attribution header us
 | `@author` | `Jawahar R. Mallah` | Primary architect and author |
 | `@organization` | `Smritisys & AITDL Networks` | Authoring technological organization |
 | `@client` | `Prashant Academy Coaching Institute` | Client enterprise and beneficiary |
-| `@copyright` | `Copyright (c) 2026 AITDL` | Legal copyright notice |
+| `@copyright` | `Copyright (c) 2026 PrathamOne EduOS` | Legal copyright notice |
 | `@license` | `Proprietary` | Proprietary software license restriction |
 | `@version` | Semantic version string (defaults to `1.0.0`) | File-level version identifier |
 | `@created` | ISO Date (`YYYY-MM-DD`) | Preserved historical authoring timestamp |

@@ -7,7 +7,7 @@
 #  * @author      Jawahar R. Mallah
 #  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
-#  * @copyright   Copyright (c) 2026 AITDL
+#  * @copyright   Copyright (c) 2026 PrathamOne EduOS
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
@@ -51,7 +51,11 @@ VALID_ORGANIZATIONS = {
     "AITDL",
 }
 CLIENT = "Prashant Academy Coaching Institute"
-COPYRIGHT = "Copyright (c) 2026 AITDL"
+COPYRIGHT = "Copyright (c) 2026 PrathamOne EduOS"
+VALID_COPYRIGHTS = {
+    "Copyright (c) 2026 PrathamOne EduOS",
+    "Copyright (c) 2026 PrathamOne EduOS. All rights reserved.",
+}
 LICENSE = "Proprietary"
 DEFAULT_VERSION = "1.0.0"
 
@@ -882,7 +886,7 @@ def validate_header_data(rel_path: str, data: dict) -> list[str]:
     if data["@client"] != CLIENT:
         errors.append(f"@client mismatch: expected '{CLIENT}', got '{data['@client']}'")
 
-    if data["@copyright"] != COPYRIGHT:
+    if data["@copyright"] not in VALID_COPYRIGHTS:
         errors.append(f"@copyright mismatch: expected '{COPYRIGHT}', got '{data['@copyright']}'")
 
     if data["@license"] != LICENSE:

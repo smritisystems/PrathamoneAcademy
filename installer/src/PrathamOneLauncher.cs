@@ -6,7 +6,7 @@
 //  * @author      Jawahar R. Mallah
 //  * @organization Smritisys & AITDL Networks
 //  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 AITDL
+//  * @copyright   Copyright (c) 2026 PrathamOne EduOS
 //  * @license     Proprietary
 //  *
 //  * @version     1.0.0

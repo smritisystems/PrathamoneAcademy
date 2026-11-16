@@ -7,7 +7,7 @@ rem  *
 rem  * @author      Jawahar R. Mallah
 rem  * @organization Smritisys & AITDL Networks
 rem  * @client      Prashant Academy Coaching Institute
-rem  * @copyright   Copyright (c) 2026 AITDL
+rem  * @copyright   Copyright (c) 2026 PrathamOne EduOS
 rem  * @license     Proprietary
 rem  *
 rem  * @version     1.0.0

@@ -24,7 +24,7 @@ related_modules: []
 **Author:** Jawahar R. Mallah  
 **Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
-**Copyright:** Copyright (c) 2026 AITDL  
+**Copyright:** Copyright (c) 2026 PrathamOne EduOS  
 **License:** Proprietary  
 **Repository Version:** 1.0.0  
 **Verification Date:** 2026-11-04  
@@ -52,7 +52,7 @@ The `@project` attribution field has been updated to **`PrathamOne Academy Coach
  * @author      Jawahar R. Mallah
  * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
- * @copyright   Copyright (c) 2026 AITDL
+ * @copyright   Copyright (c) 2026 PrathamOne EduOS
  * @license     Proprietary
  *
  * @version     1.0.0

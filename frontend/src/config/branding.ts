@@ -6,7 +6,7 @@
  * @author      Jawahar R. Mallah
  * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
- * @copyright   Copyright (c) 2026 AITDL
+ * @copyright   Copyright (c) 2026 PrathamOne EduOS
  * @license     Proprietary
  *
  * @version     1.0.0
@@ -87,7 +87,7 @@ export const BRANDING_CONFIG = {
   monogram: 'YA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.16-REV-192-v1.107.1-019CA26',
+  buildNumber: '2026.11.16-REV-193-v1.107.2-C688FB1A',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-16',

@@ -11,7 +11,7 @@
     Author:      Jawahar R. Mallah
     Organization: Smritisys & AITDL Networks
     Client:      Prashant Academy Coaching Institute
-    Copyright:   Copyright (c) 2026 AITDL
+    Copyright:   Copyright (c) 2026 PrathamOne EduOS
     License:     Proprietary
     Version:     1.0.0
 #>
