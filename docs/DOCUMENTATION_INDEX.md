@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-16 20:28:18<br>
-**Total Indexed Items:** 497  
+**Last Reindexed:** 2026-11-16 21:11:54<br>
+**Total Indexed Items:** 498  
 
 ---
 
@@ -35,7 +35,7 @@
 | `18` | [18_TESTING_QA](#18_testing_qa) | **11** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **13** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **69** | Forensic Audits & Data Health |
-| `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **3** | Troubleshooting, Runbooks & Recovery |
+| `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **4** | Troubleshooting, Runbooks & Recovery |
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **12** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
@@ -518,6 +518,7 @@
 |---|---|---|---|---|---|---|
 | **Backup and Disaster Recovery Runbook** | `DEVELOPER-MANUAL` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md](21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md) | - |
 | **CodeX Engine Fresh Installation & Roster Import 500 Error Root Cause Analysis and Remediation** | `REPORT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md](21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md) | 16_DATABASE_API, 02_INSTALLATION_DEPLOYMENT |
+| **Customer Telemetry Diagnostic Postmortem: Chat WebSocket 500, Fee Reminder 422 & Housekeeping 504 RCA** | `REPORT` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_TROUBLESHOOTING_POSTMORTEM_CUSTOMER-TELEMETRY-WS500-FEE422-BACKUP504-ROOT-CAUSE-ANALYSIS_V1.md](21_TROUBLESHOOTING/2026-11-16_TROUBLESHOOTING_POSTMORTEM_CUSTOMER-TELEMETRY-WS500-FEE422-BACKUP504-ROOT-CAUSE-ANALYSIS_V1.md) | 15_INTEGRATIONS, 10_FINANCE_ACCOUNTING, 13_SYSADMIN_SETTINGS |
 | **Troubleshooting and Operations Runbook** | `DEVELOPER-MANUAL` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md](21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md) | - |
 
 

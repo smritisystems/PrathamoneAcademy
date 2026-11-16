@@ -20,6 +20,7 @@ import asyncio
 import gzip
 import hashlib
 import json
+import logging
 import os
 import re
 import secrets
@@ -30,6 +31,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import unquote, urlparse
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy import text, select, desc, func, delete, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
@@ -392,34 +395,53 @@ class HousekeepingService:
     def list_backups(cls) -> List[Dict[str, Any]]:
         results_with_timestamp: List[Tuple[float, Dict[str, Any]]] = []
         for source, directory in (("backups", resolve_backups_dir()), ("legacy_data", resolve_legacy_backups_dir())):
-            if not directory.exists():
-                continue
-            for entry in sorted(directory.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
-                if not entry.is_file() or entry.suffix not in (".edu", ".dump", ".sql"):
+            try:
+                if not directory.exists():
                     continue
-                stat = entry.stat()
+            except Exception:
+                continue
+
+            try:
+                raw_entries = list(directory.iterdir())
+            except Exception as e:
+                logger.warning("Failed to iterate backups directory %s: %s", directory, e)
+                continue
+
+            for entry in raw_entries:
+                try:
+                    if not entry.is_file() or entry.suffix not in (".edu", ".dump", ".sql"):
+                        continue
+                    stat = entry.stat()
+                except Exception:
+                    continue
+
                 sha_path = Path(str(entry) + ".sha256")
                 meta_path = Path(str(entry) + ".meta.json")
                 meta_data: Dict[str, Any] = {}
-                if meta_path.exists():
-                    try:
+                try:
+                    if meta_path.exists():
                         meta_data = json.loads(meta_path.read_text(encoding="utf-8"))
-                    except Exception:
-                        meta_data = {}
+                except Exception:
+                    meta_data = {}
+
                 stored_sha = None
-                if sha_path.exists():
-                    checksum_parts = sha_path.read_text(encoding="utf-8", errors="replace").strip().split()
-                    stored_sha = checksum_parts[0] if checksum_parts else None
-                elif meta_data.get("sha256"):
+                try:
+                    if sha_path.exists():
+                        checksum_parts = sha_path.read_text(encoding="utf-8", errors="replace").strip().split()
+                        stored_sha = checksum_parts[0] if checksum_parts else None
+                    elif meta_data.get("sha256"):
+                        stored_sha = meta_data.get("sha256")
+                except Exception:
                     stored_sha = meta_data.get("sha256")
 
-                created_at = meta_data.get("created_at") or datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
                 try:
+                    created_at = meta_data.get("created_at") or datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
                     created_dt = datetime.fromisoformat(str(created_at).replace("Z", "+00:00"))
                     if created_dt.tzinfo is None:
                         created_dt = created_dt.replace(tzinfo=timezone.utc)
                     sort_timestamp = created_dt.timestamp()
-                except (TypeError, ValueError, OverflowError):
+                except Exception:
+                    created_at = meta_data.get("created_at") or datetime.now(timezone.utc).isoformat()
                     sort_timestamp = stat.st_mtime
 
                 fmt_label = (
@@ -448,10 +470,14 @@ class HousekeepingService:
                     "notes": meta_data.get("notes"),
                 }
                 results_with_timestamp.append((sort_timestamp, result))
-        return [
-            item
-            for _, item in sorted(results_with_timestamp, key=lambda entry: entry[0], reverse=True)
-        ]
+
+        try:
+            return [
+                item
+                for _, item in sorted(results_with_timestamp, key=lambda entry: entry[0], reverse=True)
+            ]
+        except Exception:
+            return [item for _, item in results_with_timestamp]
 
     @classmethod
     async def _verify_raw_payload(cls, payload_path: Path, pg: Dict[str, str]) -> Tuple[bool, int, str]:
@@ -1234,7 +1260,11 @@ class HousekeepingService:
             """)
         )).all()
 
-        backups = cls.list_backups()
+        try:
+            backups = cls.list_backups()
+        except Exception as e:
+            logger.warning("Failed to retrieve backups in get_overview_telemetry: %s", e)
+            backups = []
         total_backup_bytes = sum(b["size_bytes"] for b in backups)
         verified_backups = [b for b in backups if b.get("verified")]
         latest = verified_backups[0] if verified_backups else (backups[0] if backups else None)

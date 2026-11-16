@@ -2086,7 +2086,11 @@ export const communicationApi = {
     apiClient.post<{ status: string; message: string; rules: AutomationRules }>('/communication/automation/rules', data),
 
   previewFeeReminders: (params?: { min_balance?: number; search?: string }) =>
-    apiClient.post<{ count: number; min_balance: number; queue: FeeReminderQueueItem[] }>('/communication/automation/fee-reminders/preview', null, { params }),
+    apiClient.post<{ count: number; min_balance: number; queue: FeeReminderQueueItem[] }>(
+      '/communication/automation/fee-reminders/preview',
+      params || {},
+      { params }
+    ),
 
   dispatchFeeReminders: (data: { reminders: FeeReminderQueueItem[]; channel?: string }) =>
     apiClient.post<{ status: string; message: string; count: number; results: any[] }>('/communication/automation/fee-reminders/dispatch', data),

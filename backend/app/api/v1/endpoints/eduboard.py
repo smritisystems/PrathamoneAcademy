@@ -34,6 +34,7 @@ from app.services.eduboard_realtime import EduBoardWsClient, eduboard_realtime_m
 from app.services.eduboard_service import EduBoardService, RevisionConflictError
 
 router = APIRouter()
+ws_router = APIRouter(tags=["EduBoard WebSocket"])
 
 
 class EduBoardCreateSchema(BaseModel):
@@ -798,7 +799,7 @@ async def _authenticate_eduboard_ws(
             return await _run_with_db(db_sess)
 
 
-@router.websocket("/ws/boards/{board_id}")
+@ws_router.websocket("/ws/boards/{board_id}")
 async def eduboard_realtime_websocket(
     websocket: WebSocket,
     board_id: int,

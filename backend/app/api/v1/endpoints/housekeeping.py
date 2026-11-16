@@ -16,6 +16,7 @@
 #  * @description Protected REST API endpoints for the Housekeeping Module: DB backups, verification, retention pruning, sandbox restore drills, guarded production restore, vacuum maintenance, and backup schedules.
 #  */
 
+import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
@@ -28,6 +29,7 @@ from app.models.user import User
 from app.services.financial_governance_service import FinancialFilter, FinancialGovernanceService
 from app.services.housekeeping_service import HousekeepingService, read_history_events
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["housekeeping"])
 
 MAX_BACKUP_UPLOAD_BYTES = 500 * 1024 * 1024  # 500 MB hard upload cap
@@ -131,7 +133,11 @@ async def get_housekeeping_overview(
 async def list_database_backups(
     _current_user: User = Depends(_require_housekeeping_view_or_backup_access),
 ):
-    return {"backups": HousekeepingService.list_backups()}
+    try:
+        return {"backups": HousekeepingService.list_backups()}
+    except Exception as e:
+        logger.exception("Failed to list database backups: %s", e)
+        return {"backups": [], "error": str(e)}
 
 
 @router.post("/backups", status_code=status.HTTP_201_CREATED)
@@ -161,9 +167,16 @@ async def create_database_backup(
             institution_id=inst_id,
         )
     except RuntimeError as e:
+        logger.error("Runtime error creating database backup: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
     except ValueError as e:
+        logger.error("Validation error creating database backup: %s", e)
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Unexpected error creating database backup: %s", e)
+        raise HTTPException(status_code=500, detail=f"Database backup failed: {str(e)}")
 
 
 @router.post("/backups/{filename}/verify")

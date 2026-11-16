@@ -888,18 +888,36 @@ async def update_rules_endpoint(
     return await update_automation_rules(db, inst_id, update_data)
 
 
-@router.post("/automation/fee-reminders/preview")
+@router.api_route("/automation/fee-reminders/preview", methods=["GET", "POST"])
 async def preview_fee_reminders_endpoint(
-    payload: FeeRemindersPreviewRequest,
+    payload: Optional[FeeRemindersPreviewRequest] = None,
+    min_balance: Optional[float] = Query(None),
+    search: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
 ):
     """Returns queue of students with outstanding fee balances and pre-filled WhatsApp links."""
     inst_id = getattr(current_user, "institution_id", 1) or 1
-    queue = await generate_fee_reminder_queue(db, inst_id, min_balance=payload.min_balance, search=payload.search)
+    resolved_min = 1.0
+    if payload and payload.min_balance is not None:
+        resolved_min = float(payload.min_balance)
+    elif min_balance is not None:
+        resolved_min = float(min_balance)
+
+    resolved_search = None
+    if payload and payload.search:
+        resolved_search = payload.search.strip() or None
+    elif search:
+        resolved_search = search.strip() or None
+
+    queue = await generate_fee_reminder_queue(db, inst_id, min_balance=resolved_min, search=resolved_search)
+    total_amt = sum(item.get("pending_amount", 0) for item in queue)
     return {
+        "count": len(queue),
+        "min_balance": resolved_min,
+        "queue": queue,
         "total_pending": len(queue),
-        "total_amount": sum(item["pending_amount"] for item in queue),
+        "total_amount": total_amt,
         "items": queue,
     }
 

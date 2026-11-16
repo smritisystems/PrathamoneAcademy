@@ -65,6 +65,10 @@ auth_router = APIRouter()
 auth_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 auth_router.include_router(institutions.public_router, prefix="/institutions", tags=["institutions-public"])
 
+ws_router = APIRouter()
+ws_router.include_router(chat_endpoint.ws_router, prefix="", tags=["chat-ws"])
+ws_router.include_router(eduboard.ws_router, prefix="/eduboard", tags=["eduboard-ws"])
+
 api_router = APIRouter(dependencies=[Depends(license_endpoint.enforce_license_request)])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 api_router.include_router(

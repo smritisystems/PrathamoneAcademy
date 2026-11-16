@@ -116,8 +116,10 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
     // Establish WebSocket Connection with Fallback Polling
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
-    const token = localStorage.getItem('prashant_access_token') || ''
-    const wsUrl = `${protocol}//${host}/api/v1/chat/ws/${activeRoomId}?token=${encodeURIComponent(token)}`
+    const authStoreToken = useAuthStore.getState().token
+    const rawToken = authStoreToken && authStoreToken !== 'cookie-session' ? authStoreToken : ''
+    const tokenParam = rawToken ? `?token=${encodeURIComponent(rawToken)}` : ''
+    const wsUrl = `${protocol}//${host}/api/v1/chat/ws/${activeRoomId}${tokenParam}`
 
     try {
       const ws = new WebSocket(wsUrl)

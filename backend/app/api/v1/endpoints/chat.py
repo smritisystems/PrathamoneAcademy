@@ -32,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db, AsyncSessionLocal
-from app.core.deps import get_current_active_user
+from app.core.deps import get_current_active_user, ACCESS_COOKIE_NAME
 from app.core.security import decode_token
 from app.models.user import User
 from app.models.institution import Institution
@@ -40,6 +40,7 @@ from app.models.chat import ChatRoom
 from app.services.chat_service import ChatService
 
 router = APIRouter(prefix="/chat", tags=["Chat & Academic Doubts"])
+ws_router = APIRouter(prefix="/chat", tags=["Chat WebSocket"])
 
 
 # ------------------------------------------------------------------------------
@@ -306,23 +307,30 @@ async def get_mentionable_entities(
 # ------------------------------------------------------------------------------
 # WebSocket Real-Time Stream
 # ------------------------------------------------------------------------------
-@router.websocket("/ws/{room_id}")
+@ws_router.websocket("/ws/{room_id}")
 async def chat_websocket_endpoint(
     websocket: WebSocket,
     room_id: int,
     token: Optional[str] = Query(None),
 ):
     """WebSocket stream for real-time room communication."""
-    # Authenticate token
-    if not token:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
+    resolved_token = (token.strip() if token else None) or websocket.cookies.get(ACCESS_COOKIE_NAME)
+    user_id: Optional[int] = None
 
-    try:
-        payload = decode_token(token)
-        user_id = int(payload.get("sub"))
-    except Exception:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+    if resolved_token and resolved_token != "cookie-session":
+        try:
+            payload = decode_token(resolved_token)
+            if payload and payload.get("sub"):
+                user_id = int(payload.get("sub"))
+        except Exception:
+            user_id = None
+
+    if not user_id:
+        try:
+            await websocket.accept()
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Unauthorized")
+        except Exception:
+            pass
         return
 
     await manager.connect(websocket, room_id)
@@ -358,4 +366,6 @@ async def chat_websocket_endpoint(
                     json.dumps({"type": "ERROR", "error": str(inner_ex)})
                 )
     except WebSocketDisconnect:
+        manager.disconnect(websocket, room_id)
+    except Exception:
         manager.disconnect(websocket, room_id)
