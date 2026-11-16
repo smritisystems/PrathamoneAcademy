@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "logo", "ui-ux", "design-system", "assets", "eduos"]
 entities: ["BrandingConfig", "LogoSystem", "TenantIdentity"]
@@ -23,7 +23,7 @@ related_modules: ["00_PRODUCT_OVERVIEW", "13_SYSADMIN_SETTINGS", "14_PRINTING_DO
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition (Coaching Institutes Suite)  
 **Parent Brand:** PrathamOne  
-**Corporate Group:** AITDL — AI Technology & Development Lab  
+**Corporate Group:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 **Document Status:** Approved Architectural Specification  
 

@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["teachers", "staff", "workforce", "dashboards", "lifecycle", "assignments", "timetable", "activity-history"]
 entities: ["User", "StaffProfile", "StaffEmploymentHistory", "TeacherAssignment", "TimetableEntry", "TeachingSession", "StaffAttendance", "StaffLeave", "TeacherPayroll"]
@@ -30,7 +30,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "07_ATTENDANCE"
 **Edition:** Coaching Institute Edition  
 **Module:** 05_TEACHER_MANAGEMENT & People Operations  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

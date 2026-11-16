@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["automated-tests", "test-report", "pytest", "vitest", "quality-assurance", "regressions"]
 entities: ["Invoice", "Payment", "PaymentReceipt", "Student", "StaffProfile", "User"]
@@ -25,7 +25,7 @@ related_modules: ["18_TESTING_QA", "20_AUDITS_COMPLIANCE"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date of Execution:** November 10, 2026  
 **Total Automated Tests:** 710 Tests  
 **Global Pass Rate:** 100% (710/710 Runnable Tests Passed)  

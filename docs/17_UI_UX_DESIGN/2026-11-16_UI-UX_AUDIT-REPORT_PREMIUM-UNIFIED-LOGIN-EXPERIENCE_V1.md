@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-16"
 updated_date: "2026-11-16"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["login", "visual-audit", "responsive-svg", "unified-auth", "academic-overlays"]
 entities: ["Institution", "User", "Board", "Standard", "Subject"]
@@ -23,7 +23,7 @@ related_modules: ["12_RBAC_SECURITY", "13_SYSADMIN_SETTINGS", "03_ACADEMIC_MANAG
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-16  
 
 ---
@@ -83,6 +83,6 @@ The application was tested using headless Chromium across 14 standard viewports:
 ## 4. Architectural Sign-off
 
 - **Product Architect:** Jawahar R. Mallah  
-- **Organization:** AITDL — AI Technology & Development Lab  
+- **Organization:** Smritisys & AITDL Networks  
 - **Client Deployment:** Prashant Academy Coaching Institute  
 - **Status:** Approved for Production Baseline v1.0.0  

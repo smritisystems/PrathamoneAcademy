@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["buttons", "actions", "validation-matrix", "ui-audit", "interactive-elements"]
 entities: ["User", "Student", "StaffProfile", "FeeStructure", "Examination"]
@@ -24,7 +24,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "05_TEACHER
 **Baseline Version:** 1.0.0  
 **Audit Scope:** Full Application Interactive Buttons, Action Menus & Triggers  
 **Lead Auditor:** Jawahar R Mallah, Product Architect  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-07  
 
 ---

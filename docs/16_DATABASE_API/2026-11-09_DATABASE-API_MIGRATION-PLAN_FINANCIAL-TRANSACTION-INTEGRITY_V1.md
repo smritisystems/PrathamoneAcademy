@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["database", "alembic", "migration", "rollback", "schema", "financial-integrity"]
 entities: ["Payment", "PaymentReceipt", "FinancialPeriod"]
@@ -25,7 +25,7 @@ related_modules: ["09_FEES_PAYMENTS", "10_FINANCE_ACCOUNTING"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Migration ID:** `033_financial_transaction_integrity`  
 
 ---

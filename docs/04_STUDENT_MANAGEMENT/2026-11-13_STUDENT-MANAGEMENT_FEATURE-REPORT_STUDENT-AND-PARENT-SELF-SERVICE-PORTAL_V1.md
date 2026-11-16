@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-13"
 updated_date: "2026-11-13"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["student-portal", "parent-portal", "self-service", "homework", "attendance", "report-cards", "fees", "vouchers"]
 entities: ["Student", "StudentHomeworkRecord", "Attendance", "Examination", "ExamMark", "FeeInvoice", "Payment", "PaymentReceipt"]
@@ -23,7 +23,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "07_ATTENDANCE", "08_EXAMINATION", "0
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0 (Build: `2026.11.13-REV-169-v1.92.0-A4D67BC`)  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Module:** `04_STUDENT_MANAGEMENT` / Self-Service Portal  
 **Directive Compliance:** SSOT Rules 001–011, View-First Governance (Rule 010), Immutability of Financial & Academic Ledgers  
 

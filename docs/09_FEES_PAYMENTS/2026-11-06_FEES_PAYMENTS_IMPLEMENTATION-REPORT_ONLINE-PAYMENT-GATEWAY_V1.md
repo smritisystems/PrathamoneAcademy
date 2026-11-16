@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["payments", "razorpay", "upi", "qr-code", "checkout", "receipts", "webhook", "cryptography"]
 entities: ["Payment", "FeeInvoice", "PaymentAllocation", "PaymentReceipt", "InstitutionSetting"]
@@ -30,7 +30,7 @@ related_modules: ["09_FEES_PAYMENTS", "10_FINANCE_ACCOUNTING", "15_INTEGRATIONS"
 **Edition:** Coaching Institute Edition  
 **Module:** 09_FEES_PAYMENTS & 15_INTEGRATIONS  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** FULLY COMPLIANT — SSOT & ANTI-DUPLICATION STRICTLY ENFORCED  
 
 ---

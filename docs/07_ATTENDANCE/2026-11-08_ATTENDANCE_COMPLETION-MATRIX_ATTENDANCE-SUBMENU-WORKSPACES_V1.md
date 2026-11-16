@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["attendance", "workspaces", "qr-terminal", "roll-call", "defaulters", "ssot", "view-first"]
 entities: ["AttendanceRecord", "Student", "Standard", "Division", "AttendancePolicy"]
@@ -24,7 +24,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "03_ACADEMIC_MANAGEMENT"]
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
 **Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-08  
 
 ---

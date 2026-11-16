@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-11"
 updated_date: "2026-11-11"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["reports", "calculation-engine", "intelligence", "provenance", "decision-support", "benchmarks", "ssot"]
 entities: ["ReportIntelligenceService", "ReportIntelligenceBanner", "SafeMath", "InstitutionSetting"]
@@ -25,7 +25,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "07_ATTENDANCE", "08_EXAMINATION", "0
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Execution Date:** 2026-11-11  
 
 ---

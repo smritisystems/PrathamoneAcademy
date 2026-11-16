@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["receipts", "nethan", "typos", "reconciliation", "fees", "data-quality"]
 entities: ["PaymentReceipt", "Payment", "Student", "User", "FeeInvoice"]

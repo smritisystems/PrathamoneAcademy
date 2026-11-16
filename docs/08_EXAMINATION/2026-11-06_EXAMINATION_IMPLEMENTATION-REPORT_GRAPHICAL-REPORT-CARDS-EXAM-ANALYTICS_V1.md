@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["examinations", "report-cards", "analytics", "grades", "leaderboard", "marks-sheet", "printing"]
 entities: ["Examination", "ExamMarks", "Subject", "Standard", "Student", "Institution"]
@@ -25,7 +25,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "14_PRINTIN
 **Edition:** Coaching Institute Edition  
 **Module:** 08_EXAMINATION (Examinations, Analytics & Printable Report Cards)  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** FULLY COMPLIANT — SSOT & ANTI-DUPLICATION STRICTLY ENFORCED  
 
 ---

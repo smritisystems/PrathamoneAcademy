@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["remediation-roadmap", "action-plan", "implementation-phases", "workforce", "dossier-print"]
 entities: ["User", "StaffProfile", "TeacherAssignment", "TeacherPayroll", "StaffDocument"]
@@ -24,7 +24,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "14_PRINTING_DO
 **Baseline Version:** 1.0.0  
 **Directive:** Forensic Audit & Evidence-Based Controlled Remediation  
 **Lead Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-07  
 
 ---

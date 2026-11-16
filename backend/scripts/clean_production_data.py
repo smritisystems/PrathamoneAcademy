@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Source component for Clean Production Data in the backend.scripts module.
 #  */
@@ -21,7 +21,7 @@ File:         clean_production_data.py
 Project:      PrathamOne Academy Coaching Institute Management System
 Module:       backend.scripts
 Author:       Jawahar R. Mallah
-Organization: AITDL (AI Technology & Development Lab)
+Organization: Smritisys & AITDL Networks
 Client:       Prashant Academy Coaching Institute
 Copyright:    Copyright (c) 2026 AITDL
 License:      Proprietary

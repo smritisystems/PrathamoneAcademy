@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["crm", "leads", "submenus", "workspaces", "matrix", "view-mode-governance", "ssot"]
 entities: ["Lead", "LeadFollowUp", "LeadDemoClass", "InstitutionSetting", "Student", "User"]
@@ -33,7 +33,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "12_RBAC_SECURITY", "14_PRINTING_DOCU
 **Document Version:** 1.0.0  
 **Created:** 2026-11-08  
 **Author:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Engineering Directive:** AUDIT → REUSE → REFACTOR → EXTEND → CREATE ONLY IF MISSING  
 
 ---

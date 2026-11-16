@@ -4,7 +4,7 @@
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

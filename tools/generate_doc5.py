@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-16
 #  *
 #  * @description Generator for Deliverable 5: FRONTEND_BACKEND_DATABASE_MAPPING_MATRIX.md
 #  */
@@ -36,7 +36,7 @@ def generate():
         'created_date: "2026-11-09"',
         'updated_date: "2026-11-09"',
         'author: "Jawahar R Mallah"',
-        'organization: "AITDL — AI Technology & Development Lab"',
+        'organization: "Smritisys & AITDL Networks"',
         'status: "Approved"',
         'tags: ["audit", "mapping", "traceability", "frontend", "backend", "database", "ssot"]',
         'entities: ["FrontendField", "APIField", "PydanticSchema", "SQLAlchemyModel", "DBColumn"]',
@@ -49,7 +49,7 @@ def generate():
         '**Product:** PrathamOne EduOS (Coaching Institute Edition)  ',
         '**Version:** 1.0.0  ',
         '**Architect:** Jawahar R Mallah  ',
-        '**Organization:** AITDL — AI Technology & Development Lab  ',
+        '**Organization:** Smritisys & AITDL Networks  ',
         '**Audit Date:** 2026-11-09  ',
         '**Scope:** End-to-end data flow validation across UI Components, API Clients, Backend Routes, Pydantic Schemas, Domain Services, SQLAlchemy Models, and PostgreSQL Columns.  ',
         '',

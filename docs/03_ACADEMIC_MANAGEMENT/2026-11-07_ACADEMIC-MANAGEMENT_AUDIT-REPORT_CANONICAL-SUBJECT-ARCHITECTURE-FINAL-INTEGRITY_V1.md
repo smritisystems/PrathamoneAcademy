@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["academics", "subjects", "canonical-subject", "subject-mappings", "ssot", "audit", "integrity", "nulls-not-distinct"]
 entities: ["CanonicalSubject", "SubjectMapping", "Subject", "Standard", "Board", "AcademicYear", "ExamMark", "TeachingSession", "TimetableEntry"]
@@ -24,7 +24,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "08_EXAMINATION", "12_RBAC_SECURITY"
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Module:** 03_ACADEMIC_MANAGEMENT  
 **Reference Commit:** `fca2238`  
 **Date:** 2026-11-07  

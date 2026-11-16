@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["financial-audit", "ledger-reconciliation", "fee-integrity", "receipt-numbering", "invoice-audit", "ssot"]
 entities: ["Invoice", "Payment", "PaymentAllocation", "PaymentReceipt", "ConcessionApplication", "Student"]
@@ -25,7 +25,7 @@ related_modules: ["09_FEES_PAYMENTS", "10_FINANCE_ACCOUNTING", "16_DATABASE_API"
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date of Audit:** November 10, 2026  
 **Audit Priority:** CRITICAL / HIGHEST  
 **Mathematical Discrepancy Count:** ZERO (0)  

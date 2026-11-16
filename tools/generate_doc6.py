@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-16
 #  *
 #  * @description Generator for Deliverable 6: API_AND_SERVICE_CONSOLIDATION_REPORT.md
 #  */
@@ -45,7 +45,7 @@ def generate():
         'created_date: "2026-11-09"',
         'updated_date: "2026-11-09"',
         'author: "Jawahar R Mallah"',
-        'organization: "AITDL — AI Technology & Development Lab"',
+        'organization: "Smritisys & AITDL Networks"',
         'status: "Approved"',
         'tags: ["audit", "api", "services", "consolidation", "ssot", "endpoints", "rbac"]',
         'entities: ["FastAPIRouter", "DomainService", "PydanticSchema", "RBAC"]',
@@ -58,7 +58,7 @@ def generate():
         '**Product:** PrathamOne EduOS (Coaching Institute Edition)  ',
         '**Version:** 1.0.0  ',
         '**Architect:** Jawahar R Mallah  ',
-        '**Organization:** AITDL — AI Technology & Development Lab  ',
+        '**Organization:** Smritisys & AITDL Networks  ',
         '**Audit Date:** 2026-11-09  ',
         '**Scope:** 329 Backend API Endpoints across 31 Router Files, 18 Domain Services, and 52 Frontend API Client Interfaces.  ',
         '',

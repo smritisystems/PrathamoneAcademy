@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-13"
 updated_date: "2026-11-13"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["examinations", "grading_scales", "cbse", "icse", "state_board", "report_cards", "batch_dossier", "gpa"]
 entities: ["Examination", "ExamMark", "InstitutionSetting", "Student"]

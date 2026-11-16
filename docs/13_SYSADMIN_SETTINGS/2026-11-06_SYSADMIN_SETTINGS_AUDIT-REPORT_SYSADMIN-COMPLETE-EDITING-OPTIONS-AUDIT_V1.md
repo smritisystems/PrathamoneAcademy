@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["13-sysadmin-settings", "audit-report"]
 entities: ["InstituteSetting", "SystemSetting"]

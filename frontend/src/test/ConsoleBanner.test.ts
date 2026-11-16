@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-06
+ * @updated     2026-11-16
  *
  * @description Unit tests verifying browser console startup banner rendering with AITDL parent org, product hierarchy, and security controls.
  */
@@ -67,7 +67,7 @@ describe('Browser Console Startup Branding Banner', () => {
 
     // Parent organization
     expect(bannerText).toContain('Parent Org:')
-    expect(bannerText).toContain('AITDL — AI Technology & Development Lab')
+    expect(bannerText).toContain('Smritisys & AITDL Networks')
     expect(bannerText).toContain('https://aitdl.com')
 
     // Products hierarchy

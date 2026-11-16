@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-14"
 updated_date: "2026-11-14"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Implemented"
 tags: ["printing", "reports", "software-branding", "pdf"]
 entities: []

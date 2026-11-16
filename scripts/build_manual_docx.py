@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-12
+#  * @updated     2026-11-16
 #  *
 #  * @description Source component for Build Manual Docx in the scripts module.
 #  */
@@ -24,7 +24,7 @@ PrathamOne_Academy_Complete_User_Manual.docx
 Product: PrathamOne Coaching Institutes Enterprise Suite
 Website: https://prathamone.com
 Author: Jawahar R Mallah
-Organization: AITDL — AI Technology & Development Lab
+Organization: Smritisys & AITDL Networks
 Version: 1.0.0 (2026.11.06-STABLE-v1.0.0)
 Date: November 2026
 """
@@ -179,7 +179,7 @@ def build_docx_manual():
     meta_rows = [
         ("Software Product", "PrathamOne Coaching Institutes Enterprise Suite"),
         ("Author & Chief Architect", "Jawahar R Mallah"),
-        ("Organization", "AITDL — AI Technology & Development Lab"),
+        ("Organization", "Smritisys & AITDL Networks"),
         ("Official Website", "https://prathamone.com"),
         ("Verified Release Version", "v1.88.2 (Build: 2026.11.12-REV-161-v1.88.2)"),
         ("Manual Revision Date", "November 12, 2026"),
@@ -519,7 +519,7 @@ def build_docx_manual():
         "• Support Email: support@prathamone.com | Alternate: prathamone@outlook.com\n"
         "• Website: https://prathamone.com\n"
         "• Author & Architect: Jawahar R Mallah\n"
-        "• Organization: AITDL — AI Technology & Development Lab"
+        "• Organization: Smritisys & AITDL Networks"
     )
 
     # Save Document

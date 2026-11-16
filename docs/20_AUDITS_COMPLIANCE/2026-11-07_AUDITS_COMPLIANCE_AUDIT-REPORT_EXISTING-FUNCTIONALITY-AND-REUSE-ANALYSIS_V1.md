@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["workforce", "audit", "reuse", "ssot", "dossier", "banking", "contacts", "delete_protection"]
 entities: ["StaffProfile", "User", "StaffBankAccount", "StaffKeyContact", "TeacherAssignment", "TeacherPayroll"]
@@ -23,7 +23,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "12_RBAC_SECURI
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Directive Status:** MANDATORY COMPLIANCE — REUSE FIRST, REFACTOR SECOND, CREATE ONLY IF MISSING  
 
 ---

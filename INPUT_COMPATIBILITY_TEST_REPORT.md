@@ -5,7 +5,7 @@
 **System Module:** `18_TESTING_QA` / `03_ACADEMIC_MANAGEMENT` (EduBoard)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** QA COMPLIANCE VERIFICATION  
 **Canonical Document:** [`docs/18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_INPUT-COMPATIBILITY-TEST-REPORT_V1.md`](file:///f:/PrashantAcademy/docs/18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_INPUT-COMPATIBILITY-TEST-REPORT_V1.md)
 

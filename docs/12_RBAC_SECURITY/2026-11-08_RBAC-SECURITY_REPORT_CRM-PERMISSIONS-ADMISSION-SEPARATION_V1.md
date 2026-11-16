@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["rbac", "crm", "permissions", "admission-separation", "view-first", "security"]
 entities: ["Lead", "Student", "UserPermission", "Role"]
@@ -21,7 +21,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "12_RBAC_SECURITY", "09_FEES_PAYMENTS
 # RBAC CORRECTION — SEPARATE CRM PERMISSIONS FROM STUDENT ADMISSION
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Author:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Report Date:** 2026-11-08  
 **Status:** Approved & Verified (100% Tests Passing)
 

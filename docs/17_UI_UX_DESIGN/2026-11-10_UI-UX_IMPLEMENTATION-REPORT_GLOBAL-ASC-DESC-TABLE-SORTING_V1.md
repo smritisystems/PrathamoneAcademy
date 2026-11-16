@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["sorting", "asc", "desc", "tables", "ui-ux", "filters", "ssot"]
 entities: ["useTableSort", "SortableHeader", "TableSortSelect", "CascadingFilters"]
@@ -22,7 +22,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "05_TEACHER
 
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-10  
 **Status:** Approved & Implemented  
 

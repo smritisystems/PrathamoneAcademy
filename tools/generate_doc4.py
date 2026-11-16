@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-16
 #  *
 #  * @description Generator for Deliverable 4: SUBJECT_MASTER_CANONICALIZATION_REPORT.md
 #  */
@@ -41,7 +41,7 @@ def generate():
         'created_date: "2026-11-09"',
         'updated_date: "2026-11-09"',
         'author: "Jawahar R Mallah"',
-        'organization: "AITDL — AI Technology & Development Lab"',
+        'organization: "Smritisys & AITDL Networks"',
         'status: "Approved"',
         'tags: ["audit", "academic", "subjects", "canonicalization", "curriculum", "relational-bridge"]',
         'entities: ["CanonicalSubject", "SubjectMapping", "Subject", "ExamMark", "TimetableEntry"]',
@@ -54,7 +54,7 @@ def generate():
         '**Product:** PrathamOne EduOS (Coaching Institute Edition)  ',
         '**Version:** 1.0.0  ',
         '**Architect:** Jawahar R Mallah  ',
-        '**Organization:** AITDL — AI Technology & Development Lab  ',
+        '**Organization:** Smritisys & AITDL Networks  ',
         '**Audit Date:** 2026-11-09  ',
         '**Scope:** Academic Subject Master across database tables, API routes, and downstream relational dependencies.  ',
         '',

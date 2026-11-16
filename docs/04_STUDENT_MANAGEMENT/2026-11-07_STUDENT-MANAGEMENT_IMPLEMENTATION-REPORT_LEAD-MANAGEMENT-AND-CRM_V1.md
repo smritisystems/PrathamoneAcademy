@@ -10,7 +10,7 @@ doc_version: "1.1"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["crm", "lead-management", "kanban", "follow-up", "admissions", "rule-010", "view-first", "dossier", "ssot"]
 entities: ["Lead", "LeadFollowUp", "LeadDemoClass", "CommunicationLog", "Student", "Guardian", "StudentEnrollment", "LookupItem"]
@@ -35,7 +35,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "09_FEES_PA
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Author:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-07 (Revision 1.1 — Forensic Validation & SSOT Consolidation)
 
 ---

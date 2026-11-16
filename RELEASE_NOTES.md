@@ -6,7 +6,7 @@
 **Build Identifier:** `2026.11.10-REV-137-v1.76.0-C31CC0B`  
 **Target Environment:** Production  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client Deployment:** Prashant Academy Coaching Institute  
 
 ---

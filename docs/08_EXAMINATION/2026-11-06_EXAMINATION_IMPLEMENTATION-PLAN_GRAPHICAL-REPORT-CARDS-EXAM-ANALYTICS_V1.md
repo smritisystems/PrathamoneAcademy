@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Draft"
 tags: ["examinations", "report-cards", "analytics", "marks-entry", "coaching-edition", "print"]
 entities: ["Examination", "ExamMark", "Subject", "Student", "Institution", "Standard"]
@@ -25,7 +25,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "07_ATTENDANCE", "14_PRINTING_DOCUMEN
 **Baseline Version:** 1.0.0  
 **Module:** 08_EXAMINATION  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["teachers", "faculty", "workspaces", "payroll", "allocations", "timetable", "ssot", "view-first"]
 entities: ["User", "StaffMember", "TeacherAssignment", "StaffAttendance", "StaffLeave", "TeacherPayrollMonthly"]
@@ -24,7 +24,7 @@ related_modules: ["06_TEACHER_PAYROLL", "03_ACADEMIC_MANAGEMENT", "12_RBAC_SECUR
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
 **Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-09  
 
 ---

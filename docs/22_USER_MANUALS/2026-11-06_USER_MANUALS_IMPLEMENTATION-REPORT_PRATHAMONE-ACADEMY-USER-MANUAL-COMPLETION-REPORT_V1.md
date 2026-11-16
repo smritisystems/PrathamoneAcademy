@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["22-user-manuals", "implementation-report"]
 entities: []
@@ -23,7 +23,7 @@ related_modules: []
 > **Product:** PrathamOne Coaching Institutes Enterprise Suite  
 > **Official Website:** [https://prathamone.com](https://prathamone.com)  
 > **Author & Chief Architect:** **Jawahar R Mallah**  
-> **Organization:** **AITDL — AI Technology & Development Lab**  
+> **Organization:** **Smritisys & AITDL Networks**  
 > **Verified Software Version:** **`v6.99.1`** (Build: `2026.11.05-PROD-REL`)  
 > **Publication Date:** November 06, 2026  
 > **Repository Commit:** [`48b6132`](https://github.com/smritisystems/PrathamoneAcademy/commit/48b6132) (`master`)  
@@ -214,7 +214,7 @@ The cover page, document control tables, and page footers display the verified a
 | **Product Suite** | **PrathamOne Coaching Institutes Enterprise Suite** |
 | **Official Website** | [https://prathamone.com](https://prathamone.com) |
 | **Author & Chief Architect** | **Jawahar R Mallah** |
-| **Organization** | **AITDL — AI Technology & Development Lab** |
+| **Organization** | **Smritisys & AITDL Networks** |
 | **Direct Phone / WhatsApp Helplines** | **+91 9323 023 007** / **+91 9324 117 007** |
 | **Primary Support Email** | [support@prathamone.com](mailto:support@prathamone.com) |
 | **Alternate Support Email** | [prathamone@outlook.com](mailto:prathamone@outlook.com) |

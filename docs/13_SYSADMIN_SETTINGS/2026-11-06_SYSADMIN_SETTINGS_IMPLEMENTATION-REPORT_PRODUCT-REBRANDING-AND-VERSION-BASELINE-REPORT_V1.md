@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["13-sysadmin-settings", "implementation-report"]
 entities: ["InstituteSetting", "SystemSetting"]
@@ -25,7 +25,7 @@ related_modules: []
 **Official Baseline Version:** 1.0.0  
 **Build Identifier:** `2026.11.06-STABLE-v1.0.0`  
 **Parent Brand:** PrathamOne (`https://prathamone.com`)  
-**Parent Organization:** AITDL — AI Technology & Development Lab (`https://aitdl.com`)  
+**Parent Organization:** Smritisys & AITDL Networks (`https://aitdl.com`)  
 **Product Architect:** Jawahar R Mallah  
 **Official Tagline:** "The Power of Enterprise Education. The Simplicity of WhatsApp."  
 **Verification Date:** November 6, 2026  
@@ -52,7 +52,7 @@ All product identity metadata, semantic versioning configurations, print headers
 | `frontend/public/manifest.json` | PWA & Desktop App Manifest | `name: 'PrathamOne EduOS — Coaching Institute Edition'`, `short_name: 'PrathamOne EduOS'` |
 | `frontend/package.json` | Frontend Package Manifest | `"version": "1.0.0"` |
 | `package.json` (Root) | Monorepo Manifest | `"version": "1.0.0"` |
-| `backend/app/core/config.py` | FastAPI Settings | `PRODUCT_NAME = "PrathamOne EduOS"`, `EDITION = "Coaching Institute Edition"`, `VERSION = "1.0.0"`, `BUILD_NUMBER = "2026.11.06-STABLE-v1.0.0"`, `AUTHOR = "Jawahar R Mallah"`, `ORGANIZATION = "AITDL — AI Technology & Development Lab"` |
+| `backend/app/core/config.py` | FastAPI Settings | `PRODUCT_NAME = "PrathamOne EduOS"`, `EDITION = "Coaching Institute Edition"`, `VERSION = "1.0.0"`, `BUILD_NUMBER = "2026.11.06-STABLE-v1.0.0"`, `AUTHOR = "Jawahar R Mallah"`, `ORGANIZATION = "Smritisys & AITDL Networks"` |
 | `backend/app/main.py` | API Entrypoint & Root `/` | Title: `PrathamOne EduOS — Coaching Institute Edition`, Root `/` returns full product, edition, version, tagline, and organization metadata |
 | `backend/app/services/release_service.py` | Release Governance Engine | Fallback baseline and release notes header: `PrathamOne EduOS v1.0.0` |
 | `backend/app/services/data_exporter.py` | Excel/CSV Exports | Print footer: `PrathamOne EduOS · Coaching Institute Edition · prathamone.com` |
@@ -90,7 +90,7 @@ In PostgreSQL table `system_releases` (which enforces a unique constraint on `ve
   "version": "1.0.0",
   "build_number": "2026.11.06-STABLE-v1.0.0",
   "tagline": "The Power of Enterprise Education. The Simplicity of WhatsApp.",
-  "organization": "AITDL — AI Technology & Development Lab",
+  "organization": "Smritisys & AITDL Networks",
   "author": "Jawahar R Mallah",
   "docs": "/api/docs"
 }

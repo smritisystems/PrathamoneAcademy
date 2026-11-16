@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-05"
 updated_date: "2026-11-05"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["13-sysadmin-settings", "implementation-report"]
 entities: ["InstituteSetting", "SystemSetting"]
@@ -24,7 +24,7 @@ related_modules: []
 **System:** PrathamOne Academy Coaching Institute Management System (Enterprise Edition)  
 **Client:** Prashant Academy  
 **Author / Auditor:** Jawahar R. Mallah, Senior Full-Stack Architect, QA Engineer & UX Reviewer  
-**Organization:** AITDL (AI Technology & Development Lab)  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Timestamp:** November 5, 2026, 20:00 IST  
 **Environment:** Production Containerized Stack (`prashant_academy_frontend`, `prashant_academy_backend`, `prashant_academy_db`)  
 

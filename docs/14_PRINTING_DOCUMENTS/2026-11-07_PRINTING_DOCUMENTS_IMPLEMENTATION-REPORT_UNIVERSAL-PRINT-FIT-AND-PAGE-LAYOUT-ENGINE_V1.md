@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["universal-print", "implementation-report", "page-layout", "scaling-engine", "readability"]
 entities: ["Institution", "PaymentReceipt", "Student", "StaffProfile", "FeeStructure"]
@@ -23,7 +23,7 @@ related_modules: ["09_FEES_PAYMENTS", "05_TEACHER_MANAGEMENT", "08_EXAMINATION",
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0  
 **Lead Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-07  
 
 ---

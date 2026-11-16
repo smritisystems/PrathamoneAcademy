@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-16"
 updated_date: "2026-11-16"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["boards", "curriculum", "canonical-subjects", "login-redesign", "installer", "pan-india"]
 entities: ["Board", "CanonicalSubject", "SubjectMapping", "Division", "Standard"]
@@ -24,7 +24,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "17_UI_UX_DESIGN", "02_INSTALLATION_
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Module:** 03_ACADEMIC_MANAGEMENT  
 **Date:** 2026-11-16  
 

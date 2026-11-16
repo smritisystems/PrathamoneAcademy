@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-04"
 updated_date: "2026-11-04"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["11-reports-exports", "implementation-report"]
 entities: []
@@ -22,7 +22,7 @@ related_modules: []
 
 **Project**: PrathamOne Academy Coaching Institute Management System  
 **Client**: Prashant Academy Coaching Institute  
-**Author**: Jawahar R. Mallah (AITDL - AI Technology & Development Lab)  
+**Author**: Jawahar R. Mallah (Smritisys & AITDL Networks)  
 **Date**: November 4, 2026  
 **Version**: `v6.99.1`  
 

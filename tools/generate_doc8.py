@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-16
 #  *
 #  * @description Generator for Deliverable 8: GLOBAL_DATA_GOVERNANCE_FINAL_REPORT.md
 #  */
@@ -37,7 +37,7 @@ def generate():
         'created_date: "2026-11-09"',
         'updated_date: "2026-11-09"',
         'author: "Jawahar R Mallah"',
-        'organization: "AITDL — AI Technology & Development Lab"',
+        'organization: "Smritisys & AITDL Networks"',
         'status: "Approved"',
         'tags: ["audit", "governance", "ssot", "roadmap", "architecture", "final-report"]',
         'entities: ["DataGovernance", "SingleSourceOfTruth", "Roadmap", "Policy"]',
@@ -50,7 +50,7 @@ def generate():
         '**Product:** PrathamOne EduOS (Coaching Institute Edition)  ',
         '**Version:** 1.0.0  ',
         '**Product Architect:** Jawahar R Mallah  ',
-        '**Organization:** AITDL — AI Technology & Development Lab  ',
+        '**Organization:** Smritisys & AITDL Networks  ',
         '**Audit Date:** 2026-11-09  ',
         '**Policy Status:** MANDATORY — ALL REPOSITORY WORKFLOWS & CODING AGENTS  ',
         '',
@@ -181,7 +181,7 @@ def generate():
         '## 6. FINAL SIGN-OFF & STAGE 1 COMPLETION',
         '',
         '**Audit Lead & Product Architect:** Jawahar R Mallah  ',
-        '**Organization:** AITDL — AI Technology & Development Lab  ',
+        '**Organization:** Smritisys & AITDL Networks  ',
         '**Verification Status:** 100% COMPLETE — Zero breaking schema changes introduced. Ready for user review and Stage 2 approval.  ',
         ''
     ]
@@ -202,7 +202,7 @@ def generate():
         'created_date: "2026-11-09"',
         'updated_date: "2026-11-09"',
         'author: "Jawahar R Mallah"',
-        'organization: "AITDL — AI Technology & Development Lab"',
+        'organization: "Smritisys & AITDL Networks"',
         'status: "Approved"',
         'tags: ["policy", "ssot", "deduplication", "canonical-master", "mapping", "governance"]',
         'entities: ["DataGovernance", "SingleSourceOfTruth", "Policy", "MasterData"]',
@@ -216,7 +216,7 @@ def generate():
         '**Product:** PrathamOne EduOS (Coaching Institute Edition)  ',
         '**Version:** 1.0.0  ',
         '**Architect:** Jawahar R Mallah  ',
-        '**Organization:** AITDL — AI Technology & Development Lab  ',
+        '**Organization:** Smritisys & AITDL Networks  ',
         '**Effective Date:** 2026-11-09  ',
         '**Status:** ACTIVE & MANDATORY FOR ALL DEVELOPERS AND CODING AGENTS  ',
         '',

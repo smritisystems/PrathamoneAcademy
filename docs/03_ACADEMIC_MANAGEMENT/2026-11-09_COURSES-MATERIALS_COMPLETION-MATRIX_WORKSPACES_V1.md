@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["courses", "study-materials", "digital-content", "workspaces", "view-first", "submenus", "completion-matrix"]
 entities: ["StudyMaterial", "Standard", "Subject", "Division"]
@@ -24,7 +24,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "08_EXAMINATION", "13_SYSADMIN_SETTI
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
 **Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-09  
 
 ---

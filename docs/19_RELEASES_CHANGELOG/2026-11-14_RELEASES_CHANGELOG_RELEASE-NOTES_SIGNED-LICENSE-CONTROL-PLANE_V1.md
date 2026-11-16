@@ -10,7 +10,7 @@ doc_version: "1.2"
 created_date: "2026-11-14"
 updated_date: "2026-11-15"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Draft"
 tags: ["licensing", "Ed25519", "activation", "batch-codes", "offline-activation", "release-notes"]
 entities: ["License", "Activation", "Entitlement", "LicenseCode"]

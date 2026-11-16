@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["print-audit", "export-audit", "receipt-printing", "id-cards", "excel-export", "print-footer", "a5-layout"]
 entities: ["PaymentReceipt", "Student", "ReportCard", "FormTemplate", "PrintAuditLog"]
@@ -25,7 +25,7 @@ related_modules: ["11_REPORTS_EXPORTS", "14_PRINTING_DOCUMENTS", "20_AUDITS_COMP
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date of Audit:** November 10, 2026  
 
 ---

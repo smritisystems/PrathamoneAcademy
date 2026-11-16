@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-08
-#  * @updated     2026-11-08
+#  * @updated     2026-11-16
 #  *
 #  * @description Source component for Migrate Theme Tokens in the tools module.
 #  */
@@ -24,7 +24,7 @@ Scans the frontend codebase to detect hardcoded legacy blue/indigo utility class
 and provides automated migration to canonical semantic primary/brand tokens.
 
 Author: Jawahar R. Mallah
-Organization: AITDL (AI Technology & Development Lab)
+Organization: Smritisys & AITDL Networks
 Project: PrathamOne EduOS
 """
 

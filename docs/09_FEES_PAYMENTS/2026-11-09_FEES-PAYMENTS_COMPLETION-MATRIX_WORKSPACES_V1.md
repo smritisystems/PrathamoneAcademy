@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["fees", "payments", "invoicing", "defaulters", "concessions", "online-gateway", "receipts", "daybook", "workspaces", "view-first"]
 entities: ["FeeInvoice", "Payment", "FeeStructure", "FeeCategory", "FeeDefaulter", "FeeConcession"]
@@ -24,7 +24,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "10_FINANCE_ACCOUNTING", "14_PRINTING
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-09  
 **Governance Status:** FULLY COMPLIANT (SSOT Rules 001–010 & Global View-First Enforced)  
 

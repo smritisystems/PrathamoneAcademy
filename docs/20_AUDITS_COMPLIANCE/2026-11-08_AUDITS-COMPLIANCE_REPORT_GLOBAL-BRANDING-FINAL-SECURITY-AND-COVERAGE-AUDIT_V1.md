@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "multi-tenant", "isolation", "security", "accessibility", "regression", "audit"]
 entities: ["Institution", "User", "InstituteProfile"]
@@ -25,7 +25,7 @@ related_modules: ["17_UI_UX_DESIGN", "13_SYSADMIN_SETTINGS", "14_PRINTING_DOCUME
 **Baseline Version:** 1.0.0  
 **Verification Scope:** Global Branding & Appearance Engine Post-Commit `14b77ac`  
 **Lead Auditor / Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Execution Date:** 2026-11-08  
 **Audit Status:** FULLY VERIFIED & HARDENED (PASS)
@@ -209,4 +209,4 @@ The Global Branding & Appearance Engine of PrathamOne EduOS has been comprehensi
 **Report Approved By:**  
 Jawahar R Mallah  
 Product Architect, PrathamOne EduOS  
-AITDL — AI Technology & Development Lab
+Smritisys & AITDL Networks

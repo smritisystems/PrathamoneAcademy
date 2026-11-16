@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["20-audits-compliance", "full-software-audit", "operational-health", "architecture"]
 entities: ["users", "students", "staff_profiles", "teacher_profiles", "fee_invoices", "payments", "codex_configs"]
@@ -23,7 +23,7 @@ related_modules: ["00_PRODUCT_OVERVIEW", "01_ARCHITECTURE", "12_RBAC_SECURITY", 
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0 (Build: 2026.11.06-REV-016-v1.10.0-9D2489F)  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 **Audit Date:** 2026-11-07  
 **Status:** Comprehensive Audit Complete (Discovery & Evidence Baseline)  
@@ -114,5 +114,5 @@ All three services maintain automated healthchecks and internal network bridging
 I hereby certify that this audit report represents an accurate, evidence-based assessment of **PrathamOne EduOS** as of November 7, 2026. The system is structurally sound, secure, highly performant, and ready for governed CodeX integration.
 
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab
+**Organization:** Smritisys & AITDL Networks
 

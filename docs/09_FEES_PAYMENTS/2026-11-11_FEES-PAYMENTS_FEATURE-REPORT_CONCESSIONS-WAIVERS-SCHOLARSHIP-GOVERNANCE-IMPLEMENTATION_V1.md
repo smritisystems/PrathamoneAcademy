@@ -10,7 +10,7 @@ doc_version: "1.1"
 created_date: "2026-11-11"
 updated_date: "2026-11-11"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["concessions", "fee-waivers", "scholarships", "sponsor-funding", "reconciliation", "SSOT", "financial-governance", "reports"]
 entities: ["FeeConcessionType", "StudentConcessionApplication", "FeeConcessionAllocation", "SponsorSettlement", "FeeInvoice", "FeeInvoiceItem", "StudentFeeAssignment", "Payment", "PaymentAllocation", "PaymentReceipt", "Refund", "AuditLog"]

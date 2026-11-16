@@ -4,7 +4,7 @@
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** MANDATORY — ALL REPOSITORY WORKFLOWS & CODING AGENTS  
 
 ---
@@ -19,7 +19,7 @@ You are working on **PrathamOne EduOS** (Coaching Institute Edition), an enterpr
 All code, documents, and interactions must strictly respect product branding:
 - Product Name: **PrathamOne EduOS**
 - Baseline Version: **1.0.0**
-- Organization: **AITDL — AI Technology & Development Lab**
+- Organization: **Smritisys & AITDL Networks**
 - Product Architect: **Jawahar R Mallah**
 
 ---
@@ -106,7 +106,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["tag1", "tag2"]
 entities: ["EntityName"]

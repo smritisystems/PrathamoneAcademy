@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["fees", "dashboard", "reporting", "receivables", "architecture"]
 entities: ["FeeInvoice", "Payment", "Student"]
@@ -24,7 +24,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "17_UI_UX_DESIGN"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** APPROVED ARCHITECTURAL SPECIFICATION  
 
 ---

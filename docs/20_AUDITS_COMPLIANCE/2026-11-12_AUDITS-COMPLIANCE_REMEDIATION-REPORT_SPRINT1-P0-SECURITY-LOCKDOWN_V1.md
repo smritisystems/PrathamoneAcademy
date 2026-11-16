@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["sprint-1", "p0", "security-lockdown", "rbac", "tenant-isolation", "payments", "nginx", "remediation"]
 entities: ["Payment", "PaymentReceipt", "FeeInvoice", "User", "Institution", "TeacherPayroll", "AuditLog", "InstitutionSetting"]

@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["examinations", "marks-entry", "analytics", "report-cards", "schedules", "view-first", "submenus"]
 entities: ["Examination", "ExamMarks", "Standard", "AcademicYear", "Institution"]
@@ -24,7 +24,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "14_PRINTIN
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
 **Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-08  
 
 ---

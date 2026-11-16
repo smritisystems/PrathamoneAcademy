@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["22-user-manuals", "workforce-management", "teacher-workspace", "staff-workspace", "employee-dossier", "codex-engine", "universal-print"]
 entities: ["StaffProfile", "StaffBankAccount", "StaffKeyContact", "TeacherAssignment", "StaffDocument", "CodexConfig", "CodexMappingProfile"]
@@ -24,7 +24,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "14_PRINTING_DO
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Release Date:** November 07, 2026  
 
 ---

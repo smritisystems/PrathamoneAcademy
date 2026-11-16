@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-16
 #  *
 #  * @description Generator for Deliverable 7: DATA_MIGRATION_AND_INTEGRITY_REPORT.md
 #  */
@@ -38,7 +38,7 @@ def generate():
         'created_date: "2026-11-09"',
         'updated_date: "2026-11-09"',
         'author: "Jawahar R Mallah"',
-        'organization: "AITDL — AI Technology & Development Lab"',
+        'organization: "Smritisys & AITDL Networks"',
         'status: "Approved"',
         'tags: ["audit", "migration", "integrity", "database", "dag", "safety", "zero-data-loss"]',
         'entities: ["DatabaseTables", "AlembicMigrations", "ForeignKeyGraph", "Ledgers"]',
@@ -51,7 +51,7 @@ def generate():
         '**Product:** PrathamOne EduOS (Coaching Institute Edition)  ',
         '**Version:** 1.0.0  ',
         '**Architect:** Jawahar R Mallah  ',
-        '**Organization:** AITDL — AI Technology & Development Lab  ',
+        '**Organization:** Smritisys & AITDL Networks  ',
         '**Audit Date:** 2026-11-09  ',
         '**Scope:** Referential Integrity Graph, Baseline Record Counts, and Safe Migration Protocols across 74 PostgreSQL Tables.  ',
         '',

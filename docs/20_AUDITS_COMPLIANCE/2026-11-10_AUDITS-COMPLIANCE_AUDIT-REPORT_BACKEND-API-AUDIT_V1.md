@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["backend-audit", "api-audit", "fastapi", "sqlalchemy", "pytest", "rbac", "idempotency"]
 entities: ["User", "Student", "Invoice", "Payment", "StaffProfile", "TeachingSession", "Lead"]
@@ -25,7 +25,7 @@ related_modules: ["01_ARCHITECTURE", "12_RBAC_SECURITY", "16_DATABASE_API", "18_
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date of Audit:** November 10, 2026  
 **Backend Test Results:** 253 Items Collected — 249 Passed, 4 Skipped, 0 Failed  
 

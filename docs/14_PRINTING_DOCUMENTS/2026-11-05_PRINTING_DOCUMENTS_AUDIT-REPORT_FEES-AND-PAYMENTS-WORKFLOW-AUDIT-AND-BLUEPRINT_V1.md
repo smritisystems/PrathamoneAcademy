@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-05"
 updated_date: "2026-11-05"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["14-printing-documents", "audit-report"]
 entities: []

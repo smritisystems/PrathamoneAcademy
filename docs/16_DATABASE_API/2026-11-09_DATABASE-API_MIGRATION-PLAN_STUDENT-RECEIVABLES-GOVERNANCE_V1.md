@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["database", "schema-evaluation", "zero-migration", "ssot", "receivables", "rollback"]
 entities: ["Student", "StudentEnrollment", "FeeInvoice", "StudentLifecycleLog"]
@@ -24,7 +24,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "09_FEES_PAYMENTS"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** MANDATORY ARCHITECTURAL VERIFICATION  
 
 ---

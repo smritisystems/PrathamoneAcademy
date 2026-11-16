@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["20-audits-compliance", "module-validation", "matrix", "readiness"]
 entities: ["users", "students", "staff_profiles", "teacher_profiles", "fee_invoices", "payments", "examinations", "codex_configs"]
@@ -23,7 +23,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "05_TEACHER
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0 (Build: 2026.11.06-REV-016-v1.10.0-9D2489F)  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 **Audit Date:** 2026-11-07  
 **Validation Status:** Complete Multi-Module Certification  

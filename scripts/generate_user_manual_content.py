@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-12
+#  * @updated     2026-11-16
 #  *
 #  * @description Source component for Generate User Manual Content in the scripts module.
 #  */
@@ -26,7 +26,7 @@ Generates comprehensive, professional documentation content for:
 Product: PrathamOne Coaching Institutes Enterprise Suite
 Website: https://prathamone.com
 Author: Jawahar R Mallah
-Organization: AITDL — AI Technology & Development Lab
+Organization: Smritisys & AITDL Networks
 Version: 1.0.0 (2026.11.06-STABLE-v1.0.0)
 Date: November 2026
 """
@@ -441,7 +441,7 @@ def get_cover_html(title, subtitle, doc_type="USER MANUAL"):
                 </div>
                 <div class="meta-item">
                     <div class="meta-label">Organization</div>
-                    <div class="meta-value">AITDL — AI Technology & Development Lab</div>
+                    <div class="meta-value">Smritisys & AITDL Networks</div>
                 </div>
                 <div class="meta-item">
                     <div class="meta-label">Official Website</div>

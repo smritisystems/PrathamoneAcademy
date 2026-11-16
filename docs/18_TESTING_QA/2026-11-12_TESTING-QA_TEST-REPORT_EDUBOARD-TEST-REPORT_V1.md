@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["eduboard", "qa", "test-report", "browser-verification", "rbac", "pdf-js"]
 entities: ["EduBoard", "EduBoardPage", "EduBoardRevision", "EduBoardAttachment", "TeachingSession", "CommunicationLog", "AuditLog"]

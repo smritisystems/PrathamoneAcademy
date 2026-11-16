@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["communication", "whatsapp", "sms", "dlt", "submenus", "workspaces", "templates", "diagnostics"]
 entities: ["CommunicationLog", "MessageTemplate", "AutomationRules", "FeeReminderQueue"]
@@ -24,7 +24,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "05_TEACHER_MANAGEMENT", "09_FEES_PAY
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Module:** Communication Center (`/communication`)  
 **Status:** Completed & Production Verified  
 **Date:** 2026-11-09  

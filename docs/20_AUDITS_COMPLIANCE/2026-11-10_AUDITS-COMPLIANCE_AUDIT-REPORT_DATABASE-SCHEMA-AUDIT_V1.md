@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["database-audit", "postgresql-16", "alembic", "schema-integrity", "migrations", "ssot"]
 entities: ["User", "Student", "Invoice", "Payment", "PaymentAllocation", "CanonicalSubject", "StaffProfile"]
@@ -25,7 +25,7 @@ related_modules: ["01_ARCHITECTURE", "16_DATABASE_API", "20_AUDITS_COMPLIANCE"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date of Audit:** November 10, 2026  
 **Database Server:** PostgreSQL 16.2 on Docker (`prashant_academy_db`)  
 

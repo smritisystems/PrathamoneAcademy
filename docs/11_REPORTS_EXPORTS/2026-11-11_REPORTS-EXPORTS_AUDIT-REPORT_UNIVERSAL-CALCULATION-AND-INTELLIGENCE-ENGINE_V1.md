@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-11"
 updated_date: "2026-11-11"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["reports", "calculations", "kpi", "intelligence", "formulas", "audit", "decision-support"]
 entities: ["ReportCalculationDefinition", "ReportMetric", "ReportInsight", "Student", "FeeInvoice", "Payment", "Attendance", "HomeworkAssignment", "Examination", "TeacherMonthlyPayroll", "Lead"]
@@ -25,7 +25,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "05_TEACHER
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** MANDATORY COMPLIANCE — SSOT & EXPLAINABLE CALCULATION GOVERNANCE  
 
 ---

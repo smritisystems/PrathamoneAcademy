@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-15"
 updated_date: "2026-11-15"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["native-exe", "win32", "winexe", "system-tray", "zero-console", "desktop-installer"]
 entities: ["PrathamOneExe", "StopPrathamOneExe", "SystemTray", "InnoSetup"]

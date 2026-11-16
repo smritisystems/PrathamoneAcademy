@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["release-notes", "v1.88.0-rc.1", "eduboard", "digital-classroom", "pdfjs", "konva"]
 entities: ["EduBoard", "EduBoardPage", "EduBoardRevision", "EduBoardAttachment", "TeachingSession"]

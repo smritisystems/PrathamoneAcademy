@@ -3,7 +3,7 @@
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 **Policy Classification:** MANDATORY — ALL CONTRIBUTORS & AI CODING AGENTS  
 
@@ -115,7 +115,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["payroll", "teachers", "sessions", "accounting"]
 entities: ["TeacherPaymentProfile", "TeachingSession", "TeacherPayroll", "TeacherPaymentVoucher"]

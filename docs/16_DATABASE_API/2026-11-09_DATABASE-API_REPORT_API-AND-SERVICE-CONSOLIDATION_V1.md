@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["audit", "api", "services", "consolidation", "ssot", "endpoints", "rbac"]
 entities: ["FastAPIRouter", "DomainService", "PydanticSchema", "RBAC"]
@@ -23,7 +23,7 @@ related_modules: ["16_DATABASE_API", "01_ARCHITECTURE", "12_RBAC_SECURITY", "25_
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-09  
 **Scope:** 329 Backend API Endpoints across 31 Router Files, 18 Domain Services, and 52 Frontend API Client Interfaces.  
 

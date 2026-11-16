@@ -4,7 +4,7 @@
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Module:** Print Forms Studio & KYC (`/forms`)  
 **Status:** Completed & Production Verified  
 **Date:** 2026-11-09  

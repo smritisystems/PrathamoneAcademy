@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["audit", "migration", "integrity", "database", "dag", "safety", "zero-data-loss"]
 entities: ["DatabaseTables", "AlembicMigrations", "ForeignKeyGraph", "Ledgers"]
@@ -23,7 +23,7 @@ related_modules: ["02_INSTALLATION_DEPLOYMENT", "01_ARCHITECTURE", "16_DATABASE_
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-09  
 **Scope:** Referential Integrity Graph, Baseline Record Counts, and Safe Migration Protocols across 74 PostgreSQL Tables.  
 

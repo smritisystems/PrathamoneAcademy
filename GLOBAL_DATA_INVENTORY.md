@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["audit", "inventory", "database", "api", "frontend", "ssot"]
 entities: ["DatabaseTables", "APIRoutes", "FrontendComponents", "Services"]
@@ -23,7 +23,7 @@ related_modules: ["01_ARCHITECTURE", "16_DATABASE_API", "25_BUSINESS_REQUIREMENT
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-09  
 **Scope:** Entire software system — 74 Database Tables, 194 Foreign Keys, 329 Backend Routes, 121 Pydantic Schemas, 18 Domain Services, 52 Frontend API Clients, 37 Pages.  
 

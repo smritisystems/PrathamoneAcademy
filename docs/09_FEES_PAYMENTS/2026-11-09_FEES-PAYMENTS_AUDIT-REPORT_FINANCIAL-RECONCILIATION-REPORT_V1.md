@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["reconciliation", "financial-report", "ledger-balance", "daybook", "invariants"]
 entities: ["Payment", "PaymentReceipt", "PaymentAllocation", "FeeInvoice", "StudentFeeAssignment"]
@@ -25,7 +25,7 @@ related_modules: ["10_FINANCE_ACCOUNTING", "16_DATABASE_API"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Reconciliation Baseline Date:** 2026-11-09  
 
 ---

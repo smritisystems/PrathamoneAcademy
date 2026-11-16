@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["mock-data", "placeholders", "synthetic-data", "fallbacks", "data-integrity"]
 entities: ["StaffProfile", "User", "TeachingSession", "TeacherPayroll", "AcademicYear"]
@@ -24,7 +24,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "14_PRINTING_DO
 **Baseline Version:** 1.0.0  
 **Audit Scope:** Synthetic Datasets, Hardcoded Constants, Fallbacks, and Placeholders  
 **Lead Auditor:** Jawahar R Mallah, Product Architect  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-07  
 
 ---

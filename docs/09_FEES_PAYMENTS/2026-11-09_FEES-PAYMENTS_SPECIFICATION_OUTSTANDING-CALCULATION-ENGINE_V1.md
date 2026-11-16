@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["fees", "calculation-engine", "ledger-invariants", "reconciliation", "receivables"]
 entities: ["FeeInvoice", "Payment", "PaymentAllocation", "StudentFeeAssignment"]
@@ -24,7 +24,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "10_FINANCE_ACCOUNTING"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** MANDATORY DOMAIN LOGIC DIRECTIVE  
 
 ---

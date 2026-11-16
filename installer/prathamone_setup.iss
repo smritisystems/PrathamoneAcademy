@@ -18,6 +18,7 @@
 ;  */
 
 #define MyAppName "PrathamOne EduOS"
+#define MyAppDirName "PrathamOneEduOS"
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Smritisys & AITDL Networks"
 #define MyAppURL "https://aitdl.com"
@@ -32,7 +33,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\{#MyAppName}
+DefaultDirName={code:GetSmartInstallDir|{#MyAppDirName}}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=..\LICENSE
@@ -126,6 +127,9 @@ Filename: "taskkill"; Parameters: "/F /IM PrathamOne.exe /IM pythonw.exe /IM pos
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""PrathamOne EduOS Local Network"""; Flags: runhidden; RunOnceId: "RemoveFirewall"
 
 [Code]
+function GetDriveType(lpRootPathName: String): Cardinal;
+external 'GetDriveTypeW@kernel32.dll stdcall';
+
 var
   ConfigPage: TInputQueryWizardPage;
   LogoPage: TInputFileWizardPage;
@@ -134,6 +138,46 @@ var
   AdminPasswordValue: String;
   DbPortValue: String;
 
+function GetSmartInstallDir(AppName: String): String;
+var
+  SysDrive: String;
+  DriveCode: Integer;
+  DriveLetter: String;
+  DrivePath: String;
+  BestDrive: String;
+begin
+  SysDrive := Copy(ExpandConstant('{sd}'), 1, 1);
+  BestDrive := '';
+
+  for DriveCode := 68 to 90 do
+  begin
+    DriveLetter := Chr(DriveCode);
+    if DriveLetter <> SysDrive then
+    begin
+      DrivePath := DriveLetter + ':\';
+      if DirExists(DrivePath) and (GetDriveType(DrivePath) = 3) then
+      begin
+        BestDrive := DriveLetter;
+        Break;
+      end;
+    end;
+  end;
+
+  if (BestDrive = '') and (SysDrive <> 'C') then
+  begin
+    DrivePath := 'C:\';
+    if DirExists(DrivePath) and (GetDriveType(DrivePath) = 3) then
+    begin
+      BestDrive := 'C';
+    end;
+  end;
+
+  if BestDrive <> '' then
+    Result := BestDrive + ':\' + AppName
+  else
+    Result := ExpandConstant('{autopf}\') + AppName;
+end;
+
 function InitializeSetup: Boolean;
 var
   ResultCode: Integer;
@@ -141,11 +185,13 @@ begin
   Result := True;
   // 1. Terminate any previous running or stuck instances so files are not locked
   Exec('taskkill.exe', '/F /IM PrathamOne.exe /IM pythonw.exe /IM postgres.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  // 2. Remove stale database lock if updating/reinstalling
+  // 2. Remove stale database lock if updating/reinstalling across possible paths
   if FileExists(ExpandConstant('{autopf}\{#MyAppName}\data\postmaster.pid')) then
-  begin
     DeleteFile(ExpandConstant('{autopf}\{#MyAppName}\data\postmaster.pid'));
-  end;
+  if FileExists(ExpandConstant('{autopf}\{#MyAppDirName}\data\postmaster.pid')) then
+    DeleteFile(ExpandConstant('{autopf}\{#MyAppDirName}\data\postmaster.pid'));
+  if FileExists('D:\' + '{#MyAppDirName}\data\postmaster.pid') then
+    DeleteFile('D:\' + '{#MyAppDirName}\data\postmaster.pid');
 end;
 
 function HasPythonExe: Boolean;

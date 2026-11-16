@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["communication", "whatsapp", "sms", "automation", "fee-reminders", "attendance-alerts"]
 entities: ["CommunicationLog", "InstitutionSetting", "FeeInvoice", "Student", "Guardian"]
@@ -25,7 +25,7 @@ related_modules: ["07_ATTENDANCE", "09_FEES_PAYMENTS", "12_RBAC_SECURITY"]
 **Baseline Version:** 1.0.0  
 **Module:** 15_INTEGRATIONS / Communication & Automations  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

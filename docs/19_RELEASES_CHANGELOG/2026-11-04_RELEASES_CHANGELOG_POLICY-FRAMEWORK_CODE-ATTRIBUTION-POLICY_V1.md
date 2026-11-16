@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-04"
 updated_date: "2026-11-04"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["19-releases-changelog", "policy-framework"]
 entities: ["Release"]
@@ -22,7 +22,7 @@ related_modules: []
 
 **Project:** Prashant Academy Coaching Institute Management System  
 **Author:** Jawahar R. Mallah  
-**Organization:** AITDL (AI Technology & Development Lab)  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Copyright:** Copyright (c) 2026 AITDL  
 **License:** Proprietary  

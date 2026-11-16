@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["releases", "v1.87.0", "homework", "assignments", "submissions", "evaluation", "notifications", "governance"]
 entities: ["HomeworkAssignment", "StudentHomeworkRecord", "HomeworkAuditLog", "HomeworkFile", "CommunicationLog"]
@@ -28,7 +28,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "05_TEACHER
 **Database Schema Head:** `045_homework_enhancement (head)`  
 **Target Environment:** Staging / Local Docker Verification (not auto-published to external customer production)  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab
+**Organization:** Smritisys & AITDL Networks
 
 ---
 

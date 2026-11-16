@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["codex", "security-audit", "rbac", "data-masking", "cross-module-enforcement", "rate-limiting"]
 entities: ["CodexConfig", "CodexMappingProfile", "CodexMappingVersion", "CodexScopeAssignment", "CodexAuditLog", "CodexTemporaryToken"]
@@ -24,7 +24,7 @@ related_modules: ["09_FEES_PAYMENTS", "06_TEACHER_PAYROLL", "11_REPORTS_EXPORTS"
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0  
 **Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Status:** PASS (100% Verified)  
 
 ---

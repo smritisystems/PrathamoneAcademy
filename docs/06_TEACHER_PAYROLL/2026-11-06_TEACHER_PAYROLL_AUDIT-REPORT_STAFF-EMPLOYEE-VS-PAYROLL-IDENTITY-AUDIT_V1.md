@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["audit", "ssot", "teacher-payroll", "staff", "database-schema", "foreign-keys"]
 entities: ["User", "StaffProfile", "TeacherPaymentProfile", "TeachingSession", "TeacherPayroll", "TeacherPaymentVoucher"]
@@ -24,7 +24,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "12_RBAC_SECURITY", "16_DATABASE_API"
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 **Audit Date:** 2026-11-06  
 **Status:** 100% Verified — Single Source of Truth Confirmed  

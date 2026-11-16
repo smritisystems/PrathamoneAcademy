@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["view-first", "edit-mode", "rbac", "security", "governance", "immutability", "audit-trail"]
 entities: ["EditModeState", "User", "AuditLog", "StudentDocument", "Standard", "Subject", "TeacherPayroll"]

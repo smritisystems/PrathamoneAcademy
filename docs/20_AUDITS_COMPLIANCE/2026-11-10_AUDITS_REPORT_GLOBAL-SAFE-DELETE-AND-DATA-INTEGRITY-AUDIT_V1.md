@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["safe-delete", "governance", "data-integrity", "audit", "rbac", "immutability"]
 entities: ["User", "Student", "Standard", "Division", "Subject", "FeeInvoice", "Payment", "PaymentReceipt", "TeacherPayroll", "Examination", "Lead"]

@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["audit", "database", "ssot", "tables", "deduplication", "consolidation"]
 entities: ["DatabaseTables", "Subjects", "Fees", "AuditLogs", "StaffDocuments"]
@@ -23,7 +23,7 @@ related_modules: ["01_ARCHITECTURE", "03_ACADEMIC_MANAGEMENT", "09_FEES_PAYMENTS
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-09  
 **Scope:** 74 Database Tables in live PostgreSQL 16 database.  
 

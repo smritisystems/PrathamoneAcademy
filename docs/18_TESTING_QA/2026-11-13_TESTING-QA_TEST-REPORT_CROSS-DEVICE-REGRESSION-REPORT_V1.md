@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-13"
 updated_date: "2026-11-13"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["eduboard", "regression-testing", "cross-device", "ssot", "view-first", "pdf-export", "offline-recovery", "qa"]
 entities: ["EduBoard", "EduBoardPage", "EduBoardRevision", "EduBoardDisplayPrefs"]
@@ -25,7 +25,7 @@ related_modules: ["01_ARCHITECTURE", "03_ACADEMIC_MANAGEMENT", "12_RBAC_SECURITY
 **System Module:** `18_TESTING_QA` / `03_ACADEMIC_MANAGEMENT` (EduBoard)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** QA COMPLIANCE VERIFICATION  
 
 ---

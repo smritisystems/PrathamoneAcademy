@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "matrix", "ui-surfaces", "verification", "eduos"]
 entities: ["PrathamOne", "PrathamOne EduOS", "AITDL", "Prashant Academy"]
@@ -21,7 +21,7 @@ related_modules: ["frontend.config", "frontend.components", "14_PRINTING_DOCUMEN
 # PrathamOne EduOS Brand Implementation & Surface Verification Matrix
 
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client Organization:** Prashant Academy Coaching Institute  
 **Baseline Release:** 1.0.0  
 **Effective Date:** 2026-11-07  

@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["students", "admissions", "submenus", "workspaces", "ssot", "view-first", "id-cards", "allocations"]
 entities: ["Student", "Enrollment", "Standard", "Division", "StudentIdCard", "AdmissionSettings"]
@@ -24,7 +24,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "07_ATTENDANCE", "08_EXAMINATION", "
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
 **Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-09  
 
 ---

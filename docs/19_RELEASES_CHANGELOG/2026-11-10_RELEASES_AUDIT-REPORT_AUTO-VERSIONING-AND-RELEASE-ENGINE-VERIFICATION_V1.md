@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["releases", "auto-versioning", "semver", "git-hooks", "ci-cd", "verification"]
 entities: ["SystemRelease", "ReleaseService"]
@@ -24,7 +24,7 @@ related_modules: ["13_SYSADMIN_SETTINGS", "16_DATABASE_API"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date of Audit:** 2026-11-10  
 **Status:** FULLY OPERATIONAL & VERIFIED  
 

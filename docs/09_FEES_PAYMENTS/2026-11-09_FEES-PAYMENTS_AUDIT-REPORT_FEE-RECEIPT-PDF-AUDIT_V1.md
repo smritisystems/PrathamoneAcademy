@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["fees", "payments", "receipts", "pdf", "audit", "ssot"]
 entities: ["Payment", "PaymentReceipt", "FeeInvoice", "Institution"]
@@ -24,7 +24,7 @@ related_modules: ["14_PRINTING_DOCUMENTS", "18_TESTING_QA", "04_STUDENT_MANAGEME
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

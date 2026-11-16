@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["printing", "pdf-engine", "global-footer", "pagination", "branding", "governance"]
 entities: ["PrintFooter", "UniversalPrintModal", "PrintPreviewCanvas", "PrintSettings", "PaymentReceiptView", "ReportCardModal", "EmployeeDossierDocument", "TeacherPayroll", "FormTemplateEngine"]

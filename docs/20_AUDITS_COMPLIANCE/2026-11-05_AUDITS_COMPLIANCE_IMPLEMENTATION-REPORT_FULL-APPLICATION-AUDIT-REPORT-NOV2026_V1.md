@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-05"
 updated_date: "2026-11-05"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["20-audits-compliance", "implementation-report"]
 entities: []
@@ -25,7 +25,7 @@ related_modules: []
 **Application:** PrathamOne Academy (Enterprise Coaching Institute Management System)  
 **Client:** Prashant Academy  
 **Author / Lead Auditor:** Jawahar R. Mallah, Senior QA Engineer, Full-Stack Architect & Security Reviewer  
-**Organization:** AITDL (AI Technology & Development Lab)  
+**Organization:** Smritisys & AITDL Networks  
 **Repository Branch:** `master` (Commit `0e9d4c7`)  
 **Audit Date:** November 5, 2026  
 **Operating Constraint:** **READ-ONLY EXECUTION** — Zero code or database modifications applied during this phase.

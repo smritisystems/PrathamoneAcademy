@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["deployment", "readiness", "production", "runbook", "healthcheck", "financial-governance"]
 entities: ["Payment", "FeeInvoice", "PaymentReceipt"]
@@ -25,7 +25,7 @@ related_modules: ["09_FEES_PAYMENTS", "16_DATABASE_API"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Deployment Target:** Production Environment  
 
 ---
@@ -102,5 +102,5 @@ python tools/forensic_financial_audit.py
 
 ## 4. ARCHITECTURAL SIGN-OFF
 
-The PrathamOne EduOS Financial Transaction Integrity Pack is fully audited, verified, and certified ready for production deployment under the authority of AITDL — AI Technology & Development Lab.
+The PrathamOne EduOS Financial Transaction Integrity Pack is fully audited, verified, and certified ready for production deployment under the authority of Smritisys & AITDL Networks.
 

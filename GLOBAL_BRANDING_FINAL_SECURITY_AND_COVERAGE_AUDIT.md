@@ -4,7 +4,7 @@
 **Baseline Version:** 1.0.0  
 **Audit Scope:** Global Branding & Appearance Engine Post-Commit `14b77ac`  
 **Auditor / Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Execution Date:** 2026-11-08  
 **Final Status:** PASS (100% Verified)

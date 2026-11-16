@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["dashboard", "fees", "outstanding", "audit", "recovery"]
 entities: ["FeeInvoice", "Payment", "Student", "StudentEnrollment"]
@@ -24,7 +24,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "09_FEES_PAYMENTS"]
 **Institution:** Prashant Academy  
 **Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-10  
 
 ---

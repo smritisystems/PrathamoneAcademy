@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["homework", "assignments", "acceptance-report", "phase-15", "ssot", "rbac", "testing", "v1.87.0"]
 entities: ["HomeworkAssignment", "StudentHomeworkRecord", "HomeworkAuditLog", "HomeworkFile", "CommunicationLog", "InstitutionSetting"]

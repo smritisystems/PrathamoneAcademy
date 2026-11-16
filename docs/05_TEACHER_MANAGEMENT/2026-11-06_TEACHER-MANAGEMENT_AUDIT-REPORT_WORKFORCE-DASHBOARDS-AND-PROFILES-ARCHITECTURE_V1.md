@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["workforce", "teacher-dashboard", "staff-dashboard", "individual-profiles", "ssot", "audit", "ui-ux"]
 entities: ["User", "StaffProfile", "TeacherAssignment", "TimetableEntry", "TeachingSession", "TeacherPayroll", "StaffAttendance", "StaffLeave", "StaffEmploymentHistory"]
@@ -25,7 +25,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "07_ATTENDANCE"
 **Version:** 1.0.0  
 **Module:** People & Workforce Management  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Scope:** Existing Architecture, UI/UX, Data Models, APIs, Frontend Routing, and Visual Concept Alignment  
 **Execution Status:** DISCOVERY & RECOMMENDATIONS ONLY — NO CODE IMPLEMENTATION COMMENCED  
 

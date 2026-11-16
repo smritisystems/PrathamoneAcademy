@@ -5,7 +5,7 @@
 **System Module:** `03_ACADEMIC_MANAGEMENT` (EduBoard)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** MANDATORY COMPATIBILITY REGISTER  
 **Canonical Document:** [`docs/03_ACADEMIC_MANAGEMENT/2026-11-13_ACADEMIC-MANAGEMENT_COMPATIBILITY-MATRIX_DEVICE-COMPATIBILITY-MATRIX_V1.md`](file:///f:/PrashantAcademy/docs/03_ACADEMIC_MANAGEMENT/2026-11-13_ACADEMIC-MANAGEMENT_COMPATIBILITY-MATRIX_DEVICE-COMPATIBILITY-MATRIX_V1.md)
 

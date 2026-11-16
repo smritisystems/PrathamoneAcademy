@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["audit", "database", "fields", "deduplication", "snapshots", "ssot"]
 entities: ["DatabaseColumns", "Snapshots", "Students", "Payments", "Guardians"]
@@ -23,7 +23,7 @@ related_modules: ["01_ARCHITECTURE", "04_STUDENT_MANAGEMENT", "09_FEES_PAYMENTS"
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-09  
 **Scope:** Column-level inspection across all 74 database tables.  
 

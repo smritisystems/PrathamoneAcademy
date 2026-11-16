@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-05"
 updated_date: "2026-11-05"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["14-printing-documents", "implementation-report"]
 entities: []
@@ -23,7 +23,7 @@ related_modules: []
 **Document Reference:** `PRATHAM-PRINT-BRAND-2026-11`  
 **Application Version:** `v6.99.1 (Build: 2026.11.05-PROD-REL)`  
 **Target Organization:** `Prashant Academy Coaching Institute / PrathamOne Academy`  
-**Parent Org:** `AITDL — AI Technology & Development Lab (https://aitdl.com)`  
+**Parent Org:** `Smritisys & AITDL Networks (https://aitdl.com)`  
 
 ---
 

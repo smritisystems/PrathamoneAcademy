@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["20-audits-compliance", "performance-audit", "latency", "benchmarks", "reliability"]
 entities: ["users", "students", "fee_invoices", "payments", "attendances", "codex_configs"]
@@ -23,7 +23,7 @@ related_modules: ["01_ARCHITECTURE", "16_DATABASE_API", "18_TESTING_QA"]
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0 (Build: 2026.11.06-REV-016-v1.10.0-9D2489F)  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 **Audit Date:** 2026-11-07  
 **Test Methodology:** Multi-Sample Live API Benchmarks via Async Connection Pool  

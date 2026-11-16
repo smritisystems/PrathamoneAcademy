@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["infrastructure-audit", "docker-compose", "nginx", "healthcheck", "whatsapp-integration", "dlt-sms", "smtp"]
 entities: ["Institution", "User", "CommunicationLog"]
@@ -25,7 +25,7 @@ related_modules: ["02_INSTALLATION_DEPLOYMENT", "15_INTEGRATIONS", "20_AUDITS_CO
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date of Audit:** November 10, 2026  
 **Infrastructure Health:** 100% HEALTHY  
 

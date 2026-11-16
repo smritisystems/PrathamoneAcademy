@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["printing", "print-footer", "absolute-bottom", "fee-receipt", "page-layout", "pdf-engine"]
 entities: ["PaymentReceiptView", "PrintFooter", "PrintBrandingFooter", "UniversalPrintEngine"]
@@ -24,7 +24,7 @@ related_modules: ["09_FEES_PAYMENTS", "14_PRINTING_DOCUMENTS"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Module:** 14_PRINTING_DOCUMENTS & 09_FEES_PAYMENTS  
 **Status:** Approved & Verified in Production  
 

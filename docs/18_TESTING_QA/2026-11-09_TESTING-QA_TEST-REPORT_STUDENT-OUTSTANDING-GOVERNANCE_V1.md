@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["testing", "qa", "pytest", "student-outstanding", "receivables", "vitest"]
 entities: ["FeeInvoice", "Payment", "Student"]
@@ -26,7 +26,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "09_FEES_PAYMENTS"]
 **Test Suite:** `backend/tests/test_student_outstanding_governance.py` & `frontend/src/test/FeesDedicatedSubmenus.test.tsx`  
 **Test Framework:** Pytest 9.2.0 (AsyncIO) & Vitest 1.6.1  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** VERIFIED & PASSED  
 
 ---

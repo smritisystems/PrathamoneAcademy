@@ -5,7 +5,7 @@
 **System Module:** `01_ARCHITECTURE` / `03_ACADEMIC_MANAGEMENT` (EduBoard)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** MANDATORY ARCHITECTURAL SPECIFICATION  
 **Canonical Document:** [`docs/01_ARCHITECTURE/2026-11-13_ARCHITECTURE_SYSTEM-DESIGN_UNIVERSAL-SMART-BOARD-ARCHITECTURE_V1.md`](file:///f:/PrashantAcademy/docs/01_ARCHITECTURE/2026-11-13_ARCHITECTURE_SYSTEM-DESIGN_UNIVERSAL-SMART-BOARD-ARCHITECTURE_V1.md)
 

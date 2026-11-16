@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["workforce", "teacher-management", "staff-management", "unassigned-teachers", "lifecycle", "ssot", "audit"]
 entities: ["User", "StaffProfile", "StaffEmploymentHistory", "TeacherAssignment", "TimetableEntry", "TeachingSession", "TeacherPayroll", "StaffLeave", "StaffAttendance"]
@@ -25,7 +25,7 @@ related_modules: ["06_TEACHER_PAYROLL", "07_ATTENDANCE", "03_ACADEMIC_MANAGEMENT
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** FULL COMPLIANCE (SSOT & Corporate Attribution)
 
 ---

@@ -3,7 +3,7 @@
 **Document Version:** 1.0.0  
 **Created:** 2026-11-08  
 **Author:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Engineering Directive:** AUDIT → REUSE → REFACTOR → EXTEND → CREATE ONLY IF MISSING  
 
 ---

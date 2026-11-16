@@ -10,7 +10,7 @@ doc_version: "1.1"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["help-centre", "about-centre", "deep-analysis", "security-audit", "ssot", "rbac", "architecture", "rule-010", "rule-011"]
 entities: ["HelpCategory", "HelpArticle", "HelpArticleRevision", "SupportRequest", "SupportRequestComment", "InstitutionSetting", "SettingAuditLog", "User"]
@@ -24,7 +24,7 @@ related_modules: ["00_PRODUCT_OVERVIEW", "01_ARCHITECTURE", "12_RBAC_SECURITY", 
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0 (Runtime Application Config Version: `1.76.0`, Build: `2026.11.10-REV-137-v1.76.0-C31CC0B`)  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-12  
 **Audit Scope:** Full-stack forensic review of the Help & About Centre (`backend/app/models/help.py`, Alembic migration `043`, `help_service.py`, `help_seed_data.py`, `endpoints/help.py`, `navigation_service.py`, `HelpCentre.tsx`, `components/help/*`, `ContextualHelpButton.tsx`, host module integrations, RBAC/Rule 010/Rule 011 compliance, content safety, and automated test suites)
 

@@ -3,10 +3,10 @@
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-16 07:14:41<br>
-**Total Indexed Items:** 486  
+**Last Reindexed:** 2026-11-16 08:51:24<br>
+**Total Indexed Items:** 488  
 
 ---
 
@@ -15,7 +15,7 @@
 | Module # | Module Directory | Registered Documents | Description |
 |---|---|---|---|
 | `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **8** | Product Overview & Vision |
-| `01` | [01_ARCHITECTURE](#01_architecture) | **8** | System Architecture & Workflows |
+| `01` | [01_ARCHITECTURE](#01_architecture) | **10** | System Architecture & Workflows |
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **10** | Installation & Deployment |
 | `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **28** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **21** | Student Directory & Admissions |
@@ -56,8 +56,8 @@
 | **PrathamOne & PrathamOne EduOS Brand Architecture Specification** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md) | frontend.config, frontend.components, 14_PRINTING_DOCUMENTS |
 | **PrathamOne & PrathamOne EduOS Brand Asset Register & Master Specifications** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md) | frontend.config, frontend.components, 17_UI_UX_DESIGN |
 | **PrathamOne EduOS Official Brand Identity & Logo Assets Specification** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md) | 17_UI_UX_DESIGN, 14_PRINTING_DOCUMENTS |
-| **PrathamOne EduOS — Centralized Documentation Hub** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [README.md](README.md) | - |
-| **PrathamOne EduOS — Documentation Governance & Naming Rules** | `DOCUMENT` | `1.0` | 2026-11-06 | `Approved` | [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) | - |
+| **PrathamOne EduOS — Centralized Documentation Hub** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [README.md](README.md) | - |
+| **PrathamOne EduOS — Documentation Governance & Naming Rules** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) | - |
 | **Strategic Product Roadmap — Prashant Academy** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md](00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md) | - |
 
 
@@ -70,7 +70,9 @@
 | **Global Data Inventory — Complete Software & Schema Census** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
 | **Global Duplicate Table Audit — Forensic Structural Consolidation Review** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DUPLICATE-TABLE-AUDIT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 16_DATABASE_API |
 | **Global Field Deduplication Audit — Canonical Attributes & Snapshot Governance** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-FIELD-DEDUPLICATION-AUDIT_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-FIELD-DEDUPLICATION-AUDIT_V1.md) | 01_ARCHITECTURE, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
+| **Multi-Server Licensing Mirror and CRM Decoupling Architectural Blueprint** | `BLUEPRINT` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_MULTI-SERVER-LICENSING-MIRROR-AND-CRM-DECOUPLING_V1.md](01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_MULTI-SERVER-LICENSING-MIRROR-AND-CRM-DECOUPLING_V1.md) | 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 15_INTEGRATIONS, 16_DATABASE_API |
 | **PrathamOne EduBoard — System Architecture & Engineering Design** | `ARCHITECTURE` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ARCHITECTURE_SYSTEM-DESIGN_EDUBOARD-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-12_ARCHITECTURE_SYSTEM-DESIGN_EDUBOARD-ARCHITECTURE_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 06_TEACHER_PAYROLL, 12_RBAC_SECURITY, 16_DATABASE_API |
+| **Smart Installer Drive Selection and Folder Architecture Blueprint** | `BLUEPRINT` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_SMART-INSTALLER-DRIVE-SELECTION-AND-FOLDER-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_SMART-INSTALLER-DRIVE-SELECTION-AND-FOLDER-ARCHITECTURE_V1.md) | 02_INSTALLATION_DEPLOYMENT, 13_SYSADMIN_SETTINGS, 16_DATABASE_API |
 | **System Architecture Document** | `ARCHITECTURE-DESIGN` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md) | - |
 | **Universal Smart Board & Interactive Teaching Platform Architecture** | `ARCHITECTURE` | `1.0` | 2026-11-13 | `Approved` | [2026-11-13_ARCHITECTURE_SYSTEM-DESIGN_UNIVERSAL-SMART-BOARD-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-13_ARCHITECTURE_SYSTEM-DESIGN_UNIVERSAL-SMART-BOARD-ARCHITECTURE_V1.md) | 03_ACADEMIC_MANAGEMENT, 18_TESTING_QA, 16_DATABASE_API |
 
@@ -523,9 +525,9 @@
 | **PrathamOne_Academy_Complete_User_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Complete_User_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Complete_User_Manual.pdf) | - |
 | **PrathamOne_Academy_Quick_Start_Guide.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Quick_Start_Guide.pdf](22_USER_MANUALS/PrathamOne_Academy_Quick_Start_Guide.pdf) | - |
 | **PrathamOne_Academy_Sysadmin_Manual.pdf** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [PrathamOne_Academy_Sysadmin_Manual.pdf](22_USER_MANUALS/PrathamOne_Academy_Sysadmin_Manual.pdf) | - |
-| **complete_user_manual.html** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [complete_user_manual.html](22_USER_MANUALS/complete_user_manual.html) | - |
-| **quick_start_guide.html** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [quick_start_guide.html](22_USER_MANUALS/quick_start_guide.html) | - |
-| **sysadmin_manual.html** | `DOCUMENT` | `1.0` | 2026-11-12 | `Approved` | [sysadmin_manual.html](22_USER_MANUALS/sysadmin_manual.html) | - |
+| **complete_user_manual.html** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [complete_user_manual.html](22_USER_MANUALS/complete_user_manual.html) | - |
+| **quick_start_guide.html** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [quick_start_guide.html](22_USER_MANUALS/quick_start_guide.html) | - |
+| **sysadmin_manual.html** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [sysadmin_manual.html](22_USER_MANUALS/sysadmin_manual.html) | - |
 
 
 ### <a id="23_development_guides"></a>23_DEVELOPMENT_GUIDES — Developer Manuals & Coding Standards

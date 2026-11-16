@@ -10,7 +10,7 @@ doc_version: "1.1"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["user-manuals", "documentation", "v1.88.2", "eduboard", "homework", "receipt-print", "help-centre"]
 entities: ["Homework", "EduBoard", "FeeReceipt", "HelpArticle"]

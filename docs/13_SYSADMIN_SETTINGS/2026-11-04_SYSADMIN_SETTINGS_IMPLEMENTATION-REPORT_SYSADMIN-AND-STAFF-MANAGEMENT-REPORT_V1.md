@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-04"
 updated_date: "2026-11-04"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["13-sysadmin-settings", "implementation-report"]
 entities: ["InstituteSetting", "SystemSetting"]
@@ -21,7 +21,7 @@ related_modules: []
 # System Administrator (SysAdmin) Superuser & Teacher/Staff Management Implementation Report
 
 **Project:** PrathamOne Academy Coaching Institute Management System  
-**Organization:** AITDL (AI Technology & Development Lab)  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Commit:** `83a8006`  
 **Date:** November 4, 2026  

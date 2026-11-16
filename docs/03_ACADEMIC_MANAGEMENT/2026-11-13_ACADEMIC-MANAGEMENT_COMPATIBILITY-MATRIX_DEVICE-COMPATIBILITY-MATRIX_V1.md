@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-13"
 updated_date: "2026-11-13"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["eduboard", "compatibility-matrix", "hardware-test", "teachmint", "windows-ops", "android-edla", "touchscreen", "stylus"]
 entities: ["EduBoard", "EduBoardPage", "EduBoardRevision", "EduBoardDisplayPrefs"]
@@ -25,7 +25,7 @@ related_modules: ["01_ARCHITECTURE", "18_TESTING_QA"]
 **System Module:** `03_ACADEMIC_MANAGEMENT` (EduBoard)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** MANDATORY COMPATIBILITY REGISTER  
 
 ---

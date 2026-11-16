@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["06-teacher-payroll", "implementation-plan"]
 entities: ["TeacherPaymentProfile", "TeachingSession", "TeacherPayroll", "TeacherPaymentVoucher"]
@@ -23,7 +23,7 @@ related_modules: []
 **Edition:** Coaching Institute Edition  
 **Module:** Teacher Payroll & Payment Management  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Specification Baseline:** Version 1.0 (November 2026)
 
 ---

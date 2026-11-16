@@ -3,7 +3,7 @@
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 
 ---

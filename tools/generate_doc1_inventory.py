@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-09
+#  * @updated     2026-11-16
 #  *
 #  * @description Generator for Deliverable 1: GLOBAL_DATA_INVENTORY.md
 #  */
@@ -70,7 +70,7 @@ def generate_doc1():
     lines.append('created_date: "2026-11-09"')
     lines.append('updated_date: "2026-11-09"')
     lines.append('author: "Jawahar R Mallah"')
-    lines.append('organization: "AITDL — AI Technology & Development Lab"')
+    lines.append('organization: "Smritisys & AITDL Networks"')
     lines.append('status: "Approved"')
     lines.append('tags: ["audit", "inventory", "database", "api", "frontend", "ssot"]')
     lines.append('entities: ["DatabaseTables", "APIRoutes", "FrontendComponents", "Services"]')
@@ -83,7 +83,7 @@ def generate_doc1():
     lines.append('**Product:** PrathamOne EduOS (Coaching Institute Edition)  ')
     lines.append('**Version:** 1.0.0  ')
     lines.append('**Architect:** Jawahar R Mallah  ')
-    lines.append('**Organization:** AITDL — AI Technology & Development Lab  ')
+    lines.append('**Organization:** Smritisys & AITDL Networks  ')
     lines.append('**Audit Date:** 2026-11-09  ')
     lines.append('**Scope:** Entire software system — 74 Database Tables, 194 Foreign Keys, 329 Backend Routes, 121 Pydantic Schemas, 18 Domain Services, 52 Frontend API Clients, 37 Pages.  ')
     lines.append('')

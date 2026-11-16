@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["workforce", "teacher-workspace", "staff-workspace", "teacher-profile", "staff-profile", "visual-analytics", "donut-chart", "monthly-hours", "ssot", "implementation"]
 entities: ["User", "StaffProfile", "TeacherAssignment", "TimetableEntry", "TeachingSession", "TeacherPayroll", "StaffAttendance", "StaffLeave", "StaffEmploymentHistory"]
@@ -25,7 +25,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "07_ATTENDANCE"
 **Version:** 1.0.0  
 **Module:** People & Workforce Management  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Status:** IMPLEMENTATION COMPLETE & VERIFIED — ZERO CONSOLE ERRORS  
 
 ---
@@ -127,7 +127,7 @@ In full alignment with the visual concept directive (**PRATHAMONE EduOS — Teac
 ## 5. SIGN-OFF & ATTRIBUTION
 
 **Author:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Platform Version:** 1.0.0
 

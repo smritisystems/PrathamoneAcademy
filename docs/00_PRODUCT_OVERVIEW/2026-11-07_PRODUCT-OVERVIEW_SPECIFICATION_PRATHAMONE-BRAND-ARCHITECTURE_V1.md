@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "brand-architecture", "corporate-identity", "eduos", "aitdl"]
 entities: ["PrathamOne", "PrathamOne EduOS", "AITDL", "Prashant Academy"]
@@ -21,7 +21,7 @@ related_modules: ["frontend.config", "frontend.components", "14_PRINTING_DOCUMEN
 # PrathamOne & PrathamOne EduOS Brand Architecture Specification
 
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client Organization:** Prashant Academy Coaching Institute  
 **Effective Date:** 2026-11-07  
 **Governance Level:** Mandatory Global Directive  

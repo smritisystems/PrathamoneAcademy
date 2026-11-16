@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Focused signature validation and license-mode tests.
 #  */
@@ -111,7 +111,7 @@ def test_license_mode_preserves_perpetual_operation_and_enforces_subscription_gr
         "status": "ACTIVE",
         "starts_at": "2020-01-01",
         "expires_at": "2020-01-02",
-        "issued_at": datetime.now(timezone.utc).isoformat(),
+        "issued_at": now.isoformat(),
     }
     subscription = {
         "license_model": "on_premise_subscription",

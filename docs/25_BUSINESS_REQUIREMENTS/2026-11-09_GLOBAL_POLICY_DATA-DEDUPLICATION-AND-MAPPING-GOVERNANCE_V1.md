@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["policy", "ssot", "deduplication", "canonical-master", "mapping", "governance"]
 entities: ["DataGovernance", "SingleSourceOfTruth", "Policy", "MasterData"]
@@ -24,7 +24,7 @@ related_modules: ["25_BUSINESS_REQUIREMENTS", "01_ARCHITECTURE", "16_DATABASE_AP
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Effective Date:** 2026-11-09  
 **Status:** ACTIVE & MANDATORY FOR ALL DEVELOPERS AND CODING AGENTS  
 

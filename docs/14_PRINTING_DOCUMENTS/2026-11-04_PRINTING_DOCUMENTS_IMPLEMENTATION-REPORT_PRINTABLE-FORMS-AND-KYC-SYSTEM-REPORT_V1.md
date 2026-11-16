@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-04"
 updated_date: "2026-11-04"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["14-printing-documents", "implementation-report"]
 entities: []
@@ -21,7 +21,7 @@ related_modules: []
 # Centralized Printable Forms & KYC System Implementation Report
 
 **Author:** Jawahar R. Mallah  
-**Organization:** AITDL (AI Technology & Development Lab)  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Project:** PrathamOne Academy Coaching Institute Management System  
 **Date:** 04 November 2026  

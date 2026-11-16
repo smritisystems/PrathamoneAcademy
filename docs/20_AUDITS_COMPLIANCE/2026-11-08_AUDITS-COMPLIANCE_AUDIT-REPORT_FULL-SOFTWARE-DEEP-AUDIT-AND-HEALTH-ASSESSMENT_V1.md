@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["deep-audit", "system-health", "ssot", "view-first", "governance", "security", "full-software"]
 entities: ["Institution", "User", "Student", "StaffProfile", "FeeInvoice", "Payment", "Examination", "Attendance", "Lead"]
@@ -24,7 +24,7 @@ related_modules: ["00_PRODUCT_OVERVIEW", "01_ARCHITECTURE", "02_INSTALLATION_DEP
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0 (Build 1.11.0-2DCB052)  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Audit Scope:** Entire Enterprise Software System (Backend, Frontend, Database, Security, SSOT, View-First Governance, Document Printing, Test Suites)  
 **Audit Date:** 2026-11-08  
@@ -345,5 +345,5 @@ flowchart TD
 *Signed and Approved:*  
 **Jawahar R. Mallah**  
 Product Architect, PrathamOne EduOS  
-**AITDL — AI Technology & Development Lab**
+**Smritisys & AITDL Networks**
 

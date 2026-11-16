@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-12
+#  * @updated     2026-11-16
 #  *
 #  * @description Source component for Build All Manuals in the scripts module.
 #  */
@@ -26,7 +26,7 @@ Generates:
 Product: PrathamOne Coaching Institutes Enterprise Suite
 Website: https://prathamone.com
 Author: Jawahar R Mallah
-Organization: AITDL — AI Technology & Development Lab
+Organization: Smritisys & AITDL Networks
 Version: 1.0.0 (2026.11.06-STABLE-v1.0.0)
 Date: November 2026
 """
@@ -92,7 +92,7 @@ def build_complete_user_manual_html():
         </tr>
         <tr>
             <th>Organization</th>
-            <td><strong>AITDL — AI Technology & Development Lab</strong></td>
+            <td><strong>Smritisys & AITDL Networks</strong></td>
         </tr>
         <tr>
             <th>Official Website</th>
@@ -1146,7 +1146,7 @@ A: No! Financial records and attendance history are permanently preserved. The s
        &bull; <a href="https://prathamone.com">https://prathamone.com</a>
     </p>
     <p><strong>Author & Chief Architect:</strong> Jawahar R Mallah<br>
-       <strong>Organization:</strong> AITDL — AI Technology & Development Lab
+       <strong>Organization:</strong> Smritisys & AITDL Networks
     </p>
 </div>
 

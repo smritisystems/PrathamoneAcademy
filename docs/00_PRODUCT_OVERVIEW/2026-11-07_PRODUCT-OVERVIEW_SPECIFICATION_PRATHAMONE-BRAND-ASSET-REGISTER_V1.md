@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-14"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "asset-register", "logo-specifications", "pwa-icons", "eduos-brand-refresh"]
 entities: ["PrathamOne", "PrathamOne EduOS", "AITDL"]
@@ -21,7 +21,7 @@ related_modules: ["frontend.config", "frontend.components", "17_UI_UX_DESIGN"]
 # PrathamOne & PrathamOne EduOS Brand Asset Register & Master Specifications
 
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client Organization:** Prashant Academy Coaching Institute  
 **Master File Reference:** `POlogo.png` (2752 × 1536 Master Artwork)  
 **Effective Date:** 2026-11-07  

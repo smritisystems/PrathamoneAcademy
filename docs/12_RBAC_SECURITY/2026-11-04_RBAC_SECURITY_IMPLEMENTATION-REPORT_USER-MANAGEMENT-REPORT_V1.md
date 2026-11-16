@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-04"
 updated_date: "2026-11-04"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["12-rbac-security", "implementation-report"]
 entities: ["User", "Role", "Permission", "UserRole"]

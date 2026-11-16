@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["eduboard", "regression", "rule-010", "homework", "student-portal", "rbac"]
 entities: ["EduBoard", "EduBoardPage", "EduBoardRevision", "EduBoardAttachment", "Homework"]

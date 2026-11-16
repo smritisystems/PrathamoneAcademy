@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-15"
 updated_date: "2026-11-15"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["02-installation-deployment", "windows-installer", "inno-setup", "zero-docker", "offline-installer", "desktop-packaging"]
 entities: ["InstallationEngine", "EmbeddedPostgres", "EmbeddedBackend", "SystemTrayLauncher", "AutoBackupEngine"]
@@ -24,7 +24,7 @@ related_modules: ["01_ARCHITECTURE", "13_SYSADMIN_SETTINGS", "20_AUDITS_COMPLIAN
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Target Operating Systems:** Windows 10 (Build 19041+), Windows 11 (64-bit)  
 **Deliverable Status:** Complete & Verified  

@@ -2,7 +2,7 @@
 
 **Project:** Prashant Academy Coaching Institute Management System  
 **Author:** Jawahar R. Mallah  
-**Organization:** AITDL (AI Technology & Development Lab)  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Copyright:** Copyright (c) 2026 AITDL  
 **License:** Proprietary  

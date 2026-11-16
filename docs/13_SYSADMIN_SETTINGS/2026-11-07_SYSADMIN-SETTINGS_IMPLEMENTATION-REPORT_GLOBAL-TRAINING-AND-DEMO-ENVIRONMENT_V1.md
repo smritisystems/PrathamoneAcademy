@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["training", "demo", "sandbox", "isolation", "crm", "tenant"]
 entities: ["TrainingEnvironmentConfig", "TrainingSession", "TrainingResetLog", "Lead", "Student"]
@@ -24,7 +24,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "09_FEES_PAYMENTS", "11_REPORTS_EXPOR
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Status:** Approved & Production-Ready  
 
 ---

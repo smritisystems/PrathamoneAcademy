@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["charts", "analytics", "data-validation", "visual-metrics", "fallbacks", "audit"]
 entities: ["TeachingSession", "TeacherAssignment", "StaffProfile", "Payment", "Attendance"]
@@ -24,7 +24,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "11_REPORTS_EXP
 **Baseline Version:** 1.0.0  
 **Audit Scope:** Visual Analytics, Donut Charts, Trend Bars, and KPI Computation  
 **Lead Auditor:** Jawahar R Mallah, Product Architect  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-07  
 
 ---

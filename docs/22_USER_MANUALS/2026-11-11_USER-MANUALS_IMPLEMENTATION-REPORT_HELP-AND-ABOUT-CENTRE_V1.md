@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-11"
 updated_date: "2026-11-11"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["22-user-manuals", "help-centre", "about-centre", "support-ticketing", "contextual-help", "legal-compliance"]
 entities: ["HelpCategory", "HelpArticle", "HelpArticleRevision", "SupportRequest", "SupportRequestComment", "InstitutionSetting", "SettingAuditLog", "AuditLog"]
@@ -35,7 +35,7 @@ related_modules: ["13_SYSADMIN_SETTINGS", "12_RBAC_SECURITY", "17_UI_UX_DESIGN",
 
 ## 2. Existing About Functionality Audit
 
-- `Footer.tsx` displayed an AITDL & Product Ecosystem quick modal and branch title bar (`resolvePageTitle`), while `OrganizationBranding.tsx`, `config/branding.ts`, and `config/appConfig.ts` exposed verified branding constants (`PrathamOne`, `SmritiBooks`, `SmritiSys`, `AITDL — AI Technology & Development Lab`, `9323 023 007 | 9324 117 007`).
+- `Footer.tsx` displayed an AITDL & Product Ecosystem quick modal and branch title bar (`resolvePageTitle`), while `OrganizationBranding.tsx`, `config/branding.ts`, and `config/appConfig.ts` exposed verified branding constants (`PrathamOne`, `SmritiBooks`, `SmritiSys`, `Smritisys & AITDL Networks`, `9323 023 007 | 9324 117 007`).
 - No dedicated customer-facing `/help/about-product`, `/help/about-company` (SMRITI Systems & AITDL), `/help/version`, `/help/legal`, or admin-only `/help/system-info` workspaces existed.
 
 ## 3. Existing Components & Services Reused

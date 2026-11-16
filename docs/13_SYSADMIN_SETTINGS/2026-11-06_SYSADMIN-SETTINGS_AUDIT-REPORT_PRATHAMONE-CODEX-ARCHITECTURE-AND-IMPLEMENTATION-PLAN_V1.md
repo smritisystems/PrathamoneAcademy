@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Draft"
 tags: ["codex", "numeric-coding", "obfuscation", "security", "sysadmin", "settings"]
 entities: ["CodexConfig", "CodexMappingProfile", "CodexMappingVersion", "CodexScopeAssignment", "CodexAuditLog"]
@@ -27,7 +27,7 @@ related_modules: ["13_SYSADMIN_SETTINGS", "06_TEACHER_PAYROLL", "09_FEES_PAYMENT
 **Owner:** Business Owner / Authorized System Administrator  
 **System Default:** **DISABLED (OFF)**  
 **Author:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

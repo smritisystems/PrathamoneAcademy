@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-11"
 updated_date: "2026-11-11"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["homework", "assignments", "academic_management", "audit", "teaching_sessions", "student_portal"]
 entities: ["HomeworkAssignment", "StudentHomeworkRecord", "HomeworkAuditLog", "TeachingSession", "StudentEnrollment", "Student"]
@@ -23,7 +23,7 @@ related_modules: ["03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAGEMENT", "05_TEACHER
 
 **Product:** PrathamOne EduOS (Coaching Institute Edition v1.0.0)  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date of Audit:** 2026-11-11  
 
 ---
@@ -176,6 +176,6 @@ This audit confirms that the existing system architecture is fully prepared to i
 
 **Audited & Approved By:**  
 Jawahar R Mallah, Product Architect  
-AITDL — AI Technology & Development Lab  
+Smritisys & AITDL Networks  
 PrathamOne EduOS v1.0.0
 

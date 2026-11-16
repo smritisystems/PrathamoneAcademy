@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["versioning", "semver", "revisions", "git-hook", "automation", "ssot", "release-governance"]
 entities: ["SystemRelease", "Settings", "BRANDING_CONFIG"]
@@ -27,7 +27,7 @@ related_modules: ["13_SYSADMIN_SETTINGS", "01_ARCHITECTURE"]
 **Current Calculated Version:** 1.7.0  
 **Build Identifier:** 2026.11.06-REV-008-v1.7.0-B836163  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

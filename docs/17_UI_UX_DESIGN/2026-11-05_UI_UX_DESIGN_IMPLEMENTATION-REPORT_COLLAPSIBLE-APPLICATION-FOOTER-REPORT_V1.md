@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-05"
 updated_date: "2026-11-05"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["17-ui-ux-design", "implementation-report"]
 entities: []
@@ -21,7 +21,7 @@ related_modules: []
 # PrathamOne Academy — Collapsible Application Footer Report
 
 **Author:** Jawahar R. Mallah  
-**Organization:** AITDL (AI Technology & Development Lab)  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Version:** 1.2.0 (Build `2026.11.05-PROD-REL`)  
 **Date:** November 5, 2026  

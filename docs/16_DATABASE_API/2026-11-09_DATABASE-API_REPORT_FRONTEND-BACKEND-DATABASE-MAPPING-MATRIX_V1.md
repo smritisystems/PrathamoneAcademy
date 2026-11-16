@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["audit", "mapping", "traceability", "frontend", "backend", "database", "ssot"]
 entities: ["FrontendField", "APIField", "PydanticSchema", "SQLAlchemyModel", "DBColumn"]
@@ -23,7 +23,7 @@ related_modules: ["16_DATABASE_API", "01_ARCHITECTURE", "03_ACADEMIC_MANAGEMENT"
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Version:** 1.0.0  
 **Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Date:** 2026-11-09  
 **Scope:** End-to-end data flow validation across UI Components, API Clients, Backend Routes, Pydantic Schemas, Domain Services, SQLAlchemy Models, and PostgreSQL Columns.  
 

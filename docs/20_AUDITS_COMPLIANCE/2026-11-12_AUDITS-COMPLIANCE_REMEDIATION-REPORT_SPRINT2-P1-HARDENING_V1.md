@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-12"
 updated_date: "2026-11-12"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["remediation", "sprint-2", "p1", "rbac", "multi-tenancy", "idor", "xss", "rule-010", "dependencies", "pyjwt", "write-excel-file", "vite-8"]
 entities: ["User", "Institution", "Student", "Payment", "PaymentReceipt", "FeeInvoice", "FeeConcessionAllocation", "Subject", "CanonicalSubject", "StaffProfile"]

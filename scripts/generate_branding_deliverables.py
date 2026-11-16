@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-08
-#  * @updated     2026-11-08
+#  * @updated     2026-11-16
 #  *
 #  * @description Generates the 5 mandatory forensic documentation reports and implementation matrix for the Global Branding & Appearance Engine.
 #  */
@@ -33,7 +33,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "architecture", "theme-engine", "design-tokens", "multi-tenant"]
 entities: ["Institution", "InstitutionSetting"]
@@ -44,7 +44,7 @@ related_modules: ["01_ARCHITECTURE", "13_SYSADMIN_SETTINGS", "17_UI_UX_DESIGN"]
 # PRATHAMONE EDUOS — GLOBAL BRANDING & APPEARANCE ARCHITECTURE
 
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
-**Parent Organization:** AITDL — AI Technology & Development Lab  
+**Parent Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R. Mallah  
 **Architectural Tier:** Enterprise Multi-Tenant Global Theme & Identity Engine  
 
@@ -149,7 +149,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "matrix", "audit", "components", "pages"]
 entities: ["Institution"]
@@ -202,7 +202,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "audit", "hardcoded-colors", "refactoring"]
 entities: ["Institution"]
@@ -260,7 +260,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["tenant-isolation", "security", "branding", "multi-tenant"]
 entities: ["Institution"]
@@ -306,7 +306,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["visual-validation", "acceptance-test", "branding", "ui-ux"]
 entities: ["Institution"]

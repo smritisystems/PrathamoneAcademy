@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["dashboard", "analytics", "fee-collection", "outstanding", "crm", "academic", "reconciliation"]
 entities: ["FeeInvoice", "Payment", "Student", "StudentEnrollment", "Lead", "Attendance", "ExamMark"]
@@ -23,7 +23,7 @@ related_modules: ["00_PRODUCT_OVERVIEW", "03_ACADEMIC_MANAGEMENT", "04_STUDENT_M
 **Product:** PrathamOne EduOS — Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Institution:** Prashant Academy Coaching Institute  
 **Deployment Status:** Complete, Verified & In Production  
 

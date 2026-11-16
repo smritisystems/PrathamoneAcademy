@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["data-dictionary", "schema", "ssot", "reuse-matrix", "payments", "fees"]
 entities: ["Payment", "PaymentReceipt", "PaymentAllocation", "FeeInvoice", "FeeInvoiceItem", "Refund", "StudentFeeAssignment", "FeeStructure", "FeeCategory"]
@@ -25,7 +25,7 @@ related_modules: ["10_FINANCE_ACCOUNTING", "16_DATABASE_API"]
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Policy Status:** MANDATORY SSOT ANTI-DUPLICATION COMPLIANCE  
 
 ---

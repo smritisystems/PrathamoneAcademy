@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-14"
 updated_date: "2026-11-14"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["installation", "quickstart", "docker", "bootstrap-security"]
 entities: ["User"]
@@ -213,6 +213,6 @@ docker compose down -v
 - **System:** PrathamOne Academy Management System
 - **Client Deployment:** Prashant Academy Coaching Institute (Branch: Jankalyan Nagar, Malad West)
 - **Author & Lead Architect:** Jawahar R. Mallah
-- **Organization:** AITDL (AI Technology & Development Lab)
+- **Organization:** Smritisys & AITDL Networks
 - **Copyright:** Copyright (c) 2026 AITDL. All rights reserved.
 - **License:** Proprietary

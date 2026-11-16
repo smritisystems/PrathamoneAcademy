@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["user-manual", "universal-print", "printing-guide", "paper-sizes", "receipt-printing"]
 entities: ["Institution", "PaymentReceipt", "Student", "StaffProfile"]
@@ -24,7 +24,7 @@ related_modules: ["09_FEES_PAYMENTS", "05_TEACHER_MANAGEMENT", "08_EXAMINATION",
 **Baseline Version:** 1.0.0  
 **Target Audience:** System Administrators, Accountants, Front-Desk Executives, and Teachers  
 **Author:** Jawahar R Mallah, Product Architect  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Date:** 2026-11-07  
 
 ---

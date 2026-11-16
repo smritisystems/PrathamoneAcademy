@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-10"
 updated_date: "2026-11-10"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["production-readiness", "sign-off", "deployment-certification", "engineering-directive", "ssot"]
 entities: ["Institution", "User", "Invoice", "Payment", "Student"]
@@ -25,7 +25,7 @@ related_modules: ["00_PRODUCT_OVERVIEW", "01_ARCHITECTURE", "02_INSTALLATION_DEP
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Certification Date:** November 10, 2026  
 **Final Production Verdict:** CERTIFIED FOR PRODUCTION USE  
@@ -85,6 +85,6 @@ This audit confirms that:
 
 **Jawahar R Mallah**  
 Product Architect & Lead Engineer  
-*AITDL — AI Technology & Development Lab*  
+*Smritisys & AITDL Networks*  
 November 10, 2026
 

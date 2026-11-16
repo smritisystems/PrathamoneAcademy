@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-11"
 updated_date: "2026-11-14"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["housekeeping", "database-backup", "restore-drill", "pg-dump", "gfs-retention", "vacuum", "ssot", "rule-010"]
 entities: ["InstitutionSetting", "SettingAuditLog", "AuditLog", "CommunicationLog", "SharedDocumentToken", "UserNavigationActivity"]
@@ -44,7 +44,7 @@ related_modules: ["12_RBAC_SECURITY", "13_SYSADMIN_SETTINGS", "16_DATABASE_API",
 **Product:** PrathamOne EduOS — Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
 **Product Architect:** Jawahar R. Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Institution:** Prashant Academy Coaching Institute  
 **Policy Alignment:** SSOT Rules 001–011 & Rule 010 Global View-First Edit Mode Governance  
 

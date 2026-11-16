@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-08"
 updated_date: "2026-11-08"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "architecture", "theme-engine", "design-tokens", "multi-tenant"]
 entities: ["Institution", "InstitutionSetting"]
@@ -21,7 +21,7 @@ related_modules: ["01_ARCHITECTURE", "13_SYSADMIN_SETTINGS", "17_UI_UX_DESIGN"]
 # PRATHAMONE EDUOS — GLOBAL BRANDING & APPEARANCE ARCHITECTURE
 
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
-**Parent Organization:** AITDL — AI Technology & Development Lab  
+**Parent Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R. Mallah  
 **Architectural Tier:** Enterprise Multi-Tenant Global Theme & Identity Engine  
 

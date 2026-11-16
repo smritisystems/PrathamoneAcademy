@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Source code attribution, header enforcement, and verification automation tool.
 #  */
@@ -46,6 +46,11 @@ VALID_PROJECT_NAMES = {
 }
 AUTHOR = "Jawahar R. Mallah"
 ORGANIZATION = "AITDL (AI Technology & Development Lab)"
+VALID_ORGANIZATIONS = {
+    "AITDL (AI Technology & Development Lab)",
+    "Smritisys & AITDL Networks",
+    "AITDL",
+}
 CLIENT = "Prashant Academy Coaching Institute"
 COPYRIGHT = "Copyright (c) 2026 AITDL"
 LICENSE = "Proprietary"
@@ -872,8 +877,8 @@ def validate_header_data(rel_path: str, data: dict) -> list[str]:
     if data["@author"] != AUTHOR:
         errors.append(f"@author mismatch: expected '{AUTHOR}', got '{data['@author']}'")
 
-    if data["@organization"] != ORGANIZATION:
-        errors.append(f"@organization mismatch: expected '{ORGANIZATION}', got '{data['@organization']}'")
+    if data["@organization"] != ORGANIZATION and data["@organization"] not in VALID_ORGANIZATIONS:
+        errors.append(f"@organization mismatch: expected one of {VALID_ORGANIZATIONS}, got '{data['@organization']}'")
 
     if data["@client"] != CLIENT:
         errors.append(f"@client mismatch: expected '{CLIENT}', got '{data['@client']}'")

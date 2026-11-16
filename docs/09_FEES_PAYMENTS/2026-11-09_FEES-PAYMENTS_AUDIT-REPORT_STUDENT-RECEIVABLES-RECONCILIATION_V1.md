@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-09"
 updated_date: "2026-11-09"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["forensic-audit", "receivables", "reconciliation", "student-outstanding", "ledger-integrity"]
 entities: ["FeeInvoice", "Payment", "Student", "StudentEnrollment"]
@@ -25,7 +25,7 @@ related_modules: ["04_STUDENT_MANAGEMENT", "10_FINANCE_ACCOUNTING"]
 **Baseline Version:** 1.0.0  
 **Audit Date:** 2026-11-09  
 **Auditor & Chief Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Audit Classification:** SYSTEM-WIDE FORENSIC CERTIFICATION  
 
 ---

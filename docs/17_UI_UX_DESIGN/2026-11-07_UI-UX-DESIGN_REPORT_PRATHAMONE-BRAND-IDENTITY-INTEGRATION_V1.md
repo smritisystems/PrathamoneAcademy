@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-07"
 updated_date: "2026-11-07"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["branding", "brand-integration", "executive-report", "visual-identity", "eduos"]
 entities: ["PrathamOne", "PrathamOne EduOS", "AITDL", "Prashant Academy"]
@@ -23,7 +23,7 @@ related_modules: ["frontend.config", "frontend.components", "00_PRODUCT_OVERVIEW
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Baseline Version:** 1.0.0  
 **Parent Brand:** PrathamOne  
-**Parent Organization:** AITDL — AI Technology & Development Lab  
+**Parent Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 **Client Organization:** Prashant Academy Coaching Institute  
 **Deployment Head:** Commit `1c1a1e9` (Pushed to `master`)  
@@ -51,7 +51,7 @@ graph TD
     F --> H["Tenant Academy: Prashant Academy<br/>(Client Implementation PA001)"]
 ```
 
-1. **Parent Organization:** **AITDL — AI Technology & Development Lab** ([aitdl.com](https://aitdl.com)) holds legal ownership, technical governance, and copyright.
+1. **Parent Organization:** **Smritisys & AITDL Networks** ([aitdl.com](https://aitdl.com)) holds legal ownership, technical governance, and copyright.
 2. **Parent Brand:** **PrathamOne** ([prathamone.com](https://prathamone.com)) represents the master enterprise corporate identity with the iconic elephant 'P' emblem.
 3. **Product Brand:** **PrathamOne EduOS** (Coaching Institute Edition) represents the education management operating system.
 4. **Client/Tenant Institution:** **Prashant Academy** maintains primary customer prominence across student-facing documents, receipts, certificates, and ID cards, while PrathamOne EduOS is anchored in the canonical bottom 2-row software footer.

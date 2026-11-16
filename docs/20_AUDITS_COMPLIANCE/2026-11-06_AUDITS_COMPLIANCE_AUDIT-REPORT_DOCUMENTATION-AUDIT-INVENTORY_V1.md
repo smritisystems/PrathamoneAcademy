@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["20-audits-compliance", "audit-report"]
 entities: []
@@ -23,7 +23,7 @@ related_modules: []
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Version:** 1.0.0  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
 **Audit Date:** 2026-11-06  
 **Status:** Pre-Modification Baseline Established  

@@ -10,7 +10,7 @@ doc_version: "1.5"
 created_date: "2026-11-14"
 updated_date: "2026-11-16"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Draft"
 tags: ["license", "issuance", "activation", "institution-admin", "sysadmin", "SMRITISYS"]
 entities: ["License", "Activation", "Entitlement", "Institution"]

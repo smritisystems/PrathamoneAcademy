@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-06"
 updated_date: "2026-11-06"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Draft"
 tags: ["students", "id-cards", "qr-code", "attendance-scanning", "thermal-print", "coaching-edition"]
 entities: ["Student", "StudentEnrollment", "Attendance", "Institution"]
@@ -25,7 +25,7 @@ related_modules: ["07_ATTENDANCE", "14_PRINTING_DOCUMENTS", "12_RBAC_SECURITY"]
 **Baseline Version:** 1.0.0  
 **Module:** 04_STUDENT_MANAGEMENT & 07_ATTENDANCE  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

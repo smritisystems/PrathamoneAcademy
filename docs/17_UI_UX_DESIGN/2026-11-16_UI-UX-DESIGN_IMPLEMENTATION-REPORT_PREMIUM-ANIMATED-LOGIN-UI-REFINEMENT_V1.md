@@ -10,7 +10,7 @@ doc_version: "1.0"
 created_date: "2026-11-16"
 updated_date: "2026-11-16"
 author: "Jawahar R Mallah"
-organization: "AITDL — AI Technology & Development Lab"
+organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["login", "ui-ux", "svg-animation", "accessibility", "institute-profile", "branding"]
 entities: ["Institution", "User"]
@@ -25,7 +25,7 @@ related_modules: ["12_RBAC_SECURITY", "13_SYSADMIN_SETTINGS", "02_INSTALLATION_D
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0 (Production Release Candidate)  
 **Product Architect:** Jawahar R Mallah  
-**Organization:** AITDL — AI Technology & Development Lab  
+**Organization:** Smritisys & AITDL Networks  
 
 ---
 

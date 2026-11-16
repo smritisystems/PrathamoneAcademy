@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Centralized documentation management, auto-organization, indexing, search, and validation engine.
 #  */
@@ -38,7 +38,7 @@ if hasattr(sys.stdout, 'reconfigure'):
 PRODUCT_NAME = "PrathamOne EduOS"
 PRODUCT_EDITION = "Coaching Institute Edition"
 PRODUCT_VERSION = "1.0.0"
-ORGANIZATION_NAME = "AITDL — AI Technology & Development Lab"
+ORGANIZATION_NAME = "Smritisys & AITDL Networks"
 PRODUCT_ARCHITECT = "Jawahar R Mallah"
 
 # Default Brain Directory
