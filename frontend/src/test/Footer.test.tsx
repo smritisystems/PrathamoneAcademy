@@ -96,6 +96,9 @@ describe('Application Footer Specifications', () => {
     expect(resolvePageTitle('/forms', '')).toBe('Print Forms & KYC')
     expect(resolvePageTitle('/fees/collect/129', '')).toBe('Fee Collection')
     expect(resolvePageTitle('/receipts/RCP-001001', '')).toBe('Fee Receipt')
+    expect(resolvePageTitle('/communication/notices', '')).toBe('Notice Board')
+    expect(resolvePageTitle('/notices', '')).toBe('Notice Board')
+    expect(resolvePageTitle('/communication', '')).toBe('Communication Center')
     expect(resolvePageTitle('/custom-analytics-overview', '')).toBe('Custom Analytics Overview')
   })
 
@@ -356,6 +359,26 @@ describe('Application Footer Specifications', () => {
 
       expect(screen.getByTestId('footer-expanded-content')).toBeDefined()
       expect(localStorage.getItem(FOOTER_COLLAPSED_KEY)).toBe('false')
+    })
+
+    it('renders the pinned Notice Board quick-action button in both expanded and collapsed footers', () => {
+      // Expanded state on desktop
+      window.innerWidth = 1024
+      renderFooter()
+      const noticesBtnExpanded = screen.getByTestId('footer-quick-notices-btn')
+      expect(noticesBtnExpanded).toBeDefined()
+      expect(noticesBtnExpanded.textContent).toContain('Notices')
+
+      // Collapse the footer
+      const collapseBtn = screen.getByTestId('footer-collapse-btn')
+      act(() => {
+        fireEvent.click(collapseBtn)
+      })
+
+      // Collapsed state
+      const noticesBtnCollapsed = screen.getByTestId('footer-quick-notices-btn')
+      expect(noticesBtnCollapsed).toBeDefined()
+      expect(noticesBtnCollapsed.textContent).toContain('Notices')
     })
   })
 })

@@ -17,9 +17,9 @@
  */
 
 import { useState, useEffect, useMemo } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, X, ChevronDown, ChevronUp, MessageSquare, Presentation } from 'lucide-react'
+import { Building2, X, ChevronDown, ChevronUp, MessageSquare, Presentation, Bell } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { institutionsApi } from '../api/endpoints'
 import { APP_CONFIG, BRANDING_CONFIG } from '../config/appConfig'
@@ -85,6 +85,17 @@ export function resolvePageTitle(pathname: string, search: string): string {
     '/users': 'Users & Roles',
     '/releases': 'Releases & Changes',
     '/admin/releases': 'Releases & Changes',
+    '/communication': 'Communication Center',
+    '/communication/overview': 'Communication Center',
+    '/communication/notices': 'Notice Board',
+    '/notices': 'Notice Board',
+    '/communication/broadcasts': 'Broadcast Composer',
+    '/communication/whatsapp': 'WhatsApp Stream',
+    '/communication/templates': 'Message Templates',
+    '/communication/history': 'Dispatch Logs',
+    '/communication/automations': 'Reminder Queues',
+    '/communication/gateways': 'Gateway Diagnostics',
+    '/communication/chat': 'Hybrid Chat',
     '/help': 'Help & About Centre',
     '/help/support': 'Support Centre',
     '/help/about-product': 'About PrathamOne EduOS',
@@ -153,10 +164,12 @@ function useLiveConnectionStatus(): boolean {
 
 export default function Footer() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, selectedInstitutionId, token } = useAuthStore()
   const { activeDrawer, toggleDrawer } = useBottomBarDrawerStore()
   const isOnline = useLiveConnectionStatus()
   const [showAboutModal, setShowAboutModal] = useState(false)
+  const isNoticesActive = location.pathname.startsWith('/communication/notices') || location.pathname === '/notices'
 
   // Initialize collapse state: check localStorage first, else default to mobile (< 768px)
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
@@ -314,8 +327,23 @@ export default function Footer() {
               <span className="hidden xs:inline">Expand</span>
             </button>
 
-            {/* Extreme Right Quick Actions: Chats & EduBoard */}
+            {/* Extreme Right Quick Actions: Notices, Chats & EduBoard */}
             <div className="flex items-center gap-1 pl-1 border-l border-slate-200">
+              <button
+                type="button"
+                onClick={() => navigate('/communication/notices')}
+                data-testid="footer-quick-notices-btn"
+                title="Notice Board & Circulars Register (Extreme Right)"
+                className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[30px] sm:min-h-auto ${
+                  isNoticesActive
+                    ? 'bg-violet-700 text-white ring-2 ring-violet-400'
+                    : 'bg-violet-50 text-violet-800 hover:bg-violet-100 border border-violet-200/80'
+                }`}
+              >
+                <Bell className="w-3.5 h-3.5 shrink-0" />
+                <span>Notices</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => toggleDrawer('chats')}
@@ -468,8 +496,23 @@ export default function Footer() {
                   <span>Collapse</span>
                 </button>
 
-                {/* Extreme Right Quick Actions: Chats & EduBoard */}
+                {/* Extreme Right Quick Actions: Notices, Chats & EduBoard */}
                 <div className="flex items-center gap-1 pl-1.5 border-l border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/communication/notices')}
+                    data-testid="footer-quick-notices-btn"
+                    title="Notice Board & Circulars Register (Extreme Right)"
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
+                      isNoticesActive
+                        ? 'bg-violet-700 text-white ring-2 ring-violet-400'
+                        : 'bg-violet-50 text-violet-800 hover:bg-violet-100 border border-violet-200/80'
+                    }`}
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    <span>Notices</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => toggleDrawer('chats')}
