@@ -319,7 +319,7 @@ async def create_document_share_link(
     # Resolve document display text for WhatsApp sharing
     doc_title = f"{payload.document_type.replace('_', ' ').title()} #{payload.record_id}"
     share_url = f"/shared-doc/{token_str}"
-    
+
     # Message for direct WhatsApp sharing
     whatsapp_text = (
         f"Official document from PrathamOne Academy: {doc_title}. "

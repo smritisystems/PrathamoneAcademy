@@ -643,11 +643,10 @@ function CommunicationContent() {
                     key={tab.id}
                     type="button"
                     onClick={() => handleTabChange(tab.id, tab.route)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                      isActive
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${isActive
                         ? 'bg-white text-violet-700 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                    }`}
+                      }`}
                   >
                     <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-violet-600' : 'text-slate-500'}`} />
                     <span>{tab.label}</span>
@@ -662,11 +661,10 @@ function CommunicationContent() {
       {/* Feedback Banner */}
       {feedback && (
         <div
-          className={`mx-6 mt-4 p-3 rounded-xl flex items-center gap-2.5 text-xs font-medium ${
-            feedback.type === 'success'
+          className={`mx-6 mt-4 p-3 rounded-xl flex items-center gap-2.5 text-xs font-medium ${feedback.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
               : 'bg-rose-50 text-rose-800 border border-rose-200'
-          }`}
+            }`}
         >
           {feedback.type === 'success' ? (
             <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -930,13 +928,12 @@ function CommunicationContent() {
                       <div key={log.id} className="py-2.5 flex items-center justify-between text-xs">
                         <div className="flex items-center gap-3">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              log.channel === 'WHATSAPP'
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${log.channel === 'WHATSAPP'
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : log.channel === 'EMAIL'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-purple-100 text-purple-800'
-                            }`}
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-purple-100 text-purple-800'
+                              }`}
                           >
                             {log.channel}
                           </span>
@@ -952,11 +949,10 @@ function CommunicationContent() {
                             {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              log.status === 'DELIVERED' || log.status === 'SENT'
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${log.status === 'DELIVERED' || log.status === 'SENT'
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : 'bg-amber-100 text-amber-800'
-                            }`}
+                              }`}
                           >
                             {log.status}
                           </span>
@@ -1014,11 +1010,10 @@ function CommunicationContent() {
                               key={ch.id}
                               type="button"
                               onClick={() => setChannel(ch.id as any)}
-                              className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                                isSelected
+                              className={`p-2.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${isSelected
                                   ? 'border-violet-600 bg-violet-50 text-violet-900 shadow-2xs'
                                   : 'border-gray-200 hover:border-gray-300 text-gray-700 bg-white'
-                              }`}
+                                }`}
                             >
                               <Icon className={`w-3.5 h-3.5 ${ch.color}`} />
                               <span>{ch.label}</span>
@@ -1168,11 +1163,10 @@ function CommunicationContent() {
                         disabled={!isEditMode || selectedRecipients.length === 0 || !messageBody.trim() || submitting}
                         onClick={() => setIsConfirmModalOpen(true)}
                         title={!isEditMode ? 'Locked in View Mode: Activate Edit Mode above to dispatch messages' : ''}
-                        className={`px-5 py-2 text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition-colors ${
-                          !isEditMode
+                        className={`px-5 py-2 text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition-colors ${!isEditMode
                             ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
                             : 'text-white bg-violet-600 hover:bg-violet-700 active:bg-violet-800'
-                        }`}
+                          }`}
                       >
                         {submitting ? (
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -1279,22 +1273,20 @@ function CommunicationContent() {
                           <div
                             key={idx}
                             onClick={() => handleToggleRecipient(item)}
-                            className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors ${
-                              isSelected ? 'bg-violet-50' : 'hover:bg-slate-50'
-                            }`}
+                            className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'bg-violet-50' : 'hover:bg-slate-50'
+                              }`}
                           >
                             <div className="min-w-0 flex-1">
                               <div className="text-xs font-semibold text-gray-900 truncate flex items-center gap-1.5">
                                 <span
-                                  className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
-                                    item.type === 'STUDENT'
+                                  className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${item.type === 'STUDENT'
                                       ? 'bg-blue-100 text-blue-800'
                                       : item.type === 'PARENT'
-                                      ? 'bg-amber-100 text-amber-800'
-                                      : item.type === 'STAFF'
-                                      ? 'bg-purple-100 text-purple-800'
-                                      : 'bg-emerald-100 text-emerald-800'
-                                  }`}
+                                        ? 'bg-amber-100 text-amber-800'
+                                        : item.type === 'STAFF'
+                                          ? 'bg-purple-100 text-purple-800'
+                                          : 'bg-emerald-100 text-emerald-800'
+                                    }`}
                                 >
                                   {item.type}
                                 </span>
@@ -1305,11 +1297,10 @@ function CommunicationContent() {
                               </div>
                             </div>
                             <div
-                              className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                isSelected
+                              className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected
                                   ? 'bg-violet-600 border-violet-600 text-white'
                                   : 'border-gray-300 bg-white'
-                              }`}
+                                }`}
                             >
                               {isSelected && <Check className="w-3 h-3" />}
                             </div>
@@ -1496,11 +1487,10 @@ function CommunicationContent() {
                               showNotification('error', 'Please enter a valid 10-digit mobile number')
                             }
                           }}
-                          className={`px-5 py-2 text-xs font-semibold rounded-xl flex items-center gap-2 shadow-xs transition-all ${
-                            waDirectPhone.length >= 10
+                          className={`px-5 py-2 text-xs font-semibold rounded-xl flex items-center gap-2 shadow-xs transition-all ${waDirectPhone.length >= 10
                               ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                               : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                          }`}
+                            }`}
                         >
                           <MessageCircle className="w-4 h-4" />
                           <span>Launch Direct WhatsApp Chat</span>
@@ -1673,11 +1663,10 @@ function CommunicationContent() {
                         setIsTemplateModalOpen(true)
                       }}
                       title={!isEditMode ? 'Locked in View Mode: Activate Edit Mode above to create templates' : ''}
-                      className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors ${
-                        !isEditMode
+                      className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow-2xs transition-colors ${!isEditMode
                           ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
                           : 'text-white bg-violet-600 hover:bg-violet-700'
-                      }`}
+                        }`}
                     >
                       {!isEditMode ? <Lock className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                       <span>Create New Template</span>
@@ -1837,15 +1826,14 @@ function CommunicationContent() {
                             </td>
                             <td className="px-4 py-2.5">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  log.channel === 'WHATSAPP'
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${log.channel === 'WHATSAPP'
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : log.channel === 'EMAIL'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : log.channel === 'SMS'
-                                    ? 'bg-purple-100 text-purple-800'
-                                    : 'bg-violet-100 text-violet-800'
-                                }`}
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : log.channel === 'SMS'
+                                        ? 'bg-purple-100 text-purple-800'
+                                        : 'bg-violet-100 text-violet-800'
+                                  }`}
                               >
                                 {log.channel}
                               </span>
@@ -1861,13 +1849,12 @@ function CommunicationContent() {
                             </td>
                             <td className="px-4 py-2.5 text-center">
                               <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                                  log.status === 'DELIVERED' || log.status === 'SENT'
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${log.status === 'DELIVERED' || log.status === 'SENT'
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : log.status === 'FAILED'
-                                    ? 'bg-rose-100 text-rose-800'
-                                    : 'bg-amber-100 text-amber-800'
-                                }`}
+                                      ? 'bg-rose-100 text-rose-800'
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`}
                               >
                                 {log.status}
                               </span>
@@ -1938,11 +1925,10 @@ function CommunicationContent() {
                       disabled={!isEditMode || savingRules}
                       onClick={handleSaveAutomationRules}
                       title={!isEditMode ? 'Locked in View Mode: Activate Edit Mode above to save rules' : ''}
-                      className={`px-4 py-2 text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-all ${
-                        !isEditMode
+                      className={`px-4 py-2 text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-all ${!isEditMode
                           ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
                           : 'text-white bg-violet-600 hover:bg-violet-700'
-                      }`}
+                        }`}
                     >
                       {savingRules ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -2160,9 +2146,8 @@ function CommunicationContent() {
                             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono">
                               {t.channel}
                             </span>
-                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
-                              t.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
-                            }`}>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold ${t.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
+                              }`}>
                               {t.enabled ? 'ACTIVE' : 'PAUSED'}
                             </span>
                           </div>
@@ -2217,11 +2202,10 @@ function CommunicationContent() {
                               <td className="px-4 py-2 font-medium text-gray-900">{d.recipient_name}</td>
                               <td className="px-4 py-2 font-mono text-[11px] text-gray-600">{d.recipient_destination}</td>
                               <td className="px-4 py-2 text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  d.status === 'DELIVERED' || d.status === 'SENT'
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${d.status === 'DELIVERED' || d.status === 'SENT'
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : 'bg-amber-100 text-amber-800'
-                                }`}>
+                                  }`}>
                                   {d.status}
                                 </span>
                               </td>
@@ -2302,11 +2286,10 @@ function CommunicationContent() {
                         disabled={!isEditMode || dispatchingQueue || selectedQueueIds.length === 0}
                         onClick={handleDispatchBatchReminders}
                         title={!isEditMode ? 'Locked in View Mode: Activate Edit Mode above to dispatch batch reminders' : ''}
-                        className={`px-4 py-2 text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-all ${
-                          !isEditMode
+                        className={`px-4 py-2 text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-all ${!isEditMode
                             ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
                             : 'text-white bg-emerald-600 hover:bg-emerald-700'
-                        }`}
+                          }`}
                       >
                         {dispatchingQueue ? (
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -2375,9 +2358,8 @@ function CommunicationContent() {
                             return (
                               <tr
                                 key={item.invoice_id}
-                                className={`hover:bg-violet-50/40 transition-colors ${
-                                  isSelected ? 'bg-violet-50/30' : ''
-                                }`}
+                                className={`hover:bg-violet-50/40 transition-colors ${isSelected ? 'bg-violet-50/30' : ''
+                                  }`}
                               >
                                 <td className="py-3 px-4 text-center">
                                   <input
@@ -2613,11 +2595,10 @@ function CommunicationContent() {
                       disabled={!isEditMode || submitting || !testDestination}
                       onClick={handleRunDiagnosticTest}
                       title={!isEditMode ? 'Locked in View Mode: Activate Edit Mode above to trigger diagnostics tests' : ''}
-                      className={`px-4 py-2 text-xs font-semibold rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors ${
-                        !isEditMode
+                      className={`px-4 py-2 text-xs font-semibold rounded-lg shadow-2xs flex items-center gap-1.5 transition-colors ${!isEditMode
                           ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
                           : 'text-white bg-violet-600 hover:bg-violet-700'
-                      }`}
+                        }`}
                     >
                       {submitting ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -2684,11 +2665,10 @@ function CommunicationContent() {
                       disabled={!isEditMode || savingSettings}
                       onClick={handleSaveChannelSettings}
                       title={!isEditMode ? 'Locked in View Mode: Activate Edit Mode above to save channel settings' : ''}
-                      className={`px-4 py-2 text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-all ${
-                        !isEditMode
+                      className={`px-4 py-2 text-xs font-semibold rounded-xl shadow-xs flex items-center gap-1.5 transition-all ${!isEditMode
                           ? 'bg-slate-200 text-slate-500 cursor-not-allowed border border-slate-300'
                           : 'text-white bg-violet-600 hover:bg-violet-700'
-                      }`}
+                        }`}
                     >
                       {savingSettings ? (
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
