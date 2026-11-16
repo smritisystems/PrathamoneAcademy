@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Code-signing automation utility for PrathamOne EduOS installer.
 #  *              Applies Authenticode digital signatures and exports local root certificates.

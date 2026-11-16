@@ -11,7 +11,7 @@
 ;  *
 ;  * @version     1.0.0
 ;  * @created     2026-11-15
-;  * @updated     2026-11-15
+;  * @updated     2026-11-16
 ;  *
 ;  * @description Inno Setup Script: Packages PrathamOne EduOS, embedded PostgreSQL 16,
 ;  *              Python backend runtime, and compiled React SPA into a single zero-knowledge installer.
@@ -72,8 +72,10 @@ Name: "{app}\data"; Permissions: users-full
 Source: "assets\app_icon.ico"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "assets\wizard_large.bmp"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "assets\wizard_small.bmp"; DestDir: "{app}\assets"; Flags: ignoreversion
-Source: "..\frontend\public\artwork\16112026\001\fl.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
-Source: "..\frontend\public\artwork\16112026\001\fl3.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "assets\widelogo.png"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "assets\widelogo.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\frontend\public\artwork\CSM\widelogo.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\frontend\public\artwork\CSM\path1.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "..\frontend\public\artwork\16112026\001\2.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
 
 ; Root configuration and scripts
@@ -216,6 +218,12 @@ end;
 
 procedure InitializeWizard;
 begin
+  // Dynamically configure upper-right header for wide logo branding
+  WizardForm.WizardSmallBitmapImage.Width := 160;
+  WizardForm.WizardSmallBitmapImage.Left := WizardForm.MainPanel.ClientWidth - 165;
+  WizardForm.PageNameLabel.Width := WizardForm.WizardSmallBitmapImage.Left - WizardForm.PageNameLabel.Left - 10;
+  WizardForm.PageDescriptionLabel.Width := WizardForm.WizardSmallBitmapImage.Left - WizardForm.PageDescriptionLabel.Left - 10;
+
   // Create Custom Configuration Page for institute details and administrator credentials
   ConfigPage := CreateInputQueryPage(wpSelectDir,
     'Institute & Academy Profile Setup',

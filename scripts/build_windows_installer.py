@@ -25,6 +25,8 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
+from scripts.prepare_installer_artwork import generate_installer_assets
+
 
 def find_iscc() -> Path | None:
     """Locate Inno Setup Compiler (ISCC.exe) across standard Windows paths."""

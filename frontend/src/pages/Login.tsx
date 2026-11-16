@@ -156,7 +156,7 @@ export default function LoginPage() {
           LEFT PANEL: DIGNIFIED INSTITUTIONAL EDITORIAL CANVAS
           Featuring Organic Curved Wave Edge and App Original Navy Blue Gradient
           ========================================================================= */}
-      <div className="relative w-full lg:w-[54%] xl:w-[56%] shrink-0 text-white flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-14 lg:pr-24 xl:pr-32 overflow-hidden min-h-[460px] lg:min-h-screen z-10"
+      <div className="relative w-full lg:w-[54%] xl:w-[56%] shrink-0 text-white flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-14 lg:pr-24 xl:pr-32 overflow-hidden min-h-[460px] lg:min-h-screen z-10 order-2 lg:order-1"
         style={{
           background: `linear-gradient(145deg, #051632 0%, ${secondaryBrandColor} 45%, ${primaryBrandColor} 100%)`,
         }}
@@ -334,7 +334,7 @@ export default function LoginPage() {
           RIGHT PANEL: SEAMLESS FULL-HEIGHT ENTERPRISE AUTHENTICATION WINDOW
           Full Width & Height Split Pane with Ergonomically Centered Input Workspace
           ========================================================================= */}
-      <div className="relative w-full lg:w-[46%] xl:w-[44%] bg-white flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 min-h-[580px] lg:min-h-screen z-20 overflow-hidden">
+      <div className="relative w-full lg:w-[46%] xl:w-[44%] bg-white flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 min-h-[580px] lg:min-h-screen z-20 overflow-hidden order-1 lg:order-2">
         {/* Soft Warm Saffron Ambient Aura in Background */}
         <div
           className="absolute -bottom-12 -right-12 w-80 sm:w-96 h-80 sm:h-96 rounded-full blur-[120px] pointer-events-none opacity-20 select-none"
@@ -420,9 +420,8 @@ export default function LoginPage() {
                 <input
                   id="login-username"
                   {...register('username')}
-                  className={`w-full text-sm border rounded-xl pl-10 pr-3.5 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] focus:border-[#0B2D6B] text-slate-900 placeholder-slate-400 transition-colors shadow-2xs ${
-                    errors.username ? 'border-rose-400' : 'border-slate-300'
-                  }`}
+                  className={`w-full text-sm border rounded-xl pl-10 pr-3.5 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] focus:border-[#0B2D6B] text-slate-900 placeholder-slate-400 transition-colors shadow-2xs ${errors.username ? 'border-rose-400' : 'border-slate-300'
+                    }`}
                   placeholder="Enter your email or username"
                   autoComplete="username"
                   aria-invalid={errors.username ? 'true' : 'false'}
@@ -449,9 +448,8 @@ export default function LoginPage() {
                   id="login-password"
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
-                  className={`w-full text-sm border rounded-xl pl-10 pr-11 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] focus:border-[#0B2D6B] text-slate-900 placeholder-slate-400 transition-colors shadow-2xs ${
-                    errors.password ? 'border-rose-400' : 'border-slate-300'
-                  }`}
+                  className={`w-full text-sm border rounded-xl pl-10 pr-11 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] focus:border-[#0B2D6B] text-slate-900 placeholder-slate-400 transition-colors shadow-2xs ${errors.password ? 'border-rose-400' : 'border-slate-300'
+                    }`}
                   placeholder="••••••••••••"
                   autoComplete="current-password"
                   aria-invalid={errors.password ? 'true' : 'false'}
