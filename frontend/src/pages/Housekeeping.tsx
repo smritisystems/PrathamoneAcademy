@@ -4,14 +4,14 @@
  * @module      frontend.pages
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-14
+ * @updated     2026-11-16
  *
  * @description Housekeeping Workspace for automated & on-demand PostgreSQL database backup, SHA-256 verification, GFS pruning, sandbox restore drills, guarded production restoration, VACUUM maintenance, SSOT ledger parity, and scheduler policies.
  */

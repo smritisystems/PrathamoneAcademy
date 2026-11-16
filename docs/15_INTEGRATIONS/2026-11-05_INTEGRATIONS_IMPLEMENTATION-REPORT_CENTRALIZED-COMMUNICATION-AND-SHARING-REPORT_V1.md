@@ -21,7 +21,7 @@ related_modules: []
 # Centralized Communication & Sharing Module — Engineering Report
 
 **Project**: PrathamOne Academy Coaching Institute Management System  
-**Organization**: AITDL (AI Technology & Development Lab)  
+**Organization**: Smritisys & AITDL Networks  
 **Lead Architect & Author**: Jawahar R. Mallah  
 **Client**: Prashant Academy Coaching Institute  
 **Release Date**: November 5, 2026  

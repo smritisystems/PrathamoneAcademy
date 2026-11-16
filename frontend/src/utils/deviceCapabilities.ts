@@ -4,14 +4,14 @@
  * @module      frontend.utils
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-13
- * @updated     2026-11-13
+ * @updated     2026-11-16
  *
  * @description Hardware-independent device capability detection layer for EduBoard. Inspects browser APIs, screen geometry, pointer characteristics, and synchronization states without proprietary hardware SDKs.
  */

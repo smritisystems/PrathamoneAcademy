@@ -4,14 +4,14 @@
  * @module      frontend.utils
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-13
+ * @updated     2026-11-16
  *
  * @description Secure, once-only startup console branding banner logging AITDL parent identity, product ecosystem, and contacts without sensitive credential leakage.
  */

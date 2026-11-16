@@ -4,14 +4,14 @@
 #  * @module      backend.app.api.v1.endpoints
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-10
+#  * @updated     2026-11-16
 #  *
 #  * @description REST API router managing academic study materials, question banks, and syllabus documents.
 #  */

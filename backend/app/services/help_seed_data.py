@@ -4,7 +4,7 @@
 #  * @module      backend.app.services
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
@@ -2201,7 +2201,7 @@ Follow this workflow during live classroom or hybrid sessions to get the maximum
 > **Management Approval Required:** Formal statutory copyright notice text for customer distribution is flagged for management legal approval.
 
 ## Verified Ownership Attribution
-- **Copyright Owner:** `Copyright © 2026 AITDL (AI Technology & Development Lab). All rights reserved.`
+- **Copyright Owner:** `Copyright © 2026 Smritisys & AITDL Networks. All rights reserved.`
 - **Product:** PrathamOne EduOS — Education Management Operating System (Coaching Institute Edition).
 - **Developer & Product Owner:** AITDL & SMRITI Systems.
 - **Distinction Notice:** All coaching institute content, student data, marks, and financial records remain the property of the respective subscribing institution (e.g., Prashant Academy Coaching Institute), separate from PrathamOne EduOS software ownership.
@@ -2252,7 +2252,7 @@ Follow this workflow during live classroom or hybrid sessions to get the maximum
 
 ## PrathamOne EduOS Product & Engineering Credits
 - **Product:** PrathamOne EduOS — Education Management Operating System (Coaching Institute Edition).
-- **Developer & Product Owner:** AITDL (AI Technology & Development Lab) & SMRITI Systems.
+- **Developer & Product Owner:** Smritisys & AITDL Networks & SMRITI Systems.
 - **Product Architect:** Jawahar R. Mallah.
 - **Subscribing Institution Data Ownership:** All student records, fee ledgers, marks, and institutional assets remain the sole property of the subscribing coaching institute.
 

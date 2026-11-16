@@ -4,14 +4,14 @@
 #  * @module      backend.alembic.versions
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-12
-#  * @updated     2026-11-12
+#  * @updated     2026-11-16
 #  *
 #  * @description Extend homework_assignments and student_homework_records for assignment types, late-joiner policies, submission versioning, evaluation history, secure homework_files storage, and granular homework RBAC permissions.
 #  */

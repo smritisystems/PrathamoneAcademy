@@ -4,7 +4,7 @@
 ;  * @module      installer
 ;  *
 ;  * @author      Jawahar R. Mallah
-;  * @organization AITDL (AI Technology & Development Lab)
+;  * @organization Smritisys & AITDL Networks
 ;  * @client      Prashant Academy Coaching Institute
 ;  * @copyright   Copyright (c) 2026 AITDL
 ;  * @license     Proprietary

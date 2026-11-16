@@ -4,14 +4,14 @@
  * @module      frontend.components.common
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-10
+ * @updated     2026-11-16
  *
  * @description Standardized enterprise safe-delete modal enforcing pre-flight dependency audits, active Edit Mode, 3-tier actions (Delete/Deactivate/Archive), and financial ledger immutability.
  */

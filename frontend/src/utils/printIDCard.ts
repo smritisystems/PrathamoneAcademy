@@ -4,14 +4,14 @@
  * @module      frontend.utils
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Isolated student and staff ID card printing utility for high-fidelity CR80 PVC and A4 sheet generation.
  */

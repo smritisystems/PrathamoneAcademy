@@ -4,14 +4,14 @@
  * @module      frontend.hooks
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Real-time bidirectional synchronization hook combining backend WebSocket rooms and same-origin BroadcastChannel for zero-latency EduBoard main/detached multi-window collaboration and presence.
  */

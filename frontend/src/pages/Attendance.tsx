@@ -4,14 +4,14 @@
  * @module      frontend.pages
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Attendance management workspace transforming daily batch roll call, QR terminals, registers, and absenteeism into dedicated functional views.
  */

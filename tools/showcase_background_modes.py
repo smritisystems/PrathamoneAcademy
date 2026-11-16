@@ -4,14 +4,14 @@
 #  * @module      00_PRODUCT_OVERVIEW
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-08
-#  * @updated     2026-11-14
+#  * @updated     2026-11-16
 #  *
 #  * @description Comprehensive showcase capturing screenshots for all Login Canvas Background Modes and Overlay Controls.
 #  */

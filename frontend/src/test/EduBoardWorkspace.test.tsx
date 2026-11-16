@@ -4,14 +4,14 @@
  * @module      frontend.test
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Vitest test suite for PrathamOne EduBoard workspace, Konva/React-Konva canvas tools, View-First governance, 409 conflict UI, read-only Student view, and scoped IndexedDB crash recovery.
  */

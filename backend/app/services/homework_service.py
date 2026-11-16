@@ -4,14 +4,14 @@
 #  * @module      backend.app.services
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.1.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-12
+#  * @updated     2026-11-16
 #  *
 #  * @description Domain service implementing core business logic for Homework & Assignment management, teacher scope authorization, recipient snapshots, late-joiner handling, secure files, submission versioning, evaluation history, notifications, and analytics.
 #  */

@@ -23,7 +23,7 @@ related_modules: []
 
 **Project:** PrathamOne Academy Coaching Institute Management System  
 **Module:** Financial Ledger, Fees, Payments, Receipts & Workflow Governance  
-**Author:** Jawahar R. Mallah, AITDL (AI Technology & Development Lab)  
+**Author:** Jawahar R. Mallah, Smritisys & AITDL Networks  
 **Client:** Prashant Academy Coaching Institute  
 **Date:** November 5, 2026  
 **Status:** **Pending User Approval (Pre-Coding Phase)**

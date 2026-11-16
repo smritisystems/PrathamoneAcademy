@@ -103,7 +103,7 @@ Using `scripts/prepare_installer_artwork.py`, source brand graphics were convert
 
 ### 3.4 Automated Authenticode Code Signing (`scripts/sign_installer.ps1`)
 An automated code signing utility was created:
-- Generates or binds to an official `CN=AITDL (AI Technology & Development Lab)` certificate.
+- Generates or binds to an official `CN=Smritisys & AITDL Networks` certificate.
 - Applies Authenticode signatures with RFC 3161 timestamps via DigiCert (`http://timestamp.digicert.com`).
 - Exports `dist/AITDL_CodeSigning_CA.cer` for 1-click local machine trust installation.
 

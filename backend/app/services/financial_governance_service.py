@@ -4,14 +4,14 @@
 #  * @module      backend.app.services.financial_governance
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-13
+#  * @updated     2026-11-16
 #  *
 #  * @description Centralized Single Source of Truth (SSOT) Financial Governance Engine unifying Concessions, Fee Waivers, Scholarships, Sponsor Funding, Collections, Refunds, Reversals, 7 Dashboards, 20 Governed Reports, Reconciliation, and Drill-Down Traceability.
 #  */

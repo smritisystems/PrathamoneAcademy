@@ -23,7 +23,7 @@ related_modules: []
 
 **Audit Execution Date**: November 5, 2026  
 **Auditor**: Jawahar R. Mallah, Lead Systems Architect  
-**Organization**: AITDL (AI Technology & Development Lab)  
+**Organization**: Smritisys & AITDL Networks  
 **Client / Workload**: Prashant Academy Coaching Institute  
 **System Version**: v6.99.1 (Enterprise Production Edition)  
 **Commit / Branch**: `35ba720` on `origin/master`  

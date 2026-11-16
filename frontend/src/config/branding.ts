@@ -4,7 +4,7 @@
  * @module      frontend.config
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
@@ -87,7 +87,7 @@ export const BRANDING_CONFIG = {
   monogram: 'YA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.16-REV-191-v1.107.0-200BD0E',
+  buildNumber: '2026.11.16-REV-192-v1.107.1-019CA26',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-16',

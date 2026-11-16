@@ -4,14 +4,14 @@
 #  * @module      backend.alembic.versions
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-11
+#  * @updated     2026-11-16
 #  *
 #  * @description Alembic migration adding workforce lifecycle fields to staff_profiles and creating staff_employment_histories.
 #  */

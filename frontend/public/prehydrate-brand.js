@@ -4,17 +4,18 @@
  * @module      frontend.public
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Pre-hydration synchronous brand theme resolver extracted from index.html for strict CSP compliance without inline scripts.
  */
+
 (function () {
   try {
     var authRaw = localStorage.getItem('prashant-auth')

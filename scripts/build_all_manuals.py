@@ -4,7 +4,7 @@
 #  * @module      scripts
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
@@ -116,7 +116,7 @@ def build_complete_user_manual_html():
 
     <div class="callout callout-note" style="margin-top: 30px;">
         <div class="callout-title">Copyright & Proprietary Notice</div>
-        <p>Copyright &copy; 2026 AITDL (AI Technology & Development Lab). All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the author and publisher.</p>
+        <p>Copyright &copy; 2026 Smritisys & AITDL Networks. All rights reserved. No part of this publication may be reproduced, distributed, or transmitted in any form or by any means, including photocopying, recording, or other electronic or mechanical methods, without the prior written permission of the author and publisher.</p>
         <p>PrathamOne EduOS, PrathamOne Coaching Institutes Enterprise Suite, and the PrathamOne logo are trademarks or registered trademarks of AITDL in India and other jurisdictions.</p>
     </div>
 </div>
@@ -187,7 +187,7 @@ def build_complete_user_manual_html():
 <h1>1. Welcome & Product Architecture Overview</h1>
 
 <h2>1.1 Executive Summary & Mission</h2>
-<p><strong>PrathamOne EduOS</strong> (part of the <em>PrathamOne Coaching Institutes Enterprise Suite</em>) is an enterprise-grade ERP and academic operations platform engineered specifically for coaching institutes, competitive exam academies, tutoring centers, and multi-branch educational networks. Engineered by <strong>Jawahar R Mallah</strong> and the team at <strong>AITDL (AI Technology & Development Lab)</strong>, PrathamOne EduOS consolidates fragmented institute workflows into a unified, secure, high-performance web platform.</p>
+<p><strong>PrathamOne EduOS</strong> (part of the <em>PrathamOne Coaching Institutes Enterprise Suite</em>) is an enterprise-grade ERP and academic operations platform engineered specifically for coaching institutes, competitive exam academies, tutoring centers, and multi-branch educational networks. Engineered by <strong>Jawahar R Mallah</strong> and the team at <strong>Smritisys & AITDL Networks</strong>, PrathamOne EduOS consolidates fragmented institute workflows into a unified, secure, high-performance web platform.</p>
 
 <p>The platform delivers complete lifecycle management across five core institutional pillars:</p>
 <ul>

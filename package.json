@@ -1,6 +1,6 @@
 {
   "name": "prashant-academy-workspace",
-  "version": "1.107.0",
+  "version": "1.107.1",
   "private": true,
   "description": "Prashant Academy Coaching Institute Management System - Monorepo Workspace",
   "scripts": {
@@ -14,7 +14,7 @@
     "build:frontend": "npm --prefix frontend run build"
   },
   "author": "Jawahar R. Mallah",
-  "organization": "AITDL (AI Technology & Development Lab)",
+  "organization": "Smritisys & AITDL Networks",
   "client": "Prashant Academy Coaching Institute",
   "license": "Proprietary"
 }

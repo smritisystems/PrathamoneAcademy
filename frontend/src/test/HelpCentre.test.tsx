@@ -4,14 +4,14 @@
  * @module      frontend.src.test
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-15
+ * @updated     2026-11-16
  *
  * @description Comprehensive Vitest suite covering Help & About Centre navigation, unified search, contextual help routing, product/company/version/legal views, admin-only System Info, support ticketing, and Rule 010 EditMode governance.
  */

@@ -4,14 +4,14 @@
  * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-15
+ * @updated     2026-11-16
  *
  * @description Admin-only Content Management & Governance console adhering strictly to Rule 010 View-First Edit Mode for articles, FAQs, categories, legal approvals, revision history, and product metadata.
  */

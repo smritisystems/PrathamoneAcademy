@@ -22,7 +22,7 @@ related_modules: ["05_TEACHER_MANAGEMENT", "06_TEACHER_PAYROLL", "12_RBAC_SECURI
 
 ## Executive Summary
 
-Under the governance directive of **Jawahar R. Mallah** (Product Architect) and **AITDL (AI Technology & Development Lab)**, this implementation completes the evolution of the Teacher Profile into an enterprise-grade **Master Employee Dossier** for **PrathamOne EduOS (Coaching Institute Edition)**.
+Under the governance directive of **Jawahar R. Mallah** (Product Architect) and **Smritisys & AITDL Networks**, this implementation completes the evolution of the Teacher Profile into an enterprise-grade **Master Employee Dossier** for **PrathamOne EduOS (Coaching Institute Edition)**.
 
 Adhering strictly to the **Single Source of Truth (SSOT)** and **Anti-Duplication Directives**, this architecture establishes that **Teachers and Non-Teaching Staff share one canonical Employee Identity (`users.id` + `staff_profiles`)**, while preserving specialized teaching extensions (`teacher_assignments`, `teacher_payment_profiles`).
 

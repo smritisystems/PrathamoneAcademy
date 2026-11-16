@@ -4,14 +4,14 @@
  * @module      frontend.components
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-13
+ * @updated     2026-11-16
  *
  * @description Official Printable Graphical Student Report Card modal with A4 transcript layout, progress bars, and analytics.
  */

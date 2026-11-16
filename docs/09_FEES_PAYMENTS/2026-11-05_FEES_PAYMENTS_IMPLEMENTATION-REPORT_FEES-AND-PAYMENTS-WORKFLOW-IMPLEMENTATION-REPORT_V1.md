@@ -22,7 +22,7 @@ related_modules: []
 
 **Project:** PrathamOne Academy Coaching Institute Management System  
 **Client:** Prashant Academy Coaching Institute  
-**Engineering Lab:** AITDL (AI Technology & Development Lab) — `https://aitdl.com`  
+**Engineering Lab:** Smritisys & AITDL Networks — `https://aitdl.com`  
 **Date:** November 5, 2026  
 **Status:** Completed, Verified, and Deployed to Production  
 

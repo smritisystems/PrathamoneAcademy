@@ -4,14 +4,14 @@
  * @module      frontend.test
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-08
+ * @updated     2026-11-16
  *
  * @description Comprehensive unit and integration test suite verifying all 9 dedicated CRM submenu workspaces: Overview, Register, Pipeline, Follow-ups, Counselling, Sources, Campaigns, Reports, and Settings.
  */

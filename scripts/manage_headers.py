@@ -5,7 +5,7 @@
 #  * @module      scripts
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
@@ -45,9 +45,8 @@ VALID_PROJECT_NAMES = {
     "Prashant Academy Coaching Institute Management System"
 }
 AUTHOR = "Jawahar R. Mallah"
-ORGANIZATION = "AITDL (AI Technology & Development Lab)"
+ORGANIZATION = "Smritisys & AITDL Networks"
 VALID_ORGANIZATIONS = {
-    "AITDL (AI Technology & Development Lab)",
     "Smritisys & AITDL Networks",
     "AITDL",
 }

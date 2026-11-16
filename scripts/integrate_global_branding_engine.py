@@ -4,14 +4,14 @@
 #  * @module      scripts
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-08
-#  * @updated     2026-11-08
+#  * @updated     2026-11-16
 #  *
 #  * @description Integrates the centralized Global Branding & Appearance Engine across index.html, tailwind.config.js, index.css, branding.ts, Login.tsx, Sidebar.tsx, and Settings.tsx.
 #  */

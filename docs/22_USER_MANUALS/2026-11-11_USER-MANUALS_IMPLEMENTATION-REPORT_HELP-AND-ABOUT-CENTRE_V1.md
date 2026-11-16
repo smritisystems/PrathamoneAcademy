@@ -22,7 +22,7 @@ related_modules: ["13_SYSADMIN_SETTINGS", "12_RBAC_SECURITY", "17_UI_UX_DESIGN",
 
 **Product:** PrathamOne EduOS (Coaching Institute Edition)  
 **Developer & Product Owner:** AITDL & SMRITI Systems  
-**Prepared By:** Jawahar R Mallah — AITDL (AI Technology & Development Lab)  
+**Prepared By:** Jawahar R Mallah — Smritisys & AITDL Networks  
 **Date:** 2026-11-11  
 
 ---

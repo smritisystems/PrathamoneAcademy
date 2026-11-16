@@ -4,14 +4,14 @@
  * @module      frontend.pages.crm
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-08
+ * @updated     2026-11-16
  *
  * @description Unified CRM Workspace Header with 9 dedicated sub-navigation tabs, Training Mode pill indicator, View-First Edit Mode governance, and page-level action triggers.
  */

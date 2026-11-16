@@ -5,7 +5,7 @@ rem  * @project     PrathamOne EduOS Coaching Institute Management System
 rem  * @module      installer.files
 rem  *
 rem  * @author      Jawahar R. Mallah
-rem  * @organization AITDL (AI Technology & Development Lab)
+rem  * @organization Smritisys & AITDL Networks
 rem  * @client      Prashant Academy Coaching Institute
 rem  * @copyright   Copyright (c) 2026 AITDL
 rem  * @license     Proprietary

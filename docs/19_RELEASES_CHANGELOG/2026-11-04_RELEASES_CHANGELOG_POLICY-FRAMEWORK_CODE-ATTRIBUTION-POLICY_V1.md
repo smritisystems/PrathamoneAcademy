@@ -49,7 +49,7 @@ Every first-party source file must begin with the standard attribution header us
  * @module      <module name>
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
@@ -79,7 +79,7 @@ Every first-party source file must begin with the standard attribution header us
 | `@project` | `PrathamOne Academy Coaching Institute Management System` | Official institutional project title |
 | `@module` | Domain taxonomy (e.g. `frontend.pages`, `backend.app.api.v1`) | Architectural subsystem of the file |
 | `@author` | `Jawahar R. Mallah` | Primary architect and author |
-| `@organization` | `AITDL (AI Technology & Development Lab)` | Authoring technological organization |
+| `@organization` | `Smritisys & AITDL Networks` | Authoring technological organization |
 | `@client` | `Prashant Academy Coaching Institute` | Client enterprise and beneficiary |
 | `@copyright` | `Copyright (c) 2026 AITDL` | Legal copyright notice |
 | `@license` | `Proprietary` | Proprietary software license restriction |

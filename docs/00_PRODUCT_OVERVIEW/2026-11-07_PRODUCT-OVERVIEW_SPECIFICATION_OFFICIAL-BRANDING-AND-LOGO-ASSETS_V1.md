@@ -22,7 +22,7 @@ related_modules: ["17_UI_UX_DESIGN", "14_PRINTING_DOCUMENTS"]
 
 ## 1. Executive Summary & Brand Mark Identity
 
-**PrathamOne EduOS** (Coaching Institute Edition) is the flagship education operating system engineered by **AITDL (AI Technology & Development Lab)** under Chief Product Architect **Jawahar R. Mallah**.
+**PrathamOne EduOS** (Coaching Institute Edition) is the flagship education operating system engineered by **Smritisys & AITDL Networks** under Chief Product Architect **Jawahar R. Mallah**.
 
 The official brand identity combines elegance, cognitive power, and software reliability:
 - **The "P" Elephant Emblem:** The letter **P** in *PrathamOne* is ingeniously formed by a stylized elephant silhouette. In Indian cultural and educational heritage, the elephant represents supreme wisdom, memory (*Smriti*), intelligence, and unstoppable momentum. The circular ear and eye shape the upper bowl of the 'P', while the curved trunk gracefully extends downward to establish the letter's authoritative vertical stem.

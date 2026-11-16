@@ -4,14 +4,14 @@
  * @module      frontend.test
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Comprehensive unit and specification tests verifying the Enterprise Release & Change Management workspace, tabs, quality gates, and approval lifecycles.
  */

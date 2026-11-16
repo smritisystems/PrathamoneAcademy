@@ -214,5 +214,5 @@ docker compose down -v
 - **Client Deployment:** Prashant Academy Coaching Institute (Branch: Jankalyan Nagar, Malad West)
 - **Author & Lead Architect:** Jawahar R. Mallah
 - **Organization:** Smritisys & AITDL Networks
-- **Copyright:** Copyright (c) 2026 AITDL. All rights reserved.
+- **Copyright:** Copyright (c) 2026 PrathamOne EduOS. All rights reserved.
 - **License:** Proprietary

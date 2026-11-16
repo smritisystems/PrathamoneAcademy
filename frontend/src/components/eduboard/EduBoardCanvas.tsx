@@ -4,14 +4,14 @@
  * @module      frontend.components.eduboard
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.1.0
  * @created     2026-11-12
- * @updated     2026-11-13
+ * @updated     2026-11-16
  *
  * @description Interactive Konva + React-Konva + PDF.js multi-mode classroom canvas supporting Classic Greenboard/Blackboard chalk rendering, Digital Whiteboard, Grid/Ruled surfaces, non-destructive PDF annotations, Fit-to-Screen, keyboard shortcuts, and collapsible/dockable/floating toolbar integration.
  */

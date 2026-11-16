@@ -4,14 +4,14 @@
 #  * @module      backend.app.api.v1.endpoints
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.1.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-13
+#  * @updated     2026-11-16
 #  *
 #  * @description REST API endpoints for Homework & Assignment Management, Recipient Previews & Late-Joiner Policies, Secure File Attachments, Digital Submissions with Version History, Evaluations, Notifications, Dashboards, and Institute Analytics.
 #  */

@@ -4,14 +4,14 @@
  * @module      frontend.pages
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */

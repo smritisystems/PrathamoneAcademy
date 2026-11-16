@@ -21,7 +21,7 @@ related_modules: ["01_ARCHITECTURE", "03_ACADEMIC_MANAGEMENT", "04_STUDENT_MANAG
 # PHASE 11 — FINAL DELIVERY & RECONCILIATION REPORT: CENTRALIZED CONCESSIONS, FEE WAIVERS & SCHOLARSHIP FINANCIAL GOVERNANCE
 
 **Product:** PrathamOne EduOS (Coaching Institute Edition v1.0.0)  
-**Architect & Author:** Jawahar R. Mallah — AITDL (AI Technology & Development Lab)  
+**Architect & Author:** Jawahar R. Mallah — Smritisys & AITDL Networks  
 **Pre-Implementation Backup:** `data/backups/prashant_academy_pre_concession_governance_2026-11-11.sql` (`2,114,740` bytes)  
 **Active Alembic Head:** `042_concession_governance` (reversible to `041_subject_dedup`)  
 **Phase 1 Audit Reference:** [2026-11-11_FEES-PAYMENTS_AUDIT-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-AUDIT_V1.md](file:///f:/PrashantAcademy/docs/09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_AUDIT-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-AUDIT_V1.md)

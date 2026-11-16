@@ -4,7 +4,7 @@
 #  * @module      scripts.prepare_installer_artwork
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
@@ -17,6 +17,7 @@
 #  */
 
 import asyncio
+import base64
 from pathlib import Path
 from PIL import Image
 
@@ -35,6 +36,9 @@ def generate_installer_assets():
         return
 
     print(f"[ARTWORK] Rendering canonical vector SVGs: {svg2_path.name} & {fl_path.name} via Playwright")
+
+    svg2_data = "data:image/svg+xml;base64," + base64.b64encode(svg2_path.read_bytes()).decode("utf-8")
+    fl_data = "data:image/svg+xml;base64," + base64.b64encode(fl_path.read_bytes()).decode("utf-8")
 
     async def render_svgs():
         from playwright.async_api import async_playwright
@@ -149,8 +153,8 @@ def generate_installer_assets():
   <div class='glow-cyan'></div>
   <div>
     <div class='emblem-card'>
-      <img src='{svg2_path.as_uri()}' class='emblem-img' />
-      <img src='{fl_path.as_uri()}' class='fl-img' />
+      <img src='{svg2_data}' class='emblem-img' />
+      <img src='{fl_data}' class='fl-img' />
     </div>
     <div class='edition-pill'>Coaching Institute Edition</div>
   </div>
@@ -162,7 +166,7 @@ def generate_installer_assets():
   </div>
   <div class='footer-bar'>
     <span>v1.0.0 Production</span>
-    <span style='color: #38BDF8; font-weight: 600;'>AITDL Verified</span>
+    <span style='color: #38BDF8; font-weight: 600;'>Smritisys &amp; AITDL</span>
   </div>
 </body>
 </html>"""
@@ -190,7 +194,7 @@ def generate_installer_assets():
 </style>
 </head>
 <body>
-  <img src='{svg2_path.as_uri()}' />
+  <img src='{svg2_data}' />
 </body>
 </html>"""
 
@@ -217,7 +221,7 @@ def generate_installer_assets():
 </style>
 </head>
 <body>
-  <img src='{svg2_path.as_uri()}' />
+  <img src='{svg2_data}' />
 </body>
 </html>"""
 

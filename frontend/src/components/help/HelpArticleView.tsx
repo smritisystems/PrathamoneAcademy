@@ -4,14 +4,14 @@
  * @module      frontend.src.components.help
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Clean structured reader for Help Guides, Tutorials, FAQs, and Legal Compliance documents with breadcrumbs, permission tags, and clear back navigation.
  */

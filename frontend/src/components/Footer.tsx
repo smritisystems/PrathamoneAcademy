@@ -4,14 +4,14 @@
  * @module      frontend.components
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.2.0
  * @created     2026-11-04
- * @updated     2026-11-14
+ * @updated     2026-11-16
  *
  * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and parent organization branding.
  */

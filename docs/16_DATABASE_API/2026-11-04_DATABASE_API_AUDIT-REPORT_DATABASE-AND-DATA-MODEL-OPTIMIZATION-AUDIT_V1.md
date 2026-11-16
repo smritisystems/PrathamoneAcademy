@@ -22,7 +22,7 @@ related_modules: []
 **Project:** PrathamOne Academy Coaching Institute Management System (Enterprise Edition v1.0.0)  
 **Client:** Prashant Academy Coaching Institute  
 **Audit Executed:** November 4, 2026  
-**Auditor / Engineering Organization:** AITDL (AI Technology & Development Lab)  
+**Auditor / Engineering Organization:** Smritisys & AITDL Networks  
 **Lead Architect:** Jawahar R. Mallah  
 **Inspection Mode:** Strictly Read-Only (Zero Destructive Changes Applied)  
 **Verified Pre-Audit Backup:** `backups\audit_pre_remediation_20261104.sql` (664,688 bytes, verified valid)

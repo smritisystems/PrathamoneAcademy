@@ -23,7 +23,7 @@ related_modules: []
 **Project**: PrathamOne Academy Coaching Institute Management System  
 **Client**: Prashant Academy Coaching Institute  
 **Author**: Jawahar R. Mallah  
-**Organization**: AITDL (AI Technology & Development Lab)  
+**Organization**: Smritisys & AITDL Networks  
 **Date**: November 4, 2026  
 **Status**: Completed & Verified  
 

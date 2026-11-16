@@ -4,14 +4,14 @@
 #  * @module      backend.tests
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-16
 #  *
 #  * @description Automated security and cross-module enforcement test suite verifying all 4 visibility modes, backend data masking, persistent PIN brute-force lockout, genuine zero vs masked distinction, and export leakage prevention.
 #  */

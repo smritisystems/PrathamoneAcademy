@@ -4,14 +4,14 @@
  * @module      frontend.test
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-13
+ * @updated     2026-11-16
  *
  * @description Vitest test suite for Communication Center workspace, covering compose & send, templates catalogue, delivery logs, diagnostics, and automated outbound triggers.
  */

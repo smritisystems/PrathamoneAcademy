@@ -4,14 +4,14 @@
 #  * @module      backend.alembic.versions
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-13
-#  * @updated     2026-11-13
+#  * @updated     2026-11-16
 #  *
 #  * @description Migrates institution default colors to official PrathamOne brand artwork specifications (#0B2D6B Navy, #071C44 Prussian Blue, #F57C00 Saffron Orange).
 #  */

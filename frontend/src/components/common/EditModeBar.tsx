@@ -4,14 +4,14 @@
  * @module      frontend.components.common
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-12
+ * @updated     2026-11-16
  *
  * @description Master View-First & Explicit Edit Mode banner and toggle component enforcing global read-only default and explicit modification authorization.
  */

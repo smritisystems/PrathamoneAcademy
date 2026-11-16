@@ -4,14 +4,14 @@
 #  * @module      backend.tests
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-07
+#  * @updated     2026-11-16
 #  *
 #  * @description Backend security test suite for staff mutation endpoints (addresses, bank accounts, key contacts) verifying Rule 010, authentication (401), role authorization (403), and audit log creation.
 #  */

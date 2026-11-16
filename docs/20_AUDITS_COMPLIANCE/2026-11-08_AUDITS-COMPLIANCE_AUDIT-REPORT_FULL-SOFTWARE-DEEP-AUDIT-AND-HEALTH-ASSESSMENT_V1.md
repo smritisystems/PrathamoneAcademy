@@ -319,7 +319,7 @@ flowchart TD
    - Command: `python scripts/manage_headers.py check`
    - Files Checked: 394 source files (`.py`, `.ts`, `.tsx`, `.js`, `.jsx`, `.css`)
    - Compliance: **394 / 394 (100% PASS)**
-   - Header Attribution: Jawahar R. Mallah, AITDL (AI Technology & Development Lab).
+   - Header Attribution: Jawahar R. Mallah, Smritisys & AITDL Networks.
 2. **Documentation Registry Engine:**
    - Command: `python tools/docs_manager.py validate`
    - Documents Validated: 305 Markdown documents across 27 directories.

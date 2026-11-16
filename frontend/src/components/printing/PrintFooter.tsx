@@ -4,14 +4,14 @@
  * @module      frontend.components.printing
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     2.1.0
  * @created     2026-11-07
- * @updated     2026-11-14
+ * @updated     2026-11-16
  *
  * @description Canonical Global Print Footer component enforcing two-row right/center aligned standard with absolute bottom positioning and spacer reservation across all printable outputs.
  */

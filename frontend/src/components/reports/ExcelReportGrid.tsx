@@ -4,14 +4,14 @@
  * @module      frontend.components.reports
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-11
+ * @updated     2026-11-16
  *
  * @description Production-grade spreadsheet-style report data grid with sorting, column resizing/reordering, visibility toggle, column filters, and multi-format exports.
  */

@@ -4,14 +4,14 @@
  * @module      frontend.components.forms
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-09
+ * @updated     2026-11-16
  *
  * @description Standardized A4 print and preview template engine with DPDP Act 2023 compliance, Aadhaar masking, and signatures.
  */

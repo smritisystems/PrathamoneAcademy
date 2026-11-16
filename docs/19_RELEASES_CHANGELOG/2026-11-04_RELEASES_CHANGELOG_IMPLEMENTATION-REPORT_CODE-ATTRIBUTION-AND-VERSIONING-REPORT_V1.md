@@ -50,7 +50,7 @@ The `@project` attribution field has been updated to **`PrathamOne Academy Coach
  * @module      <module name>
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary

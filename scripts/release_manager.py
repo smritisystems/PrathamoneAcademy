@@ -5,14 +5,14 @@
 #  * @module      scripts
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-06
+#  * @updated     2026-11-16
 #  *
 #  * @description Enterprise CLI tool for managing application releases, change tracking, version bumping, and pre-flight CI/CD validation.
 #  */

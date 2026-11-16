@@ -4,14 +4,14 @@
  * @module      frontend.test
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-09
+ * @updated     2026-11-16
  *
  * @description Vitest test suite validating dedicated functional workspaces for Students & Admissions Centre across all 8 submenus, URL synchronization, and Rule 010 View-First governance.
  */

@@ -4,14 +4,14 @@
  * @module      frontend.components.eduboard
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-13
- * @updated     2026-11-13
+ * @updated     2026-11-16
  *
  * @description Universal hardware-independent device capability diagnostics modal for EduBoard. Displays detected browser APIs, screen geometry, pointer characteristics, and synchronization health without claiming unsupported hardware certification.
  */

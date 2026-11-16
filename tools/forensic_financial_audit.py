@@ -4,14 +4,14 @@
 #  * @module      tools
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Comprehensive forensic audit of all financial tables, schemas, constraints, and ledger sums.
 #  */

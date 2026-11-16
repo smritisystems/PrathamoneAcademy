@@ -4,7 +4,7 @@
 #  * @module      scripts
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
@@ -215,7 +215,7 @@ def build_docx_manual():
         "Primary Technical Helpline: +91 9323 023 007 / +91 9324 117 007\n"
         "Official Helpdesk Email: support@prathamone.com (Alternate: prathamone@outlook.com)\n"
         "Platform Website: https://prathamone.com\n"
-        "Author: Jawahar R Mallah · AITDL (AI Technology & Development Lab)",
+        "Author: Jawahar R Mallah · Smritisys & AITDL Networks",
         title="OFFICIAL SUPPORT CONTACTS",
         color="0f766e",
         bg_color="f0fdf4"

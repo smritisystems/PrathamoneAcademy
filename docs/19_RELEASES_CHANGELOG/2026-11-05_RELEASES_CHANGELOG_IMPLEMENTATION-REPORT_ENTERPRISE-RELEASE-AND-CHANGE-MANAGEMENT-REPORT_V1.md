@@ -21,7 +21,7 @@ related_modules: []
 # PrathamOne Academy — Enterprise Release & Change Management System Report
 
 **Author**: Jawahar R. Mallah  
-**Organization**: AITDL (AI Technology & Development Lab)  
+**Organization**: Smritisys & AITDL Networks  
 **Client**: Prashant Academy Coaching Institute  
 **Edition**: Enterprise Edition  
 **Version**: `v6.99.1` (Build: `2026.11.05-PROD-REL`)  

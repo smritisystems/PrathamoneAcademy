@@ -22,7 +22,7 @@ related_modules: []
 **Project:** PrathamOne Academy Coaching Institute Management System (Enterprise Edition v1.0.0)  
 **Client:** Prashant Academy Coaching Institute  
 **Audit Executed:** November 4, 2026  
-**Auditor / Engineering Organization:** AITDL (AI Technology & Development Lab)  
+**Auditor / Engineering Organization:** Smritisys & AITDL Networks  
 **Author:** Jawahar R. Mallah  
 **Environment:** Local Docker Stack / Windows 11 Workspace (`F:\PrashantAcademy`)
 

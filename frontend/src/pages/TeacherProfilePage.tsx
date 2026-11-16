@@ -4,14 +4,14 @@
  * @module      frontend.pages.workforce
  *
  * @author      Jawahar R. Mallah
- * @organization AITDL (AI Technology & Development Lab)
+ * @organization Smritisys & AITDL Networks
  * @client      Prashant Academy Coaching Institute
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-08
+ * @updated     2026-11-16
  *
  * @description Dedicated full-page Teacher Profile & Employee Dossier workspace with persistent hero banner, 13 specialized tabs, multi-address/bank/contact management, timetable matrix, payroll configuration, and activity timeline.
  */

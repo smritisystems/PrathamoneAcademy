@@ -4,14 +4,14 @@
 #  * @module      backend.app.services
 #  *
 #  * @author      Jawahar R. Mallah
-#  * @organization AITDL (AI Technology & Development Lab)
+#  * @organization Smritisys & AITDL Networks
 #  * @client      Prashant Academy Coaching Institute
 #  * @copyright   Copyright (c) 2026 AITDL
 #  * @license     Proprietary
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Service layer for PrathamOne EduOS Help & About Centre: seeding, unified search, contextual routing, support ticketing, CMS governance, product/company info, and restricted system health telemetry.
 #  */
