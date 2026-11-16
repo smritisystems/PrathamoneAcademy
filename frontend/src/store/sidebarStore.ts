@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Zustand state store managing responsive sidebar layout state, collapsed rails, and mobile drawer.
  */
@@ -78,10 +78,6 @@ const getInitialDesktopState = (): DesktopSidebarState => {
       if (parsed?.state?.desktopState) {
         return parsed.state.desktopState
       }
-    }
-    // Tablet default: collapsed if screen width is between 768px and 1024px
-    if (window.innerWidth >= 768 && window.innerWidth < 1024) {
-      return 'collapsed'
     }
   } catch (e) {
     // Ignore storage parse issues

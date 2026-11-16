@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -4106,6 +4106,100 @@ export interface HomeworkAssignmentItem {
   template_name?: string | null
   attachments: HomeworkAttachment[]
   summary: HomeworkSummary
+}
+
+export type PlanningStatus =
+  | 'backlog'
+  | 'todo'
+  | 'in_progress'
+  | 'blocked'
+  | 'completed'
+  | 'cancelled'
+
+export interface PlanningReference {
+  source_type: string
+  source_record_id: number
+}
+
+export interface PlanningRecurrence {
+  frequency: 'daily' | 'weekly' | 'monthly'
+  interval: number
+  until: string
+  weekdays: number[]
+}
+
+export interface PlanningItem {
+  id: number | string
+  key: string
+  source_type: string
+  source_id: number
+  title: string
+  description?: string | null
+  activity_type: 'task' | 'event' | 'holiday'
+  category: string
+  start_at?: string | null
+  end_at?: string | null
+  due_at?: string | null
+  occurrence_date?: string | null
+  timezone?: string | null
+  all_day: boolean
+  location?: string | null
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  status: PlanningStatus
+  allowed_transitions?: PlanningStatus[]
+  visibility: 'institution' | 'assignees'
+  is_published: boolean
+  academic_year_id?: number | null
+  division_id?: number | null
+  subject_id?: number | null
+  assignees: Array<{ user_id: number; name: string }>
+  attachments: Array<{
+    id: number
+    filename: string
+    mime_type: string
+    file_size_bytes: number
+  }>
+  references: PlanningReference[]
+  recurrence?: PlanningRecurrence | null
+  version?: number | null
+  created_by_id?: number | null
+  created_at?: string | null
+  updated_at?: string | null
+  editable: boolean
+}
+
+export interface PlanningPayload {
+  institution_id?: number
+  academic_year_id?: number | null
+  division_id?: number | null
+  subject_id?: number | null
+  title: string
+  description?: string | null
+  activity_type: 'task' | 'event' | 'holiday'
+  category: 'academic' | 'administrative' | 'institutional' | 'meeting' | 'other'
+  start_at?: string | null
+  end_at?: string | null
+  due_at?: string | null
+  timezone?: string
+  all_day: boolean
+  location?: string | null
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  status?: PlanningStatus
+  visibility: 'institution' | 'assignees'
+  is_published: boolean
+  recurrence?: PlanningRecurrence | null
+  assignee_user_ids: number[]
+  department_names: string[]
+  references: PlanningReference[]
+}
+
+export interface PlanningHistoryItem {
+  id: number
+  action: string
+  user_id?: number | null
+  old_data?: Record<string, unknown> | null
+  new_data?: Record<string, unknown> | null
+  created_at?: string | null
 }
 
 export interface HomeworkSubmissionFile {

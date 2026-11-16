@@ -17,6 +17,19 @@ services:
       timeout: 5s
       retries: 5
 
+  clamav:
+    image: clamav/clamav:1.4_base
+    container_name: prashant_academy_clamav
+    restart: unless-stopped
+    volumes:
+      - clamav_db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping=1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 5m
+
   backend:
     build:
       context: ./backend
@@ -35,6 +48,9 @@ services:
       LICENSE_PRODUCT_CODE: ${LICENSE_PRODUCT_CODE:-prathamone-eduos}
       LICENSE_PUBLIC_KEYS_JSON: ${LICENSE_PUBLIC_KEYS_JSON:-}
       LICENSE_ENFORCEMENT_STAGE: ${LICENSE_ENFORCEMENT_STAGE:-shadow}
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+      CLAMAV_TIMEOUT_SECONDS: 60
     ports:
       - "8000:8000"
     volumes:
@@ -76,3 +92,4 @@ services:
 volumes:
   pgdata:
   homework_uploads:
+  clamav_db:

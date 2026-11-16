@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -19,7 +19,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard,
+  LayoutDashboard, Users, UserPlus, ClipboardList, Award, CreditCard, CalendarDays,
   BookOpen, BarChart2, Shield, LogOut, GraduationCap, ChevronDown, ChevronRight,
   Settings, FileSpreadsheet, PanelLeftClose, PanelLeftOpen, X, EyeOff, Printer, Download,
   Briefcase, Terminal, MessageSquare, GitBranch, DollarSign, Layers, FlaskConical,
@@ -183,6 +183,7 @@ const secondaryNavItems: NavItem[] = [
   { to: '/examinations', label: 'Tests & Results', icon: Award },
   { to: '/fees', label: 'Fees & Payments', icon: CreditCard },
   { to: '/homework', label: 'Homework & Assignments', icon: FileCheck },
+  { to: '/planning', label: 'Planning & Activities', icon: CalendarDays },
   { to: '/eduboard', label: 'EduBoard Classroom', icon: Presentation },
   { to: '/courses', label: 'Study Materials', icon: BookOpen },
   { to: '/reports', label: 'Reports', icon: BarChart2 },
@@ -238,16 +239,32 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isMobile, setIsMobile] = useState(false)
+  const sidebarRef = useRef<HTMLElement>(null)
+  const mobileCloseButtonRef = useRef<HTMLButtonElement>(null)
+  const isMobileDrawerOpen = isMobile && mobileOpen
 
   // Track viewport width for responsive mobile drawer detection
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
+      const mobileViewport = window.innerWidth < 768
+      setIsMobile(mobileViewport)
+      if (!mobileViewport) closeMobile()
     }
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [closeMobile])
+
+  useEffect(() => {
+    const sidebar = sidebarRef.current
+    if (!sidebar) return
+
+    if (isMobile && !mobileOpen) {
+      sidebar.setAttribute('inert', '')
+    } else {
+      sidebar.removeAttribute('inert')
+    }
+  }, [isMobile, mobileOpen])
 
   // Close mobile drawer on route navigation
   const prevLocationRef = useRef(location.pathname + location.search)
@@ -258,16 +275,62 @@ export default function Sidebar() {
     }
   }, [location.pathname, location.search, closeMobile])
 
-  // Close mobile drawer on Escape key press
+  // Keep the mobile drawer modal while open and return focus to its trigger on close.
   useEffect(() => {
+    if (!mobileOpen) return
+
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const drawer = sidebarRef.current
+    const focusableSelector = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled]):not([type="hidden"])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',')
+    const focusables = () => Array.from(
+      drawer?.querySelectorAll<HTMLElement>(focusableSelector) || [],
+    ).filter((element) => element.getAttribute('aria-hidden') !== 'true')
+
+    if (isMobileDrawerOpen) {
+      (mobileCloseButtonRef.current || drawer)?.focus()
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && mobileOpen) {
+        e.preventDefault()
         closeMobile()
+        return
+      }
+
+      if (!isMobileDrawerOpen || e.key !== 'Tab') return
+
+      const elements = focusables()
+      if (elements.length === 0) {
+        e.preventDefault()
+        drawer?.focus()
+        return
+      }
+
+      const first = elements[0]
+      const last = elements[elements.length - 1]
+      if (e.shiftKey && (document.activeElement === first || !drawer?.contains(document.activeElement))) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && (document.activeElement === last || !drawer?.contains(document.activeElement))) {
+        e.preventDefault()
+        first.focus()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [mobileOpen, closeMobile])
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      if (isMobileDrawerOpen && window.innerWidth < 768 && previouslyFocused?.isConnected) {
+        previouslyFocused.focus()
+      }
+    }
+  }, [mobileOpen, isMobileDrawerOpen, closeMobile])
 
   const [logoLoadFailed, setLogoLoadFailed] = useState(false)
   useEffect(() => {
@@ -612,8 +675,12 @@ const isStaffActive = location.pathname.startsWith('/staff')
 
         <aside
           id="app-sidebar"
-          role="navigation"
+          ref={sidebarRef}
+          role={isMobileDrawerOpen ? 'dialog' : 'navigation'}
+          aria-modal={isMobileDrawerOpen ? true : undefined}
           aria-label="Student Navigation"
+          aria-hidden={isMobile && !mobileOpen ? true : undefined}
+          tabIndex={-1}
           className={`
             bg-[#0f172a] text-white flex flex-col shadow-2xl border-r border-slate-800 transition-all duration-300 ease-in-out z-50
             fixed inset-y-0 left-0 md:static md:translate-x-0 h-full md:h-full shrink-0
@@ -663,8 +730,9 @@ const isStaffActive = location.pathname.startsWith('/staff')
             {/* Collapse toggle / close button */}
             {isMobile ? (
               <button
+                ref={mobileCloseButtonRef}
                 onClick={closeMobile}
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+                className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
                 aria-label="Close sidebar drawer"
               >
                 <X className="w-5 h-5" />
@@ -883,8 +951,12 @@ const isStaffActive = location.pathname.startsWith('/staff')
       {/* Main Sidebar Shell */}
       <aside
         id="app-sidebar"
-        role="navigation"
+        ref={sidebarRef}
+        role={isMobileDrawerOpen ? 'dialog' : 'navigation'}
+        aria-modal={isMobileDrawerOpen ? true : undefined}
         aria-label="Main Navigation"
+        aria-hidden={isMobile && !mobileOpen ? true : undefined}
+        tabIndex={-1}
         className={`
           bg-[#0f172a] text-white flex flex-col shadow-2xl border-r border-slate-800 transition-all duration-300 ease-in-out z-50
           fixed inset-y-0 left-0 md:static md:translate-x-0 h-full md:h-full shrink-0
@@ -938,8 +1010,9 @@ const isStaffActive = location.pathname.startsWith('/staff')
           {/* Action buttons in header */}
           {isMobile ? (
             <button
+              ref={mobileCloseButtonRef}
               onClick={closeMobile}
-              className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+              className="h-11 w-11 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
               aria-label="Close sidebar drawer"
             >
               <X className="w-5 h-5" />
@@ -1154,7 +1227,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
 
                 {/* Floating Flyout Menu on Hover */}
                 <div
-                  role="menu"
+                  role="group"
                   aria-label="Academic Workspace Menu"
                   className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-52 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                 >
@@ -1281,7 +1354,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
 
                 {/* Floating Flyout Menu on Hover */}
                 <div
-                  role="menu"
+                  role="group"
                   aria-label="Students & Admissions Menu"
                   className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                 >
@@ -1389,7 +1462,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
 
                 {/* Floating Flyout Menu on Hover */}
                 <div
-                  role="menu"
+                  role="group"
                   aria-label="Lead Management & CRM Menu"
                   className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                 >
@@ -1501,7 +1574,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
 
                       {/* Floating Flyout Menu on Hover */}
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Teachers Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >
@@ -1620,7 +1693,7 @@ if (item.to === '/staff') {
 
                       {/* Floating Flyout Menu on Hover */}
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Staff & HR Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >
@@ -1739,7 +1812,7 @@ if (item.to === '/staff') {
 
                       {/* Floating Flyout Menu on Hover */}
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Attendance Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >
@@ -1858,7 +1931,7 @@ if (item.to === '/staff') {
 
                       {/* Floating Flyout Menu on Hover */}
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Tests & Results Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >
@@ -1977,7 +2050,7 @@ if (item.to === '/staff') {
 
                       {/* Floating Flyout Menu on Hover */}
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Fees & Payments Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >
@@ -2096,7 +2169,7 @@ if (item.to === '/staff') {
 
                       {/* Floating Flyout Menu on Hover */}
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Study Materials Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >
@@ -2215,7 +2288,7 @@ if (item.to === '/staff') {
 
                       {/* Floating Flyout Menu on Hover */}
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Communication Center Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >
@@ -2334,7 +2407,7 @@ if (item.to === '/staff') {
 
                       {/* Floating Flyout Menu on Hover */}
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Print Forms Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-60 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >
@@ -2451,7 +2524,7 @@ if (item.to === '/staff') {
                       </div>
 
                       <div
-                        role="menu"
+                        role="group"
                         aria-label="Housekeeping Menu"
                         className="absolute left-full ml-3 top-0 py-2.5 px-1.5 w-56 bg-slate-900 rounded-2xl shadow-2xl border border-slate-700/90 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-auto z-50 text-xs"
                       >

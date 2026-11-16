@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -42,6 +42,7 @@ import {
   HardDrive,
   HelpCircle,
   Presentation,
+  CalendarDays,
   LucideIcon,
 } from 'lucide-react'
 import type { User, NavigationModule, NavigationSubItem } from '../types'
@@ -235,6 +236,17 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
       { id: 'exam_papers', label: 'Question Papers', to: '/examinations/papers' },
       { id: 'exam_settings', label: 'Settings & Grading', to: '/examinations/settings' },
     ],
+  },
+  {
+    id: 'planning',
+    label: 'Planning & Activities',
+    category: 'operations',
+    defaultPath: '/planning',
+    icon: CalendarDays,
+    iconName: 'CalendarDays',
+    description: 'One activity system for calendar, Kanban, agenda, and timeline views.',
+    requiredPermission: 'planning:view',
+    subItems: [],
   },
   {
     id: 'homework',

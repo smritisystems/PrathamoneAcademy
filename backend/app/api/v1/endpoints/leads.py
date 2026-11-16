@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -34,7 +34,9 @@ from app.core.deps import (
     require_role,
     enforce_institution_access,
     has_permission,
+    has_resource_access,
     is_sysadmin,
+    LEAD_READ_ROLES,
 )
 from app.models.user import User, AuditLog
 from app.models.crm import Lead, LeadFollowUp, LeadDemoClass
@@ -54,7 +56,6 @@ from app.services.concession_service import ConcessionWorkflowService
 
 router = APIRouter()
 
-LEAD_READ_ROLES = ("superadmin", "super_admin", "sysadmin", "admin", "principal", "staff", "accountant", "teacher")
 LEAD_WRITE_ROLES = ("superadmin", "super_admin", "sysadmin", "admin", "principal", "staff")
 LEAD_DELETE_ROLES = ("superadmin", "super_admin", "sysadmin", "admin", "principal")
 
@@ -71,18 +72,7 @@ def require_lead_access(action: str, default_roles: tuple = LEAD_WRITE_ROLES):
         current_user: User = Depends(get_current_active_user),
         db: AsyncSession = Depends(get_db),
     ) -> User:
-        if is_sysadmin(current_user):
-            return current_user
-
-        # Explicit granular permission check
-        if await has_permission(db, current_user, "leads", action):
-            return current_user
-        if await has_permission(db, current_user, "leads", "*"):
-            return current_user
-
-        # Role fallback
-        user_role = (getattr(current_user, "role", "") or "").lower()
-        if user_role in default_roles:
+        if await has_resource_access(db, current_user, "leads", action, default_roles):
             return current_user
 
         raise HTTPException(

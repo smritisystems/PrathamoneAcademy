@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -82,6 +82,10 @@ from app.models.report_book import (
 )
 from app.models.chat import (
     ChatRoom, ChatParticipant, ChatMessage
+)
+from app.models.planning import (
+    Activity, ActivityAssignee, ActivityAttachment, ActivityReference,
+    ActivityRecurrenceException,
 )
 
 
@@ -181,5 +185,10 @@ __all__ = [
     "ChatRoom",
     "ChatParticipant",
     "ChatMessage",
+    "Activity",
+    "ActivityAssignee",
+    "ActivityAttachment",
+    "ActivityReference",
+    "ActivityRecurrenceException",
 ]
 

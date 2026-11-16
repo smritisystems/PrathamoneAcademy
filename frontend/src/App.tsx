@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -73,6 +73,7 @@ const CrmReportsPage = lazyWithRetry(() => import('./pages/crm/CrmReportsPage'),
 const CrmSettingsPage = lazyWithRetry(() => import('./pages/crm/CrmSettingsPage'), 'CrmSettingsPage')
 const TrainingManagementPage = lazyWithRetry(() => import('./pages/TrainingManagement'), 'TrainingManagement')
 const HomeworkWorkspacePage = lazyWithRetry(() => import('./pages/HomeworkWorkspace'), 'HomeworkWorkspace')
+const PlanningWorkspacePage = lazyWithRetry(() => import('./pages/PlanningWorkspace'), 'PlanningWorkspace')
 const EduBoardWorkspacePage = lazyWithRetry(() => import('./pages/EduBoardWorkspace'), 'EduBoardWorkspace')
 const EduBoardWindowPage = lazyWithRetry(() => import('./pages/EduBoardWindowPage'), 'EduBoardWindowPage')
 
@@ -340,6 +341,7 @@ export default function App() {
           <Route path="examinations/papers" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           <Route path="examinations/settings" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           {/* Homework & Assignment Dedicated Workspaces */}
+          <Route path="planning" element={<Suspense fallback={<PageLoader />}><PlanningWorkspacePage /></Suspense>} />
           <Route path="homework" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/overview" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/new" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />

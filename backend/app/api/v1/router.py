@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description Central v1 API router registering all domain endpoint routers.
 #  */
@@ -59,6 +59,7 @@ from app.api.v1.endpoints import (
     eduboard,
     license as license_endpoint,
     chat as chat_endpoint,
+    planning,
 )
 
 auth_router = APIRouter()
@@ -126,6 +127,7 @@ api_router.include_router(study_materials.router, prefix="/study-materials", tag
 api_router.include_router(navigation.router, prefix="/navigation", tags=["navigation"])
 api_router.include_router(governance.router, prefix="/governance", tags=["governance"])
 api_router.include_router(homework.router, prefix="/homework", tags=["homework"])
+api_router.include_router(planning.router, prefix="/planning", tags=["planning"])
 api_router.include_router(housekeeping.router, prefix="/housekeeping", tags=["housekeeping"])
 api_router.include_router(help_endpoint.router, prefix="/help", tags=["help"])
 api_router.include_router(eduboard.router, prefix="/eduboard", tags=["eduboard"])

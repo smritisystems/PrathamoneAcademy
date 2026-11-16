@@ -11,13 +11,13 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
 
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download, Search, Sliders } from 'lucide-react'
 import Sidebar from './Sidebar'
@@ -35,7 +35,6 @@ import { institutionsApi, academicYearsApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
 import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { useState } from 'react'
 import { useEnvironmentStore, DataEnvironment } from '../store/environmentStore'
 import TrainingModeBanner from './common/TrainingModeBanner'
 import LicenseModeBanner from './common/LicenseModeBanner'
@@ -53,6 +52,7 @@ const DEFAULT_ACADEMIC_YEARS = [
 
 export default function Layout() {
   const branding = useBranding()
+  const appContentRef = useRef<HTMLDivElement>(null)
   const { dataEnvironment, isTrainingMode } = useEnvironmentStore()
   const [switchTarget, setSwitchTarget] = useState<DataEnvironment | null>(null)
   useDocumentTitle()
@@ -67,10 +67,23 @@ export default function Layout() {
 
   const {
     desktopState,
+    mobileOpen,
     toggleCollapse,
     expandSidebar,
     toggleMobileOpen,
+    closeMobile,
   } = useSidebarStore()
+
+  useEffect(() => {
+    const appContent = appContentRef.current
+    if (!appContent) return
+
+    if (mobileOpen) {
+      appContent.setAttribute('inert', '')
+    } else {
+      appContent.removeAttribute('inert')
+    }
+  }, [mobileOpen])
 
   const { isInstalled } = usePWA()
   const location = useLocation()
@@ -84,6 +97,10 @@ export default function Layout() {
   const hideSidebarShell = isEduBoardRoute && ebWorkspaceMode !== 'standard'
   const hideHeaderShell = isEduBoardRoute && (ebWorkspaceMode !== 'standard' || ebHideHeader)
   const hideFooterShell = isEduBoardRoute && (ebWorkspaceMode !== 'standard' || ebHideStatusBar)
+
+  useEffect(() => {
+    if (hideSidebarShell && mobileOpen) closeMobile()
+  }, [hideSidebarShell, mobileOpen, closeMobile])
 
   // Reset transient EduBoard immersive display chrome when navigating away from /eduboard
   useEffect(() => {
@@ -188,7 +205,10 @@ export default function Layout() {
     <div className="flex h-screen h-[100dvh] w-full bg-gray-50 overflow-hidden relative print:h-auto print:overflow-visible">
       {!hideSidebarShell && <Sidebar />}
 
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative transition-all duration-300 ease-in-out print:h-auto print:overflow-visible">
+      <div
+        ref={appContentRef}
+        className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative transition-all duration-300 ease-in-out print:h-auto print:overflow-visible"
+      >
         {/* Top Header */}
         {!hideHeaderShell && (
         <header className="bg-white border-b border-gray-200 px-2.5 sm:px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-1.5 sm:gap-3 md:gap-4 shrink-0 z-30 shadow-xs print:hidden min-w-0 max-w-full overflow-hidden">
@@ -196,8 +216,11 @@ export default function Layout() {
           <button
             type="button"
             onClick={toggleMobileOpen}
-            aria-label="Open navigation menu"
-            className="p-1.5 sm:p-2 -ml-1 sm:-ml-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 md:hidden transition-colors shrink-0"
+            id="mobile-navigation-trigger"
+            aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="app-sidebar"
+            className="h-11 w-11 flex items-center justify-center -ml-1 sm:-ml-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 md:hidden transition-colors shrink-0"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -329,6 +352,16 @@ export default function Layout() {
               <kbd className="hidden lg:inline-flex text-[10px] px-1.5 py-0.2 bg-white text-slate-500 border rounded font-mono">
                 Ctrl+K
               </kbd>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => useNavigationStore.getState().openSearch()}
+              aria-label="Search navigation"
+              title="Search modules, workspaces, reports"
+              className="inline-flex sm:hidden h-11 w-11 items-center justify-center rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <Search className="w-5 h-5" aria-hidden="true" />
             </button>
 
             {!isInstalled && (

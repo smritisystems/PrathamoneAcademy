@@ -11,12 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -24,12 +24,19 @@ import Sidebar from '../components/Sidebar'
 import Layout from '../components/Layout'
 import { useSidebarStore } from '../store/sidebarStore'
 import { useAuthStore } from '../store/authStore'
+import { useNavigationStore } from '../store/navigationStore'
 import { APP_CONFIG } from '../config/appConfig'
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: false },
   },
+})
+
+const defaultViewportWidth = window.innerWidth
+
+afterEach(() => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: defaultViewportWidth })
 })
 
 const renderWithProviders = (ui: React.ReactElement, initialRoute = '/') => {
@@ -91,6 +98,7 @@ describe('Collapsible & Responsive Sidebar Component', () => {
     expect(screen.getByRole('link', { name: /attendance/i })).toBeDefined()
     expect(screen.getByRole('link', { name: /tests & results/i })).toBeDefined()
     expect(screen.getByRole('link', { name: /fees & payments/i })).toBeDefined()
+    expect(screen.getByRole('link', { name: /planning & activities/i })).toBeDefined()
     expect(screen.getByRole('link', { name: /users & roles/i })).toBeDefined()
 
     // Action controls
@@ -120,12 +128,12 @@ describe('Collapsible & Responsive Sidebar Component', () => {
     expect(tooltips.some((t) => t.textContent?.includes('Dashboard'))).toBe(true)
 
     // Flyout menu for Academic Workspace exists
-    const flyoutMenu = screen.getByRole('menu', { name: 'Academic Workspace Menu', hidden: true })
+    const flyoutMenu = screen.getByRole('group', { name: 'Academic Workspace Menu', hidden: true })
     expect(flyoutMenu).toBeDefined()
     expect(flyoutMenu.textContent).toContain('Academic Workspace')
 
     // Flyout menu for Lead Management & CRM exists
-    const crmFlyoutMenu = screen.getByRole('menu', { name: 'Lead Management & CRM Menu', hidden: true })
+    const crmFlyoutMenu = screen.getByRole('group', { name: 'Lead Management & CRM Menu', hidden: true })
     expect(crmFlyoutMenu).toBeDefined()
     expect(crmFlyoutMenu.textContent).toContain('Lead Management & CRM')
   })
@@ -210,11 +218,13 @@ describe('Layout Integration & Mobile Drawer', () => {
   })
 
   it('renders header with mobile toggle and responds to opening and closing drawer', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
     renderWithProviders(<Layout />)
 
     // Mobile menu toggle button in header
     const mobileToggle = screen.getByLabelText('Open navigation menu')
     expect(mobileToggle).toBeDefined()
+    expect(document.querySelector('#app-sidebar')?.hasAttribute('inert')).toBe(true)
 
     // Open mobile drawer
     fireEvent.click(mobileToggle)
@@ -229,6 +239,52 @@ describe('Layout Integration & Mobile Drawer', () => {
       fireEvent.click(backdrop)
       expect(useSidebarStore.getState().mobileOpen).toBe(false)
     }
+  })
+
+  it('manages focus and exposes modal state for the mobile navigation drawer', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
+    renderWithProviders(<Layout />)
+
+    const trigger = screen.getByRole('button', { name: 'Open navigation menu' })
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(trigger.getAttribute('aria-controls')).toBe('app-sidebar')
+
+    trigger.focus()
+    fireEvent.click(trigger)
+
+    const dialog = screen.getByRole('dialog', { name: 'Main Navigation' })
+    const closeButton = within(dialog).getByRole('button', { name: 'Close sidebar drawer' })
+    expect(dialog.getAttribute('aria-modal')).toBe('true')
+    expect(dialog.hasAttribute('inert')).toBe(false)
+    expect(document.querySelector('main')?.parentElement?.hasAttribute('inert')).toBe(true)
+    expect(document.activeElement).toBe(closeButton)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+
+    const focusables = Array.from(
+      dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')
+    )
+    const lastFocusable = focusables[focusables.length - 1]
+    lastFocusable.focus()
+    fireEvent.keyDown(lastFocusable, { key: 'Tab' })
+    expect(document.activeElement).toBe(closeButton)
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(useSidebarStore.getState().mobileOpen).toBe(false)
+    expect(document.querySelector('#app-sidebar')?.hasAttribute('inert')).toBe(true)
+    expect(document.querySelector('main')?.parentElement?.hasAttribute('inert')).toBe(false)
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('provides direct mobile access to global navigation search', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
+    renderWithProviders(<Layout />)
+
+    const searchButton = screen.getByRole('button', { name: 'Search navigation' })
+    expect(searchButton.className).toContain('sm:hidden')
+    fireEvent.click(searchButton)
+
+    expect(useNavigationStore.getState().isSearchOpen).toBe(true)
+    useNavigationStore.getState().closeSearch()
   })
 
   it('shows persistent Show Sidebar button in header when desktop state is hidden', () => {
@@ -266,6 +322,7 @@ describe('Layout Integration & Mobile Drawer', () => {
   })
 
   it('closes mobile drawer on Escape key press', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 })
     act(() => {
       useSidebarStore.setState({ mobileOpen: true })
     })

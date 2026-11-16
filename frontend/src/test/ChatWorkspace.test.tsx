@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Frontend test suite for Full Hybrid Chat & Academic Doubt Resolution Workspace.
  */
@@ -35,9 +35,12 @@ vi.mock('../api/endpoints', () => ({
 }))
 
 vi.mock('../store/authStore', () => ({
-  useAuthStore: () => ({
-    user: { id: 1, role: 'admin', username: 'admin', full_name: 'Super Admin' },
-  }),
+  useAuthStore: Object.assign(
+    () => ({
+      user: { id: 1, role: 'admin', username: 'admin', full_name: 'Super Admin' },
+    }),
+    { getState: () => ({ token: null }) },
+  ),
   isUserSysAdmin: () => true,
 }))
 

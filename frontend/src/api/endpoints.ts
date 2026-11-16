@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -64,6 +64,7 @@ import type {
   HomeworkSettingsConfig, HomeworkFileUploadResponse, HomeworkRecipientPreviewStudent,
   StudentAssignmentOverride, HomeworkAttachment, StudentHomeworkDashboard,
   HomeworkNotificationItem, BatchHomeworkReport, InstituteHomeworkAnalytics,
+  PlanningItem, PlanningPayload, PlanningHistoryItem,
   ReportKPIItem, ReportInsightItem, ReportIntelligencePayload, CalculationDefinitionItem,
   HousekeepingOverview, HousekeepingBackupItem, HousekeepingPolicy,
   HousekeepingCreateBackupResponse, HousekeepingVerifyResponse, HousekeepingPruneResponse,
@@ -2728,6 +2729,77 @@ export const homeworkApi = {
 
   listTemplates: (params?: { standard_id?: number | string; subject_id?: number | string }) =>
     apiClient.get<{ templates: any[] }>('/homework/templates', { params }),
+}
+
+// ─── Unified Planning & Activities Workspace ─────────────────────────────────
+
+export const planningApi = {
+  listActivities: (params: {
+    start: string
+    end: string
+    include_sources?: boolean
+    include_cancelled?: boolean
+    institution_id?: number
+  }) => apiClient.get<{ items: PlanningItem[]; timezone: string }>('/planning/activities', { params }),
+
+  getActivity: (id: number | string) =>
+    apiClient.get<{ item: PlanningItem }>(`/planning/activities/${id}`),
+
+  createActivity: (payload: PlanningPayload) =>
+    apiClient.post<{ item: PlanningItem }>('/planning/activities', payload),
+
+  updateActivity: (
+    id: number | string,
+    payload: Partial<PlanningPayload> & { expected_version: number }
+  ) => apiClient.put<{ item: PlanningItem }>(`/planning/activities/${id}`, payload),
+
+  transitionActivity: (
+    id: number | string,
+    payload: { status: PlanningItem['status']; expected_version: number }
+  ) => apiClient.patch<{ id: number; status: PlanningItem['status']; version: number }>(
+    `/planning/activities/${id}/status`,
+    payload
+  ),
+
+  cancelActivity: (id: number | string) =>
+    apiClient.delete<{ id: number; status: PlanningItem['status']; version?: number }>(
+      `/planning/activities/${id}`
+    ),
+
+  cancelOccurrence: (id: number | string, occurrence_date: string) =>
+    apiClient.post<{ activity_id: number; occurrence_date: string }>(
+      `/planning/activities/${id}/exceptions`,
+      null,
+      { params: { occurrence_date } }
+    ),
+
+  getAssignees: () =>
+    apiClient.get<{
+      users: Array<{ id: number; name: string; role: string }>
+      departments: string[]
+    }>('/planning/assignees'),
+
+  getHistory: (id: number | string) =>
+    apiClient.get<{ items: PlanningHistoryItem[] }>(`/planning/activities/${id}/history`),
+
+  uploadAttachment: (id: number | string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post<{
+      id: number
+      filename: string
+      mime_type: string
+      file_size_bytes: number
+    }>(`/planning/activities/${id}/attachments`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
+  deleteAttachment: (id: number | string) =>
+    apiClient.delete<{ id: number; deleted: boolean; version: number }>(`/planning/attachments/${id}`),
+
+  downloadAttachment: (id: number | string) =>
+    apiClient.get(`/planning/attachments/${id}/download`, { responseType: 'blob' }),
 }
 
 export const reportIntelligenceApi = {

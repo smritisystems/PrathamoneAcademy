@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description Pytest configuration fixtures providing test database session, test client, and auth helpers.
 #  */
@@ -218,6 +218,7 @@ async def db_setup():
 
     yield
     async with test_engine.begin() as conn:
+        await conn.execute(text("DROP VIEW IF EXISTS v_unified_audit_logs CASCADE;"))
         await conn.run_sync(Base.metadata.drop_all)
 
 

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description FastAPI dependency injection providers for database sessions and authenticated user context.
 #  */
@@ -126,6 +126,10 @@ def require_sysadmin(
 
 TRAINING_INSTITUTION_CODE = "PA001-DEMO"
 TRAINING_ALLOWED_ROLES = {"sysadmin", "superadmin", "super_admin", "admin", "principal", "staff", "accountant", "teacher"}
+LEAD_READ_ROLES = (
+    "superadmin", "super_admin", "sysadmin", "admin", "principal",
+    "staff", "accountant", "teacher",
+)
 
 
 def get_data_environment(
@@ -278,6 +282,19 @@ async def has_permission(
         return True
 
     return False
+
+
+async def has_resource_access(
+    db: AsyncSession,
+    user,
+    resource: str,
+    action: str,
+    default_roles: tuple[str, ...] = (),
+) -> bool:
+    if await has_permission(db, user, resource, action):
+        return True
+    user_role = (getattr(user, "role", "") or "").strip().lower()
+    return user_role in default_roles
 
 
 def require_permission(resource: str, action: str, allow_wildcard: bool = True):

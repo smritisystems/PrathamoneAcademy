@@ -8,7 +8,7 @@ edition: "Coaching Institute Edition"
 version: "1.0.0"
 doc_version: "1.0"
 created_date: "2026-11-03"
-updated_date: "2026-11-03"
+updated_date: "2026-11-17"
 author: "Jawahar R Mallah"
 organization: "Smritisys & AITDL Networks"
 status: "Approved"
@@ -30,6 +30,8 @@ related_modules: []
 
 The fastest and most reliable deployment method is Docker Compose:
 
+The Compose stack includes ClamAV for fail-closed Planning attachment scanning. On first startup, signature databases can take several minutes to initialize; the backend may start meanwhile, but attachment uploads remain rejected until ClamAV is available. Budget approximately 4 GiB of RAM for ClamAV. The scanner port is intentionally not published to the host.
+
 ```bash
 # 1. Clone repository to deployment server
 git clone <repo-url> /opt/prashant-academy
@@ -45,6 +47,7 @@ docker compose up -d --build
 # 4. Verify running services
 docker compose ps
 docker compose logs -f backend
+docker compose logs -f clamav
 ```
 
 ---
