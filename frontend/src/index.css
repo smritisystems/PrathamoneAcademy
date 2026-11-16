@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-13
+ * @updated     2026-11-16
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -21,6 +21,16 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
   body {
     @apply font-sans bg-gray-50 text-gray-900;
   }

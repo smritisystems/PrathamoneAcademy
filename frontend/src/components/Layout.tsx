@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-15
+ * @updated     2026-11-16
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -176,10 +176,10 @@ export default function Layout() {
   }, [academicYears, selectedAcademicYearId, setSelectedAcademicYear])
 
   return (
-    <div className="flex h-screen h-[100dvh] bg-gray-50 overflow-hidden print:h-auto print:overflow-visible">
+    <div className="flex h-screen h-[100dvh] w-full bg-gray-50 overflow-hidden relative print:h-auto print:overflow-visible">
       {!hideSidebarShell && <Sidebar />}
 
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden transition-all duration-300 ease-in-out print:h-auto print:overflow-visible">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative transition-all duration-300 ease-in-out print:h-auto print:overflow-visible">
         {/* Top Header */}
         {!hideHeaderShell && (
         <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center gap-3 md:gap-4 shrink-0 z-30 shadow-xs print:hidden">
@@ -322,7 +322,7 @@ export default function Layout() {
 
         {/* Page Content */}
         <main
-          className={`flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 print:h-auto print:overflow-visible print:p-0 ${
+          className={`flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 relative print:h-auto print:overflow-visible print:p-0 ${
             isEduBoardRoute && ebWorkspaceMode !== 'standard' ? 'p-2' : 'p-4 md:p-6'
           }`}
         >

@@ -55,9 +55,9 @@ Windows Defender SmartScreen and User Account Control (UAC) enforce binary integ
 1. When any unsigned executable (`.exe`) is launched, Windows cannot cryptographically verify who created the binary or whether it was modified in transit.
 2. Windows displays a yellow/orange elevation shield with `Publisher: Unknown`.
 3. If downloaded from the internet, Microsoft SmartScreen may also display an alert reading *"Windows protected your PC: Microsoft Defender SmartScreen prevented an unrecognized app from starting"*.
-4. **Remedy:** To display `Verified Publisher: AITDL (AI Technology & Development Lab)`:
+4. **Remedy:** To display `Verified Publisher: Smritisys & AITDL Networks`:
    - **For Commercial / Customer Distribution:** Sign the installer using an Extended Validation (EV) or standard Code Signing Certificate issued by a publicly trusted Certificate Authority (CA) such as DigiCert, Sectigo, or GlobalSign.
-   - **For Institute / Internal Deployment:** Sign the installer with an AITDL Code Signing Certificate and import the public CA certificate into the target machine's `Trusted Root Certification Authorities` store.
+   - **For Institute / Internal Deployment:** Sign the installer with a Smritisys & AITDL Networks Code Signing Certificate and import the public CA certificate into the target machine's `Trusted Root Certification Authorities` store.
 
 ### 2.3 The "DOS Command Prompt Flashes and Closes Instantly" Behavior
 When clicking the installed application shortcut, a command prompt opened and disappeared in a fraction of a second without launching the web interface:

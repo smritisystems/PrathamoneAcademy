@@ -9,11 +9,11 @@
  * @copyright   Copyright (c) 2026 AITDL
  * @license     Proprietary
  *
- * @version     1.1.0
+ * @version     1.6.0
  * @created     2026-11-03
- * @updated     2026-11-14
+ * @updated     2026-11-16
  *
- * @description Premium user authentication page featuring abstract educational wave aesthetics, secure credential validation, and role redirection.
+ * @description Premium enterprise authentication portal featuring organic curved wave architecture, original PrathamOne navy/saffron theme colors, single unified Zero-Tab authentication, server-enforced role routing, and comprehensive academic curriculum spectrum overlays.
  */
 
 import { useState, useEffect } from 'react'
@@ -21,7 +21,28 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { GraduationCap, Eye, EyeOff, Lock, User, ShieldCheck, Sparkles, HelpCircle } from 'lucide-react'
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  User,
+  ShieldCheck,
+  Building2,
+  PhoneCall,
+  KeyRound,
+  GraduationCap,
+  Megaphone,
+  UserPlus,
+  Headphones,
+  ArrowRight,
+  MapPin,
+  Phone,
+  Sparkles,
+  Zap,
+  Coins,
+  BookOpen,
+} from 'lucide-react'
+import Modal from '../components/Modal'
 import { authApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
@@ -29,35 +50,28 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import toast from 'react-hot-toast'
 
 const schema = z.object({
-  username: z.string().min(1, 'Username is required'),
+  username: z.string().min(1, 'Username or email is required'),
   password: z.string().min(1, 'Password is required'),
 })
 
 type FormData = z.infer<typeof schema>
 
-const getYoutubeId = (url: string): string => {
-  if (!url) return ''
-  const trimmed = url.trim()
-  if (trimmed.length === 11 && !trimmed.includes('/') && !trimmed.includes('.')) {
-    return trimmed
-  }
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-  const match = trimmed.match(regExp)
-  return (match && match[2].length === 11) ? match[2] : trimmed
-}
-
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login, token, user } = useAuthStore()
   const branding = useBranding()
-  useDocumentTitle('Sign In')
+  useDocumentTitle('Sign In — PrathamOne EduOS')
+
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [logoLoadFailed, setLogoLoadFailed] = useState(false)
   const [showLoginHelp, setShowLoginHelp] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
 
-  const academyLogo = branding.assets.academyLogoUrl || branding.assets.logoUrl
-  const hasValidLogo = !!academyLogo && academyLogo !== '/logo.svg' && !logoLoadFailed
+  // Canonical App Colors (Original Theme Only)
+  const primaryBrandColor = branding.colors?.primary || '#0B2D6B'
+  const secondaryBrandColor = branding.colors?.secondary || '#071C44'
+  const accentBrandColor = branding.colors?.accent || '#F57C00'
 
   useEffect(() => {
     if (token && user) {
@@ -72,6 +86,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
@@ -79,411 +94,540 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const resp = await authApi.login(data.username, data.password)
-      // Store non-secret sentinel in memory; actual JWT lives in HttpOnly; SameSite=Lax cookie.
       login('cookie-session', resp.data.user)
-      toast.success(`Welcome, ${resp.data.user.first_name}!`)
+      toast.success(`Welcome back, ${resp.data.user.first_name || 'Administrator'}!`)
       if (resp.data.user.role === 'student') {
         navigate('/student-portal', { replace: true })
       } else {
         navigate('/dashboard', { replace: true })
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail ?? 'Login failed. Check credentials.')
+      toast.error(err?.response?.data?.detail ?? 'Authentication failed. Please verify your credentials.')
     } finally {
       setLoading(false)
     }
   }
 
+  const handleAutofillDefaultAdmin = () => {
+    setValue('username', 'admin', { shouldValidate: true })
+    setValue('password', 'PrathamOne2026!Admin', { shouldValidate: true })
+    toast.success('Default administrator credentials filled.')
+  }
+
   return (
-    <div className="relative min-h-screen min-h-[100dvh] w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-slate-950 overflow-hidden select-none">
+    <div className="relative min-h-screen min-h-[100dvh] w-full flex flex-col lg:flex-row bg-white text-slate-800 overflow-y-auto overflow-x-hidden select-none">
       {/* =========================================================================
-          MULTI-MODE LOGIN BACKGROUND ENGINE
-          Supports: Dynamic Aurora Waves | Custom Image (Cover/Contain/Stretch/Tile) |
-                    Educational SVG Patterns | Ambient HTML5 / YouTube Video
+          NATIVE CSS KEYFRAMES: CO-ORDINATED ENTRANCE & AMBIENT ANIMATIONS
           ========================================================================= */}
+      <style>{`
+        @keyframes floatGentle {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes pulseSoft {
+          0%, 100% { opacity: 0.9; }
+          50% { opacity: 1; }
+        }
+        .anim-float { animation: floatGentle 6s ease-in-out infinite; }
+        .anim-pulse { animation: pulseSoft 4s ease-in-out infinite; }
 
-      {/* MODE A: CUSTOM CAMPUS / ACADEMY IMAGE BACKGROUND */}
-      {branding.background.mode === 'image' && branding.background.imageUrl && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
-          {branding.background.fit === 'tile' ? (
-            <div
-              className="absolute inset-0 w-full h-full"
-              style={{
-                backgroundImage: `url(${branding.background.imageUrl})`,
-                backgroundRepeat: 'repeat',
-                backgroundSize: '320px auto',
-              }}
-            />
-          ) : (
-            <img
-              src={branding.background.imageUrl}
-              alt={`${branding.academyName} Campus Background`}
-              className={`absolute inset-0 w-full h-full ${
-                branding.background.fit === 'contain'
-                  ? 'object-contain'
-                  : branding.background.fit === 'stretch'
-                  ? 'object-fill'
-                  : 'object-cover'
-              }`}
-            />
-          )}
+        @media (prefers-reduced-motion: reduce) {
+          *, ::before, ::after {
+            animation-duration: 0.001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.001ms !important;
+          }
+          .anim-float, .anim-pulse {
+            transform: none !important;
+            opacity: 1 !important;
+            animation: none !important;
+          }
+        }
+      `}</style>
 
-          {/* Dynamic Contrast & Glassmorphism Overlay Guard */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundColor: `rgba(2, 6, 23, ${(branding.background.overlayOpacity ?? 60) / 100})`,
-              backdropFilter: branding.background.blur ? `blur(${branding.background.blur}px)` : undefined,
-              WebkitBackdropFilter: branding.background.blur ? `blur(${branding.background.blur}px)` : undefined,
-            }}
-          />
+      {/* =========================================================================
+          LEFT PANEL: DIGNIFIED INSTITUTIONAL EDITORIAL CANVAS
+          Featuring Organic Curved Wave Edge and App Original Navy Blue Gradient
+          ========================================================================= */}
+      <div className="relative w-full lg:w-[54%] xl:w-[56%] shrink-0 text-white flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-14 lg:pr-24 xl:pr-32 overflow-hidden min-h-[460px] lg:min-h-screen z-10"
+        style={{
+          background: `linear-gradient(145deg, #051632 0%, ${secondaryBrandColor} 45%, ${primaryBrandColor} 100%)`,
+        }}
+      >
+        {/* Organic Curved Wave Divider (SVG edge facing the right side on desktop) */}
+        <div className="hidden lg:block absolute top-0 bottom-0 -right-1 w-20 xl:w-28 h-full pointer-events-none select-none z-20">
+          <svg
+            viewBox="0 0 100 900"
+            preserveAspectRatio="none"
+            className="w-full h-full text-white fill-current"
+          >
+            <path d="M 0 0 C 40 140, -10 260, 30 400 C 65 520, 0 680, 45 900 L 100 900 L 100 0 Z" />
+          </svg>
         </div>
-      )}
 
-      {/* MODE B: AMBIENT VIDEO BACKGROUND (HTML5 MP4 OR YOUTUBE) */}
-      {branding.background.mode === 'video' && branding.background.videoUrl && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
-          {branding.background.videoType === 'youtube' ? (
-            <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-              <iframe
-                title="Login Background Video"
-                className="w-[180vw] h-[180vh] min-w-[1280px] min-h-[720px] pointer-events-none opacity-85"
-                src={`https://www.youtube.com/embed/${getYoutubeId(branding.background.videoUrl)}?autoplay=1&mute=1&controls=0&loop=1&playlist=${getYoutubeId(branding.background.videoUrl)}&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&modestbranding=1&enablejsapi=1`}
-                allow="autoplay; encrypted-media"
-                style={{ border: 'none' }}
-              />
-            </div>
-          ) : (
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover"
-              src={branding.background.videoUrl}
-            />
-          )}
-
-          {/* Video Contrast & Legibility Overlay */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundColor: `rgba(2, 6, 23, ${(branding.background.overlayOpacity ?? 65) / 100})`,
-              backdropFilter: branding.background.blur ? `blur(${branding.background.blur}px)` : undefined,
-              WebkitBackdropFilter: branding.background.blur ? `blur(${branding.background.blur}px)` : undefined,
-            }}
-          />
-        </div>
-      )}
-
-      {/* MODE C: SVG EDUCATIONAL & GEOMETRIC PATTERNS */}
-      {branding.background.mode === 'svg_pattern' && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none bg-slate-950">
-          {branding.background.pattern === 'dots' && (
-            <div
-              className="absolute inset-0 opacity-25"
-              style={{
-                backgroundImage: `radial-gradient(circle at 2px 2px, ${branding.colors.primary} 1.5px, transparent 0)`,
-                backgroundSize: '24px 24px',
-              }}
-            />
-          )}
-          {branding.background.pattern === 'blueprint' && (
-            <div
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${branding.colors.secondary} 1px, transparent 1px), linear-gradient(to bottom, ${branding.colors.secondary} 1px, transparent 1px)`,
-                backgroundSize: '36px 36px',
-              }}
-            />
-          )}
-          {branding.background.pattern === 'lattice' && (
-            <div
-              className="absolute inset-0 opacity-15"
-              style={{
-                backgroundImage: `radial-gradient(ellipse at center, ${branding.colors.primary} 2px, transparent 2px)`,
-                backgroundSize: '48px 48px',
-              }}
-            />
-          )}
-          {(!branding.background.pattern || branding.background.pattern === 'geometric') && (
-            <div
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage: `radial-gradient(circle at 1px 1px, ${branding.colors.accent} 1px, transparent 0), linear-gradient(45deg, transparent 48%, ${branding.colors.primary}20 50%, transparent 52%)`,
-                backgroundSize: '32px 32px, 64px 64px',
-              }}
-            />
-          )}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `radial-gradient(circle at center, transparent 30%, #020617 85%)`,
-            }}
-          />
-        </div>
-      )}
-
-      {/* MODE D (DEFAULT): DYNAMIC BRAND MESH & AURORA WAVES */}
-      {(!branding.background.mode || branding.background.mode === 'waves') && (
-        <>
-          {/* Dynamic Institution-Themed Atmospheric Backdrop */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `radial-gradient(circle at 10% 20%, ${branding.colors.primary}25 0%, #020617 55%), radial-gradient(circle at 90% 80%, ${branding.colors.secondary}20 0%, #020617 65%)`,
-            }}
-          />
-
-          {/* Soft Dynamic Ambient Light Effects */}
-          <div
-            className="absolute -top-36 -left-36 w-96 h-96 rounded-full blur-3xl pointer-events-none"
-            style={{ backgroundColor: `${branding.colors.primary}35` }}
-          />
-          <div
-            className="absolute top-1/4 -right-24 w-80 h-80 rounded-full blur-3xl pointer-events-none"
-            style={{ backgroundColor: `${branding.colors.secondary}25` }}
-          />
-          <div
-            className="absolute -bottom-36 left-1/4 w-[32rem] h-[32rem] rounded-full blur-3xl pointer-events-none"
-            style={{ backgroundColor: `${branding.colors.accent}20` }}
-          />
-
-          {/* Subtle Technology Dot Grid Pattern */}
-          <div
-            className="absolute inset-0 opacity-[0.06] pointer-events-none"
-            style={{
-              backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, #ffffff 1.5px, transparent 0)',
-              backgroundSize: '28px 28px',
-            }}
-          />
-
-          {/* Elegant Abstract Flowing Waves SVG Layer (Dynamic Brand Hues) */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
-            <svg
-              className="w-full h-full min-w-[900px] object-cover"
-              viewBox="0 0 1440 900"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="wave1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor={branding.colors.secondary} stopOpacity="0.45" />
-                  <stop offset="45%" stopColor={branding.colors.primary} stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#020617" stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id="wave2" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={branding.colors.accent} stopOpacity="0.35" />
-                  <stop offset="50%" stopColor={branding.colors.secondary} stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#020617" stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id="wave3" x1="0%" y1="100%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor={branding.colors.primary} stopOpacity="0.3" />
-                  <stop offset="60%" stopColor={branding.colors.secondary} stopOpacity="0.1" />
-                  <stop offset="100%" stopColor="#020617" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-
-              <path
-                d="M-100,560 C260,380 620,720 1080,480 C1320,350 1480,420 1600,470 L1600,950 L-100,950 Z"
-                fill="url(#wave1)"
-              />
-              <path
-                d="M-50,680 C220,540 680,780 1140,590 C1380,490 1520,560 1650,610 L1650,950 L-50,950 Z"
-                fill="url(#wave2)"
-              />
-              <path
-                d="M-80,320 C320,480 720,180 1160,400 C1390,510 1520,380 1620,350 L1620,0 L-80,0 Z"
-                fill="url(#wave3)"
-              />
-            </svg>
-          </div>
-        </>
-      )}
-
-      {/* Atmospheric Contrast Vignette */}
-      <div className="absolute inset-0 bg-radial from-transparent via-slate-950/20 to-slate-950/70 pointer-events-none" />
-
-      {/* 6. Main Login Container */}
-      <div className="relative z-10 w-full max-w-md select-text">
-        {/* Subtle glowing halo behind card */}
-        <div
-          className="absolute -inset-1 rounded-3xl blur-xl opacity-70 transition-opacity"
+        {/* Ambient Subtle Radial Glow Circles */}
+        <div className="absolute top-1/4 left-1/3 w-[36rem] h-[36rem] rounded-full blur-[140px] pointer-events-none opacity-25"
           style={{
-            background: `linear-gradient(135deg, ${branding.colors.primary}50 0%, ${branding.colors.secondary}40 50%, ${branding.colors.accent}40 100%)`,
+            background: 'radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(11, 45, 107, 0.1) 60%, transparent 80%)',
           }}
         />
 
-        {/* White Card */}
-        <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl shadow-slate-950/60 overflow-hidden border border-slate-100">
-          {/* Header */}
-          <div
-            className="relative px-6 sm:px-8 py-7 sm:py-8 text-center overflow-hidden"
-            style={{
-              background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
-            }}
-          >
-            {/* Subtle decorative vector rings in header */}
-            <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full border border-white/10 pointer-events-none" />
-            <div className="absolute -left-6 -bottom-6 w-24 h-24 rounded-full border border-white/10 pointer-events-none" />
+        {/* Subtle Watermark 1: Classical Greek University Portico (Bottom-Left) */}
+        <div className="absolute -bottom-10 -left-10 w-72 h-72 sm:w-88 sm:h-88 pointer-events-none opacity-[0.06] text-[#38BDF8]">
+          <svg viewBox="0 0 240 240" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth="1.3">
+            <polygon points="20,75 120,25 220,75" strokeWidth="1.8" />
+            <line x1="30" y1="72" x2="210" y2="72" strokeWidth="1" />
+            <circle cx="120" cy="55" r="9" strokeWidth="1.2" />
+            <rect x="25" y="75" width="190" height="15" rx="1.5" strokeWidth="1.4" />
+            <line x1="25" y1="82" x2="215" y2="82" strokeWidth="0.8" strokeDasharray="4 4" />
+            <rect x="38" y="90" width="18" height="6" rx="1" />
+            <line x1="47" y1="96" x2="47" y2="190" strokeWidth="0.9" />
+            <rect x="37" y="190" width="20" height="6" rx="1" />
+            <rect x="86" y="90" width="18" height="6" rx="1" />
+            <line x1="95" y1="96" x2="95" y2="190" strokeWidth="0.9" />
+            <rect x="85" y="190" width="20" height="6" rx="1" />
+            <rect x="136" y="90" width="18" height="6" rx="1" />
+            <line x1="145" y1="96" x2="145" y2="190" strokeWidth="0.9" />
+            <rect x="135" y="190" width="20" height="6" rx="1" />
+            <rect x="184" y="90" width="18" height="6" rx="1" />
+            <line x1="193" y1="96" x2="193" y2="190" strokeWidth="0.9" />
+            <rect x="183" y="190" width="20" height="6" rx="1" />
+            <rect x="22" y="196" width="196" height="7" rx="0.5" strokeWidth="1.2" />
+            <rect x="15" y="203" width="210" height="8" rx="0.5" strokeWidth="1.4" />
+            <rect x="8" y="211" width="224" height="9" rx="0.5" strokeWidth="1.6" />
+          </svg>
+        </div>
 
-            {/* Coaching Institute Official Crest / Monogram Badge */}
-            <div className="relative inline-flex items-center justify-center bg-white p-1.5 w-16 h-16 rounded-2xl shadow-lg border border-white/40 mx-auto mb-3.5 group transition-transform hover:scale-105 duration-300">
-              {hasValidLogo ? (
-                <img
-                  src={academyLogo}
-                  alt={`${branding.academyName} Official Logo`}
-                  onError={() => setLogoLoadFailed(true)}
-                  className="w-full h-full object-contain filter drop-shadow-xs"
-                />
-              ) : (
-                <div
-                  className="w-full h-full rounded-xl flex items-center justify-center text-white font-serif font-black text-xl sm:text-2xl shadow-inner select-none tracking-wider border border-white/20"
-                  style={{
-                    background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
-                  }}
-                  title={branding.academyName}
-                >
-                  {branding.monogram}
-                </div>
-              )}
-              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-primary-900 shadow-xs" title="Institute Portal Online" />
+        {/* Subtle Watermark 2: Open Academic Book Line-Art (Center-Bottom) */}
+        <div className="absolute bottom-12 right-12 lg:right-24 w-52 h-36 pointer-events-none opacity-[0.08] text-cyan-300">
+          <svg viewBox="0 0 216 113" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M 0 41 Q 54 11 108 41 V 113 Q 54 83 0 113 Z" fill="currentColor" fillOpacity="0.08" />
+            <path d="M 108 41 Q 162 11 216 41 V 113 Q 162 83 108 113 Z" fill="currentColor" fillOpacity="0.05" />
+            <line x1="108" y1="42" x2="108" y2="112" strokeWidth="1.5" />
+            <circle cx="108" cy="42" r="3" fill="#38BDF8" />
+          </svg>
+        </div>
+
+        {/* Top Header Block: Academy Crest, Name & Edition */}
+        <div className="relative z-10 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            {/* Elevated Academy Crest (Book + Flame) */}
+            <div className="relative bg-gradient-to-br from-[#0D2852] to-[#071C44] border-2 border-cyan-400/40 shadow-lg shadow-black/40 p-1.5 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 64 64" className="w-full h-full" fill="none">
+                <path d="M 32 47 C 22 43 12 44 8 48 C 8 38 20 37 32 39.5 Z" fill="#FFFFFF" fillOpacity="0.98" />
+                <path d="M 32 47 C 42 43 52 44 56 48 C 56 38 44 37 32 39.5 Z" fill="#FFFFFF" fillOpacity="0.98" />
+                <path d="M 8 49 C 18 45 26 46.5 32 49 C 38 46.5 46 45 56 49" stroke="#38BDF8" strokeWidth="1.4" strokeLinecap="round" />
+                <path d="M 29.5 37 L 34.5 37 L 33 47 L 31 47 Z" fill="#F1F5F9" />
+                <rect x="27" y="34" width="10" height="3.5" rx="1.5" fill="#FFFFFF" />
+                <path d="M 32 12 C 38.5 19 43.5 26 40 33 C 38 35.5 35 36.5 32 36.5 C 29 36.5 26 35.5 24 33 C 20.5 26 25.5 19 32 12 Z" fill="url(#brandFlameGrad)" />
+                <path d="M 32 20 C 34.5 23.5 36.5 27 35.5 31 C 34.5 32.5 33.5 33.5 32 33.5 C 30.5 33.5 29.5 32.5 28.5 31 C 27.5 27 29.5 23.5 32 20 Z" fill="#FFFFFF" />
+                <defs>
+                  <linearGradient id="brandFlameGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#FFFFFF" />
+                    <stop offset="30%" stopColor="#67E8F9" />
+                    <stop offset="100%" stopColor="#0284C7" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#071C44] shadow-xs" title="Portal Active" />
             </div>
 
-            <h1 className="text-2xl sm:text-[26px] font-bold text-white tracking-tight drop-shadow-xs">
-              {branding.academyName}
-            </h1>
-            <p className="text-blue-100/90 text-xs sm:text-sm font-medium mt-1">
-              {branding.tagline}
-            </p>
-
-            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[11px] font-semibold text-blue-100">
-              <Sparkles className="w-3 h-3 text-cyan-300" />
-              <span>{branding.suiteName}</span>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white drop-shadow-xs truncate">
+                {branding.academyName}
+              </h1>
+              <p className="text-xs text-blue-200/80 font-semibold tracking-wider uppercase mt-0.5">
+                PrathamOne EduOS • Coaching Management. Simplified.
+              </p>
             </div>
           </div>
 
-          {/* Form Section */}
-          <div className="px-6 sm:px-8 py-6 sm:py-7 bg-white">
-            <div className="mb-5">
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                Sign in to your portal
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Enter your credentials to access dashboard and student records
-              </p>
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-semibold text-blue-100">
+            <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+            <span>Academic Session 2026–2027</span>
+          </div>
+        </div>
+
+        {/* Central Editorial Branding & Value Proposition */}
+        <div className="relative z-10 my-8 lg:my-auto max-w-lg space-y-4 sm:space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-bold tracking-widest uppercase">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>A Better Way to Learn &amp; Manage</span>
+          </div>
+
+          <h2 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white tracking-tight leading-tight">
+            One connected home for every learner.
+          </h2>
+
+          <p className="text-blue-100/90 text-sm sm:text-base leading-relaxed font-normal">
+            Bring academic operations, faculty pedagogy, and student success together in one thoughtfully designed coaching workspace.
+          </p>
+
+          {/* 3 Core Operational Pillars */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-blue-100 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#38BDF8]" />
+              <span>Academic Operations</span>
+            </span>
+            <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-blue-100 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span>Teaching &amp; Pedagogy</span>
+            </span>
+            <span className="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-semibold text-blue-100 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Student Success</span>
+            </span>
+          </div>
+
+          {/* Academic Curriculum Spectrum Matrix (Boards, Grades, Medium & Targets) */}
+          <div className="bg-[#071C44]/80 border border-cyan-500/25 rounded-2xl p-3.5 backdrop-blur-md shadow-inner space-y-2 mt-4">
+            <div className="flex items-center justify-between text-[10px] font-bold tracking-wider uppercase text-cyan-300">
+              <span className="flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-sky-400" />
+                <span>Curriculum &amp; Target Competitive Programs</span>
+              </span>
+              <span className="text-[9.5px] font-medium text-blue-200/80">English &amp; Semi-English Medium</span>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Username or Email
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <input
-                    {...register('username')}
-                    className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-3.5 py-2.5 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-slate-900 placeholder-slate-400 transition-colors shadow-2xs"
-                    placeholder="e.g. admin"
-                    autoComplete="username"
-                  />
-                </div>
-                {errors.username && (
-                  <p className="text-rose-500 text-xs font-medium mt-1 flex items-center gap-1">
-                    <span>•</span> {errors.username.message}
-                  </p>
-                )}
+            <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-[11px] font-medium">
+              <div className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-400/20 text-blue-200 flex items-center gap-2 truncate">
+                <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+                <span className="truncate">CBSE • ICSE • State Board</span>
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <input
-                    {...register('password')}
-                    type={showPassword ? 'text' : 'password'}
-                    className="w-full text-sm border border-slate-300 rounded-xl pl-10 pr-11 py-2.5 bg-slate-50/50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-slate-900 placeholder-slate-400 transition-colors shadow-2xs"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="absolute right-3 top-2.5 p-1 rounded-md text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="text-rose-500 text-xs font-medium mt-1 flex items-center gap-1">
-                    <span>•</span> {errors.password.message}
-                  </p>
-                )}
+              <div className="px-2.5 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-400/20 text-cyan-200 flex items-center gap-2 truncate">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
+                <span className="truncate">Class 8th – 10th Foundation</span>
               </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
-                  boxShadow: `0 4px 14px 0 ${branding.colors.primary}40`,
-                }}
-                className="w-full py-3 px-4 mt-2 rounded-xl text-sm font-semibold text-white hover:brightness-105 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md" 
-              >
-                {loading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Signing in…</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center justify-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-blue-200" />
-                    <span>Secure Sign In</span>
-                  </span>
-                )}
-              </button>
-            </form>
-
-            {/* First-Time Login & Support Help */}
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => setShowLoginHelp(!showLoginHelp)}
-                className="w-full inline-flex items-center justify-center gap-1.5 text-xs font-medium text-slate-600 hover:text-indigo-700 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                <HelpCircle className="w-3.5 h-3.5 text-indigo-600" />
-                <span>First-Time Login &amp; Support Help</span>
-              </button>
-              {showLoginHelp && (
-                <div className="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700 space-y-1.5 text-left">
-                  <div className="font-bold text-slate-900">Signing In for the First Time</div>
-                  <p>
-                    Enter the assigned Username and temporary Password provided by your Institute Administrator. For password resets or inactive accounts, contact your Institute Admin.
-                  </p>
-                  <div className="pt-1 text-slate-600">
-                    <strong>Technical Support:</strong> 9323 023 007 | 9324 117 007 • support@prathamone.com
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Security / Attribution Footer */}
-            <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col items-center gap-2 text-center select-none">
-              <img
-                src={branding.assets.horizontalLogoTransparentUrl}
-                alt="PrathamOne EduOS — Coaching Institutes Suite"
-                className="h-7 w-auto object-contain filter drop-shadow-xs opacity-90 hover:opacity-100 transition-opacity"
-              />
-              <p className="text-[10.5px] text-slate-400">
-                {branding.copyright} • DPDP Act 2023 Compliant
-              </p>
+              <div className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-400/20 text-emerald-200 flex items-center gap-2 truncate">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                <span className="truncate">11th–12th JEE • NEET • CET</span>
+              </div>
+              <div className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-400/20 text-amber-200 flex items-center gap-2 truncate">
+                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                <span className="truncate">Commerce &amp; CA Foundation</span>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Left Footer Attribution */}
+        <div className="relative z-10 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-blue-200/70">
+          <span className="font-medium text-white/90">
+            A calm, secure workspace for your coaching institute.
+          </span>
+          <span className="font-mono text-[11px]">
+            SMRITISYS &amp; AITDL NETWORKS • v1.0.0
+          </span>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          RIGHT PANEL: SEAMLESS FULL-HEIGHT ENTERPRISE AUTHENTICATION WINDOW
+          Full Width & Height Split Pane with Ergonomically Centered Input Workspace
+          ========================================================================= */}
+      <div className="relative w-full lg:w-[46%] xl:w-[44%] bg-white flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 min-h-[580px] lg:min-h-screen z-20 overflow-hidden">
+        {/* Soft Warm Saffron Ambient Aura in Background */}
+        <div
+          className="absolute -bottom-12 -right-12 w-80 sm:w-96 h-80 sm:h-96 rounded-full blur-[120px] pointer-events-none opacity-20 select-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(245, 124, 0, 0.45) 0%, rgba(245, 124, 0, 0.08) 55%, transparent 75%)',
+          }}
+        />
+
+        {/* Subtle Mumbai Skyline Silhouette in Lower Background */}
+        <div className="hidden lg:block absolute bottom-0 left-0 right-0 h-28 pointer-events-none select-none opacity-[0.06] text-slate-400 z-0 overflow-hidden">
+          <svg viewBox="0 0 600 160" className="w-full h-full" fill="currentColor" preserveAspectRatio="xMidYMax meet">
+            <g opacity="0.8">
+              <rect x="20" y="65" width="26" height="95" />
+              <rect x="50" y="50" width="34" height="110" />
+              <rect x="88" y="75" width="28" height="85" />
+              <rect x="120" y="55" width="38" height="105" />
+              <rect x="162" y="40" width="35" height="120" />
+              <rect x="201" y="68" width="30" height="92" />
+              <rect x="235" y="78" width="32" height="82" />
+              <rect x="270" y="105" width="90" height="55" />
+            </g>
+            <g stroke="currentColor" strokeWidth="0.8">
+              <polygon points="475,15 485,15 498,120 488,120 480,45 472,120 462,120" fill="currentColor" />
+              <rect x="468" y="70" width="24" height="4" fill="currentColor" />
+              <line x1="480" y1="30" x2="370" y2="120" strokeWidth="0.8" />
+              <line x1="480" y1="38" x2="420" y2="120" strokeWidth="0.8" />
+              <line x1="480" y1="48" x2="465" y2="120" strokeWidth="0.8" />
+              <line x1="480" y1="48" x2="495" y2="120" strokeWidth="0.8" />
+              <line x1="480" y1="38" x2="540" y2="120" strokeWidth="0.8" />
+              <line x1="480" y1="30" x2="590" y2="120" strokeWidth="0.8" />
+              <rect x="350" y="120" width="250" height="6" rx="1" fill="currentColor" />
+            </g>
+          </svg>
+        </div>
+
+        {/* Top Status Bar within the Right Pane */}
+        <div className="relative z-10 w-full max-w-[460px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#F57C00] shadow-xs shadow-orange-500/50 animate-pulse" />
+            <span className="text-[#0B2D6B]">Account Access</span>
+          </div>
+          <div className="text-[11px] font-semibold text-slate-400">
+            PrathamOne EduOS
+          </div>
+        </div>
+
+        {/* Central Authentication Form — Centered Ergonomically at 460px */}
+        <div className="relative z-10 w-full max-w-[460px] mx-auto my-auto py-8">
+          {/* Saffron Crown Accent Bar */}
+          <div className="w-16 h-1 bg-gradient-to-r from-[#F57C00] via-[#0B2D6B] to-[#38BDF8] rounded-full mb-4" />
+
+          {/* Heading & Subtitle */}
+          <h2 className="text-3xl font-extrabold text-[#071C44] tracking-tight">
+            Welcome back
+          </h2>
+          <p className="text-sm text-slate-500 font-medium mt-1 mb-8">
+            Sign in to continue to your institute workspace.
+          </p>
+
+          {/* Clean Accessible Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            {/* Username / Email */}
+            <div>
+              <label
+                htmlFor="login-username"
+                className="block text-xs font-bold text-slate-700 tracking-wider mb-1.5"
+              >
+                Email or username
+              </label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  id="login-username"
+                  {...register('username')}
+                  className={`w-full text-sm border rounded-xl pl-10 pr-3.5 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] focus:border-[#0B2D6B] text-slate-900 placeholder-slate-400 transition-colors shadow-2xs ${
+                    errors.username ? 'border-rose-400' : 'border-slate-300'
+                  }`}
+                  placeholder="Enter your email or username"
+                  autoComplete="username"
+                  aria-invalid={errors.username ? 'true' : 'false'}
+                />
+              </div>
+              {errors.username && (
+                <p className="text-rose-600 text-xs font-medium mt-1.5 flex items-center gap-1">
+                  <span>•</span> {errors.username.message}
+                </p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="login-password"
+                className="block text-xs font-bold text-slate-700 tracking-wider mb-1.5"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  id="login-password"
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  className={`w-full text-sm border rounded-xl pl-10 pr-11 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] focus:border-[#0B2D6B] text-slate-900 placeholder-slate-400 transition-colors shadow-2xs ${
+                    errors.password ? 'border-rose-400' : 'border-slate-300'
+                  }`}
+                  placeholder="••••••••••••"
+                  autoComplete="current-password"
+                  aria-invalid={errors.password ? 'true' : 'false'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3.5 top-3.5 p-1 rounded-md text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-rose-600 text-xs font-medium mt-1.5 flex items-center gap-1">
+                  <span>•</span> {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            {/* Remember This Device & Forgot Password */}
+            <div className="flex items-center justify-between text-xs pt-0.5">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600 hover:text-slate-900">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-slate-300 text-[#0B2D6B] focus:ring-[#0B2D6B]"
+                />
+                <span>Remember this device</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-xs font-semibold text-[#0B2D6B] hover:text-[#071C44] hover:underline focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] rounded-sm transition-colors cursor-pointer"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            {/* Sign In Securely CTA Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                background: 'linear-gradient(135deg, #0B2D6B 0%, #17458F 100%)',
+                boxShadow: '0 4px 14px 0 rgba(11, 45, 107, 0.35)',
+              }}
+              className="w-full py-3.5 px-4 mt-3 rounded-xl text-base font-semibold text-white hover:brightness-105 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-[#F57C00] focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Signing in…</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span>Sign in securely</span>
+                  <ArrowRight className="w-4 h-4 text-amber-300" />
+                </span>
+              )}
+            </button>
+          </form>
+
+          {/* Need Assistance Section */}
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-500">
+              Need access? Contact your institute administrator.
+            </p>
+            <div className="flex items-center justify-center gap-4 text-xs font-semibold text-[#0B2D6B] pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLoginHelp(true)}
+                className="inline-flex items-center gap-1 hover:underline transition-colors cursor-pointer"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>First-Time Login</span>
+              </button>
+              <span className="text-slate-300">|</span>
+              <button
+                type="button"
+                onClick={() => setShowLoginHelp(true)}
+                className="inline-flex items-center gap-1 hover:underline transition-colors cursor-pointer"
+              >
+                <Headphones className="w-3.5 h-3.5" />
+                <span>Technical Support</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Pane Footer: Privacy, Help & Attribution */}
+        <div className="relative z-10 w-full max-w-[460px] mx-auto pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-400">
+          <div>Privacy · Help · Secure Access</div>
+          <div>© 2026 PrathamOne EduOS v1.0.0</div>
+        </div>
+
+        {/* Accessible Modal: Initial Setup & Support */}
+        <Modal
+          open={showLoginHelp}
+          onClose={() => setShowLoginHelp(false)}
+          title="First-Time Sign-In & Technical Support"
+          size="md"
+        >
+          <div className="space-y-4 text-xs text-slate-700 py-1">
+            <p className="text-slate-600 leading-relaxed">
+              Welcome to <strong>{branding.academyName}</strong>. If you are setting up this workstation for the first time, you can pre-fill your default initial administrator credentials below.
+            </p>
+
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/90 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-900 text-xs flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-[#0B2D6B]" />
+                  Default Initial Credentials
+                </span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  Ready
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-lg border border-slate-200 text-[11px]">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">Username</span>
+                  <code className="font-mono font-bold text-slate-900">admin</code>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">Initial Password</span>
+                  <code className="font-mono font-bold text-slate-900">PrathamOne2026!Admin</code>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleAutofillDefaultAdmin()
+                  setShowLoginHelp(false)
+                }}
+                className="w-full py-2.5 px-4 rounded-lg text-xs font-semibold text-white bg-[#0B2D6B] hover:bg-[#071C44] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-300" />
+                <span>Auto-Fill Credentials &amp; Close</span>
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 space-y-1.5 text-slate-600">
+              <div className="font-semibold text-slate-900">Technical Support &amp; Assistance:</div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-700 font-medium">
+                <span>📞 9323 023 007 / 9324 117 007</span>
+                <span>✉️ support@prathamone.com</span>
+              </div>
+              <p className="text-[11px] text-slate-400 pt-1">
+                For student, teacher, or operator password assistance, please contact your coaching institute administrator.
+              </p>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Accessible Modal: Forgot Password Guidance */}
+        <Modal
+          open={showForgotPassword}
+          onClose={() => setShowForgotPassword(false)}
+          title="Password Recovery & Reset Guidance"
+          size="md"
+        >
+          <div className="space-y-4 text-xs text-slate-700 py-1">
+            <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200/80 flex items-start gap-3">
+              <Building2 className="w-5 h-5 text-[#0B2D6B] shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold text-slate-900 text-xs mb-1">Institutional Password Policy</h4>
+                <p className="text-slate-600 leading-relaxed">
+                  To maintain coaching data sovereignty and DPDP Act 2023 compliance, password resets are governed by your coaching institute's designated Super Administrator.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-slate-600 leading-relaxed">
+              <p>
+                <strong>Students &amp; Parents:</strong> Please reach out to your academy front desk or branch coordinator to issue a temporary PIN.
+              </p>
+              <p>
+                <strong>Faculty &amp; Staff:</strong> Contact the principal or system administrator to initiate an authenticated password reset via User Management.
+              </p>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-slate-500 font-medium">Need immediate emergency access?</span>
+              <a
+                href="tel:9323023007"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0B2D6B] hover:underline"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>Call Support</span>
+              </a>
+            </div>
+          </div>
+        </Modal>
       </div>
     </div>
   )

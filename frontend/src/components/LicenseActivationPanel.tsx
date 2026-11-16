@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-14
- * @updated     2026-11-15
+ * @updated     2026-11-16
  *
  * @description Institution-scoped activation and refresh of signed software licenses.
  */
@@ -705,7 +705,7 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
                   placeholder="Enter a legacy license key"
                   className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                <label className="relative overflow-hidden inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                   <Upload className="h-4 w-4" />
                   Import offline response
                   <input

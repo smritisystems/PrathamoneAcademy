@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Central v1 API router registering all domain endpoint routers.
 #  */
@@ -62,6 +62,7 @@ from app.api.v1.endpoints import (
 
 auth_router = APIRouter()
 auth_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+auth_router.include_router(institutions.public_router, prefix="/institutions", tags=["institutions-public"])
 
 api_router = APIRouter(dependencies=[Depends(license_endpoint.enforce_license_request)])
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])

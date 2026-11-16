@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description">
+  <title id="title">PrathamOne EduOS premium enterprise login mockup</title>
+  <desc id="description">A desktop sign-in mockup with a branded academy panel and a focused, secure-looking login form.</desc>
+  <defs>
+    <linearGradient id="brand-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08172a"/>
+      <stop offset=".58" stop-color="#102644"/>
+      <stop offset="1" stop-color="#18324d"/>
+    </linearGradient>
+    <linearGradient id="action" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0b9487"/>
+      <stop offset="1" stop-color="#187a9f"/>
+    </linearGradient>
+    <radialGradient id="aura" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#38d7c2" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#38d7c2" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="card-shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="16"/>
+      <feOffset dy="10"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".12"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <style>
+      .accent-dot { animation: breathe 3.4s ease-in-out infinite; }
+      .focus-line { animation: reveal 1.1s ease-out both; }
+      @keyframes breathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+      @keyframes reveal { from { stroke-dashoffset: 220; } to { stroke-dashoffset: 0; } }
+      @media (prefers-reduced-motion: reduce) { .accent-dot, .focus-line { animation: none; } }
+    </style>
+  </defs>
+  <rect width="1440" height="900" fill="#f3f6fa"/>
+  <path d="M0 0H790C750 149 822 255 780 395C742 521 820 678 772 900H0Z" fill="url(#brand-bg)"/>
+  <circle cx="595" cy="370" r="290" fill="url(#aura)"/>
+  <circle cx="610" cy="370" r="190" fill="none" stroke="#77dbd1" stroke-opacity=".14" stroke-width="1"/>
+  <circle cx="610" cy="370" r="238" fill="none" stroke="#77dbd1" stroke-opacity=".1" stroke-width="1" stroke-dasharray="3 11"/>
+  <path d="M0 690C195 625 360 690 520 640S690 620 790 659" fill="none" stroke="#73ddd2" stroke-opacity=".12" stroke-width="1"/>
+
+  <g font-family="Inter, Segoe UI, Arial, sans-serif">
+    <rect x="76" y="58" width="46" height="46" rx="14" fill="url(#action)"/>
+    <path d="M88 72Q99 69 110 75V91Q99 85 88 89Z" fill="none" stroke="#f1ffff" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="M99 73V88" stroke="#f1ffff" stroke-width="1.4"/>
+    <text x="136" y="78" fill="#f7fbff" font-size="17" font-weight="750" letter-spacing=".1">PrathamOne</text>
+    <text x="136" y="97" fill="#a8bfd5" font-size="11" letter-spacing="1.5">EDUOS</text>
+    <text x="714" y="82" text-anchor="end" fill="#9db6cc" font-size="11" font-weight="650" letter-spacing="1.6">COACHING INSTITUTE EDITION</text>
+
+    <text x="88" y="326" fill="#9de9df" font-size="12" font-weight="700" letter-spacing="2">A BETTER WAY TO LEARN</text>
+    <text x="88" y="382" fill="#f5f9ff" font-size="43" font-weight="750" letter-spacing="-1.1">One connected home</text>
+    <text x="88" y="434" fill="#f5f9ff" font-size="43" font-weight="750" letter-spacing="-1.1">for every learner.</text>
+    <text x="90" y="480" fill="#b6c8da" font-size="16">Bring academic operations, teaching, and student support</text>
+    <text x="90" y="505" fill="#b6c8da" font-size="16">together in one thoughtfully designed workspace.</text>
+
+    <g>
+      <rect x="88" y="558" width="177" height="40" rx="20" fill="#ffffff" fill-opacity=".06" stroke="#b3d8e8" stroke-opacity=".16"/>
+      <circle class="accent-dot" cx="108" cy="578" r="4" fill="#55dfc8"/>
+      <text x="122" y="582" fill="#d9e8f4" font-size="11" font-weight="600">ACADEMIC OPERATIONS</text>
+      <rect x="277" y="558" width="113" height="40" rx="20" fill="#ffffff" fill-opacity=".06" stroke="#b3d8e8" stroke-opacity=".16"/>
+      <circle class="accent-dot" cx="297" cy="578" r="4" fill="#55dfc8" style="animation-delay:.45s"/>
+      <text x="311" y="582" fill="#d9e8f4" font-size="11" font-weight="600">TEACHING</text>
+      <rect x="402" y="558" width="145" height="40" rx="20" fill="#ffffff" fill-opacity=".06" stroke="#b3d8e8" stroke-opacity=".16"/>
+      <circle class="accent-dot" cx="422" cy="578" r="4" fill="#55dfc8" style="animation-delay:.9s"/>
+      <text x="436" y="582" fill="#d9e8f4" font-size="11" font-weight="600">STUDENT SUCCESS</text>
+    </g>
+
+    <g transform="translate(536 646)" opacity=".88">
+      <path d="M0 41Q54 11 108 41V113Q54 83 0 113Z" fill="#eafffb" fill-opacity=".08" stroke="#89ddd4" stroke-opacity=".46" stroke-width="1.5"/>
+      <path d="M108 41Q162 11 216 41V113Q162 83 108 113Z" fill="#eafffb" fill-opacity=".05" stroke="#89ddd4" stroke-opacity=".38" stroke-width="1.5"/>
+      <path d="M108 42V112" stroke="#89ddd4" stroke-opacity=".5" stroke-width="1.4"/>
+      <path class="focus-line" d="M23 56Q54 42 84 57M23 72Q54 58 84 73M132 57Q162 42 192 55M132 73Q162 58 192 71" fill="none" stroke="#9beadd" stroke-opacity=".72" stroke-width="2" stroke-linecap="round" stroke-dasharray="220"/>
+      <circle cx="108" cy="41" r="5" fill="#49d6c1"/>
+    </g>
+    <text x="88" y="840" fill="#91abc2" font-size="11">A calm, secure workspace for your institute.</text>
+    <text x="714" y="840" text-anchor="end" fill="#7892aa" font-size="10">VERSION 1.0.0</text>
+
+    <g filter="url(#card-shadow)">
+      <rect x="855" y="132" width="500" height="640" rx="24" fill="#ffffff" stroke="#e5eaf1"/>
+    </g>
+    <rect x="895" y="174" width="116" height="28" rx="14" fill="#e9f8f6"/>
+    <circle cx="911" cy="188" r="4" fill="#0b9487"/>
+    <text x="923" y="192" fill="#167d77" font-size="10" font-weight="700" letter-spacing="1">ACCOUNT ACCESS</text>
+
+    <text x="895" y="255" fill="#16253a" font-size="34" font-weight="750" letter-spacing="-.7">Welcome back</text>
+    <text x="897" y="284" fill="#69788b" font-size="14">Sign in to your academy workspace.</text>
+    <text x="897" y="334" fill="#26374c" font-size="12" font-weight="650">Email or username</text>
+    <rect x="895" y="348" width="420" height="54" rx="11" fill="#fbfcfe" stroke="#d7dee8" stroke-width="1.4"/>
+    <text x="914" y="381" fill="#8996a7" font-size="13">Enter your email or username</text>
+
+    <text x="897" y="447" fill="#26374c" font-size="12" font-weight="650">Password</text>
+    <rect x="895" y="461" width="420" height="54" rx="11" fill="#fbfcfe" stroke="#d7dee8" stroke-width="1.4"/>
+    <text x="914" y="494" fill="#7e8b9b" font-size="17" letter-spacing="3">••••••••••••</text>
+    <g transform="translate(1271 480)" fill="none" stroke="#8794a5" stroke-width="1.5">
+      <path d="M0 8Q9-2 18 8Q9 18 0 8Z"/>
+      <circle cx="9" cy="8" r="3"/>
+    </g>
+
+    <rect x="896" y="545" width="17" height="17" rx="4" fill="#ffffff" stroke="#aab7c6" stroke-width="1.3"/>
+    <text x="923" y="558" fill="#57677b" font-size="12">Remember this device</text>
+    <text x="1314" y="558" text-anchor="end" fill="#087f82" font-size="12" font-weight="650">Forgot password?</text>
+
+    <rect x="895" y="588" width="420" height="56" rx="12" fill="url(#action)"/>
+    <text x="1105" y="622" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="700">Sign in securely</text>
+    <path d="M1265 609H1280M1274 603L1280 609L1274 615" fill="none" stroke="#e7fffb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <path d="M895 674H1315" stroke="#edf0f4"/>
+    <text x="1105" y="706" text-anchor="middle" fill="#66768a" font-size="12">Need access? Contact your institute administrator.</text>
+    <text x="1105" y="741" text-anchor="middle" fill="#92a0b0" font-size="10">Privacy · Help · Secure account access</text>
+
+    <text x="1105" y="822" text-anchor="middle" fill="#8895a4" font-size="11">© 2026 AITDL · PrathamOne EduOS</text>
+  </g>
+</svg>

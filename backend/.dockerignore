@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+.pytest_cache
+tests
+venv
+.venv
+.git
+.vscode
+.env
+uploads
+backups
+data

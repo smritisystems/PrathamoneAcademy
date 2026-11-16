@@ -19,9 +19,9 @@
 
 #define MyAppName "PrathamOne EduOS"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "AITDL (AI Technology & Development Lab)"
+#define MyAppPublisher "Smritisys & AITDL Networks"
 #define MyAppURL "https://aitdl.com"
-#define MyAppExeName "PrathamOneLauncher.bat"
+#define MyAppExeName "PrathamOne.exe"
 #define MyAppDescription "Coaching Institute Management System"
 
 [Setup]
@@ -48,10 +48,10 @@ WizardImageFile=assets\wizard_large.bmp
 WizardSmallImageFile=assets\wizard_small.bmp
 UninstallDisplayIcon={app}\assets\app_icon.ico
 DisableWelcomePage=no
-VersionInfoCompany=AITDL (AI Technology & Development Lab)
+VersionInfoCompany=Smritisys & AITDL Networks
 VersionInfoDescription=PrathamOne EduOS Setup
 VersionInfoVersion=1.0.0.0
-VersionInfoCopyright=Copyright (C) 2026 AITDL
+VersionInfoCopyright=Copyright (C) 2026 Smritisys & AITDL Networks
 VersionInfoProductName=PrathamOne EduOS
 VersionInfoProductVersion=1.0.0
 
@@ -71,6 +71,9 @@ Name: "{app}\data"; Permissions: users-full
 Source: "assets\app_icon.ico"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "assets\wizard_large.bmp"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "assets\wizard_small.bmp"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\frontend\public\artwork\16112026\001\fl.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\frontend\public\artwork\16112026\001\fl3.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\frontend\public\artwork\16112026\001\2.svg"; DestDir: "{app}\assets"; Flags: ignoreversion
 
 ; Root configuration and scripts
 Source: "..\.env.example"; DestDir: "{app}"; Flags: ignoreversion
@@ -91,49 +94,59 @@ Source: "..\backend\*"; DestDir: "{app}\backend"; Flags: ignoreversion recursesu
 ; Compiled React Frontend SPA
 Source: "..\frontend\dist\*"; DestDir: "{app}\frontend\dist"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Launcher & Stop Scripts
+; Native Executables and Diagnostic Scripts
+Source: "files\PrathamOne.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "files\StopPrathamOne.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\PrathamOneLauncher.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "files\StopPrathamOne.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\scripts\windows_launcher.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"; Tasks: desktopicon
-Name: "{group}\{#MyAppName}"; Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\scripts\windows_launcher.py"""; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"; Tasks: desktopicon
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
+Name: "{group}\Stop PrathamOne EduOS"; Filename: "{app}\StopPrathamOne.exe"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
+Name: "{group}\PrathamOne EduOS (Browser)"; Filename: "http://localhost:2026"; IconFilename: "{app}\assets\app_icon.ico"
 Name: "{group}\PrathamOne EduOS (Console Mode)"; Filename: "{app}\PrathamOneLauncher.bat"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
-Name: "{group}\PrathamOne EduOS (Browser)"; Filename: "http://localhost:8000"; IconFilename: "{app}\assets\app_icon.ico"
-Name: "{group}\Stop PrathamOne EduOS"; Filename: "{app}\StopPrathamOne.bat"; WorkingDir: "{app}"; IconFilename: "{app}\assets\app_icon.ico"
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 
 [Run]
 ; 1. Initialize PostgreSQL cluster if data folder doesn't exist
 Filename: "{app}\pgsql\bin\initdb.exe"; Parameters: "-D ""{app}\data"" -U postgres -A trust --encoding=UTF8 --locale=C --no-instructions"; WorkingDir: "{app}\pgsql\bin"; Flags: runhidden skipifdoesntexist; StatusMsg: "Initializing local database cluster..."; Check: NeedsDbInit
 
-; 2. Temporarily start PostgreSQL on port 5433 to run bootstrap & migrations
-Filename: "{app}\pgsql\bin\pg_ctl.exe"; Parameters: "start -D ""{app}\data"" -o ""-p 5433"" -l ""{app}\data\init_pg.log"" -w"; WorkingDir: "{app}\pgsql\bin"; Flags: runhidden skipifdoesntexist; StatusMsg: "Preparing database service..."; Check: NeedsDbInit
+; 2. Add Windows Firewall rule if task selected
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""PrathamOne EduOS Local Network"" dir=in action=allow protocol=TCP localport=2026"; Flags: runhidden; Tasks: firewallrule
 
-; 3. Run bootstrap migration and administrator seed
-Filename: "{app}\python\python.exe"; Parameters: """{app}\scripts\windows_bootstrap.py"" --admin-password=""{code:GetAdminPassword}"" --db-port=5433"; WorkingDir: "{app}"; Flags: runhidden skipifdoesntexist; StatusMsg: "Configuring initial academic masters and security credentials..."; Check: HasPythonExe
-
-; 4. Stop temporary PostgreSQL
-Filename: "{app}\pgsql\bin\pg_ctl.exe"; Parameters: "stop -D ""{app}\data"" -m fast"; WorkingDir: "{app}\pgsql\bin"; Flags: runhidden skipifdoesntexist; Check: NeedsDbInit
-
-; 5. Add Windows Firewall rule if task selected
-Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""PrathamOne EduOS Local Network"" dir=in action=allow protocol=TCP localport=8000"; Flags: runhidden; Tasks: firewallrule
-
-; 6. Option to launch immediately
-Filename: "{app}\python\pythonw.exe"; Parameters: """{app}\scripts\windows_launcher.py"""; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+; 3. Option to launch immediately
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
-; Stop running services
-Filename: "taskkill"; Parameters: "/F /IM python.exe /FI ""WINDOWTITLE eq PrathamOne*"""; Flags: runhidden; RunOnceId: "StopPython"
-Filename: "{app}\pgsql\bin\pg_ctl.exe"; Parameters: "stop -D ""{app}\data"" -m fast"; WorkingDir: "{app}\pgsql\bin"; Flags: runhidden skipifdoesntexist; RunOnceId: "StopPostgres"
+; Stop running services cleanly via native Stop executable
+Filename: "{app}\StopPrathamOne.exe"; Flags: runhidden skipifdoesntexist; RunOnceId: "StopPrathamOne"
+Filename: "taskkill"; Parameters: "/F /IM PrathamOne.exe /IM pythonw.exe /IM postgres.exe"; Flags: runhidden; RunOnceId: "StopPython"
 ; Remove firewall rule
 Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""PrathamOne EduOS Local Network"""; Flags: runhidden; RunOnceId: "RemoveFirewall"
 
 [Code]
 var
   ConfigPage: TInputQueryWizardPage;
+  LogoPage: TInputFileWizardPage;
+  AcademicPage: TInputOptionWizardPage;
+  MediumPage: TInputOptionWizardPage;
   AdminPasswordValue: String;
   DbPortValue: String;
+
+function InitializeSetup: Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := True;
+  // 1. Terminate any previous running or stuck instances so files are not locked
+  Exec('taskkill.exe', '/F /IM PrathamOne.exe /IM pythonw.exe /IM postgres.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  // 2. Remove stale database lock if updating/reinstalling
+  if FileExists(ExpandConstant('{autopf}\{#MyAppName}\data\postmaster.pid')) then
+  begin
+    DeleteFile(ExpandConstant('{autopf}\{#MyAppName}\data\postmaster.pid'));
+  end;
+end;
 
 function HasPythonExe: Boolean;
 begin
@@ -157,22 +170,73 @@ end;
 
 procedure InitializeWizard;
 begin
-  // Create Custom Configuration Page for non-technical operator
+  // Create Custom Configuration Page for institute details and administrator credentials
   ConfigPage := CreateInputQueryPage(wpSelectDir,
-    'Coaching Institute & Administrator Setup',
-    'Set up initial institute credentials',
-    'Please enter your coaching institute name and create a secure administrator password.');
+    'Institute & Academy Profile Setup',
+    'Personalize PrathamOne EduOS for your coaching institute, academy, or school',
+    'Please enter your institution details and create a secure administrator password. These details will appear on student admission forms, receipts, and marksheets:');
 
-  ConfigPage.Add('Coaching Institute Name:', False);
-  ConfigPage.Add('Administrator Username:', False);
+  ConfigPage.Add('Coaching Institute / Academy / School Name:', False);
+  ConfigPage.Add('Primary Branch / Campus Name:', False);
+  ConfigPage.Add('Campus Address & City:', False);
+  ConfigPage.Add('Helpline / Contact Phone:', False);
   ConfigPage.Add('Administrator Password (min 14 characters):', True);
   ConfigPage.Add('Confirm Administrator Password:', True);
 
   // Set default pre-filled values
-  ConfigPage.Values[0] := 'Prashant Academy Coaching Institute';
-  ConfigPage.Values[1] := 'admin';
-  ConfigPage.Values[2] := 'PrathamOne2026!Admin';
-  ConfigPage.Values[3] := 'PrathamOne2026!Admin';
+  ConfigPage.Values[0] := 'Your Academy Name';
+  ConfigPage.Values[1] := 'Main Campus';
+  ConfigPage.Values[2] := '123 Education Hub, MG Road';
+  ConfigPage.Values[3] := '9876543210';
+  ConfigPage.Values[4] := 'PrathamOne2026!Admin';
+  ConfigPage.Values[5] := 'PrathamOne2026!Admin';
+
+  // Academy Official Logo Selection Page (Optional)
+  LogoPage := CreateInputFilePage(ConfigPage.ID,
+    'Official Academy Crest or Logo (Optional)',
+    'Select your coaching institute or school logo image',
+    'Choose an image file (.png, .jpg, .jpeg) for your receipts, identity cards, and portal. If you do not have one ready right now, leave it blank for an automated prestigious academic crest:');
+  LogoPage.Add('Official Logo Image File (.png, .jpg):', 'Image files (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|All files (*.*)|*.*', '.png');
+
+  // Academic Boards Selection Page
+  AcademicPage := CreateInputOptionPage(LogoPage.ID,
+    'Educational Boards & Academic Curriculum',
+    'Select the examination boards taught at your coaching institute',
+    'The installer will pre-populate official subjects, curriculum mappings, and batches for your selected boards:',
+    False, True);
+
+  AcademicPage.Add('Maharashtra State Board (MSBSHSE - SSC & HSC)');
+  AcademicPage.Add('Central Board of Secondary Education (CBSE)');
+  AcademicPage.Add('Council for Indian School Certificate Exams (ICSE / ISC)');
+  AcademicPage.Add('Gujarat Secondary & Higher Secondary Board (GSEB)');
+  AcademicPage.Add('Competitive Entrance Coaching (IIT-JEE / NEET-UG / State CETs)');
+  AcademicPage.Add('Pan-India State Boards (UP, Karnataka, Tamil Nadu, WB, etc.)');
+
+  AcademicPage.Values[0] := True;
+  AcademicPage.Values[1] := True;
+  AcademicPage.Values[2] := True;
+  AcademicPage.Values[3] := True;
+  AcademicPage.Values[4] := True;
+  AcademicPage.Values[5] := True;
+
+  // Medium of Instruction Selection Page
+  MediumPage := CreateInputOptionPage(AcademicPage.ID,
+    'Instruction Mediums & Teaching Languages',
+    'Select active mediums of instruction at your coaching institute',
+    'Choose the teaching languages used for class batches and academic divisions:',
+    False, True);
+
+  MediumPage.Add('English Medium (Universal)');
+  MediumPage.Add('Semi-English Medium (Vernacular with English Science & Maths)');
+  MediumPage.Add('Hindi Medium');
+  MediumPage.Add('Marathi Medium');
+  MediumPage.Add('Gujarati Medium');
+
+  MediumPage.Values[0] := True;
+  MediumPage.Values[1] := True;
+  MediumPage.Values[2] := True;
+  MediumPage.Values[3] := True;
+  MediumPage.Values[4] := True;
 
   DbPortValue := '5432';
 end;
@@ -184,26 +248,78 @@ begin
   begin
     if Length(Trim(ConfigPage.Values[0])) = 0 then
     begin
-      MsgBox('Please enter your coaching institute name.', mbError, MB_OK);
+      MsgBox('Please enter your coaching institute or school name.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    if Length(ConfigPage.Values[2]) < 14 then
+    if Length(ConfigPage.Values[4]) < 14 then
     begin
       MsgBox('The administrator password must contain at least 14 characters for security.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    if ConfigPage.Values[2] <> ConfigPage.Values[3] then
+    if ConfigPage.Values[4] <> ConfigPage.Values[5] then
     begin
       MsgBox('The administrator passwords do not match. Please re-enter them.', mbError, MB_OK);
       Result := False;
       Exit;
     end;
 
-    AdminPasswordValue := ConfigPage.Values[2];
+    AdminPasswordValue := ConfigPage.Values[4];
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  JsonContent: String;
+  SelectedBoards: String;
+  SelectedMediums: String;
+  EscapedLogoPath: String;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    SelectedBoards := '';
+    if AcademicPage.Values[0] then SelectedBoards := SelectedBoards + 'MSBSHSE,';
+    if AcademicPage.Values[1] then SelectedBoards := SelectedBoards + 'CBSE,';
+    if AcademicPage.Values[2] then SelectedBoards := SelectedBoards + 'ICSE,';
+    if AcademicPage.Values[3] then SelectedBoards := SelectedBoards + 'GSEB,';
+    if AcademicPage.Values[4] then SelectedBoards := SelectedBoards + 'COMPETITIVE,';
+    if AcademicPage.Values[5] then SelectedBoards := SelectedBoards + 'ALL_STATE,';
+    if Length(SelectedBoards) > 0 then
+      SetLength(SelectedBoards, Length(SelectedBoards) - 1)
+    else
+      SelectedBoards := 'MSBSHSE,CBSE,ICSE,GSEB,COMPETITIVE';
+
+    SelectedMediums := '';
+    if MediumPage.Values[0] then SelectedMediums := SelectedMediums + 'English,';
+    if MediumPage.Values[1] then SelectedMediums := SelectedMediums + 'Semi-English,';
+    if MediumPage.Values[2] then SelectedMediums := SelectedMediums + 'Hindi,';
+    if MediumPage.Values[3] then SelectedMediums := SelectedMediums + 'Marathi,';
+    if MediumPage.Values[4] then SelectedMediums := SelectedMediums + 'Gujarati,';
+    if Length(SelectedMediums) > 0 then
+      SetLength(SelectedMediums, Length(SelectedMediums) - 1)
+    else
+      SelectedMediums := 'English,Semi-English,Hindi,Marathi,Gujarati';
+
+    EscapedLogoPath := LogoPage.Values[0];
+    StringChangeEx(EscapedLogoPath, '\', '\\', True);
+
+    JsonContent := '{' + #13#10 +
+      '  "institute_name": "' + ConfigPage.Values[0] + '",' + #13#10 +
+      '  "branch_name": "' + ConfigPage.Values[1] + '",' + #13#10 +
+      '  "address": "' + ConfigPage.Values[2] + '",' + #13#10 +
+      '  "phone": "' + ConfigPage.Values[3] + '",' + #13#10 +
+      '  "logo_path": "' + EscapedLogoPath + '",' + #13#10 +
+      '  "admin_username": "admin",' + #13#10 +
+      '  "admin_password": "' + AdminPasswordValue + '",' + #13#10 +
+      '  "boards": "' + SelectedBoards + '",' + #13#10 +
+      '  "mediums": "' + SelectedMediums + '",' + #13#10 +
+      '  "port": 2026' + #13#10 +
+      '}';
+
+    SaveStringToFile(ExpandConstant('{app}\setup_config.json'), JsonContent, False);
   end;
 end;
 

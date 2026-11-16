@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-15
+#  * @updated     2026-11-16
 #  *
 #  * @description Windows Desktop & System Tray Launcher: manages local PostgreSQL service,
 #  */
@@ -64,7 +64,7 @@ class PrathamOneManager:
         self.backend_dir = self.root_dir / "backend"
         self.pgsql_dir = self.root_dir / "pgsql"
         self.data_dir = self.root_dir / "data"
-        self.preferred_port = int(os.getenv("PORT", "8000"))
+        self.preferred_port = int(os.getenv("PORT", "2026"))
         self.port = self.preferred_port
         self.pg_port = 5432
         self.backend_proc = None
@@ -87,8 +87,38 @@ class PrathamOneManager:
             pass
         return False
 
+    def clean_stale_pid_file(self):
+        """Detect and remove stale postmaster.pid file if postgres is not running."""
+        pid_file = self.data_dir / "postmaster.pid"
+        if not pid_file.exists():
+            return
+        try:
+            content = pid_file.read_text(encoding="utf-8")
+            lines = content.splitlines()
+            if lines:
+                pid = int(lines[0].strip())
+                is_alive = False
+                if sys.platform == "win32":
+                    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+                    h = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+                    if h:
+                        ctypes.windll.kernel32.CloseHandle(h)
+                        is_alive = True
+                if not is_alive:
+                    print(f"[LAUNCHER] Cleaning stale database lock (PID {pid} is terminated).")
+                    pid_file.unlink(missing_ok=True)
+                else:
+                    print(f"[LAUNCHER] Active database process detected (PID {pid}).")
+        except Exception as e:
+            print(f"[LAUNCHER WARN] Stale PID check note: {e}")
+            try:
+                pid_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+
     def start_postgresql(self) -> bool:
         """Start embedded PostgreSQL if present and not already running."""
+        self.clean_stale_pid_file()
         pg_ctl = self.pgsql_dir / "bin" / "pg_ctl.exe"
         if not pg_ctl.exists():
             print("[LAUNCHER] Embedded PostgreSQL not detected at pgsql\\bin; assuming existing service.")
@@ -138,52 +168,77 @@ class PrathamOneManager:
         else:
             self.pg_port = 5432
 
-        # Check status
-        status_cmd = [str(pg_ctl), "status", "-D", str(self.data_dir)]
-        res = subprocess.run(status_cmd, capture_output=True, text=True)
-        if "server is running" in res.stdout:
-            print("[LAUNCHER] PostgreSQL service is already active.")
+        # Check if already active
+        if self.is_port_in_use(self.pg_port):
+            print(f"[LAUNCHER] PostgreSQL service is already active on port {self.pg_port}.")
             return True
 
         print(f"[LAUNCHER] Starting embedded PostgreSQL service on port {self.pg_port}...")
-        log_file = self.data_dir / "postgresql.log"
-        start_cmd = [str(pg_ctl), "start", "-D", str(self.data_dir), "-o", f"-p {self.pg_port}", "-l", str(log_file), "-w"]
-        res = subprocess.run(start_cmd, capture_output=True, text=True)
+        log_file = self.data_dir / "pg_server.log"
+        postgres_exe = self.pgsql_dir / "bin" / "postgres.exe"
+        flags = 0x08000000 if sys.platform == "win32" else 0
 
-        if res.returncode == 0:
-            print("[LAUNCHER] PostgreSQL started successfully.")
-            self.pg_managed = True
+        # Launch postgres.exe directly with CREATE_NO_WINDOW to eliminate cmd.exe console
+        try:
+            log_fp = open(str(log_file), "a", encoding="utf-8")
+            self.pg_proc = subprocess.Popen(
+                [str(postgres_exe), "-D", str(self.data_dir), "-p", str(self.pg_port)],
+                stdout=log_fp,
+                stderr=log_fp,
+                creationflags=flags,
+            )
+            # Wait up to 15 seconds for PostgreSQL port to open
+            started = False
+            for _ in range(30):
+                if self.is_port_in_use(self.pg_port):
+                    print("[LAUNCHER] PostgreSQL started successfully.")
+                    self.pg_managed = True
+                    started = True
+                    break
+                time.sleep(0.5)
 
-            # If .env does not exist or database is unmigrated, run bootstrap
-            env_file = self.root_dir / ".env"
-            bootstrap_script = self.root_dir / "scripts" / "windows_bootstrap.py"
-            if bootstrap_script.exists():
-                try:
-                    subprocess.run([
-                        sys.executable,
-                        str(bootstrap_script),
-                        "--admin-password=PrathamOne2026!Admin",
-                        f"--db-port={self.pg_port}"
-                    ], check=True)
-                    print("[LAUNCHER] Database schema and canonical masters verified.")
-                except Exception as b_exc:
-                    print(f"[LAUNCHER WARN] Bootstrap execution note: {b_exc}")
-
-            return True
-        else:
-            err_msg = f"Failed to start local database engine:\n{res.stderr.strip() or 'Port conflict or permission error.'}"
+            if not started:
+                raise TimeoutError("PostgreSQL did not start listening within timeout.")
+        except Exception as pg_err:
+            err_msg = f"Failed to start local database engine:\n{pg_err}"
             print(f"[LAUNCHER ERROR] {err_msg}")
             show_native_message("PrathamOne EduOS — Database Start Failed", err_msg, is_error=True)
             return False
 
+        # If .env does not exist or database is unmigrated, run bootstrap
+        env_file = self.root_dir / ".env"
+        bootstrap_script = self.root_dir / "scripts" / "windows_bootstrap.py"
+        if bootstrap_script.exists():
+            try:
+                subprocess.run([
+                    sys.executable,
+                    str(bootstrap_script),
+                    f"--db-port={self.pg_port}"
+                ], check=True, creationflags=flags)
+                print("[LAUNCHER] Database schema and canonical masters verified.")
+            except Exception as b_exc:
+                print(f"[LAUNCHER WARN] Bootstrap execution note: {b_exc}")
+
+        return True
+
     def stop_postgresql(self):
         """Stop embedded PostgreSQL gracefully."""
-        pg_ctl = self.pgsql_dir / "bin" / "pg_ctl.exe"
-        if pg_ctl.exists() and self.data_dir.exists() and self.pg_managed:
+        if hasattr(self, "pg_proc") and self.pg_proc and self.pg_proc.poll() is None:
             print("[LAUNCHER] Stopping embedded PostgreSQL service...")
-            stop_cmd = [str(pg_ctl), "stop", "-D", str(self.data_dir), "-m", "fast"]
-            subprocess.run(stop_cmd, capture_output=True)
+            self.pg_proc.terminate()
+            try:
+                self.pg_proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.pg_proc.kill()
             print("[LAUNCHER] PostgreSQL stopped.")
+        else:
+            pg_ctl = self.pgsql_dir / "bin" / "pg_ctl.exe"
+            flags = 0x08000000 if sys.platform == "win32" else 0
+            if pg_ctl.exists() and self.data_dir.exists() and self.pg_managed:
+                print("[LAUNCHER] Stopping embedded PostgreSQL service...")
+                stop_cmd = [str(pg_ctl), "stop", "-D", str(self.data_dir), "-m", "fast"]
+                subprocess.run(stop_cmd, capture_output=True, creationflags=flags)
+                print("[LAUNCHER] PostgreSQL stopped.")
 
     def start_backend(self):
         """Launch FastAPI Uvicorn server in background."""
@@ -195,7 +250,7 @@ class PrathamOneManager:
                 sys.exit(0)
             else:
                 # Occupied by another application; pick next available port
-                self.port = find_free_port(8001)
+                self.port = find_free_port(2027)
                 print(f"[LAUNCHER] Port {self.preferred_port} occupied; assigned available port: {self.port}")
 
         print(f"[LAUNCHER] Starting PrathamOne EduOS backend on port {self.port}...")
@@ -217,6 +272,9 @@ class PrathamOneManager:
         if static_dist.exists():
             env["STATIC_DIR"] = str(static_dist)
 
+        # Ensure backend connects to the active PostgreSQL port
+        env["DATABASE_URL"] = f"postgresql+asyncpg://postgres:postgres@localhost:{self.pg_port}/prashant_academy"
+
         cmd = [
             sys.executable,
             "-m",
@@ -229,7 +287,15 @@ class PrathamOneManager:
             "--log-level",
             "info",
         ]
-        self.backend_proc = subprocess.Popen(cmd, cwd=str(self.backend_dir), env=env)
+        flags = 0x08000000 if sys.platform == "win32" else 0
+        self.backend_proc = subprocess.Popen(
+            cmd,
+            cwd=str(self.backend_dir),
+            env=env,
+            creationflags=flags,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     def stop_backend(self):
         """Terminate backend process cleanly."""

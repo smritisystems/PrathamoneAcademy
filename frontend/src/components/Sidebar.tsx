@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-15
+ * @updated     2026-11-16
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -633,20 +633,17 @@ const isStaffActive = location.pathname.startsWith('/staff')
           >
             <div className="flex items-center gap-3 min-w-0">
               <div
-                style={{
-                  background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
-                }}
-                className="w-9 h-9 rounded-xl p-0.5 shadow-md flex-shrink-0 flex items-center justify-center overflow-hidden"
+                className="w-9 h-9 rounded-xl bg-white p-1 shadow-md shadow-black/25 ring-1 ring-white/20 flex-shrink-0 flex items-center justify-center overflow-hidden"
               >
                 {hasValidLogo ? (
                   <img
                     src={branding.assets.logoUrl}
                     alt={branding.academyName}
                     onError={() => setLogoLoadFailed(true)}
-                    className="w-full h-full object-cover rounded-lg"
+                    className="w-full h-full object-contain rounded-lg"
                   />
                 ) : (
-                  <div className="w-full h-full bg-slate-900/60 backdrop-blur-xs rounded-lg flex items-center justify-center font-bold text-xs text-white">
+                  <div className="w-full h-full bg-primary-600 rounded-lg flex items-center justify-center font-bold text-xs text-white">
                     {branding.monogram}
                   </div>
                 )}
@@ -843,25 +840,22 @@ const isStaffActive = location.pathname.startsWith('/staff')
           </div>
           {/* PrathamOne EduOS Platform Footnote */}
           {!isCollapsed ? (
-            <div className="px-4 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
-              <div className="flex items-center gap-2 truncate">
-                <div className="w-4 h-4 rounded bg-white/10 border border-white/10 flex items-center justify-center p-0.5 shrink-0">
-                  <img
-                    src={branding.assets.appIconUrl}
-                    alt="PrathamOne EduOS"
-                    className="w-full h-full object-contain filter brightness-125"
-                  />
-                </div>
-                <span className="font-medium text-slate-300 truncate">{branding.suiteName}</span>
+            <div className="px-3.5 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
+              <div className="flex items-center min-w-0 pr-2">
+                <img
+                  src="/artwork/16112026/001/fl3.svg"
+                  alt="PrathamOne EduOS"
+                  className="h-6 w-auto max-w-[170px] object-contain"
+                />
               </div>
-              <span className="font-mono text-slate-400 text-[9.5px]">{branding.versionDisplay}</span>
+              <span className="font-mono text-slate-400 text-[9.5px] shrink-0">{branding.versionDisplay}</span>
             </div>
           ) : (
-            <div className="py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-center" title={`${branding.suiteName} ${branding.versionDisplay}`}>
+            <div className="py-2.5 px-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-center" title={`${branding.suiteName} ${branding.versionDisplay}`}>
               <img
-                src={branding.assets.appIconUrl}
+                src="/artwork/16112026/001/fl3.svg"
                 alt="PrathamOne EduOS"
-                className="w-4 h-4 object-contain opacity-80 hover:opacity-100 transition-opacity"
+                className="h-5 w-auto max-w-[54px] object-contain opacity-90 hover:opacity-100 transition-opacity"
               />
             </div>
           )}
@@ -910,20 +904,17 @@ const isStaffActive = location.pathname.startsWith('/staff')
         >
           <div className="flex items-center gap-3 min-w-0">
             <div
-              style={{
-                background: `linear-gradient(135deg, ${branding.colors.primary} 0%, ${branding.colors.secondary} 100%)`,
-              }}
-              className="w-10 h-10 rounded-xl p-0.5 shadow-lg flex-shrink-0 flex items-center justify-center overflow-hidden"
+              className="w-10 h-10 rounded-xl bg-white p-1 shadow-md shadow-black/25 ring-1 ring-white/20 flex-shrink-0 flex items-center justify-center overflow-hidden"
             >
               {hasValidLogo ? (
                 <img
                   src={branding.assets.logoUrl}
                   alt={branding.academyName}
                   onError={() => setLogoLoadFailed(true)}
-                  className="w-full h-full object-cover rounded-[10px]"
+                  className="w-full h-full object-contain rounded-lg"
                 />
               ) : (
-                <div className="w-full h-full bg-slate-900/60 backdrop-blur-xs rounded-[10px] flex items-center justify-center font-black text-xs text-white">
+                <div className="w-full h-full bg-primary-600 rounded-lg flex items-center justify-center font-black text-xs text-white">
                   {branding.monogram}
                 </div>
               )}
@@ -2683,25 +2674,22 @@ if (item.to === '/staff') {
         </div>
         {/* PrathamOne EduOS Platform Footnote */}
         {!isCollapsed ? (
-          <div className="px-4 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
-            <div className="flex items-center gap-1.5 truncate">
-              <div className="w-4 h-4 rounded bg-white/10 border border-white/10 flex items-center justify-center p-0.5 shrink-0">
-                <img
-                  src={branding.assets.appIconUrl}
-                  alt="PrathamOne EduOS"
-                  className="w-full h-full object-contain filter brightness-125"
-                />
-              </div>
-              <span className="font-medium text-slate-300 truncate">{branding.suiteName}</span>
+          <div className="px-3.5 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
+            <div className="flex items-center min-w-0 pr-2">
+              <img
+                src="/artwork/16112026/001/fl3.svg"
+                alt="PrathamOne EduOS"
+                className="h-6 w-auto max-w-[170px] object-contain"
+              />
             </div>
-            <span className="font-mono text-slate-400 text-[9.5px]">{branding.versionDisplay}</span>
+            <span className="font-mono text-slate-400 text-[9.5px] shrink-0">{branding.versionDisplay}</span>
           </div>
         ) : (
-          <div className="py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-center" title={`${branding.suiteName} ${branding.versionDisplay}`}>
+          <div className="py-2.5 px-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-center" title={`${branding.suiteName} ${branding.versionDisplay}`}>
             <img
-              src={branding.assets.appIconUrl}
+              src="/artwork/16112026/001/fl3.svg"
               alt="PrathamOne EduOS"
-              className="w-4 h-4 object-contain opacity-80 hover:opacity-100 transition-opacity"
+              className="h-5 w-auto max-w-[54px] object-contain opacity-90 hover:opacity-100 transition-opacity"
             />
           </div>
         )}

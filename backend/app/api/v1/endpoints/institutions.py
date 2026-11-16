@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-14
+#  * @updated     2026-11-16
 #  *
 #  * @description API endpoints for multi-branch institute profile configuration and campus metadata.
 #  */
@@ -24,15 +24,19 @@ from app.core.config import PRODUCT_APP_ICON_URL
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access
 from app.models.institution import Institution
+from app.models.academic_year import AcademicYear
 from app.models.settings import InstitutionSetting
 from pydantic import BaseModel
 
 router = APIRouter()
+public_router = APIRouter()
 
 
 class InstitutionCreate(BaseModel):
     name: str
     code: str
+    short_name: Optional[str] = None
+    tagline: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
@@ -40,10 +44,13 @@ class InstitutionCreate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
+    institute_type: Optional[str] = "Coaching Institute"
 
 
 class InstitutionUpdate(BaseModel):
     name: Optional[str] = None
+    short_name: Optional[str] = None
+    tagline: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
@@ -51,6 +58,13 @@ class InstitutionUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
+    logo_url: Optional[str] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
+    accent_color: Optional[str] = None
+    institute_type: Optional[str] = None
+    establishment_year: Optional[int] = None
+    registration_number: Optional[str] = None
 
 
 @router.get("/")
@@ -111,6 +125,7 @@ async def create_institution(
 
 
 @router.get("/public/branding")
+@public_router.get("/public/branding")
 async def get_public_institution_branding(
     institution_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
@@ -133,18 +148,48 @@ async def get_public_institution_branding(
     )
     b_settings = {s.key: s.value for s in settings_res.scalars().all()}
 
+    # Resolve active academic session
+    ay_res = await db.execute(
+        select(AcademicYear).where(
+            AcademicYear.institution_id == inst.id,
+            AcademicYear.is_current == True,
+        ).limit(1)
+    )
+    active_ay = ay_res.scalar_one_or_none()
+    if not active_ay:
+        ay_res = await db.execute(
+            select(AcademicYear).where(
+                AcademicYear.institution_id == inst.id,
+                AcademicYear.is_active == True,
+            ).order_by(AcademicYear.id.desc()).limit(1)
+        )
+        active_ay = ay_res.scalar_one_or_none()
+    academic_session = f"Academic Session {active_ay.name}" if active_ay else "Academic Session 2026–2027"
+
     def _safe_int(val, default):
         try:
             return int(val) if val is not None else default
         except (ValueError, TypeError):
             return default
 
+    fallback_monogram = "YA"
+    if inst.name and inst.name != "Your Academy Name":
+        parts = inst.name.split()
+        if len(parts) >= 2:
+            fallback_monogram = f"{parts[0][0]}{parts[1][0]}".upper()
+        elif len(parts) == 1 and len(parts[0]) >= 2:
+            fallback_monogram = parts[0][:2].upper()
+
     return {
         "id": inst.id,
         "name": inst.name,
         "code": inst.code,
-        "short_name": inst.short_name or "PA",
-        "tagline": inst.tagline or "Learn • Practice • Achieve",
+        "short_name": inst.short_name or fallback_monogram,
+        "tagline": inst.tagline or "Empowering Minds • Inspiring Excellence • Shaping Futures",
+        "academic_session": academic_session,
+        "branch_name": inst.city or "Main Campus",
+        "institute_type": inst.institute_type or "Coaching Institute",
+        "establishment_year": inst.establishment_year or 2018,
         "logo_url": inst.logo_url,
         "favicon_url": inst.favicon_url or PRODUCT_APP_ICON_URL,
         "primary_color": inst.primary_color or "#0B2D6B",
