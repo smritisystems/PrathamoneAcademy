@@ -41,6 +41,7 @@ import TrainingModeBanner from './common/TrainingModeBanner'
 import LicenseModeBanner from './common/LicenseModeBanner'
 import EnvironmentSwitchModal from './common/EnvironmentSwitchModal'
 import ContextualHelpButton from './common/ContextualHelpButton'
+import { BottomBarDrawer } from './common/BottomBarDrawer'
 import { FlaskConical, ShieldCheck } from 'lucide-react'
 
 // Fallback authoritative academic sessions ensuring zero blank dropdown states
@@ -334,6 +335,9 @@ export default function Layout() {
         {/* Application Fixed Bottom Footer */}
         {!hideFooterShell && <Footer />}
       </div>
+
+      {/* Floating Bottom Bar Drawer (Chats & EduBoard) */}
+      <BottomBarDrawer />
 
       {switchTarget && (
         <EnvironmentSwitchModal

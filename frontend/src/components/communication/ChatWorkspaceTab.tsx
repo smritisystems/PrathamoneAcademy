@@ -21,14 +21,14 @@ import {
   MessageSquare, Send, Users, Shield, Clock, CheckCircle2,
   AlertTriangle, Search, Plus, Moon, HelpCircle, Check,
   Sparkles, RefreshCw, X, Radio, ArrowRight, Lock, BookOpen,
-  AtSign, Download, Eye, FileText, UserCheck, Receipt, GraduationCap
+  AtSign, Download, Eye, FileText, UserCheck, Receipt, GraduationCap, ChevronLeft
 } from 'lucide-react'
 import { chatApi } from '../../api/endpoints'
 import type { ChatRoomItem, ChatMessageItem, MentionableEntityItem } from '../../types'
 import { useAuthStore, isUserSysAdmin } from '../../store/authStore'
 import { useBranding } from '../../config/branding'
 
-export function ChatWorkspaceTab() {
+export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}) {
   const { user } = useAuthStore()
   const branding = useBranding()
   const isSysAdmin = isUserSysAdmin(user)
@@ -38,6 +38,7 @@ export function ChatWorkspaceTab() {
   }, [user])
 
   // State
+  const [compactPane, setCompactPane] = useState<'rooms' | 'chat'>('rooms')
   const [rooms, setRooms] = useState<ChatRoomItem[]>([])
   const [activeRoomId, setActiveRoomId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessageItem[]>([])
@@ -484,11 +485,19 @@ export function ChatWorkspaceTab() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row h-[750px]">
+    <div
+      className={`bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row ${
+        compact ? 'h-full border-none shadow-none rounded-none' : 'h-[750px]'
+      }`}
+    >
       {/* ------------------------------------------------------------------ */}
       {/* LEFT PANE: Channels & Doubt Desks Explorer */}
       {/* ------------------------------------------------------------------ */}
-      <div className="w-full md:w-80 border-r border-slate-200 bg-slate-50 flex flex-col h-full">
+      <div
+        className={`${
+          compact && compactPane !== 'rooms' ? 'hidden' : 'flex'
+        } w-full ${compact ? 'md:w-full' : 'md:w-80'} border-r border-slate-200 bg-slate-50 flex-col h-full`}
+      >
         {/* Channel Search & Filters */}
         <div className="p-4 border-b border-slate-200 space-y-3">
           <div className="flex items-center justify-between">
@@ -566,7 +575,10 @@ export function ChatWorkspaceTab() {
               return (
                 <button
                   key={room.id}
-                  onClick={() => setActiveRoomId(room.id)}
+                  onClick={() => {
+                    setActiveRoomId(room.id)
+                    if (compact) setCompactPane('chat')
+                  }}
                   className={`w-full text-left p-3.5 transition-colors flex items-start gap-3 ${
                     isActive
                       ? 'bg-emerald-50/70 border-l-4 border-emerald-600'
@@ -617,27 +629,43 @@ export function ChatWorkspaceTab() {
       {/* ------------------------------------------------------------------ */}
       {/* RIGHT PANE: Chat Stream & Message Composer */}
       {/* ------------------------------------------------------------------ */}
-      <div className="flex-1 flex flex-col h-full bg-slate-50/30">
+      <div
+        className={`${
+          compact && compactPane !== 'chat' ? 'hidden' : 'flex'
+        } flex-1 flex-col h-full bg-slate-50/30`}
+      >
         {activeRoom ? (
           <>
             {/* Room Header */}
-            <div className="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-bold text-slate-900 text-sm">{activeRoom.name}</h2>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                      activeRoom.room_type === 'BATCH_DOUBT'
-                        ? 'bg-indigo-100 text-indigo-700'
-                        : 'bg-emerald-100 text-emerald-700'
-                    }`}
+            <div className="p-3 sm:p-4 bg-white border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                {compact && (
+                  <button
+                    type="button"
+                    onClick={() => setCompactPane('rooms')}
+                    title="Back to Channels"
+                    className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors shrink-0"
                   >
-                    {activeRoom.room_type.replace('_', ' ')}
-                  </span>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-bold text-slate-900 text-sm truncate">{activeRoom.name}</h2>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${
+                        activeRoom.room_type === 'BATCH_DOUBT'
+                          ? 'bg-indigo-100 text-indigo-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
+                      {activeRoom.room_type.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5 truncate">
+                    {activeRoom.description || 'Institute collaboration channel'}
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {activeRoom.description || 'Institute collaboration channel'}
-                </p>
               </div>
 
               {/* Status Indicators */}

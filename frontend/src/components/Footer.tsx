@@ -19,11 +19,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Building2, X, ChevronDown, ChevronUp, MessageSquare, Presentation } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { institutionsApi } from '../api/endpoints'
 import { APP_CONFIG, BRANDING_CONFIG } from '../config/appConfig'
 import OrganizationBranding from './OrganizationBranding'
+import { useBottomBarDrawerStore } from '../store/bottomBarDrawerStore'
 
 export const FOOTER_COLLAPSED_KEY = 'pratham_footer_collapsed'
 
@@ -153,6 +154,7 @@ function useLiveConnectionStatus(): boolean {
 export default function Footer() {
   const location = useLocation()
   const { user, selectedInstitutionId, token } = useAuthStore()
+  const { activeDrawer, toggleDrawer } = useBottomBarDrawerStore()
   const isOnline = useLiveConnectionStatus()
   const [showAboutModal, setShowAboutModal] = useState(false)
 
@@ -297,8 +299,8 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Right: Expand Toggle Button */}
-          <div className="flex items-center gap-1 shrink-0">
+          {/* Right: Expand Toggle Button & Extreme Right Quick Action Launchers */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={toggleCollapsed}
@@ -311,6 +313,39 @@ export default function Footer() {
               <ChevronUp className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
               <span>Expand</span>
             </button>
+
+            {/* Extreme Right Quick Actions: Chats & EduBoard */}
+            <div className="flex items-center gap-1 pl-1 border-l border-slate-200">
+              <button
+                type="button"
+                onClick={() => toggleDrawer('chats')}
+                data-testid="footer-quick-chats-btn"
+                title="Quick Chats & Academic Doubts (Extreme Right)"
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
+                  activeDrawer === 'chats'
+                    ? 'bg-[#0B2D6B] text-white ring-2 ring-blue-400'
+                    : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200/80'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Chats</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleDrawer('boards')}
+                data-testid="footer-quick-boards-btn"
+                title="EduBoard Smart Classroom Whiteboard (Extreme Right)"
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
+                  activeDrawer === 'boards'
+                    ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300'
+                    : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80'
+                }`}
+              >
+                <Presentation className="w-3.5 h-3.5" />
+                <span>Boards</span>
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -432,6 +467,39 @@ export default function Footer() {
                   <ChevronDown className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
                   <span>Collapse</span>
                 </button>
+
+                {/* Extreme Right Quick Actions: Chats & EduBoard */}
+                <div className="flex items-center gap-1 pl-1.5 border-l border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => toggleDrawer('chats')}
+                    data-testid="footer-quick-chats-btn"
+                    title="Quick Chats & Academic Doubts (Extreme Right)"
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
+                      activeDrawer === 'chats'
+                        ? 'bg-[#0B2D6B] text-white ring-2 ring-blue-400'
+                        : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200/80'
+                    }`}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Chats</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleDrawer('boards')}
+                    data-testid="footer-quick-boards-btn"
+                    title="EduBoard Smart Classroom Whiteboard (Extreme Right)"
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
+                      activeDrawer === 'boards'
+                        ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300'
+                        : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80'
+                    }`}
+                  >
+                    <Presentation className="w-3.5 h-3.5" />
+                    <span>Boards</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
