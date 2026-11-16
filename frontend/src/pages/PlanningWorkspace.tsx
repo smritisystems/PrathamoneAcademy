@@ -24,7 +24,17 @@ import {
   ListTodo, Plus, RefreshCw, Rows3, Search,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { academicYearsApi, divisionsApi, planningApi, standardsApi, subjectsApi } from '../api/endpoints'
+import {
+  academicYearsApi,
+  divisionsApi,
+  examinationsApi,
+  homeworkApi,
+  leadsApi,
+  planningApi,
+  standardsApi,
+  studentsApi,
+  subjectsApi,
+} from '../api/endpoints'
 import { EditModeBar } from '../components/common'
 import Modal from '../components/Modal'
 import { hasPermission, useAuthStore } from '../store/authStore'
@@ -226,6 +236,8 @@ export default function PlanningWorkspace() {
   const [attachmentToRemove, setAttachmentToRemove] = useState<number | null>(null)
   const [referenceType, setReferenceType] = useState<(typeof referenceTypes)[number][0]>('student')
   const [referenceId, setReferenceId] = useState('')
+  const [pickerSearchQuery, setPickerSearchQuery] = useState('')
+  const [manualIdMode, setManualIdMode] = useState(false)
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)')
@@ -319,6 +331,70 @@ export default function PlanningWorkspace() {
     queryFn: () => subjectsApi.list({ standard_id: selectedDivision!.standard_id }),
     enabled: formOpen && !!selectedDivision,
   })
+
+  const { data: studentSearchResults, isFetching: isSearchingStudents } = useQuery({
+    queryKey: ['planning-search-students', pickerSearchQuery],
+    queryFn: async () => {
+      const res = await studentsApi.list({ search: pickerSearchQuery.trim(), page_size: 8 })
+      return res.data?.data || []
+    },
+    enabled: formOpen && referenceType === 'student' && !manualIdMode && pickerSearchQuery.trim().length >= 1,
+    staleTime: 30000,
+  })
+
+  const { data: leadSearchResults, isFetching: isSearchingLeads } = useQuery({
+    queryKey: ['planning-search-leads', pickerSearchQuery],
+    queryFn: async () => {
+      const res = await leadsApi.getLeads({ search: pickerSearchQuery.trim(), limit: 8 })
+      return res.data?.items || []
+    },
+    enabled: formOpen && referenceType === 'lead' && !manualIdMode && pickerSearchQuery.trim().length >= 1,
+    staleTime: 30000,
+  })
+
+  const { data: examSearchResults, isFetching: isSearchingExams } = useQuery({
+    queryKey: ['planning-search-exams', selectedInstitutionId],
+    queryFn: async () => {
+      const res = await examinationsApi.list()
+      return Array.isArray(res.data) ? res.data : []
+    },
+    enabled: formOpen && referenceType === 'examination' && !manualIdMode,
+    staleTime: 60000,
+  })
+
+  const { data: hwSearchResults, isFetching: isSearchingHw } = useQuery({
+    queryKey: ['planning-search-hw', pickerSearchQuery],
+    queryFn: async () => {
+      const res = await homeworkApi.listAssignments({ search: pickerSearchQuery.trim(), limit: 8 })
+      return res.data?.items || []
+    },
+    enabled: formOpen && referenceType === 'homework_assignment' && !manualIdMode && pickerSearchQuery.trim().length >= 1,
+    staleTime: 30000,
+  })
+
+  const addReference = (sourceType: string, sourceRecordId: number, label?: string) => {
+    if (!Number.isSafeInteger(sourceRecordId) || sourceRecordId < 1) {
+      toast.error('Enter a valid linked record ID.')
+      return
+    }
+    if (form.references.some((reference) => reference.source_type === sourceType && reference.source_record_id === sourceRecordId)) {
+      toast.error('That record is already linked.')
+      return
+    }
+    setForm({
+      ...form,
+      references: [
+        ...form.references,
+        {
+          source_type: sourceType,
+          source_record_id: sourceRecordId,
+          label: label || undefined,
+        },
+      ],
+    })
+    setReferenceId('')
+    setPickerSearchQuery('')
+  }
   const { data: historyResponse, isFetching: isHistoryLoading, refetch: loadHistory } = useQuery({
     queryKey: ['planning-history', activeItem?.source_id],
     queryFn: () => planningApi.getHistory(Number(activeItem!.source_id)),
@@ -406,6 +482,8 @@ export default function PlanningWorkspace() {
     setEditingItem(null)
     setForm(initialForm(selectedAcademicYearId))
     setReferenceId('')
+    setPickerSearchQuery('')
+    setManualIdMode(false)
     setFormOpen(true)
   }
 
@@ -416,6 +494,8 @@ export default function PlanningWorkspace() {
     setConfirmCancel(false)
     setAttachmentToRemove(null)
     setReferenceId('')
+    setPickerSearchQuery('')
+    setManualIdMode(false)
     const itemTimeZone = item.timezone || timeZone
     setForm({
       title: item.title,
@@ -903,34 +983,175 @@ export default function PlanningWorkspace() {
             )}
             <fieldset className="md:col-span-2 rounded-lg border border-slate-200 p-3">
               <legend className="px-1 text-sm font-medium text-slate-700">Linked institutional records</legend>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <label className="flex-1 text-xs font-medium text-slate-600">Record type
-                  <select value={referenceType} onChange={(event) => setReferenceType(event.target.value as typeof referenceType)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <label className="flex-1 text-xs font-medium text-slate-600 sm:max-w-xs">Record type
+                  <select
+                    value={referenceType}
+                    onChange={(event) => {
+                      setReferenceType(event.target.value as typeof referenceType)
+                      setPickerSearchQuery('')
+                    }}
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  >
                     {referenceTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
                 </label>
-                <label className="w-full text-xs font-medium text-slate-600 sm:w-40">Record ID
-                  <input type="number" min={1} value={referenceId} onChange={(event) => setReferenceId(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const sourceRecordId = Number(referenceId)
-                    if (!Number.isSafeInteger(sourceRecordId) || sourceRecordId < 1) {
-                      toast.error('Enter a valid linked record ID.')
-                      return
-                    }
-                    if (form.references.some((reference) => reference.source_type === referenceType && reference.source_record_id === sourceRecordId)) {
-                      toast.error('That record is already linked.')
-                      return
-                    }
-                    setForm({ ...form, references: [...form.references, { source_type: referenceType, source_record_id: sourceRecordId }] })
-                    setReferenceId('')
-                  }}
-                  className="inline-flex items-center justify-center gap-1 self-end rounded-lg border px-3 py-2 text-sm font-semibold text-indigo-700"
-                >
-                  <Link2 className="h-4 w-4" /> Add link
-                </button>
+
+                {!manualIdMode && ['student', 'lead', 'examination', 'homework_assignment'].includes(referenceType) ? (
+                  <div className="relative flex-1">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">
+                        {referenceType === 'student' && 'Search student by name or admission #'}
+                        {referenceType === 'lead' && 'Search lead by applicant name'}
+                        {referenceType === 'examination' && 'Search examination by name'}
+                        {referenceType === 'homework_assignment' && 'Search homework assignment'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setManualIdMode(true)}
+                        className="text-[11px] text-indigo-600 hover:underline"
+                      >
+                        Enter ID manually
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={pickerSearchQuery}
+                        onChange={(e) => setPickerSearchQuery(e.target.value)}
+                        placeholder={
+                          referenceType === 'student' ? 'e.g. Ashwin, PA-2024...' :
+                          referenceType === 'lead' ? 'e.g. Candidate name...' :
+                          referenceType === 'examination' ? 'e.g. Mock test...' : 'e.g. Assignment title...'
+                        }
+                        className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-3 text-sm focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Autocomplete Dropdown */}
+                    {referenceType === 'student' && pickerSearchQuery.trim().length >= 1 && (
+                      <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                        {isSearchingStudents && <div className="p-3 text-xs text-slate-500">Searching students…</div>}
+                        {!isSearchingStudents && (studentSearchResults || []).length === 0 && (
+                          <div className="p-3 text-xs text-slate-500">No students found matching "{pickerSearchQuery}".</div>
+                        )}
+                        {(studentSearchResults || []).map((s: any) => {
+                          const fullName = `${s.first_name || ''} ${s.last_name || ''}`.trim()
+                          const label = `${fullName} (${s.admission_number || s.id})`
+                          return (
+                            <button
+                              type="button"
+                              key={s.id}
+                              onClick={() => addReference('student', s.id, label)}
+                              className="flex w-full items-center justify-between border-b border-slate-100 p-2 text-left text-xs hover:bg-indigo-50"
+                            >
+                              <span className="font-medium text-slate-800">{fullName} <span className="text-slate-500">· {s.admission_number}</span></span>
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600">ID #{s.id}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {referenceType === 'lead' && pickerSearchQuery.trim().length >= 1 && (
+                      <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                        {isSearchingLeads && <div className="p-3 text-xs text-slate-500">Searching leads…</div>}
+                        {!isSearchingLeads && (leadSearchResults || []).length === 0 && (
+                          <div className="p-3 text-xs text-slate-500">No leads found matching "{pickerSearchQuery}".</div>
+                        )}
+                        {(leadSearchResults || []).map((l: any) => {
+                          const label = `${l.student_name} (${l.stage || 'lead'})`
+                          return (
+                            <button
+                              type="button"
+                              key={l.id}
+                              onClick={() => addReference('lead', l.id, label)}
+                              className="flex w-full items-center justify-between border-b border-slate-100 p-2 text-left text-xs hover:bg-indigo-50"
+                            >
+                              <span className="font-medium text-slate-800">{l.student_name} <span className="text-slate-500">· {l.stage}</span></span>
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600">ID #{l.id}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {referenceType === 'examination' && (
+                      <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                        {isSearchingExams && <div className="p-3 text-xs text-slate-500">Loading examinations…</div>}
+                        {((examSearchResults || []) as any[])
+                          .filter((e) => !pickerSearchQuery.trim() || e.name?.toLowerCase().includes(pickerSearchQuery.trim().toLowerCase()))
+                          .slice(0, 8)
+                          .map((e: any) => (
+                            <button
+                              type="button"
+                              key={e.id}
+                              onClick={() => addReference('examination', e.id, e.name)}
+                              className="flex w-full items-center justify-between border-b border-slate-100 p-2 text-left text-xs hover:bg-indigo-50"
+                            >
+                              <span className="font-medium text-slate-800">{e.name}</span>
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600">ID #{e.id}</span>
+                            </button>
+                          ))}
+                      </div>
+                    )}
+
+                    {referenceType === 'homework_assignment' && pickerSearchQuery.trim().length >= 1 && (
+                      <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-lg">
+                        {isSearchingHw && <div className="p-3 text-xs text-slate-500">Searching assignments…</div>}
+                        {!isSearchingHw && (hwSearchResults || []).length === 0 && (
+                          <div className="p-3 text-xs text-slate-500">No assignments found matching "{pickerSearchQuery}".</div>
+                        )}
+                        {(hwSearchResults || []).map((h: any) => (
+                          <button
+                            type="button"
+                            key={h.id}
+                            onClick={() => addReference('homework_assignment', h.id, h.title)}
+                            className="flex w-full items-center justify-between border-b border-slate-100 p-2 text-left text-xs hover:bg-indigo-50"
+                          >
+                            <span className="font-medium text-slate-800">{h.title}</span>
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600">ID #{h.id}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <label className="w-full text-xs font-medium text-slate-600 sm:w-44">
+                      <div className="mb-1 flex items-center justify-between">
+                        <span>Record ID</span>
+                        {['student', 'lead', 'examination', 'homework_assignment'].includes(referenceType) && (
+                          <button
+                            type="button"
+                            onClick={() => setManualIdMode(false)}
+                            className="text-[11px] text-indigo-600 hover:underline"
+                          >
+                            Search by name
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="number"
+                        min={1}
+                        value={referenceId}
+                        onChange={(event) => setReferenceId(event.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sourceRecordId = Number(referenceId)
+                        addReference(referenceType, sourceRecordId)
+                      }}
+                      className="inline-flex items-center justify-center gap-1 rounded-lg border px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+                    >
+                      <Link2 className="h-4 w-4" /> Add link
+                    </button>
+                  </>
+                )}
               </div>
               <p className="mt-2 text-xs text-slate-500">The server verifies the record exists in this institution; linked module records remain authoritative.</p>
               {form.references.length > 0 && (
@@ -938,8 +1159,10 @@ export default function PlanningWorkspace() {
                   {form.references.map((reference) => {
                     const label = referenceTypes.find(([value]) => value === reference.source_type)?.[1] || reference.source_type
                     return (
-                      <li key={`${reference.source_type}:${reference.source_record_id}`} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
-                        {label} #{reference.source_record_id}
+                      <li key={`${reference.source_type}:${reference.source_record_id}`} className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs text-indigo-900">
+                        <span className="font-semibold text-indigo-700">{label}:</span>
+                        <span>{reference.label || `#${reference.source_record_id}`}</span>
+                        {reference.label && <span className="font-mono text-[10px] text-indigo-400">#{reference.source_record_id}</span>}
                         <button
                           type="button"
                           aria-label={`Remove ${label} ${reference.source_record_id}`}
@@ -949,7 +1172,7 @@ export default function PlanningWorkspace() {
                               item.source_type !== reference.source_type || item.source_record_id !== reference.source_record_id,
                             ),
                           })}
-                          className="rounded-full p-0.5 hover:bg-slate-200"
+                          className="rounded-full p-0.5 hover:bg-indigo-200"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -998,7 +1221,21 @@ export default function PlanningWorkspace() {
               {activeItem.assignees.length > 0 && <p>Assigned: {activeItem.assignees.map((person) => person.name).join(', ')}</p>}
             </div>
             {activeItem.references.length > 0 && (
-              <div><h3 className="mb-1 text-sm font-semibold">Linked institutional records</h3><div className="flex flex-wrap gap-2">{activeItem.references.map((reference) => <span key={`${reference.source_type}:${reference.source_record_id}`} className="rounded bg-slate-100 px-2 py-1 text-xs">{reference.source_type} #{reference.source_record_id}</span>)}</div></div>
+              <div>
+                <h3 className="mb-1 text-sm font-semibold">Linked institutional records</h3>
+                <div className="flex flex-wrap gap-2">
+                  {activeItem.references.map((reference) => {
+                    const typeLabel = referenceTypes.find(([v]) => v === reference.source_type)?.[1] || reference.source_type
+                    return (
+                      <span key={`${reference.source_type}:${reference.source_record_id}`} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-800">
+                        <span className="font-semibold text-slate-600">{typeLabel}:</span>
+                        <span>{reference.label || `#${reference.source_record_id}`}</span>
+                        {reference.label && <span className="font-mono text-[10px] text-slate-400">#{reference.source_record_id}</span>}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
             )}
             {activeItem.attachments.length > 0 && (
               <div>

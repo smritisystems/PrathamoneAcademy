@@ -346,11 +346,113 @@ def _occurrence_dates(activity: Activity, start: date, end: date) -> list[date]:
     return result
 
 
+async def resolve_reference_labels(
+    db: AsyncSession,
+    references: list[ActivityReference],
+) -> dict[tuple[str, int], str]:
+    if not references:
+        return {}
+
+    labels: dict[tuple[str, int], str] = {}
+    by_type: dict[str, set[int]] = {}
+    for ref in references:
+        by_type.setdefault(ref.source_type, set()).add(ref.source_record_id)
+
+    # 1. Students
+    if "student" in by_type:
+        rows = await db.execute(
+            select(Student.id, Student.first_name, Student.last_name, Student.admission_number)
+            .where(Student.id.in_(by_type["student"]))
+        )
+        for sid, fname, lname, adm in rows.all():
+            full = f"{fname or ''} {lname or ''}".strip()
+            labels[("student", sid)] = f"{full} ({adm})" if adm else full
+
+    # 2. Leads
+    if "lead" in by_type:
+        rows = await db.execute(
+            select(Lead.id, Lead.student_name, Lead.stage)
+            .where(Lead.id.in_(by_type["lead"]))
+        )
+        for lid, name, stage in rows.all():
+            labels[("lead", lid)] = f"{name} ({stage})" if stage else name
+
+    # 3. Examinations
+    if "examination" in by_type:
+        rows = await db.execute(
+            select(Examination.id, Examination.name)
+            .where(Examination.id.in_(by_type["examination"]))
+        )
+        for eid, name in rows.all():
+            labels[("examination", eid)] = name
+
+    # 4. Homework Assignments
+    if "homework_assignment" in by_type:
+        rows = await db.execute(
+            select(HomeworkAssignment.id, HomeworkAssignment.title)
+            .where(HomeworkAssignment.id.in_(by_type["homework_assignment"]))
+        )
+        for hid, title in rows.all():
+            labels[("homework_assignment", hid)] = title
+
+    # 5. Divisions / Classes
+    if "division" in by_type:
+        rows = await db.execute(
+            select(Division.id, Division.name, Standard.name)
+            .join(Standard, Standard.id == Division.standard_id)
+            .where(Division.id.in_(by_type["division"]))
+        )
+        for did, dname, sname in rows.all():
+            labels[("division", did)] = f"Class {sname} · {dname}"
+
+    # 6. Subjects
+    if "subject" in by_type:
+        rows = await db.execute(
+            select(Subject.id, Subject.name)
+            .where(Subject.id.in_(by_type["subject"]))
+        )
+        for suid, sname in rows.all():
+            labels[("subject", suid)] = sname
+
+    # 7. Academic Years
+    if "academic_year" in by_type:
+        rows = await db.execute(
+            select(AcademicYear.id, AcademicYear.name)
+            .where(AcademicYear.id.in_(by_type["academic_year"]))
+        )
+        for yid, yname in rows.all():
+            labels[("academic_year", yid)] = yname
+
+    # 8. Timetable
+    if "timetable_entry" in by_type:
+        rows = await db.execute(
+            select(TimetableEntry.id, Subject.name, Division.name)
+            .join(Division, Division.id == TimetableEntry.division_id)
+            .join(Subject, Subject.id == TimetableEntry.subject_id)
+            .where(TimetableEntry.id.in_(by_type["timetable_entry"]))
+        )
+        for tid, sname, dname in rows.all():
+            labels[("timetable_entry", tid)] = f"{sname} · {dname}"
+
+    # 9. Fee Invoices
+    if "fee_invoice" in by_type:
+        rows = await db.execute(
+            select(FeeInvoice.id, FeeInvoice.invoice_number, Student.first_name, Student.last_name)
+            .join(Student, Student.id == FeeInvoice.student_id)
+            .where(FeeInvoice.id.in_(by_type["fee_invoice"]))
+        )
+        for fid, num, fname, lname in rows.all():
+            labels[("fee_invoice", fid)] = f"Invoice #{num} ({fname or ''} {lname or ''}".strip() + ")"
+
+    return labels
+
+
 def _serialize_activity(
     activity: Activity,
     *,
     occurrence_date: Optional[date] = None,
     exceptions: Optional[set[date]] = None,
+    reference_labels: Optional[dict[tuple[str, int], str]] = None,
 ) -> dict[str, Any]:
     zone = _local_zone(activity.timezone)
     base_start = _aware_utc(activity.start_at)
@@ -409,6 +511,7 @@ def _serialize_activity(
             {
                 "source_type": item.source_type,
                 "source_record_id": item.source_record_id,
+                "label": (reference_labels or {}).get((item.source_type, item.source_record_id)),
             }
             for item in activity.references
         ],
@@ -433,16 +536,19 @@ def _serialize_activity(
 
 
 def expand_activity(
-    activity: Activity, start: date, end: date
+    activity: Activity,
+    start: date,
+    end: date,
+    reference_labels: Optional[dict[tuple[str, int], str]] = None,
 ) -> list[dict[str, Any]]:
     exceptions = {exception.occurrence_date for exception in activity.recurrence_exceptions}
     if activity.recurrence_frequency and activity.start_at:
         return [
-            _serialize_activity(activity, occurrence_date=occurrence)
+            _serialize_activity(activity, occurrence_date=occurrence, reference_labels=reference_labels)
             for occurrence in _occurrence_dates(activity, start, end)
             if occurrence not in exceptions
         ]
-    result = _serialize_activity(activity)
+    result = _serialize_activity(activity, reference_labels=reference_labels)
     start_at = _aware_utc(activity.start_at)
     end_at = _aware_utc(activity.end_at)
     due_at = _aware_utc(activity.due_at)
@@ -509,7 +615,7 @@ def _projected_item(
         "subject_id": subject_id,
         "assignees": [],
         "attachments": [],
-        "references": [{"source_type": source_type, "source_record_id": source_id}],
+        "references": [{"source_type": source_type, "source_record_id": source_id, "label": title}],
         "recurrence": None,
         "version": None,
         "created_by_id": None,
@@ -554,10 +660,12 @@ async def list_calendar_items(
     if not include_cancelled:
         query = query.where(Activity.status != "cancelled")
     activities = (await db.execute(query.order_by(Activity.start_at, Activity.due_at))).scalars().all()
+    all_refs = [ref for activity in activities for ref in activity.references]
+    ref_labels = await resolve_reference_labels(db, all_refs)
     items = [
         occurrence
         for activity in activities
-        for occurrence in expand_activity(activity, start, end)
+        for occurrence in expand_activity(activity, start, end, reference_labels=ref_labels)
     ]
 
     local_zone = _local_zone(institution.timezone or "Asia/Kolkata")

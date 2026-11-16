@@ -4119,6 +4119,7 @@ export type PlanningStatus =
 export interface PlanningReference {
   source_type: string
   source_record_id: number
+  label?: string | null
 }
 
 export interface PlanningRecurrence {

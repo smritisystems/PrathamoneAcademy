@@ -71,6 +71,7 @@ from app.services.planning_service import (
     record_activity_audit,
     require_planning_permission,
     resolve_assignee_ids,
+    resolve_reference_labels,
     validate_academic_scope,
     validate_reference,
 )
@@ -135,6 +136,7 @@ class RecurrenceInput(BaseModel):
 class ActivityReferenceInput(BaseModel):
     source_type: str
     source_record_id: int = Field(gt=0)
+    label: Optional[str] = None
 
 
 class ActivityCreateRequest(BaseModel):
@@ -449,14 +451,16 @@ async def create_activity(
     await record_activity_audit(db, current_user, activity, "created", None, _activity_snapshot(activity))
     await db.commit()
     activity = await get_activity(db, activity.id, current_user)
-    return {"item": _serialize_activity_for_detail(activity)}
+    return {"item": await _serialize_activity_for_detail(db, activity)}
 
 
-def _serialize_activity_for_detail(activity: Activity) -> dict:
+async def _serialize_activity_for_detail(db: AsyncSession, activity: Activity) -> dict:
+    ref_labels = await resolve_reference_labels(db, activity.references)
     expanded = expand_activity(
         activity,
         activity.start_at.date() if activity.start_at else date.today(),
         activity.start_at.date() if activity.start_at else date.today(),
+        reference_labels=ref_labels,
     )
     item = expanded[0] if expanded else {
         "id": activity.id,
@@ -479,7 +483,7 @@ async def get_activity_detail(
     await require_planning_permission(db, current_user, "view")
     activity = await get_activity(db, activity_id, current_user)
     await ensure_activity_visible(db, activity, current_user)
-    return {"item": _serialize_activity_for_detail(activity)}
+    return {"item": await _serialize_activity_for_detail(db, activity)}
 
 
 @router.put("/activities/{activity_id}")
@@ -585,7 +589,7 @@ async def update_activity(
     await record_activity_audit(db, current_user, activity, "updated", old_data, _activity_snapshot(activity))
     await db.commit()
     activity = await get_activity(db, activity.id, current_user)
-    return {"item": _serialize_activity_for_detail(activity)}
+    return {"item": await _serialize_activity_for_detail(db, activity)}
 
 
 @router.patch("/activities/{activity_id}/status")
