@@ -5031,11 +5031,13 @@ export default function AcademicWorkspace() {
               {/* Institution Header */}
               <div className="border-b-2 border-primary-900 pb-4 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-800 to-indigo-700 text-white flex items-center justify-center font-black text-2xl shadow-sm">
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-xs overflow-hidden">
                     {timetableDocketData.institution.logo_url ? (
-                      <img src={timetableDocketData.institution.logo_url} alt="Logo" className="w-12 h-12 object-contain" />
+                      <img src={timetableDocketData.institution.logo_url} alt="Logo" className="w-full h-full object-contain [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]" />
                     ) : (
-                      <School className="w-8 h-8" />
+                      <div className="w-full h-full rounded-xl bg-gradient-to-tr from-primary-800 to-indigo-700 text-white flex items-center justify-center">
+                        <School className="w-7 h-7" />
+                      </div>
                     )}
                   </div>
                   <div>

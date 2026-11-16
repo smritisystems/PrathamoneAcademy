@@ -63,8 +63,8 @@ export const PRINT_FOOTER_BRANDING_TEXT = 'Created by' as const
 const PRODUCT_BRAND_ASSET_ROOT = '/artwork/14112026'
 const PRODUCT_LOGO_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g1-4_1080.png`
 const PRODUCT_LOGO_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g1-4_1080.svg`
-const PRODUCT_APP_ICON_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_rect1-1-8-6_10802.png`
-const PRODUCT_APP_ICON_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_rect1-1-8-6_10802.svg`
+const PRODUCT_APP_ICON_URL = '/artwork/16112026/001/path8-5-8.png'
+const PRODUCT_APP_ICON_SVG_URL = '/artwork/16112026/001/path8-5-8.svg'
 const PRODUCT_APP_ICON_192_URL = PRODUCT_APP_ICON_URL
 
 /**
@@ -78,16 +78,16 @@ export const BRANDING_CONFIG = {
   suiteName: 'PrathamOne EduOS',
   edition: 'Coaching Institute Edition',
   editionFull: 'PrathamOne EduOS — Coaching Institute Edition',
-  defaultAcademyName: 'Your Academy Name',
-  defaultAcademyCode: 'EDU001',
-  defaultBranchName: 'Main Campus',
-  defaultBranchCode: 'MAIN',
-  tagline: 'Empowering Minds • Inspiring Excellence • Shaping Futures',
-  motto: 'Empowering Minds • Inspiring Excellence • Shaping Futures',
-  monogram: 'YA' as string,
+  defaultAcademyName: 'Prashant Academy',
+  defaultAcademyCode: 'PA001',
+  defaultBranchName: 'Jankalyan Nagar, Malad West',
+  defaultBranchCode: 'MALAD-W',
+  tagline: 'The Power of Enterprise Education. The Simplicity of WhatsApp.',
+  motto: 'The Power of Enterprise Education. The Simplicity of WhatsApp.',
+  monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.16-REV-198-v1.108.0-16DA032E',
+  buildNumber: '2026.11.16-REV-199-v1.108.1-374074F7',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-16',
@@ -95,7 +95,7 @@ export const BRANDING_CONFIG = {
   environment: (typeof import.meta !== 'undefined' && (import.meta as any).env?.MODE) || 'production',
   copyright: 'Copyright © 2026 SmritiSys. All rights reserved.',
   organization: 'SmritiSys',
-  clientOrganization: 'Your Coaching Academy',
+  clientOrganization: 'Prashant Academy Coaching Institute',
   parentOrganization: {
     name: 'SmritiSys',
     shortName: 'SMRITISYS',
@@ -148,11 +148,11 @@ export const BRANDING_CONFIG = {
     prathamGold: '#FFA726',   // PrathamOne Official Gold / Amber Accent
   },
   assets: {
-    // Tenant Coaching Academy Logo (Official PrathamOne Symbol Icon Default)
-    academyLogoUrl: '/media/logo/prathamone-symbol-icon.svg' as string,
-    academyLogoPngUrl: '/media/logo/prathamone-symbol-icon.svg' as string,
-    logoUrl: '/media/logo/prathamone-symbol-icon.svg' as string,
-    logoDarkUrl: '/media/logo/prathamone-symbol-icon.svg' as string,
+    // Tenant Coaching Academy Logo (Default Prashant Academy Crest)
+    academyLogoUrl: '/media/logo/prashant-academy-logo.svg' as string,
+    academyLogoPngUrl: '/media/logo/prashant-academy-logo.png' as string,
+    logoUrl: '/media/logo/prashant-academy-logo.svg' as string,
+    logoDarkUrl: '/media/logo/prashant-academy-logo.svg' as string,
     faviconUrl: PRODUCT_APP_ICON_192_URL as string,
     faviconPngUrl: PRODUCT_APP_ICON_192_URL as string,
     faviconIcoUrl: '/favicon.ico' as string,
@@ -273,12 +273,36 @@ export function normalizeInstitutionFaviconUrl(faviconUrl?: string | null): stri
 /**
  * Pure function resolving tenant-specific overrides merged with baseline branding.
  */
+export function normalizeLogoUrl(url?: string | null): string {
+  if (!url || typeof url !== 'string' || !url.trim() || url === '/logo.svg') {
+    return BRANDING_CONFIG.assets.academyLogoUrl
+  }
+  const trimmed = url.trim()
+  if (
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/')
+  ) {
+    return trimmed
+  }
+  return `/${trimmed}`
+}
+
 export function resolveBranding(activeInstitution?: Partial<Institution> | null): ResolvedBranding {
-  const rawAcademyName = activeInstitution?.name?.trim()
+  let cached: any = null
+  if (!activeInstitution && typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(BRANDING_STORAGE_KEY)
+      if (raw) cached = JSON.parse(raw)
+    } catch {}
+  }
+
+  const rawAcademyName = activeInstitution?.name?.trim() || cached?.academyName
   const academyName = rawAcademyName || BRANDING_CONFIG.defaultAcademyName
-  const academyCode = activeInstitution?.code?.trim() || BRANDING_CONFIG.defaultAcademyCode
-  const tagline = activeInstitution?.tagline?.trim() || BRANDING_CONFIG.tagline
-  const shortName = activeInstitution?.short_name?.trim()
+  const academyCode = activeInstitution?.code?.trim() || cached?.academyCode || BRANDING_CONFIG.defaultAcademyCode
+  const tagline = activeInstitution?.tagline?.trim() || cached?.tagline || BRANDING_CONFIG.tagline
+  const shortName = activeInstitution?.short_name?.trim() || cached?.monogram
 
   // Derive monogram: prefer explicit short_name if provided, otherwise compute from academyName
   let monogram = shortName || BRANDING_CONFIG.monogram
@@ -291,22 +315,31 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     }
   }
 
-  const primaryColor = activeInstitution?.primary_color || BRANDING_CONFIG.colors.primary
-  const secondaryColor = activeInstitution?.secondary_color || BRANDING_CONFIG.colors.secondary
-  const accentColor = activeInstitution?.accent_color || BRANDING_CONFIG.colors.accent
+  const primaryColor = activeInstitution?.primary_color || cached?.colors?.primary || BRANDING_CONFIG.colors.primary
+  const secondaryColor = activeInstitution?.secondary_color || cached?.colors?.secondary || BRANDING_CONFIG.colors.secondary
+  const accentColor = activeInstitution?.accent_color || cached?.colors?.accent || BRANDING_CONFIG.colors.accent
 
   const address = activeInstitution?.address
     ? `${activeInstitution.address}${activeInstitution.city ? `, ${activeInstitution.city}` : ''}${
         activeInstitution.state ? `, ${activeInstitution.state}` : ''
       }${activeInstitution.pincode ? ` - ${activeInstitution.pincode}` : ''}`
-    : BRANDING_CONFIG.support.address
+    : cached?.institutionAddress || BRANDING_CONFIG.support.address
 
-  const academicSession = (activeInstitution as any)?.academic_session?.trim() || 'Academic Session 2026–2027'
-  const branchName = (activeInstitution as any)?.branch_name?.trim() || activeInstitution?.city?.trim() || BRANDING_CONFIG.defaultBranchName
-  const instituteType = (activeInstitution as any)?.institute_type?.trim() || 'Coaching Institute'
-  const establishmentYear = (activeInstitution as any)?.establishment_year || 2018
-  const city = activeInstitution?.city?.trim() || ''
-  const state = activeInstitution?.state?.trim() || ''
+  const academicSession = (activeInstitution as any)?.academic_session?.trim() || cached?.academicSession || 'Academic Session 2026–2027'
+  const branchName = (activeInstitution as any)?.branch_name?.trim() || activeInstitution?.city?.trim() || cached?.branchName || BRANDING_CONFIG.defaultBranchName
+  const instituteType = (activeInstitution as any)?.institute_type?.trim() || cached?.instituteType || 'Coaching Institute'
+  const establishmentYear = (activeInstitution as any)?.establishment_year || cached?.establishmentYear || 2018
+  const city = activeInstitution?.city?.trim() || cached?.city || ''
+  const state = activeInstitution?.state?.trim() || cached?.state || ''
+
+  let resolvedLogo = ''
+  if (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg') {
+    resolvedLogo = normalizeLogoUrl(activeInstitution.logo_url)
+  } else if (!activeInstitution || activeInstitution.id === 1) {
+    resolvedLogo = normalizeLogoUrl(cached?.assets?.logoUrl || BRANDING_CONFIG.assets.academyLogoUrl)
+  } else {
+    resolvedLogo = ''
+  }
 
   return {
     appName: BRANDING_CONFIG.appName,
@@ -347,13 +380,10 @@ export function resolveBranding(activeInstitution?: Partial<Institution> | null)
     },
     assets: {
       ...BRANDING_CONFIG.assets,
-      logoUrl: (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg' && !activeInstitution.logo_url.includes('prashant-academy'))
-        ? activeInstitution.logo_url
-        : BRANDING_CONFIG.assets.academyLogoUrl,
-      academyLogoUrl: (activeInstitution?.logo_url && activeInstitution.logo_url !== '/logo.svg' && !activeInstitution.logo_url.includes('prashant-academy'))
-        ? activeInstitution.logo_url
-        : BRANDING_CONFIG.assets.academyLogoUrl,
-      faviconUrl: normalizeInstitutionFaviconUrl(activeInstitution?.favicon_url),
+      logoUrl: resolvedLogo,
+      academyLogoUrl: resolvedLogo,
+      academyLogoPngUrl: resolvedLogo,
+      faviconUrl: normalizeInstitutionFaviconUrl(activeInstitution?.favicon_url || cached?.assets?.faviconUrl),
     },
     support: {
       ...BRANDING_CONFIG.support,

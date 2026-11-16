@@ -28,7 +28,7 @@ _INSECURE_SECRETS = {
     "REPLACE_WITH_RANDOM_64_CHAR_HEX_SECRET",
 }
 
-PRODUCT_APP_ICON_URL = "/artwork/14112026/batch_rect1-1-8-6_10802.png"
+PRODUCT_APP_ICON_URL = "/artwork/16112026/001/path8-5-8.png"
 
 
 class Settings(BaseSettings):
@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.108.0"
-    BUILD_NUMBER: str = "2026.11.16-REV-198-v1.108.0-16DA032E"
+    VERSION: str = "1.108.1"
+    BUILD_NUMBER: str = "2026.11.16-REV-199-v1.108.1-374074F7"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-16"

@@ -20,6 +20,7 @@ import io
 import os
 import re
 import math
+import base64
 import zipfile
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
@@ -32,34 +33,91 @@ _ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
 _DEFAULT_CREST_PNG = _ASSETS_DIR / "prashant-academy-logo.png"
 
 
-def _resolve_logo_image_path(inst: Dict[str, Any]) -> Optional[Path]:
+def _resolve_logo_renderable(inst: Dict[str, Any]) -> Tuple[Optional[Path], Optional[bytes], Optional[fitz.Pixmap]]:
     """
-    Resolves a local filesystem path for the academy crest/logo image so PDF exports
-    display the same visual logo as the web preview without network calls.
+    Resolves the academy logo as either a Path, raw bytes (base64/data URI), or Pixmap (SVG),
+    so PDF receipt exports display the exact custom or institutional logo.
     """
     raw_logo = str(inst.get("logo_url") or "").strip()
-    if raw_logo and raw_logo not in ("/logo.svg", "/media/logo/prashant-academy-logo.svg"):
+    file_path = Path(__file__).resolve()
+    backend_dir = file_path.parents[2]
+    project_root = file_path.parents[3] if len(file_path.parents) > 3 else backend_dir
+
+    # 1. Base64 Data URI handling (e.g. data:image/png;base64,... or data:image/svg+xml;base64,...)
+    if raw_logo.startswith("data:image/"):
+        try:
+            header, b64_data = raw_logo.split(",", 1)
+            raw_bytes = base64.b64decode(b64_data)
+            if "svg" in header.lower():
+                try:
+                    svg_doc = fitz.open(stream=raw_bytes, filetype="svg")
+                    pix = svg_doc[0].get_pixmap(dpi=200)
+                    return None, None, pix
+                except Exception:
+                    pass
+            return None, raw_bytes, None
+        except Exception:
+            pass
+
+    # 2. Local filesystem path search
+    if raw_logo and raw_logo not in ("/logo.svg",):
         cleaned = raw_logo.lstrip("/")
         candidates = [
+            project_root / "frontend" / "public" / cleaned,
+            project_root / "frontend" / "dist" / cleaned,
+            Path("D:/PrathamOneEduOS/frontend/dist") / cleaned,
+            Path("D:/PrathamOneEduOS/frontend/public") / cleaned,
+            Path("/app/frontend/dist") / cleaned,
+            Path("/app/frontend/public") / cleaned,
+            Path("/usr/share/nginx/html") / cleaned,
             Path("/app") / cleaned,
-            Path("/app/uploads") / cleaned.removeprefix("uploads/"),
-            Path(__file__).resolve().parent.parent.parent / cleaned,
+            Path("/app/app/assets") / Path(cleaned).name,
             _ASSETS_DIR / Path(cleaned).name,
+            Path("/app/uploads") / cleaned.removeprefix("uploads/"),
+            project_root / cleaned,
+            Path(raw_logo),
         ]
         for candidate in candidates:
-            if candidate.is_file() and candidate.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"):
-                return candidate
+            if candidate.is_file():
+                suffix = candidate.suffix.lower()
+                if suffix in (".png", ".jpg", ".jpeg", ".webp"):
+                    return candidate, None, None
+                elif suffix == ".svg":
+                    try:
+                        svg_doc = fitz.open(str(candidate))
+                        pix = svg_doc[0].get_pixmap(dpi=200)
+                        return None, None, pix
+                    except Exception:
+                        pass
 
-    inst_id = inst.get("id")
-    inst_name = str(inst.get("name") or "").strip().lower()
-    if _DEFAULT_CREST_PNG.is_file() and (
-        not raw_logo
-        or raw_logo in ("/logo.svg", "/media/logo/prashant-academy-logo.svg", "/media/logo/prashant-academy-logo.png")
-        or inst_id == 1
-        or "prashant" in inst_name
-    ):
-        return _DEFAULT_CREST_PNG
-    return None
+    # 3. Fallback to default symbol or default crest if available
+    symbol_candidates = [
+        project_root / "frontend" / "public" / "media" / "logo" / "prathamone-symbol-icon.svg",
+        project_root / "frontend" / "dist" / "media" / "logo" / "prathamone-symbol-icon.svg",
+        Path("/app/frontend/dist/media/logo/prathamone-symbol-icon.svg"),
+        Path("/app/app/assets/prathamone-symbol-icon.svg"),
+    ]
+    for sym in symbol_candidates:
+        if sym.is_file():
+            try:
+                svg_doc = fitz.open(str(sym))
+                pix = svg_doc[0].get_pixmap(dpi=200)
+                return None, None, pix
+            except Exception:
+                pass
+
+    if _DEFAULT_CREST_PNG.is_file():
+        return _DEFAULT_CREST_PNG, None, None
+
+    return None, None, None
+
+
+def _resolve_logo_image_path(inst: Dict[str, Any]) -> Optional[Path]:
+    """
+    Resolves a local filesystem path for the academy crest/logo image.
+    """
+    path, _, _ = _resolve_logo_renderable(inst)
+    return path
 
 
 def number_to_words_inr(num: float | int) -> str:
@@ -329,11 +387,23 @@ class ReceiptPdfService:
         # 1. Executive Header Block (y = 16 to 62)
         # Top-Left: Academy Logo Image (or Executive Dual-Ring Collegiate Crest fallback)
         if show_logo:
-            logo_path = _resolve_logo_image_path(inst)
+            logo_path, logo_bytes, logo_pixmap = _resolve_logo_renderable(inst)
+            rendered_logo = False
+            target_rect = fitz.Rect(18, 17, 56, 55)
             if logo_path is not None:
-                page.insert_image(fitz.Rect(18, 17, 56, 55), filename=str(logo_path), keep_proportion=True)
+                page.insert_image(target_rect, filename=str(logo_path), keep_proportion=True)
                 page.insert_text(fitz.Point(28, 38), "PA", fontname="hebo", fontsize=8, render_mode=3)
-            else:
+                rendered_logo = True
+            elif logo_bytes is not None:
+                page.insert_image(target_rect, stream=logo_bytes, keep_proportion=True)
+                page.insert_text(fitz.Point(28, 38), "PA", fontname="hebo", fontsize=8, render_mode=3)
+                rendered_logo = True
+            elif logo_pixmap is not None:
+                page.insert_image(target_rect, pixmap=logo_pixmap, keep_proportion=True)
+                page.insert_text(fitz.Point(28, 38), "PA", fontname="hebo", fontsize=8, render_mode=3)
+                rendered_logo = True
+
+            if not rendered_logo:
                 cx_logo, cy_logo = 36, 38
                 page.draw_circle(fitz.Point(cx_logo, cy_logo), 17.5, color=cls.C_DARK_NAVY, fill=cls.C_DARK_NAVY)
                 page.draw_circle(fitz.Point(cx_logo, cy_logo), 15.0, color=(0.85, 0.69, 0.22), width=0.8)

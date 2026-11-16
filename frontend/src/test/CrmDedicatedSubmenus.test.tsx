@@ -80,7 +80,7 @@ describe('CRM Submenu Dedicated Workspaces Suite', () => {
       user: {
         id: 1,
         username: 'admin_test',
-        email: 'admin@prashantacademy.com',
+        email: 'admin@example.com',
         role: 'admin',
         first_name: 'System',
         last_name: 'Administrator',

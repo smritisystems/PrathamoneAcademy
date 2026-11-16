@@ -116,7 +116,7 @@ describe('Universal Report Intelligence Engine Suite', () => {
         first_name: 'System',
         last_name: 'Admin',
         role: 'admin',
-        email: 'admin@prashantacademy.com',
+        email: 'admin@example.com',
       },
       selectedInstitutionId: 1,
       selectedAcademicYearId: 1,

@@ -5468,6 +5468,16 @@ export interface EduBoardReportsSummary {
 export type ChatRoomType = 'STAFF_GENERAL' | 'STAFF_DEPT' | 'STAFF_DIRECT' | 'BATCH_DOUBT'
 export type ChatMessageType = 'TEXT' | 'DOUBT_QUESTION' | 'DOUBT_ANSWER' | 'ATTACHMENT' | 'SYSTEM_NOTICE'
 
+export interface DirectChatUserItem {
+  id: number
+  username: string
+  first_name: string
+  last_name: string
+  full_name: string
+  email: string
+  role: string
+}
+
 export interface ChatRoomItem {
   id: number
   name: string
@@ -5483,6 +5493,12 @@ export interface ChatRoomItem {
   is_curfew_active: boolean
   user_room_role: string
   unresolved_doubts_count: number
+  direct_user?: {
+    id: number
+    name: string
+    role: string
+    email: string
+  } | null
   created_at?: string | null
 }
 

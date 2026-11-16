@@ -340,10 +340,13 @@ export default function Settings() {
           }
           localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(updated))
           localStorage.setItem(`pratham_branding_inst_${res.data.profile.id || 1}`, JSON.stringify(updated))
-        } catch {}
+        } catch { }
         await queryClient.invalidateQueries({ queryKey: ['institutions'] })
         await queryClient.invalidateQueries({ queryKey: ['public_branding'] })
         await queryClient.invalidateQueries({ queryKey: ['institute_profile'] })
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('storage'))
+        }
         showNotification('success', 'Institute profile and branding settings saved and applied globally across all modules.')
       } else {
         const categoryData = allSettings[activeCategory] || {}
@@ -655,25 +658,22 @@ export default function Settings() {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`w-full text-left p-2.5 rounded-lg flex items-start gap-3 transition-all ${
-                    isActive
+                  className={`w-full text-left p-2.5 rounded-lg flex items-start gap-3 transition-all ${isActive
                       ? 'bg-primary-50 text-primary-900 shadow-xs border-l-4 border-primary-600 rounded-l-none'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`mt-0.5 p-1 rounded-md ${
-                      isActive ? 'text-primary-700 bg-primary-100' : 'text-gray-500 bg-gray-100'
-                    }`}
+                    className={`mt-0.5 p-1 rounded-md ${isActive ? 'text-primary-700 bg-primary-100' : 'text-gray-500 bg-gray-100'
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-semibold leading-snug truncate">{cat.title}</div>
                     <div
-                      className={`text-[11px] truncate leading-tight ${
-                        isActive ? 'text-primary-600' : 'text-gray-500'
-                      }`}
+                      className={`text-[11px] truncate leading-tight ${isActive ? 'text-primary-600' : 'text-gray-500'
+                        }`}
                     >
                       {cat.subtitle}
                     </div>
@@ -729,11 +729,10 @@ export default function Settings() {
           {/* Feedback Banner */}
           {feedback && (
             <div
-              className={`mx-6 mt-4 p-3 rounded-lg flex items-center gap-2.5 text-xs font-medium ${
-                feedback.type === 'success'
+              className={`mx-6 mt-4 p-3 rounded-lg flex items-center gap-2.5 text-xs font-medium ${feedback.type === 'success'
                   ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                   : 'bg-rose-50 text-rose-800 border border-rose-200'
-              }`}
+                }`}
             >
               {feedback.type === 'success' ? (
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -770,1941 +769,1943 @@ export default function Settings() {
                   </div>
                 )}
                 <div className={!isEditMode ? 'pointer-events-none opacity-80 select-none' : ''}>
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 1: INSTITUTE PROFILE & BRANDING                     */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'profile' && (
-                  <div className="space-y-6">
-                    {/* Sub-tab pills matching Screenshot */}
-                    <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
-                      <button
-                        type="button"
-                        onClick={() => setProfileSubTab('basic')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                          profileSubTab === 'basic'
-                            ? 'bg-primary-600 text-white shadow-xs'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}
-                      >
-                        <Info className="w-3.5 h-3.5" />
-                        <span>Basic Details</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProfileSubTab('address')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                          profileSubTab === 'address'
-                            ? 'bg-primary-600 text-white shadow-xs'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}
-                      >
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span>Address & Contact</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProfileSubTab('branches')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                          profileSubTab === 'branches'
-                            ? 'bg-primary-600 text-white shadow-xs'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}
-                      >
-                        <GitFork className="w-3.5 h-3.5" />
-                        <span>Branches</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProfileSubTab('affiliations')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                          profileSubTab === 'affiliations'
-                            ? 'bg-primary-600 text-white shadow-xs'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}
-                      >
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Affiliations</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProfileSubTab('compliance')}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                          profileSubTab === 'compliance'
-                            ? 'bg-primary-600 text-white shadow-xs'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>Legal & Compliance</span>
-                      </button>
-                    </div>
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 1: INSTITUTE PROFILE & BRANDING                     */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'profile' && (
+                    <div className="space-y-6">
+                      {/* Sub-tab pills matching Screenshot */}
+                      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
+                        <button
+                          type="button"
+                          onClick={() => setProfileSubTab('basic')}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'basic'
+                              ? 'bg-primary-600 text-white shadow-xs'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            }`}
+                        >
+                          <Info className="w-3.5 h-3.5" />
+                          <span>Basic Details</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProfileSubTab('address')}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'address'
+                              ? 'bg-primary-600 text-white shadow-xs'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            }`}
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          <span>Address & Contact</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProfileSubTab('branches')}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'branches'
+                              ? 'bg-primary-600 text-white shadow-xs'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            }`}
+                        >
+                          <GitFork className="w-3.5 h-3.5" />
+                          <span>Branches</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProfileSubTab('affiliations')}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'affiliations'
+                              ? 'bg-primary-600 text-white shadow-xs'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            }`}
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>Affiliations</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProfileSubTab('compliance')}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${profileSubTab === 'compliance'
+                              ? 'bg-primary-600 text-white shadow-xs'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            }`}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Legal & Compliance</span>
+                        </button>
+                      </div>
 
-                    {profileSubTab === 'basic' && (
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                        {/* Left Column (Inputs): 7 cols */}
-                        <div className="lg:col-span-7 space-y-5">
-                          {/* Basic Institute Details Card */}
-                          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-gray-100">
-                              <Building2 className="w-4 h-4 text-primary-600" />
-                              <div>
-                                <h3 className="text-sm font-bold text-gray-900">
-                                  Basic Institute Details
-                                </h3>
-                                <p className="text-[11px] text-gray-500">
-                                  Core identity details of your coaching institute
-                                </p>
+                      {profileSubTab === 'basic' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                          {/* Left Column (Inputs): 7 cols */}
+                          <div className="lg:col-span-7 space-y-5">
+                            {/* Basic Institute Details Card */}
+                            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                              <div className="flex items-center gap-2.5 pb-2 border-b border-gray-100">
+                                <Building2 className="w-4 h-4 text-primary-600" />
+                                <div>
+                                  <h3 className="text-sm font-bold text-gray-900">
+                                    Basic Institute Details
+                                  </h3>
+                                  <p className="text-[11px] text-gray-500">
+                                    Core identity details of your coaching institute
+                                  </p>
+                                </div>
                               </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Institute Name <span className="text-rose-500">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={profile.name}
-                                  onChange={(e) => handleProfileChange('name', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Short Name / Abbreviation <span className="text-rose-500">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  value={profile.short_name}
-                                  onChange={(e) => handleProfileChange('short_name', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 uppercase"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Institute Type <span className="text-rose-500">*</span>
-                                </label>
-                                <select
-                                  value={profile.institute_type}
-                                  onChange={(e) => handleProfileChange('institute_type', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
-                                >
-                                  <option value="Coaching Institute">Coaching Institute</option>
-                                  <option value="Tuition Center">Tuition Center</option>
-                                  <option value="School / Junior College">School / Junior College</option>
-                                  <option value="Competitive Exam Academy">Competitive Exam Academy</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Establishment Year
-                                </label>
-                                <div className="relative">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Institute Name <span className="text-rose-500">*</span>
+                                  </label>
                                   <input
-                                    type="number"
-                                    value={profile.establishment_year}
-                                    onChange={(e) =>
-                                      handleProfileChange('establishment_year', parseInt(e.target.value) || 2018)
-                                    }
-                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    type="text"
+                                    value={profile.name}
+                                    onChange={(e) => handleProfileChange('name', e.target.value)}
+                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Short Name / Abbreviation <span className="text-rose-500">*</span>
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={profile.short_name}
+                                    onChange={(e) => handleProfileChange('short_name', e.target.value)}
+                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 uppercase"
                                   />
                                 </div>
                               </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Institute Type <span className="text-rose-500">*</span>
+                                  </label>
+                                  <select
+                                    value={profile.institute_type}
+                                    onChange={(e) => handleProfileChange('institute_type', e.target.value)}
+                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
+                                  >
+                                    <option value="Coaching Institute">Coaching Institute</option>
+                                    <option value="Tuition Center">Tuition Center</option>
+                                    <option value="School / Junior College">School / Junior College</option>
+                                    <option value="Competitive Exam Academy">Competitive Exam Academy</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Establishment Year
+                                  </label>
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      value={profile.establishment_year}
+                                      onChange={(e) =>
+                                        handleProfileChange('establishment_year', parseInt(e.target.value) || 2018)
+                                      }
+                                      className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Registration / License No.
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={profile.registration_number}
+                                    onChange={(e) => handleProfileChange('registration_number', e.target.value)}
+                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    PAN / Tax ID (Optional)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={profile.tax_id}
+                                    onChange={(e) => handleProfileChange('tax_id', e.target.value)}
+                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
+                                  />
+                                </div>
+                              </div>
+
                               <div>
                                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Registration / License No.
+                                  Tagline
                                 </label>
                                 <input
                                   type="text"
-                                  value={profile.registration_number}
-                                  onChange={(e) => handleProfileChange('registration_number', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
+                                  value={profile.tagline}
+                                  onChange={(e) => handleProfileChange('tagline', e.target.value)}
+                                  placeholder="Learn • Practice • Achieve"
+                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 />
                               </div>
+
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  PAN / Tax ID (Optional)
-                                </label>
-                                <input
-                                  type="text"
-                                  value={profile.tax_id}
-                                  onChange={(e) => handleProfileChange('tax_id', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 uppercase"
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="block text-xs font-medium text-gray-700">
+                                    Description (for documents & communication)
+                                  </label>
+                                  <span className="text-[10px] text-gray-400">
+                                    {profile.description?.length || 0} / 250
+                                  </span>
+                                </div>
+                                <textarea
+                                  rows={3}
+                                  maxLength={250}
+                                  value={profile.description}
+                                  onChange={(e) => handleProfileChange('description', e.target.value)}
+                                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none text-gray-800"
                                 />
                               </div>
                             </div>
 
-                            <div>
+                            {/* Status & Preferences Card */}
+                            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                              <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                                <Sliders className="w-4 h-4 text-primary-600" />
+                                <h3 className="text-sm font-bold text-gray-900">
+                                  Status & Preferences
+                                </h3>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                                {/* Active Institute Toggle */}
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleProfileChange('is_active', !profile.is_active)}
+                                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${profile.is_active ? 'bg-emerald-500' : 'bg-gray-300'
+                                      }`}
+                                  >
+                                    <div
+                                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${profile.is_active ? 'translate-x-5' : 'translate-x-0'
+                                        }`}
+                                    />
+                                  </button>
+                                  <div>
+                                    <div className="text-xs font-semibold text-gray-900">Active Institute</div>
+                                    <div className="text-[10px] text-gray-500">Enable to use this institute</div>
+                                  </div>
+                                </div>
+
+                                {/* Default Language */}
+                                <div>
+                                  <label className="block text-[11px] font-medium text-gray-600 mb-1">
+                                    Default Language
+                                  </label>
+                                  <select
+                                    value={profile.default_language}
+                                    onChange={(e) => handleProfileChange('default_language', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
+                                  >
+                                    <option value="en">English</option>
+                                    <option value="hi">Hindi (हिंदी)</option>
+                                    <option value="mr">Marathi (मराठी)</option>
+                                  </select>
+                                </div>
+
+                                {/* Timezone */}
+                                <div>
+                                  <label className="block text-[11px] font-medium text-gray-600 mb-1">
+                                    Timezone
+                                  </label>
+                                  <select
+                                    value={profile.timezone}
+                                    onChange={(e) => handleProfileChange('timezone', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
+                                  >
+                                    <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                                    <option value="UTC">UTC (Coordinated)</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right Column (Branding Preview & Uploaders): 5 cols */}
+                          <div className="lg:col-span-5 space-y-5">
+                            {/* Live Branding Preview Card */}
+                            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                              <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                                <Eye className="w-4 h-4 text-primary-600" />
+                                <div>
+                                  <h3 className="text-sm font-bold text-gray-900">Branding Preview</h3>
+                                  <p className="text-[11px] text-gray-500">
+                                    How your institute will appear in the application
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Dynamic Live Banner Card matching Screenshot */}
+                              <div
+                                style={{
+                                  background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
+                                }}
+                                className="rounded-xl p-4 text-white shadow-md flex items-center gap-3.5 relative overflow-hidden"
+                              >
+                                {/* Background ambient lighting element */}
+                                <div
+                                  style={{ backgroundColor: profile.accent_color || '#F57C00' }}
+                                  className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
+                                />
+
+                                <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center font-bold text-lg text-primary-900 border border-white/40 shadow-sm flex-shrink-0 overflow-hidden">
+                                  {profile.logo_url && profile.logo_url !== '/logo.svg' ? (
+                                    <img
+                                      src={profile.logo_url}
+                                      alt="Logo preview"
+                                      className="w-full h-full object-contain rounded-lg [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                                    />
+                                  ) : (
+                                    profile.short_name || 'PA'
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1 relative z-10">
+                                  <h4 className="font-bold text-sm tracking-tight truncate">
+                                    {profile.name || 'PrathamOne Academy'}
+                                  </h4>
+                                  <p className="text-xs text-blue-100 font-medium truncate mt-0.5">
+                                    {profile.tagline || 'Learn • Practice • Achieve'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Logo File Selector */}
+                              <div className="pt-2 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
+                                    className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-xs overflow-hidden border border-slate-200"
+                                  >
+                                    {profile.logo_url && profile.logo_url !== '/logo.svg' ? (
+                                      <img
+                                        src={profile.logo_url}
+                                        alt="Logo preview"
+                                        className="w-full h-full object-contain bg-white"
+                                      />
+                                    ) : (
+                                      profile.short_name || 'PA'
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-semibold text-gray-900">Logo</div>
+                                    <div className="text-[10px] text-gray-400">Recommended: 512 x 512 px</div>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => logoInputRef.current?.click()}
+                                  className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 shadow-2xs"
+                                >
+                                  <Upload className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>Change Logo</span>
+                                </button>
+                                <input
+                                  ref={logoInputRef}
+                                  type="file"
+                                  accept="image/png, image/jpeg, image/svg+xml"
+                                  onChange={handleLogoUpload}
+                                  className="hidden"
+                                />
+                              </div>
+
+                              {/* Favicon Selector */}
+                              <div className="pt-2 flex items-center justify-between gap-3 border-t border-gray-100">
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    style={{ backgroundColor: profile.secondary_color || '#071C44' }}
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-xs overflow-hidden border border-slate-200"
+                                  >
+                                    {profile.favicon_url ? (
+                                      <img
+                                        src={profile.favicon_url}
+                                        alt="Favicon preview"
+                                        className="w-full h-full object-contain bg-white"
+                                      />
+                                    ) : (
+                                      profile.short_name || 'PA'
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-semibold text-gray-900">Favicon</div>
+                                    <div className="text-[10px] text-gray-400">32 x 32 px (ICO/PNG)</div>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => faviconInputRef.current?.click()}
+                                  className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 shadow-2xs"
+                                >
+                                  <Upload className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>Change Favicon</span>
+                                </button>
+                                <input
+                                  ref={faviconInputRef}
+                                  type="file"
+                                  accept="image/png, image/x-icon, image/svg+xml"
+                                  onChange={handleFaviconUpload}
+                                  className="hidden"
+                                />
+                              </div>
+
+                              {/* Color Pickers matching screenshot */}
+                              <div className="pt-3 border-t border-gray-100 space-y-3">
+                                {/* Primary Color */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-gray-700">Primary Color</span>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="color"
+                                      value={profile.primary_color || '#0B2D6B'}
+                                      onChange={(e) => handleProfileChange('primary_color', e.target.value)}
+                                      className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={profile.primary_color || '#0B2D6B'}
+                                      onChange={(e) => handleProfileChange('primary_color', e.target.value)}
+                                      className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Secondary Color */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-gray-700">Secondary Color</span>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="color"
+                                      value={profile.secondary_color || '#071C44'}
+                                      onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
+                                      className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={profile.secondary_color || '#071C44'}
+                                      onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
+                                      className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Accent Color */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-gray-700">Accent Color</span>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="color"
+                                      value={profile.accent_color || '#F57C00'}
+                                      onChange={(e) => handleProfileChange('accent_color', e.target.value)}
+                                      className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
+                                    />
+                                    <input
+                                      type="text"
+                                      value={profile.accent_color || '#F57C00'}
+                                      onChange={(e) => handleProfileChange('accent_color', e.target.value)}
+                                      className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Informational Box */}
+                              <div className="p-3 bg-primary-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-[11px] text-primary-900">
+                                <Info className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" />
+                                <span>
+                                  These branding settings will be applied to the app header, login page, receipts, reports, and all official documents.
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Address & Contact Sub-tab */}
+                      {profileSubTab === 'address' && (
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
+                          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-primary-600" />
+                            <span>Campus Address & Public Contact Information</span>
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="sm:col-span-2">
                               <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Tagline
+                                Street / Campus Address
                               </label>
                               <input
                                 type="text"
-                                value={profile.tagline}
-                                onChange={(e) => handleProfileChange('tagline', e.target.value)}
-                                placeholder="Learn • Practice • Achieve"
+                                value={profile.address}
+                                onChange={(e) => handleProfileChange('address', e.target.value)}
                                 className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
                             </div>
-
                             <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <label className="block text-xs font-medium text-gray-700">
-                                  Description (for documents & communication)
-                                </label>
-                                <span className="text-[10px] text-gray-400">
-                                  {profile.description?.length || 0} / 250
-                                </span>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
+                              <input
+                                type="text"
+                                value={profile.city}
+                                onChange={(e) => handleProfileChange('city', e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">State</label>
+                              <input
+                                type="text"
+                                value={profile.state}
+                                onChange={(e) => handleProfileChange('state', e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Pincode</label>
+                              <input
+                                type="text"
+                                value={profile.pincode}
+                                onChange={(e) => handleProfileChange('pincode', e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Contact Phone</label>
+                              <input
+                                type="text"
+                                value={profile.phone}
+                                onChange={(e) => handleProfileChange('phone', e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Official Email</label>
+                              <input
+                                type="email"
+                                value={profile.email}
+                                onChange={(e) => handleProfileChange('email', e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Website URL</label>
+                              <input
+                                type="text"
+                                value={profile.website}
+                                onChange={(e) => handleProfileChange('website', e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Branches Sub-tab */}
+                      {profileSubTab === 'branches' && (
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
+                          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                              <GitFork className="w-4 h-4 text-primary-600" />
+                              <span>Campus Centers & Branches</span>
+                            </h3>
+                          </div>
+                          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex items-center justify-between">
+                            <div>
+                              <div className="text-xs font-bold text-gray-900">
+                                {profile.name} - Main Campus
                               </div>
+                              <div className="text-[11px] text-gray-500">
+                                Code: <span className="font-mono">{profile.short_name}-MAIN</span> • {profile.address}
+                              </div>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                              Primary Headquarters
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Affiliations Sub-tab */}
+                      {profileSubTab === 'affiliations' && (
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
+                          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-primary-600" />
+                            <span>Educational Boards & Accreditations</span>
+                          </h3>
+                          <p className="text-xs text-gray-600">
+                            PrathamOne Academy supports multi-board coaching curriculums:
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="p-3 border border-blue-200 bg-primary-50 rounded-lg">
+                              <div className="text-xs font-bold text-primary-900">CBSE Curriculum</div>
+                              <div className="text-[11px] text-primary-700">Central Board of Secondary Education</div>
+                            </div>
+                            <div className="p-3 border border-indigo-200 bg-primary-50 rounded-lg">
+                              <div className="text-xs font-bold text-primary-900">ICSE Curriculum</div>
+                              <div className="text-[11px] text-primary-700">Council for the Indian School Certificate</div>
+                            </div>
+                            <div className="p-3 border border-emerald-200 bg-emerald-50 rounded-lg">
+                              <div className="text-xs font-bold text-emerald-900">State Board (MH)</div>
+                              <div className="text-[11px] text-emerald-700">Maharashtra State Secondary Board</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Legal & Compliance Sub-tab */}
+                      {profileSubTab === 'compliance' && (
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
+                          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-primary-600" />
+                            <span>Legal, DPDP & Regulatory Compliance</span>
+                          </h3>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                GST Registration Number (GSTIN)
+                              </label>
+                              <input
+                                type="text"
+                                value="27AABCP1234K1Z5"
+                                readOnly
+                                className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700 font-mono"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Digital Personal Data Protection (DPDP) Act Compliance Notice
+                              </label>
                               <textarea
                                 rows={3}
-                                maxLength={250}
-                                value={profile.description}
-                                onChange={(e) => handleProfileChange('description', e.target.value)}
-                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 resize-none text-gray-800"
+                                readOnly
+                                value="Personal data collected is utilized solely for academic instruction, student performance records, attendance auditing, and financial accounting under DPDP rules."
+                                className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700 resize-none"
                               />
                             </div>
                           </div>
-
-                          {/* Status & Preferences Card */}
-                          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                            <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                              <Sliders className="w-4 h-4 text-primary-600" />
-                              <h3 className="text-sm font-bold text-gray-900">
-                                Status & Preferences
-                              </h3>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                              {/* Active Institute Toggle */}
-                              <div className="flex items-center gap-3">
-                                <button
-                                  type="button"
-                                  onClick={() => handleProfileChange('is_active', !profile.is_active)}
-                                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
-                                    profile.is_active ? 'bg-emerald-500' : 'bg-gray-300'
-                                  }`}
-                                >
-                                  <div
-                                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                                      profile.is_active ? 'translate-x-5' : 'translate-x-0'
-                                    }`}
-                                  />
-                                </button>
-                                <div>
-                                  <div className="text-xs font-semibold text-gray-900">Active Institute</div>
-                                  <div className="text-[10px] text-gray-500">Enable to use this institute</div>
-                                </div>
-                              </div>
-
-                              {/* Default Language */}
-                              <div>
-                                <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                                  Default Language
-                                </label>
-                                <select
-                                  value={profile.default_language}
-                                  onChange={(e) => handleProfileChange('default_language', e.target.value)}
-                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
-                                >
-                                  <option value="en">English</option>
-                                  <option value="hi">Hindi (हिंदी)</option>
-                                  <option value="mr">Marathi (मराठी)</option>
-                                </select>
-                              </div>
-
-                              {/* Timezone */}
-                              <div>
-                                <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                                  Timezone
-                                </label>
-                                <select
-                                  value={profile.timezone}
-                                  onChange={(e) => handleProfileChange('timezone', e.target.value)}
-                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white"
-                                >
-                                  <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                                  <option value="UTC">UTC (Coordinated)</option>
-                                </select>
-                              </div>
-                            </div>
-                          </div>
                         </div>
-
-                        {/* Right Column (Branding Preview & Uploaders): 5 cols */}
-                        <div className="lg:col-span-5 space-y-5">
-                          {/* Live Branding Preview Card */}
-                          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                            <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                              <Eye className="w-4 h-4 text-primary-600" />
-                              <div>
-                                <h3 className="text-sm font-bold text-gray-900">Branding Preview</h3>
-                                <p className="text-[11px] text-gray-500">
-                                  How your institute will appear in the application
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Dynamic Live Banner Card matching Screenshot */}
-                            <div
-                              style={{
-                                background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
-                              }}
-                              className="rounded-xl p-4 text-white shadow-md flex items-center gap-3.5 relative overflow-hidden"
-                            >
-                              {/* Background ambient lighting element */}
-                              <div
-                                style={{ backgroundColor: profile.accent_color || '#F57C00' }}
-                                className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
-                              />
-
-                              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-bold text-lg text-white border border-white/30 shadow-xs flex-shrink-0">
-                                {profile.logo_url && profile.logo_url !== '/logo.svg' ? (
-                                  <img
-                                    src={profile.logo_url}
-                                    alt="Logo preview"
-                                    className="w-full h-full object-cover rounded-xl"
-                                  />
-                                ) : (
-                                  profile.short_name || 'PA'
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1 relative z-10">
-                                <h4 className="font-bold text-sm tracking-tight truncate">
-                                  {profile.name || 'PrathamOne Academy'}
-                                </h4>
-                                <p className="text-xs text-blue-100 font-medium truncate mt-0.5">
-                                  {profile.tagline || 'Learn • Practice • Achieve'}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Logo File Selector */}
-                            <div className="pt-2 flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <div
-                                  style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
-                                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-xs"
-                                >
-                                  {profile.short_name || 'PA'}
-                                </div>
-                                <div>
-                                  <div className="text-xs font-semibold text-gray-900">Logo</div>
-                                  <div className="text-[10px] text-gray-400">Recommended: 512 x 512 px</div>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => logoInputRef.current?.click()}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 shadow-2xs"
-                              >
-                                <Upload className="w-3.5 h-3.5 text-gray-500" />
-                                <span>Change Logo</span>
-                              </button>
-                              <input
-                                ref={logoInputRef}
-                                type="file"
-                                accept="image/png, image/jpeg, image/svg+xml"
-                                onChange={handleLogoUpload}
-                                className="hidden"
-                              />
-                            </div>
-
-                            {/* Favicon Selector */}
-                            <div className="pt-2 flex items-center justify-between gap-3 border-t border-gray-100">
-                              <div className="flex items-center gap-3">
-                                <div
-                                  style={{ backgroundColor: profile.secondary_color || '#071C44' }}
-                                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-xs"
-                                >
-                                  {profile.short_name || 'PA'}
-                                </div>
-                                <div>
-                                  <div className="text-xs font-semibold text-gray-900">Favicon</div>
-                                  <div className="text-[10px] text-gray-400">32 x 32 px (ICO/PNG)</div>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => faviconInputRef.current?.click()}
-                                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 shadow-2xs"
-                              >
-                                <Upload className="w-3.5 h-3.5 text-gray-500" />
-                                <span>Change Favicon</span>
-                              </button>
-                              <input
-                                ref={faviconInputRef}
-                                type="file"
-                                accept="image/png, image/x-icon, image/svg+xml"
-                                onChange={handleFaviconUpload}
-                                className="hidden"
-                              />
-                            </div>
-
-                            {/* Color Pickers matching screenshot */}
-                            <div className="pt-3 border-t border-gray-100 space-y-3">
-                              {/* Primary Color */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-gray-700">Primary Color</span>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="color"
-                                    value={profile.primary_color || '#0B2D6B'}
-                                    onChange={(e) => handleProfileChange('primary_color', e.target.value)}
-                                    className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={profile.primary_color || '#0B2D6B'}
-                                    onChange={(e) => handleProfileChange('primary_color', e.target.value)}
-                                    className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Secondary Color */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-gray-700">Secondary Color</span>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="color"
-                                    value={profile.secondary_color || '#071C44'}
-                                    onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
-                                    className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={profile.secondary_color || '#071C44'}
-                                    onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
-                                    className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Accent Color */}
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-gray-700">Accent Color</span>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="color"
-                                    value={profile.accent_color || '#F57C00'}
-                                    onChange={(e) => handleProfileChange('accent_color', e.target.value)}
-                                    className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={profile.accent_color || '#F57C00'}
-                                    onChange={(e) => handleProfileChange('accent_color', e.target.value)}
-                                    className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Informational Box */}
-                            <div className="p-3 bg-primary-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-[11px] text-primary-900">
-                              <Info className="w-4 h-4 text-primary-600 flex-shrink-0 mt-0.5" />
-                              <span>
-                                These branding settings will be applied to the app header, login page, receipts, reports, and all official documents.
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Address & Contact Sub-tab */}
-                    {profileSubTab === 'address' && (
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
-                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-primary-600" />
-                          <span>Campus Address & Public Contact Information</span>
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="sm:col-span-2">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Street / Campus Address
-                            </label>
-                            <input
-                              type="text"
-                              value={profile.address}
-                              onChange={(e) => handleProfileChange('address', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
-                            <input
-                              type="text"
-                              value={profile.city}
-                              onChange={(e) => handleProfileChange('city', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">State</label>
-                            <input
-                              type="text"
-                              value={profile.state}
-                              onChange={(e) => handleProfileChange('state', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Pincode</label>
-                            <input
-                              type="text"
-                              value={profile.pincode}
-                              onChange={(e) => handleProfileChange('pincode', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Contact Phone</label>
-                            <input
-                              type="text"
-                              value={profile.phone}
-                              onChange={(e) => handleProfileChange('phone', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Official Email</label>
-                            <input
-                              type="email"
-                              value={profile.email}
-                              onChange={(e) => handleProfileChange('email', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Website URL</label>
-                            <input
-                              type="text"
-                              value={profile.website}
-                              onChange={(e) => handleProfileChange('website', e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Branches Sub-tab */}
-                    {profileSubTab === 'branches' && (
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
-                        <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                            <GitFork className="w-4 h-4 text-primary-600" />
-                            <span>Campus Centers & Branches</span>
-                          </h3>
-                        </div>
-                        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex items-center justify-between">
-                          <div>
-                            <div className="text-xs font-bold text-gray-900">
-                              {profile.name} - Main Campus
-                            </div>
-                            <div className="text-[11px] text-gray-500">
-                              Code: <span className="font-mono">{profile.short_name}-MAIN</span> • {profile.address}
-                            </div>
-                          </div>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                            Primary Headquarters
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Affiliations Sub-tab */}
-                    {profileSubTab === 'affiliations' && (
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
-                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-primary-600" />
-                          <span>Educational Boards & Accreditations</span>
-                        </h3>
-                        <p className="text-xs text-gray-600">
-                          PrathamOne Academy supports multi-board coaching curriculums:
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="p-3 border border-blue-200 bg-primary-50 rounded-lg">
-                            <div className="text-xs font-bold text-primary-900">CBSE Curriculum</div>
-                            <div className="text-[11px] text-primary-700">Central Board of Secondary Education</div>
-                          </div>
-                          <div className="p-3 border border-indigo-200 bg-primary-50 rounded-lg">
-                            <div className="text-xs font-bold text-primary-900">ICSE Curriculum</div>
-                            <div className="text-[11px] text-primary-700">Council for the Indian School Certificate</div>
-                          </div>
-                          <div className="p-3 border border-emerald-200 bg-emerald-50 rounded-lg">
-                            <div className="text-xs font-bold text-emerald-900">State Board (MH)</div>
-                            <div className="text-[11px] text-emerald-700">Maharashtra State Secondary Board</div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Legal & Compliance Sub-tab */}
-                    {profileSubTab === 'compliance' && (
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4 max-w-3xl">
-                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-primary-600" />
-                          <span>Legal, DPDP & Regulatory Compliance</span>
-                        </h3>
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              GST Registration Number (GSTIN)
-                            </label>
-                            <input
-                              type="text"
-                              value="27AABCP1234K1Z5"
-                              readOnly
-                              className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700 font-mono"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Digital Personal Data Protection (DPDP) Act Compliance Notice
-                            </label>
-                            <textarea
-                              rows={3}
-                              readOnly
-                              value="Personal data collected is utilized solely for academic instruction, student performance records, attendance auditing, and financial accounting under DPDP rules."
-                              className="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700 resize-none"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 2: BRANDING & APPEARANCE                            */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'branding' && (
-                  <div className="space-y-6 max-w-4xl">
-                    {/* Live Branding Preview Card */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                        <div className="flex items-center gap-2">
-                          <Eye className="w-4 h-4 text-primary-600" />
-                          <div>
-                            <h3 className="text-sm font-bold text-gray-900">Real-Time Global Branding Preview</h3>
-                            <p className="text-[11px] text-gray-500">
-                              Live simulation across banner, buttons, active navigation, and official print documents
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold">
-                          Tenant: {profile.short_name || 'PA'}
-                        </span>
-                      </div>
-
-                      {/* 1. Dynamic Live Banner Card */}
-                      <div
-                        style={{
-                          background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
-                        }}
-                        className="rounded-xl p-4 text-white shadow-md flex items-center gap-3.5 relative overflow-hidden"
-                      >
-                        <div
-                          style={{ backgroundColor: profile.accent_color || '#F57C00' }}
-                          className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
-                        />
-                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center font-bold text-lg text-white border border-white/30 shadow-xs flex-shrink-0">
-                          {profile.logo_url && profile.logo_url !== '/logo.svg' ? (
-                            <img
-                              src={profile.logo_url}
-                              alt="Logo preview"
-                              className="w-full h-full object-cover rounded-xl"
-                            />
-                          ) : (
-                            profile.short_name || 'PA'
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1 relative z-10">
-                          <h4 className="font-bold text-sm tracking-tight truncate">
-                            {profile.name || 'Prashant Academy'}
-                          </h4>
-                          <p className="text-xs text-blue-100 font-medium truncate mt-0.5">
-                            {profile.tagline || 'Learn • Practice • Achieve'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* 2. Multi-Element Interactive Component Previews */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                        {/* Primary & Secondary Buttons Preview */}
-                        <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
-                          <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                            Buttons & Actions
-                          </div>
-                          <div className="space-y-1.5">
-                            <button
-                              type="button"
-                              style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
-                              className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold text-white shadow-2xs hover:brightness-105 transition-all text-center"
-                            >
-                              Primary Action
-                            </button>
-                            <button
-                              type="button"
-                              style={{
-                                color: profile.primary_color || '#0B2D6B',
-                                borderColor: profile.primary_color || '#0B2D6B',
-                              }}
-                              className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-white border hover:bg-slate-50 transition-all text-center"
-                            >
-                              Secondary Action
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Active Navigation Pill Preview */}
-                        <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2 text-white">
-                          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                            Sidebar Navigation
-                          </div>
-                          <div className="space-y-1">
-                            <div
-                              style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
-                              className="py-1.5 px-2.5 rounded-lg text-xs font-semibold text-white shadow-xs flex items-center justify-between"
-                            >
-                              <span>Active Menu Tab</span>
-                              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                            </div>
-                            <div className="py-1.5 px-2.5 rounded-lg text-xs font-medium text-slate-400">
-                              Inactive Item
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Document Print Header Excerpt Preview */}
-                        <div className="p-3 bg-white border-2 border-slate-900 rounded-xl space-y-1.5">
-                          <div className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
-                            Print Documents
-                          </div>
-                          <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5">
-                            <div
-                              style={{
-                                background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
-                              }}
-                              className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-serif font-black text-white shrink-0"
-                            >
-                              {profile.short_name || 'PA'}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-[10px] font-bold text-slate-900 truncate">
-                                {profile.name || 'Prashant Academy'}
-                              </div>
-                              <div className="text-[8.5px] text-slate-500 font-mono">
-                                REF: RCP-2026-001
-                              </div>
-                            </div>
-                          </div>
-                          <div
-                            style={{ backgroundColor: profile.accent_color || '#F57C00' }}
-                            className="text-[9px] font-bold text-white px-2 py-0.5 rounded text-center"
-                          >
-                            Accent Status Badge
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
+                  )}
 
-                    {/* Presets and Custom Colors Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Theme Presets */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 2: BRANDING & APPEARANCE                            */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'branding' && (
+                    <div className="space-y-6 max-w-4xl">
+                      {/* Live Branding Preview Card */}
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <Palette className="w-4 h-4 text-primary-600" />
-                          <span>Curated Theme Presets</span>
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {[
-                            { name: 'Pratham Navy & Saffron (Official)', primary: '#0B2D6B', secondary: '#071C44', accent: '#F57C00' },
-                            { name: 'Royal Blue & Indigo', primary: '#1E40AF', secondary: '#3B82F6', accent: '#8B5CF6' },
-                            { name: 'Emerald Forest', primary: '#065F46', secondary: '#10B981', accent: '#059669' },
-                            { name: 'Midnight Slate', primary: '#0F172A', secondary: '#38BDF8', accent: '#6366F1' },
-                            { name: 'Imperial Crimson', primary: '#881337', secondary: '#F43F5E', accent: '#FB7185' },
-                          ].map((preset) => {
-                            const isCurrent =
-                              profile.primary_color?.toUpperCase() === preset.primary.toUpperCase() &&
-                              profile.secondary_color?.toUpperCase() === preset.secondary.toUpperCase()
-                            return (
-                              <button
-                                key={preset.name}
-                                type="button"
-                                onClick={() => {
-                                  setProfile((prev) => {
-                                    const next = {
-                                      ...prev,
-                                      primary_color: preset.primary,
-                                      secondary_color: preset.secondary,
-                                      accent_color: preset.accent,
-                                    }
-                                    applyGlobalBrandTheme({
-                                      primary: preset.primary,
-                                      secondary: preset.secondary,
-                                      accent: preset.accent,
-                                    }, next.logo_url)
-                                    return next
-                                  })
-                                  showNotification('success', `Preset "${preset.name}" applied to live preview. Click Save Changes to commit globally.`)
-                                }}
-                                className={`p-3 border rounded-xl text-left transition-all relative ${
-                                  isCurrent
-                                    ? 'border-primary-600 ring-2 ring-blue-500 bg-primary-50/20 shadow-xs'
-                                    : 'border-gray-200 hover:border-gray-300 hover:shadow-xs'
-                                }`}
-                              >
-                                {isCurrent && (
-                                  <span className="absolute top-2 right-2 text-[10px] font-bold text-primary-600 bg-primary-100 px-1.5 py-0.2 rounded-full">
-                                    Active
-                                  </span>
-                                )}
-                                <div className="flex items-center gap-1.5 mb-2">
-                                  <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.primary }} />
-                                  <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.secondary }} />
-                                  <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.accent }} />
-                                </div>
-                                <div className="text-xs font-bold text-gray-900">{preset.name}</div>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Login Page Canvas & Background Configuration Engine */}
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-5">
-                        <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                        <div className="flex items-center justify-between pb-2 border-b border-gray-100">
                           <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-primary-600" />
+                            <Eye className="w-4 h-4 text-primary-600" />
                             <div>
-                              <h3 className="text-sm font-bold text-gray-900">Login Page Canvas & Background Engine</h3>
+                              <h3 className="text-sm font-bold text-gray-900">Real-Time Global Branding Preview</h3>
                               <p className="text-[11px] text-gray-500">
-                                Choose custom campus imagery, scaling fit, SVG patterns, or video for the authentication portal
+                                Live simulation across banner, buttons, active navigation, and official print documents
                               </p>
                             </div>
                           </div>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-200">
-                            Active: {(allSettings.branding?.login_bg_mode || 'waves').toUpperCase()}
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold">
+                            Tenant: {profile.short_name || 'PA'}
                           </span>
                         </div>
 
-                        {/* Mode Selector 4-Card Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          {[
-                            { id: 'waves', title: 'Dynamic Waves', desc: 'Brand Aurora Glow', icon: '🎨' },
-                            { id: 'image', title: 'Custom Image', desc: 'Campus & Classes', icon: '🖼️' },
-                            { id: 'svg_pattern', title: 'SVG Pattern', desc: 'Blueprint & Lattice', icon: '📐' },
-                            { id: 'video', title: 'Ambient Video', desc: 'MP4 / YouTube', icon: '🎬' },
-                          ].map((m) => {
-                            const isSelected = (allSettings.branding?.login_bg_mode || 'waves') === m.id
-                            return (
-                              <button
-                                key={m.id}
-                                type="button"
-                                onClick={() => handleSettingChange('branding', 'login_bg_mode', m.id)}
-                                className={`p-3 rounded-xl border text-left transition-all ${
-                                  isSelected
-                                    ? 'border-primary-600 ring-2 ring-primary-500 bg-primary-50/20 shadow-xs'
-                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
-                                }`}
-                              >
-                                <div className="text-xl mb-1">{m.icon}</div>
-                                <div className="text-xs font-bold text-gray-900">{m.title}</div>
-                                <div className="text-[10px] text-gray-500">{m.desc}</div>
-                              </button>
-                            )
-                          })}
+                        {/* 1. Dynamic Live Banner Card */}
+                        <div
+                          style={{
+                            background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
+                          }}
+                          className="rounded-xl p-4 text-white shadow-md flex items-center gap-3.5 relative overflow-hidden"
+                        >
+                          <div
+                            style={{ backgroundColor: profile.accent_color || '#F57C00' }}
+                            className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
+                          />
+                          <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center font-bold text-lg text-primary-900 border border-white/40 shadow-sm flex-shrink-0 overflow-hidden">
+                            {profile.logo_url && profile.logo_url !== '/logo.svg' ? (
+                              <img
+                                src={profile.logo_url}
+                                alt="Logo preview"
+                                className="w-full h-full object-contain rounded-lg [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                              />
+                            ) : (
+                              profile.short_name || 'PA'
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1 relative z-10">
+                            <h4 className="font-bold text-sm tracking-tight truncate">
+                              {profile.name || 'Prashant Academy'}
+                            </h4>
+                            <p className="text-xs text-blue-100 font-medium truncate mt-0.5">
+                              {profile.tagline || 'Learn • Practice • Achieve'}
+                            </p>
+                          </div>
                         </div>
 
-                        {/* MODE: CUSTOM IMAGE CONFIGURATION */}
-                        {(allSettings.branding?.login_bg_mode === 'image') && (
-                          <div className="space-y-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
-                            <div>
-                              <label className="block text-xs font-bold text-slate-700 mb-1">
-                                Background Image URL
-                              </label>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="https://... or /media/backgrounds/campus.jpg"
-                                  value={allSettings.branding?.login_bg_image_url || ''}
-                                  onChange={(e) => handleSettingChange('branding', 'login_bg_image_url', e.target.value)}
-                                  className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
-                                />
+                        {/* 2. Multi-Element Interactive Component Previews */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                          {/* Primary & Secondary Buttons Preview */}
+                          <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                            <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                              Buttons & Actions
+                            </div>
+                            <div className="space-y-1.5">
+                              <button
+                                type="button"
+                                style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
+                                className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold text-white shadow-2xs hover:brightness-105 transition-all text-center"
+                              >
+                                Primary Action
+                              </button>
+                              <button
+                                type="button"
+                                style={{
+                                  color: profile.primary_color || '#0B2D6B',
+                                  borderColor: profile.primary_color || '#0B2D6B',
+                                }}
+                                className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-white border hover:bg-slate-50 transition-all text-center"
+                              >
+                                Secondary Action
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Active Navigation Pill Preview */}
+                          <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2 text-white">
+                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                              Sidebar Navigation
+                            </div>
+                            <div className="space-y-1">
+                              <div
+                                style={{ backgroundColor: profile.primary_color || '#0B2D6B' }}
+                                className="py-1.5 px-2.5 rounded-lg text-xs font-semibold text-white shadow-xs flex items-center justify-between"
+                              >
+                                <span>Active Menu Tab</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-white" />
                               </div>
-                              {/* Quick Image Presets */}
-                              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                                <span className="text-[10px] font-semibold text-slate-500">Demo Presets:</span>
-                                {[
-                                  { label: 'Campus Exterior', url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1920&q=80' },
-                                  { label: 'Study Hall', url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1920&q=80' },
-                                  { label: 'Classroom', url: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1920&q=80' },
-                                ].map((pre) => (
-                                  <button
-                                    key={pre.label}
-                                    type="button"
-                                    onClick={() => handleSettingChange('branding', 'login_bg_image_url', pre.url)}
-                                    className="px-2 py-0.5 text-[10px] font-medium bg-white hover:bg-slate-200 border border-slate-300 rounded text-slate-700 transition"
+                              <div className="py-1.5 px-2.5 rounded-lg text-xs font-medium text-slate-400">
+                                Inactive Item
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Document Print Header Excerpt Preview */}
+                          <div className="p-3 bg-white border-2 border-slate-900 rounded-xl space-y-1.5">
+                            <div className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
+                              Print Documents
+                            </div>
+                            <div className="flex items-center gap-2 border-b border-slate-200 pb-1.5">
+                              <div
+                                style={{
+                                  background: `linear-gradient(135deg, ${profile.primary_color || '#0B2D6B'} 0%, ${profile.secondary_color || '#071C44'} 100%)`,
+                                }}
+                                className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-serif font-black text-white shrink-0"
+                              >
+                                {profile.short_name || 'PA'}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[10px] font-bold text-slate-900 truncate">
+                                  {profile.name || 'Prashant Academy'}
+                                </div>
+                                <div className="text-[8.5px] text-slate-500 font-mono">
+                                  REF: RCP-2026-001
+                                </div>
+                              </div>
+                            </div>
+                            <div
+                              style={{ backgroundColor: profile.accent_color || '#F57C00' }}
+                              className="text-[9px] font-bold text-white px-2 py-0.5 rounded text-center"
+                            >
+                              Accent Status Badge
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Presets and Custom Colors Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Theme Presets */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                            <Palette className="w-4 h-4 text-primary-600" />
+                            <span>Curated Theme Presets</span>
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {[
+                              { name: 'Pratham Navy & Saffron (Official)', primary: '#0B2D6B', secondary: '#071C44', accent: '#F57C00' },
+                              { name: 'Royal Blue & Indigo', primary: '#1E40AF', secondary: '#3B82F6', accent: '#8B5CF6' },
+                              { name: 'Emerald Forest', primary: '#065F46', secondary: '#10B981', accent: '#059669' },
+                              { name: 'Midnight Slate', primary: '#0F172A', secondary: '#38BDF8', accent: '#6366F1' },
+                              { name: 'Imperial Crimson', primary: '#881337', secondary: '#F43F5E', accent: '#FB7185' },
+                            ].map((preset) => {
+                              const isCurrent =
+                                profile.primary_color?.toUpperCase() === preset.primary.toUpperCase() &&
+                                profile.secondary_color?.toUpperCase() === preset.secondary.toUpperCase()
+                              return (
+                                <button
+                                  key={preset.name}
+                                  type="button"
+                                  onClick={() => {
+                                    setProfile((prev) => {
+                                      const next = {
+                                        ...prev,
+                                        primary_color: preset.primary,
+                                        secondary_color: preset.secondary,
+                                        accent_color: preset.accent,
+                                      }
+                                      applyGlobalBrandTheme({
+                                        primary: preset.primary,
+                                        secondary: preset.secondary,
+                                        accent: preset.accent,
+                                      }, next.logo_url)
+                                      return next
+                                    })
+                                    showNotification('success', `Preset "${preset.name}" applied to live preview. Click Save Changes to commit globally.`)
+                                  }}
+                                  className={`p-3 border rounded-xl text-left transition-all relative ${isCurrent
+                                      ? 'border-primary-600 ring-2 ring-blue-500 bg-primary-50/20 shadow-xs'
+                                      : 'border-gray-200 hover:border-gray-300 hover:shadow-xs'
+                                    }`}
+                                >
+                                  {isCurrent && (
+                                    <span className="absolute top-2 right-2 text-[10px] font-bold text-primary-600 bg-primary-100 px-1.5 py-0.2 rounded-full">
+                                      Active
+                                    </span>
+                                  )}
+                                  <div className="flex items-center gap-1.5 mb-2">
+                                    <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.primary }} />
+                                    <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.secondary }} />
+                                    <span className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: preset.accent }} />
+                                  </div>
+                                  <div className="text-xs font-bold text-gray-900">{preset.name}</div>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Login Page Canvas & Background Configuration Engine */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-5">
+                          <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary-600" />
+                              <div>
+                                <h3 className="text-sm font-bold text-gray-900">Login Page Canvas & Background Engine</h3>
+                                <p className="text-[11px] text-gray-500">
+                                  Choose custom campus imagery, scaling fit, SVG patterns, or video for the authentication portal
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-200">
+                              Active: {(allSettings.branding?.login_bg_mode || 'waves').toUpperCase()}
+                            </span>
+                          </div>
+
+                          {/* Mode Selector 4-Card Grid */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {[
+                              { id: 'waves', title: 'Dynamic Waves', desc: 'Brand Aurora Glow', icon: '🎨' },
+                              { id: 'image', title: 'Custom Image', desc: 'Campus & Classes', icon: '🖼️' },
+                              { id: 'svg_pattern', title: 'SVG Pattern', desc: 'Blueprint & Lattice', icon: '📐' },
+                              { id: 'video', title: 'Ambient Video', desc: 'MP4 / YouTube', icon: '🎬' },
+                            ].map((m) => {
+                              const isSelected = (allSettings.branding?.login_bg_mode || 'waves') === m.id
+                              return (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => handleSettingChange('branding', 'login_bg_mode', m.id)}
+                                  className={`p-3 rounded-xl border text-left transition-all ${isSelected
+                                      ? 'border-primary-600 ring-2 ring-primary-500 bg-primary-50/20 shadow-xs'
+                                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
+                                    }`}
+                                >
+                                  <div className="text-xl mb-1">{m.icon}</div>
+                                  <div className="text-xs font-bold text-gray-900">{m.title}</div>
+                                  <div className="text-[10px] text-gray-500">{m.desc}</div>
+                                </button>
+                              )
+                            })}
+                          </div>
+
+                          {/* MODE: CUSTOM IMAGE CONFIGURATION */}
+                          {(allSettings.branding?.login_bg_mode === 'image') && (
+                            <div className="space-y-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
+                              <div>
+                                <label className="block text-xs font-bold text-slate-700 mb-1">
+                                  Background Image URL
+                                </label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="https://... or /media/backgrounds/campus.jpg"
+                                    value={allSettings.branding?.login_bg_image_url || ''}
+                                    onChange={(e) => handleSettingChange('branding', 'login_bg_image_url', e.target.value)}
+                                    className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
+                                  />
+                                </div>
+                                {/* Quick Image Presets */}
+                                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                                  <span className="text-[10px] font-semibold text-slate-500">Demo Presets:</span>
+                                  {[
+                                    { label: 'Campus Exterior', url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1920&q=80' },
+                                    { label: 'Study Hall', url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=1920&q=80' },
+                                    { label: 'Classroom', url: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1920&q=80' },
+                                  ].map((pre) => (
+                                    <button
+                                      key={pre.label}
+                                      type="button"
+                                      onClick={() => handleSettingChange('branding', 'login_bg_image_url', pre.url)}
+                                      className="px-2 py-0.5 text-[10px] font-medium bg-white hover:bg-slate-200 border border-slate-300 rounded text-slate-700 transition"
+                                    >
+                                      {pre.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Display Fit Mode */}
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                                    Image Scaling & Fit
+                                  </label>
+                                  <select
+                                    value={allSettings.branding?.login_bg_fit || 'cover'}
+                                    onChange={(e) => handleSettingChange('branding', 'login_bg_fit', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
                                   >
-                                    {pre.label}
+                                    <option value="cover">Crop to Fit (Cover - Recommended)</option>
+                                    <option value="contain">Fit Entire Image (Contain)</option>
+                                    <option value="stretch">Stretch to Screen (Fill)</option>
+                                    <option value="tile">Tiled Repeating Pattern</option>
+                                  </select>
+                                </div>
+
+                                {/* Dark Contrast Overlay Tint */}
+                                <div>
+                                  <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                    <span>Contrast Tint</span>
+                                    <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_overlay_opacity || '60'}%</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="20"
+                                    max="90"
+                                    step="5"
+                                    value={allSettings.branding?.login_bg_overlay_opacity || '60'}
+                                    onChange={(e) => handleSettingChange('branding', 'login_bg_overlay_opacity', e.target.value)}
+                                    className="w-full accent-primary-600"
+                                  />
+                                  <div className="text-[10px] text-slate-400 mt-0.5">Prevents white text & card clashing</div>
+                                </div>
+
+                                {/* Backdrop Glassmorphism Blur */}
+                                <div>
+                                  <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                    <span>Backdrop Blur</span>
+                                    <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_blur || '4'}px</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="16"
+                                    step="2"
+                                    value={allSettings.branding?.login_bg_blur || '4'}
+                                    onChange={(e) => handleSettingChange('branding', 'login_bg_blur', e.target.value)}
+                                    className="w-full accent-primary-600"
+                                  />
+                                  <div className="text-[10px] text-slate-400 mt-0.5">Smooth glassmorphic depth</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* MODE: SVG PATTERN CONFIGURATION */}
+                          {(allSettings.branding?.login_bg_mode === 'svg_pattern') && (
+                            <div className="space-y-3 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
+                              <label className="block text-xs font-bold text-slate-700">
+                                Educational / Architectural Pattern Style
+                              </label>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                {[
+                                  { id: 'geometric', label: 'Isometric Grid' },
+                                  { id: 'dots', label: 'Technology Matrix' },
+                                  { id: 'blueprint', label: 'Architectural Blueprint' },
+                                  { id: 'lattice', label: 'Monogram Watermark' },
+                                ].map((pat) => (
+                                  <button
+                                    key={pat.id}
+                                    type="button"
+                                    onClick={() => handleSettingChange('branding', 'login_bg_pattern', pat.id)}
+                                    className={`p-2.5 text-xs font-semibold rounded-lg border text-center transition ${(allSettings.branding?.login_bg_pattern || 'geometric') === pat.id
+                                        ? 'border-primary-600 bg-primary-50 text-primary-700 font-bold'
+                                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                                      }`}
+                                  >
+                                    {pat.label}
                                   </button>
                                 ))}
                               </div>
                             </div>
+                          )}
 
-                            {/* Display Fit Mode */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                              <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                  Image Scaling & Fit
-                                </label>
-                                <select
-                                  value={allSettings.branding?.login_bg_fit || 'cover'}
-                                  onChange={(e) => handleSettingChange('branding', 'login_bg_fit', e.target.value)}
-                                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
-                                >
-                                  <option value="cover">Crop to Fit (Cover - Recommended)</option>
-                                  <option value="contain">Fit Entire Image (Contain)</option>
-                                  <option value="stretch">Stretch to Screen (Fill)</option>
-                                  <option value="tile">Tiled Repeating Pattern</option>
-                                </select>
+                          {/* MODE: VIDEO BACKGROUND CONFIGURATION */}
+                          {(allSettings.branding?.login_bg_mode === 'video') && (
+                            <div className="space-y-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">Video Source Type</label>
+                                  <select
+                                    value={allSettings.branding?.login_bg_video_type || 'mp4'}
+                                    onChange={(e) => handleSettingChange('branding', 'login_bg_video_type', e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                                  >
+                                    <option value="mp4">Direct HTML5 Video (MP4 / WebM)</option>
+                                    <option value="youtube">YouTube Video Embed</option>
+                                  </select>
+                                </div>
+                                <div className="sm:col-span-2">
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                                    {allSettings.branding?.login_bg_video_type === 'youtube' ? 'YouTube URL or Video ID' : 'Direct MP4 Video URL'}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    placeholder={allSettings.branding?.login_bg_video_type === 'youtube' ? 'e.g. dQw4w9WgXcQ or https://youtube.com/watch?v=...' : 'https://example.com/ambient-loop.mp4'}
+                                    value={allSettings.branding?.login_bg_video_url || ''}
+                                    onChange={(e) => handleSettingChange('branding', 'login_bg_video_url', e.target.value)}
+                                    className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                                  />
+                                </div>
+                              </div>
+                              {/* Video Display Overlay Controls */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
+                                {/* Dark Contrast Overlay Tint */}
+                                <div>
+                                  <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                    <span>Video Contrast Tint</span>
+                                    <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_overlay_opacity || '40'}%</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="10"
+                                    max="90"
+                                    step="5"
+                                    value={allSettings.branding?.login_bg_overlay_opacity || '40'}
+                                    onChange={(e) => handleSettingChange('branding', 'login_bg_overlay_opacity', e.target.value)}
+                                    className="w-full accent-primary-600"
+                                  />
+                                  <div className="text-[10px] text-slate-400 mt-0.5">Controls background darkness behind login card</div>
+                                </div>
+
+                                {/* Backdrop Glassmorphism Blur */}
+                                <div>
+                                  <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                                    <span>Video Backdrop Blur</span>
+                                    <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_blur || '0'}px</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="16"
+                                    step="2"
+                                    value={allSettings.branding?.login_bg_blur || '0'}
+                                    onChange={(e) => handleSettingChange('branding', 'login_bg_blur', e.target.value)}
+                                    className="w-full accent-primary-600"
+                                  />
+                                  <div className="text-[10px] text-slate-400 mt-0.5">Soft glassmorphic video softening (0px = crystal clear)</div>
+                                </div>
                               </div>
 
-                              {/* Dark Contrast Overlay Tint */}
-                              <div>
-                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
-                                  <span>Contrast Tint</span>
-                                  <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_overlay_opacity || '60'}%</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="20"
-                                  max="90"
-                                  step="5"
-                                  value={allSettings.branding?.login_bg_overlay_opacity || '60'}
-                                  onChange={(e) => handleSettingChange('branding', 'login_bg_overlay_opacity', e.target.value)}
-                                  className="w-full accent-primary-600"
-                                />
-                                <div className="text-[10px] text-slate-400 mt-0.5">Prevents white text & card clashing</div>
-                              </div>
-
-                              {/* Backdrop Glassmorphism Blur */}
-                              <div>
-                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
-                                  <span>Backdrop Blur</span>
-                                  <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_blur || '4'}px</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0"
-                                  max="16"
-                                  step="2"
-                                  value={allSettings.branding?.login_bg_blur || '4'}
-                                  onChange={(e) => handleSettingChange('branding', 'login_bg_blur', e.target.value)}
-                                  className="w-full accent-primary-600"
-                                />
-                                <div className="text-[10px] text-slate-400 mt-0.5">Smooth glassmorphic depth</div>
+                              <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
+                                <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <span>
+                                  Video backgrounds are automatically muted and looped. Mobile devices conserve data with an automatic fallback poster.
+                                </span>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
 
-                        {/* MODE: SVG PATTERN CONFIGURATION */}
-                        {(allSettings.branding?.login_bg_mode === 'svg_pattern') && (
-                          <div className="space-y-3 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
-                            <label className="block text-xs font-bold text-slate-700">
-                              Educational / Architectural Pattern Style
-                            </label>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                              {[
-                                { id: 'geometric', label: 'Isometric Grid' },
-                                { id: 'dots', label: 'Technology Matrix' },
-                                { id: 'blueprint', label: 'Architectural Blueprint' },
-                                { id: 'lattice', label: 'Monogram Watermark' },
-                              ].map((pat) => (
-                                <button
-                                  key={pat.id}
-                                  type="button"
-                                  onClick={() => handleSettingChange('branding', 'login_bg_pattern', pat.id)}
-                                  className={`p-2.5 text-xs font-semibold rounded-lg border text-center transition ${
-                                    (allSettings.branding?.login_bg_pattern || 'geometric') === pat.id
-                                      ? 'border-primary-600 bg-primary-50 text-primary-700 font-bold'
-                                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                                  }`}
-                                >
-                                  {pat.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* MODE: VIDEO BACKGROUND CONFIGURATION */}
-                        {(allSettings.branding?.login_bg_mode === 'video') && (
-                          <div className="space-y-4 p-4 rounded-xl bg-slate-50/80 border border-slate-200">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* Custom Palette Controls */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                            <Sliders className="w-4 h-4 text-primary-600" />
+                            <span>Custom Color Controls</span>
+                          </h3>
+                          <div className="space-y-3">
+                            {/* Primary */}
+                            <div className="flex items-center justify-between">
                               <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">Video Source Type</label>
-                                <select
-                                  value={allSettings.branding?.login_bg_video_type || 'mp4'}
-                                  onChange={(e) => handleSettingChange('branding', 'login_bg_video_type', e.target.value)}
-                                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
-                                >
-                                  <option value="mp4">Direct HTML5 Video (MP4 / WebM)</option>
-                                  <option value="youtube">YouTube Video Embed</option>
-                                </select>
+                                <div className="text-xs font-medium text-gray-900">Primary Color</div>
+                                <div className="text-[10px] text-gray-400">Buttons, active nav, primary highlights</div>
                               </div>
-                              <div className="sm:col-span-2">
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                  {allSettings.branding?.login_bg_video_type === 'youtube' ? 'YouTube URL or Video ID' : 'Direct MP4 Video URL'}
-                                </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={profile.primary_color || '#0B2D6B'}
+                                  onChange={(e) => handleProfileChange('primary_color', e.target.value)}
+                                  className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
+                                />
                                 <input
                                   type="text"
-                                  placeholder={allSettings.branding?.login_bg_video_type === 'youtube' ? 'e.g. dQw4w9WgXcQ or https://youtube.com/watch?v=...' : 'https://example.com/ambient-loop.mp4'}
-                                  value={allSettings.branding?.login_bg_video_url || ''}
-                                  onChange={(e) => handleSettingChange('branding', 'login_bg_video_url', e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                                  value={profile.primary_color || '#0B2D6B'}
+                                  onChange={(e) => handleProfileChange('primary_color', e.target.value)}
+                                  className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                                 />
                               </div>
                             </div>
-                            {/* Video Display Overlay Controls */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
-                              {/* Dark Contrast Overlay Tint */}
+                            {/* Secondary */}
+                            <div className="flex items-center justify-between">
                               <div>
-                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
-                                  <span>Video Contrast Tint</span>
-                                  <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_overlay_opacity || '40'}%</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="10"
-                                  max="90"
-                                  step="5"
-                                  value={allSettings.branding?.login_bg_overlay_opacity || '40'}
-                                  onChange={(e) => handleSettingChange('branding', 'login_bg_overlay_opacity', e.target.value)}
-                                  className="w-full accent-primary-600"
-                                />
-                                <div className="text-[10px] text-slate-400 mt-0.5">Controls background darkness behind login card</div>
+                                <div className="text-xs font-medium text-gray-900">Secondary Color</div>
+                                <div className="text-[10px] text-gray-400">Supporting gradients & header accents</div>
                               </div>
-
-                              {/* Backdrop Glassmorphism Blur */}
-                              <div>
-                                <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
-                                  <span>Video Backdrop Blur</span>
-                                  <span className="font-mono text-primary-600">{allSettings.branding?.login_bg_blur || '0'}px</span>
-                                </div>
+                              <div className="flex items-center gap-2">
                                 <input
-                                  type="range"
-                                  min="0"
-                                  max="16"
-                                  step="2"
-                                  value={allSettings.branding?.login_bg_blur || '0'}
-                                  onChange={(e) => handleSettingChange('branding', 'login_bg_blur', e.target.value)}
-                                  className="w-full accent-primary-600"
+                                  type="color"
+                                  value={profile.secondary_color || '#071C44'}
+                                  onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
+                                  className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                                 />
-                                <div className="text-[10px] text-slate-400 mt-0.5">Soft glassmorphic video softening (0px = crystal clear)</div>
+                                <input
+                                  type="text"
+                                  value={profile.secondary_color || '#071C44'}
+                                  onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
+                                  className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
+                                />
                               </div>
                             </div>
-
-                            <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
-                              <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                              <span>
-                                Video backgrounds are automatically muted and looped. Mobile devices conserve data with an automatic fallback poster.
-                              </span>
+                            {/* Accent */}
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-xs font-medium text-gray-900">Accent Color</div>
+                                <div className="text-[10px] text-gray-400">Badges, indicators & ambient halos</div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={profile.accent_color || '#F57C00'}
+                                  onChange={(e) => handleProfileChange('accent_color', e.target.value)}
+                                  className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
+                                />
+                                <input
+                                  type="text"
+                                  value={profile.accent_color || '#F57C00'}
+                                  onChange={(e) => handleProfileChange('accent_color', e.target.value)}
+                                  className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
+                                />
+                              </div>
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
+                    </div>
+                  )}
 
-                      {/* Custom Palette Controls */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 3: ACADEMIC CONFIGURATION                           */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'academic' && (
+                    <div className="space-y-6 max-w-4xl">
                       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                         <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                          <Sliders className="w-4 h-4 text-primary-600" />
-                          <span>Custom Color Controls</span>
+                          <GraduationCap className="w-4 h-4 text-primary-600" />
+                          <span>Academic Session & Batch Management Defaults</span>
                         </h3>
-                        <div className="space-y-3">
-                          {/* Primary */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-xs font-medium text-gray-900">Primary Color</div>
-                              <div className="text-[10px] text-gray-400">Buttons, active nav, primary highlights</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="color"
-                                value={profile.primary_color || '#0B2D6B'}
-                                onChange={(e) => handleProfileChange('primary_color', e.target.value)}
-                                className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
-                              />
-                              <input
-                                type="text"
-                                value={profile.primary_color || '#0B2D6B'}
-                                onChange={(e) => handleProfileChange('primary_color', e.target.value)}
-                                className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
-                              />
-                            </div>
-                          </div>
-                          {/* Secondary */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-xs font-medium text-gray-900">Secondary Color</div>
-                              <div className="text-[10px] text-gray-400">Supporting gradients & header accents</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="color"
-                                value={profile.secondary_color || '#071C44'}
-                                onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
-                                className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
-                              />
-                              <input
-                                type="text"
-                                value={profile.secondary_color || '#071C44'}
-                                onChange={(e) => handleProfileChange('secondary_color', e.target.value)}
-                                className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
-                              />
-                            </div>
-                          </div>
-                          {/* Accent */}
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-xs font-medium text-gray-900">Accent Color</div>
-                              <div className="text-[10px] text-gray-400">Badges, indicators & ambient halos</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="color"
-                                value={profile.accent_color || '#F57C00'}
-                                onChange={(e) => handleProfileChange('accent_color', e.target.value)}
-                                className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
-                              />
-                              <input
-                                type="text"
-                                value={profile.accent_color || '#F57C00'}
-                                onChange={(e) => handleProfileChange('accent_color', e.target.value)}
-                                className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 3: ACADEMIC CONFIGURATION                           */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'academic' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <GraduationCap className="w-4 h-4 text-primary-600" />
-                        <span>Academic Session & Batch Management Defaults</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Default Academic Year
-                          </label>
-                          <input
-                            type="text"
-                            value={allSettings.academic?.default_academic_year || '2026-27'}
-                            onChange={(e) => handleSettingChange('academic', 'default_academic_year', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Term Structure
-                          </label>
-                          <select
-                            value={allSettings.academic?.term_structure || 'Quarterly'}
-                            onChange={(e) => handleSettingChange('academic', 'term_structure', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500 bg-white"
-                          >
-                            <option value="Quarterly">Quarterly (4 Terms)</option>
-                            <option value="Trimester">Trimester (3 Terms)</option>
-                            <option value="Semester">Semester (2 Terms)</option>
-                            <option value="Annual">Annual (1 Session)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Standard Naming Convention
-                          </label>
-                          <select
-                            value={allSettings.academic?.standard_naming || 'Roman'}
-                            onChange={(e) => handleSettingChange('academic', 'standard_naming', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500 bg-white"
-                          >
-                            <option value="Roman">Roman (VIII, IX, X, XI, XII)</option>
-                            <option value="Numeric">Numeric (8th, 9th, 10th)</option>
-                            <option value="Grade">Grade (Grade 8, Grade 9)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Timetable Slot Duration (Minutes)
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.academic?.timetable_slot_duration || 45}
-                            onChange={(e) => handleSettingChange('academic', 'timetable_slot_duration', parseInt(e.target.value) || 45)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Batch Capacity Warning Threshold
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.academic?.batch_capacity_warning || 40}
-                            onChange={(e) => handleSettingChange('academic', 'batch_capacity_warning', parseInt(e.target.value) || 40)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 4: STUDENT & ADMISSION SETTINGS                     */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'admission' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-primary-600" />
-                        <span>Admission Numbering & Student Policies</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Admission Number Prefix
-                          </label>
-                          <input
-                            type="text"
-                            value={allSettings.admission?.admission_prefix || 'PA'}
-                            onChange={(e) => handleSettingChange('admission', 'admission_prefix', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg uppercase"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Next Admission Sequence Number
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.admission?.next_admission_number || 43}
-                            onChange={(e) => handleSettingChange('admission', 'next_admission_number', parseInt(e.target.value) || 1)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Sibling Discount Percentage (%)
-                          </label>
-                          <input
-                            type="number"
-                            step="0.5"
-                            value={allSettings.admission?.sibling_discount_pct || 10.0}
-                            onChange={(e) => handleSettingChange('admission', 'sibling_discount_pct', parseFloat(e.target.value) || 0)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Minimum Admission Age (Years)
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.admission?.min_admission_age || 5}
-                            onChange={(e) => handleSettingChange('admission', 'min_admission_age', parseInt(e.target.value) || 5)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Student Status & Operational Visibility Configuration */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <div className="border-b border-gray-100 pb-2">
-                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                          <Eye className="w-4 h-4 text-primary-600" />
-                          <span>Student Status & Operational Visibility</span>
-                        </h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Configure institute-level default visibility rules for inactive, withdrawn, completed, and graduated students.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                        {/* 1. Dashboard Student Visibility */}
-                        <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
-                          <label className="block text-xs font-bold text-gray-900">
-                            Dashboard Visibility
-                          </label>
-                          <p className="text-[11px] text-gray-500 leading-tight mb-2">
-                            Controls whether executive dashboard KPI metrics show only active students or include all statuses.
-                          </p>
-                          <select
-                            data-testid="setting-student-visibility-dashboard"
-                            value={allSettings.admission?.student_visibility_dashboard || 'active_only'}
-                            onChange={(e) => handleSettingChange('admission', 'student_visibility_dashboard', e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
-                          >
-                            <option value="active_only">Active students only (default)</option>
-                            <option value="include_all">Include all student statuses</option>
-                          </select>
-                        </div>
-
-                        {/* 2. Reports Student Visibility */}
-                        <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
-                          <label className="block text-xs font-bold text-gray-900">
-                            Reports Visibility
-                          </label>
-                          <p className="text-[11px] text-gray-500 leading-tight mb-2">
-                            Controls whether financial and academic reports default to including all statuses or active only.
-                          </p>
-                          <select
-                            data-testid="setting-student-visibility-reports"
-                            value={allSettings.admission?.student_visibility_reports || 'include_all'}
-                            onChange={(e) => handleSettingChange('admission', 'student_visibility_reports', e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
-                          >
-                            <option value="include_all">Include all statuses by default</option>
-                            <option value="active_only">Active students only by default</option>
-                          </select>
-                        </div>
-
-                        {/* 3. Student Lists Visibility */}
-                        <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
-                          <label className="block text-xs font-bold text-gray-900">
-                            Student Lists Visibility
-                          </label>
-                          <p className="text-[11px] text-gray-500 leading-tight mb-2">
-                            Controls whether student directories and batch roster views load active students only or all students by default.
-                          </p>
-                          <select
-                            data-testid="setting-student-visibility-lists"
-                            value={allSettings.admission?.student_visibility_lists || 'active_only'}
-                            onChange={(e) => handleSettingChange('admission', 'student_visibility_lists', e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
-                          >
-                            <option value="active_only">Show active students by default</option>
-                            <option value="include_all">Show all students by default</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 5: STAFF & HR SETTINGS                              */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'staff' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Users className="w-4 h-4 text-primary-600" />
-                        <span>Staff Member ID & Leave Policies</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Employee ID Prefix
-                          </label>
-                          <input
-                            type="text"
-                            value={allSettings.staff?.employee_id_prefix || 'EMP'}
-                            onChange={(e) => handleSettingChange('staff', 'employee_id_prefix', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg uppercase"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Next Employee Number
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.staff?.next_employee_number || 101}
-                            onChange={(e) => handleSettingChange('staff', 'next_employee_number', parseInt(e.target.value) || 1)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Annual Casual Leave Quota (Days)
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.staff?.annual_casual_leave || 12}
-                            onChange={(e) => handleSettingChange('staff', 'annual_casual_leave', parseInt(e.target.value) || 12)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Annual Sick Leave Quota (Days)
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.staff?.annual_sick_leave || 8}
-                            onChange={(e) => handleSettingChange('staff', 'annual_sick_leave', parseInt(e.target.value) || 8)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 6: FEES & FINANCE SETTINGS                          */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'fees' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-primary-600" />
-                        <span>Fee Receipt Numbering & Monetary Settings</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Receipt Prefix
-                          </label>
-                          <input
-                            type="text"
-                            value={allSettings.fees?.receipt_prefix || 'RCP'}
-                            onChange={(e) => handleSettingChange('fees', 'receipt_prefix', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg uppercase"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Next Receipt Sequence Number
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.fees?.next_receipt_number || 168}
-                            onChange={(e) => handleSettingChange('fees', 'next_receipt_number', parseInt(e.target.value) || 1)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Currency Symbol
-                          </label>
-                          <input
-                            type="text"
-                            value={allSettings.fees?.currency_symbol || '₹'}
-                            onChange={(e) => handleSettingChange('fees', 'currency_symbol', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Payment Grace Days
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.fees?.grace_period_days || 7}
-                            onChange={(e) => handleSettingChange('fees', 'grace_period_days', parseInt(e.target.value) || 7)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Payment Workflow & ERP Governance Card */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                          <span>Payment Workflow & ERP Approval Governance</span>
-                        </h3>
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                          (allSettings.fees?.workflow_mode || 'simple') === 'erp'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-primary-100 text-primary-800'
-                        }`}>
-                          {(allSettings.fees?.workflow_mode || 'simple') === 'erp' ? 'Standard ERP Mode' : 'Simple Mode'}
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-gray-500">
-                        Configure payment lifecycle controls. Simple mode keeps day-to-day operations swift and flexible, while Standard ERP mode enforces strict approval gates for high-value payments and cheques.
-                      </p>
-
-                      <div className="space-y-4 pt-1">
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-800 mb-2">
-                            Workflow Operating Mode
-                          </label>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                              (allSettings.fees?.workflow_mode || 'simple') === 'simple'
-                                ? 'border-primary-500 bg-primary-50/40 ring-1 ring-primary-500'
-                                : 'border-gray-200 hover:border-gray-300 bg-white'
-                            }`}>
-                              <input
-                                type="radio"
-                                name="workflow_mode"
-                                value="simple"
-                                checked={(allSettings.fees?.workflow_mode || 'simple') === 'simple'}
-                                onChange={() => {
-                                  handleSettingChange('fees', 'workflow_mode', 'simple')
-                                  handleSettingChange('fees', 'payment_workflow_mode', 'simple')
-                                }}
-                                className="mt-0.5 text-primary-600 focus:ring-primary-500"
-                              />
-                              <div>
-                                <span className="text-xs font-bold text-gray-900 block">
-                                  Simple Mode (Recommended Default)
-                                </span>
-                                <span className="text-[11px] text-gray-500 block mt-0.5 leading-relaxed">
-                                  Draft → Submitted → Posted. Authorized users can post payments directly without bottlenecking routine operations.
-                                </span>
-                              </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Default Academic Year
                             </label>
-
-                            <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                              (allSettings.fees?.workflow_mode || 'simple') === 'erp'
-                                ? 'border-purple-500 bg-purple-50/40 ring-1 ring-purple-500'
-                                : 'border-gray-200 hover:border-gray-300 bg-white'
-                            }`}>
-                              <input
-                                type="radio"
-                                name="workflow_mode"
-                                value="erp"
-                                checked={(allSettings.fees?.workflow_mode || 'simple') === 'erp'}
-                                onChange={() => {
-                                  handleSettingChange('fees', 'workflow_mode', 'erp')
-                                  handleSettingChange('fees', 'payment_workflow_mode', 'standard_erp')
-                                }}
-                                className="mt-0.5 text-purple-600 focus:ring-purple-500"
-                              />
-                              <div>
-                                <span className="text-xs font-bold text-gray-900 block">
-                                  Standard ERP Mode
-                                </span>
-                                <span className="text-[11px] text-gray-500 block mt-0.5 leading-relaxed">
-                                  Draft → Submitted → Approved → Posted. Enforces multi-tier approval verification for high-value amounts and cheques.
-                                </span>
-                              </div>
-                            </label>
-                          </div>
-                        </div>
-
-                        {(allSettings.fees?.workflow_mode || 'simple') === 'erp' && (
-                          <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl p-4 space-y-4">
-                            <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider">
-                              ERP Approval Criteria & Thresholds
-                            </h4>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Approval Required for Amounts Exceeding (₹)
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="1000"
-                                  value={allSettings.fees?.approval_threshold ?? 25000}
-                                  onChange={(e) => {
-                                    const val = parseFloat(e.target.value) || 0
-                                    handleSettingChange('fees', 'approval_threshold', val)
-                                    handleSettingChange('fees', 'erp_approval_amount_threshold', val)
-                                  }}
-                                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                                />
-                                <span className="text-[10px] text-gray-500 mt-1 block">
-                                  Payments at or above this amount require manager/admin sign-off.
-                                </span>
-                              </div>
-
-                              <div className="flex flex-col justify-center">
-                                <label className="flex items-center gap-2 cursor-pointer pt-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={allSettings.fees?.require_cheque_approval !== false}
-                                    onChange={(e) => handleSettingChange('fees', 'require_cheque_approval', e.target.checked)}
-                                    className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                                  />
-                                  <span className="text-xs font-semibold text-gray-800">
-                                    Require Approval for all Cheque Payments
-                                  </span>
-                                </label>
-                                <span className="text-[10px] text-gray-500 ml-5 block mt-0.5">
-                                  Prevents posting unverified cheques until clearance is verified.
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 7: ATTENDANCE SETTINGS                              */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'attendance' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <CalendarCheck className="w-4 h-4 text-primary-600" />
-                        <span>Daily & Batch Attendance Rules</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Attendance Tracking Mode
-                          </label>
-                          <select
-                            value={allSettings.attendance?.tracking_mode || 'Daily'}
-                            onChange={(e) => handleSettingChange('attendance', 'tracking_mode', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="Daily">Daily Once</option>
-                            <option value="BatchWise">Batch / Session Wise</option>
-                            <option value="SubjectWise">Subject Wise</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Grace Time for Late Arrival (Minutes)
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.attendance?.grace_minutes || 15}
-                            onChange={(e) => handleSettingChange('attendance', 'grace_minutes', parseInt(e.target.value) || 15)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 8: EXAMINATION SETTINGS                             */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'examination' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Award className="w-4 h-4 text-primary-600" />
-                        <span>Exam Grading & Report Card Evaluation</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Default Grading Scale
-                          </label>
-                          <select
-                            value={allSettings.examination?.grading_scale || 'CBSE_9_POINT'}
-                            onChange={(e) => handleSettingChange('examination', 'grading_scale', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="CBSE_9_POINT">CBSE 9-Point Scale (A1 to E2)</option>
-                            <option value="PERCENTAGE">Percentage Based</option>
-                            <option value="CGPA_10">10-Point CGPA</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Passing Threshold Percentage (%)
-                          </label>
-                          <input
-                            type="number"
-                            value={allSettings.examination?.passing_threshold_pct || 35.0}
-                            onChange={(e) => handleSettingChange('examination', 'passing_threshold_pct', parseFloat(e.target.value) || 35)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 9: COMMUNICATION SETTINGS                           */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'communication' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 text-primary-600" />
-                        <span>Automated Messaging & SMS / WhatsApp Gateways</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Default WhatsApp Gateway
-                          </label>
-                          <input
-                            type="text"
-                            value="Meta Cloud API (Official)"
-                            readOnly
-                            className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-600"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            SMS Sender Header (DLT Registered)
-                          </label>
-                          <input
-                            type="text"
-                            value="PRATHM"
-                            readOnly
-                            className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-600 font-mono"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 10: DOCUMENTS & PRINT SETTINGS                      */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'documents' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Printer className="w-4 h-4 text-primary-600" />
-                        <span>Document Paper Sizes, Signatures & Receipt Layout</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Default Fee Receipt Paper Size
-                          </label>
-                          <select
-                            value={allSettings.documents?.default_receipt_paper_size || 'A5_PORTRAIT'}
-                            onChange={(e) => handleSettingChange('documents', 'default_receipt_paper_size', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="A5_PORTRAIT">A5 Portrait (148 × 210 mm) - Compact Official (Recommended)</option>
-                            <option value="A4_PORTRAIT">A4 Portrait (210 × 297 mm) - Full Sheet</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Authorized Signatory Designation
-                          </label>
-                          <input
-                            type="text"
-                            value={allSettings.documents?.signatory_designation || 'Authorized Signatory PrathamOne Academy'}
-                            onChange={(e) => handleSettingChange('documents', 'signatory_designation', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Print Monogram Logo ("PA") on Receipt
-                          </label>
-                          <select
-                            value={String(allSettings.documents?.print_receipt_logo ?? 'false')}
-                            onChange={(e) => handleSettingChange('documents', 'print_receipt_logo', e.target.value === 'true')}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="false">Do Not Print Logo (Text Only) (Default)</option>
-                            <option value="true">Show "PA" Monogram Crest</option>
-                          </select>
-                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the institutional monogram crest on fee vouchers.</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Print Motto / Tagline on Receipt
-                          </label>
-                          <select
-                            value={String(allSettings.documents?.print_receipt_tagline ?? 'false')}
-                            onChange={(e) => handleSettingChange('documents', 'print_receipt_tagline', e.target.value === 'true')}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="false">Do Not Print Tagline (Default)</option>
-                            <option value="true">Show Tagline ("Learn · Practice · Achieve")</option>
-                          </select>
-                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the academy tagline under the institution title.</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Software Attribution in Print Footers
-                          </label>
-                          <select
-                            value={String(allSettings.documents?.print_software_branding ?? 'true')}
-                            onChange={(e) => handleSettingChange('documents', 'print_software_branding', e.target.value === 'true')}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="true">Include Understated Software Attribution (Recommended)</option>
-                            <option value="false">Omit Software Attribution (White-Label Clean)</option>
-                          </select>
-                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the subtle PrathamOne micro-attribution watermark in print footers.</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Top Sovereign Accent Trim (Navy & Gold)
-                          </label>
-                          <select
-                            value={String(allSettings.documents?.print_sovereign_trim ?? 'false')}
-                            onChange={(e) => handleSettingChange('documents', 'print_sovereign_trim', e.target.value === 'true')}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="false">Do Not Print Trim (Clean Minimal) (Default)</option>
-                            <option value="true">Show Sovereign Dual Trim (Navy & Gold)</option>
-                          </select>
-                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the royal navy and burnished gold header accent bar.</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Top-Right Official Verification Seal
-                          </label>
-                          <select
-                            value={String(allSettings.documents?.print_verification_seal ?? 'false')}
-                            onChange={(e) => handleSettingChange('documents', 'print_verification_seal', e.target.value === 'true')}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="false">Do Not Print Seal (Default)</option>
-                            <option value="true">Show Official Verification Seal ("★ OFFICIAL ★ PA VERIFIED")</option>
-                          </select>
-                          <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the institutional circular verification emblem.</p>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Computer-Generated Disclaimer Text
-                          </label>
-                          <input
-                            type="text"
-                            value={allSettings.documents?.disclaimer_text || 'This is a computer-generated receipt and does not require a physical signature. For any queries, contact the academy office.'}
-                            onChange={(e) => handleSettingChange('documents', 'disclaimer_text', e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    {/* AITDL Parent Organization & Product Ecosystem */}
-                    <OrganizationBranding variant="card" />
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 11: GENERAL LOOKUPS MANAGEMENT                      */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'lookups' && (
-                  <div className="space-y-6">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      {/* Filter & Add Bar */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <select
-                            value={selectedLookupCategory}
-                            onChange={(e) => setSelectedLookupCategory(e.target.value)}
-                            className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium"
-                          >
-                            <option value="ALL">All Categories ({lookups.length})</option>
-                            {lookupCategories.map((c) => (
-                              <option key={c} value={c}>
-                                {c}
-                              </option>
-                            ))}
-                          </select>
-
-                          <div className="relative">
-                            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                               type="text"
-                              value={lookupSearch}
-                              onChange={(e) => setLookupSearch(e.target.value)}
-                              placeholder="Search code or label..."
-                              className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              value={allSettings.academic?.default_academic_year || '2026-27'}
+                              onChange={(e) => handleSettingChange('academic', 'default_academic_year', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Term Structure
+                            </label>
+                            <select
+                              value={allSettings.academic?.term_structure || 'Quarterly'}
+                              onChange={(e) => handleSettingChange('academic', 'term_structure', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500 bg-white"
+                            >
+                              <option value="Quarterly">Quarterly (4 Terms)</option>
+                              <option value="Trimester">Trimester (3 Terms)</option>
+                              <option value="Semester">Semester (2 Terms)</option>
+                              <option value="Annual">Annual (1 Session)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Standard Naming Convention
+                            </label>
+                            <select
+                              value={allSettings.academic?.standard_naming || 'Roman'}
+                              onChange={(e) => handleSettingChange('academic', 'standard_naming', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500 bg-white"
+                            >
+                              <option value="Roman">Roman (VIII, IX, X, XI, XII)</option>
+                              <option value="Numeric">Numeric (8th, 9th, 10th)</option>
+                              <option value="Grade">Grade (Grade 8, Grade 9)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Timetable Slot Duration (Minutes)
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.academic?.timetable_slot_duration || 45}
+                              onChange={(e) => handleSettingChange('academic', 'timetable_slot_duration', parseInt(e.target.value) || 45)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Batch Capacity Warning Threshold
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.academic?.batch_capacity_warning || 40}
+                              onChange={(e) => handleSettingChange('academic', 'batch_capacity_warning', parseInt(e.target.value) || 40)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500"
                             />
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  )}
 
-                        <button
-                          type="button"
-                          onClick={handleOpenAddLookup}
-                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Add New Lookup</span>
-                        </button>
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 4: STUDENT & ADMISSION SETTINGS                     */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'admission' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <UserCheck className="w-4 h-4 text-primary-600" />
+                          <span>Admission Numbering & Student Policies</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Admission Number Prefix
+                            </label>
+                            <input
+                              type="text"
+                              value={allSettings.admission?.admission_prefix || 'PA'}
+                              onChange={(e) => handleSettingChange('admission', 'admission_prefix', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg uppercase"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Next Admission Sequence Number
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.admission?.next_admission_number || 43}
+                              onChange={(e) => handleSettingChange('admission', 'next_admission_number', parseInt(e.target.value) || 1)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Sibling Discount Percentage (%)
+                            </label>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={allSettings.admission?.sibling_discount_pct || 10.0}
+                              onChange={(e) => handleSettingChange('admission', 'sibling_discount_pct', parseFloat(e.target.value) || 0)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Minimum Admission Age (Years)
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.admission?.min_admission_age || 5}
+                              onChange={(e) => handleSettingChange('admission', 'min_admission_age', parseInt(e.target.value) || 5)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Lookups Table */}
-                      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                        <table className="w-full text-left border-collapse text-xs">
-                          <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold">
-                              <th className="px-4 py-2.5">Category</th>
-                              <th className="px-4 py-2.5">Code</th>
-                              <th className="px-4 py-2.5">Label</th>
-                              <th className="px-4 py-2.5">Description</th>
-                              <th className="px-4 py-2.5 text-center">Sort</th>
-                              <th className="px-4 py-2.5 text-center">Status</th>
-                              <th className="px-4 py-2.5 text-center">System</th>
-                              <th className="px-4 py-2.5 text-right">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {filteredLookups.map((item) => (
-                              <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-4 py-2.5 font-medium text-gray-600">
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-100 text-slate-700">
-                                    {item.category}
+                      {/* Student Status & Operational Visibility Configuration */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <div className="border-b border-gray-100 pb-2">
+                          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            <Eye className="w-4 h-4 text-primary-600" />
+                            <span>Student Status & Operational Visibility</span>
+                          </h3>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Configure institute-level default visibility rules for inactive, withdrawn, completed, and graduated students.
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                          {/* 1. Dashboard Student Visibility */}
+                          <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
+                            <label className="block text-xs font-bold text-gray-900">
+                              Dashboard Visibility
+                            </label>
+                            <p className="text-[11px] text-gray-500 leading-tight mb-2">
+                              Controls whether executive dashboard KPI metrics show only active students or include all statuses.
+                            </p>
+                            <select
+                              data-testid="setting-student-visibility-dashboard"
+                              value={allSettings.admission?.student_visibility_dashboard || 'active_only'}
+                              onChange={(e) => handleSettingChange('admission', 'student_visibility_dashboard', e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
+                            >
+                              <option value="active_only">Active students only (default)</option>
+                              <option value="include_all">Include all student statuses</option>
+                            </select>
+                          </div>
+
+                          {/* 2. Reports Student Visibility */}
+                          <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
+                            <label className="block text-xs font-bold text-gray-900">
+                              Reports Visibility
+                            </label>
+                            <p className="text-[11px] text-gray-500 leading-tight mb-2">
+                              Controls whether financial and academic reports default to including all statuses or active only.
+                            </p>
+                            <select
+                              data-testid="setting-student-visibility-reports"
+                              value={allSettings.admission?.student_visibility_reports || 'include_all'}
+                              onChange={(e) => handleSettingChange('admission', 'student_visibility_reports', e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
+                            >
+                              <option value="include_all">Include all statuses by default</option>
+                              <option value="active_only">Active students only by default</option>
+                            </select>
+                          </div>
+
+                          {/* 3. Student Lists Visibility */}
+                          <div className="space-y-1.5 p-3.5 bg-gray-50/70 border border-gray-200 rounded-xl">
+                            <label className="block text-xs font-bold text-gray-900">
+                              Student Lists Visibility
+                            </label>
+                            <p className="text-[11px] text-gray-500 leading-tight mb-2">
+                              Controls whether student directories and batch roster views load active students only or all students by default.
+                            </p>
+                            <select
+                              data-testid="setting-student-visibility-lists"
+                              value={allSettings.admission?.student_visibility_lists || 'active_only'}
+                              onChange={(e) => handleSettingChange('admission', 'student_visibility_lists', e.target.value)}
+                              className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded-lg bg-white font-medium text-gray-800 focus:ring-2 focus:ring-primary-500"
+                            >
+                              <option value="active_only">Show active students by default</option>
+                              <option value="include_all">Show all students by default</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 5: STAFF & HR SETTINGS                              */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'staff' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <Users className="w-4 h-4 text-primary-600" />
+                          <span>Staff Member ID & Leave Policies</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Employee ID Prefix
+                            </label>
+                            <input
+                              type="text"
+                              value={allSettings.staff?.employee_id_prefix || 'EMP'}
+                              onChange={(e) => handleSettingChange('staff', 'employee_id_prefix', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg uppercase"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Next Employee Number
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.staff?.next_employee_number || 101}
+                              onChange={(e) => handleSettingChange('staff', 'next_employee_number', parseInt(e.target.value) || 1)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Annual Casual Leave Quota (Days)
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.staff?.annual_casual_leave || 12}
+                              onChange={(e) => handleSettingChange('staff', 'annual_casual_leave', parseInt(e.target.value) || 12)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Annual Sick Leave Quota (Days)
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.staff?.annual_sick_leave || 8}
+                              onChange={(e) => handleSettingChange('staff', 'annual_sick_leave', parseInt(e.target.value) || 8)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 6: FEES & FINANCE SETTINGS                          */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'fees' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-primary-600" />
+                          <span>Fee Receipt Numbering & Monetary Settings</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Receipt Prefix
+                            </label>
+                            <input
+                              type="text"
+                              value={allSettings.fees?.receipt_prefix || 'RCP'}
+                              onChange={(e) => handleSettingChange('fees', 'receipt_prefix', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg uppercase"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Next Receipt Sequence Number
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.fees?.next_receipt_number || 168}
+                              onChange={(e) => handleSettingChange('fees', 'next_receipt_number', parseInt(e.target.value) || 1)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Currency Symbol
+                            </label>
+                            <input
+                              type="text"
+                              value={allSettings.fees?.currency_symbol || '₹'}
+                              onChange={(e) => handleSettingChange('fees', 'currency_symbol', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Payment Grace Days
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.fees?.grace_period_days || 7}
+                              onChange={(e) => handleSettingChange('fees', 'grace_period_days', parseInt(e.target.value) || 7)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Payment Workflow & ERP Governance Card */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                            <span>Payment Workflow & ERP Approval Governance</span>
+                          </h3>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${(allSettings.fees?.workflow_mode || 'simple') === 'erp'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-primary-100 text-primary-800'
+                            }`}>
+                            {(allSettings.fees?.workflow_mode || 'simple') === 'erp' ? 'Standard ERP Mode' : 'Simple Mode'}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-gray-500">
+                          Configure payment lifecycle controls. Simple mode keeps day-to-day operations swift and flexible, while Standard ERP mode enforces strict approval gates for high-value payments and cheques.
+                        </p>
+
+                        <div className="space-y-4 pt-1">
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-800 mb-2">
+                              Workflow Operating Mode
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${(allSettings.fees?.workflow_mode || 'simple') === 'simple'
+                                  ? 'border-primary-500 bg-primary-50/40 ring-1 ring-primary-500'
+                                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                                }`}>
+                                <input
+                                  type="radio"
+                                  name="workflow_mode"
+                                  value="simple"
+                                  checked={(allSettings.fees?.workflow_mode || 'simple') === 'simple'}
+                                  onChange={() => {
+                                    handleSettingChange('fees', 'workflow_mode', 'simple')
+                                    handleSettingChange('fees', 'payment_workflow_mode', 'simple')
+                                  }}
+                                  className="mt-0.5 text-primary-600 focus:ring-primary-500"
+                                />
+                                <div>
+                                  <span className="text-xs font-bold text-gray-900 block">
+                                    Simple Mode (Recommended Default)
                                   </span>
-                                </td>
-                                <td className="px-4 py-2.5 font-mono font-bold text-primary-900">
-                                  {item.code}
-                                </td>
-                                <td className="px-4 py-2.5 font-semibold text-gray-900">
-                                  {item.label}
-                                </td>
-                                <td className="px-4 py-2.5 text-gray-500 max-w-xs truncate">
-                                  {item.description || '—'}
-                                </td>
-                                <td className="px-4 py-2.5 text-center text-gray-600">
-                                  {item.sort_order}
-                                </td>
-                                <td className="px-4 py-2.5 text-center">
-                                  <span
-                                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                                      item.is_active
-                                        ? 'bg-emerald-100 text-emerald-800'
-                                        : 'bg-gray-100 text-gray-500'
-                                    }`}
-                                  >
-                                    {item.is_active ? 'Active' : 'Inactive'}
+                                  <span className="text-[11px] text-gray-500 block mt-0.5 leading-relaxed">
+                                    Draft → Submitted → Posted. Authorized users can post payments directly without bottlenecking routine operations.
                                   </span>
-                                </td>
-                                <td className="px-4 py-2.5 text-center">
-                                  {item.is_system ? (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary-50 text-primary-700 border border-blue-200">
-                                      Core
+                                </div>
+                              </label>
+
+                              <label className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${(allSettings.fees?.workflow_mode || 'simple') === 'erp'
+                                  ? 'border-purple-500 bg-purple-50/40 ring-1 ring-purple-500'
+                                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                                }`}>
+                                <input
+                                  type="radio"
+                                  name="workflow_mode"
+                                  value="erp"
+                                  checked={(allSettings.fees?.workflow_mode || 'simple') === 'erp'}
+                                  onChange={() => {
+                                    handleSettingChange('fees', 'workflow_mode', 'erp')
+                                    handleSettingChange('fees', 'payment_workflow_mode', 'standard_erp')
+                                  }}
+                                  className="mt-0.5 text-purple-600 focus:ring-purple-500"
+                                />
+                                <div>
+                                  <span className="text-xs font-bold text-gray-900 block">
+                                    Standard ERP Mode
+                                  </span>
+                                  <span className="text-[11px] text-gray-500 block mt-0.5 leading-relaxed">
+                                    Draft → Submitted → Approved → Posted. Enforces multi-tier approval verification for high-value amounts and cheques.
+                                  </span>
+                                </div>
+                              </label>
+                            </div>
+                          </div>
+
+                          {(allSettings.fees?.workflow_mode || 'simple') === 'erp' && (
+                            <div className="bg-purple-50/50 border border-purple-200/70 rounded-xl p-4 space-y-4">
+                              <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider">
+                                ERP Approval Criteria & Thresholds
+                              </h4>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Approval Required for Amounts Exceeding (₹)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="1000"
+                                    value={allSettings.fees?.approval_threshold ?? 25000}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0
+                                      handleSettingChange('fees', 'approval_threshold', val)
+                                      handleSettingChange('fees', 'erp_approval_amount_threshold', val)
+                                    }}
+                                    className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                                  />
+                                  <span className="text-[10px] text-gray-500 mt-1 block">
+                                    Payments at or above this amount require manager/admin sign-off.
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col justify-center">
+                                  <label className="flex items-center gap-2 cursor-pointer pt-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={allSettings.fees?.require_cheque_approval !== false}
+                                      onChange={(e) => handleSettingChange('fees', 'require_cheque_approval', e.target.checked)}
+                                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                    />
+                                    <span className="text-xs font-semibold text-gray-800">
+                                      Require Approval for all Cheque Payments
                                     </span>
-                                  ) : (
-                                    <span className="text-[10px] text-gray-400">Custom</span>
-                                  )}
-                                </td>
+                                  </label>
+                                  <span className="text-[10px] text-gray-500 ml-5 block mt-0.5">
+                                    Prevents posting unverified cheques until clearance is verified.
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 7: ATTENDANCE SETTINGS                              */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'attendance' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <CalendarCheck className="w-4 h-4 text-primary-600" />
+                          <span>Daily & Batch Attendance Rules</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Attendance Tracking Mode
+                            </label>
+                            <select
+                              value={allSettings.attendance?.tracking_mode || 'Daily'}
+                              onChange={(e) => handleSettingChange('attendance', 'tracking_mode', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                            >
+                              <option value="Daily">Daily Once</option>
+                              <option value="BatchWise">Batch / Session Wise</option>
+                              <option value="SubjectWise">Subject Wise</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Grace Time for Late Arrival (Minutes)
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.attendance?.grace_minutes || 15}
+                              onChange={(e) => handleSettingChange('attendance', 'grace_minutes', parseInt(e.target.value) || 15)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 8: EXAMINATION SETTINGS                             */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'examination' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <Award className="w-4 h-4 text-primary-600" />
+                          <span>Exam Grading & Report Card Evaluation</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Default Grading Scale
+                            </label>
+                            <select
+                              value={allSettings.examination?.grading_scale || 'CBSE_9_POINT'}
+                              onChange={(e) => handleSettingChange('examination', 'grading_scale', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                            >
+                              <option value="CBSE_9_POINT">CBSE 9-Point Scale (A1 to E2)</option>
+                              <option value="PERCENTAGE">Percentage Based</option>
+                              <option value="CGPA_10">10-Point CGPA</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Passing Threshold Percentage (%)
+                            </label>
+                            <input
+                              type="number"
+                              value={allSettings.examination?.passing_threshold_pct || 35.0}
+                              onChange={(e) => handleSettingChange('examination', 'passing_threshold_pct', parseFloat(e.target.value) || 35)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 9: COMMUNICATION SETTINGS                           */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'communication' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-primary-600" />
+                          <span>Automated Messaging & SMS / WhatsApp Gateways</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Default WhatsApp Gateway
+                            </label>
+                            <input
+                              type="text"
+                              value="Meta Cloud API (Official)"
+                              readOnly
+                              className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-600"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              SMS Sender Header (DLT Registered)
+                            </label>
+                            <input
+                              type="text"
+                              value="PRATHM"
+                              readOnly
+                              className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-600 font-mono"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 10: DOCUMENTS & PRINT SETTINGS                      */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'documents' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <Printer className="w-4 h-4 text-primary-600" />
+                          <span>Document Paper Sizes, Signatures & Receipt Layout</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Default Fee Receipt Paper Size
+                            </label>
+                            <select
+                              value={allSettings.documents?.default_receipt_paper_size || 'A5_PORTRAIT'}
+                              onChange={(e) => handleSettingChange('documents', 'default_receipt_paper_size', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                            >
+                              <option value="A5_PORTRAIT">A5 Portrait (148 × 210 mm) - Compact Official (Recommended)</option>
+                              <option value="A4_PORTRAIT">A4 Portrait (210 × 297 mm) - Full Sheet</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Authorized Signatory Designation
+                            </label>
+                            <input
+                              type="text"
+                              value={allSettings.documents?.signatory_designation || 'Authorized Signatory PrathamOne Academy'}
+                              onChange={(e) => handleSettingChange('documents', 'signatory_designation', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Print Monogram Logo ("PA") on Receipt
+                            </label>
+                            <select
+                              value={String(allSettings.documents?.print_receipt_logo ?? 'false')}
+                              onChange={(e) => handleSettingChange('documents', 'print_receipt_logo', e.target.value === 'true')}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                            >
+                              <option value="false">Do Not Print Logo (Text Only) (Default)</option>
+                              <option value="true">Show "PA" Monogram Crest</option>
+                            </select>
+                            <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the institutional monogram crest on fee vouchers.</p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Print Motto / Tagline on Receipt
+                            </label>
+                            <select
+                              value={String(allSettings.documents?.print_receipt_tagline ?? 'false')}
+                              onChange={(e) => handleSettingChange('documents', 'print_receipt_tagline', e.target.value === 'true')}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                            >
+                              <option value="false">Do Not Print Tagline (Default)</option>
+                              <option value="true">Show Tagline ("Learn · Practice · Achieve")</option>
+                            </select>
+                            <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the academy tagline under the institution title.</p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Software Attribution in Print Footers
+                            </label>
+                            <select
+                              value={String(allSettings.documents?.print_software_branding ?? 'true')}
+                              onChange={(e) => handleSettingChange('documents', 'print_software_branding', e.target.value === 'true')}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                            >
+                              <option value="true">Include Understated Software Attribution (Recommended)</option>
+                              <option value="false">Omit Software Attribution (White-Label Clean)</option>
+                            </select>
+                            <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the subtle PrathamOne micro-attribution watermark in print footers.</p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Top Sovereign Accent Trim (Navy & Gold)
+                            </label>
+                            <select
+                              value={String(allSettings.documents?.print_sovereign_trim ?? 'false')}
+                              onChange={(e) => handleSettingChange('documents', 'print_sovereign_trim', e.target.value === 'true')}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                            >
+                              <option value="false">Do Not Print Trim (Clean Minimal) (Default)</option>
+                              <option value="true">Show Sovereign Dual Trim (Navy & Gold)</option>
+                            </select>
+                            <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the royal navy and burnished gold header accent bar.</p>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Top-Right Official Verification Seal
+                            </label>
+                            <select
+                              value={String(allSettings.documents?.print_verification_seal ?? 'false')}
+                              onChange={(e) => handleSettingChange('documents', 'print_verification_seal', e.target.value === 'true')}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white"
+                            >
+                              <option value="false">Do Not Print Seal (Default)</option>
+                              <option value="true">Show Official Verification Seal ("★ OFFICIAL ★ PA VERIFIED")</option>
+                            </select>
+                            <p className="text-[10px] text-gray-500 mt-1">Controls rendering of the institutional circular verification emblem.</p>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Computer-Generated Disclaimer Text
+                            </label>
+                            <input
+                              type="text"
+                              value={allSettings.documents?.disclaimer_text || 'This is a computer-generated receipt and does not require a physical signature. For any queries, contact the academy office.'}
+                              onChange={(e) => handleSettingChange('documents', 'disclaimer_text', e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {/* AITDL Parent Organization & Product Ecosystem */}
+                      <OrganizationBranding variant="card" />
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 11: GENERAL LOOKUPS MANAGEMENT                      */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'lookups' && (
+                    <div className="space-y-6">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        {/* Filter & Add Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <select
+                              value={selectedLookupCategory}
+                              onChange={(e) => setSelectedLookupCategory(e.target.value)}
+                              className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 font-medium"
+                            >
+                              <option value="ALL">All Categories ({lookups.length})</option>
+                              {lookupCategories.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+
+                            <div className="relative">
+                              <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                              <input
+                                type="text"
+                                value={lookupSearch}
+                                onChange={(e) => setLookupSearch(e.target.value)}
+                                placeholder="Search code or label..."
+                                className="pl-8 pr-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleOpenAddLookup}
+                            className="px-3.5 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add New Lookup</span>
+                          </button>
+                        </div>
+
+                        {/* Lookups Table */}
+                        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                          <table className="w-full text-left border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold">
+                                <th className="px-4 py-2.5">Category</th>
+                                <th className="px-4 py-2.5">Code</th>
+                                <th className="px-4 py-2.5">Label</th>
+                                <th className="px-4 py-2.5">Description</th>
+                                <th className="px-4 py-2.5 text-center">Sort</th>
+                                <th className="px-4 py-2.5 text-center">Status</th>
+                                <th className="px-4 py-2.5 text-center">System</th>
+                                <th className="px-4 py-2.5 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {filteredLookups.map((item) => (
+                                <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                                  <td className="px-4 py-2.5 font-medium text-gray-600">
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-100 text-slate-700">
+                                      {item.category}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2.5 font-mono font-bold text-primary-900">
+                                    {item.code}
+                                  </td>
+                                  <td className="px-4 py-2.5 font-semibold text-gray-900">
+                                    {item.label}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-gray-500 max-w-xs truncate">
+                                    {item.description || '—'}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center text-gray-600">
+                                    {item.sort_order}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center">
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${item.is_active
+                                          ? 'bg-emerald-100 text-emerald-800'
+                                          : 'bg-gray-100 text-gray-500'
+                                        }`}
+                                    >
+                                      {item.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center">
+                                    {item.is_system ? (
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary-50 text-primary-700 border border-blue-200">
+                                        Core
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-gray-400">Custom</span>
+                                    )}
+                                  </td>
                                   <td className="px-4 py-2.5 text-right space-x-1.5">
                                     <LockedIconButton
                                       isEditMode={isEditMode}
@@ -2721,310 +2722,310 @@ export default function Settings() {
                                       className="p-1 text-gray-500 hover:text-rose-600 rounded transition-colors"
                                     />
                                   </td>
-                              </tr>
-                            ))}
-                            {filteredLookups.length === 0 && (
-                              <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-400 text-xs">
-                                  No lookups found in this view.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
+                                </tr>
+                              ))}
+                              {filteredLookups.length === 0 && (
+                                <tr>
+                                  <td colSpan={8} className="px-4 py-8 text-center text-gray-400 text-xs">
+                                    No lookups found in this view.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 12: SYSTEM PARAMETERS                               */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'system' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <SlidersHorizontal className="w-4 h-4 text-primary-600" />
-                        <span>System Regional & Feature Defaults</span>
-                      </h3>
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 12: SYSTEM PARAMETERS                               */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'system' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <SlidersHorizontal className="w-4 h-4 text-primary-600" />
+                          <span>System Regional & Feature Defaults</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Date Format
+                            </label>
+                            <input
+                              type="text"
+                              value="DD/MM/YYYY"
+                              readOnly
+                              className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Numbering Convention
+                            </label>
+                            <input
+                              type="text"
+                              value="Indian Lakhs & Crores (e.g., ₹ 90,000)"
+                              readOnly
+                              className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 13: USERS & PERMISSIONS                             */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'permissions' && (
+                    <div className="space-y-6 max-w-4xl">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-primary-600" />
+                          <span>Role-Based Access Control Matrices</span>
+                        </h3>
+                        <p className="text-xs text-gray-600">
+                          Centralized privilege matrices enforcing administrative governance across all coaching operations:
+                        </p>
+                        <div className="border border-gray-200 rounded-lg overflow-hidden text-xs">
+                          <table className="w-full text-left">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                              <tr>
+                                <th className="px-4 py-2 font-semibold text-gray-700">Role</th>
+                                <th className="px-4 py-2 font-semibold text-gray-700">Scope</th>
+                                <th className="px-4 py-2 font-semibold text-gray-700">Universal Edit</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              <tr>
+                                <td className="px-4 py-2 font-bold text-primary-900">sysadmin</td>
+                                <td className="px-4 py-2 text-gray-700">Global Full Enterprise Superuser</td>
+                                <td className="px-4 py-2 text-emerald-600 font-semibold">Enabled</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 font-bold text-primary-900">admin / principal</td>
+                                <td className="px-4 py-2 text-gray-700">Institution Leadership & Settings</td>
+                                <td className="px-4 py-2 text-emerald-600 font-semibold">Enabled</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 font-bold text-gray-800">teacher / faculty</td>
+                                <td className="px-4 py-2 text-gray-700">Assigned Batches, Marks & Attendance</td>
+                                <td className="px-4 py-2 text-gray-400">Scoped</td>
+                              </tr>
+                              <tr>
+                                <td className="px-4 py-2 font-bold text-gray-800">accountant</td>
+                                <td className="px-4 py-2 text-gray-700">Fees, Payment Invoices & Receipts</td>
+                                <td className="px-4 py-2 text-gray-400">Scoped</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 14: INTEGRATIONS                                    */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'integrations' && (
+                    <div className="space-y-6 max-w-4xl">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Date Format
-                          </label>
-                          <input
-                            type="text"
-                            value="DD/MM/YYYY"
-                            readOnly
-                            className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700"
-                          />
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-gray-900">Razorpay Payments</h4>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                              Active
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Automated online UPI, debit/credit cards, and net-banking settlement for student fees.
+                          </p>
                         </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Numbering Convention
-                          </label>
-                          <input
-                            type="text"
-                            value="Indian Lakhs & Crores (e.g., ₹ 90,000)"
-                            readOnly
-                            className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700"
-                          />
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-gray-900">Biometric Devices</h4>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">
+                              Configured
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Real-time biometric attendance integration for students and teaching faculty.
+                          </p>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 13: USERS & PERMISSIONS                             */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'permissions' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-primary-600" />
-                        <span>Role-Based Access Control Matrices</span>
-                      </h3>
-                      <p className="text-xs text-gray-600">
-                        Centralized privilege matrices enforcing administrative governance across all coaching operations:
-                      </p>
-                      <div className="border border-gray-200 rounded-lg overflow-hidden text-xs">
-                        <table className="w-full text-left">
-                          <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                              <th className="px-4 py-2 font-semibold text-gray-700">Role</th>
-                              <th className="px-4 py-2 font-semibold text-gray-700">Scope</th>
-                              <th className="px-4 py-2 font-semibold text-gray-700">Universal Edit</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            <tr>
-                              <td className="px-4 py-2 font-bold text-primary-900">sysadmin</td>
-                              <td className="px-4 py-2 text-gray-700">Global Full Enterprise Superuser</td>
-                              <td className="px-4 py-2 text-emerald-600 font-semibold">Enabled</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-2 font-bold text-primary-900">admin / principal</td>
-                              <td className="px-4 py-2 text-gray-700">Institution Leadership & Settings</td>
-                              <td className="px-4 py-2 text-emerald-600 font-semibold">Enabled</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-2 font-bold text-gray-800">teacher / faculty</td>
-                              <td className="px-4 py-2 text-gray-700">Assigned Batches, Marks & Attendance</td>
-                              <td className="px-4 py-2 text-gray-400">Scoped</td>
-                            </tr>
-                            <tr>
-                              <td className="px-4 py-2 font-bold text-gray-800">accountant</td>
-                              <td className="px-4 py-2 text-gray-700">Fees, Payment Invoices & Receipts</td>
-                              <td className="px-4 py-2 text-gray-400">Scoped</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 14: INTEGRATIONS                                    */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'integrations' && (
-                  <div className="space-y-6 max-w-4xl">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-bold text-gray-900">Razorpay Payments</h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                            Active
-                          </span>
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 15: DATA & MAINTENANCE                              */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'maintenance' && (
+                    <div className="space-y-6">
+                      {/* Link to Dedicated Housekeeping & Database Operations Module */}
+                      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-bold text-emerald-950 flex items-center gap-2">
+                            <Database className="w-4 h-4 text-emerald-700" />
+                            <span>Housekeeping: Full PostgreSQL Backup & Restore Center</span>
+                          </h4>
+                          <p className="text-xs text-emerald-800">
+                            Run verified PostgreSQL backups, GFS retention pruning, non-destructive sandbox restore drills,
+                            VACUUM ANALYZE, and automated CLI scheduling.
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          Automated online UPI, debit/credit cards, and net-banking settlement for student fees.
-                        </p>
-                      </div>
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-bold text-gray-900">Biometric Devices</h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">
-                            Configured
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          Real-time biometric attendance integration for students and teaching faculty.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION 15: DATA & MAINTENANCE                              */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'maintenance' && (
-                  <div className="space-y-6">
-                    {/* Link to Dedicated Housekeeping & Database Operations Module */}
-                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-emerald-950 flex items-center gap-2">
-                          <Database className="w-4 h-4 text-emerald-700" />
-                          <span>Housekeeping: Full PostgreSQL Backup & Restore Center</span>
-                        </h4>
-                        <p className="text-xs text-emerald-800">
-                          Run verified PostgreSQL backups, GFS retention pruning, non-destructive sandbox restore drills,
-                          VACUUM ANALYZE, and automated CLI scheduling.
-                        </p>
-                      </div>
-                      <Link
-                        to="/housekeeping"
-                        className="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl inline-flex items-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-auto"
-                      >
-                        <span>Open Housekeeping Module</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-
-                    {/* Maintenance Quick Actions */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
-                        <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                          <Download className="w-4 h-4 text-primary-600" />
-                          <span>Backup Configuration Snapshot</span>
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          Download a portable JSON archive of your institute profile, custom branding, settings, and general lookups.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={handleDownloadSnapshot}
-                          className="px-3.5 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
+                        <Link
+                          to="/housekeeping"
+                          className="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl inline-flex items-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-auto"
                         >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Download Snapshot</span>
-                        </button>
+                          <span>Open Housekeeping Module</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Link>
                       </div>
 
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
-                        <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                          <RotateCcw className="w-4 h-4 text-rose-600" />
-                          <span>Reset Section Defaults</span>
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          Restore factory settings baseline for any operational category. Custom values will be cleared.
-                        </p>
-                        <LockedButton
-                          isEditMode={isEditMode}
-                          onClick={() => handleResetDefaults('academic')}
-                          icon={RotateCcw}
-                          className="px-3.5 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 rounded-lg flex items-center gap-1.5 shadow-2xs"
-                        >
-                          Reset Academic Defaults
-                        </LockedButton>
-                      </div>
-                    </div>
-
-                    {/* Audit Logs Trail */}
-                    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
-                      <h4 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
-                        <Database className="w-4 h-4 text-primary-600" />
-                        <span>Settings Configuration Audit Trail</span>
-                      </h4>
-                      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                        <table className="w-full text-left border-collapse text-xs">
-                          <thead>
-                            <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold">
-                              <th className="px-4 py-2.5">Date / Time</th>
-                              <th className="px-4 py-2.5">Category</th>
-                              <th className="px-4 py-2.5">Setting Key</th>
-                              <th className="px-4 py-2.5">Changed By</th>
-                              <th className="px-4 py-2.5">Reason</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {auditLogs.map((log) => (
-                              <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-4 py-2.5 font-mono text-gray-500">
-                                  {new Date(log.created_at).toLocaleString()}
-                                </td>
-                                <td className="px-4 py-2.5 font-semibold text-primary-900">
-                                  {log.category}
-                                </td>
-                                <td className="px-4 py-2.5 font-mono text-gray-800">
-                                  {log.setting_key}
-                                </td>
-                                <td className="px-4 py-2.5 text-gray-700">
-                                  {log.changed_by_name || 'System Admin'}
-                                </td>
-                                <td className="px-4 py-2.5 text-gray-500 max-w-xs truncate">
-                                  {log.reason || 'Settings workspace modification'}
-                                </td>
-                              </tr>
-                            ))}
-                            {auditLogs.length === 0 && (
-                              <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-xs">
-                                  No audit logs recorded yet.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION: NAVIGATION & MENU GOVERNANCE                          */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'navigation' && (
-                  <NavigationSettingsPanel />
-                )}
-
-                {/* ─────────────────────────────────────────────────────────── */}
-                {/* SECTION: CODEX CONFIGURATION STUDIO                           */}
-                {/* ─────────────────────────────────────────────────────────── */}
-                {activeCategory === 'codex' && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <KeyRound className="w-5 h-5 text-indigo-400" />
-                          <h3 className="text-lg font-bold">CodeX Configuration Studio</h3>
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-500/30 text-indigo-200 border border-indigo-400/30">
-                            Enterprise Capability
-                          </span>
+                      {/* Maintenance Quick Actions */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
+                          <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            <Download className="w-4 h-4 text-primary-600" />
+                            <span>Backup Configuration Snapshot</span>
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            Download a portable JSON archive of your institute profile, custom branding, settings, and general lookups.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleDownloadSnapshot}
+                            className="px-3.5 py-1.5 text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg flex items-center gap-1.5 shadow-2xs"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download Snapshot</span>
+                          </button>
                         </div>
-                        <p className="text-xs text-slate-300">
-                          Configure numeric-to-alphabet bijective mappings, value obfuscation scopes, and authorized on-demand decoders.
-                        </p>
-                      </div>
-                      <Link
-                        to="/codex"
-                        className="px-4 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-xs transition-all shrink-0"
-                      >
-                        <span>Open Full Studio</span>
-                        <ExternalLink className="w-4 h-4" />
-                      </Link>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
-                        <span className="text-xs font-bold text-gray-500 uppercase">System Default</span>
-                        <div className="text-lg font-bold text-gray-900">DISABLED (OFF)</div>
-                        <p className="text-xs text-gray-500">CodeX is an opt-in capability that never enables automatically on installation or upgrade.</p>
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
+                          <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                            <RotateCcw className="w-4 h-4 text-rose-600" />
+                            <span>Reset Section Defaults</span>
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            Restore factory settings baseline for any operational category. Custom values will be cleared.
+                          </p>
+                          <LockedButton
+                            isEditMode={isEditMode}
+                            onClick={() => handleResetDefaults('academic')}
+                            icon={RotateCcw}
+                            className="px-3.5 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 rounded-lg flex items-center gap-1.5 shadow-2xs"
+                          >
+                            Reset Academic Defaults
+                          </LockedButton>
+                        </div>
                       </div>
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
-                        <span className="text-xs font-bold text-gray-500 uppercase">Reversible Engine</span>
-                        <div className="text-lg font-bold text-primary-700">0–9 Bijective Mapping</div>
-                        <p className="text-xs text-gray-500">Maps 0-9 digits to unique symbols (e.g. 1250 → AZPQ) with decimal, negative, and version history support.</p>
-                      </div>
-                      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
-                        <span className="text-xs font-bold text-gray-500 uppercase">Scoped Authorization</span>
-                        <div className="text-lg font-bold text-emerald-700">7-Tier Precedence</div>
-                        <p className="text-xs text-gray-500">Precedence: Security &gt; System &gt; Business &gt; Dept &gt; Role &gt; User. Restrictive rules always win.</p>
+
+                      {/* Audit Logs Trail */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <h4 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 flex items-center gap-2">
+                          <Database className="w-4 h-4 text-primary-600" />
+                          <span>Settings Configuration Audit Trail</span>
+                        </h4>
+                        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                          <table className="w-full text-left border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-gray-50 border-b border-gray-200 text-gray-600 font-semibold">
+                                <th className="px-4 py-2.5">Date / Time</th>
+                                <th className="px-4 py-2.5">Category</th>
+                                <th className="px-4 py-2.5">Setting Key</th>
+                                <th className="px-4 py-2.5">Changed By</th>
+                                <th className="px-4 py-2.5">Reason</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {auditLogs.map((log) => (
+                                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                                  <td className="px-4 py-2.5 font-mono text-gray-500">
+                                    {new Date(log.created_at).toLocaleString()}
+                                  </td>
+                                  <td className="px-4 py-2.5 font-semibold text-primary-900">
+                                    {log.category}
+                                  </td>
+                                  <td className="px-4 py-2.5 font-mono text-gray-800">
+                                    {log.setting_key}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-gray-700">
+                                    {log.changed_by_name || 'System Admin'}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-gray-500 max-w-xs truncate">
+                                    {log.reason || 'Settings workspace modification'}
+                                  </td>
+                                </tr>
+                              ))}
+                              {auditLogs.length === 0 && (
+                                <tr>
+                                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-xs">
+                                    No audit logs recorded yet.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION: NAVIGATION & MENU GOVERNANCE                          */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'navigation' && (
+                    <NavigationSettingsPanel />
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION: CODEX CONFIGURATION STUDIO                           */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'codex' && (
+                    <div className="space-y-6">
+                      <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <KeyRound className="w-5 h-5 text-indigo-400" />
+                            <h3 className="text-lg font-bold">CodeX Configuration Studio</h3>
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-500/30 text-indigo-200 border border-indigo-400/30">
+                              Enterprise Capability
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-300">
+                            Configure numeric-to-alphabet bijective mappings, value obfuscation scopes, and authorized on-demand decoders.
+                          </p>
+                        </div>
+                        <Link
+                          to="/codex"
+                          className="px-4 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-xs transition-all shrink-0"
+                        >
+                          <span>Open Full Studio</span>
+                          <ExternalLink className="w-4 h-4" />
+                        </Link>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
+                          <span className="text-xs font-bold text-gray-500 uppercase">System Default</span>
+                          <div className="text-lg font-bold text-gray-900">DISABLED (OFF)</div>
+                          <p className="text-xs text-gray-500">CodeX is an opt-in capability that never enables automatically on installation or upgrade.</p>
+                        </div>
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
+                          <span className="text-xs font-bold text-gray-500 uppercase">Reversible Engine</span>
+                          <div className="text-lg font-bold text-primary-700">0–9 Bijective Mapping</div>
+                          <p className="text-xs text-gray-500">Maps 0-9 digits to unique symbols (e.g. 1250 → AZPQ) with decimal, negative, and version history support.</p>
+                        </div>
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2">
+                          <span className="text-xs font-bold text-gray-500 uppercase">Scoped Authorization</span>
+                          <div className="text-lg font-bold text-emerald-700">7-Tier Precedence</div>
+                          <p className="text-xs text-gray-500">Precedence: Security &gt; System &gt; Business &gt; Dept &gt; Role &gt; User. Restrictive rules always win.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}

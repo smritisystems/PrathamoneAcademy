@@ -162,10 +162,15 @@ class ChatService:
         await cls.sync_default_staff_rooms(session, institution_id)
         await cls.sync_batch_rooms(session, institution_id)
 
-        rooms_stmt = select(ChatRoom).where(
-            ChatRoom.institution_id == institution_id,
-            ChatRoom.is_active == True,
-        ).order_by(ChatRoom.room_type, ChatRoom.name)
+        rooms_stmt = (
+            select(ChatRoom)
+            .where(
+                ChatRoom.institution_id == institution_id,
+                ChatRoom.is_active == True,
+            )
+            .options(selectinload(ChatRoom.participants).selectinload(ChatParticipant.user))
+            .order_by(ChatRoom.room_type, ChatRoom.name)
+        )
 
         all_rooms = (await session.execute(rooms_stmt)).scalars().all()
         accessible = []
@@ -187,8 +192,28 @@ class ChatService:
         for room in all_rooms:
             can_access = False
             user_room_role = "MEMBER"
+            room_name = room.name
+            room_desc = room.description
+            direct_user = None
 
-            if is_staff:
+            if room.room_type == "STAFF_DIRECT":
+                # Private 1-on-1 direct rooms are strictly restricted to registered participants
+                if is_staff and any(p.user_id == user.id for p in room.participants):
+                    can_access = True
+                    user_room_role = "MEMBER"
+                    other_p = next((p for p in room.participants if p.user_id != user.id), None)
+                    if other_p and other_p.user:
+                        o_user = other_p.user
+                        o_role = (o_user.role or "Staff").title()
+                        room_name = f"{o_user.full_name} ({o_role})"
+                        room_desc = f"1-on-1 Direct Chat • {o_user.email}"
+                        direct_user = {
+                            "id": o_user.id,
+                            "name": o_user.full_name,
+                            "role": o_user.role,
+                            "email": o_user.email,
+                        }
+            elif is_staff:
                 # Admins, principals, teachers see all staff rooms and doubt rooms
                 if user_role in ("superadmin", "super_admin", "sysadmin", "admin", "principal"):
                     can_access = True
@@ -197,8 +222,8 @@ class ChatService:
                     can_access = True
                     user_room_role = "TEACHER"
                 elif user_role in ("accountant", "staff", "receptionist", "counselor"):
-                    # Staff members see staff rooms
-                    if room.room_type in ("STAFF_GENERAL", "STAFF_DEPT", "STAFF_DIRECT"):
+                    # Staff members see general staff rooms
+                    if room.room_type in ("STAFF_GENERAL", "STAFF_DEPT"):
                         can_access = True
                         user_room_role = "MEMBER"
             elif student:
@@ -224,10 +249,10 @@ class ChatService:
 
                 accessible.append({
                     "id": room.id,
-                    "name": room.name,
+                    "name": room_name,
                     "code": room.code,
                     "room_type": room.room_type,
-                    "description": room.description,
+                    "description": room_desc,
                     "standard_id": room.standard_id,
                     "division_id": room.division_id,
                     "subject_id": room.subject_id,
@@ -237,6 +262,7 @@ class ChatService:
                     "is_curfew_active": curfew_active,
                     "user_room_role": user_room_role,
                     "unresolved_doubts_count": unresolved_count,
+                    "direct_user": direct_user,
                     "created_at": room.created_at.isoformat() if room.created_at else None,
                 })
 
@@ -438,6 +464,138 @@ class ChatService:
             "room_type": room.room_type,
             "description": room.description,
             "is_curfew_enabled": room.is_curfew_enabled,
+        }
+
+    @classmethod
+    async def get_direct_directory(
+        cls,
+        session: AsyncSession,
+        institution_id: int,
+        current_user: User,
+        query: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Return all active users available for 1-on-1 direct messaging (teachers, staff, admins)."""
+        stmt = (
+            select(User)
+            .where(
+                User.institution_id == institution_id,
+                User.is_active == True,
+                User.id != current_user.id,
+            )
+            .order_by(User.first_name, User.last_name, User.username)
+        )
+
+        if query and query.strip():
+            clean_q = f"%{query.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    User.first_name.ilike(clean_q),
+                    User.last_name.ilike(clean_q),
+                    User.username.ilike(clean_q),
+                    User.email.ilike(clean_q),
+                    User.role.ilike(clean_q),
+                )
+            )
+
+        users = (await session.execute(stmt)).scalars().all()
+        return [
+            {
+                "id": u.id,
+                "username": u.username,
+                "first_name": u.first_name or "",
+                "last_name": u.last_name or "",
+                "full_name": u.full_name or f"{u.first_name or ''} {u.last_name or ''}".strip() or u.username,
+                "email": u.email,
+                "role": u.role,
+            }
+            for u in users
+        ]
+
+    @classmethod
+    async def get_or_create_direct_room(
+        cls,
+        session: AsyncSession,
+        institution_id: int,
+        current_user: User,
+        target_user_id: int,
+    ) -> Dict[str, Any]:
+        """Retrieve existing or provision new 1-on-1 direct chat room between two users."""
+        if current_user.id == target_user_id:
+            raise ValueError("You cannot initiate a direct chat with yourself")
+
+        target_user = (await session.execute(
+            select(User).where(User.id == target_user_id, User.is_active == True)
+        )).scalar_one_or_none()
+
+        if not target_user:
+            raise ValueError("Target user not found or inactive")
+
+        # Deterministic room code for canonical deduplication
+        u_min = min(current_user.id, target_user.id)
+        u_max = max(current_user.id, target_user.id)
+        code = f"direct_u{u_min}_u{u_max}"
+
+        room_stmt = (
+            select(ChatRoom)
+            .where(ChatRoom.code == code)
+            .options(selectinload(ChatRoom.participants).selectinload(ChatParticipant.user))
+        )
+        room = (await session.execute(room_stmt)).scalar_one_or_none()
+
+        if not room:
+            room = ChatRoom(
+                institution_id=institution_id,
+                room_type="STAFF_DIRECT",
+                name=f"Direct: {current_user.first_name} & {target_user.first_name}",
+                code=code,
+                description=f"Direct chat between {current_user.full_name or current_user.username} and {target_user.full_name or target_user.username}",
+                is_active=True,
+                is_curfew_enabled=False,
+            )
+            session.add(room)
+            await session.flush()
+
+            # Add both users as participants
+            p1 = ChatParticipant(room_id=room.id, user_id=current_user.id, role_in_room="MEMBER")
+            p2 = ChatParticipant(room_id=room.id, user_id=target_user.id, role_in_room="MEMBER")
+            session.add_all([p1, p2])
+            await session.commit()
+            await session.refresh(room)
+        else:
+            # Ensure participants exist
+            existing_user_ids = {p.user_id for p in room.participants if p.user_id}
+            added = False
+            if current_user.id not in existing_user_ids:
+                session.add(ChatParticipant(room_id=room.id, user_id=current_user.id, role_in_room="MEMBER"))
+                added = True
+            if target_user.id not in existing_user_ids:
+                session.add(ChatParticipant(room_id=room.id, user_id=target_user.id, role_in_room="MEMBER"))
+                added = True
+            if added:
+                await session.commit()
+                await session.refresh(room)
+
+        target_display_name = f"{target_user.full_name or target_user.username} ({(target_user.role or 'Staff').title()})"
+        return {
+            "id": room.id,
+            "name": target_display_name,
+            "code": room.code,
+            "room_type": room.room_type,
+            "description": f"1-on-1 Direct Chat • {target_user.email}",
+            "standard_id": None,
+            "division_id": None,
+            "subject_id": None,
+            "is_curfew_enabled": False,
+            "is_curfew_active": False,
+            "user_room_role": "MEMBER",
+            "unresolved_doubts_count": 0,
+            "direct_user": {
+                "id": target_user.id,
+                "name": target_user.full_name or target_user.username,
+                "role": target_user.role,
+                "email": target_user.email,
+            },
+            "created_at": room.created_at.isoformat() if room.created_at else None,
         }
 
     @classmethod

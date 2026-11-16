@@ -177,6 +177,7 @@ async def seed(bootstrap_only: bool = False):
             "administrator",
         )
         accountant_password = os.getenv("INITIAL_ACCOUNTANT_PASSWORD")
+        default_admin_email = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@example.com").strip().lower()
 
         if existing_accountant and accountant_password:
             accountant_password = validate_bootstrap_password(
@@ -187,6 +188,8 @@ async def seed(bootstrap_only: bool = False):
 
         if existing_admin:
             existing_admin.hashed_password = get_password_hash(initial_admin_password)
+            if existing_admin.email == "admin@prashantacademy.com":
+                existing_admin.email = default_admin_email
 
         # 2. Institution Master Record
         existing_inst = await session.execute(
@@ -256,7 +259,7 @@ async def seed(bootstrap_only: bool = False):
             admin_user = User(
                 institution_id=institution.id,
                 username="admin",
-                email="admin@prashantacademy.com",
+                email=default_admin_email,
                 hashed_password=get_password_hash(initial_admin_password),
                 first_name="Admin",
                 last_name="User",

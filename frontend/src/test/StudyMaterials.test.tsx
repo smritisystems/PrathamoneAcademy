@@ -63,7 +63,7 @@ describe('Study Materials & Academic Programs Console (CoursesPage)', () => {
         id: 1,
         username: 'admin',
         role: 'admin',
-        email: 'admin@prashantacademy.com',
+        email: 'admin@example.com',
         institution_id: 1,
       } as any,
       selectedInstitutionId: 1,

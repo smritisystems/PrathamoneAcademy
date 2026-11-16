@@ -16,7 +16,7 @@
  * @description Canonical document branding header, statutory compliance notices, and authorized signatory layout for printable documents.
  */
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ShieldCheck, FileCheck2 } from 'lucide-react'
 import { useBranding, BRANDING_CONFIG, PRINT_FOOTER_BRANDING_TEXT } from '../config/branding'
 import type { Institution } from '../types'
@@ -67,8 +67,12 @@ export function PrintDocumentHeader({
   const displayMonogram = monogram || globalBranding.monogram || 'PA'
   const displaySubtitle = subtitle || globalBranding.tagline
   const [logoError, setLogoError] = useState(false)
-  const logoUrl = institution?.logo_url
+  const logoUrl = institution?.logo_url ?? (globalBranding.assets.logoUrl !== BRANDING_CONFIG.assets.academyLogoUrl ? globalBranding.assets.logoUrl : null)
   const hasValidLogo = !!logoUrl && logoUrl !== '/logo.svg' && !logoError
+
+  useEffect(() => {
+    setLogoError(false)
+  }, [logoUrl])
 
   const badgeBg = {
     blue: 'bg-primary-50 text-primary-900 border-blue-200',

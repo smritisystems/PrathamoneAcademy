@@ -106,6 +106,14 @@ export default function Layout() {
     retry: false,
   })
 
+  const [headerLogoFailed, setHeaderLogoFailed] = useState(false)
+  const currentInst = institutions.find((i) => i.id === selectedInstitutionId) ?? institutions[0]
+  const effectiveHeaderLogo = currentInst?.logo_url || branding.assets.logoUrl
+
+  useEffect(() => {
+    setHeaderLogoFailed(false)
+  }, [effectiveHeaderLogo, selectedInstitutionId])
+
   // Validate or auto-select institution if none selected or if stale ID
   useEffect(() => {
     if (institutions.length > 0) {
@@ -218,24 +226,42 @@ export default function Layout() {
             </button>
           )}
 
-          {/* Institution Selector */}
-          <div className="relative">
-            <select
-              value={selectedInstitutionId ?? (institutions[0]?.id ?? '')}
-              onChange={(e) => setSelectedInstitution(Number(e.target.value))}
-              className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px]"
-            >
-              {institutions.length === 0 ? (
-                <option value="">Loading...</option>
+          {/* Active Institution Badge with Logo & Selector */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/90 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden" title={currentInst?.name || branding.academyName}>
+              {effectiveHeaderLogo && !headerLogoFailed ? (
+                <img
+                  src={effectiveHeaderLogo}
+                  alt={currentInst?.name || branding.academyName}
+                  onError={() => setHeaderLogoFailed(true)}
+                  className="w-full h-full object-contain rounded-md [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                />
               ) : (
-                institutions.map((inst) => (
-                  <option key={inst.id} value={inst.id}>
-                    {inst.name}
-                  </option>
-                ))
+                <div className="w-full h-full bg-primary-600 rounded-md flex items-center justify-center font-bold text-[11px] text-white">
+                  {currentInst?.short_name || branding.monogram}
+                </div>
               )}
-            </select>
-            <ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Institution Selector */}
+            <div className="relative">
+              <select
+                value={selectedInstitutionId ?? (institutions[0]?.id ?? '')}
+                onChange={(e) => setSelectedInstitution(Number(e.target.value))}
+                className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px] font-medium text-slate-800"
+              >
+                {institutions.length === 0 ? (
+                  <option value="">Loading...</option>
+                ) : (
+                  institutions.map((inst) => (
+                    <option key={inst.id} value={inst.id}>
+                      {inst.name}
+                    </option>
+                  ))
+                )}
+              </select>
+              <ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
           </div>
 
           {/* Academic Year Selector */}

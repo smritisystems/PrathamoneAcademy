@@ -87,11 +87,9 @@ describe('Centralized Application Branding & Identity System', () => {
       `${artworkRoot}/batch_g1-4_1080.png`
     )
     expect(BRANDING_CONFIG.assets.softwareLogoSvgUrl).toBe(`${artworkRoot}/batch_g1-4_1080.svg`)
-    expect(BRANDING_CONFIG.assets.appIconUrl).toBe(
-      `${artworkRoot}/batch_rect1-1-8-6_10802.png`
-    )
+    expect(BRANDING_CONFIG.assets.appIconUrl).toBe('/artwork/16112026/001/path8-5-8.png')
     expect(BRANDING_CONFIG.assets.softwareIconSvgUrl).toBe(
-      `${artworkRoot}/batch_rect1-1-8-6_10802.svg`
+      '/artwork/16112026/001/path8-5-8.svg'
     )
     expect(BRANDING_CONFIG.assets.faviconUrl).toBe(BRANDING_CONFIG.assets.appIconUrl)
     expect(BRANDING_CONFIG.assets.academyLogoUrl).toBe('/media/logo/prashant-academy-logo.svg')

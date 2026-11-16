@@ -19,6 +19,7 @@
 import apiClient from './client'
 import type {
   ChatRoomItem, ChatMessageItem, SendChatMessagePayload, CreateChatRoomPayload, MentionableEntityItem,
+  DirectChatUserItem,
   PaymentPermissions,
   Institution, AcademicYear, Board, Standard, Division,
   Student, FeeCategory, FeeStructure, FeeInvoice,
@@ -3011,6 +3012,10 @@ export const eduboardApi = {
 export const chatApi = {
   getRooms: () => apiClient.get<ChatRoomItem[]>('/chat/rooms'),
   createRoom: (payload: CreateChatRoomPayload) => apiClient.post<ChatRoomItem>('/chat/rooms', payload),
+  getDirectDirectory: (q?: string) =>
+    apiClient.get<DirectChatUserItem[]>('/chat/direct-directory', { params: q ? { q } : {} }),
+  getOrCreateDirectRoom: (targetUserId: number) =>
+    apiClient.post<ChatRoomItem>('/chat/direct', { target_user_id: targetUserId }),
   getMessages: (roomId: number, limit = 50, beforeId?: number) =>
     apiClient.get<ChatMessageItem[]>(`/chat/rooms/${roomId}/messages`, {
       params: { limit, before_id: beforeId },

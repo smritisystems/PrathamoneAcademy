@@ -21,10 +21,11 @@ import {
   MessageSquare, Send, Users, Shield, Clock, CheckCircle2,
   AlertTriangle, Search, Plus, Moon, HelpCircle, Check,
   Sparkles, RefreshCw, X, Radio, ArrowRight, Lock, BookOpen,
-  AtSign, Download, Eye, FileText, UserCheck, Receipt, GraduationCap, ChevronLeft
+  AtSign, Download, Eye, FileText, UserCheck, Receipt, GraduationCap, ChevronLeft,
+  UserPlus, User, Mail
 } from 'lucide-react'
 import { chatApi } from '../../api/endpoints'
-import type { ChatRoomItem, ChatMessageItem, MentionableEntityItem } from '../../types'
+import type { ChatRoomItem, ChatMessageItem, MentionableEntityItem, DirectChatUserItem } from '../../types'
 import { useAuthStore, isUserSysAdmin } from '../../store/authStore'
 import { useBranding } from '../../config/branding'
 
@@ -45,7 +46,12 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
   const [isLoadingRooms, setIsLoadingRooms] = useState(true)
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'ALL' | 'STAFF' | 'DOUBTS'>('ALL')
+  const [filterType, setFilterType] = useState<'ALL' | 'STAFF' | 'DOUBTS' | 'DIRECT'>('ALL')
+  const [showDirectModal, setShowDirectModal] = useState(false)
+  const [directSearchQuery, setDirectSearchQuery] = useState('')
+  const [directDirectory, setDirectDirectory] = useState<DirectChatUserItem[]>([])
+  const [isLoadingDirectory, setIsLoadingDirectory] = useState(false)
+  const [isStartingDirect, setIsStartingDirect] = useState(false)
   const [inputText, setInputText] = useState('')
   const [isDoubtMode, setIsDoubtMode] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -182,14 +188,57 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
       if (!matchesSearch) return false
 
       if (filterType === 'STAFF') {
-        return ['STAFF_GENERAL', 'STAFF_DEPT', 'STAFF_DIRECT'].includes(r.room_type)
+        return ['STAFF_GENERAL', 'STAFF_DEPT'].includes(r.room_type)
       }
       if (filterType === 'DOUBTS') {
         return r.room_type === 'BATCH_DOUBT'
       }
+      if (filterType === 'DIRECT') {
+        return r.room_type === 'STAFF_DIRECT'
+      }
       return true
     })
   }, [rooms, searchQuery, filterType])
+
+  const openDirectModal = () => {
+    setShowDirectModal(true)
+    setDirectSearchQuery('')
+    fetchDirectDirectory('')
+  }
+
+  const fetchDirectDirectory = async (query = '') => {
+    setIsLoadingDirectory(true)
+    try {
+      const res = await chatApi.getDirectDirectory(query)
+      setDirectDirectory(res.data)
+    } catch (err) {
+      console.error('Failed to load direct chat directory:', err)
+    } finally {
+      setIsLoadingDirectory(false)
+    }
+  }
+
+  const handleStartDirectChat = async (targetUserId: number) => {
+    setIsStartingDirect(true)
+    try {
+      const res = await chatApi.getOrCreateDirectRoom(targetUserId)
+      const room = res.data
+      setRooms((prev) => {
+        const existing = prev.find((r) => r.id === room.id)
+        if (existing) {
+          return prev.map((r) => (r.id === room.id ? room : r))
+        }
+        return [room, ...prev]
+      })
+      setActiveRoomId(room.id)
+      if (compact) setCompactPane('chat')
+      setShowDirectModal(false)
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to start direct chat.')
+    } finally {
+      setIsStartingDirect(false)
+    }
+  }
 
   // Send message
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -505,15 +554,25 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
               <MessageSquare className="w-4 h-4 text-emerald-600" />
               Communication Desks
             </h3>
-            {isSysAdmin && (
+            <div className="flex items-center gap-1">
               <button
-                onClick={() => setShowNewRoomModal(true)}
-                className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-slate-200 rounded transition-colors"
-                title="Create Custom Channel"
+                type="button"
+                onClick={openDirectModal}
+                className="p-1 text-slate-500 hover:text-sky-600 hover:bg-slate-200 rounded transition-colors"
+                title="Start 1-on-1 Direct Chat with Individual"
               >
-                <Plus className="w-4 h-4" />
+                <UserPlus className="w-4 h-4" />
               </button>
-            )}
+              {isSysAdmin && (
+                <button
+                  onClick={() => setShowNewRoomModal(true)}
+                  className="p-1 text-slate-500 hover:text-emerald-600 hover:bg-slate-200 rounded transition-colors"
+                  title="Create Custom Channel"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="relative">
@@ -528,10 +587,10 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 pt-1">
+          <div className="flex items-center gap-1 pt-1 overflow-x-auto pb-1 scrollbar-none">
             <button
               onClick={() => setFilterType('ALL')}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
                 filterType === 'ALL'
                   ? 'bg-emerald-600 text-white'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -541,7 +600,7 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
             </button>
             <button
               onClick={() => setFilterType('STAFF')}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
                 filterType === 'STAFF'
                   ? 'bg-emerald-600 text-white'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -550,16 +609,36 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
               Staff
             </button>
             <button
+              onClick={() => setFilterType('DIRECT')}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
+                filterType === 'DIRECT'
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              Direct ({rooms.filter((r) => r.room_type === 'STAFF_DIRECT').length})
+            </button>
+            <button
               onClick={() => setFilterType('DOUBTS')}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors shrink-0 ${
                 filterType === 'DOUBTS'
-                  ? 'bg-emerald-600 text-white'
+                  ? 'bg-indigo-600 text-white'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
               Doubts
             </button>
           </div>
+
+          {/* Quick Direct Message Action */}
+          <button
+            type="button"
+            onClick={openDirectModal}
+            className="w-full py-1.5 px-3 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5 text-sky-600" />
+            <span>+ New Direct Chat</span>
+          </button>
         </div>
 
         {/* Room List */}
@@ -572,6 +651,7 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
             filteredRooms.map((room) => {
               const isActive = room.id === activeRoomId
               const isBatch = room.room_type === 'BATCH_DOUBT'
+              const isDirect = room.room_type === 'STAFF_DIRECT'
               return (
                 <button
                   key={room.id}
@@ -581,16 +661,30 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
                   }}
                   className={`w-full text-left p-3.5 transition-colors flex items-start gap-3 ${
                     isActive
-                      ? 'bg-emerald-50/70 border-l-4 border-emerald-600'
+                      ? isDirect
+                        ? 'bg-sky-50/80 border-l-4 border-sky-600'
+                        : isBatch
+                        ? 'bg-indigo-50/80 border-l-4 border-indigo-600'
+                        : 'bg-emerald-50/70 border-l-4 border-emerald-600'
                       : 'hover:bg-slate-100/70'
                   }`}
                 >
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      isBatch ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                      isDirect
+                        ? 'bg-sky-100 text-sky-700'
+                        : isBatch
+                        ? 'bg-indigo-100 text-indigo-700'
+                        : 'bg-emerald-100 text-emerald-700'
                     }`}
                   >
-                    {isBatch ? <BookOpen className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+                    {isDirect ? (
+                      <User className="w-4 h-4" />
+                    ) : isBatch ? (
+                      <BookOpen className="w-4 h-4" />
+                    ) : (
+                      <Users className="w-4 h-4" />
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -610,7 +704,11 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
 
                     <div className="flex items-center justify-between gap-1 mt-1 text-[11px] text-slate-500">
                       <span className="truncate">
-                        {isBatch ? 'Academic Doubt Desk' : 'Staff Collaboration'}
+                        {isDirect
+                          ? room.description || '1-on-1 Direct Chat'
+                          : isBatch
+                          ? 'Academic Doubt Desk'
+                          : 'Staff Collaboration'}
                       </span>
                       {room.unresolved_doubts_count > 0 && (
                         <span className="shrink-0 px-1.5 py-0.2 bg-amber-500 text-white rounded-full font-bold text-[10px]">
@@ -654,12 +752,16 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
                     <h2 className="font-bold text-slate-900 text-sm truncate">{activeRoom.name}</h2>
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${
-                        activeRoom.room_type === 'BATCH_DOUBT'
+                        activeRoom.room_type === 'STAFF_DIRECT'
+                          ? 'bg-sky-100 text-sky-700'
+                          : activeRoom.room_type === 'BATCH_DOUBT'
                           ? 'bg-indigo-100 text-indigo-700'
                           : 'bg-emerald-100 text-emerald-700'
                       }`}
                     >
-                      {activeRoom.room_type.replace('_', ' ')}
+                      {activeRoom.room_type === 'STAFF_DIRECT'
+                        ? 'Direct 1-on-1'
+                        : activeRoom.room_type.replace('_', ' ')}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5 truncate">
@@ -1057,6 +1159,126 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Modal: Start Direct 1-on-1 Chat */}
+      {/* ------------------------------------------------------------------ */}
+      {showDirectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-5 border border-slate-200 space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm">Start Direct 1-on-1 Chat</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Connect individually with teachers, staff, accountants, or administrators.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDirectModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search colleague by name, email, or role..."
+                value={directSearchQuery}
+                onChange={(e) => {
+                  setDirectSearchQuery(e.target.value)
+                  fetchDirectDirectory(e.target.value)
+                }}
+                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:bg-white transition-all"
+                autoFocus
+              />
+            </div>
+
+            {/* Colleagues Directory List */}
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 min-h-[220px] max-h-[380px] -mx-2 px-2">
+              {isLoadingDirectory ? (
+                <div className="p-8 text-center text-xs text-slate-400">Loading institute staff directory...</div>
+              ) : directDirectory.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  No colleagues found matching your search.
+                </div>
+              ) : (
+                directDirectory.map((colleague) => {
+                  const roleBadge = (colleague.role || 'staff').toLowerCase()
+                  const badgeColor =
+                    roleBadge === 'admin' || roleBadge === 'superadmin' || roleBadge === 'sysadmin'
+                      ? 'bg-rose-100 text-rose-700'
+                      : roleBadge === 'teacher'
+                      ? 'bg-purple-100 text-purple-700'
+                      : roleBadge === 'accountant'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-emerald-100 text-emerald-700'
+
+                  const initials = (colleague.first_name?.[0] || colleague.username?.[0] || 'U').toUpperCase()
+
+                  return (
+                    <div
+                      key={colleague.id}
+                      className="py-2.5 px-3 hover:bg-sky-50/60 rounded-lg transition-colors flex items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                          {initials}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-xs text-slate-900 truncate">
+                              {colleague.full_name}
+                            </span>
+                            <span className={`text-[10px] px-2 py-0.2 rounded-full font-semibold uppercase ${badgeColor}`}>
+                              {colleague.role}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 truncate mt-0.5">
+                            <Mail className="w-3 h-3 shrink-0 text-slate-400" />
+                            <span className="truncate">{colleague.email}</span>
+                            <span className="text-slate-300">•</span>
+                            <span className="text-slate-400 font-mono">@{colleague.username}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isStartingDirect}
+                        onClick={() => handleStartDirectChat(colleague.id)}
+                        className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-medium flex items-center gap-1 shrink-0 shadow-sm transition-colors disabled:opacity-50"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                        <span>Chat</span>
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowDirectModal(false)}
+                className="px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

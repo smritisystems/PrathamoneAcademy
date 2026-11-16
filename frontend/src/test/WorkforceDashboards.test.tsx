@@ -179,7 +179,7 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
         id: 1,
         institution_id: 1,
         username: 'sysadmin',
-        email: 'admin@prashantacademy.com',
+        email: 'admin@example.com',
         role: 'superadmin',
         first_name: 'System',
         last_name: 'Administrator',

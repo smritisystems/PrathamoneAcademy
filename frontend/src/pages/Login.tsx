@@ -67,6 +67,13 @@ export default function LoginPage() {
   const [showLoginHelp, setShowLoginHelp] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false)
+
+  useEffect(() => {
+    setLogoLoadFailed(false)
+  }, [branding.assets.logoUrl])
+
+  const hasValidLogo = !!branding.assets.logoUrl && !logoLoadFailed
 
   // Canonical App Colors (Original Theme Only)
   const primaryBrandColor = branding.colors?.primary || '#0B2D6B'
@@ -172,29 +179,35 @@ export default function LoginPage() {
           }}
         />
 
-        {/* Subtle Watermark 1: Classical Greek University Portico (Bottom-Left) */}
-        <div className="absolute -bottom-10 -left-10 w-72 h-72 sm:w-88 sm:h-88 pointer-events-none opacity-[0.06] text-[#38BDF8]">
-          <svg viewBox="0 0 240 240" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth="1.3">
-            <polygon points="20,75 120,25 220,75" strokeWidth="1.8" />
-            <line x1="30" y1="72" x2="210" y2="72" strokeWidth="1" />
-            <circle cx="120" cy="55" r="9" strokeWidth="1.2" />
-            <rect x="25" y="75" width="190" height="15" rx="1.5" strokeWidth="1.4" />
-            <line x1="25" y1="82" x2="215" y2="82" strokeWidth="0.8" strokeDasharray="4 4" />
-            <rect x="38" y="90" width="18" height="6" rx="1" />
-            <line x1="47" y1="96" x2="47" y2="190" strokeWidth="0.9" />
-            <rect x="37" y="190" width="20" height="6" rx="1" />
-            <rect x="86" y="90" width="18" height="6" rx="1" />
-            <line x1="95" y1="96" x2="95" y2="190" strokeWidth="0.9" />
-            <rect x="85" y="190" width="20" height="6" rx="1" />
-            <rect x="136" y="90" width="18" height="6" rx="1" />
-            <line x1="145" y1="96" x2="145" y2="190" strokeWidth="0.9" />
-            <rect x="135" y="190" width="20" height="6" rx="1" />
-            <rect x="184" y="90" width="18" height="6" rx="1" />
-            <line x1="193" y1="96" x2="193" y2="190" strokeWidth="0.9" />
-            <rect x="183" y="190" width="20" height="6" rx="1" />
-            <rect x="22" y="196" width="196" height="7" rx="0.5" strokeWidth="1.2" />
-            <rect x="15" y="203" width="210" height="8" rx="0.5" strokeWidth="1.4" />
-            <rect x="8" y="211" width="224" height="9" rx="0.5" strokeWidth="1.6" />
+        {/* Subtle Watermark: Historic Nalanda University Architectural Line Art */}
+        <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0">
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 1000 700"
+            preserveAspectRatio="xMidYMid slice"
+          >
+            <defs>
+              <filter id="nalanda-lineart-tint" colorInterpolationFilters="sRGB">
+                <feColorMatrix
+                  in="SourceGraphic"
+                  type="matrix"
+                  values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2 -2 -2 0 1.5"
+                  result="line-alpha"
+                />
+                <feFlood floodColor="#38BDF8" floodOpacity="0.9" result="line-color" />
+                <feComposite in="line-color" in2="line-alpha" operator="in" />
+              </filter>
+            </defs>
+            <g opacity="0.13" filter="url(#nalanda-lineart-tint)">
+              <image
+                href="/artwork/16112026/001/nalanda15.svg"
+                x="-40"
+                y="20"
+                width="1080"
+                height="680"
+                preserveAspectRatio="xMidYMid slice"
+              />
+            </g>
           </svg>
         </div>
 
@@ -211,24 +224,20 @@ export default function LoginPage() {
         {/* Top Header Block: Academy Crest, Name & Edition */}
         <div className="relative z-10 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            {/* Elevated Academy Crest (Book + Flame) */}
-            <div className="relative bg-gradient-to-br from-[#0D2852] to-[#071C44] border-2 border-cyan-400/40 shadow-lg shadow-black/40 p-1.5 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0">
-              <svg viewBox="0 0 64 64" className="w-full h-full" fill="none">
-                <path d="M 32 47 C 22 43 12 44 8 48 C 8 38 20 37 32 39.5 Z" fill="#FFFFFF" fillOpacity="0.98" />
-                <path d="M 32 47 C 42 43 52 44 56 48 C 56 38 44 37 32 39.5 Z" fill="#FFFFFF" fillOpacity="0.98" />
-                <path d="M 8 49 C 18 45 26 46.5 32 49 C 38 46.5 46 45 56 49" stroke="#38BDF8" strokeWidth="1.4" strokeLinecap="round" />
-                <path d="M 29.5 37 L 34.5 37 L 33 47 L 31 47 Z" fill="#F1F5F9" />
-                <rect x="27" y="34" width="10" height="3.5" rx="1.5" fill="#FFFFFF" />
-                <path d="M 32 12 C 38.5 19 43.5 26 40 33 C 38 35.5 35 36.5 32 36.5 C 29 36.5 26 35.5 24 33 C 20.5 26 25.5 19 32 12 Z" fill="url(#brandFlameGrad)" />
-                <path d="M 32 20 C 34.5 23.5 36.5 27 35.5 31 C 34.5 32.5 33.5 33.5 32 33.5 C 30.5 33.5 29.5 32.5 28.5 31 C 27.5 27 29.5 23.5 32 20 Z" fill="#FFFFFF" />
-                <defs>
-                  <linearGradient id="brandFlameGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="30%" stopColor="#67E8F9" />
-                    <stop offset="100%" stopColor="#0284C7" />
-                  </linearGradient>
-                </defs>
-              </svg>
+            {/* Elevated Academy Crest / Custom Logo with High-Contrast White Enamel Tile */}
+            <div className="relative bg-white p-1.5 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-black/25 ring-2 ring-white/30 overflow-hidden">
+              {hasValidLogo ? (
+                <img
+                  src={branding.assets.logoUrl}
+                  alt={branding.academyName}
+                  onError={() => setLogoLoadFailed(true)}
+                  className="w-full h-full object-contain rounded-xl [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[#0D2852] to-[#071C44] rounded-xl flex items-center justify-center font-black text-lg text-white">
+                  {branding.monogram}
+                </div>
+              )}
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#071C44] shadow-xs" title="Portal Active" />
             </div>
 
@@ -316,7 +325,7 @@ export default function LoginPage() {
             A calm, secure workspace for your coaching institute.
           </span>
           <span className="font-mono text-[11px]">
-            SMRITISYS &amp; AITDL NETWORKS • v1.0.0
+            SMRITISYS &amp; AITDL NETWORKS • {branding.versionDisplay}
           </span>
         </div>
       </div>
@@ -374,6 +383,32 @@ export default function LoginPage() {
 
         {/* Central Authentication Form — Centered Ergonomically at 460px */}
         <div className="relative z-10 w-full max-w-[460px] mx-auto my-auto py-8">
+          {/* Institute Brand Header */}
+          <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-slate-100">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+              {hasValidLogo ? (
+                <img
+                  src={branding.assets.logoUrl}
+                  alt={branding.academyName}
+                  onError={() => setLogoLoadFailed(true)}
+                  className="w-full h-full object-contain rounded-lg [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#0B2D6B] rounded-lg flex items-center justify-center font-bold text-sm text-white">
+                  {branding.monogram}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-extrabold text-base text-[#071C44] tracking-tight truncate leading-snug">
+                {branding.academyName}
+              </h3>
+              <p className="text-xs text-slate-500 font-medium truncate">
+                {branding.tagline || 'Coaching Management System'}
+              </p>
+            </div>
+          </div>
+
           {/* Saffron Crown Accent Bar */}
           <div className="w-16 h-1 bg-gradient-to-r from-[#F57C00] via-[#0B2D6B] to-[#38BDF8] rounded-full mb-4" />
 
@@ -526,7 +561,7 @@ export default function LoginPage() {
         {/* Bottom Pane Footer: Privacy, Help & Attribution */}
         <div className="relative z-10 w-full max-w-[460px] mx-auto pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-400">
           <div>Privacy · Help · Secure Access</div>
-          <div>© 2026 PrathamOne EduOS v1.0.0</div>
+          <div>© 2026 {branding.suiteName} {branding.versionDisplay}</div>
         </div>
 
         {/* Accessible Modal: Initial Setup & Support */}

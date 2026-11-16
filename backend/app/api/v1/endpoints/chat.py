@@ -92,9 +92,56 @@ class SendMessageRequest(BaseModel):
     attachment_type: Optional[str] = None
 
 
+class DirectChatRequest(BaseModel):
+    target_user_id: int
+
+
 # ------------------------------------------------------------------------------
 # REST Endpoints
 # ------------------------------------------------------------------------------
+@router.get("/direct-directory")
+async def get_direct_directory(
+    q: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve list of active teachers, staff, and administrators available for 1-on-1 direct messaging."""
+    inst_id = current_user.institution_id
+    if not inst_id:
+        inst_stmt = select(Institution.id).order_by(Institution.id.desc()).limit(1)
+        inst_id = (await db.execute(inst_stmt)).scalar() or 1
+
+    return await ChatService.get_direct_directory(
+        session=db,
+        institution_id=inst_id,
+        current_user=current_user,
+        query=q,
+    )
+
+
+@router.post("/direct")
+async def get_or_create_direct_room(
+    payload: DirectChatRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve existing or initiate a new 1-on-1 direct chat channel with an individual user."""
+    inst_id = current_user.institution_id
+    if not inst_id:
+        inst_stmt = select(Institution.id).order_by(Institution.id.desc()).limit(1)
+        inst_id = (await db.execute(inst_stmt)).scalar() or 1
+
+    try:
+        return await ChatService.get_or_create_direct_room(
+            session=db,
+            institution_id=inst_id,
+            current_user=current_user,
+            target_user_id=payload.target_user_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
 @router.get("/rooms")
 async def list_accessible_rooms(
     current_user: User = Depends(get_current_active_user),

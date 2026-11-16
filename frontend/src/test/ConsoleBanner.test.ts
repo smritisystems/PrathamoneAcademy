@@ -60,15 +60,15 @@ describe('Browser Console Startup Branding Banner', () => {
     expect(bannerText).toContain(BRANDING_CONFIG.support.email)
   })
 
-  it('displays AITDL parent organization and its product ecosystem', () => {
+  it('displays SmritiSys parent organization and its product ecosystem', () => {
     printConsoleBrandingBanner()
     const logArgs = consoleSpy.mock.calls[0]
     const bannerText = logArgs[0] as string
 
     // Parent organization
     expect(bannerText).toContain('Parent Org:')
-    expect(bannerText).toContain('Smritisys & AITDL Networks')
-    expect(bannerText).toContain('https://aitdl.com')
+    expect(bannerText).toContain(BRANDING_CONFIG.parentOrganization.name)
+    expect(bannerText).toContain(BRANDING_CONFIG.parentOrganization.website)
 
     // Products hierarchy
     expect(bannerText).toContain('1. PrathamOne — Education, Coaching Institute Management, ERP & AI Solutions (https://prathamone.com)')

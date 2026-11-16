@@ -269,7 +269,10 @@ export default function Sidebar() {
   }, [mobileOpen, closeMobile])
 
   const [logoLoadFailed, setLogoLoadFailed] = useState(false)
-  const hasValidLogo = !!branding.assets.logoUrl && branding.assets.logoUrl !== '/logo.svg' && !logoLoadFailed
+  useEffect(() => {
+    setLogoLoadFailed(false)
+  }, [branding.assets.logoUrl])
+  const hasValidLogo = !!branding.assets.logoUrl && !logoLoadFailed
 
   const handleLogout = () => {
     void authApi.logout().catch(() => {})
@@ -640,7 +643,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                     src={branding.assets.logoUrl}
                     alt={branding.academyName}
                     onError={() => setLogoLoadFailed(true)}
-                    className="w-full h-full object-contain rounded-lg"
+                    className="w-full h-full object-contain rounded-lg [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
                   />
                 ) : (
                   <div className="w-full h-full bg-primary-600 rounded-lg flex items-center justify-center font-bold text-xs text-white">
@@ -911,7 +914,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                   src={branding.assets.logoUrl}
                   alt={branding.academyName}
                   onError={() => setLogoLoadFailed(true)}
-                  className="w-full h-full object-contain rounded-lg"
+                  className="w-full h-full object-contain rounded-lg [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
                 />
               ) : (
                 <div className="w-full h-full bg-primary-600 rounded-lg flex items-center justify-center font-black text-xs text-white">
