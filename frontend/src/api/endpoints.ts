@@ -11,13 +11,14 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-15
+ * @updated     2026-11-16
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
 
 import apiClient from './client'
 import type {
+  ChatRoomItem, ChatMessageItem, SendChatMessagePayload, CreateChatRoomPayload,
   PaymentPermissions,
   Institution, AcademicYear, Board, Standard, Division,
   Student, FeeCategory, FeeStructure, FeeInvoice,
@@ -3005,6 +3006,29 @@ export const eduboardApi = {
     apiClient.post<{ ws_token: string; expires_in_seconds: number; mode: EduBoardPopoutMode }>(
       `/eduboard/boards/${boardId}/ws-ticket`,
     ),
+}
+
+export const chatApi = {
+  getRooms: () => apiClient.get<ChatRoomItem[]>('/chat/rooms'),
+  createRoom: (payload: CreateChatRoomPayload) => apiClient.post<ChatRoomItem>('/chat/rooms', payload),
+  getMessages: (roomId: number, limit = 50, beforeId?: number) =>
+    apiClient.get<ChatMessageItem[]>(`/chat/rooms/${roomId}/messages`, {
+      params: { limit, before_id: beforeId },
+    }),
+  sendMessage: (roomId: number, payload: SendChatMessagePayload) =>
+    apiClient.post<ChatMessageItem>(`/chat/rooms/${roomId}/messages`, payload),
+  resolveDoubt: (messageId: number) =>
+    apiClient.post<{ id: number; is_doubt_resolved: boolean; resolved_at: string }>(
+      `/chat/messages/${messageId}/resolve`,
+    ),
+  getCurfewStatus: (roomId: number) =>
+    apiClient.get<{
+      room_id: number
+      is_curfew_enabled: boolean
+      curfew_start_time: string
+      curfew_end_time: string
+      is_curfew_active: boolean
+    }>(`/chat/rooms/${roomId}/curfew-status`),
 }
 
 export type { EduBoardPageItem }

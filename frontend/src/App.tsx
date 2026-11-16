@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-15
+ * @updated     2026-11-16
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -389,6 +389,8 @@ export default function App() {
           {/* Communication Center Dedicated Workspaces */}
           <Route path="communication" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/overview" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/chat" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="chat" element={<Navigate to="/communication/chat" replace />} />
           <Route path="communication/broadcasts" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/compose" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/whatsapp" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />

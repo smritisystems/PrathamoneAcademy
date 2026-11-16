@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-13
+ * @updated     2026-11-16
  *
  * @description Centralized Communication Center workspace comprising 8 dedicated submenus, multichannel broadcasts, WhatsApp direct launcher, template authoring, delivery tracking, gateway diagnostics, and Rule 010 View-First governance.
  */
@@ -35,10 +35,12 @@ import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
 import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
+import { ChatWorkspaceTab } from '../components/communication/ChatWorkspaceTab'
 import { useBranding } from '../config/branding'
 
 export type CommunicationTab =
   | 'overview'
+  | 'chat'
   | 'broadcasts'
   | 'whatsapp'
   | 'templates'
@@ -56,6 +58,7 @@ export interface TabInfo {
 
 export const COMMUNICATION_TABS: TabInfo[] = [
   { id: 'overview', label: 'Overview', route: '/communication/overview', icon: MessageSquare },
+  { id: 'chat', label: 'Chat & Doubts', route: '/communication/chat', icon: MessageSquare },
   { id: 'broadcasts', label: 'Broadcast Composer', route: '/communication/broadcasts', icon: Send },
   { id: 'whatsapp', label: 'WhatsApp Stream', route: '/communication/whatsapp', icon: MessageCircle },
   { id: 'templates', label: 'Message Templates', route: '/communication/templates', icon: FileText },
@@ -78,6 +81,7 @@ function CommunicationContent() {
 
   // Synchronize Tab with Route
   const getTabFromPath = (path: string): CommunicationTab => {
+    if (path.includes('/communication/chat') || path.includes('/chat')) return 'chat'
     if (path.includes('/communication/broadcasts') || path.includes('/communication/compose')) return 'broadcasts'
     if (path.includes('/communication/whatsapp')) return 'whatsapp'
     if (path.includes('/communication/templates')) return 'templates'
@@ -954,6 +958,15 @@ function CommunicationContent() {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* WORKSPACE: FULL HYBRID CHAT & ACADEMIC DOUBT RESOLUTION DESK    */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {activeTab === 'chat' && (
+              <div className="space-y-4">
+                <ChatWorkspaceTab />
               </div>
             )}
 

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-15
+ * @updated     2026-11-16
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -5461,3 +5461,62 @@ export interface EduBoardReportsSummary {
     updated_at?: string | null
   }>
 }
+
+// ==============================================================================
+// Full Hybrid Chat & Academic Doubt Engine Types
+// ==============================================================================
+export type ChatRoomType = 'STAFF_GENERAL' | 'STAFF_DEPT' | 'STAFF_DIRECT' | 'BATCH_DOUBT'
+export type ChatMessageType = 'TEXT' | 'DOUBT_QUESTION' | 'DOUBT_ANSWER' | 'ATTACHMENT' | 'SYSTEM_NOTICE'
+
+export interface ChatRoomItem {
+  id: number
+  name: string
+  code: string
+  room_type: ChatRoomType
+  description?: string | null
+  standard_id?: number | null
+  division_id?: number | null
+  subject_id?: number | null
+  is_curfew_enabled: boolean
+  curfew_start_time?: string | null
+  curfew_end_time?: string | null
+  is_curfew_active: boolean
+  user_room_role: string
+  unresolved_doubts_count: number
+  created_at?: string | null
+}
+
+export interface ChatMessageItem {
+  id: number
+  room_id: number
+  sender_user_id?: number | null
+  sender_student_id?: number | null
+  sender_display_name: string
+  sender_role: string
+  message_type: ChatMessageType
+  content: string
+  attachment_url?: string | null
+  attachment_type?: string | null
+  is_doubt_resolved: boolean
+  resolved_by_user_id?: number | null
+  resolved_at?: string | null
+  is_quarantined: boolean
+  quarantine_reason?: string | null
+  created_at?: string | null
+}
+
+export interface SendChatMessagePayload {
+  content: string
+  message_type?: ChatMessageType
+  attachment_url?: string | null
+  attachment_type?: string | null
+}
+
+export interface CreateChatRoomPayload {
+  name: string
+  code: string
+  room_type?: ChatRoomType
+  description?: string
+  is_curfew_enabled?: boolean
+}
+
