@@ -22,7 +22,7 @@ from sqlalchemy import select, func, and_, or_, desc, update, delete
 from sqlalchemy.orm import selectinload
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, date, timedelta, timezone
 import json
 import hmac
 
@@ -38,6 +38,7 @@ from app.models.division import Division
 from app.models.standard import Standard
 from app.models.payment import PaymentReceipt, Payment
 from app.models.communication import MessageTemplate, CommunicationLog, SharedDocumentToken
+from app.models.portal import Announcement
 from app.services.communication import (
     resolve_placeholders,
     generate_whatsapp_web_url,
@@ -1049,3 +1050,194 @@ async def dispatch_exam_schedule_endpoint(
         "message": f"Exam schedule broadcast dispatched to {res.get('dispatched_count')} students via {channel}",
         "summary": res,
     }
+
+
+# ─── Notice Board (Announcements) Management ──────────────────────────────────
+
+class NoticeCreate(BaseModel):
+    title: str = Field(..., max_length=200)
+    content: str
+    category: str = Field(default="general", max_length=50)
+    standard_id: Optional[int] = None
+    division_id: Optional[int] = None
+    is_pinned: bool = False
+    publish_date: Optional[date] = None
+
+
+class NoticeUpdate(BaseModel):
+    title: Optional[str] = Field(None, max_length=200)
+    content: Optional[str] = None
+    category: Optional[str] = Field(None, max_length=50)
+    standard_id: Optional[int] = None
+    division_id: Optional[int] = None
+    is_pinned: Optional[bool] = None
+    publish_date: Optional[date] = None
+
+
+@router.get("/notices")
+async def list_notices_endpoint(
+    standard_id: Optional[int] = Query(None),
+    division_id: Optional[int] = Query(None),
+    category: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Lists all institutional announcements and circulars with optional filters."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    stmt = (
+        select(
+            Announcement,
+            Standard.name.label("standard_name"),
+            Division.name.label("division_name"),
+        )
+        .outerjoin(Standard, Standard.id == Announcement.standard_id)
+        .outerjoin(Division, Division.id == Announcement.division_id)
+        .where(Announcement.institution_id == inst_id)
+    )
+
+    if standard_id:
+        stmt = stmt.where(Announcement.standard_id == standard_id)
+    if division_id:
+        stmt = stmt.where(Announcement.division_id == division_id)
+    if category and category.lower() != "all":
+        stmt = stmt.where(func.lower(Announcement.category) == category.lower())
+    if search:
+        s = f"%{search.strip()}%"
+        stmt = stmt.where(or_(Announcement.title.ilike(s), Announcement.content.ilike(s)))
+
+    stmt = stmt.order_by(desc(Announcement.is_pinned), desc(Announcement.publish_date), desc(Announcement.created_at))
+    rows = (await db.execute(stmt)).all()
+
+    notices = []
+    for ann, std_name, div_name in rows:
+        notices.append({
+            "id": ann.id,
+            "institution_id": ann.institution_id,
+            "title": ann.title,
+            "content": ann.content,
+            "category": ann.category,
+            "is_pinned": ann.is_pinned,
+            "publish_date": ann.publish_date.isoformat() if ann.publish_date else None,
+            "created_at": ann.created_at.isoformat() if ann.created_at else None,
+            "standard_id": ann.standard_id,
+            "division_id": ann.division_id,
+            "standard_name": std_name,
+            "division_name": div_name,
+            "target_label": (
+                f"{std_name} — Division {div_name}" if std_name and div_name
+                else std_name if std_name
+                else "All Academy Students (Global)"
+            ),
+        })
+
+    return {"data": notices, "total": len(notices)}
+
+
+@router.post("/notices", status_code=status.HTTP_201_CREATED)
+async def create_notice_endpoint(
+    payload: NoticeCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Publishes a new announcement or circular to the Notice Board."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    pub_date = payload.publish_date or date.today()
+
+    notice = Announcement(
+        institution_id=inst_id,
+        standard_id=payload.standard_id if payload.standard_id and payload.standard_id > 0 else None,
+        division_id=payload.division_id if payload.division_id and payload.division_id > 0 else None,
+        title=payload.title.strip(),
+        content=payload.content.strip(),
+        category=payload.category.lower().strip(),
+        is_pinned=payload.is_pinned,
+        publish_date=pub_date,
+    )
+    db.add(notice)
+    await db.commit()
+    await db.refresh(notice)
+
+    return {
+        "status": "success",
+        "message": f"Notice '{notice.title}' published successfully to Notice Board.",
+        "data": {
+            "id": notice.id,
+            "title": notice.title,
+            "category": notice.category,
+            "is_pinned": notice.is_pinned,
+            "publish_date": notice.publish_date.isoformat() if notice.publish_date else None,
+        },
+    }
+
+
+@router.put("/notices/{notice_id}")
+async def update_notice_endpoint(
+    notice_id: int,
+    payload: NoticeUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Updates an existing notice record."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    stmt = select(Announcement).where(and_(Announcement.id == notice_id, Announcement.institution_id == inst_id))
+    notice = (await db.execute(stmt)).scalar_one_or_none()
+    if not notice:
+        raise HTTPException(status_code=404, detail="Notice not found or belongs to another institution.")
+
+    if payload.title is not None:
+        notice.title = payload.title.strip()
+    if payload.content is not None:
+        notice.content = payload.content.strip()
+    if payload.category is not None:
+        notice.category = payload.category.lower().strip()
+    if payload.standard_id is not None:
+        notice.standard_id = payload.standard_id if payload.standard_id > 0 else None
+    if payload.division_id is not None:
+        notice.division_id = payload.division_id if payload.division_id > 0 else None
+    if payload.is_pinned is not None:
+        notice.is_pinned = payload.is_pinned
+    if payload.publish_date is not None:
+        notice.publish_date = payload.publish_date
+
+    await db.commit()
+    await db.refresh(notice)
+    return {"status": "success", "message": "Notice updated successfully.", "data": {"id": notice.id, "title": notice.title}}
+
+
+@router.patch("/notices/{notice_id}/pin")
+async def toggle_pin_notice_endpoint(
+    notice_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Toggles pin status of a notice."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    stmt = select(Announcement).where(and_(Announcement.id == notice_id, Announcement.institution_id == inst_id))
+    notice = (await db.execute(stmt)).scalar_one_or_none()
+    if not notice:
+        raise HTTPException(status_code=404, detail="Notice not found.")
+
+    notice.is_pinned = not notice.is_pinned
+    await db.commit()
+    await db.refresh(notice)
+    status_str = "pinned to top" if notice.is_pinned else "unpinned"
+    return {"status": "success", "message": f"Notice '{notice.title}' {status_str}.", "is_pinned": notice.is_pinned}
+
+
+@router.delete("/notices/{notice_id}")
+async def delete_notice_endpoint(
+    notice_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*COMM_STAFF_ROLES)),
+):
+    """Deletes an announcement from the Notice Board."""
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    stmt = select(Announcement).where(and_(Announcement.id == notice_id, Announcement.institution_id == inst_id))
+    notice = (await db.execute(stmt)).scalar_one_or_none()
+    if not notice:
+        raise HTTPException(status_code=404, detail="Notice not found.")
+
+    await db.delete(notice)
+    await db.commit()
+    return {"status": "success", "message": f"Notice #{notice_id} deleted successfully."}

@@ -155,6 +155,7 @@ const coursesSubItems = [
 const communicationSubItems = [
   { to: '/communication/overview', label: 'Overview' },
   { to: '/communication/broadcasts', label: 'Broadcast Composer' },
+  { to: '/communication/notices', label: 'Notice Board' },
   { to: '/communication/whatsapp', label: 'WhatsApp Stream' },
   { to: '/communication/templates', label: 'Message Templates' },
   { to: '/communication/history', label: 'Dispatch Logs' },

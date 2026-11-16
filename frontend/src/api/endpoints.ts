@@ -42,6 +42,7 @@ import type {
   StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
   SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
+  NoticeBoardItem,
   MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
   ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem, AutomationTriggerStatus, StudentIdCardData, ScanCheckinResult,
   ExamMarksSheet, ExamAnalyticsData, StudentReportCardData,
@@ -2104,6 +2105,40 @@ export const communicationApi = {
 
   dispatchExamScheduleNotification: (examId: number, data?: { channel?: string }) =>
     apiClient.post<{ status: string; message: string; summary: any }>(`/communication/automation/dispatch-exam-schedule/${examId}`, data),
+
+  getNotices: (params?: { standard_id?: number; division_id?: number; category?: string; search?: string }) =>
+    apiClient.get<{ data: NoticeBoardItem[]; total: number }>('/communication/notices', { params }),
+
+  createNotice: (data: {
+    title: string
+    content: string
+    category: string
+    standard_id?: number | null
+    division_id?: number | null
+    is_pinned?: boolean
+    publish_date?: string
+  }) =>
+    apiClient.post<{ status: string; message: string; data: any }>('/communication/notices', data),
+
+  updateNotice: (
+    id: number,
+    data: {
+      title?: string
+      content?: string
+      category?: string
+      standard_id?: number | null
+      division_id?: number | null
+      is_pinned?: boolean
+      publish_date?: string
+    }
+  ) =>
+    apiClient.put<{ status: string; message: string; data: any }>(`/communication/notices/${id}`, data),
+
+  togglePinNotice: (id: number) =>
+    apiClient.patch<{ status: string; message: string; is_pinned: boolean }>(`/communication/notices/${id}/pin`),
+
+  deleteNotice: (id: number) =>
+    apiClient.delete<{ status: string; message: string }>(`/communication/notices/${id}`),
 }
 
 // ─── Release & Change Management ─────────────────────────────────────────────

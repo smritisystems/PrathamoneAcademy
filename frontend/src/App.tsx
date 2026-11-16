@@ -393,6 +393,8 @@ export default function App() {
           <Route path="chat" element={<Navigate to="/communication/chat" replace />} />
           <Route path="communication/broadcasts" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/compose" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="communication/notices" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
+          <Route path="notices" element={<Navigate to="/communication/notices" replace />} />
           <Route path="communication/whatsapp" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/templates" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />
           <Route path="communication/history" element={<Suspense fallback={<PageLoader />}><CommunicationPage /></Suspense>} />

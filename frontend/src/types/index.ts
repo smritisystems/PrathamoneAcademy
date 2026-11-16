@@ -2789,6 +2789,22 @@ export type AllSettingsState = Record<string, Record<string, any>>
 
 // ─── Centralized Communication & Sharing Module ──────────────────────────────
 
+export interface NoticeBoardItem {
+  id: number
+  institution_id: number
+  title: string
+  content: string
+  category: string
+  is_pinned: boolean
+  publish_date: string
+  created_at: string
+  standard_id?: number | null
+  division_id?: number | null
+  standard_name?: string | null
+  division_name?: string | null
+  target_label?: string
+}
+
 export interface MessageTemplateItem {
   id: number
   name: string

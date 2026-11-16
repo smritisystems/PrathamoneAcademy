@@ -23,7 +23,7 @@ import {
   GraduationCap, Calendar, Clock, CheckCircle2, AlertCircle, RefreshCw,
   Search, Plus, Edit, Trash2, Shield, Eye, ExternalLink, Filter, X,
   FileText, Check, Paperclip, ChevronRight, RotateCcw,
-  Zap, Copy, CheckSquare, Square, Sliders, BellRing, Lock, LockOpen,
+  Zap, Copy, CheckSquare, Square, Sliders, BellRing, Bell, Lock, LockOpen,
   ArrowRight, Radio, Smartphone, Activity, Server, Key, AlertTriangle, BookOpen
 } from 'lucide-react'
 import { communicationApi } from '../api/endpoints'
@@ -36,6 +36,7 @@ import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
 import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
 import { ChatWorkspaceTab } from '../components/communication/ChatWorkspaceTab'
+import { NoticeBoardTab } from '../components/communication/NoticeBoardTab'
 import { useBranding } from '../config/branding'
 
 export type CommunicationTab =
@@ -43,6 +44,7 @@ export type CommunicationTab =
   | 'chat'
   | 'broadcasts'
   | 'whatsapp'
+  | 'notices'
   | 'templates'
   | 'history'
   | 'automations'
@@ -60,6 +62,7 @@ export const COMMUNICATION_TABS: TabInfo[] = [
   { id: 'overview', label: 'Overview', route: '/communication/overview', icon: MessageSquare },
   { id: 'chat', label: 'Chat & Doubts', route: '/communication/chat', icon: MessageSquare },
   { id: 'broadcasts', label: 'Broadcast Composer', route: '/communication/broadcasts', icon: Send },
+  { id: 'notices', label: 'Notice Board', route: '/communication/notices', icon: Bell },
   { id: 'whatsapp', label: 'WhatsApp Stream', route: '/communication/whatsapp', icon: MessageCircle },
   { id: 'templates', label: 'Message Templates', route: '/communication/templates', icon: FileText },
   { id: 'history', label: 'Dispatch Logs', route: '/communication/history', icon: Clock },
@@ -83,6 +86,7 @@ function CommunicationContent() {
   const getTabFromPath = (path: string): CommunicationTab => {
     if (path.includes('/communication/chat') || path.includes('/chat')) return 'chat'
     if (path.includes('/communication/broadcasts') || path.includes('/communication/compose')) return 'broadcasts'
+    if (path.includes('/communication/notices') || path.includes('/notices')) return 'notices'
     if (path.includes('/communication/whatsapp')) return 'whatsapp'
     if (path.includes('/communication/templates')) return 'templates'
     if (path.includes('/communication/history')) return 'history'
@@ -774,6 +778,14 @@ function CommunicationContent() {
                         route: '/communication/broadcasts',
                         icon: Send,
                         color: 'text-violet-600 bg-violet-50 border-violet-200',
+                      },
+                      {
+                        id: 'notices',
+                        title: 'Notice Board',
+                        desc: 'Official institutional circulars, exam schedules, and holiday announcements on student dashboards.',
+                        route: '/communication/notices',
+                        icon: Bell,
+                        color: 'text-amber-600 bg-amber-50 border-amber-200',
                       },
                       {
                         id: 'whatsapp',
@@ -1600,6 +1612,13 @@ function CommunicationContent() {
                   <span className="text-[11px] text-gray-400 mt-2">Live WhatsApp render preview simulation</span>
                 </div>
               </div>
+            )}
+
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* WORKSPACE: NOTICE BOARD & CIRCULARS REGISTER                     */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {activeTab === 'notices' && (
+              <NoticeBoardTab isEditMode={isEditMode} />
             )}
 
             {/* ═══════════════════════════════════════════════════════════════ */}
