@@ -226,40 +226,40 @@ export default function Footer() {
     <footer
       role="contentinfo"
       aria-label="Application Footer"
-      className={`shrink-0 z-20 bg-white border-t border-slate-200/90 px-3 md:px-5 print:hidden transition-all duration-200 select-none ${
+      className={`shrink-0 z-20 bg-white border-t border-slate-200/90 px-2.5 sm:px-3 md:px-5 print:hidden transition-all duration-200 select-none pb-[max(0.25rem,env(safe-area-inset-bottom))] ${
         isCollapsed
-          ? 'py-1 text-[10px] sm:text-[10.5px]'
-          : 'py-1.5 text-[10.5px] sm:text-[11px] leading-tight text-slate-600'
+          ? 'py-1.5 sm:py-1 text-[10px] sm:text-[10.5px]'
+          : 'py-2 sm:py-1.5 text-[10.5px] sm:text-[11px] leading-tight text-slate-600'
       }`}
     >
       {isCollapsed ? (
         /* Slim Collapsed Footer Bar */
         <div
           data-testid="footer-collapsed-bar"
-          className="flex items-center justify-between gap-2 w-full min-w-0"
+          className="flex items-center justify-between gap-1.5 sm:gap-2 w-full min-w-0"
         >
           {/* Tenant summary and grouped product/system context */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0 text-slate-500 font-medium">
-            <span className="font-semibold text-slate-800 tracking-tight">{tenantName}</span>
-            <span className="text-slate-300 select-none">·</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 text-slate-500 font-medium">
+            <span className="hidden sm:inline font-semibold text-slate-800 tracking-tight shrink-0">{tenantName}</span>
+            <span className="hidden sm:inline text-slate-300 select-none">·</span>
             <div
               data-testid="footer-product-system-group"
-              className="flex items-center gap-1.5 flex-wrap min-w-0 rounded-lg border border-blue-100 bg-primary-50/40 px-1.5 py-0.5"
+              className="flex items-center gap-1.5 min-w-0 rounded-lg border border-blue-100 bg-primary-50/40 px-1.5 py-0.5"
             >
               <div
-                className="flex items-center gap-1 min-w-0"
+                className="flex items-center gap-1 min-w-0 max-w-[130px] xs:max-w-[160px] sm:max-w-none"
                 title={`Active Workspace: ${currentPageTitle}`}
               >
-                <span className="text-slate-500">Workspace:</span>
+                <span className="text-slate-500 shrink-0">Workspace:</span>
                 <span
                   data-testid="footer-page-title"
-                  className="font-semibold text-primary-700 bg-white/80 px-1.5 py-0.2 rounded border border-blue-200/60"
+                  className="font-semibold text-primary-700 bg-white/80 px-1.5 py-0.2 rounded border border-blue-200/60 truncate"
                 >
                   {currentPageTitle}
                 </span>
               </div>
               <span className="hidden md:inline text-slate-300 select-none">·</span>
-              <div className="hidden md:flex items-center gap-1">
+              <div className="hidden md:flex items-center gap-1 shrink-0">
                 <img
                   src={BRANDING_CONFIG.assets.softwareIconUrl}
                   alt="PrathamOne EduOS"
@@ -272,13 +272,13 @@ export default function Footer() {
                 to="/help/version"
                 aria-label="Software license details"
                 title="View license status, validity, and deployment details"
-                className="text-primary-700 hover:text-primary-900 hover:underline font-semibold"
+                className="hidden md:inline text-primary-700 hover:text-primary-900 hover:underline font-semibold shrink-0"
               >
                 License details
               </Link>
               <span className="hidden sm:inline text-slate-300 select-none">·</span>
               <span
-                className="hidden sm:inline-flex items-center gap-1"
+                className="hidden sm:inline-flex items-center gap-1 shrink-0"
                 title={isOnline ? 'Cloud Sync: Connected' : 'Cloud Sync: Offline'}
                 aria-label={`Connection status: ${isOnline ? 'Online' : 'Offline'}`}
               >
@@ -293,14 +293,14 @@ export default function Footer() {
                 </span>
               </span>
               <span className="hidden md:inline text-slate-300 select-none">·</span>
-              <span className="hidden md:inline font-mono text-[10px] text-slate-700">
+              <span className="hidden md:inline font-mono text-[10px] text-slate-700 shrink-0">
                 {APP_CONFIG.versionDisplay}
               </span>
             </div>
           </div>
 
           {/* Right: Expand Toggle Button & Extreme Right Quick Action Launchers */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button
               type="button"
               onClick={toggleCollapsed}
@@ -308,10 +308,10 @@ export default function Footer() {
               aria-label="Expand footer"
               aria-expanded="false"
               title="Expand footer (Ctrl+Shift+F)"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-1 focus:ring-primary-500 min-h-[30px] sm:min-h-auto"
             >
               <ChevronUp className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
-              <span>Expand</span>
+              <span className="hidden xs:inline">Expand</span>
             </button>
 
             {/* Extreme Right Quick Actions: Chats & EduBoard */}
@@ -321,13 +321,13 @@ export default function Footer() {
                 onClick={() => toggleDrawer('chats')}
                 data-testid="footer-quick-chats-btn"
                 title="Quick Chats & Academic Doubts (Extreme Right)"
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
+                className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[30px] sm:min-h-auto ${
                   activeDrawer === 'chats'
                     ? 'bg-[#0B2D6B] text-white ring-2 ring-blue-400'
                     : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200/80'
                 }`}
               >
-                <MessageSquare className="w-3.5 h-3.5" />
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
                 <span>Chats</span>
               </button>
 
@@ -336,13 +336,13 @@ export default function Footer() {
                 onClick={() => toggleDrawer('boards')}
                 data-testid="footer-quick-boards-btn"
                 title="EduBoard Smart Classroom Whiteboard (Extreme Right)"
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
+                className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[30px] sm:min-h-auto ${
                   activeDrawer === 'boards'
                     ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300'
                     : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80'
                 }`}
               >
-                <Presentation className="w-3.5 h-3.5" />
+                <Presentation className="w-3.5 h-3.5 shrink-0" />
                 <span>Boards</span>
               </button>
             </div>

@@ -41,12 +41,12 @@ export default function Pagination({ page, pageSize, total, onChange }: Paginati
   }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-      <p className="text-sm text-gray-600">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-100">
+      <p className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
         Showing {Math.min((page - 1) * pageSize + 1, total)}–{Math.min(page * pageSize, total)} of{' '}
         {total} results
       </p>
-      <div className="flex gap-1">
+      <div className="flex flex-wrap items-center justify-center gap-1">
         <button
           onClick={() => onChange(page - 1)}
           disabled={page === 1}

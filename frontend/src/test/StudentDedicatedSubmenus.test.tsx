@@ -217,8 +217,8 @@ describe('Students & Admissions Dedicated Workspaces Suite', () => {
 
     expect(await screen.findByText('Master Student Directory & Register')).toBeDefined()
     expect(screen.getByPlaceholderText(/search by name, admission no\., phone, city/i)).toBeDefined()
-    expect(await screen.findByText('Aarav Sharma')).toBeDefined()
-    expect(screen.getByText('PA-2026-001')).toBeDefined()
+    expect((await screen.findAllByText('Aarav Sharma')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('PA-2026-001').length).toBeGreaterThan(0)
   })
 
   it('renders New Admission workspace at /students/admission with KYC application form', async () => {

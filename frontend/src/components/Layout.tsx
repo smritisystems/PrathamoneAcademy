@@ -191,13 +191,13 @@ export default function Layout() {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative transition-all duration-300 ease-in-out print:h-auto print:overflow-visible">
         {/* Top Header */}
         {!hideHeaderShell && (
-        <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center gap-3 md:gap-4 shrink-0 z-30 shadow-xs print:hidden">
+        <header className="bg-white border-b border-gray-200 px-2.5 sm:px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-1.5 sm:gap-3 md:gap-4 shrink-0 z-30 shadow-xs print:hidden min-w-0 max-w-full overflow-hidden">
           {/* Mobile Navigation Drawer Toggle */}
           <button
             type="button"
             onClick={toggleMobileOpen}
             aria-label="Open navigation menu"
-            className="p-2 -ml-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 md:hidden transition-colors"
+            className="p-1.5 sm:p-2 -ml-1 sm:-ml-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 md:hidden transition-colors shrink-0"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -226,9 +226,9 @@ export default function Layout() {
             </button>
           )}
 
-          {/* Active Institution Badge with Logo & Selector */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/90 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden" title={currentInst?.name || branding.academyName}>
+          {/* Active Institution Badge with Logo & Selectors */}
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-initial">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-slate-200/90 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden" title={currentInst?.name || branding.academyName}>
               {effectiveHeaderLogo && !headerLogoFailed ? (
                 <img
                   src={effectiveHeaderLogo}
@@ -244,11 +244,12 @@ export default function Layout() {
             </div>
 
             {/* Institution Selector */}
-            <div className="relative">
+            <div className="relative min-w-0 max-w-[125px] xs:max-w-[155px] sm:max-w-none flex-1 sm:flex-initial">
               <select
                 value={selectedInstitutionId ?? (institutions[0]?.id ?? '')}
                 onChange={(e) => setSelectedInstitution(Number(e.target.value))}
-                className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px] font-medium text-slate-800"
+                className="appearance-none text-xs sm:text-sm border border-gray-300 rounded-lg pl-2 sm:pl-3 pr-6 sm:pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white w-full sm:min-w-[140px] font-medium text-slate-800 truncate"
+                title="Switch active institution"
               >
                 {institutions.length === 0 ? (
                   <option value="">Loading...</option>
@@ -260,86 +261,91 @@ export default function Layout() {
                   ))
                 )}
               </select>
-              <ChevronDown className="absolute right-2 top-2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-1.5 sm:right-2 top-2 sm:top-2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Academic Year Selector */}
+            <div className="relative shrink-0 max-w-[95px] xs:max-w-[115px] sm:max-w-none">
+              <select
+                value={effectiveYearId}
+                onChange={(e) => setSelectedAcademicYear(Number(e.target.value))}
+                className="appearance-none text-xs sm:text-sm border border-gray-300 rounded-lg pl-2 sm:pl-3 pr-5 sm:pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white w-full sm:min-w-[140px] font-medium text-gray-800"
+                title="Select academic session"
+              >
+                {displayYears.map((year) => (
+                  <option key={year.id} value={year.id}>
+                    AY {year.name} {year.is_current ? '(Current)' : '(Historical)'}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-1.5 sm:right-2 top-2 sm:top-2.5 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500 pointer-events-none" />
             </div>
           </div>
 
-          {/* Academic Year Selector */}
-          <div className="relative">
-            <select
-              value={effectiveYearId}
-              onChange={(e) => setSelectedAcademicYear(Number(e.target.value))}
-              className="appearance-none text-sm border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white min-w-[140px] font-medium text-gray-800"
+          {/* Right Action Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Environment Switcher Pill */}
+            <button
+              type="button"
+              onClick={() => setSwitchTarget(isTrainingMode ? 'PRODUCTION' : 'TRAINING')}
+              title={
+                isTrainingMode
+                  ? 'Currently in Training Mode with sample data. Click to switch to Live Mode.'
+                  : 'Currently in Live Production Mode. Click to explore Training Mode.'
+              }
+              className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-2xs ${
+                isTrainingMode
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 animate-pulse'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+              }`}
             >
-              {displayYears.map((year) => (
-                <option key={year.id} value={year.id}>
-                  AY {year.name} {year.is_current ? '(Current)' : '(Historical)'}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
+              {isTrainingMode ? (
+                <>
+                  <FlaskConical className="w-3.5 h-3.5 text-white shrink-0" />
+                  <span className="hidden xs:inline">TRAINING</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="hidden xs:inline">Live</span>
+                </>
+              )}
+            </button>
 
-          {/* Environment Switcher Pill */}
-          <button
-            type="button"
-            onClick={() => setSwitchTarget(isTrainingMode ? 'PRODUCTION' : 'TRAINING')}
-            title={
-              isTrainingMode
-                ? 'Currently in Training Mode with sample data. Click to switch to Live Mode.'
-                : 'Currently in Live Production Mode. Click to explore Training Mode.'
-            }
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-2xs ${
-              isTrainingMode
-                ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 animate-pulse'
-                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
-            }`}
-          >
-            {isTrainingMode ? (
-              <>
-                <FlaskConical className="w-3.5 h-3.5 text-white" />
-                <span>TRAINING MODE</span>
-              </>
-            ) : (
-              <>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Live Mode</span>
-              </>
+            {/* Contextual Help */}
+            <div className="hidden xs:block">
+              <ContextualHelpButton variant="pill" label="Help" />
+            </div>
+
+            {/* Global Search Command Button */}
+            <button
+              type="button"
+              onClick={() => useNavigationStore.getState().openSearch()}
+              title="Search modules, workspaces, reports (Ctrl+K)"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors shadow-2xs font-medium"
+            >
+              <Search className="w-3.5 h-3.5 text-slate-400" />
+              <span>Search</span>
+              <kbd className="hidden lg:inline-flex text-[10px] px-1.5 py-0.2 bg-white text-slate-500 border rounded font-mono">
+                Ctrl+K
+              </kbd>
+            </button>
+
+            {!isInstalled && (
+              <Link
+                to="/install"
+                title="Install PrathamOne EduOS Desktop & Mobile App"
+                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-blue-200 rounded-xl transition-colors shadow-2xs"
+              >
+                <Download className="w-3.5 h-3.5 text-primary-600" />
+                <span>Install App</span>
+              </Link>
             )}
-          </button>
 
-          {/* Global Search Command Button */}
-          <button
-            type="button"
-            onClick={() => useNavigationStore.getState().openSearch()}
-            title="Search modules, workspaces, reports (Ctrl+K)"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-colors shadow-2xs font-medium"
-          >
-            <Search className="w-3.5 h-3.5 text-slate-400" />
-            <span>Search</span>
-            <kbd className="hidden lg:inline-flex text-[10px] px-1.5 py-0.2 bg-white text-slate-500 border rounded font-mono">
-              Ctrl+K
-            </kbd>
-          </button>
-
-          <div className="flex-1" />
-
-          <ContextualHelpButton variant="pill" label="Help" />
-
-          {!isInstalled && (
-            <Link
-              to="/install"
-              title="Install PrathamOne EduOS Desktop & Mobile App"
-              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-blue-200 rounded-xl transition-colors shadow-2xs"
-            >
-              <Download className="w-3.5 h-3.5 text-primary-600" />
-              <span>Install App</span>
-            </Link>
-          )}
-
-          <p className="text-sm font-medium text-gray-600 hidden sm:block">
-            {branding.academyName} {branding.tagline}
-          </p>
+            <p className="text-sm font-medium text-gray-600 hidden sm:block">
+              {branding.academyName} {branding.tagline}
+            </p>
+          </div>
         </header>
         )}
 
@@ -350,7 +356,9 @@ export default function Layout() {
         {/* Page Content */}
         <main
           className={`flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 relative print:h-auto print:overflow-visible print:p-0 ${
-            isEduBoardRoute && ebWorkspaceMode !== 'standard' ? 'p-2' : 'p-4 md:p-6'
+            isEduBoardRoute && ebWorkspaceMode !== 'standard'
+              ? 'p-2'
+              : 'p-3 sm:p-4 md:p-6 pb-24 md:pb-8 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))]'
           }`}
         >
           <RouteErrorBoundary>
