@@ -31,7 +31,7 @@ using System.Windows.Forms;
 [assembly: AssemblyDescription("Coaching Institute Management System")]
 [assembly: AssemblyCompany("Smritisys & AITDL Networks")]
 [assembly: AssemblyProduct("PrathamOne EduOS")]
-[assembly: AssemblyCopyright("Copyright (c) 2026 Smritisys & AITDL Networks")]
+[assembly: AssemblyCopyright("Copyright (c) 2026 PrathamOne EduOS")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 

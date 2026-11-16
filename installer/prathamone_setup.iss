@@ -52,7 +52,7 @@ DisableWelcomePage=no
 VersionInfoCompany=Smritisys & AITDL Networks
 VersionInfoDescription=PrathamOne EduOS Setup
 VersionInfoVersion=1.0.0.0
-VersionInfoCopyright=Copyright (C) 2026 Smritisys & AITDL Networks
+VersionInfoCopyright=Copyright (C) 2026 PrathamOne EduOS
 VersionInfoProductName=PrathamOne EduOS
 VersionInfoProductVersion=1.0.0
 
