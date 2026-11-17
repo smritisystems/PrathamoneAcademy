@@ -5,8 +5,8 @@
   "product_version": "1.0.0",
   "organization": "Smritisys & AITDL Networks",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-17T15:45:04.911558",
-  "total_documents": 515,
+  "generated_at": "2026-11-17T16:40:49.004434",
+  "total_documents": 522,
   "modules_catalog": [
     {
       "id": "00_PRODUCT_OVERVIEW",
@@ -10948,6 +10948,48 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "17_UI_UX_DESIGN_2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1_md",
+      "filename": "2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
+      "relative_path": "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
+      "extension": ".md",
+      "size_bytes": 6646,
+      "sha256": "057fd9dfb85469c5f90f676035f04013a5a1e09a971658a7731e1d4ccc922350",
+      "module": "17_UI_UX_DESIGN",
+      "title": "Planning Workspace Interactive Drag-to-Reschedule & Duration Resizing Acceptance Audit",
+      "category": "ACCEPTANCE-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-17",
+      "updated_date": "2026-11-17",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [
+        "planning",
+        "drag-and-drop",
+        "rescheduling",
+        "duration-resizing",
+        "view-first",
+        "browser-audit"
+      ],
+      "entities": [
+        "Activity",
+        "ActivityRecurrenceException"
+      ],
+      "api_routes": [
+        "/api/v1/planning/activities",
+        "/api/v1/planning/activities/{id}/exceptions"
+      ],
+      "related_modules": [
+        "03_ACADEMIC_MANAGEMENT",
+        "05_TEACHER_MANAGEMENT",
+        "12_RBAC_SECURITY"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "17_UI_UX_DESIGN_2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1_md",
       "filename": "2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
       "relative_path": "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
@@ -16786,6 +16828,144 @@
       "related_modules": []
     },
     {
+      "id": "assets_planning_drag_step1_view_mode_png",
+      "filename": "planning_drag_step1_view_mode.png",
+      "relative_path": "assets/planning_drag_step1_view_mode.png",
+      "extension": ".png",
+      "size_bytes": 216883,
+      "sha256": "32db0e531263c574bd2947a4f1b82a5576663a61567d4873cd90cee0fe08c37a",
+      "module": "assets",
+      "title": "planning_drag_step1_view_mode.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-17",
+      "updated_date": "2026-11-17",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_planning_drag_step2_edit_mode_week_png",
+      "filename": "planning_drag_step2_edit_mode_week.png",
+      "relative_path": "assets/planning_drag_step2_edit_mode_week.png",
+      "extension": ".png",
+      "size_bytes": 219366,
+      "sha256": "327f4095289a9c57099a903cef119686d452572ffbdf77e2b18dc92cfd5f44e5",
+      "module": "assets",
+      "title": "planning_drag_step2_edit_mode_week.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-17",
+      "updated_date": "2026-11-17",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_planning_drag_step3_duration_resized_png",
+      "filename": "planning_drag_step3_duration_resized.png",
+      "relative_path": "assets/planning_drag_step3_duration_resized.png",
+      "extension": ".png",
+      "size_bytes": 229344,
+      "sha256": "286941bb23cb5295247f1fc3d699cf5d00db9e8b39bf42d43618bbf208ff154a",
+      "module": "assets",
+      "title": "planning_drag_step3_duration_resized.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-17",
+      "updated_date": "2026-11-17",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_planning_drag_step4_day_view_timeline_png",
+      "filename": "planning_drag_step4_day_view_timeline.png",
+      "relative_path": "assets/planning_drag_step4_day_view_timeline.png",
+      "extension": ".png",
+      "size_bytes": 186587,
+      "sha256": "f11f911833b9e04925f7b2f9220db4935705e260b441a752b693d6f71b656c16",
+      "module": "assets",
+      "title": "planning_drag_step4_day_view_timeline.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-17",
+      "updated_date": "2026-11-17",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_planning_drag_step5_timeline_view_png",
+      "filename": "planning_drag_step5_timeline_view.png",
+      "relative_path": "assets/planning_drag_step5_timeline_view.png",
+      "extension": ".png",
+      "size_bytes": 223095,
+      "sha256": "b32f55442d9ef82c3ba3bbb224ffff14d657acc335e2321bf2a948d121fee6cf",
+      "module": "assets",
+      "title": "planning_drag_step5_timeline_view.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-17",
+      "updated_date": "2026-11-17",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_planning_drag_step6_mobile_view_png",
+      "filename": "planning_drag_step6_mobile_view.png",
+      "relative_path": "assets/planning_drag_step6_mobile_view.png",
+      "extension": ".png",
+      "size_bytes": 61395,
+      "sha256": "b4c163e7fc227ecb0276f0f3136e7bd51c79e4601c9e1c14cc26032a0e49d80d",
+      "module": "assets",
+      "title": "planning_drag_step6_mobile_view.png",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-17",
+      "updated_date": "2026-11-17",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
       "id": "assets_planning_reschedule_step1_view_mode_png",
       "filename": "planning_reschedule_step1_view_mode.png",
       "relative_path": "assets/planning_reschedule_step1_view_mode.png",
@@ -20097,6 +20277,7 @@
     ],
     "17_ui_ux_design_acceptance": [
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_NAVIGATION-MOBILE-AUTHENTICATED-AUDIT_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md"
     ],
     "17_ui_ux_design_research": [
@@ -20361,6 +20542,7 @@
       "17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_SPECIFICATION_UNIVERSAL-APP-ICON-CONTRAST-AND-INTEGRATION_V1.md",
       "17_UI_UX_DESIGN/2026-11-16_UI-UX_AUDIT-REPORT_PREMIUM-UNIFIED-LOGIN-EXPERIENCE_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_NAVIGATION-MOBILE-AUTHENTICATED-AUDIT_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_RESEARCH-REPORT_NAVIGATION-EXPERIENCE-RECOMMENDATIONS_V1.md",
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md",
@@ -20612,6 +20794,7 @@
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-PDF-GOVERNANCE-ENGINE_V1.md",
       "17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_NAVIGATION-MOBILE-AUTHENTICATED-AUDIT_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md",
       "26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md"
@@ -20692,6 +20875,7 @@
       "01_ARCHITECTURE/2026-11-17_ARCHITECTURE_RESEARCH-REPORT_PLANNING-SCHEDULE-INTEGRATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-PLAN_DEDICATED-WORKFORCE-DASHBOARDS_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md"
     ],
     "activityassignee": [
@@ -20703,6 +20887,7 @@
     "activityrecurrenceexception": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md"
     ],
     "activityreference": [
@@ -20930,6 +21115,7 @@
       "17_UI_UX_DESIGN/2026-11-14_UI-UX-DESIGN_IMPLEMENTATION-REPORT_SIDEBAR-CONTRAST-AND-SCROLL-GUARD-RESOLUTION_V1.md",
       "17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_IMPLEMENTATION-REPORT_MOBILE-RESPONSIVE-AND-FUNNY-404-EXPERIENCE_V1.md",
       "17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_SPECIFICATION_UNIVERSAL-APP-ICON-CONTRAST-AND-INTEGRATION_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_RESEARCH-REPORT_NAVIGATION-EXPERIENCE-RECOMMENDATIONS_V1.md",
       "18_TESTING_QA/2026-11-04_TESTING_QA_SPECIFICATION_ACCEPTANCE-CRITERIA_V1.md",
       "18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-GREENBOARD-AND-POPOUT_V1.md",
@@ -21277,6 +21463,7 @@
       "17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_IMPLEMENTATION-REPORT_MOBILE-RESPONSIVE-AND-FUNNY-404-EXPERIENCE_V1.md",
       "17_UI_UX_DESIGN/2026-11-16_UI-UX_AUDIT-REPORT_PREMIUM-UNIFIED-LOGIN-EXPERIENCE_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_NAVIGATION-MOBILE-AUTHENTICATED-AUDIT_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_AUDIT-REPORT_AUTO-VERSIONING-AND-RELEASE-ENGINE-VERIFICATION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md",
@@ -21370,6 +21557,7 @@
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_ARCHITECTURE-AUDIT_UNIVERSAL-PRINT-ENGINE-AUDIT_V1.md",
       "16_DATABASE_API/2026-11-04_DATABASE_API_AUDIT-REPORT_DATABASE-AND-DATA-MODEL-OPTIMIZATION-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_NAVIGATION-MOBILE-AUTHENTICATED-AUDIT_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_GLOBAL-PLACEHOLDER-AND-MOCK-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS-COMPLIANCE_REPORT_PRATHAMONE-GLOBAL-BRANDING-AUDIT_V1.md",
@@ -21682,6 +21870,7 @@
       "15_INTEGRATIONS/2026-11-13_INTEGRATIONS_FEATURE-REPORT_COMMUNICATION-AND-WHATSAPP-AUTOMATION_V1.md"
     ],
     "browser": [
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
       "18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-TEST-REPORT_V1.md"
     ],
@@ -22996,6 +23185,9 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_SECURITY-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md"
     ],
+    "drag": [
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md"
+    ],
     "drawer": [
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_NAVIGATION-MOBILE-AUTHENTICATED-AUDIT_V1.md"
     ],
@@ -23007,6 +23199,9 @@
     ],
     "drive": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_SMART-INSTALLER-DRIVE-SELECTION-AND-FOLDER-ARCHITECTURE_V1.md"
+    ],
+    "drop": [
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md"
     ],
     "dump": [
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_FEATURE-REPORT_HOUSEKEEPING-DB-BACKUP-RESTORE-MODULE_V1.md",
@@ -23020,6 +23215,9 @@
     "duplication": [
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_SUBJECT-MASTER-ARCHITECTURE-AND-MAPPINGS_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md"
+    ],
+    "duration": [
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md"
     ],
     "duties": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS_REPORT_GLOBAL-TRANSACTION-GOVERNANCE-AND-NUMBERING_V1.md"
@@ -23922,6 +24120,7 @@
       "12_RBAC_SECURITY/2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md",
       "12_RBAC_SECURITY/2026-11-12_RBAC-SECURITY_PERMISSION-MATRIX_EDUBOARD-PERMISSION-MATRIX_V1.md",
       "15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_NOTICE-BOARD-MANAGER-AND-CIRCULARS_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_CROSS-DEVICE-REGRESSION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FRONTEND-FUNCTIONAL-AUDIT_V1.md",
@@ -24906,6 +25105,7 @@
     ],
     "interactive": [
       "01_ARCHITECTURE/2026-11-13_ARCHITECTURE_SYSTEM-DESIGN_UNIVERSAL-SMART-BOARD-ARCHITECTURE_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES_EDUBOARD-RELEASE-NOTES_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_BUTTON-AND-ACTION-VALIDATION-MATRIX_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md"
@@ -26429,7 +26629,26 @@
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "01_ARCHITECTURE/2026-11-17_ARCHITECTURE_RESEARCH-REPORT_PLANNING-SCHEDULE-INTEGRATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md"
+    ],
+    "planning_drag_step1_view_mode": [
+      "assets/planning_drag_step1_view_mode.png"
+    ],
+    "planning_drag_step2_edit_mode_week": [
+      "assets/planning_drag_step2_edit_mode_week.png"
+    ],
+    "planning_drag_step3_duration_resized": [
+      "assets/planning_drag_step3_duration_resized.png"
+    ],
+    "planning_drag_step4_day_view_timeline": [
+      "assets/planning_drag_step4_day_view_timeline.png"
+    ],
+    "planning_drag_step5_timeline_view": [
+      "assets/planning_drag_step5_timeline_view.png"
+    ],
+    "planning_drag_step6_mobile_view": [
+      "assets/planning_drag_step6_mobile_view.png"
     ],
     "planning_reschedule_step1_view_mode": [
       "assets/planning_reschedule_step1_view_mode.png"
@@ -26502,6 +26721,12 @@
       "assets/nav_acceptance_admin_mobile_drawer.png",
       "assets/nav_acceptance_student_portal.png",
       "assets/nav_acceptance_teacher_desktop.png",
+      "assets/planning_drag_step1_view_mode.png",
+      "assets/planning_drag_step2_edit_mode_week.png",
+      "assets/planning_drag_step3_duration_resized.png",
+      "assets/planning_drag_step4_day_view_timeline.png",
+      "assets/planning_drag_step5_timeline_view.png",
+      "assets/planning_drag_step6_mobile_view.png",
       "assets/planning_reschedule_step1_view_mode.png",
       "assets/planning_reschedule_step2_modal_active.png",
       "assets/planning_reschedule_step3_card_badge.png",
@@ -27872,6 +28097,7 @@
     "report_planning": [
       "01_ARCHITECTURE/2026-11-17_ARCHITECTURE_RESEARCH-REPORT_PLANNING-SCHEDULE-INTEGRATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md"
     ],
     "report_prathamone": [
@@ -28149,10 +28375,14 @@
     "reschedule": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md"
     ],
     "reschedule_v1": [
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md"
+    ],
+    "rescheduling": [
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md"
     ],
     "research": [
       "01_ARCHITECTURE/2026-11-17_ARCHITECTURE_RESEARCH-REPORT_PLANNING-SCHEDULE-INTEGRATION_V1.md",
@@ -28163,6 +28393,9 @@
     ],
     "resilience": [
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_TROUBLESHOOTING-REPORT_CODEX-CONFIGURATION-LOAD-RESOLUTION_V1.md"
+    ],
+    "resizing": [
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md"
     ],
     "resolution": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_FULL-HYBRID-CHAT-AND-DOUBT-RESOLUTION-ENGINE_V1.md",
@@ -30158,6 +30391,7 @@
       "12_RBAC_SECURITY/2026-11-09_RBAC-SECURITY_SPECIFICATION_FINANCIAL-PERMISSIONS-APPROVAL-MATRIX_V1.md",
       "12_RBAC_SECURITY/2026-11-12_RBAC-SECURITY_PERMISSION-MATRIX_EDUBOARD-PERMISSION-MATRIX_V1.md",
       "15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_NOTICE-BOARD-MANAGER-AND-CIRCULARS_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_CROSS-DEVICE-REGRESSION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-SOFTWARE-DEEP-AUDIT-AND-HEALTH-ASSESSMENT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md",
@@ -30304,6 +30538,7 @@
       "11_REPORTS_EXPORTS/2026-11-14_REPORTS-EXPORTS_AUDIT-REPORT_REPORTING-WORKSPACE_V1.md",
       "12_RBAC_SECURITY/2026-11-04_RBAC_SECURITY_IMPLEMENTATION-REPORT_USER-MANAGEMENT-REPORT_V1.md",
       "17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_IMPLEMENTATION-REPORT_MOBILE-RESPONSIVE-AND-FUNNY-404-EXPERIENCE_V1.md",
+      "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-DRAG-RESCHEDULE-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES_V1-88-0-RC2_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",

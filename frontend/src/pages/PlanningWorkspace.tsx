@@ -19,9 +19,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, ArrowRight, CalendarDays, Clock3, KanbanSquare,
+  ArrowLeft, ArrowRight, CalendarDays, Clock3, GripVertical, KanbanSquare,
   Link2, X,
-  ListTodo, Plus, RefreshCw, Rows3, Search,
+  ListTodo, Plus, RefreshCw, Rows3, Search, Timer,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -190,16 +190,94 @@ function itemPayload(values: FormValues, timeZone: string, current?: PlanningIte
   }
 }
 
-function PlanningCard({ item, timeZone, onClick }: { item: PlanningItem; timeZone: string; onClick: () => void }) {
+const DRAG_TYPE_ACTIVITY = 'application/x-planning-activity'
+
+type DragActivityData = {
+  id: number | string
+  key: string
+  title: string
+  is_recurrence: boolean
+  occurrence_date?: string | null
+  original_occurrence_date?: string | null
+  start_at?: string | null
+  end_at?: string | null
+  timezone?: string | null
+  version?: number | null
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  const remaining = minutes % 60
+  return remaining > 0 ? `${hours}h ${remaining}m` : `${hours}h`
+}
+
+function getItemDurationMinutes(item: PlanningItem): number | null {
+  if (!item.start_at || !item.end_at) return null
+  const start = new Date(item.start_at).getTime()
+  const end = new Date(item.end_at).getTime()
+  if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return null
+  return Math.round((end - start) / 60000)
+}
+
+function PlanningCard({
+  item,
+  timeZone,
+  onClick,
+  isEditMode = false,
+  onDragStart,
+  onAdjustDuration,
+  showDurationControls = true,
+}: {
+  item: PlanningItem
+  timeZone: string
+  onClick: () => void
+  isEditMode?: boolean
+  onDragStart?: (event: React.DragEvent, item: PlanningItem) => void
+  onAdjustDuration?: (item: PlanningItem, deltaMinutes: number, event: React.MouseEvent) => void
+  showDurationControls?: boolean
+}) {
   const sourceLabel = sourceLabels[item.source_type] || 'Linked record'
+  const durationMinutes = getItemDurationMinutes(item)
+  const canDrag = isEditMode && item.editable
+
   return (
-    <button
-      type="button"
+    <div
+      role="article"
+      tabIndex={0}
+      aria-label={item.title}
+      draggable={canDrag}
+      onDragStart={(event) => {
+        if (canDrag && onDragStart) {
+          onDragStart(event, item)
+        }
+      }}
       onClick={onClick}
-      className="w-full rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-indigo-300 hover:shadow-md"
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick()
+        }
+      }}
+      className={`group relative w-full rounded-lg border bg-white p-3 text-left shadow-sm transition select-none ${
+        canDrag
+          ? 'cursor-grab border-slate-200 active:cursor-grabbing hover:border-indigo-400 hover:shadow-md'
+          : 'cursor-pointer border-slate-200 hover:border-indigo-300 hover:shadow-sm'
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="line-clamp-2 text-sm font-semibold text-slate-800">{item.title}</span>
+        <div className="flex items-start gap-1.5 min-w-0">
+          {canDrag && (
+            <span
+              className="mt-0.5 shrink-0 text-slate-300 group-hover:text-slate-500"
+              title="Drag to reschedule"
+              aria-hidden="true"
+            >
+              <GripVertical className="h-4 w-4" />
+            </span>
+          )}
+          <span className="line-clamp-2 text-sm font-semibold text-slate-800">{item.title}</span>
+        </div>
         <div className="flex shrink-0 items-center gap-1">
           {item.is_rescheduled && (
             <span
@@ -220,10 +298,63 @@ function PlanningCard({ item, timeZone, onClick }: { item: PlanningItem; timeZon
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
         <span>{formatDate(item.start_at || item.due_at, item.timezone || timeZone)}</span>
+        {durationMinutes !== null && (
+          <span className="inline-flex items-center gap-1 font-medium text-slate-600">
+            <Timer className="h-3 w-3 text-slate-400" />
+            {formatDuration(durationMinutes)}
+          </span>
+        )}
         {item.assignees.length > 0 && <span>{item.assignees.map((person) => person.name).join(', ')}</span>}
         {!item.editable && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">Read-only source</span>}
       </div>
-    </button>
+
+      {isEditMode && item.editable && showDurationControls && durationMinutes !== null && onAdjustDuration && (
+        <div
+          className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span className="text-[10px] font-medium text-slate-500">Duration ({formatDuration(durationMinutes)})</span>
+          <div className="flex items-center gap-1">
+            {durationMinutes > 30 && (
+              <button
+                type="button"
+                aria-label={`Decrease duration of ${item.title} by 30 minutes`}
+                onClick={(event) => onAdjustDuration(item, -30, event)}
+                className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 active:scale-95 transition"
+              >
+                -30m
+              </button>
+            )}
+            {durationMinutes > 15 && (
+              <button
+                type="button"
+                aria-label={`Decrease duration of ${item.title} by 15 minutes`}
+                onClick={(event) => onAdjustDuration(item, -15, event)}
+                className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-200 active:scale-95 transition"
+              >
+                -15m
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label={`Increase duration of ${item.title} by 15 minutes`}
+              onClick={(event) => onAdjustDuration(item, 15, event)}
+              className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 hover:bg-indigo-100 active:scale-95 transition"
+            >
+              +15m
+            </button>
+            <button
+              type="button"
+              aria-label={`Increase duration of ${item.title} by 30 minutes`}
+              onClick={(event) => onAdjustDuration(item, 30, event)}
+              className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700 hover:bg-indigo-100 active:scale-95 transition"
+            >
+              +30m
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -255,6 +386,7 @@ export default function PlanningWorkspace() {
     startTime: '09:00',
     endTime: '10:00',
   })
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null)
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)')
@@ -543,6 +675,230 @@ export default function PlanningWorkspace() {
     onError: (error: any) => toast.error(error.response?.data?.detail || 'Could not remove attachment.'),
   })
 
+  const rescheduleOccurrenceMutation = useMutation({
+    mutationFn: async ({
+      activityId,
+      occurrenceDate,
+      startIso,
+      endIso,
+    }: {
+      activityId: number
+      occurrenceDate: string
+      startIso: string
+      endIso?: string
+    }) => {
+      return planningApi.rescheduleOccurrence(activityId, {
+        occurrence_date: occurrenceDate,
+        rescheduled_start_at: startIso,
+        rescheduled_end_at: endIso,
+      })
+    },
+    onSuccess: () => {
+      refresh()
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail?.message || error.response?.data?.detail || 'Could not reschedule occurrence.'
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+    },
+  })
+
+  const rescheduleActivityMutation = useMutation({
+    mutationFn: async ({
+      activityId,
+      expectedVersion,
+      startIso,
+      endIso,
+    }: {
+      activityId: number
+      expectedVersion: number
+      startIso?: string
+      endIso?: string
+    }) => {
+      return planningApi.updateActivity(activityId, {
+        expected_version: expectedVersion,
+        ...(startIso ? { start_at: startIso } : {}),
+        ...(endIso ? { end_at: endIso } : {}),
+      })
+    },
+    onSuccess: () => {
+      refresh()
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail?.message || error.response?.data?.detail || 'Could not update activity schedule.'
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+    },
+  })
+
+  const handleDragStart = (event: React.DragEvent, item: PlanningItem) => {
+    if (!isEditMode || !item.editable) {
+      event.preventDefault()
+      return
+    }
+    const payload: DragActivityData = {
+      id: item.source_id,
+      key: item.key,
+      title: item.title,
+      is_recurrence: !!item.recurrence,
+      occurrence_date: item.occurrence_date || null,
+      original_occurrence_date: item.original_occurrence_date || null,
+      start_at: item.start_at || null,
+      end_at: item.end_at || null,
+      timezone: item.timezone || timeZone,
+      version: item.version,
+    }
+    event.dataTransfer.setData(DRAG_TYPE_ACTIVITY, JSON.stringify(payload))
+    event.dataTransfer.setData('text/plain', item.title)
+    event.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (event: React.DragEvent, targetId: string) => {
+    if (!isEditMode) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    if (dragOverTarget !== targetId) {
+      setDragOverTarget(targetId)
+    }
+  }
+
+  const handleDragLeave = (event: React.DragEvent, targetId: string) => {
+    if (dragOverTarget === targetId) {
+      setDragOverTarget(null)
+    }
+  }
+
+  const handleDropOnDate = async (targetDateKey: string, event: React.DragEvent) => {
+    event.preventDefault()
+    setDragOverTarget(null)
+    if (!isEditMode) return
+
+    const raw = event.dataTransfer.getData(DRAG_TYPE_ACTIVITY)
+    if (!raw) return
+
+    try {
+      const dragged: DragActivityData = JSON.parse(raw)
+      const itemTz = dragged.timezone || timeZone
+      const startWall = planningWallDateTime(dragged.start_at, itemTz)
+      const endWall = planningWallDateTime(dragged.end_at, itemTz)
+      const currentDateKey = startWall ? startWall.slice(0, 10) : (dragged.occurrence_date || '')
+
+      if (currentDateKey === targetDateKey) return
+
+      const startTimePart = startWall && startWall.length >= 16 ? startWall.slice(11, 16) : '09:00'
+      const endTimePart = endWall && endWall.length >= 16 ? endWall.slice(11, 16) : '10:00'
+
+      const newStartIso = planningInstantFromWallTime(`${targetDateKey}T${startTimePart}`, itemTz)
+      const newEndIso = planningInstantFromWallTime(`${targetDateKey}T${endTimePart}`, itemTz)
+      if (!newStartIso) return
+
+      if (dragged.is_recurrence) {
+        const originalOccDate = dragged.original_occurrence_date || dragged.occurrence_date
+        if (!originalOccDate) return
+        await rescheduleOccurrenceMutation.mutateAsync({
+          activityId: Number(dragged.id),
+          occurrenceDate: originalOccDate,
+          startIso: newStartIso,
+          endIso: newEndIso || undefined,
+        })
+        toast.success(`Occurrence rescheduled to ${targetDateKey}.`)
+      } else {
+        await rescheduleActivityMutation.mutateAsync({
+          activityId: Number(dragged.id),
+          expectedVersion: dragged.version || 1,
+          startIso: newStartIso,
+          endIso: newEndIso || undefined,
+        })
+        toast.success(`Activity rescheduled to ${targetDateKey}.`)
+      }
+    } catch (err) {}
+  }
+
+  const handleDropOnHourSlot = async (hourString: string, event: React.DragEvent) => {
+    event.preventDefault()
+    setDragOverTarget(null)
+    if (!isEditMode) return
+
+    const raw = event.dataTransfer.getData(DRAG_TYPE_ACTIVITY)
+    if (!raw) return
+
+    try {
+      const dragged: DragActivityData = JSON.parse(raw)
+      const itemTz = dragged.timezone || timeZone
+      const targetDateKey = calendarDateKey(focusDate)
+
+      const durationMs = (dragged.start_at && dragged.end_at)
+        ? new Date(dragged.end_at).getTime() - new Date(dragged.start_at).getTime()
+        : 60 * 60 * 1000
+
+      const newStartIso = planningInstantFromWallTime(`${targetDateKey}T${hourString}`, itemTz)
+      if (!newStartIso) return
+      const newEndIso = new Date(new Date(newStartIso).getTime() + durationMs).toISOString()
+
+      if (dragged.is_recurrence) {
+        const originalOccDate = dragged.original_occurrence_date || dragged.occurrence_date
+        if (!originalOccDate) return
+        await rescheduleOccurrenceMutation.mutateAsync({
+          activityId: Number(dragged.id),
+          occurrenceDate: originalOccDate,
+          startIso: newStartIso,
+          endIso: newEndIso,
+        })
+        toast.success(`Occurrence moved to ${hourString}.`)
+      } else {
+        await rescheduleActivityMutation.mutateAsync({
+          activityId: Number(dragged.id),
+          expectedVersion: dragged.version || 1,
+          startIso: newStartIso,
+          endIso: newEndIso,
+        })
+        toast.success(`Activity moved to ${hourString}.`)
+      }
+    } catch (err) {}
+  }
+
+  const handleAdjustDuration = async (item: PlanningItem, deltaMinutes: number, event: React.MouseEvent) => {
+    event.stopPropagation()
+    if (!isEditMode) {
+      toast.error('Enable Edit Mode to resize activity duration.')
+      return
+    }
+    if (!item.editable) {
+      toast.error('This activity is read-only.')
+      return
+    }
+    const currentMinutes = getItemDurationMinutes(item)
+    if (currentMinutes === null || !item.start_at) {
+      toast.error('Activity does not have a measurable duration.')
+      return
+    }
+    const targetMinutes = currentMinutes + deltaMinutes
+    if (targetMinutes < 15) {
+      toast.error('Duration must be at least 15 minutes.')
+      return
+    }
+    if (targetMinutes > 24 * 60) {
+      toast.error('Duration cannot exceed 24 hours.')
+      return
+    }
+    const newEndIso = new Date(new Date(item.start_at).getTime() + targetMinutes * 60000).toISOString()
+    if (item.recurrence) {
+      const originalOccDate = item.original_occurrence_date || item.occurrence_date!
+      await rescheduleOccurrenceMutation.mutateAsync({
+        activityId: Number(item.source_id),
+        occurrenceDate: originalOccDate,
+        startIso: item.start_at,
+        endIso: newEndIso,
+      })
+      toast.success(`Duration updated to ${formatDuration(targetMinutes)}.`)
+    } else {
+      await rescheduleActivityMutation.mutateAsync({
+        activityId: Number(item.source_id),
+        expectedVersion: item.version || 1,
+        endIso: newEndIso,
+      })
+      toast.success(`Duration updated to ${formatDuration(targetMinutes)}.`)
+    }
+  }
+
   const openCreate = () => {
     if (!isEditMode) {
       toast.error('Enable Edit Mode before creating an activity.')
@@ -656,51 +1012,259 @@ export default function PlanningWorkspace() {
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => <div key={day} className="py-2">{day}</div>)}
       </div>
       <div className="grid grid-cols-7">
-        {calendarDays.map((day) => (
-          <div
-            key={calendarDateKey(day)}
-            className={`min-h-24 border-b border-r border-slate-100 p-1.5 sm:min-h-32 ${
-              day.getUTCMonth() !== focusDate.getUTCMonth() ? 'bg-slate-50/70 text-slate-400' : ''
-            } ${calendarDateKey(day) === planningDateKey(new Date(), timeZone) ? 'bg-indigo-50/50' : ''}`}
-          >
-            <button type="button" onClick={() => setFocusDate(day)} className="mb-1 px-1 text-xs font-semibold">
-              {day.getUTCDate()}
-            </button>
-            <div className="space-y-1">
-              {itemsForDay(day).slice(0, 3).map((item) => (
-                <button
-                  type="button"
-                  key={item.key}
-                  onClick={() => setActiveItem(item)}
-                  className={`block w-full truncate rounded px-1 py-0.5 text-left text-[10px] ${
-                    item.is_rescheduled
-                      ? 'border border-amber-300 bg-amber-100 font-medium text-amber-900'
-                      : 'bg-indigo-100 text-indigo-800'
-                  }`}
-                  title={`${item.title}${item.is_rescheduled && item.original_occurrence_date ? ` (Rescheduled from ${item.original_occurrence_date})` : ''}`}
-                >
-                  {item.is_rescheduled ? '↻ ' : ''}{item.title}
-                </button>
-              ))}
-              {itemsForDay(day).length > 3 && <span className="px-1 text-[10px] text-slate-500">+{itemsForDay(day).length - 3} more</span>}
+        {calendarDays.map((day) => {
+          const dateKey = calendarDateKey(day)
+          const isOver = dragOverTarget === dateKey
+          return (
+            <div
+              key={dateKey}
+              onDragOver={(event) => handleDragOver(event, dateKey)}
+              onDragLeave={(event) => handleDragLeave(event, dateKey)}
+              onDrop={(event) => handleDropOnDate(dateKey, event)}
+              className={`min-h-24 border-b border-r border-slate-100 p-1.5 sm:min-h-32 transition-colors ${
+                day.getUTCMonth() !== focusDate.getUTCMonth() ? 'bg-slate-50/70 text-slate-400' : ''
+              } ${dateKey === planningDateKey(new Date(), timeZone) ? 'bg-indigo-50/50' : ''} ${
+                isOver ? 'bg-indigo-100/80 ring-2 ring-indigo-500 ring-inset border-indigo-400' : ''
+              }`}
+            >
+              <button type="button" onClick={() => setFocusDate(day)} className="mb-1 px-1 text-xs font-semibold">
+                {day.getUTCDate()}
+              </button>
+              <div className="space-y-1">
+                {itemsForDay(day).slice(0, 3).map((item) => (
+                  <button
+                    type="button"
+                    key={item.key || item.id}
+                    draggable={isEditMode && item.editable}
+                    onDragStart={(event) => handleDragStart(event, item)}
+                    onClick={() => setActiveItem(item)}
+                    className={`block w-full truncate rounded px-1 py-0.5 text-left text-[10px] ${
+                      isEditMode && item.editable ? 'cursor-grab active:cursor-grabbing hover:ring-1 hover:ring-indigo-400' : ''
+                    } ${
+                      item.is_rescheduled
+                        ? 'border border-amber-300 bg-amber-100 font-medium text-amber-900'
+                        : 'bg-indigo-100 text-indigo-800'
+                    }`}
+                    title={`${item.title}${item.is_rescheduled && item.original_occurrence_date ? ` (Rescheduled from ${item.original_occurrence_date})` : ''}`}
+                  >
+                    {item.is_rescheduled ? '↻ ' : ''}{item.title}
+                  </button>
+                ))}
+                {itemsForDay(day).length > 3 && <span className="px-1 text-[10px] text-slate-500">+{itemsForDay(day).length - 3} more</span>}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
 
-  const renderDay = () => (
-    <section className="rounded-xl border border-slate-200 bg-white p-4">
-      <h2 className="mb-3 text-sm font-bold text-slate-700">
-        {calendarDateLabel(focusDate, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-      </h2>
-      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-        {itemsForDay(focusDate).map((item) => <PlanningCard key={item.key} item={item} timeZone={timeZone} onClick={() => setActiveItem(item)} />)}
+  const renderWeek = () => (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
+        {calendarDays.map((day) => {
+          const dateKey = calendarDateKey(day)
+          const dayItems = itemsForDay(day)
+          const isToday = dateKey === planningDateKey(new Date(), timeZone)
+          const isOver = dragOverTarget === dateKey
+          return (
+            <div
+              key={dateKey}
+              onDragOver={(event) => handleDragOver(event, dateKey)}
+              onDragLeave={(event) => handleDragLeave(event, dateKey)}
+              onDrop={(event) => handleDropOnDate(dateKey, event)}
+              className={`flex flex-col min-h-64 rounded-xl border p-2.5 transition-all ${
+                isOver
+                  ? 'border-indigo-400 bg-indigo-50/90 ring-2 ring-indigo-400 ring-inset shadow-md'
+                  : isToday
+                    ? 'border-indigo-300 bg-indigo-50/30'
+                    : 'border-slate-200 bg-white'
+              }`}
+            >
+              <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-2">
+                <div>
+                  <span className="block text-[11px] font-medium uppercase text-slate-400">
+                    {calendarDateLabel(day, { weekday: 'short' })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setFocusDate(day); setView('day') }}
+                    className={`text-sm font-bold ${isToday ? 'text-indigo-600' : 'text-slate-800'} hover:underline`}
+                  >
+                    {calendarDateLabel(day, { month: 'short', day: 'numeric' })}
+                  </button>
+                </div>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                  {dayItems.length}
+                </span>
+              </div>
+              <div className="flex-1 space-y-2">
+                {dayItems.map((item) => (
+                  <PlanningCard
+                    key={item.key || item.id}
+                    item={item}
+                    timeZone={timeZone}
+                    onClick={() => setActiveItem(item)}
+                    isEditMode={isEditMode}
+                    onDragStart={handleDragStart}
+                    onAdjustDuration={handleAdjustDuration}
+                  />
+                ))}
+                {dayItems.length === 0 && (
+                  <div className={`flex h-28 items-center justify-center rounded-lg border border-dashed text-center text-xs ${
+                    isOver ? 'border-indigo-400 text-indigo-700 bg-indigo-100/50' : 'border-slate-200 text-slate-400'
+                  }`}>
+                    {isOver ? 'Drop to reschedule here' : isEditMode ? 'Drag here to reschedule' : 'No activities'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
-      {itemsForDay(focusDate).length === 0 && <p className="py-8 text-center text-sm text-slate-500">No activities scheduled for this day.</p>}
-    </section>
+    </div>
   )
+
+  const renderDay = () => {
+    const dayItems = itemsForDay(focusDate)
+    const timedItems = dayItems.filter((i) => i.start_at && !i.all_day)
+    const allDayOrUnscheduled = dayItems.filter((i) => !i.start_at || i.all_day)
+    const dayHours = Array.from({ length: 14 }, (_, i) => i + 7)
+
+    const prevDate = new Date(focusDate)
+    prevDate.setUTCDate(prevDate.getUTCDate() - 1)
+    const prevKey = calendarDateKey(prevDate)
+
+    const nextDate = new Date(focusDate)
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1)
+    const nextKey = calendarDateKey(nextDate)
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3">
+          <button
+            type="button"
+            onClick={() => shiftDate(-1)}
+            onDragOver={(event) => handleDragOver(event, `day-nav:${prevKey}`)}
+            onDragLeave={(event) => handleDragLeave(event, `day-nav:${prevKey}`)}
+            onDrop={(event) => handleDropOnDate(prevKey, event)}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+              dragOverTarget === `day-nav:${prevKey}`
+                ? 'border-indigo-500 bg-indigo-100 text-indigo-800 ring-2 ring-indigo-400'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+            title="Drop here to shift to previous day"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>{calendarDateLabel(prevDate, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+          </button>
+
+          <h2 className="text-sm font-bold text-slate-800 sm:text-base">
+            {calendarDateLabel(focusDate, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </h2>
+
+          <button
+            type="button"
+            onClick={() => shiftDate(1)}
+            onDragOver={(event) => handleDragOver(event, `day-nav:${nextKey}`)}
+            onDragLeave={(event) => handleDragLeave(event, `day-nav:${nextKey}`)}
+            onDrop={(event) => handleDropOnDate(nextKey, event)}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+              dragOverTarget === `day-nav:${nextKey}`
+                ? 'border-indigo-500 bg-indigo-100 text-indigo-800 ring-2 ring-indigo-400'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+            title="Drop here to shift to next day"
+          >
+            <span>{calendarDateLabel(nextDate, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {allDayOrUnscheduled.length > 0 && (
+          <section className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+              All-Day & Tasks ({allDayOrUnscheduled.length})
+            </h3>
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {allDayOrUnscheduled.map((item) => (
+                <PlanningCard
+                  key={item.key || item.id}
+                  item={item}
+                  timeZone={timeZone}
+                  onClick={() => setActiveItem(item)}
+                  isEditMode={isEditMode}
+                  onDragStart={handleDragStart}
+                  onAdjustDuration={handleAdjustDuration}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="divide-y divide-slate-100">
+            {dayHours.map((h) => {
+              const hourStr = `${String(h).padStart(2, '0')}:00`
+              const hourLabel = `${h % 12 === 0 ? 12 : h % 12}:00 ${h >= 12 ? 'PM' : 'AM'}`
+              const isOver = dragOverTarget === `hour:${hourStr}`
+
+              const slotItems = timedItems.filter((i) => {
+                const wall = planningWallDateTime(i.start_at, i.timezone || timeZone)
+                return wall.length >= 13 && Number(wall.slice(11, 13)) === h
+              })
+
+              return (
+                <div
+                  key={hourStr}
+                  onDragOver={(event) => handleDragOver(event, `hour:${hourStr}`)}
+                  onDragLeave={(event) => handleDragLeave(event, `hour:${hourStr}`)}
+                  onDrop={(event) => handleDropOnHourSlot(hourStr, event)}
+                  className={`flex flex-col gap-2 p-2.5 transition sm:flex-row sm:items-start ${
+                    isOver ? 'bg-indigo-50/90 ring-2 ring-indigo-400 ring-inset' : 'hover:bg-slate-50/50'
+                  }`}
+                >
+                  <div className="w-20 shrink-0 pt-1 text-xs font-semibold text-slate-400 sm:text-right sm:pr-4">
+                    {hourLabel}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    {slotItems.map((item) => (
+                      <PlanningCard
+                        key={item.key || item.id}
+                        item={item}
+                        timeZone={timeZone}
+                        onClick={() => setActiveItem(item)}
+                        isEditMode={isEditMode}
+                        onDragStart={handleDragStart}
+                        onAdjustDuration={handleAdjustDuration}
+                      />
+                    ))}
+                    {slotItems.length === 0 && (
+                      <div
+                        className={`rounded-lg border border-dashed py-2 text-center text-xs transition ${
+                          isOver
+                            ? 'border-indigo-400 bg-indigo-100/60 font-semibold text-indigo-700'
+                            : isEditMode
+                              ? 'border-slate-200 text-slate-400'
+                              : 'border-transparent text-slate-300'
+                        }`}
+                      >
+                        {isOver ? `Drop to reschedule to ${hourLabel}` : isEditMode ? `Empty (${hourLabel})` : ''}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        {dayItems.length === 0 && (
+          <p className="py-4 text-center text-sm text-slate-500">No activities scheduled for this day.</p>
+        )}
+      </div>
+    )
+  }
 
   const renderKanban = () => (
     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
@@ -735,7 +1299,13 @@ export default function PlanningWorkspace() {
                   }}
                   className={isEditMode && item.editable ? 'cursor-grab active:cursor-grabbing' : ''}
                 >
-                  <PlanningCard item={item} timeZone={timeZone} onClick={() => setActiveItem(item)} />
+                  <PlanningCard
+                    item={item}
+                    timeZone={timeZone}
+                    onClick={() => setActiveItem(item)}
+                    isEditMode={isEditMode}
+                    onAdjustDuration={handleAdjustDuration}
+                  />
                 </div>
               ))}
               {columnItems.length === 0 && <p className="rounded-lg border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500">No activities</p>}
@@ -781,7 +1351,15 @@ export default function PlanningWorkspace() {
               </h2>
               <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                 {section.items.map((item) => (
-                  <PlanningCard key={`${section.title}:${item.key}`} item={item} timeZone={timeZone} onClick={() => setActiveItem(item)} />
+                  <PlanningCard
+                    key={`${section.title}:${item.key}`}
+                    item={item}
+                    timeZone={timeZone}
+                    onClick={() => setActiveItem(item)}
+                    isEditMode={isEditMode}
+                    onDragStart={handleDragStart}
+                    onAdjustDuration={handleAdjustDuration}
+                  />
                 ))}
                 {section.items.length === 0 && <p className="text-sm text-slate-500">Nothing to show.</p>}
               </div>
@@ -802,18 +1380,42 @@ export default function PlanningWorkspace() {
     const ordered = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))
     return (
       <div className="space-y-5">
-        {ordered.map(([key, group]) => (
-          <section key={key} className={view === 'timeline' ? 'border-l-2 border-indigo-200 pl-4' : ''}>
-            <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
-              {view === 'timeline' && <span className="h-2 w-2 -ml-[21px] rounded-full bg-indigo-500" />}
-              {key === 'unscheduled' ? 'Unscheduled' : calendarDateLabel(group.date, { weekday: 'long', month: 'long', day: 'numeric' })}
-              <span className="text-xs font-normal text-slate-500">{group.items.length}</span>
-            </h2>
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {group.items.map((item) => <PlanningCard key={item.key} item={item} timeZone={timeZone} onClick={() => setActiveItem(item)} />)}
-            </div>
-          </section>
-        ))}
+        {ordered.map(([key, group]) => {
+          const isOver = dragOverTarget === `timeline:${key}`
+          return (
+            <section
+              key={key}
+              onDragOver={(event) => key !== 'unscheduled' && handleDragOver(event, `timeline:${key}`)}
+              onDragLeave={(event) => key !== 'unscheduled' && handleDragLeave(event, `timeline:${key}`)}
+              onDrop={(event) => key !== 'unscheduled' && handleDropOnDate(key, event)}
+              className={`transition-all ${
+                view === 'timeline' ? 'border-l-2 border-indigo-200 pl-4' : ''
+              } ${
+                isOver ? 'rounded-xl bg-indigo-50/70 ring-2 ring-indigo-400 ring-inset p-3' : ''
+              }`}
+            >
+              <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
+                {view === 'timeline' && <span className="h-2 w-2 -ml-[21px] rounded-full bg-indigo-500" />}
+                {key === 'unscheduled' ? 'Unscheduled' : calendarDateLabel(group.date, { weekday: 'long', month: 'long', day: 'numeric' })}
+                <span className="text-xs font-normal text-slate-500">{group.items.length}</span>
+                {isOver && <span className="ml-2 text-xs font-medium text-indigo-600">Drop to reschedule to this date</span>}
+              </h2>
+              <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                {group.items.map((item) => (
+                  <PlanningCard
+                    key={item.key || item.id}
+                    item={item}
+                    timeZone={timeZone}
+                    onClick={() => setActiveItem(item)}
+                    isEditMode={isEditMode}
+                    onDragStart={handleDragStart}
+                    onAdjustDuration={handleAdjustDuration}
+                  />
+                ))}
+              </div>
+            </section>
+          )
+        })}
         {ordered.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">No activities in this date range.</p>}
       </div>
     )
@@ -905,7 +1507,8 @@ export default function PlanningWorkspace() {
           <button type="button" onClick={() => refetch()} className="ml-2 font-semibold underline">Retry</button>
         </div>
       ) : view === 'day' ? renderDay()
-        : view === 'calendar' || view === 'week' ? renderCalendar()
+        : view === 'week' ? renderWeek()
+        : view === 'calendar' ? renderCalendar()
         : view === 'kanban' ? renderKanban()
           : renderAgendaOrTimeline()}
 

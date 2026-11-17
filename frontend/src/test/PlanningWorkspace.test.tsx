@@ -41,6 +41,8 @@ vi.mock('../api/endpoints', () => ({
     listActivities: () => Promise.resolve({ data: { items: mockPlanningData.items, timezone: 'Asia/Kolkata' } }),
     getAssignees: () => Promise.resolve({ data: { users: [], departments: [] } }),
     createActivity: vi.fn(() => Promise.resolve({ data: { item: {} } })),
+    updateActivity: vi.fn(() => Promise.resolve({ data: { item: {} } })),
+    transitionActivity: vi.fn(() => Promise.resolve({ data: {} })),
     cancelOccurrence: vi.fn(() => Promise.resolve({ data: {} })),
     cancelActivity: vi.fn(() => Promise.resolve({ data: {} })),
     rescheduleOccurrence: vi.fn(() => Promise.resolve({ data: {} })),
@@ -417,6 +419,228 @@ describe('Planning workspace view switcher accessibility', () => {
     fireEvent.click(restoreBtn)
     await waitFor(() => {
       expect(vi.mocked(planningApi.deleteOccurrenceException)).toHaveBeenCalledWith(7, '2026-11-26')
+    })
+  })
+
+  it('enforces view-first immutability: disables drag handles and duration controls when Edit Mode is inactive', async () => {
+    useEditModeStore.setState({ scopes: {} })
+
+    const testItem: PlanningItem = {
+      id: 'activity:88',
+      key: 'activity:88',
+      source_id: 88,
+      source_type: 'activity',
+      title: 'Chemistry Seminar',
+      description: 'Annual lecture',
+      activity_type: 'event',
+      category: 'academic',
+      status: 'todo',
+      priority: 'high',
+      start_at: '2026-11-18T10:00:00Z',
+      end_at: '2026-11-18T11:00:00Z',
+      timezone: 'UTC',
+      academic_year_id: 8,
+      division_id: null,
+      subject_id: null,
+      assignees: [],
+      attachments: [],
+      references: [],
+      recurrence: null,
+      version: 1,
+      created_by_id: 1,
+      created_at: null,
+      updated_at: null,
+      editable: true,
+      all_day: false,
+      visibility: 'institution',
+      is_published: true,
+    }
+    mockPlanningData.items = [testItem]
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <PlanningWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    // Switch to Week view
+    fireEvent.click(screen.getByRole('button', { name: 'Week' }))
+
+    const card = await screen.findByRole('article', { name: 'Chemistry Seminar' })
+    expect(card).toBeTruthy()
+    expect(card.getAttribute('draggable')).toBe('false')
+
+    // In view mode, duration +/- buttons are not displayed
+    expect(screen.queryByRole('button', { name: /Increase duration/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Decrease duration/i })).toBeNull()
+  })
+
+  it('allows adjusting activity duration via interactive resize controls in Edit Mode', async () => {
+    useEditModeStore.setState({ scopes: { 'planning:workspace': true } })
+
+    const testItem: PlanningItem = {
+      id: 'activity:89',
+      key: 'activity:89',
+      source_id: 89,
+      source_type: 'activity',
+      title: 'Curriculum Review',
+      description: 'Departmental curriculum workshop',
+      activity_type: 'event',
+      category: 'academic',
+      status: 'todo',
+      priority: 'normal',
+      start_at: '2026-11-18T09:00:00Z',
+      end_at: '2026-11-18T10:00:00Z',
+      timezone: 'UTC',
+      academic_year_id: 8,
+      division_id: null,
+      subject_id: null,
+      assignees: [],
+      attachments: [],
+      references: [],
+      recurrence: null,
+      version: 1,
+      created_by_id: 1,
+      created_at: null,
+      updated_at: null,
+      editable: true,
+      all_day: false,
+      visibility: 'institution',
+      is_published: true,
+    }
+    mockPlanningData.items = [testItem]
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <PlanningWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    // Switch to Week view
+    fireEvent.click(screen.getByRole('button', { name: 'Week' }))
+
+    const card = await screen.findByRole('article', { name: 'Curriculum Review' })
+    expect(card).toBeTruthy()
+    expect(card.getAttribute('draggable')).toBe('true')
+
+    // Find increase duration button (+30m)
+    const plus30Btn = screen.getByRole('button', { name: 'Increase duration of Curriculum Review by 30 minutes' })
+    expect(plus30Btn).toBeTruthy()
+
+    fireEvent.click(plus30Btn)
+
+    await waitFor(() => {
+      expect(vi.mocked(planningApi.updateActivity)).toHaveBeenCalledWith(
+        89,
+        expect.objectContaining({
+          expected_version: 1,
+          end_at: expect.stringMatching(/2026-11-18T10:30:00/),
+        }),
+      )
+    })
+  })
+
+  it('reschedules a recurring occurrence when dragged and dropped onto a different day of the week', async () => {
+    useEditModeStore.setState({ scopes: { 'planning:workspace': true } })
+
+    const recurringItem: PlanningItem = {
+      id: 'activity:90:2026-11-18',
+      source_id: 90,
+      source_type: 'activity',
+      key: 'activity:90:2026-11-18',
+      title: 'Weekly Physics Lab',
+      description: 'Lab experiment',
+      activity_type: 'event',
+      category: 'academic',
+      status: 'todo',
+      priority: 'high',
+      occurrence_date: '2026-11-18',
+      start_at: '2026-11-18T09:00:00Z',
+      end_at: '2026-11-18T10:30:00Z',
+      timezone: 'UTC',
+      all_day: false,
+      visibility: 'institution',
+      is_published: true,
+      academic_year_id: 8,
+      division_id: null,
+      subject_id: null,
+      assignees: [],
+      attachments: [],
+      references: [],
+      recurrence: { frequency: 'weekly', interval: 1, until: '2026-12-31', weekdays: [3] },
+      version: 1,
+      created_by_id: 1,
+      created_at: null,
+      updated_at: null,
+      editable: true,
+    }
+    mockPlanningData.items = [recurringItem]
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <PlanningWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    // Switch to Week view
+    fireEvent.click(screen.getByRole('button', { name: 'Week' }))
+
+    const card = await screen.findByRole('article', { name: 'Weekly Physics Lab' })
+    expect(card).toBeTruthy()
+
+    // Test drag start data transfer
+    const dataTransferStore: Record<string, string> = {}
+    const mockDataTransfer = {
+      setData: (type: string, val: string) => { dataTransferStore[type] = val },
+      getData: (type: string) => dataTransferStore[type] || '',
+      effectAllowed: '',
+      dropEffect: '',
+    }
+
+    fireEvent.dragStart(card, {
+      dataTransfer: mockDataTransfer,
+    })
+
+    expect(dataTransferStore['application/x-planning-activity']).toBeTruthy()
+    const parsed = JSON.parse(dataTransferStore['application/x-planning-activity'])
+    expect(parsed.id).toBe(90)
+    expect(parsed.is_recurrence).toBe(true)
+
+    // Drop onto target column (Friday 2026-11-20)
+    // Find the Friday column or date target by text
+    const friTarget = screen.getByText('Fri').closest('div')
+    expect(friTarget).toBeTruthy()
+
+    fireEvent.drop(friTarget!, {
+      dataTransfer: mockDataTransfer,
+      preventDefault: vi.fn(),
+    })
+
+    await waitFor(() => {
+      expect(vi.mocked(planningApi.rescheduleOccurrence)).toHaveBeenCalledWith(
+        90,
+        expect.objectContaining({
+          occurrence_date: '2026-11-18',
+        }),
+      )
     })
   })
 })
