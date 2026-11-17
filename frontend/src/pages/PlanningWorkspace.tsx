@@ -445,15 +445,25 @@ export default function PlanningWorkspace() {
     },
     onError: (error: any) => toast.error(error.response?.data?.detail || 'Could not update status.'),
   })
-  const cancelMutation = useMutation({
-    mutationFn: async (item: PlanningItem): Promise<unknown> => {
-      if (item.recurrence && item.occurrence_date) {
-        return planningApi.cancelOccurrence(Number(item.source_id), item.occurrence_date)
-      }
+  const cancelOccurrenceMutation = useMutation({
+    mutationFn: async ({ item, occurrenceDate }: { item: PlanningItem; occurrenceDate: string }) => {
+      return planningApi.cancelOccurrence(Number(item.source_id), occurrenceDate)
+    },
+    onSuccess: () => {
+      toast.success('Occurrence cancelled.')
+      setConfirmCancel(false)
+      setActiveItem(null)
+      refresh()
+    },
+    onError: (error: any) => toast.error(error.response?.data?.detail || 'Could not cancel occurrence.'),
+  })
+  const cancelSeriesMutation = useMutation({
+    mutationFn: async (item: PlanningItem) => {
       return planningApi.cancelActivity(Number(item.source_id))
     },
     onSuccess: () => {
       toast.success('Activity cancelled.')
+      setConfirmCancel(false)
       setActiveItem(null)
       refresh()
     },
@@ -1306,26 +1316,62 @@ export default function PlanningWorkspace() {
               {isEditMode && activeItem.editable && (
                 <>
                   <button type="button" onClick={() => openEdit(activeItem)} className="rounded-lg border px-3 py-2 text-sm font-semibold text-slate-700">Edit</button>
-                  <button type="button" onClick={() => setConfirmCancel(true)} disabled={cancelMutation.isPending} className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700">Cancel activity</button>
+                  <button type="button" onClick={() => setConfirmCancel(true)} disabled={cancelOccurrenceMutation.isPending || cancelSeriesMutation.isPending} className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700">Cancel activity</button>
                 </>
               )}
               <button type="button" onClick={() => setActiveItem(null)} className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">Close</button>
             </div>
             {confirmCancel && (
-              <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3">
-                <p className="text-sm text-rose-800">
-                  {activeItem.occurrence_date ? 'Cancel only this occurrence?' : 'Cancel this activity?'}
-                </p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setConfirmCancel(false)} className="rounded-lg border px-3 py-2 text-sm">Keep activity</button>
+              <div role="alert" className="flex flex-col gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-rose-900">
+                    {activeItem.recurrence && activeItem.occurrence_date
+                      ? 'Cancel Recurring Activity'
+                      : 'Confirm Cancellation'}
+                  </p>
+                  <p className="text-xs text-rose-700">
+                    {activeItem.recurrence && activeItem.occurrence_date
+                      ? `Select whether to cancel only this single occurrence on ${activeItem.occurrence_date} or cancel the entire recurring series.`
+                      : 'Are you sure you want to cancel this activity?'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    disabled={cancelMutation.isPending}
-                    onClick={() => cancelMutation.mutate(activeItem)}
-                    className="rounded-lg bg-rose-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    onClick={() => setConfirmCancel(false)}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    {cancelMutation.isPending ? 'Cancelling…' : 'Confirm cancellation'}
+                    Keep
                   </button>
+                  {activeItem.recurrence && activeItem.occurrence_date ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={cancelOccurrenceMutation.isPending || cancelSeriesMutation.isPending}
+                        onClick={() => cancelOccurrenceMutation.mutate({ item: activeItem, occurrenceDate: activeItem.occurrence_date! })}
+                        className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                      >
+                        {cancelOccurrenceMutation.isPending ? 'Cancelling occurrence…' : `Cancel only ${activeItem.occurrence_date}`}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={cancelOccurrenceMutation.isPending || cancelSeriesMutation.isPending}
+                        onClick={() => cancelSeriesMutation.mutate(activeItem)}
+                        className="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 disabled:opacity-50"
+                      >
+                        {cancelSeriesMutation.isPending ? 'Cancelling series…' : 'Cancel entire series'}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={cancelSeriesMutation.isPending}
+                      onClick={() => cancelSeriesMutation.mutate(activeItem)}
+                      className="rounded-lg bg-rose-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-800 disabled:opacity-50"
+                    >
+                      {cancelSeriesMutation.isPending ? 'Cancelling…' : 'Confirm cancellation'}
+                    </button>
+                  )}
                 </div>
               </div>
             )}

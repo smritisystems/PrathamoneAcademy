@@ -41,6 +41,8 @@ vi.mock('../api/endpoints', () => ({
     listActivities: () => Promise.resolve({ data: { items: mockPlanningData.items, timezone: 'Asia/Kolkata' } }),
     getAssignees: () => Promise.resolve({ data: { users: [], departments: [] } }),
     createActivity: vi.fn(() => Promise.resolve({ data: { item: {} } })),
+    cancelOccurrence: vi.fn(() => Promise.resolve({ data: {} })),
+    cancelActivity: vi.fn(() => Promise.resolve({ data: {} })),
   },
   standardsApi: {
     list: vi.fn(() => Promise.resolve({ data: [{ id: 4, name: 'Grade 8' }] })),
@@ -207,5 +209,67 @@ describe('Planning workspace view switcher accessibility', () => {
     expect(vi.mocked(divisionsApi.list)).toHaveBeenCalled()
     expect(vi.mocked(subjectsApi.list)).toHaveBeenCalledWith({ standard_id: 4 })
     expect(vi.mocked(academicYearsApi.list)).toHaveBeenCalledWith(1)
+  })
+
+  it('allows choosing between cancelling only an occurrence or the entire recurring series', async () => {
+    const recurringItem: PlanningItem = {
+      id: 'activity:5',
+      key: 'activity:5:2026-11-24',
+      source_type: 'activity',
+      source_id: 5,
+      title: 'Weekly Faculty Meeting',
+      description: null,
+      activity_type: 'event',
+      category: 'meeting',
+      start_at: '2026-11-24T09:00:00Z',
+      end_at: '2026-11-24T10:00:00Z',
+      due_at: null,
+      occurrence_date: '2026-11-24',
+      timezone: 'Asia/Kolkata',
+      all_day: false,
+      location: 'Staff Room',
+      priority: 'high',
+      status: 'todo',
+      visibility: 'institution',
+      is_published: true,
+      academic_year_id: null,
+      division_id: null,
+      subject_id: null,
+      assignees: [],
+      attachments: [],
+      references: [],
+      recurrence: { frequency: 'weekly', interval: 1, until: '2026-12-31', weekdays: [2] },
+      version: 1,
+      created_by_id: 1,
+      created_at: null,
+      updated_at: null,
+      editable: true,
+    }
+    mockPlanningData.items = [recurringItem]
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <PlanningWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    fireEvent.click(await screen.findByText('Weekly Faculty Meeting'))
+    expect(screen.getByText('Cancel activity')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel activity' }))
+    expect(screen.getByText('Cancel Recurring Activity')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cancel only 2026-11-24' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cancel entire series' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel only 2026-11-24' }))
+    await waitFor(() => {
+      expect(vi.mocked(planningApi.cancelOccurrence)).toHaveBeenCalledWith(5, '2026-11-24')
+    })
   })
 })
