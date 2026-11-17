@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Full Hybrid Chat Workspace component featuring Staff Collaboration Rooms,
  */
@@ -65,6 +65,7 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
   const [mentionQuery, setMentionQuery] = useState('')
   const [mentionEntities, setMentionEntities] = useState<MentionableEntityItem[]>([])
   const [isLoadingEntities, setIsLoadingEntities] = useState(false)
+  const [isExportingTranscript, setIsExportingTranscript] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WebSocket | null>(null)
@@ -307,6 +308,29 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
       alert(err.response?.data?.detail || 'Failed to create room.')
     } finally {
       setIsCreatingRoom(false)
+    }
+  }
+
+  // Action: Export Room Audit Transcript as PDF
+  const handleExportTranscript = async () => {
+    if (!activeRoomId || !activeRoom) return
+    setIsExportingTranscript(true)
+    try {
+      const res = await chatApi.exportTranscriptPdf(activeRoomId)
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `chat_transcript_${activeRoom.code || activeRoom.id}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err: any) {
+      console.error('Failed to export transcript:', err)
+      alert(err.response?.data?.detail || 'Failed to export transcript PDF.')
+    } finally {
+      setIsExportingTranscript(false)
     }
   }
 
@@ -797,6 +821,19 @@ export function ChatWorkspaceTab({ compact = false }: { compact?: boolean } = {}
                   />
                   {wsConnected ? 'Live' : 'Synced'}
                 </div>
+
+                {isTeacherOrAdmin && (
+                  <button
+                    type="button"
+                    onClick={handleExportTranscript}
+                    disabled={isExportingTranscript}
+                    className="px-2.5 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 hover:text-slate-900 rounded-md shadow-sm flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                    title="Export immutable audit transcript PDF"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{isExportingTranscript ? 'Exporting...' : 'Export Transcript'}</span>
+                  </button>
+                )}
               </div>
             </div>
 

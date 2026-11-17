@@ -31,6 +31,7 @@ vi.mock('../api/endpoints', () => ({
     resolveDoubt: vi.fn(),
     createRoom: vi.fn(),
     getMentionableEntities: vi.fn(),
+    exportTranscriptPdf: vi.fn(),
   },
 }))
 
@@ -248,5 +249,38 @@ describe('Full Hybrid Chat & Academic Doubt Workspace Suite', () => {
       expect(screen.getByText('Download PDF')).toBeTruthy()
       expect(screen.getByText('View')).toBeTruthy()
     })
+  })
+
+  it('allows teacher or admin to export room audit transcript PDF', async () => {
+    const mockBlob = new Blob(['%PDF-1.4 mock transcript'], { type: 'application/pdf' })
+    vi.mocked(chatApi.exportTranscriptPdf).mockResolvedValue({
+      data: mockBlob,
+    } as any)
+
+    // Mock window.URL.createObjectURL and revokeObjectURL
+    const originalCreateObjectURL = window.URL.createObjectURL
+    const originalRevokeObjectURL = window.URL.revokeObjectURL
+    window.URL.createObjectURL = vi.fn(() => 'blob:http://localhost/mock-blob-url')
+    window.URL.revokeObjectURL = vi.fn()
+
+    render(
+      <MemoryRouter>
+        <ChatWorkspaceTab />
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Export Transcript')).toBeTruthy()
+    })
+
+    const exportBtn = screen.getByText('Export Transcript')
+    fireEvent.click(exportBtn)
+
+    await waitFor(() => {
+      expect(chatApi.exportTranscriptPdf).toHaveBeenCalledWith(1)
+    })
+
+    window.URL.createObjectURL = originalCreateObjectURL
+    window.URL.revokeObjectURL = originalRevokeObjectURL
   })
 })

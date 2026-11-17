@@ -11,9 +11,9 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
-#  * @description Domain service managing Full Hybrid Chat: Staff Collaboration Rooms,
+#  * @description Domain service managing Full Hybrid Chat: Staff Collaboration Rooms, Academic Doubts, and PDF Transcripts
 #  */
 
 import re
@@ -175,10 +175,14 @@ class ChatService:
         all_rooms = (await session.execute(rooms_stmt)).scalars().all()
         accessible = []
 
-        is_staff = user is not None
+        is_staff = user is not None and (user.role or "").lower() != "student"
         user_role = (user.role.lower() if user and user.role else "")
 
         # For student: find active divisions
+        if user and user_role == "student" and not student and user.student_id:
+            student = await session.get(Student, user.student_id)
+            is_staff = False
+
         student_div_ids = set()
         if student:
             enr_stmt = select(StudentEnrollment.division_id).where(
@@ -340,16 +344,23 @@ class ChatService:
         if not room:
             raise ValueError("Chat room not found or inactive")
 
-        is_staff = sender_user is not None
+        is_staff = sender_user is not None and (sender_user.role or "").lower() != "student"
         sender_role = "STAFF"
         display_name = "User"
 
         if sender_user:
-            sender_role = (sender_user.role or "STAFF").upper()
-            display_name = sender_user.full_name or sender_user.username
+            if (sender_user.role or "").lower() == "student" and sender_user.student_id:
+                sender_student = await session.get(Student, sender_user.student_id)
+                sender_role = "STUDENT"
+                display_name = f"{sender_student.first_name} {sender_student.last_name}".strip() if sender_student else (sender_user.full_name or sender_user.username)
+                is_staff = False
+            else:
+                sender_role = (sender_user.role or "STAFF").upper()
+                display_name = sender_user.full_name or sender_user.username
         elif sender_student:
             sender_role = "STUDENT"
             display_name = f"{sender_student.first_name} {sender_student.last_name}".strip()
+            is_staff = False
 
         # Check Curfew Mode: Students are prohibited from sending messages during curfew
         if not is_staff and cls.is_curfew_active(room):
@@ -475,12 +486,16 @@ class ChatService:
         query: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Return all active users available for 1-on-1 direct messaging (teachers, staff, admins)."""
+        if (current_user.role or "").lower() == "student":
+            raise PermissionError("Students are not permitted to use private direct messaging.")
+
         stmt = (
             select(User)
             .where(
                 User.institution_id == institution_id,
                 User.is_active == True,
                 User.id != current_user.id,
+                or_(User.role.is_(None), func.lower(User.role) != "student"),
             )
             .order_by(User.first_name, User.last_name, User.username)
         )
@@ -520,6 +535,9 @@ class ChatService:
         target_user_id: int,
     ) -> Dict[str, Any]:
         """Retrieve existing or provision new 1-on-1 direct chat room between two users."""
+        if (current_user.role or "").lower() == "student":
+            raise PermissionError("Students are prohibited from initiating direct private chats.")
+
         if current_user.id == target_user_id:
             raise ValueError("You cannot initiate a direct chat with yourself")
 
@@ -529,6 +547,9 @@ class ChatService:
 
         if not target_user:
             raise ValueError("Target user not found or inactive")
+
+        if (target_user.role or "").lower() == "student":
+            raise PermissionError("Direct messaging with students is prohibited; all student doubts belong in Batch Doubt Desks.")
 
         # Deterministic room code for canonical deduplication
         u_min = min(current_user.id, target_user.id)
@@ -771,3 +792,131 @@ class ChatService:
             })
 
         return results[:limit]
+
+    @classmethod
+    async def generate_transcript_pdf(
+        cls,
+        session: AsyncSession,
+        room_id: int,
+        institution_id: int,
+        generated_by_user: User,
+    ) -> bytes:
+        """Generate an official immutable audit transcript PDF for a chat room."""
+        import fitz
+        import math
+        from app.models.institution import Institution
+
+        room_stmt = select(ChatRoom).where(ChatRoom.id == room_id)
+        room = (await session.execute(room_stmt)).scalar_one_or_none()
+        if not room:
+            raise ValueError("Chat room not found")
+
+        # Verify institution access if user is tenant-scoped
+        user_role = (generated_by_user.role or "").lower()
+        if user_role not in ("superadmin", "super_admin", "sysadmin"):
+            if generated_by_user.institution_id and room.institution_id and room.institution_id != generated_by_user.institution_id:
+                raise PermissionError("Access denied to room transcript from another institution")
+
+        target_inst_id = room.institution_id or institution_id
+        inst = (await session.execute(select(Institution).where(Institution.id == target_inst_id))).scalar_one_or_none()
+        inst_name = inst.name if inst else "PrathamOne Coaching Institute"
+
+        # Fetch all non-deleted messages chronologically
+        msg_stmt = (
+            select(ChatMessage)
+            .where(ChatMessage.room_id == room_id, ChatMessage.is_deleted == False)
+            .order_by(ChatMessage.created_at.asc())
+        )
+        messages = (await session.execute(msg_stmt)).scalars().all()
+
+        doc = fitz.open()
+        page_width, page_height = 595.3, 841.9  # A4
+        margin_x = 40.0
+
+        def add_page_header(p):
+            # Top banner
+            p.draw_rect(fitz.Rect(0, 0, page_width, 55), color=None, fill=(0.12, 0.16, 0.35))
+            p.insert_text(fitz.Point(margin_x, 26), inst_name.upper(), fontsize=10.5, color=(1, 1, 1), fontname="helv")
+            p.insert_text(fitz.Point(margin_x, 44), "OFFICIAL CHAT ROOM AUDIT TRANSCRIPT • IMMUTABLE RECORD", fontsize=7.5, color=(0.8, 0.85, 1), fontname="helv")
+
+        def add_page_footer(p, page_num: int, total_pages: int):
+            p.draw_line(fitz.Point(margin_x, page_height - 35), fitz.Point(page_width - margin_x, page_height - 35), color=(0.8, 0.8, 0.8), width=0.5)
+            footer_text = f"PrathamOne EduOS • Immutable Audit Record • Room Code: {room.code}"
+            p.insert_text(fitz.Point(margin_x, page_height - 20), footer_text, fontsize=7.5, color=(0.5, 0.5, 0.5), fontname="helv")
+            page_text = f"Page {page_num} of {total_pages}"
+            p.insert_text(fitz.Point(page_width - margin_x - 60, page_height - 20), page_text, fontsize=7.5, color=(0.5, 0.5, 0.5), fontname="helv")
+
+        # Create first page
+        page = doc.new_page(width=page_width, height=page_height)
+        add_page_header(page)
+
+        # Room Metadata Summary Card
+        card_rect = fitz.Rect(margin_x, 70, page_width - margin_x, 145)
+        page.draw_rect(card_rect, color=(0.85, 0.87, 0.92), fill=(0.96, 0.97, 0.99), width=0.75)
+
+        page.insert_text(fitz.Point(margin_x + 12, 90), f"Room: {room.name}", fontsize=11.5, color=(0.1, 0.1, 0.1), fontname="helv")
+        type_label = room.room_type.replace("_", " ").title()
+        meta_line1 = f"Code: {room.code}   |   Type: {type_label}   |   Total Messages: {len(messages)}"
+        page.insert_text(fitz.Point(margin_x + 12, 106), meta_line1, fontsize=8, color=(0.3, 0.3, 0.3), fontname="helv")
+
+        curfew_info = f"Curfew: {room.curfew_start_time} - {room.curfew_end_time}" if room.is_curfew_enabled else "Curfew: Disabled (24/7)"
+        gen_by_name = generated_by_user.full_name or generated_by_user.username
+        gen_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        meta_line2 = f"{curfew_info}   |   Generated by: {gen_by_name} ({generated_by_user.role or 'Staff'})   |   Date: {gen_time}"
+        page.insert_text(fitz.Point(margin_x + 12, 122), meta_line2, fontsize=7.5, color=(0.4, 0.4, 0.4), fontname="helv")
+
+        if room.description:
+            page.insert_text(fitz.Point(margin_x + 12, 136), f"Description: {room.description[:110]}", fontsize=7.5, color=(0.45, 0.45, 0.45), fontname="helv")
+
+        curr_y = 158.0
+        pages = [page]
+
+        for idx, msg in enumerate(messages, 1):
+            time_str = msg.created_at.strftime("%Y-%m-%d %H:%M:%S") if msg.created_at else ""
+            sender_role = (msg.sender_role or "STAFF").upper()
+            role_tag = f"[{sender_role}]"
+
+            content_text = msg.content or ""
+            if msg.is_quarantined:
+                content_text = f"[QUARANTINED CONTENT - {msg.quarantine_reason or 'Policy Violation'}]: {content_text}"
+
+            doubt_tag = ""
+            if msg.message_type == "DOUBT_QUESTION":
+                doubt_tag = " • [DOUBT: RESOLVED]" if msg.is_doubt_resolved else " • [DOUBT: UNRESOLVED]"
+            elif msg.message_type == "DOUBT_ANSWER":
+                doubt_tag = " • [DOUBT ANSWER]"
+
+            lines_est = max(1, math.ceil(len(content_text) / 75))
+            block_height = 24 + (lines_est * 12) + 10
+
+            if curr_y + block_height > page_height - 50:
+                page = doc.new_page(width=page_width, height=page_height)
+                pages.append(page)
+                add_page_header(page)
+                curr_y = 70.0
+
+            bg_color = (0.98, 0.98, 0.99)
+            border_color = (0.9, 0.9, 0.92)
+            if msg.message_type == "DOUBT_QUESTION":
+                bg_color = (1.0, 0.98, 0.94)
+                border_color = (0.95, 0.8, 0.5)
+            elif msg.is_quarantined:
+                bg_color = (1.0, 0.95, 0.95)
+                border_color = (0.9, 0.6, 0.6)
+
+            msg_rect = fitz.Rect(margin_x, curr_y, page_width - margin_x, curr_y + block_height - 4)
+            page.draw_rect(msg_rect, color=border_color, fill=bg_color, width=0.5)
+
+            hdr_text = f"#{idx}  {time_str}  •  {msg.sender_display_name} {role_tag}{doubt_tag}"
+            page.insert_text(fitz.Point(margin_x + 8, curr_y + 11), hdr_text, fontsize=8, color=(0.2, 0.2, 0.3), fontname="helv")
+
+            text_rect = fitz.Rect(margin_x + 8, curr_y + 16, page_width - margin_x - 8, curr_y + block_height - 6)
+            page.insert_textbox(text_rect, content_text, fontsize=8.5, color=(0.15, 0.15, 0.15), fontname="helv")
+
+            curr_y += block_height
+
+        total_pages = len(pages)
+        for p_idx, p in enumerate(pages, 1):
+            add_page_footer(p, p_idx, total_pages)
+
+        return doc.tobytes()

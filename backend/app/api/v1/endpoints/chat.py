@@ -11,9 +11,9 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
-#  * @description REST and WebSocket endpoints for Full Hybrid Chat: Staff Rooms,
+#  * @description REST and WebSocket endpoints for Full Hybrid Chat: Staff Rooms, Academic Doubts, and PDF Transcripts
 #  */
 
 import json
@@ -23,6 +23,7 @@ from fastapi import (
     Depends,
     HTTPException,
     Query,
+    Response,
     status,
     WebSocket,
     WebSocketDisconnect,
@@ -112,12 +113,15 @@ async def get_direct_directory(
         inst_stmt = select(Institution.id).order_by(Institution.id.desc()).limit(1)
         inst_id = (await db.execute(inst_stmt)).scalar() or 1
 
-    return await ChatService.get_direct_directory(
-        session=db,
-        institution_id=inst_id,
-        current_user=current_user,
-        query=q,
-    )
+    try:
+        return await ChatService.get_direct_directory(
+            session=db,
+            institution_id=inst_id,
+            current_user=current_user,
+            query=q,
+        )
+    except PermissionError as pe:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(pe))
 
 
 @router.post("/direct")
@@ -139,6 +143,8 @@ async def get_or_create_direct_room(
             current_user=current_user,
             target_user_id=payload.target_user_id,
         )
+    except PermissionError as pe:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(pe))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -203,13 +209,52 @@ async def get_room_messages(
     db: AsyncSession = Depends(get_db),
 ):
     """Fetch paginated message feed for a specific room."""
+    user_role = (current_user.role or "").lower()
+    is_staff = user_role != "student"
     return await ChatService.get_room_messages(
         session=db,
         room_id=room_id,
         limit=limit,
         before_id=before_id,
-        is_staff=True,
+        is_staff=is_staff,
     )
+
+
+@router.get("/rooms/{room_id}/export-pdf")
+async def export_room_pdf(
+    room_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate and download a high-fidelity audit transcript PDF for a chat room."""
+    user_role = (current_user.role or "").lower()
+    if user_role not in ("superadmin", "super_admin", "sysadmin", "admin", "principal", "teacher"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only faculty or administrators can export room audit transcripts.",
+        )
+    inst_id = current_user.institution_id or 1
+    try:
+        pdf_bytes = await ChatService.generate_transcript_pdf(
+            session=db,
+            room_id=room_id,
+            institution_id=inst_id,
+            generated_by_user=current_user,
+        )
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="chat_transcript_room_{room_id}.pdf"'},
+        )
+    except PermissionError as pe:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(pe))
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
+    except Exception as ex:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate transcript: {str(ex)}",
+        )
 
 
 @router.post("/rooms/{room_id}/messages")

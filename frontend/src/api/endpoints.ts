@@ -3149,6 +3149,10 @@ export const chatApi = {
     apiClient.get<MentionableEntityItem[]>('/chat/mentionable-entities', {
       params: { room_id: roomId, q, limit },
     }),
+  exportTranscriptPdf: (roomId: number) =>
+    apiClient.get<Blob>(`/chat/rooms/${roomId}/export-pdf`, {
+      responseType: 'blob',
+    }),
 }
 
 export type { EduBoardPageItem }
