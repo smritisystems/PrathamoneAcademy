@@ -166,7 +166,8 @@ export default function LoginPage() {
           <svg
             viewBox="0 0 100 900"
             preserveAspectRatio="none"
-            className="w-full h-full text-white fill-current"
+            className="w-full h-full"
+            style={{ fill: 'var(--app-surface)' }}
           >
             <path d="M 0 0 C 40 140, -10 260, 30 400 C 65 520, 0 680, 45 900 L 100 900 L 100 0 Z" />
           </svg>
@@ -345,13 +346,13 @@ export default function LoginPage() {
 
         {/* Chhatrapati Shivaji Maharaj Equestrian Statue Ambient Watermark */}
         <div
-          className="hidden lg:block absolute bottom-0 -right-[75px] h-[95%] pointer-events-none select-none z-0 overflow-hidden opacity-[0.075]"
+          className="hidden lg:block absolute bottom-0 -right-[75px] h-[95%] pointer-events-none select-none z-0 overflow-hidden opacity-[0.075] dark:opacity-[0.14]"
           aria-hidden="true"
         >
           <img
             src="/artwork/CSM/path1.svg"
             alt=""
-            className="h-full w-auto max-w-none object-contain object-right-bottom"
+            className="h-full w-auto max-w-none object-contain object-right-bottom dark:brightness-0 dark:invert"
           />
         </div>
 
@@ -359,7 +360,7 @@ export default function LoginPage() {
         <div className="relative z-10 w-full max-w-[460px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
             <span className="w-2.5 h-2.5 rounded-full bg-[#F16906] shadow-xs shadow-orange-500/50 animate-pulse" />
-            <span className="text-[#0B2D6B] dark:text-blue-200">Account Access</span>
+            <span className="text-app-muted">Account Access</span>
           </div>
           <div className="text-[11px] font-semibold text-slate-400">
             PrathamOne EduOS
@@ -370,7 +371,7 @@ export default function LoginPage() {
         <div className="relative z-10 w-full max-w-[460px] mx-auto my-auto py-8">
           {/* Institute Brand Header */}
           <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-slate-100">
-            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+            <div className="brand-logo-plate w-12 h-12 rounded-xl border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
               {hasValidLogo ? (
                 <img
                   src={branding.assets.logoUrl}
@@ -385,7 +386,7 @@ export default function LoginPage() {
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="font-extrabold text-base text-[#071C44] dark:text-slate-100 tracking-tight truncate leading-snug">
+              <h3 className="font-extrabold text-base text-app-text tracking-tight truncate leading-snug">
                 {branding.academyName}
               </h3>
               <p className="text-xs text-slate-500 font-medium truncate">
@@ -398,7 +399,7 @@ export default function LoginPage() {
           <div className="w-16 h-1 bg-gradient-to-r from-[#F16906] via-[#0B2D6B] to-[#38BDF8] rounded-full mb-4" />
 
           {/* Heading & Subtitle */}
-          <h2 className="text-3xl font-extrabold text-[#071C44] dark:text-slate-100 tracking-tight">
+          <h2 className="text-3xl font-extrabold text-app-text tracking-tight">
             Welcome back
           </h2>
           <p className="text-sm text-slate-500 font-medium mt-1 mb-8">
@@ -472,7 +473,7 @@ export default function LoginPage() {
 
             {/* Remember This Device & Forgot Password */}
             <div className="flex items-center justify-between text-xs pt-0.5">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600 hover:text-slate-900">
+              <label className="flex items-center gap-2 cursor-pointer select-none text-app-muted hover:text-app-text">
                 <input
                   type="checkbox"
                   checked={rememberMe}
@@ -484,7 +485,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
-                className="text-xs font-semibold text-[#0B2D6B] dark:text-blue-200 hover:text-[#071C44] dark:hover:text-blue-100 hover:underline focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] dark:focus:ring-orange-300 rounded-sm transition-colors cursor-pointer"
+                className="text-xs font-semibold text-app-muted hover:text-app-text hover:underline focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] dark:focus:ring-orange-300 rounded-sm transition-colors cursor-pointer"
               >
                 Forgot password?
               </button>
@@ -519,7 +520,7 @@ export default function LoginPage() {
             <p className="text-xs text-slate-500">
               Need access? Contact your institute administrator.
             </p>
-            <div className="flex items-center justify-center gap-4 text-xs font-semibold text-[#0B2D6B] dark:text-blue-200 pt-2">
+            <div className="flex items-center justify-center gap-4 text-xs font-semibold text-app-muted pt-2">
               <button
                 type="button"
                 onClick={() => setShowLoginHelp(true)}
@@ -562,7 +563,7 @@ export default function LoginPage() {
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/90 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-900 text-xs flex items-center gap-2">
-                  <KeyRound className="w-4 h-4 text-[#0B2D6B]" />
+                  <KeyRound className="w-4 h-4 text-app-text" />
                   Default Initial Credentials
                 </span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
@@ -616,7 +617,7 @@ export default function LoginPage() {
         >
           <div className="space-y-4 text-xs text-slate-700 py-1">
             <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200/80 flex items-start gap-3">
-              <Building2 className="w-5 h-5 text-[#0B2D6B] shrink-0 mt-0.5" />
+              <Building2 className="w-5 h-5 text-app-text shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-bold text-slate-900 text-xs mb-1">Institutional Password Policy</h4>
                 <p className="text-slate-600 leading-relaxed">
@@ -638,7 +639,7 @@ export default function LoginPage() {
               <span className="text-slate-500 font-medium">Need immediate emergency access?</span>
               <a
                 href="tel:9323023007"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0B2D6B] hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-app-text hover:underline"
               >
                 <PhoneCall className="w-3.5 h-3.5" />
                 <span>Call Support</span>
