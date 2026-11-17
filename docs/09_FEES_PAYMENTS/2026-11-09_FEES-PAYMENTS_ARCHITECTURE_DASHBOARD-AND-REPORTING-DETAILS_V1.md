@@ -121,7 +121,7 @@ To address debts that persist after student departures, a dedicated recovery end
       "admission_number": "PA-2024-000014",
       "student_name": "Satnam Bhatia",
       "phone": "+91-9820014414",
-      "email": "satnam.bhatia@example.com",
+      "email": "satnam.bhatia@prathamone.com",
       "exit_date": "2026-11-05",
       "exit_reason": "Discontinued",
       "exit_notes": "Discontinued per administrative notification",

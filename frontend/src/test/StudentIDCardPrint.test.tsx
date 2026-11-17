@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Unit and DOM integration tests for isolated Student ID Card printing, CR80 / A4 Sheet layouts, and container isolation.
  */
@@ -134,7 +134,7 @@ describe('Student ID Card Print Engine & Container Isolation', () => {
       blood_group: 'O+',
       photo_url: null,
       phone: '+919811122233',
-      email: 'aarav@example.com',
+      email: 'aarav@prathamone.com',
       standard_name: 'Standard 10 - Science',
       division_name: 'Batch Alpha',
       roll_number: '101',

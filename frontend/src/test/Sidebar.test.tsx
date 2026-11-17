@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
@@ -181,7 +181,7 @@ describe('Collapsible & Responsive Sidebar Component', () => {
       user: {
         id: 99,
         username: 'student.aarav',
-        email: 'aarav@example.com',
+        email: 'aarav@prathamone.com',
         role: 'student',
         first_name: 'Aarav',
         last_name: 'Sharma',

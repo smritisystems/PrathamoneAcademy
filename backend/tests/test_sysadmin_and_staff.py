@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Test suite for SysAdmin superuser role, universal edit controls, audit isolation, and Staff module.
 #  */
@@ -40,7 +40,7 @@ async def sysadmin_user(db: AsyncSession, test_institution: Institution):
     user = User(
         institution_id=test_institution.id,
         username=f"test_sysadmin_{suffix}",
-        email=f"test_sysadmin_{suffix}@example.com",
+        email=f"test_sysadmin_{suffix}@prathamone.com",
         hashed_password=get_password_hash("SysAdmin@2026!"),
         first_name="Root",
         last_name="Superuser",
@@ -61,7 +61,7 @@ async def teacher_user(db: AsyncSession, test_institution: Institution):
     user = User(
         institution_id=test_institution.id,
         username=f"test_teacher_{suffix}",
-        email=f"test_teacher_{suffix}@example.com",
+        email=f"test_teacher_{suffix}@prathamone.com",
         hashed_password=get_password_hash("Teacher@2026!"),
         first_name="Test",
         last_name="Faculty",

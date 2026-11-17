@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Vitest test suite for Communication Center workspace, covering compose & send, templates catalogue, delivery logs, diagnostics, and automated outbound triggers.
  */
@@ -137,7 +137,7 @@ describe('Communication Center Workspace', () => {
       name: 'Puneeta Kulkarni',
       subtitle: 'Class VIII - Batch A (Roll #12)',
       phone: '+919876543210',
-      email: 'puneeta@example.com',
+      email: 'puneeta@prathamone.com',
     },
   ]
 

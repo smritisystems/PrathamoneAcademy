@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-17
+#  * @updated     2026-11-18
 #  *
 #  * @description Pytest test suite validating Full Hybrid Chat: room access, messaging,
 #  */
@@ -182,7 +182,7 @@ async def student_user_and_headers(db: AsyncSession, test_institution, test_stud
     student_user = User(
         institution_id=test_institution.id,
         username=username,
-        email=f"{username}@example.com",
+        email=f"{username}@prathamone.com",
         first_name="Test",
         last_name="Student",
         hashed_password=get_password_hash("testpass123"),

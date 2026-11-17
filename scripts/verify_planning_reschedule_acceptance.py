@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-17
-#  * @updated     2026-11-17
+#  * @updated     2026-11-18
 #  *
 #  * @description Live browser verification script for Single-Occurrence Rescheduling in Planning Workspace.
 #  */
@@ -30,7 +30,7 @@ API_URL = "http://localhost:8000/api/v1"
 ARTIFACTS_DIR = r"C:\Users\netma\.gemini\antigravity\brain\d80f407d-b71e-4c0b-86a6-a8f64e74ae9e"
 DOCS_ASSETS_DIR = r"F:\PrashantAcademy\docs\assets"
 PASSWORD = "7)Yaw1dC_uQEfmYqmT"
-ADMIN_EMAIL = "admin@example.com"
+ADMIN_EMAIL = "admin@prathamone.com"
 
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 os.makedirs(DOCS_ASSETS_DIR, exist_ok=True)

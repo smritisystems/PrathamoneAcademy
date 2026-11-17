@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Vitest specifications validating centralized forms workspace, prefilled & blank modes, Aadhaar masking, DPDP consent, and print triggers.
  */
@@ -108,8 +108,8 @@ vi.mock('../api/endpoints', () => ({
           code: 'PA001',
           address: 'Dadar West, Near Shivaji Park, Mumbai - 400028',
           phone: '+91-22-12345678',
-          email: 'info@example.com',
-          website: 'www.example.com',
+          email: 'info@prathamone.com',
+          website: 'www.prathamone.com',
           logo_url: '/logo.svg',
         },
         active_sections: ['header', 'personal', 'guardians', 'documents', 'dpdp_notice'],
@@ -130,7 +130,7 @@ vi.mock('../api/endpoints', () => ({
           nationality: 'Indian',
           aadhar_masked: 'XXXX-XXXX-1000',
           phone: '+91-9820014411',
-          email: 'rajnees.sharma@example.com',
+          email: 'rajnees.sharma@prathamone.com',
           address: 'Flat 101, Building A, Dadar West',
           city: 'Mumbai',
           state: 'Maharashtra',
@@ -150,7 +150,7 @@ vi.mock('../api/endpoints', () => ({
               name: 'Rajendra Sharma',
               occupation: 'Software Engineer',
               phone: '+91-9819018822',
-              email: 'father.rajnees@example.com',
+              email: 'father.rajnees@prathamone.com',
               aadhar_masked: 'XXXX-XXXX-2000',
               annual_income: '₹12,00,000.00',
             },
@@ -305,8 +305,8 @@ describe('Print Forms & KYC System Specification', () => {
         code: 'PA001',
         address: 'Dadar West, Mumbai - 400028',
         phone: '+91-22-12345678',
-        email: 'info@example.com',
-        website: 'www.example.com',
+        email: 'info@prathamone.com',
+        website: 'www.prathamone.com',
         logo_url: '/logo.svg',
       },
       active_sections: ['header', 'personal', 'guardians', 'documents', 'dpdp_notice'],
@@ -339,7 +339,7 @@ describe('Print Forms & KYC System Specification', () => {
             name: 'Rajendra Sharma',
             occupation: 'Software Engineer',
             phone: '+91-9819018822',
-            email: 'father.rajnees@example.com',
+            email: 'father.rajnees@prathamone.com',
             aadhar_masked: 'XXXX-XXXX-2000',
           },
         },

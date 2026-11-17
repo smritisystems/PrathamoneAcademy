@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Comprehensive unit test suite verifying strict separation of CRM Lead operations from Student Admission authorization across Counsellor, Admission Officer, Admin, and Unauthorized roles.
  */
@@ -82,7 +82,7 @@ describe('Lead Management & CRM RBAC Separation Specifications', () => {
     last_name: 'Joshi',
     full_name: 'Aditya Joshi',
     phone: '+91 98111 22233',
-    email: 'aditya.j@example.com',
+    email: 'aditya.j@prathamone.com',
     class_display: 'Std. 10 - CBSE',
     interested_course: 'Science Foundation',
     source: 'Walk-in',

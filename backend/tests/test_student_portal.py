@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Pytest suite testing student portal authentication, schedule views, and results queries.
 #  */
@@ -92,7 +92,7 @@ async def portal_seed(db, test_institution, test_academic_year):
         date_of_birth=date(2008, 5, 12),
         gender="male",
         phone="9876543210",
-        email=f"rohan_{suffix}@example.com",
+        email=f"rohan_{suffix}@prathamone.com",
         admission_date=date(2024, 6, 1),
         is_active=True,
     )
@@ -108,7 +108,7 @@ async def portal_seed(db, test_institution, test_academic_year):
         date_of_birth=date(2008, 8, 20),
         gender="female",
         phone="9876543211",
-        email=f"priya_{suffix}@example.com",
+        email=f"priya_{suffix}@prathamone.com",
         admission_date=date(2024, 6, 1),
         is_active=True,
     )

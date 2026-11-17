@@ -62,7 +62,7 @@ A database-wide audit querying valid receipts against student demographic record
      - `RCP-2026-0125` (₹10,000.00)
    - Corrected notes in `payments` and `fee_invoices` from `"Netham"` to `"Nethan"`.
    - Updated user identity (`users` table): `first_name = 'Nethan'`, `username = 'nethan3'`, `email = 'nethan3@prashantacademy.in'`.
-   - Cleaned demographic record (`students` table): `last_name = ''`, `email = 'nethan.patil131@example.com'`.
+   - Cleaned demographic record (`students` table): `last_name = ''`, `email = 'nethan.patil131@prathamone.com'`.
 2. **Proactive Global Sweep:**
    - Corrected all receipt JSON entries and transaction notes for Rajveer, Sarvesh, Roudrita, Satyam, Samad, and Shravya.
    - Stripped all trailing dummy hyphens (`'-'`) across `students.last_name` institute-wide.

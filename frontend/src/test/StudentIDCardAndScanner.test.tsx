@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Vitest test suite for Digital Student ID Card generation, SVG QR codes, and QR Attendance Terminal check-in.
  */
@@ -65,7 +65,7 @@ describe('Digital Student ID Cards & QR Attendance Scanner', () => {
     blood_group: 'O+',
     photo_url: null,
     phone: '+919811122233',
-    email: 'aarav@example.com',
+    email: 'aarav@prathamone.com',
     standard_name: 'Standard 10 - Science',
     division_name: 'Batch Alpha',
     roll_number: '101',

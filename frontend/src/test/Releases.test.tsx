@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Comprehensive unit and specification tests verifying the Enterprise Release & Change Management workspace, tabs, quality gates, and approval lifecycles.
  */
@@ -153,7 +153,7 @@ describe('Release & Change Management Workspace Specifications', () => {
       user: {
         id: 1,
         username: 'sysadmin',
-        email: 'sysadmin@example.com',
+        email: 'sysadmin@prathamone.com',
         first_name: 'SysAdmin',
         last_name: 'Superuser',
         role: 'superadmin',

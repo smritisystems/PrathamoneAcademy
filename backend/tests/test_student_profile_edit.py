@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Pytest suite verifying administrative editing across all student master profile fields.
 #  */
@@ -104,7 +104,7 @@ async def edit_profile_seed(db, test_institution, test_academic_year):
         caste="General",
         aadhar_number="123456789012",
         phone="9876543210",
-        email=f"rohan_{suffix}@example.com",
+        email=f"rohan_{suffix}@prathamone.com",
         address="123 MG Road",
         city="Pune",
         state="Maharashtra",
@@ -122,7 +122,7 @@ async def edit_profile_seed(db, test_institution, test_academic_year):
         first_name="Suresh",
         last_name="Sharma",
         phone="9876543211",
-        email="suresh@example.com",
+        email="suresh@prathamone.com",
         occupation="Engineer",
         annual_income=1200000.0,
         is_primary=True,
@@ -251,7 +251,7 @@ async def test_admin_can_update_master_profile_fields(client, auth_headers, edit
         "gender": "male",
         "blood_group": "O+",
         "phone": "9998887776",
-        "email": "rohan.updated@example.com",
+        "email": "rohan.updated@prathamone.com",
         "address": "456 FC Road, Deccan",
         "city": "Pune",
         "state": "Maharashtra",
@@ -322,7 +322,7 @@ async def test_admin_can_update_guardians(client, auth_headers, edit_profile_see
                 "first_name": "Suresh",
                 "last_name": "Sharma",
                 "phone": "9876500000",  # Updated phone
-                "email": "suresh.new@example.com",
+                "email": "suresh.new@prathamone.com",
                 "occupation": "Senior Architect",
                 "annual_income": 1500000.0,
                 "is_primary": True,
@@ -332,7 +332,7 @@ async def test_admin_can_update_guardians(client, auth_headers, edit_profile_see
                 "first_name": "Sunita",
                 "last_name": "Sharma",
                 "phone": "9876500001",
-                "email": "sunita@example.com",
+                "email": "sunita@prathamone.com",
                 "occupation": "Professor",
                 "annual_income": 900000.0,
                 "is_primary": False,

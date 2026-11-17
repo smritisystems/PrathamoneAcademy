@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Comprehensive student profile workspace with multi-tab master record editing for administrators.
  */
@@ -2067,7 +2067,7 @@ export default function StudentDetailPage() {
                         value={profileForm.email}
                         onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
                         className="form-input text-sm mt-1"
-                        placeholder="student@example.com"
+                        placeholder="student@prathamone.com"
                       />
                     </div>
                   </div>

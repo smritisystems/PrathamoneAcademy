@@ -90,7 +90,7 @@ The three students accounting for the difference are valid, active students who 
 1. **Student ID 160 – Shaurya Shah**:
    * Admission Number: `PA-2024-000032`
    * Gender: Female | Date of Birth: `2016-08-05`
-   * Contact: `+91-9820324411` | `shaurya.shah160@example.com`
+   * Contact: `+91-9820324411` | `shaurya.shah160@prathamone.com`
    * Academic: ICSE Board, Class VIII, Division: Batch A (Morning)
    * Enrollment ID: 32 (Status: `active`, AY: `2026-27`)
    * Fee Obligation: ₹0.00 (No `fee_invoices` generated)
@@ -99,7 +99,7 @@ The three students accounting for the difference are valid, active students who 
 2. **Student ID 166 – Sushmya Bhatia**:
    * Admission Number: `PA-2024-000038`
    * Gender: Female | Date of Birth: `2015-09-12`
-   * Contact: `+91-9820324417` | `sushmya.bhatia166@example.com`
+   * Contact: `+91-9820324417` | `sushmya.bhatia166@prathamone.com`
    * Academic: SSC Board, Class IX, Division: Batch A (Morning)
    * Enrollment ID: 38 (Status: `active`, AY: `2026-27`)
    * Fee Obligation: ₹0.00 (No `fee_invoices` generated)
@@ -108,7 +108,7 @@ The three students accounting for the difference are valid, active students who 
 3. **Student ID 167 – Aaradhya Kapoor**:
    * Admission Number: `PA-2024-000039`
    * Gender: Female | Date of Birth: `2015-11-20`
-   * Contact: `+91-9820324418` | `aaradhya.kapoor167@example.com`
+   * Contact: `+91-9820324418` | `aaradhya.kapoor167@prathamone.com`
    * Academic: SSC Board, Class IX, Division: Batch A (Morning)
    * Enrollment ID: 39 (Status: `active`, AY: `2026-27`)
    * Fee Obligation: ₹0.00 (No `fee_invoices` generated)

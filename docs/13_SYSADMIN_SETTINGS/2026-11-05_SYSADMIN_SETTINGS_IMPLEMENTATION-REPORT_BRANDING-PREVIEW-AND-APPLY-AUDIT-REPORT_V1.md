@@ -154,8 +154,8 @@ Calling `GET /api/v1/institutions/` produces:
     "city": "Mumbai",
     "state": "Maharashtra",
     "phone": "+91-22-12345678",
-    "email": "info@example.com",
-    "website": "https://example.com",
+    "email": "info@prathamone.com",
+    "website": "https://prathamone.com",
     "address": "123 Education Lane, School District"
   }
 ]

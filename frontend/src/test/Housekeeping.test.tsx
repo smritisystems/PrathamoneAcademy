@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Vitest component & governance tests for the Housekeeping workspace, Rule 010 View-First enforcement, Guarded Restore phrase confirmation, and Sidebar navigation access.
  */
@@ -327,7 +327,7 @@ describe('Housekeeping Workspace & Module Governance', () => {
       user: {
         id: 2,
         username: 'admin',
-        email: 'admin@example.com',
+        email: 'admin@prathamone.com',
         first_name: 'Institute',
         last_name: 'Admin',
         role: 'admin',

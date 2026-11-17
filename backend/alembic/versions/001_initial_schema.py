@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Initial database schema migration creating core tables for students, users, courses, and fees.
 #  */
@@ -443,7 +443,7 @@ def upgrade() -> None:
     # Seed baseline institution if none exists
     op.execute("""
         INSERT INTO institutions (id, name, code, address, city, state, pincode, phone, email, website, is_active, created_at, updated_at)
-        SELECT 1, 'Prashant Academy', 'PA001', '123 Education Lane, School District', 'Mumbai', 'Maharashtra', '400001', '+91-22-12345678', 'info@example.com', 'https://example.com', true, NOW(), NOW()
+        SELECT 1, 'Prashant Academy', 'PA001', '123 Education Lane, School District', 'Mumbai', 'Maharashtra', '400001', '+91-22-12345678', 'info@prathamone.com', 'https://prathamone.com', true, NOW(), NOW()
         WHERE NOT EXISTS (SELECT 1 FROM institutions WHERE id = 1)
     """)
     op.execute("""

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Forensic data reconciliation correcting legacy receipt typos imported from Padata.xlsx:
 #  */
@@ -66,7 +66,7 @@ def upgrade() -> None:
     op.execute("""
         UPDATE students
         SET last_name = '',
-            email = 'nethan.patil131@example.com'
+            email = 'nethan.patil131@prathamone.com'
         WHERE id = 131;
     """)
 

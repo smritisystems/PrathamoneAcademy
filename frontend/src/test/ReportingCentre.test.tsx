@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Comprehensive unit and integration test suite validating Central Reporting & Analytics Centre, 6-category navigation, search filter, favorite pins, and ExcelReportGrid rendering.
  */
@@ -42,7 +42,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
       gender: 'Male',
       date_of_birth: '2008-05-14',
       phone: '9820012345',
-      email: 'aarav@example.com',
+      email: 'aarav@prathamone.com',
       blood_group: 'B+',
       emergency_contact: '9820012346',
       standard_name: 'Std 10',
@@ -64,7 +64,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
       gender: 'Female',
       date_of_birth: '2008-08-20',
       phone: '9820023456',
-      email: 'isha@example.com',
+      email: 'isha@prathamone.com',
       blood_group: 'O+',
       emergency_contact: '9820023457',
       standard_name: 'Std 10',

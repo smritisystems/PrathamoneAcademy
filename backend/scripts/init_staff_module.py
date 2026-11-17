@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Database migration and seeder initializing Teacher & Staff Management tables, profiles, assignments, attendance, leaves, and documents.
 #  */
@@ -342,11 +342,11 @@ async def initialize_staff_module():
             doc_count = (await session.execute(text("SELECT count(*) FROM staff_documents WHERE staff_profile_id = :p_id;"), {"p_id": p_id})).scalar()
             if doc_count == 0:
                 standard_docs = [
-                    ("Degree Certificate", f"{cfg['qual'].split(',')[0]} Degree Certificate", "https://example.com/docs/sample_degree.pdf"),
-                    ("Employment Agreement", f"Prashant Academy Employment Contract ({cfg['emp_id']})", "https://example.com/docs/sample_contract.pdf"),
-                    ("PAN Card Copy", f"Income Tax Permanent Account Number ({cfg['pan']})", "https://example.com/docs/sample_pan.pdf"),
-                    ("Identity Proof", "Government Issued Photo ID Card (Masked Aadhaar)", "https://example.com/docs/sample_id.pdf"),
-                    ("Cancelled Cheque", f"{cfg['bank']} Bank Account Verification Cheque", "https://example.com/docs/sample_cheque.pdf"),
+                    ("Degree Certificate", f"{cfg['qual'].split(',')[0]} Degree Certificate", "https://prathamone.com/docs/sample_degree.pdf"),
+                    ("Employment Agreement", f"Prashant Academy Employment Contract ({cfg['emp_id']})", "https://prathamone.com/docs/sample_contract.pdf"),
+                    ("PAN Card Copy", f"Income Tax Permanent Account Number ({cfg['pan']})", "https://prathamone.com/docs/sample_pan.pdf"),
+                    ("Identity Proof", "Government Issued Photo ID Card (Masked Aadhaar)", "https://prathamone.com/docs/sample_id.pdf"),
+                    ("Cancelled Cheque", f"{cfg['bank']} Bank Account Verification Cheque", "https://prathamone.com/docs/sample_cheque.pdf"),
                 ]
                 for d_type, d_title, d_url in standard_docs:
                     await session.execute(text("""

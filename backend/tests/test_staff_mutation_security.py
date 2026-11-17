@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Backend security test suite for staff mutation endpoints (addresses, bank accounts, key contacts) verifying Rule 010, authentication (401), role authorization (403), and audit log creation.
 #  */
@@ -394,7 +394,7 @@ async def test_staff_key_contact_mutation_authorized_admin_and_audit_log(client,
         "contact_name": "Sunita Kulkarni",
         "relationship": "Spouse",
         "phone_primary": "9822012345",
-        "email": "sunita@example.com",
+        "email": "sunita@prathamone.com",
         "is_primary_emergency": True,
     }
     create_res = await client.post(

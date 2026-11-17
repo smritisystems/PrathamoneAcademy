@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -1775,7 +1775,7 @@ export default function Settings() {
                                   </label>
                                   <input
                                     type="text"
-                                    placeholder={allSettings.branding?.login_bg_video_type === 'youtube' ? 'e.g. dQw4w9WgXcQ or https://youtube.com/watch?v=...' : 'https://example.com/ambient-loop.mp4'}
+                                    placeholder={allSettings.branding?.login_bg_video_type === 'youtube' ? 'e.g. dQw4w9WgXcQ or https://youtube.com/watch?v=...' : 'https://prathamone.com/ambient-loop.mp4'}
                                     value={allSettings.branding?.login_bg_video_url || ''}
                                     onChange={(e) => handleSettingChange('branding', 'login_bg_video_url', e.target.value)}
                                     className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"

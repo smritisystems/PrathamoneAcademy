@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Universal Sharing Action modal supporting WhatsApp, Email, SMS, expiring secure links, PDF download, and printing.
  */
@@ -383,7 +383,7 @@ export default function ShareModal({
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="parent@example.com"
+                  placeholder="parent@prathamone.com"
                   className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
                 />
               </div>

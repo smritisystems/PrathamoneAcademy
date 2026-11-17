@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Vitest suite for Study Materials & Academic Programs management console.
  */
@@ -63,7 +63,7 @@ describe('Study Materials & Academic Programs Console (CoursesPage)', () => {
         id: 1,
         username: 'admin',
         role: 'admin',
-        email: 'admin@example.com',
+        email: 'admin@prathamone.com',
         institution_id: 1,
       } as any,
       selectedInstitutionId: 1,

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Master branding configuration and dynamic identity resolver for PrathamOne Academy and tenant institutions.
  */
@@ -87,7 +87,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.17-REV-229-v1.125.0-4C985695',
+  buildNumber: '2026.11.17-REV-230-v1.126.0-DDCD52E6',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-17',
@@ -197,12 +197,12 @@ export const BRANDING_CONFIG = {
   support: {
     email: 'support@prathamone.com' as string,
     alternateEmail: 'prathamone@outlook.com' as string,
-    academyEmail: 'info@example.com' as string,
+    academyEmail: 'info@prathamone.com' as string,
     phone: '+91-22-12345678' as string,
     website: 'https://prathamone.com' as string,
     websiteDisplay: 'prathamone.com' as string,
-    academyWebsite: 'https://example.com' as string,
-    academyWebsiteDisplay: 'www.example.com' as string,
+    academyWebsite: 'https://prathamone.com' as string,
+    academyWebsiteDisplay: 'www.prathamone.com' as string,
     address: '123 Education Lane, School District, Dadar West, Mumbai, Maharashtra 400028' as string,
   },
 }

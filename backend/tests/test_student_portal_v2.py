@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-13
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Pytest suite validating student portal digital homework submission, attendance calendar, report cards, and online fee checkout.
 #  */
@@ -101,7 +101,7 @@ async def portal_v2_seed(db, test_institution, test_academic_year, admin_user):
         date_of_birth=date(2007, 4, 10),
         gender="male",
         phone="9820011223",
-        email=f"aarav_{suffix}@example.com",
+        email=f"aarav_{suffix}@prathamone.com",
         admission_date=date(2024, 6, 1),
         address="102 Emerald Heights",
         city="Thane",
@@ -119,7 +119,7 @@ async def portal_v2_seed(db, test_institution, test_academic_year, admin_user):
         first_name="Sanjay",
         last_name="Deshmukh",
         phone="9820099887",
-        email=f"sanjay_{suffix}@example.com",
+        email=f"sanjay_{suffix}@prathamone.com",
         is_primary=True,
     )
     db.add(guardian)

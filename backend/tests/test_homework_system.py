@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Comprehensive test suite for Homework & Assignment Management System covering creation, recipient deduplication, checking register, digital submissions, and academic activity.
 #  */
@@ -120,7 +120,7 @@ async def test_create_homework_batch_and_checking(
         "attachments": [
             {
                 "title": "Quadratic Equations Formula Sheet",
-                "file_url": "https://example.com/quadratic.pdf",
+                "file_url": "https://prathamone.com/quadratic.pdf",
                 "file_type": "pdf",
                 "file_size_bytes": 102400,
             }
@@ -250,7 +250,7 @@ async def test_digital_submission_and_resubmission(
         "submission_text": "Attached my osmosis observation report with diagrams.",
         "submission_files": [
             {
-                "file_url": "https://example.com/osmosis_report.pdf",
+                "file_url": "https://prathamone.com/osmosis_report.pdf",
                 "file_name": "osmosis_report.pdf",
                 "file_type": "application/pdf",
             }

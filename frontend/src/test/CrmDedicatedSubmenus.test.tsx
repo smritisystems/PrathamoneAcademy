@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Comprehensive unit and integration test suite verifying all 9 dedicated CRM submenu workspaces: Overview, Register, Pipeline, Follow-ups, Counselling, Sources, Campaigns, Reports, and Settings.
  */
@@ -80,7 +80,7 @@ describe('CRM Submenu Dedicated Workspaces Suite', () => {
       user: {
         id: 1,
         username: 'admin_test',
-        email: 'admin@example.com',
+        email: 'admin@prathamone.com',
         role: 'admin',
         first_name: 'System',
         last_name: 'Administrator',

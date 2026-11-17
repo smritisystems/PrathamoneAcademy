@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-17
-#  * @updated     2026-11-17
+#  * @updated     2026-11-18
 #  *
 #  * @description Comprehensive end-to-end multi-role browser acceptance verification for Navigation & Mobile Experience.
 #  */
@@ -55,7 +55,7 @@ def verify_navigation_suite():
 
         page.goto(f"{BASE_URL}/login")
         page.wait_for_selector('input[name="username"]', timeout=15000)
-        page.fill('input[name="username"]', "admin@example.com")
+        page.fill('input[name="username"]', "admin@prathamone.com")
         page.fill('input[name="password"]', PASSWORD)
         page.click('button[type="submit"]')
         page.wait_for_url("**/dashboard", timeout=15000)
@@ -115,7 +115,7 @@ def verify_navigation_suite():
 
         mobile_page.goto(f"{BASE_URL}/login")
         mobile_page.wait_for_selector('input[name="username"]', timeout=15000)
-        mobile_page.fill('input[name="username"]', "admin@example.com")
+        mobile_page.fill('input[name="username"]', "admin@prathamone.com")
         mobile_page.fill('input[name="password"]', PASSWORD)
         mobile_page.click('button[type="submit"]')
         mobile_page.wait_for_url("**/dashboard", timeout=15000)

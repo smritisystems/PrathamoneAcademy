@@ -85,7 +85,7 @@ The failure was traced to four interconnected defects in the database migration 
   - Full Alembic schema at head (`040_homework_system`)
   - 39 verified students, 5 batches, 78 guardians, 195 KYC documents, 39 invoices, 178 payment receipts
   - Initialized CodeX configuration and default mapping profile
-  - Canonical domain `example.com`
+  - Canonical domain `prathamone.com`
 
 ### 3.4 Roster Loader Automation (`add_39_students.ps1` & `add_39_students.sh`)
 - Appended `docker compose exec -T backend alembic upgrade head` immediately following container restart and health verification.
@@ -102,7 +102,7 @@ The failure was traced to four interconnected defects in the database migration 
 2. **Roster Loader Execution Test:**
    - Ran `.\add_39_students.ps1 -Force`: **PASS (exit code 0, 39 students, 178 payments restored, Alembic at head)**.
 3. **Live Playwright & API End-to-End Verification:**
-   - Navigated to `/login`, authenticated as `admin@example.com`.
+   - Navigated to `/login`, authenticated as `admin@prathamone.com`.
    - Navigated to `/dashboard`: **HTTP 200 OK**.
    - Navigated to `/codex`: **HTTP 200 OK**.
    - Total console error/warning events: **0**.

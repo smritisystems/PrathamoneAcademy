@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.2.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Comprehensive master database seeder initializing administrator security credentials, all Indian educational boards (CBSE, ICSE, MSBSHSE, GSEB, State Boards, Competitive Streams), instruction mediums, canonical subjects catalogue (SSOT), curriculum applicability mappings, standards 1-12, and batches.
 #  */
@@ -177,7 +177,7 @@ async def seed(bootstrap_only: bool = False):
             "administrator",
         )
         accountant_password = os.getenv("INITIAL_ACCOUNTANT_PASSWORD")
-        default_admin_email = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@example.com").strip().lower()
+        default_admin_email = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@prathamone.com").strip().lower()
 
         if existing_accountant and accountant_password:
             accountant_password = validate_bootstrap_password(
@@ -644,7 +644,7 @@ async def seed(bootstrap_only: bool = False):
                 state="Maharashtra",
                 pincode="400002",
                 phone="+91-9876543210",
-                email="rahul.sharma@example.com",
+                email="rahul.sharma@prathamone.com",
                 admission_date=date(2024, 6, 1),
             )
             session.add(sample_student)
@@ -657,7 +657,7 @@ async def seed(bootstrap_only: bool = False):
                 last_name="Sharma",
                 occupation="Business",
                 phone="+91-9876543211",
-                email="suresh.sharma@example.com",
+                email="suresh.sharma@prathamone.com",
                 annual_income=500000.0,
                 is_primary=True,
             )

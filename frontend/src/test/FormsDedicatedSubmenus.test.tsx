@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Comprehensive Vitest test suite validating all 8 dedicated submenus of Print Forms Studio & KYC, URL synchronization, Rule 010 View-First lock enforcement, and Training Mode isolation.
  */
@@ -195,7 +195,7 @@ describe('Print Forms Studio & KYC Dedicated Submenus Suite', () => {
       user: {
         id: 1,
         username: 'admin',
-        email: 'admin@example.com',
+        email: 'admin@prathamone.com',
         role: 'superadmin',
         first_name: 'Jawahar',
         last_name: 'Mallah',

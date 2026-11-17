@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Comprehensive test suite validating the Universal Report Calculation & Intelligence Engine,
  */
@@ -116,7 +116,7 @@ describe('Universal Report Intelligence Engine Suite', () => {
         first_name: 'System',
         last_name: 'Admin',
         role: 'admin',
-        email: 'admin@example.com',
+        email: 'admin@prathamone.com',
       },
       selectedInstitutionId: 1,
       selectedAcademicYearId: 1,

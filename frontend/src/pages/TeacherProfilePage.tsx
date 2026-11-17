@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Dedicated full-page Teacher Profile & Employee Dossier workspace with persistent hero banner, 13 specialized tabs, multi-address/bank/contact management, timetable matrix, payroll configuration, and activity timeline.
  */
@@ -1855,7 +1855,7 @@ export default function TeacherProfilePage() {
                   value={contactForm.email}
                   onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  placeholder="contact@example.com"
+                  placeholder="contact@prathamone.com"
                 />
               </div>
               <div className="space-y-1.5 pt-1">

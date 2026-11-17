@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Centralized Communication Center workspace comprising 8 dedicated submenus, multichannel broadcasts, WhatsApp direct launcher, template authoring, delivery tracking, gateway diagnostics, and Rule 010 View-First governance.
  */
@@ -198,7 +198,7 @@ function CommunicationContent() {
   const [waWebhookToken, setWaWebhookToken] = useState<string>('prathamone_wa_webhook_token_2026')
   const [smtpHost, setSmtpHost] = useState<string>('smtp.mailgun.org')
   const [smtpPort, setSmtpPort] = useState<number>(587)
-  const [smtpSenderEmail, setSmtpSenderEmail] = useState<string>('notifications@example.com')
+  const [smtpSenderEmail, setSmtpSenderEmail] = useState<string>('notifications@prathamone.com')
   const [quietHoursStart, setQuietHoursStart] = useState<string>('21:00')
   const [quietHoursEnd, setQuietHoursEnd] = useState<string>('09:00')
   const [maxPerMinute, setMaxPerMinute] = useState<number>(60)
@@ -2583,7 +2583,7 @@ function CommunicationContent() {
                         type="text"
                         value={testDestination}
                         onChange={(e) => setTestDestination(e.target.value)}
-                        placeholder="+91 98765 43210 or admin@example.com"
+                        placeholder="+91 98765 43210 or admin@prathamone.com"
                         className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg font-mono"
                       />
                     </div>

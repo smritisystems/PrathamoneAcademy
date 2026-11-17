@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Comprehensive integration test suite for Lead Management & CRM module verifying atomic sequential numbering, Kanban pipeline, follow-ups, demo classes, Lead Dossier, Lead-to-Admission conversion, and RBAC/Audit security.
 #  */
@@ -87,7 +87,7 @@ async def test_create_lead_and_sequential_numbering(client, auth_headers, test_i
         "student_name": "Rohan Deshmukh",
         "parent_name": "Suresh Deshmukh",
         "mobile": "9812345670",
-        "email": "rohan.deshmukh@example.com",
+        "email": "rohan.deshmukh@prathamone.com",
         "class_name": "Std. 10",
         "board_name": "CBSE",
         "interested_course": "Foundation Batch",
@@ -105,7 +105,7 @@ async def test_create_lead_and_sequential_numbering(client, auth_headers, test_i
         "student_name": "Meera Joshi",
         "parent_name": "Sunil Joshi",
         "mobile": "9812345671",
-        "email": "meera.joshi@example.com",
+        "email": "meera.joshi@prathamone.com",
         "class_name": "Std. 9",
         "board_name": "ICSE",
         "interested_course": "Maths + Science",
@@ -259,7 +259,7 @@ async def test_lead_to_admission_conversion(client, auth_headers, db, test_insti
             "student_name": "Gaurav More",
             "parent_name": "Prakash More",
             "mobile": "9833445566",
-            "email": "gaurav.more@example.com",
+            "email": "gaurav.more@prathamone.com",
             "class_name": "Standard 10",
             "standard_id": std.id,
             "academic_year_id": ay.id,
@@ -385,7 +385,7 @@ async def test_lead_canonical_communication_logging(client, auth_headers, db, te
     # 1. Create test lead
     resp = await client.post(
         "/api/v1/leads",
-        json={"student_name": "Ketan Verma", "mobile": "9877665544", "email": "ketan.v@example.com"},
+        json={"student_name": "Ketan Verma", "mobile": "9877665544", "email": "ketan.v@prathamone.com"},
         headers=auth_headers,
     )
     lead_id = resp.json()["id"]
@@ -444,7 +444,7 @@ async def test_converted_student_dossier_displays_linked_lead_communication_hist
         "student_name": "Tanya Saxena",
         "parent_name": "Rajesh Saxena",
         "mobile": "9823456789",
-        "email": "tanya.saxena@example.com",
+        "email": "tanya.saxena@prathamone.com",
         "class_name": "Std. 10",
         "board_name": "CBSE",
         "interested_course": "Science Foundation",

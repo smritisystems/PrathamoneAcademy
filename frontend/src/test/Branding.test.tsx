@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Unit and integration tests verifying centralized branding configuration, AITDL parent organization, product ecosystem, and dynamic tenant resolution.
  */
@@ -114,7 +114,7 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(support.email).toBe('support@prathamone.com')
     expect(support.phone).toBe('+91-22-12345678')
     expect(support.website).toBe('https://prathamone.com')
-    expect(support.academyWebsite).toBe('https://example.com')
+    expect(support.academyWebsite).toBe('https://prathamone.com')
   })
 
   it('maintains backwards compatibility with APP_CONFIG', () => {

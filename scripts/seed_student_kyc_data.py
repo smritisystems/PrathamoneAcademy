@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Seed rich KYC, guardian, document, and demographic data for existing students to power prefilled forms.
 #  */
@@ -81,7 +81,7 @@ async def seed_kyc_data():
                 student.phone = f"+91-9820{idx+1:02d}4411"
 
             if not student.email:
-                student.email = f"{student.first_name.lower()}.{lname.lower()}{student.id}@example.com"
+                student.email = f"{student.first_name.lower()}.{lname.lower()}{student.id}@prathamone.com"
 
             if not student.aadhar_number:
                 # 12-digit Aadhaar for testing masking
@@ -107,7 +107,7 @@ async def seed_kyc_data():
                     last_name=student.last_name,
                     occupation=OCCUPATIONS[idx % len(OCCUPATIONS)],
                     phone=f"+91-9819{idx+1:02d}8822",
-                    email=f"father.{student.first_name.lower()}@example.com",
+                    email=f"father.{student.first_name.lower()}@prathamone.com",
                     aadhar_number=f"56781234{2000 + idx}",
                     annual_income=1200000.0 + (idx * 50000),
                     is_primary=True,
@@ -119,7 +119,7 @@ async def seed_kyc_data():
                     last_name=student.last_name,
                     occupation=OCCUPATIONS[(idx + 2) % len(OCCUPATIONS)],
                     phone=f"+91-9819{idx+1:02d}8823",
-                    email=f"mother.{student.first_name.lower()}@example.com",
+                    email=f"mother.{student.first_name.lower()}@prathamone.com",
                     aadhar_number=f"56781234{3000 + idx}",
                     annual_income=850000.0 + (idx * 40000),
                     is_primary=False,

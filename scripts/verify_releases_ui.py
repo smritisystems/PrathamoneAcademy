@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Automated visual verification script for Release Management UI.
 #  */
@@ -27,7 +27,7 @@ async def check_releases():
         
         await page.goto("http://localhost/login")
         await page.wait_for_timeout(1000)
-        await page.fill("input[name='username']", "admin@example.com")
+        await page.fill("input[name='username']", "admin@prathamone.com")
         await page.fill("input[name='password']", os.environ["TEST_ADMIN_PASSWORD"])
         await page.click("button[type='submit']")
         await page.wait_for_timeout(2000)

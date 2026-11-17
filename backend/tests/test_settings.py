@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Test suite for Institute Settings workspace, profile updates, batch configuration, and lookups CRUD.
 #  */
@@ -40,7 +40,7 @@ async def admin_user(db: AsyncSession, test_institution: Institution):
     user = User(
         institution_id=test_institution.id,
         username=f"test_admin_{suffix}",
-        email=f"test_admin_{suffix}@example.com",
+        email=f"test_admin_{suffix}@prathamone.com",
         hashed_password=get_password_hash("Admin@2026!"),
         first_name="Admin",
         last_name="Test",

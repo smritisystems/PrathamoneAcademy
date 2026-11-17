@@ -213,7 +213,7 @@ This enables all other institute computers on the Wi-Fi/LAN router to immediatel
 |  Configure your coaching institute details:                               |
 |                                                                           |
 |  Coaching Institute Name: [ Prashant Academy Coaching Institute       ]   |
-|  Administrator Email:     [ admin@example.com                         ]   |
+|  Administrator Email:     [ admin@prathamone.com                         ]   |
 |  Administrator Password:  [ ••••••••••••••••••                        ]   |
 |                                                                           |
 |  (*) Standalone / Server Installation (This computer stores all data)     |
@@ -250,7 +250,7 @@ This enables all other institute computers on the Wi-Fi/LAN router to immediatel
 +---------------------------------------------------------------------------+
 ```
 
-When the user clicks **Finish**, their default web browser opens to `http://localhost:8000`. They enter `admin@example.com` and their password, and immediately begin managing their institute.
+When the user clicks **Finish**, their default web browser opens to `http://localhost:8000`. They enter `admin@prathamone.com` and their password, and immediately begin managing their institute.
 
 ---
 

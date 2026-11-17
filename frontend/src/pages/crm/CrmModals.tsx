@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Shared reusable modal dialogs and badge helpers for CRM workspaces: New Prospect Enquiry, Follow-up Activity Logger, Demo Lecture Scheduler, and Admission Fast-track Conversion.
  */
@@ -192,7 +192,7 @@ export function NewLeadModal({
             <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
             <input
               type="email"
-              placeholder="student@example.com"
+              placeholder="student@prathamone.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500"

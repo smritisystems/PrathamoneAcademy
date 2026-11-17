@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -2032,7 +2032,7 @@ export default function StudentDashboardPage() {
                     value={profileForm.email}
                     onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
                     className="form-input text-sm mt-1 disabled:bg-gray-50 disabled:text-gray-600"
-                    placeholder="student@example.com"
+                    placeholder="student@prathamone.com"
                   />
                 </div>
                 <div>

@@ -11,7 +11,7 @@
  *
  * @version     1.2.0
  * @created     2026-11-04
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and parent organization branding.
  */
@@ -68,6 +68,11 @@ export function resolvePageTitle(pathname: string, search: string): string {
     '/student/dashboard': 'Student Portal',
     '/student-portal': 'Student Portal',
     '/login': 'Sign In',
+    '/students/add': 'Admissions',
+    '/releases': 'Releases & Changes',
+    '/admin/releases': 'Releases & Changes',
+    '/communication/notices': 'Notice Board',
+    '/notices': 'Notice Board',
   }
 
   if (knownRoutes[cleanPath]) {

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Unit tests verifying Teacher and Staff Workforce Dashboards, live KPI metrics, unassigned teacher highlights, lifecycle transitions, and 15-tab profile modals.
  */
@@ -179,7 +179,7 @@ describe('Teacher & Staff Workforce Dashboards Suite', () => {
         id: 1,
         institution_id: 1,
         username: 'sysadmin',
-        email: 'admin@example.com',
+        email: 'admin@prathamone.com',
         role: 'superadmin',
         first_name: 'System',
         last_name: 'Administrator',

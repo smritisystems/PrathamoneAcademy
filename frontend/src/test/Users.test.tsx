@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Vitest test suite verifying user management directory filters, role metrics, and table sorting.
  */
@@ -78,7 +78,7 @@ describe('User Management Dashboard Specification', () => {
           {
             id: 10,
             username: 'aarav.sharma',
-            email: 'aarav.sharma@example.com',
+            email: 'aarav.sharma@prathamone.com',
             first_name: 'Aarav',
             last_name: 'Sharma',
             full_name: 'Aarav Sharma',

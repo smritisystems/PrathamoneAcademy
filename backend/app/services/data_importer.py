@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Service for parsing, validating, duplicate-checking, and importing batch data from spreadsheets.
 #  */
@@ -58,7 +58,7 @@ ENTITY_CONFIGS: Dict[str, Dict[str, Any]] = {
             {"key": "gender", "label": "Gender", "required": True, "type": "str", "sample": "male", "desc": "male / female / other"},
             {"key": "blood_group", "label": "Blood Group", "required": False, "type": "str", "sample": "O+", "desc": "e.g. A+, B+, O+"},
             {"key": "phone", "label": "Phone Number", "required": False, "type": "str", "sample": "9876543210", "desc": "10-digit mobile"},
-            {"key": "email", "label": "Email Address", "required": False, "type": "email", "sample": "aarav.sharma@example.com", "desc": "Valid email address"},
+            {"key": "email", "label": "Email Address", "required": False, "type": "email", "sample": "aarav.sharma@prathamone.com", "desc": "Valid email address"},
             {"key": "address", "label": "Address", "required": False, "type": "str", "sample": "123 MG Road", "desc": "Residential address"},
             {"key": "city", "label": "City", "required": False, "type": "str", "sample": "Mumbai", "desc": "City name"},
             {"key": "state", "label": "State", "required": False, "type": "str", "sample": "Maharashtra", "desc": "State name"},
@@ -83,7 +83,7 @@ ENTITY_CONFIGS: Dict[str, Dict[str, Any]] = {
             {"key": "first_name", "label": "First Name", "required": True, "type": "str", "sample": "Rajesh", "desc": "Guardian first name"},
             {"key": "last_name", "label": "Last Name", "required": False, "type": "str", "sample": "Sharma", "desc": "Guardian last name"},
             {"key": "phone", "label": "Phone Number", "required": False, "type": "str", "sample": "9876543211", "desc": "10-digit mobile"},
-            {"key": "email", "label": "Email Address", "required": False, "type": "email", "sample": "rajesh.sharma@example.com", "desc": "Guardian email"},
+            {"key": "email", "label": "Email Address", "required": False, "type": "email", "sample": "rajesh.sharma@prathamone.com", "desc": "Guardian email"},
             {"key": "occupation", "label": "Occupation", "required": False, "type": "str", "sample": "Business", "desc": "Occupation / Profession"},
             {"key": "annual_income", "label": "Annual Income", "required": False, "type": "float", "sample": "750000", "desc": "Annual income in INR"},
             {"key": "is_primary", "label": "Is Primary Guardian", "required": False, "type": "bool", "sample": "true", "desc": "true / false"},

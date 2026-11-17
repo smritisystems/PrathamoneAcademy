@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Visual evidence capture tool for all 8 dedicated Teacher & Faculty Management workspaces.
 #  */
@@ -45,7 +45,7 @@ def main():
         print("Logging in as admin...")
         page.goto(f"{FRONTEND_URL}/login")
         page.wait_for_selector('input[name="username"]', timeout=15000)
-        page.fill('input[name="username"]', "admin@example.com")
+        page.fill('input[name="username"]', "admin@prathamone.com")
         page.fill('input[name="password"]', os.environ["TEST_ADMIN_PASSWORD"])
         page.click('button[type="submit"]')
         page.wait_for_timeout(3500)
