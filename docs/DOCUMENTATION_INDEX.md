@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-17 17:28:55<br>
-**Total Indexed Items:** 524  
+**Last Reindexed:** 2026-11-17 17:40:43<br>
+**Total Indexed Items:** 527  
 
 ---
 
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **137** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **140** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -675,6 +675,9 @@
 | `guide_step2_unlock_modal.png` | `assets/screenshots` | 239.8 KB | [guide_step2_unlock_modal.png](assets/screenshots/guide_step2_unlock_modal.png) |
 | `guide_step3_payments_edit_active.png` | `assets/screenshots` | 236.0 KB | [guide_step3_payments_edit_active.png](assets/screenshots/guide_step3_payments_edit_active.png) |
 | `guide_step4_fee_structure_editor.png` | `assets/screenshots` | 223.2 KB | [guide_step4_fee_structure_editor.png](assets/screenshots/guide_step4_fee_structure_editor.png) |
+| `modern_dashboard_step1_overview.png` | `assets` | 240.4 KB | [modern_dashboard_step1_overview.png](assets/modern_dashboard_step1_overview.png) |
+| `modern_dashboard_step2_stream_donut.png` | `assets` | 206.9 KB | [modern_dashboard_step2_stream_donut.png](assets/modern_dashboard_step2_stream_donut.png) |
+| `modern_dashboard_step3_mobile.png` | `assets` | 87.2 KB | [modern_dashboard_step3_mobile.png](assets/modern_dashboard_step3_mobile.png) |
 | `nav_acceptance_admin_desktop.png` | `assets` | 181.6 KB | [nav_acceptance_admin_desktop.png](assets/nav_acceptance_admin_desktop.png) |
 | `nav_acceptance_admin_mobile_drawer.png` | `assets` | 67.3 KB | [nav_acceptance_admin_mobile_drawer.png](assets/nav_acceptance_admin_mobile_drawer.png) |
 | `nav_acceptance_student_portal.png` | `assets` | 256.0 KB | [nav_acceptance_student_portal.png](assets/nav_acceptance_student_portal.png) |

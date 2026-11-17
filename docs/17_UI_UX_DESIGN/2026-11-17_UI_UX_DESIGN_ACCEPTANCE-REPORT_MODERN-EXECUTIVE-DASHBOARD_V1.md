@@ -65,3 +65,14 @@ Following the visual inspiration from modern SaaS analytics dashboards, the exec
 - All dashboard elements remain strictly View-First by default.
 - Clicking records safely routes to dedicated detail pages or launches non-mutating preview modals (`QuickDecoderModal`, `OutstandingDrilldownModal`).
 - CodeX Bijective obfuscation mode (`CX-XXXX`) is preserved across all cards and masked charts.
+
+---
+
+## 4. Visual Acceptance & Forensic Verification
+
+| Step | State Description | Live Verification Artifact |
+| :--- | :--- | :--- |
+| **Step 1** | **Modern Executive Desktop Overview:** Personalized greeting, 4 KPI cards with micro-sparklines, dual comparative bar chart, donut chart, and 3-pillar command tier | ![Overview Desktop](../assets/modern_dashboard_step1_overview.png) |
+| **Step 2** | **Donut Stream Distribution Mode:** Clean categorical breakdown across IIT-JEE, NEET, Class 10/9 Foundation | ![Stream Donut](../assets/modern_dashboard_step2_stream_donut.png) |
+| **Step 3** | **Mobile Responsive Command Center (390x844):** Single-column stacked layout with fluid scaling and full touch ergonomics | ![Mobile Stack](../assets/modern_dashboard_step3_mobile.png) |
+
