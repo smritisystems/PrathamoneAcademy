@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description Normalizes institution ID to 1 and synchronizes academic years, dates, and attendances for 2026-27.
 #  */
@@ -34,43 +34,50 @@ async def normalize_data():
     print("=" * 80)
 
     async with AsyncSessionLocal() as session:
-        # 1. Update institution ID to 1 if it is 2
-        # First check existing institution
-        curr_inst = (await session.execute(text("SELECT id, name, code FROM institutions LIMIT 1;"))).fetchone()
-        print(f"Current institution: ID={curr_inst[0]}, Name={curr_inst[1]}, Code={curr_inst[2]}")
+        # 1. Update institution ID to 1 if not already normalized
+        inst_1 = (await session.execute(text("SELECT id, name, code FROM institutions WHERE id = 1;"))).fetchone()
 
-        if curr_inst[0] != 1:
-            print("[Step 1] Migrating institution ID to 1 for universal compatibility...")
-            # Disable FK checks temporarily for update
-            await session.execute(text("ALTER TABLE academic_years DROP CONSTRAINT IF EXISTS academic_years_institution_id_fkey;"))
-            await session.execute(text("ALTER TABLE announcements DROP CONSTRAINT IF EXISTS announcements_institution_id_fkey;"))
-            await session.execute(text("ALTER TABLE boards DROP CONSTRAINT IF EXISTS boards_institution_id_fkey;"))
-            await session.execute(text("ALTER TABLE fee_categories DROP CONSTRAINT IF EXISTS fee_categories_institution_id_fkey;"))
-            await session.execute(text("ALTER TABLE fee_structures DROP CONSTRAINT IF EXISTS fee_structures_institution_id_fkey;"))
-            await session.execute(text("ALTER TABLE standards DROP CONSTRAINT IF EXISTS standards_institution_id_fkey;"))
-            await session.execute(text("ALTER TABLE students DROP CONSTRAINT IF EXISTS students_institution_id_fkey;"))
-            await session.execute(text("ALTER TABLE study_materials DROP CONSTRAINT IF EXISTS study_materials_institution_id_fkey;"))
-            await session.execute(text("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_institution_id_fkey;"))
-
-            # Update institutions table
-            await session.execute(text("UPDATE institutions SET id = 1 WHERE id = :old_id;"), {"old_id": curr_inst[0]})
-            # Update all referencing tables
+        if inst_1:
+            print(f"Current institution: ID=1, Name={inst_1[1]}, Code={inst_1[2]} (Already canonical)")
+            # Ensure any orphaned records referencing other institutions are realigned to institution 1
             for tbl in ["academic_years", "announcements", "boards", "fee_categories", "fee_structures", "standards", "students", "study_materials", "users"]:
-                await session.execute(text(f"UPDATE {tbl} SET institution_id = 1 WHERE institution_id = :old_id;"), {"old_id": curr_inst[0]})
+                await session.execute(text(f"UPDATE {tbl} SET institution_id = 1 WHERE institution_id IS NOT NULL AND institution_id != 1;"))
+            print("  -> Verified all 9 tables reference canonical institution ID 1.")
+        else:
+            curr_inst = (await session.execute(text("SELECT id, name, code FROM institutions ORDER BY id ASC LIMIT 1;"))).fetchone()
+            if curr_inst and curr_inst[0] != 1:
+                print(f"Current institution: ID={curr_inst[0]}, Name={curr_inst[1]}, Code={curr_inst[2]}")
+                print("[Step 1] Migrating institution ID to 1 for universal compatibility...")
+                # Disable FK checks temporarily for update
+                await session.execute(text("ALTER TABLE academic_years DROP CONSTRAINT IF EXISTS academic_years_institution_id_fkey;"))
+                await session.execute(text("ALTER TABLE announcements DROP CONSTRAINT IF EXISTS announcements_institution_id_fkey;"))
+                await session.execute(text("ALTER TABLE boards DROP CONSTRAINT IF EXISTS boards_institution_id_fkey;"))
+                await session.execute(text("ALTER TABLE fee_categories DROP CONSTRAINT IF EXISTS fee_categories_institution_id_fkey;"))
+                await session.execute(text("ALTER TABLE fee_structures DROP CONSTRAINT IF EXISTS fee_structures_institution_id_fkey;"))
+                await session.execute(text("ALTER TABLE standards DROP CONSTRAINT IF EXISTS standards_institution_id_fkey;"))
+                await session.execute(text("ALTER TABLE students DROP CONSTRAINT IF EXISTS students_institution_id_fkey;"))
+                await session.execute(text("ALTER TABLE study_materials DROP CONSTRAINT IF EXISTS study_materials_institution_id_fkey;"))
+                await session.execute(text("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_institution_id_fkey;"))
 
-            # Restore foreign key constraints
-            await session.execute(text("ALTER TABLE academic_years ADD CONSTRAINT academic_years_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
-            await session.execute(text("ALTER TABLE announcements ADD CONSTRAINT announcements_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
-            await session.execute(text("ALTER TABLE boards ADD CONSTRAINT boards_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
-            await session.execute(text("ALTER TABLE fee_categories ADD CONSTRAINT fee_categories_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
-            await session.execute(text("ALTER TABLE fee_structures ADD CONSTRAINT fee_structures_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
-            await session.execute(text("ALTER TABLE standards ADD CONSTRAINT standards_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
-            await session.execute(text("ALTER TABLE students ADD CONSTRAINT students_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
-            await session.execute(text("ALTER TABLE study_materials ADD CONSTRAINT study_materials_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
-            await session.execute(text("ALTER TABLE users ADD CONSTRAINT users_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                # Update institutions table
+                await session.execute(text("UPDATE institutions SET id = 1 WHERE id = :old_id;"), {"old_id": curr_inst[0]})
+                # Update all referencing tables
+                for tbl in ["academic_years", "announcements", "boards", "fee_categories", "fee_structures", "standards", "students", "study_materials", "users"]:
+                    await session.execute(text(f"UPDATE {tbl} SET institution_id = 1 WHERE institution_id = :old_id;"), {"old_id": curr_inst[0]})
 
-            await session.execute(text("SELECT setval('institutions_id_seq', 1);"))
-            print("  -> Institution ID normalized to 1 across all 9 tables.")
+                # Restore foreign key constraints
+                await session.execute(text("ALTER TABLE academic_years ADD CONSTRAINT academic_years_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                await session.execute(text("ALTER TABLE announcements ADD CONSTRAINT announcements_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                await session.execute(text("ALTER TABLE boards ADD CONSTRAINT boards_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                await session.execute(text("ALTER TABLE fee_categories ADD CONSTRAINT fee_categories_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                await session.execute(text("ALTER TABLE fee_structures ADD CONSTRAINT fee_structures_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                await session.execute(text("ALTER TABLE standards ADD CONSTRAINT standards_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                await session.execute(text("ALTER TABLE students ADD CONSTRAINT students_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                await session.execute(text("ALTER TABLE study_materials ADD CONSTRAINT study_materials_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+                await session.execute(text("ALTER TABLE users ADD CONSTRAINT users_institution_id_fkey FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE;"))
+
+                await session.execute(text("SELECT setval('institutions_id_seq', 1);"))
+                print("  -> Institution ID normalized to 1 across all 9 tables.")
 
         # 2. Normalize Academic Years
         print("\n[Step 2] Aligning Academic Years and Financial Dates...")
