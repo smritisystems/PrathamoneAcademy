@@ -28,7 +28,7 @@ import {
 import { useAuthStore, isUserSysAdmin, isUserAdmin, hasPermission } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
 import { useNavigationStore } from '../store/navigationStore'
-import { CANONICAL_MODULE_REGISTRY, getAuthorizedModules } from '../config/modules'
+import { CANONICAL_MODULE_REGISTRY, getAuthorizedModules, getModuleById } from '../config/modules'
 import { useBranding } from '../config/branding'
 import { authApi } from '../api/endpoints'
 
@@ -42,162 +42,57 @@ const mainNavItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 ]
 
-const academicSubItems = [
-  { to: '/academic', label: 'Academic Structure' },
-  { to: '/academic/boards', label: 'Boards' },
-  { to: '/academic/classes', label: 'Classes / Standards' },
-  { to: '/academic/subjects', label: 'Subjects' },
-  { to: '/academic/batches', label: 'Batches' },
-  { to: '/academic/timetable', label: 'Timetable' },
-  { to: '/academic/enrollment', label: 'Enrollment' },
-  { to: '/academic/reports', label: 'Reports' },
-  { to: '/academic/settings', label: 'Settings' },
+const getSubItemsForModule = (moduleId: string) => {
+  const mod = getModuleById(moduleId)
+  return mod ? mod.subItems.map((s) => ({ to: s.to, label: s.label })) : []
+}
+
+const academicSubItems = getSubItemsForModule('academic')
+const crmSubItems = getSubItemsForModule('crm')
+const feesSubItems = getSubItemsForModule('fees')
+const examSubItems = getSubItemsForModule('examinations')
+const attendanceSubItems = getSubItemsForModule('attendance')
+const teachersSubItems = getSubItemsForModule('teachers')
+const studentsSubItems = getSubItemsForModule('students')
+const staffSubItems = getSubItemsForModule('staff')
+const homeworkSubItems = getSubItemsForModule('homework')
+const coursesSubItems = getSubItemsForModule('courses')
+const communicationSubItems = getSubItemsForModule('communication')
+const formsSubItems = getSubItemsForModule('forms')
+const housekeepingSubItems = getSubItemsForModule('housekeeping')
+
+const SECONDARY_MODULE_IDS = [
+  'teachers',
+  'staff',
+  'teacher_payroll',
+  'attendance',
+  'examinations',
+  'fees',
+  'homework',
+  'planning',
+  'eduboard',
+  'courses',
+  'reports',
+  'forms',
+  'communication',
+  'import_export',
+  'install',
+  'users',
+  'releases',
+  'training',
+  'housekeeping',
+  'settings',
+  'help',
 ]
 
-const crmSubItems = [
-  { to: '/leads', label: 'Overview' },
-  { to: '/leads/all', label: 'All Leads' },
-  { to: '/leads/pipeline', label: 'Lead Pipeline' },
-  { to: '/leads/follow-ups', label: 'Follow-ups' },
-  { to: '/leads/counselling', label: 'Counselling & Demo' },
-  { to: '/leads/sources', label: 'Lead Sources' },
-  { to: '/leads/campaigns', label: 'Campaigns' },
-  { to: '/leads/reports', label: 'Reports' },
-  { to: '/leads/settings', label: 'Settings' },
-]
-
-const feesSubItems = [
-  { to: '/fees/overview', label: 'Overview' },
-  { to: '/fees/structures', label: 'Fee Structures' },
-  { to: '/fees/invoicing', label: 'Fee Invoicing' },
-  { to: '/fees/collection', label: 'Collection Desk' },
-  { to: '/payments', label: 'Payment Ledger' },
-  { to: '/fees/defaulters', label: 'Defaulters & Dues' },
-  { to: '/fees/concessions', label: 'Concessions & Waivers' },
-  { to: '/fees/online-gateway', label: 'Online Gateway' },
-  { to: '/fees/reports', label: 'Financial Daybook' },
-]
-
-const examSubItems = [
-  { to: '/examinations/overview', label: 'Overview' },
-  { to: '/examinations/schedules', label: 'Exam Schedules' },
-  { to: '/examinations/marks-entry', label: 'Marks Entry' },
-  { to: '/examinations/analytics', label: 'Performance Analytics' },
-  { to: '/examinations/report-cards', label: 'Report Cards' },
-  { to: '/examinations/papers', label: 'Question Papers' },
-  { to: '/examinations/settings', label: 'Settings & Grading' },
-]
-
-const attendanceSubItems = [
-  { to: '/attendance/overview', label: 'Overview' },
-  { to: '/attendance/daily', label: 'Daily Roll Call' },
-  { to: '/attendance/qr-terminal', label: 'QR Terminal' },
-  { to: '/attendance/register', label: 'Monthly Register' },
-  { to: '/attendance/absenteeism', label: 'Defaulters & Alerts' },
-  { to: '/attendance/leaves', label: 'Leave Requests' },
-  { to: '/attendance/reports', label: 'Reports & Analytics' },
-  { to: '/attendance/settings', label: 'Settings & Policies' },
-]
-
-const teachersSubItems = [
-  { to: '/teachers/overview', label: 'Overview' },
-  { to: '/teachers/directory', label: 'Faculty Directory' },
-  { to: '/teachers/allocations', label: 'Batch Allocations' },
-  { to: '/teachers/timetable', label: 'Teaching Schedules' },
-  { to: '/teachers/attendance', label: 'Presence & Leaves' },
-  { to: '/teachers/payroll', label: 'Salary & Payroll' },
-  { to: '/teachers/performance', label: 'Teaching Sessions' },
-  { to: '/teachers/settings', label: 'Policies & Settings' },
-]
-
-const studentsSubItems = [
-  { to: '/students/overview', label: 'Overview' },
-  { to: '/students/directory', label: 'Master Directory' },
-  { to: '/students/admission', label: 'Admissions' },
-  { to: '/students/allocations', label: 'Batch Allocations' },
-  { to: '/students/id-cards', label: 'ID Cards & Badges' },
-  { to: '/students/history', label: 'Activity History' },
-  { to: '/students/reactivation', label: 'Reactivations' },
-  { to: '/students/settings', label: 'Settings & Policies' },
-]
-
-const staffSubItems = [
-  { to: '/staff/overview', label: 'Overview' },
-  { to: '/staff/directory', label: 'Staff Register' },
-  { to: '/staff/onboarding', label: 'New Onboarding' },
-  { to: '/staff/duties', label: 'Roles & Duties' },
-  { to: '/staff/attendance', label: 'Staff Presence' },
-  { to: '/staff/leaves', label: 'Leave Requests' },
-  { to: '/staff/documents', label: 'HR Documents Studio' },
-  { to: '/staff/settings', label: 'HR Policies' },
-]
-
-const homeworkSubItems = [
-  { to: '/homework', label: 'Overview & List' },
-  { to: '/homework/create', label: 'Assign Homework' },
-  { to: '/homework/checking', label: 'Checking Register' },
-  { to: '/homework/submissions', label: 'Submissions' },
-  { to: '/homework/templates', label: 'Templates' },
-  { to: '/homework/reports', label: 'Daily Register Report' },
-]
-
-const coursesSubItems = [
-  { to: '/courses/overview', label: 'Materials Overview' },
-  { to: '/courses/repository', label: 'Master Library' },
-  { to: '/courses/upload', label: 'Upload Content' },
-  { to: '/courses/notes', label: 'Chapter Notes' },
-  { to: '/courses/question-banks', label: 'Question Banks' },
-  { to: '/courses/video-lectures', label: 'Video Lectures' },
-  { to: '/courses/syllabi', label: 'Curriculum Syllabi' },
-  { to: '/courses/settings', label: 'Storage Policies' },
-]
-
-const communicationSubItems = [
-  { to: '/communication/overview', label: 'Overview' },
-  { to: '/communication/broadcasts', label: 'Broadcast Composer' },
-  { to: '/communication/notices', label: 'Notice Board' },
-  { to: '/communication/whatsapp', label: 'WhatsApp Stream' },
-  { to: '/communication/templates', label: 'Message Templates' },
-  { to: '/communication/history', label: 'Dispatch Logs' },
-  { to: '/communication/automations', label: 'Reminder Queues' },
-  { to: '/communication/gateways', label: 'Gateway Diagnostics' },
-  { to: '/communication/settings', label: 'Channel Settings' },
-]
-
-const formsSubItems = [
-  { to: '/forms/overview', label: 'Overview' },
-  { to: '/forms/admissions', label: 'Admission Forms' },
-  { to: '/forms/id-cards', label: 'Student & Staff IDs' },
-  { to: '/forms/financial', label: 'Receipts & Notices' },
-  { to: '/forms/academic', label: 'Hall Tickets & Transcripts' },
-  { to: '/forms/certificates', label: 'Leaving & Experience Certs' },
-  { to: '/forms/bulk-print', label: 'Bulk Print Spooler' },
-  { to: '/forms/audit-logs', label: 'Print Audit Trail' },
-]
-
-const secondaryNavItems: NavItem[] = [
-  { to: '/teachers', label: 'Teachers', icon: GraduationCap },
-  { to: '/staff', label: 'Staff Directory', icon: Briefcase },
-  { to: '/teacher-payroll', label: 'Teacher Payroll', icon: DollarSign },
-  { to: '/attendance', label: 'Attendance', icon: ClipboardList },
-  { to: '/examinations', label: 'Tests & Results', icon: Award },
-  { to: '/fees', label: 'Fees & Payments', icon: CreditCard },
-  { to: '/homework', label: 'Homework & Assignments', icon: FileCheck },
-  { to: '/planning', label: 'Planning & Activities', icon: CalendarDays },
-  { to: '/eduboard', label: 'EduBoard Classroom', icon: Presentation },
-  { to: '/courses', label: 'Study Materials', icon: BookOpen },
-  { to: '/reports', label: 'Reports', icon: BarChart2 },
-  { to: '/forms', label: 'Print Forms & KYC', icon: Printer },
-  { to: '/communication', label: 'Communication Center', icon: MessageSquare },
-  { to: '/import-export', label: 'Import & Export', icon: FileSpreadsheet },
-  { to: '/install', label: 'Install App (PWA)', icon: Download },
-  { to: '/users', label: 'Users & Roles', icon: Shield },
-  { to: '/releases', label: 'Releases & Changes', icon: GitBranch },
-  { to: '/training', label: 'Training & Demo Lab', icon: FlaskConical },
-  { to: '/housekeeping', label: 'Housekeeping', icon: HardDrive },
-  { to: '/settings', label: 'Settings', icon: Settings },
-  { to: '/help', label: 'Help & About Centre', icon: HelpCircle },
-]
+const secondaryNavItems: NavItem[] = SECONDARY_MODULE_IDS.map((id) => {
+  const mod = getModuleById(id)
+  return {
+    to: mod?.defaultPath || `/${id}`,
+    label: mod?.label || id,
+    icon: mod?.icon || HelpCircle,
+  }
+})
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
@@ -207,12 +102,19 @@ export default function Sidebar() {
     desktopState,
     mobileOpen,
     academicOpen,
+    setAcademicOpen,
     crmOpen,
+    setCrmOpen,
     feesOpen,
+    setFeesOpen,
     examinationsOpen,
+    setExaminationsOpen,
     attendanceOpen,
+    setAttendanceOpen,
     teachersOpen,
+    setTeachersOpen,
     studentsOpen,
+    setStudentsOpen,
     toggleCollapse,
     setDesktopState,
     expandSidebar,
@@ -225,14 +127,19 @@ export default function Sidebar() {
     toggleTeachersOpen,
     toggleStudentsOpen,
     staffOpen,
+    setStaffOpen,
     toggleStaffOpen,
     coursesOpen,
+    setCoursesOpen,
     toggleCoursesOpen,
     communicationOpen,
+    setCommunicationOpen,
     toggleCommunicationOpen,
     formsOpen,
+    setFormsOpen,
     toggleFormsOpen,
     housekeepingOpen,
+    setHousekeepingOpen,
     toggleHousekeepingOpen,
   } = useSidebarStore()
 
@@ -410,14 +317,6 @@ const isStaffActive = location.pathname.startsWith('/staff')
   const canAccessHousekeeping =
     isUserSysAdmin(user) || isUserAdmin(user) || hasPermission(user, 'system:housekeeping')
 
-  const housekeepingSubItems = [
-    { to: '/housekeeping', label: 'Overview & Health' },
-    { to: '/housekeeping/backups', label: 'Database Backups' },
-    { to: '/housekeeping/restore', label: 'Restore & Drill' },
-    { to: '/housekeeping/maintenance', label: 'Maintenance & Vacuum' },
-    { to: '/housekeeping/schedules', label: 'Schedules & CLI' },
-  ]
-
   const isHousekeepingActive = location.pathname.startsWith('/housekeeping')
   const isHousekeepingSubActive = (to: string) => {
     if (to === '/housekeeping') {
@@ -524,6 +423,47 @@ const isStaffActive = location.pathname.startsWith('/staff')
     }
     return location.pathname + location.search === subTo
   }
+
+  // Auto-expand the active section accordion based on current route
+  useEffect(() => {
+    if (isAcademicActive) setAcademicOpen(true)
+    if (isStudentsActive) setStudentsOpen(true)
+    if (isCrmActive) setCrmOpen(true)
+    if (isTeachersActive) setTeachersOpen(true)
+    if (isStaffActive) setStaffOpen(true)
+    if (isAttendanceActive) setAttendanceOpen(true)
+    if (isExaminationsActive) setExaminationsOpen(true)
+    if (isFeesActive) setFeesOpen(true)
+    if (isCoursesActive) setCoursesOpen(true)
+    if (isCommunicationActive) setCommunicationOpen(true)
+    if (isFormsActive) setFormsOpen(true)
+    if (isHousekeepingActive) setHousekeepingOpen(true)
+  }, [
+    isAcademicActive,
+    isStudentsActive,
+    isCrmActive,
+    isTeachersActive,
+    isStaffActive,
+    isAttendanceActive,
+    isExaminationsActive,
+    isFeesActive,
+    isCoursesActive,
+    isCommunicationActive,
+    isFormsActive,
+    isHousekeepingActive,
+    setAcademicOpen,
+    setStudentsOpen,
+    setCrmOpen,
+    setTeachersOpen,
+    setStaffOpen,
+    setAttendanceOpen,
+    setExaminationsOpen,
+    setFeesOpen,
+    setCoursesOpen,
+    setCommunicationOpen,
+    setFormsOpen,
+    setHousekeepingOpen,
+  ])
 
   const isCollapsed = !isMobile && desktopState === 'collapsed'
   const isHidden = !isMobile && desktopState === 'hidden'

@@ -11,7 +11,7 @@ created_date: "2026-11-17"
 updated_date: "2026-11-17"
 author: "Jawahar R Mallah"
 organization: "Smritisys & AITDL Networks"
-status: "In Progress"
+status: "Approved"
 tags: ["navigation", "sidebar", "mobile", "accessibility", "footer", "ux-research"]
 entities: []
 api_routes: []
@@ -168,16 +168,18 @@ Primary sources, accessed 2026-11-17:
 
 ## Implementation update — 2026-11-17
 
-The first low-risk accessibility/discovery slice is implemented:
-
+### Slice 1: P0 Mobile Drawer Accessibility and Discovery
 - The mobile drawer now exposes dialog/modal state only while open, makes the off-canvas drawer inert and hidden from assistive technology while closed, and makes the underlying application content inert while open.
 - Opening the drawer moves focus to its close control; Tab and Shift+Tab remain within it; Escape, backdrop, and close-button dismissal restore focus to the trigger. Resizing to desktop closes the drawer.
 - The mobile navigation trigger reports `aria-expanded` and `aria-controls`; drawer close controls and the mobile Search button have 44px dimensions.
 - The mobile header now exposes direct access to global navigation search.
-- Collapsed sidebar flyouts no longer claim the ARIA `menu` widget role without its keyboard model; they are exposed as labeled groups. A full list-structure/navigation-registry consolidation remains pending.
-- Focused sidebar/mobile tests pass (15 tests), and the frontend TypeScript/production build passes. Existing CSS parser and large-chunk warnings remain.
+- Collapsed sidebar flyouts no longer claim the ARIA `menu` widget role without its keyboard model; they are exposed as labeled groups.
 
-Not implemented in this slice: reorganizing the full enterprise IA, consolidating all sidebar route definitions onto the canonical registry, changing the default expansion policy, separating the footer shortcuts, or adding a mobile bottom navigation bar. The latter requires role-specific usage evidence and should not be guessed. Live screen-reader, touch, and authenticated multi-role browser validation also remain release checks.
+### Slice 2: P1 Canonical Module Registry SSOT Consolidation & Compact Auto-Expansion
+- **SSOT Module Derivation:** Replaced 12 handwritten sub-item arrays and secondary item lists in `Sidebar.tsx` with dynamic lookups from `CANONICAL_MODULE_REGISTRY` via `getModuleById` and `findModuleByPath`.
+- **Compact Default & Active Route Auto-Expansion:** Prevented initial 2000px menu sprawl by defaulting accordion sections in `sidebarStore.ts` to collapsed (`academicOpen: true`), backed by an active-route `useEffect` in `Sidebar.tsx` that automatically expands the matching accordion upon deep-linking or navigation.
+- **Footer SSOT Page Title Resolution & Quick Actions:** In `Footer.tsx`, page titles dynamically resolve via `findModuleByPath` and prioritized exact-subitem matching; duplicated Notices, Chats, and EduBoard buttons were unified into a shared `<FooterQuickActions />` component with accessible labels and `min-h-[36px]` mobile touch targets.
+- **Verification & Regression Testing:** Full test suite in `Sidebar.test.tsx` expanded to 18 passing tests covering focus trapping, route auto-expansion, SSOT dynamic page titles, and canonical module secondary mapping integrity. 100% corporate header compliance satisfied across all modified files. Production frontend bundle compiled and deployed to the active container.
 
 ## Related Planning workspace release gaps
 

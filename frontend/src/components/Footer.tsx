@@ -11,7 +11,7 @@
  *
  * @version     1.2.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and parent organization branding.
  */
@@ -23,6 +23,7 @@ import { Building2, X, ChevronDown, ChevronUp, MessageSquare, Presentation, Bell
 import { useAuthStore } from '../store/authStore'
 import { institutionsApi } from '../api/endpoints'
 import { APP_CONFIG, BRANDING_CONFIG } from '../config/appConfig'
+import { findModuleByPath } from '../config/modules'
 import OrganizationBranding from './OrganizationBranding'
 import { useBottomBarDrawerStore } from '../store/bottomBarDrawerStore'
 
@@ -60,49 +61,12 @@ export function resolvePageTitle(pathname: string, search: string): string {
     }
   }
 
-  // Exact known menu / page paths
+  // Exact known menu / page paths overrides
   const knownRoutes: Record<string, string> = {
     '/': 'Dashboard',
     '/dashboard': 'Dashboard',
     '/student/dashboard': 'Student Portal',
     '/student-portal': 'Student Portal',
-    '/students': 'Students',
-    '/students/add': 'Admissions',
-    '/attendance': 'Attendance',
-    '/examinations': 'Tests & Results',
-    '/fees': 'Fees & Payments',
-    '/fees/import': 'Fee Register Import',
-    '/import/fee-register': 'Fee Register Import',
-    '/courses': 'Study Materials',
-    '/standards': 'Classes / Standards',
-    '/batches': 'Batches',
-    '/subjects': 'Subjects',
-    '/payments': 'Payments',
-    '/reports': 'Reports',
-    '/import-export': 'Import & Export',
-    '/forms': 'Print Forms & KYC',
-    '/install': 'Install App (PWA)',
-    '/users': 'Users & Roles',
-    '/releases': 'Releases & Changes',
-    '/admin/releases': 'Releases & Changes',
-    '/communication': 'Communication Center',
-    '/communication/overview': 'Communication Center',
-    '/communication/notices': 'Notice Board',
-    '/notices': 'Notice Board',
-    '/communication/broadcasts': 'Broadcast Composer',
-    '/communication/whatsapp': 'WhatsApp Stream',
-    '/communication/templates': 'Message Templates',
-    '/communication/history': 'Dispatch Logs',
-    '/communication/automations': 'Reminder Queues',
-    '/communication/gateways': 'Gateway Diagnostics',
-    '/communication/chat': 'Hybrid Chat',
-    '/help': 'Help & About Centre',
-    '/help/support': 'Support Centre',
-    '/help/about-product': 'About PrathamOne EduOS',
-    '/help/about-company': 'About SmritiSys',
-    '/help/version': 'Product & Version Information',
-    '/help/legal': 'Legal & Compliance',
-    '/help/system-info': 'System Information',
     '/login': 'Sign In',
   }
 
@@ -124,6 +88,24 @@ export function resolvePageTitle(pathname: string, search: string): string {
     return 'Fee Receipt'
   }
 
+  // Resolve from Canonical Module Registry (SSOT)
+  const matchedModule = findModuleByPath(cleanPath)
+  if (matchedModule) {
+    const exactSub = matchedModule.subItems.find(
+      (s) => s.to.toLowerCase() === cleanPath.toLowerCase()
+    )
+    if (exactSub) {
+      return exactSub.label
+    }
+    const prefixSub = matchedModule.subItems.find(
+      (s) => cleanPath.toLowerCase().startsWith(s.to.toLowerCase() + '/')
+    )
+    if (prefixSub) {
+      return prefixSub.label
+    }
+    return matchedModule.label
+  }
+
   // Dynamic fallback: capitalize URL segments
   const segments = cleanPath.split('/').filter(Boolean)
   if (segments.length > 0) {
@@ -135,6 +117,75 @@ export function resolvePageTitle(pathname: string, search: string): string {
   }
 
   return 'Workspace'
+}
+
+/**
+ * Shared extreme-right quick actions: Notices, Chats & EduBoard Whiteboard.
+ */
+interface FooterQuickActionsProps {
+  isNoticesActive: boolean
+  activeDrawer: string | null
+  onNoticesClick: () => void
+  onToggleDrawer: (drawer: 'chats' | 'boards') => void
+}
+
+function FooterQuickActions({
+  isNoticesActive,
+  activeDrawer,
+  onNoticesClick,
+  onToggleDrawer,
+}: FooterQuickActionsProps) {
+  return (
+    <div className="flex items-center gap-1 sm:gap-1.5 pl-1 border-l border-slate-200">
+      <button
+        type="button"
+        onClick={onNoticesClick}
+        data-testid="footer-quick-notices-btn"
+        title="Notice Board & Circulars Register (Extreme Right)"
+        aria-label="Notice Board & Circulars Register"
+        className={`inline-flex items-center justify-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[36px] sm:min-h-auto ${
+          isNoticesActive
+            ? 'bg-violet-700 text-white ring-2 ring-violet-400'
+            : 'bg-violet-50 text-violet-800 hover:bg-violet-100 border border-violet-200/80'
+        }`}
+      >
+        <Bell className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+        <span>Notices</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onToggleDrawer('chats')}
+        data-testid="footer-quick-chats-btn"
+        title="Quick Chats & Academic Doubts (Extreme Right)"
+        aria-label="Quick Chats & Academic Doubts"
+        className={`inline-flex items-center justify-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[36px] sm:min-h-auto ${
+          activeDrawer === 'chats'
+            ? 'bg-[#0B2D6B] text-white ring-2 ring-blue-400'
+            : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200/80'
+        }`}
+      >
+        <MessageSquare className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+        <span>Chats</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onToggleDrawer('boards')}
+        data-testid="footer-quick-boards-btn"
+        title="EduBoard Smart Classroom Whiteboard (Extreme Right)"
+        aria-label="EduBoard Smart Classroom Whiteboard"
+        className={`inline-flex items-center justify-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[36px] sm:min-h-auto ${
+          activeDrawer === 'boards'
+            ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300'
+            : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80'
+        }`}
+      >
+        <Presentation className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+        <span>Boards</span>
+      </button>
+    </div>
+  )
 }
 
 /**
@@ -328,52 +379,12 @@ export default function Footer() {
             </button>
 
             {/* Extreme Right Quick Actions: Notices, Chats & EduBoard */}
-            <div className="flex items-center gap-1 pl-1 border-l border-slate-200">
-              <button
-                type="button"
-                onClick={() => navigate('/communication/notices')}
-                data-testid="footer-quick-notices-btn"
-                title="Notice Board & Circulars Register (Extreme Right)"
-                className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[30px] sm:min-h-auto ${
-                  isNoticesActive
-                    ? 'bg-violet-700 text-white ring-2 ring-violet-400'
-                    : 'bg-violet-50 text-violet-800 hover:bg-violet-100 border border-violet-200/80'
-                }`}
-              >
-                <Bell className="w-3.5 h-3.5 shrink-0" />
-                <span>Notices</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => toggleDrawer('chats')}
-                data-testid="footer-quick-chats-btn"
-                title="Quick Chats & Academic Doubts (Extreme Right)"
-                className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[30px] sm:min-h-auto ${
-                  activeDrawer === 'chats'
-                    ? 'bg-[#0B2D6B] text-white ring-2 ring-blue-400'
-                    : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200/80'
-                }`}
-              >
-                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-                <span>Chats</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => toggleDrawer('boards')}
-                data-testid="footer-quick-boards-btn"
-                title="EduBoard Smart Classroom Whiteboard (Extreme Right)"
-                className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-1 sm:py-0.5 rounded-md text-[10px] sm:text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer min-h-[30px] sm:min-h-auto ${
-                  activeDrawer === 'boards'
-                    ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300'
-                    : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80'
-                }`}
-              >
-                <Presentation className="w-3.5 h-3.5 shrink-0" />
-                <span>Boards</span>
-              </button>
-            </div>
+            <FooterQuickActions
+              isNoticesActive={isNoticesActive}
+              activeDrawer={activeDrawer}
+              onNoticesClick={() => navigate('/communication/notices')}
+              onToggleDrawer={toggleDrawer}
+            />
           </div>
         </div>
       ) : (
@@ -497,52 +508,12 @@ export default function Footer() {
                 </button>
 
                 {/* Extreme Right Quick Actions: Notices, Chats & EduBoard */}
-                <div className="flex items-center gap-1 pl-1.5 border-l border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/communication/notices')}
-                    data-testid="footer-quick-notices-btn"
-                    title="Notice Board & Circulars Register (Extreme Right)"
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
-                      isNoticesActive
-                        ? 'bg-violet-700 text-white ring-2 ring-violet-400'
-                        : 'bg-violet-50 text-violet-800 hover:bg-violet-100 border border-violet-200/80'
-                    }`}
-                  >
-                    <Bell className="w-3.5 h-3.5" />
-                    <span>Notices</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => toggleDrawer('chats')}
-                    data-testid="footer-quick-chats-btn"
-                    title="Quick Chats & Academic Doubts (Extreme Right)"
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
-                      activeDrawer === 'chats'
-                        ? 'bg-[#0B2D6B] text-white ring-2 ring-blue-400'
-                        : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200/80'
-                    }`}
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Chats</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => toggleDrawer('boards')}
-                    data-testid="footer-quick-boards-btn"
-                    title="EduBoard Smart Classroom Whiteboard (Extreme Right)"
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold transition-all shadow-2xs cursor-pointer ${
-                      activeDrawer === 'boards'
-                        ? 'bg-amber-500 text-slate-950 ring-2 ring-amber-300'
-                        : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80'
-                    }`}
-                  >
-                    <Presentation className="w-3.5 h-3.5" />
-                    <span>Boards</span>
-                  </button>
-                </div>
+                <FooterQuickActions
+                  isNoticesActive={isNoticesActive}
+                  activeDrawer={activeDrawer}
+                  onNoticesClick={() => navigate('/communication/notices')}
+                  onToggleDrawer={toggleDrawer}
+                />
               </div>
             </div>
           </div>

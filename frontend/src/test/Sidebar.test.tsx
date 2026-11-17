@@ -22,6 +22,8 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Sidebar from '../components/Sidebar'
 import Layout from '../components/Layout'
+import { resolvePageTitle } from '../components/Footer'
+import { CANONICAL_MODULE_REGISTRY, getModuleById } from '../config/modules'
 import { useSidebarStore } from '../store/sidebarStore'
 import { useAuthStore } from '../store/authStore'
 import { useNavigationStore } from '../store/navigationStore'
@@ -56,6 +58,7 @@ describe('Collapsible & Responsive Sidebar Component', () => {
       desktopState: 'expanded',
       mobileOpen: false,
       academicOpen: true,
+      studentsOpen: true,
     })
     useAuthStore.setState({
       user: {
@@ -201,6 +204,7 @@ describe('Layout Integration & Mobile Drawer', () => {
       desktopState: 'expanded',
       mobileOpen: false,
       academicOpen: true,
+      studentsOpen: true,
     })
     useAuthStore.setState({
       user: {
@@ -408,6 +412,93 @@ describe('Layout Integration & Mobile Drawer', () => {
     expect(screen.getByText('Branch: Jankalyan Nagar, Malad West')).toBeDefined()
     expect(screen.getByText('Coaching Institute Edition')).toBeDefined()
     expect(screen.getAllByText(APP_CONFIG.versionDisplay).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('auto-expands matching module accordion based on active route', () => {
+    // Reset all accordions to closed except test defaults
+    act(() => {
+      useSidebarStore.setState({
+        academicOpen: false,
+        studentsOpen: false,
+        crmOpen: false,
+        feesOpen: false,
+        examinationsOpen: false,
+        attendanceOpen: false,
+      })
+    })
+
+    // Mount at /leads/pipeline -> crmOpen should automatically expand
+    const { unmount: unmountCrm } = renderWithProviders(<Sidebar />, '/leads/pipeline')
+    expect(useSidebarStore.getState().crmOpen).toBe(true)
+    unmountCrm()
+
+    // Mount at /fees/collection -> feesOpen should automatically expand
+    const { unmount: unmountFees } = renderWithProviders(<Sidebar />, '/fees/collection')
+    expect(useSidebarStore.getState().feesOpen).toBe(true)
+    unmountFees()
+
+    // Mount at /examinations -> examinationsOpen should automatically expand
+    const { unmount: unmountExams } = renderWithProviders(<Sidebar />, '/examinations')
+    expect(useSidebarStore.getState().examinationsOpen).toBe(true)
+    unmountExams()
+  })
+
+  it('resolves dynamic page titles accurately using SSOT module registry and fallbacks', () => {
+    // Exact academic tab override
+    expect(resolvePageTitle('/academic', '?tab=boards')).toBe('Boards')
+    expect(resolvePageTitle('/academic', '?tab=timetable')).toBe('Timetable')
+
+    // Canonical sub-items lookup
+    expect(resolvePageTitle('/fees/structures', '')).toBe('Fee Structures')
+    expect(resolvePageTitle('/leads/pipeline', '')).toBe('Lead Pipeline')
+    expect(resolvePageTitle('/attendance/daily', '')).toBe('Daily Roll Call')
+
+    // Parameterized dynamic routes
+    expect(resolvePageTitle('/students/42', '')).toBe('Student Profile')
+    expect(resolvePageTitle('/users/99', '')).toBe('User Profile')
+    expect(resolvePageTitle('/fees/collect/12', '')).toBe('Fee Collection')
+    expect(resolvePageTitle('/receipts/REC-100', '')).toBe('Fee Receipt')
+
+    // Root canonical module lookup
+    expect(resolvePageTitle('/eduboard', '')).toBe('EduBoard Classroom')
+    expect(resolvePageTitle('/teacher-payroll', '')).toBe('Teacher Payroll')
+
+    // Dynamic slug fallback
+    expect(resolvePageTitle('/custom-operations-hub', '')).toBe('Custom Operations Hub')
+  })
+
+  it('ensures canonical module registry contains all referenced secondary modules', () => {
+    const requiredSecondaryIds = [
+      'teachers',
+      'staff',
+      'teacher_payroll',
+      'attendance',
+      'examinations',
+      'fees',
+      'homework',
+      'planning',
+      'eduboard',
+      'courses',
+      'reports',
+      'forms',
+      'communication',
+      'import_export',
+      'install',
+      'users',
+      'releases',
+      'training',
+      'housekeeping',
+      'settings',
+      'help',
+    ]
+
+    for (const id of requiredSecondaryIds) {
+      const mod = getModuleById(id)
+      expect(mod, `Module ${id} must exist in CANONICAL_MODULE_REGISTRY`).toBeDefined()
+      expect(mod?.label).toBeTruthy()
+      expect(mod?.defaultPath).toBeTruthy()
+      expect(mod?.icon).toBeDefined()
+    }
   })
 })
 
