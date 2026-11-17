@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Global application stylesheet defining Tailwind directives, typography, and print vouchers.
  */
@@ -231,6 +231,131 @@
 
 :root.dark .recharts-bar-rectangle[fill="#f8fafc"] {
   fill: var(--app-surface-subtle) !important;
+}
+
+/* ==========================================================================
+   Canonical Adaptive Dual-Mode Sidebar Architecture
+   ========================================================================== */
+#app-sidebar {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* --- LIGHT MODE SIDEBAR (#app-sidebar in :root:not(.dark)) --- */
+:root:not(.dark) #app-sidebar {
+  background-color: #FFFFFF !important;
+  color: #1E293B !important;
+  border-right-color: #E2E8F0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Light mode borders */
+:root:not(.dark) #app-sidebar [class*="border-slate-800"],
+:root:not(.dark) #app-sidebar [class*="border-slate-700"] {
+  border-color: #E2E8F0 !important;
+}
+
+/* Light mode surfaces and backgrounds */
+:root:not(.dark) #app-sidebar [class*="bg-slate-950"],
+:root:not(.dark) #app-sidebar [class*="bg-slate-900"] {
+  background-color: #F8FAFC !important;
+}
+
+:root:not(.dark) #app-sidebar [class*="bg-slate-800"] {
+  background-color: #F1F5F9 !important;
+}
+
+/* Light mode text colors */
+:root:not(.dark) #app-sidebar h1.text-white,
+:root:not(.dark) #app-sidebar p.text-white,
+:root:not(.dark) #app-sidebar span.text-white {
+  color: #0F172A !important;
+}
+
+:root:not(.dark) #app-sidebar .text-slate-300 {
+  color: #334155 !important;
+}
+
+:root:not(.dark) #app-sidebar .text-slate-400 {
+  color: #64748B !important;
+}
+
+/* Light mode navigation items hover */
+:root:not(.dark) #app-sidebar a:hover,
+:root:not(.dark) #app-sidebar button:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+/* Light mode active navigation items */
+:root:not(.dark) #app-sidebar .bg-white\/10,
+:root:not(.dark) #app-sidebar .bg-white\/15,
+:root:not(.dark) #app-sidebar a[style*="background-color"]:not(.bg-primary-600) {
+  background-color: #FFF7ED !important;
+  color: #C85200 !important;
+  border-left-color: #F16906 !important;
+}
+
+:root:not(.dark) #app-sidebar .bg-white\/10 *,
+:root:not(.dark) #app-sidebar .bg-white\/15 * {
+  color: #C85200 !important;
+}
+
+/* Light mode search button and input */
+:root:not(.dark) #app-sidebar button[title*="Search"] {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  color: #64748B !important;
+}
+
+:root:not(.dark) #app-sidebar button[title*="Search"]:hover {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+:root:not(.dark) #app-sidebar button[title*="Search"] kbd {
+  background-color: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+  color: #64748B !important;
+}
+
+/* Light mode scroll masks */
+:root:not(.dark) #app-sidebar .from-\[\#0f172a\] {
+  --tw-gradient-from: #FFFFFF !important;
+  --tw-gradient-stops: #FFFFFF, transparent !important;
+}
+
+:root:not(.dark) #app-sidebar .to-\[\#0f172a\] {
+  --tw-gradient-to: #FFFFFF !important;
+}
+
+/* Light mode appearance dropdown */
+:root:not(.dark) #app-sidebar #appearance-preference {
+  background-color: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
+
+/* Light mode user card */
+:root:not(.dark) #app-sidebar .bg-slate-800\/80 {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+}
+
+:root:not(.dark) #app-sidebar .bg-slate-800\/80 p.text-white {
+  color: #0F172A !important;
+}
+
+/* --- DARK MODE SIDEBAR (#app-sidebar in :root.dark) --- */
+:root.dark #app-sidebar {
+  background-color: #0B1727 !important;
+  color: #F8FAFC !important;
+  border-right-color: #1E293B !important;
+}
+
+:root.dark #app-sidebar .bg-white\/10,
+:root.dark #app-sidebar .bg-white\/15 {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
 }
 
 /* Custom discreet scrollbars */
