@@ -645,25 +645,178 @@
 :root.dark .bg-lime-100    { background-color: rgba(132, 204, 22, 0.15) !important; }
 :root.dark .text-lime-800  { color: #bef264 !important; }
 
-/* --- text-blue-* primary shades --- */
-:root.dark .text-blue-600  { color: #60a5fa !important; }
-:root.dark .text-blue-700  { color: #93c5fd !important; }
-:root.dark .text-blue-900  { color: #bfdbfe !important; }
-:root.dark .text-green-600 { color: #34d399 !important; }
-:root.dark .text-green-700 { color: #6ee7b7 !important; }
-:root.dark .text-red-600   { color: #f87171 !important; }
-:root.dark .text-red-700   { color: #fca5a5 !important; }
-:root.dark .text-amber-600 { color: #fbbf24 !important; }
-:root.dark .text-orange-600 { color: #fb923c !important; }
-:root.dark .text-orange-500 { color: #f97316 !important; }
+/* --- High-contrast text brand & primary shades in dark mode --- */
+:root.dark .text-primary-600,
+:root.dark .text-primary-700,
+:root.dark .text-primary-800,
+:root.dark .text-primary-900,
+:root.dark .text-brand-primary,
+:root.dark .text-brand-secondary,
+:root.dark .text-brand {
+  color: #93c5fd !important;
+}
+:root.dark a.text-primary-600:hover,
+:root.dark button.text-primary-600:hover,
+:root.dark a.text-primary-700:hover,
+:root.dark button.text-primary-700:hover {
+  color: #bfdbfe !important;
+}
 
-/* --- bg colored semantic shades (non-badge contexts, e.g. stat card icon bg) --- */
-:root.dark .bg-blue-50   { background-color: rgba(59, 130, 246, 0.10) !important; }
-:root.dark .bg-green-50  { background-color: rgba(16, 185, 129, 0.10) !important; }
-:root.dark .bg-red-50    { background-color: rgba(239, 68, 68, 0.10) !important; }
-:root.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.10) !important; }
-:root.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15) !important; }
-:root.dark .bg-purple-50 { background-color: rgba(139, 92, 246, 0.10) !important; }
+/* --- High-contrast semantic text shades in dark mode --- */
+:root.dark .text-emerald-700,
+:root.dark .text-emerald-800,
+:root.dark .text-emerald-900 {
+  color: #34d399 !important;
+}
+:root.dark .text-amber-700,
+:root.dark .text-amber-800,
+:root.dark .text-amber-900 {
+  color: #fbbf24 !important;
+}
+:root.dark .text-purple-600,
+:root.dark .text-purple-700,
+:root.dark .text-purple-800,
+:root.dark .text-purple-900 {
+  color: #c4b5fd !important;
+}
+:root.dark .text-indigo-600,
+:root.dark .text-indigo-700,
+:root.dark .text-indigo-800,
+:root.dark .text-indigo-900 {
+  color: #a5b4fc !important;
+}
+:root.dark .text-rose-600,
+:root.dark .text-rose-700,
+:root.dark .text-rose-800,
+:root.dark .text-rose-900 {
+  color: #fda4af !important;
+}
+:root.dark .text-red-700,
+:root.dark .text-red-800,
+:root.dark .text-red-900 {
+  color: #f87171 !important;
+}
+:root.dark .text-teal-700,
+:root.dark .text-teal-800,
+:root.dark .text-teal-900 {
+  color: #2dd4bf !important;
+}
+:root.dark .text-cyan-700,
+:root.dark .text-cyan-800,
+:root.dark .text-cyan-900 {
+  color: #67e8f9 !important;
+}
+:root.dark .text-blue-800,
+:root.dark .text-blue-900 {
+  color: #93c5fd !important;
+}
+
+/* --- Opacity-slash background bridges in dark mode --- */
+:root.dark [class*="bg-slate-50/"],
+:root.dark [class*="bg-gray-50/"],
+:root.dark [class*="bg-slate-100/"],
+:root.dark [class*="bg-gray-100/"] {
+  background-color: var(--app-surface-subtle) !important;
+}
+:root.dark [class*="bg-slate-200/"],
+:root.dark [class*="bg-gray-200/"] {
+  background-color: var(--app-border) !important;
+}
+:root.dark [class*="bg-white/60"],
+:root.dark [class*="bg-white/70"],
+:root.dark [class*="bg-white/80"],
+:root.dark [class*="bg-white/90"] {
+  background-color: var(--app-surface) !important;
+}
+:root.dark [class*="bg-amber-50/"] {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+:root.dark [class*="bg-emerald-50/"] {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+:root.dark [class*="bg-blue-50/"],
+:root.dark [class*="bg-primary-50/"] {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+/* --- Semantic background bridges (light tints -> translucent dark) --- */
+:root.dark .bg-emerald-50,
+:root.dark .bg-emerald-100 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+:root.dark .bg-teal-50,
+:root.dark .bg-teal-100 {
+  background-color: rgba(20, 184, 166, 0.12) !important;
+}
+:root.dark .bg-cyan-50,
+:root.dark .bg-cyan-100 {
+  background-color: rgba(6, 182, 212, 0.12) !important;
+}
+:root.dark .bg-sky-50,
+:root.dark .bg-sky-100 {
+  background-color: rgba(14, 165, 233, 0.12) !important;
+}
+:root.dark .bg-indigo-50,
+:root.dark .bg-indigo-100 {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+}
+:root.dark .bg-violet-50,
+:root.dark .bg-violet-100 {
+  background-color: rgba(139, 92, 246, 0.12) !important;
+}
+:root.dark .bg-purple-50,
+:root.dark .bg-purple-100 {
+  background-color: rgba(147, 51, 234, 0.12) !important;
+}
+:root.dark .bg-rose-50,
+:root.dark .bg-rose-100 {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+}
+:root.dark .bg-amber-50,
+:root.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+:root.dark .bg-orange-50,
+:root.dark .bg-orange-100 {
+  background-color: rgba(249, 115, 22, 0.12) !important;
+}
+:root.dark .bg-primary-50,
+:root.dark .bg-primary-100 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+/* --- Colored border bridges in dark mode --- */
+:root.dark .border-indigo-100,
+:root.dark .border-indigo-200,
+:root.dark [class*="border-indigo-"] {
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+:root.dark .border-purple-100,
+:root.dark .border-purple-200,
+:root.dark [class*="border-purple-"] {
+  border-color: rgba(147, 51, 234, 0.3) !important;
+}
+:root.dark .border-emerald-100,
+:root.dark .border-emerald-200,
+:root.dark [class*="border-emerald-"] {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+:root.dark .border-amber-100,
+:root.dark .border-amber-200,
+:root.dark .border-amber-300,
+:root.dark [class*="border-amber-"] {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+:root.dark .border-orange-100,
+:root.dark .border-orange-200,
+:root.dark [class*="border-orange-"] {
+  border-color: rgba(249, 115, 22, 0.3) !important;
+}
+:root.dark .border-primary-100,
+:root.dark .border-primary-200,
+:root.dark [class*="border-primary-"] {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
 
 /* --- Progress bar and range track in dark --- */
 :root.dark progress { accent-color: var(--app-focus); }
