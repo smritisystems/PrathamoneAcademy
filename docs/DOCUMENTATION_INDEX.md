@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-17 14:50:32<br>
-**Total Indexed Items:** 508  
+**Last Reindexed:** 2026-11-17 15:45:04<br>
+**Total Indexed Items:** 515  
 
 ---
 
@@ -31,7 +31,7 @@
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **13** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **10** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
-| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **20** | UI/UX Design, Components & Footer |
+| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **21** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **11** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **13** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **69** | Forensic Audits & Data Health |
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **125** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **131** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -390,6 +390,7 @@
 | **Global Ascending / Descending Table Sorting & Filter Control Implementation Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md](17_UI_UX_DESIGN/2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS |
 | **Global Branding Visual Validation & Acceptance Report** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md](17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md) | 01_ARCHITECTURE, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
 | **Login Authentication Portal Cultural Heritage Watermark Integration** | `SPECIFICATION` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_UI-UX-DESIGN_SPECIFICATION_LOGIN-AUTHENTICATION-CULTURAL-WATERMARK-INTEGRATION_V1.md](17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_SPECIFICATION_LOGIN-AUTHENTICATION-CULTURAL-WATERMARK-INTEGRATION_V1.md) | 17_UI_UX_DESIGN, 12_RBAC_SECURITY |
+| **Planning Workspace Single-Occurrence Reschedule Live Browser Acceptance Report** | `REPORT` | `1.0` | 2026-11-17 | `Approved` | [2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md](17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md) | 17_UI_UX_DESIGN, 03_ACADEMIC_MANAGEMENT, 01_ARCHITECTURE, 18_TESTING_QA |
 | **Prashant Academy — Board, Class & Student Roster Update Report** | `IMPLEMENTATION-PLAN` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md](17_UI_UX_DESIGN/2026-11-04_UI_UX_DESIGN_IMPLEMENTATION-PLAN_BUILD-PLAN_V1.md) | - |
 | **PrathamOne & PrathamOne EduOS Global Brand Identity Integration Master Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_UI-UX-DESIGN_REPORT_PRATHAMONE-BRAND-IDENTITY-INTEGRATION_V1.md](17_UI_UX_DESIGN/2026-11-07_UI-UX-DESIGN_REPORT_PRATHAMONE-BRAND-IDENTITY-INTEGRATION_V1.md) | frontend.config, frontend.components, 00_PRODUCT_OVERVIEW, 20_AUDITS_COMPLIANCE |
 | **PrathamOne Academy — Centralized Error Handling & Recovery Architecture** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md](17_UI_UX_DESIGN/2026-11-05_UI_UX_DESIGN_IMPLEMENTATION-REPORT_APPLICATION-WIDE-ERROR-HANDLING-AND-RECOVERY-REPORT_V1.md) | - |
@@ -682,6 +683,12 @@
 | `nav_mode_2_hybrid.png` | `assets/screenshots` | 419.0 KB | [nav_mode_2_hybrid.png](assets/screenshots/nav_mode_2_hybrid.png) |
 | `nav_mode_3_my_menu_only.png` | `assets/screenshots` | 419.6 KB | [nav_mode_3_my_menu_only.png](assets/screenshots/nav_mode_3_my_menu_only.png) |
 | `payroll_login_check.png` | `assets/screenshots` | 611.7 KB | [payroll_login_check.png](assets/screenshots/payroll_login_check.png) |
+| `planning_reschedule_step1_view_mode.png` | `assets` | 194.0 KB | [planning_reschedule_step1_view_mode.png](assets/planning_reschedule_step1_view_mode.png) |
+| `planning_reschedule_step2_modal_active.png` | `assets` | 202.1 KB | [planning_reschedule_step2_modal_active.png](assets/planning_reschedule_step2_modal_active.png) |
+| `planning_reschedule_step3_card_badge.png` | `assets` | 185.7 KB | [planning_reschedule_step3_card_badge.png](assets/planning_reschedule_step3_card_badge.png) |
+| `planning_reschedule_step4_detail_and_restore.png` | `assets` | 236.8 KB | [planning_reschedule_step4_detail_and_restore.png](assets/planning_reschedule_step4_detail_and_restore.png) |
+| `planning_reschedule_step5_mobile_agenda.png` | `assets` | 58.3 KB | [planning_reschedule_step5_mobile_agenda.png](assets/planning_reschedule_step5_mobile_agenda.png) |
+| `planning_reschedule_step6_mobile_detail.png` | `assets` | 53.3 KB | [planning_reschedule_step6_mobile_detail.png](assets/planning_reschedule_step6_mobile_detail.png) |
 | `prashant-academy-logo.png` | `assets/branding` | 14.7 KB | [prashant-academy-logo.png](assets/branding/prashant-academy-logo.png) |
 | `prashant-academy-logo.svg` | `assets/branding` | 3.7 KB | [prashant-academy-logo.svg](assets/branding/prashant-academy-logo.svg) |
 | `prathamone-app-icon-192.png` | `assets/branding` | 59.4 KB | [prathamone-app-icon-192.png](assets/branding/prathamone-app-icon-192.png) |
