@@ -518,7 +518,7 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-              Hello, {user?.first_name || user?.username || 'Administrator'} 👋
+              Hello, {user?.first_name && user.first_name.toLowerCase() !== 'administrator' ? user.first_name : 'Admin'} 👋
             </h1>
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-50 text-primary-700 border border-primary-200">
               <Sparkles className="w-3 h-3 text-primary-600" />
@@ -526,7 +526,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
-            Here's what's happening in {branding.academyName} this month.
+            Here's your Institutes overview, performance, and latest updates.
           </p>
         </div>
 
@@ -1472,12 +1472,12 @@ export default function DashboardPage() {
                 <div>
                   <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
                     <PieChartIcon className="w-4 h-4 text-violet-600" />
-                    <span>{categoryChartMode === 'status' ? 'Fee Collection Status' : 'Sales by Category / Streams'}</span>
+                    <span>{categoryChartMode === 'status' ? 'Fee Collection Status' : 'Academic Stream Distribution'}</span>
                   </h2>
                   <p className="text-xs text-gray-500">
                     {categoryChartMode === 'status'
                       ? 'Collected and outstanding balance for the selected filters'
-                      : 'Student enrollment breakdown across streams'}
+                      : 'Student enrollment breakdown across academic streams'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 p-0.5 rounded-lg bg-gray-100 text-xs">

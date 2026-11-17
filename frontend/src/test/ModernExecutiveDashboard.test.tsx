@@ -168,9 +168,28 @@ describe('Modern Executive Dashboard Architecture & Ergonomics', () => {
     renderDashboard()
 
     expect(await screen.findByText(/Hello, Jawahar 👋/i)).toBeTruthy()
-    expect(screen.getByText(/Here's what's happening in Prashant Academy Coaching this month\./i)).toBeTruthy()
+    expect(screen.getByText(/Here's your Institutes overview, performance, and latest updates\./i)).toBeTruthy()
     expect(screen.getByLabelText('Dashboard Period')).toBeTruthy()
     expect(screen.getByTitle('Open Executive Reports & Exports')).toBeTruthy()
+  })
+
+  it('renders default Admin greeting when first_name is absent or Administrator', async () => {
+    useAuthStore.setState({
+      user: {
+        id: 2,
+        username: 'admin',
+        first_name: '',
+        last_name: 'Administrator',
+        email: 'admin@prashantacademy.com',
+        role: 'admin',
+      },
+      selectedAcademicYearId: 1,
+      selectedInstitutionId: 1,
+    })
+    renderDashboard()
+
+    expect(await screen.findByText(/Hello, Admin 👋/i)).toBeTruthy()
+    expect(screen.getByText(/Here's your Institutes overview, performance, and latest updates\./i)).toBeTruthy()
   })
 
   it('renders the 4 Executive KPI cards with micro-sparklines and sentiment badges', async () => {
@@ -219,7 +238,7 @@ describe('Modern Executive Dashboard Architecture & Ergonomics', () => {
 
     // Click By Stream
     fireEvent.click(streamBtn)
-    expect(await screen.findByText('Sales by Category / Streams')).toBeTruthy()
+    expect(await screen.findByText('Academic Stream Distribution')).toBeTruthy()
     expect(screen.getByText('IIT-JEE Advanced')).toBeTruthy()
     expect(screen.getByText('NEET Medical')).toBeTruthy()
 

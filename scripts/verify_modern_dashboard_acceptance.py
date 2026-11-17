@@ -65,6 +65,10 @@ def run_verification():
         page.screenshot(path=step1_path, full_page=False)
         copy_screenshot(step1_path, "modern_dashboard_step1_overview.png")
 
+        # Verify Header Greeting & Subtitle
+        assert page.locator("text=Hello,").count() > 0, "Missing Hello greeting"
+        assert page.locator("text=Here's your Institutes overview, performance, and latest updates.").count() > 0, "Missing Institute overview subtitle"
+
         # Verify 4 KPI StatCards
         assert page.locator("text=Total Fees Collected").count() > 0, "Missing Total Fees Collected"
         assert page.locator("text=Active Students").count() > 0, "Missing Active Students"
@@ -86,6 +90,7 @@ def run_verification():
         if by_stream_btn.count() > 0:
             by_stream_btn.click()
             time.sleep(1)
+            assert page.locator("text=Academic Stream Distribution").count() > 0, "Missing Academic Stream Distribution heading"
             step2_path = os.path.join(ARTIFACTS_DIR, "temp_step2_stream_donut.png")
             page.screenshot(path=step2_path, full_page=False)
             copy_screenshot(step2_path, "modern_dashboard_step2_stream_donut.png")

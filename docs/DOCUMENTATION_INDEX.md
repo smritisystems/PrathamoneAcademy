@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-17 18:27:46<br>
-**Total Indexed Items:** 528  
+**Last Reindexed:** 2026-11-17 18:50:38<br>
+**Total Indexed Items:** 529  
 
 ---
 
@@ -31,7 +31,7 @@
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **13** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **10** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
-| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **24** | UI/UX Design, Components & Footer |
+| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **25** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **11** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **13** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **69** | Forensic Audits & Data Health |
@@ -389,6 +389,7 @@
 | **Application Footer Product Edition and License Link** | `REPORT` | `1.0` | 2026-11-14 | `Implemented` | [2026-11-14_UI-UX-DESIGN_IMPLEMENTATION-REPORT_APPLICATION-FOOTER-PRODUCT-EDITION-AND-LICENSE-LINK_V1.md](17_UI_UX_DESIGN/2026-11-14_UI-UX-DESIGN_IMPLEMENTATION-REPORT_APPLICATION-FOOTER-PRODUCT-EDITION-AND-LICENSE-LINK_V1.md) | UI/UX Design, Help & About |
 | **Global Ascending / Descending Table Sorting & Filter Control Implementation Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md](17_UI_UX_DESIGN/2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS |
 | **Global Branding Visual Validation & Acceptance Report** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md](17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md) | 01_ARCHITECTURE, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
+| **Institute Overview Messaging and E-Commerce Artifact Elimination Governance** | `REPORT` | `1.0` | 2026-11-17 | `Approved` | [2026-11-17_UI_UX_DESIGN_FEATURE-REPORT_INSTITUTE-OVERVIEW-MESSAGING-GOVERNANCE_V1.md](17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_FEATURE-REPORT_INSTITUTE-OVERVIEW-MESSAGING-GOVERNANCE_V1.md) | 00_PRODUCT_OVERVIEW, 10_FINANCE_ACCOUNTING |
 | **Login Authentication Portal Cultural Heritage Watermark Integration** | `SPECIFICATION` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_UI-UX-DESIGN_SPECIFICATION_LOGIN-AUTHENTICATION-CULTURAL-WATERMARK-INTEGRATION_V1.md](17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_SPECIFICATION_LOGIN-AUTHENTICATION-CULTURAL-WATERMARK-INTEGRATION_V1.md) | 17_UI_UX_DESIGN, 12_RBAC_SECURITY |
 | **Modern Executive Dashboard Acceptance & Implementation Report** | `REPORT` | `1.0` | 2026-11-17 | `Approved` | [2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_MODERN-EXECUTIVE-DASHBOARD_V1.md](17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_MODERN-EXECUTIVE-DASHBOARD_V1.md) | 09_FEES_PAYMENTS, 04_STUDENT_MANAGEMENT, 07_ATTENDANCE, 01_ARCHITECTURE |
 | **Modern Executive Dashboard UI/UX Architecture Blueprint** | `BLUEPRINT` | `1.0` | 2026-11-17 | `Approved` | [2026-11-17_UI_UX_DESIGN_ARCHITECTURE-BLUEPRINT_MODERN-EXECUTIVE-DASHBOARD-INSPIRATION_V1.md](17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ARCHITECTURE-BLUEPRINT_MODERN-EXECUTIVE-DASHBOARD-INSPIRATION_V1.md) | 09_FEES_PAYMENTS, 04_STUDENT_MANAGEMENT, 07_ATTENDANCE, 01_ARCHITECTURE |
@@ -676,9 +677,9 @@
 | `guide_step2_unlock_modal.png` | `assets/screenshots` | 239.8 KB | [guide_step2_unlock_modal.png](assets/screenshots/guide_step2_unlock_modal.png) |
 | `guide_step3_payments_edit_active.png` | `assets/screenshots` | 236.0 KB | [guide_step3_payments_edit_active.png](assets/screenshots/guide_step3_payments_edit_active.png) |
 | `guide_step4_fee_structure_editor.png` | `assets/screenshots` | 223.2 KB | [guide_step4_fee_structure_editor.png](assets/screenshots/guide_step4_fee_structure_editor.png) |
-| `modern_dashboard_step1_overview.png` | `assets` | 240.4 KB | [modern_dashboard_step1_overview.png](assets/modern_dashboard_step1_overview.png) |
-| `modern_dashboard_step2_stream_donut.png` | `assets` | 206.9 KB | [modern_dashboard_step2_stream_donut.png](assets/modern_dashboard_step2_stream_donut.png) |
-| `modern_dashboard_step3_mobile.png` | `assets` | 87.2 KB | [modern_dashboard_step3_mobile.png](assets/modern_dashboard_step3_mobile.png) |
+| `modern_dashboard_step1_overview.png` | `assets` | 242.4 KB | [modern_dashboard_step1_overview.png](assets/modern_dashboard_step1_overview.png) |
+| `modern_dashboard_step2_stream_donut.png` | `assets` | 207.0 KB | [modern_dashboard_step2_stream_donut.png](assets/modern_dashboard_step2_stream_donut.png) |
+| `modern_dashboard_step3_mobile.png` | `assets` | 87.3 KB | [modern_dashboard_step3_mobile.png](assets/modern_dashboard_step3_mobile.png) |
 | `nav_acceptance_admin_desktop.png` | `assets` | 181.6 KB | [nav_acceptance_admin_desktop.png](assets/nav_acceptance_admin_desktop.png) |
 | `nav_acceptance_admin_mobile_drawer.png` | `assets` | 67.3 KB | [nav_acceptance_admin_mobile_drawer.png](assets/nav_acceptance_admin_mobile_drawer.png) |
 | `nav_acceptance_student_portal.png` | `assets` | 256.0 KB | [nav_acceptance_student_portal.png](assets/nav_acceptance_student_portal.png) |
