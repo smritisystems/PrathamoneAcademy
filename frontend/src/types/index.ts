@@ -4162,6 +4162,8 @@ export interface PlanningItem {
   }>
   references: PlanningReference[]
   recurrence?: PlanningRecurrence | null
+  is_rescheduled?: boolean
+  original_occurrence_date?: string | null
   version?: number | null
   created_by_id?: number | null
   created_at?: string | null

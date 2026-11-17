@@ -346,6 +346,9 @@ def _occurrence_dates(activity: Activity, start: date, end: date) -> list[date]:
     return result
 
 
+get_occurrence_dates = _occurrence_dates
+
+
 async def resolve_reference_labels(
     db: AsyncSession,
     references: list[ActivityReference],
@@ -453,12 +456,20 @@ def _serialize_activity(
     occurrence_date: Optional[date] = None,
     exceptions: Optional[set[date]] = None,
     reference_labels: Optional[dict[tuple[str, int], str]] = None,
+    override_start: Optional[datetime] = None,
+    override_end: Optional[datetime] = None,
+    is_rescheduled: bool = False,
+    original_occurrence_date: Optional[date] = None,
 ) -> dict[str, Any]:
     zone = _local_zone(activity.timezone)
     base_start = _aware_utc(activity.start_at)
     base_end = _aware_utc(activity.end_at)
     base_due = _aware_utc(activity.due_at)
-    if occurrence_date and base_start:
+    if override_start:
+        start = _aware_utc(override_start)
+        end = _aware_utc(override_end) if override_end else None
+        due = None
+    elif occurrence_date and base_start:
         local_start = base_start.astimezone(zone)
         start = datetime.combine(occurrence_date, local_start.timetz().replace(tzinfo=None), tzinfo=zone)
         duration = (base_end - base_start) if base_end else None
@@ -491,6 +502,8 @@ def _serialize_activity(
         "academic_year_id": activity.academic_year_id,
         "division_id": activity.division_id,
         "subject_id": activity.subject_id,
+        "is_rescheduled": is_rescheduled,
+        "original_occurrence_date": original_occurrence_date.isoformat() if original_occurrence_date else None,
         "assignees": [
             {
                 "user_id": item.user_id,
@@ -541,13 +554,49 @@ def expand_activity(
     end: date,
     reference_labels: Optional[dict[tuple[str, int], str]] = None,
 ) -> list[dict[str, Any]]:
-    exceptions = {exception.occurrence_date for exception in activity.recurrence_exceptions}
+    exception_map = {exc.occurrence_date: exc for exc in activity.recurrence_exceptions}
     if activity.recurrence_frequency and activity.start_at:
-        return [
-            _serialize_activity(activity, occurrence_date=occurrence, reference_labels=reference_labels)
-            for occurrence in _occurrence_dates(activity, start, end)
-            if occurrence not in exceptions
-        ]
+        zone = _local_zone(activity.timezone)
+        results = []
+        occurrences_in_range = set(_occurrence_dates(activity, start, end))
+        for occurrence in _occurrence_dates(activity, start, end):
+            exc = exception_map.get(occurrence)
+            if exc is None:
+                results.append(
+                    _serialize_activity(activity, occurrence_date=occurrence, reference_labels=reference_labels)
+                )
+            elif exc.rescheduled_start_at is not None:
+                res_local = exc.rescheduled_start_at.astimezone(zone)
+                res_date = res_local.date()
+                if start <= res_date <= end:
+                    results.append(
+                        _serialize_activity(
+                            activity,
+                            occurrence_date=res_date,
+                            reference_labels=reference_labels,
+                            override_start=exc.rescheduled_start_at,
+                            override_end=exc.rescheduled_end_at,
+                            is_rescheduled=True,
+                            original_occurrence_date=occurrence,
+                        )
+                    )
+        for exc in activity.recurrence_exceptions:
+            if exc.rescheduled_start_at is not None and exc.occurrence_date not in occurrences_in_range:
+                res_local = exc.rescheduled_start_at.astimezone(zone)
+                res_date = res_local.date()
+                if start <= res_date <= end:
+                    results.append(
+                        _serialize_activity(
+                            activity,
+                            occurrence_date=res_date,
+                            reference_labels=reference_labels,
+                            override_start=exc.rescheduled_start_at,
+                            override_end=exc.rescheduled_end_at,
+                            is_rescheduled=True,
+                            original_occurrence_date=exc.occurrence_date,
+                        )
+                    )
+        return results
     result = _serialize_activity(activity, reference_labels=reference_labels)
     start_at = _aware_utc(activity.start_at)
     end_at = _aware_utc(activity.end_at)
@@ -893,7 +942,7 @@ def _activity_intervals(
     if last < first:
         return []
 
-    exceptions = {entry.occurrence_date for entry in activity.recurrence_exceptions}
+    exceptions = {entry.occurrence_date: entry for entry in activity.recurrence_exceptions}
     wall_time = local_start.timetz().replace(tzinfo=None)
     intervals = []
     for occurrence_date in _occurrence_dates(activity, first, last):
@@ -901,6 +950,14 @@ def _activity_intervals(
             continue
         occurrence_start = datetime.combine(occurrence_date, wall_time, tzinfo=zone).astimezone(timezone.utc)
         intervals.append((occurrence_start, occurrence_start + duration))
+
+    for exc in activity.recurrence_exceptions:
+        if exc.rescheduled_start_at and exc.rescheduled_end_at:
+            res_start = _aware_utc(exc.rescheduled_start_at)
+            res_end = _aware_utc(exc.rescheduled_end_at)
+            if res_start and res_end:
+                if (window_start is None or res_end > window_start) and (window_end is None or res_start < window_end):
+                    intervals.append((res_start, res_end))
     return intervals
 
 

@@ -43,6 +43,8 @@ vi.mock('../api/endpoints', () => ({
     createActivity: vi.fn(() => Promise.resolve({ data: { item: {} } })),
     cancelOccurrence: vi.fn(() => Promise.resolve({ data: {} })),
     cancelActivity: vi.fn(() => Promise.resolve({ data: {} })),
+    rescheduleOccurrence: vi.fn(() => Promise.resolve({ data: {} })),
+    deleteOccurrenceException: vi.fn(() => Promise.resolve({ data: { restored: true } })),
   },
   standardsApi: {
     list: vi.fn(() => Promise.resolve({ data: [{ id: 4, name: 'Grade 8' }] })),
@@ -271,6 +273,150 @@ describe('Planning workspace view switcher accessibility', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel only 2026-11-24' }))
     await waitFor(() => {
       expect(vi.mocked(planningApi.cancelOccurrence)).toHaveBeenCalledWith(5, '2026-11-24')
+    })
+  })
+
+  it('allows rescheduling a single occurrence to a new date and time', async () => {
+    const recurringItem: PlanningItem = {
+      id: 'activity:6',
+      key: 'activity:6:2026-11-25',
+      source_type: 'activity',
+      source_id: 6,
+      title: 'Lab Session Recurring',
+      description: null,
+      activity_type: 'event',
+      category: 'academic',
+      start_at: '2026-11-25T10:00:00Z',
+      end_at: '2026-11-25T11:00:00Z',
+      due_at: null,
+      occurrence_date: '2026-11-25',
+      timezone: 'Asia/Kolkata',
+      all_day: false,
+      location: 'Physics Lab',
+      priority: 'normal',
+      status: 'todo',
+      visibility: 'institution',
+      is_published: true,
+      academic_year_id: null,
+      division_id: null,
+      subject_id: null,
+      assignees: [],
+      attachments: [],
+      references: [],
+      recurrence: { frequency: 'weekly', interval: 1, until: '2026-12-31', weekdays: [3] },
+      version: 1,
+      created_by_id: 1,
+      created_at: null,
+      updated_at: null,
+      editable: true,
+    }
+    mockPlanningData.items = [recurringItem]
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <PlanningWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    const cards = await screen.findAllByText('Lab Session Recurring')
+    fireEvent.click(cards[0])
+
+    const rescheduleBtn = screen.getByRole('button', { name: 'Reschedule occurrence' })
+    expect(rescheduleBtn).toBeTruthy()
+    fireEvent.click(rescheduleBtn)
+
+    expect(screen.getByText('Rescheduling Single Occurrence')).toBeTruthy()
+    const dateInput = screen.getByLabelText('New date')
+    const timeInput = screen.getByLabelText('Start time')
+
+    fireEvent.change(dateInput, { target: { value: '2026-11-27' } })
+    fireEvent.change(timeInput, { target: { value: '14:00' } })
+
+    const saveBtn = screen.getByRole('button', { name: 'Save reschedule' })
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+      expect(vi.mocked(planningApi.rescheduleOccurrence)).toHaveBeenCalledWith(
+        6,
+        expect.objectContaining({
+          occurrence_date: '2026-11-25',
+          rescheduled_start_at: expect.any(String),
+        }),
+      )
+    })
+  })
+
+  it('displays rescheduled badge and allows restoring the original schedule', async () => {
+    const rescheduledItem: PlanningItem = {
+      id: 'activity:7',
+      key: 'activity:7:2026-11-28',
+      source_type: 'activity',
+      source_id: 7,
+      title: 'Rescheduled Staff Briefing',
+      description: null,
+      activity_type: 'event',
+      category: 'meeting',
+      start_at: '2026-11-28T14:00:00Z',
+      end_at: '2026-11-28T15:00:00Z',
+      due_at: null,
+      occurrence_date: '2026-11-28',
+      original_occurrence_date: '2026-11-26',
+      is_rescheduled: true,
+      timezone: 'Asia/Kolkata',
+      all_day: false,
+      location: 'Conference Room',
+      priority: 'high',
+      status: 'todo',
+      visibility: 'institution',
+      is_published: true,
+      academic_year_id: null,
+      division_id: null,
+      subject_id: null,
+      assignees: [],
+      attachments: [],
+      references: [],
+      recurrence: { frequency: 'weekly', interval: 1, until: '2026-12-31', weekdays: [4] },
+      version: 2,
+      created_by_id: 1,
+      created_at: null,
+      updated_at: null,
+      editable: true,
+    }
+    mockPlanningData.items = [rescheduledItem]
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <PlanningWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    // Verify Rescheduled badge is visible on card
+    const badges = await screen.findAllByText('Rescheduled')
+    expect(badges.length).toBeGreaterThan(0)
+
+    const cards = await screen.findAllByText('Rescheduled Staff Briefing')
+    fireEvent.click(cards[0])
+
+    // Verify modal shows badge and restore button
+    expect(screen.getByTestId('rescheduled-badge')).toBeTruthy()
+    const restoreBtn = screen.getByRole('button', { name: 'Restore original schedule' })
+    expect(restoreBtn).toBeTruthy()
+
+    fireEvent.click(restoreBtn)
+    await waitFor(() => {
+      expect(vi.mocked(planningApi.deleteOccurrenceException)).toHaveBeenCalledWith(7, '2026-11-26')
     })
   })
 })

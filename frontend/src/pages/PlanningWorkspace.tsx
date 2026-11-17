@@ -200,12 +200,23 @@ function PlanningCard({ item, timeZone, onClick }: { item: PlanningItem; timeZon
     >
       <div className="flex items-start justify-between gap-2">
         <span className="line-clamp-2 text-sm font-semibold text-slate-800">{item.title}</span>
-        <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
-          !item.editable ? 'bg-indigo-50 text-indigo-700'
-            : item.priority === 'urgent' ? 'bg-rose-100 text-rose-700'
-              : item.priority === 'high' ? 'bg-amber-100 text-amber-800'
-                : 'bg-slate-100 text-slate-600'
-        }`}>{item.editable ? item.priority : sourceLabel}</span>
+        <div className="flex shrink-0 items-center gap-1">
+          {item.is_rescheduled && (
+            <span
+              className="inline-flex items-center gap-0.5 rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900"
+              title={item.original_occurrence_date ? `Rescheduled from ${item.original_occurrence_date}` : 'Rescheduled'}
+            >
+              <Clock3 className="h-2.5 w-2.5 text-amber-700" />
+              Rescheduled
+            </span>
+          )}
+          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+            !item.editable ? 'bg-indigo-50 text-indigo-700'
+              : item.priority === 'urgent' ? 'bg-rose-100 text-rose-700'
+                : item.priority === 'high' ? 'bg-amber-100 text-amber-800'
+                  : 'bg-slate-100 text-slate-600'
+          }`}>{item.editable ? item.priority : sourceLabel}</span>
+        </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
         <span>{formatDate(item.start_at || item.due_at, item.timezone || timeZone)}</span>
@@ -238,6 +249,12 @@ export default function PlanningWorkspace() {
   const [referenceId, setReferenceId] = useState('')
   const [pickerSearchQuery, setPickerSearchQuery] = useState('')
   const [manualIdMode, setManualIdMode] = useState(false)
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false)
+  const [rescheduleForm, setRescheduleForm] = useState({
+    date: '',
+    startTime: '09:00',
+    endTime: '10:00',
+  })
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)')
@@ -469,6 +486,48 @@ export default function PlanningWorkspace() {
     },
     onError: (error: any) => toast.error(error.response?.data?.detail || 'Could not cancel activity.'),
   })
+  const rescheduleMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeItem || !activeItem.occurrence_date) return
+      const itemTimeZone = activeItem.timezone || timeZone
+      const originalOccDate = activeItem.original_occurrence_date || activeItem.occurrence_date
+      const startIso = planningInstantFromWallTime(`${rescheduleForm.date}T${rescheduleForm.startTime}`, itemTimeZone)
+      const endIso = rescheduleForm.endTime
+        ? planningInstantFromWallTime(`${rescheduleForm.date}T${rescheduleForm.endTime}`, itemTimeZone)
+        : undefined
+      if (!startIso) return
+      return planningApi.rescheduleOccurrence(Number(activeItem.source_id), {
+        occurrence_date: originalOccDate,
+        rescheduled_start_at: startIso,
+        rescheduled_end_at: endIso || undefined,
+      })
+    },
+    onSuccess: () => {
+      toast.success('Occurrence rescheduled.')
+      setRescheduleModalOpen(false)
+      setActiveItem(null)
+      refresh()
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail?.message || error.response?.data?.detail || 'Could not reschedule occurrence.'
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+    },
+  })
+  const restoreOccurrenceMutation = useMutation({
+    mutationFn: async ({ item }: { item: PlanningItem }) => {
+      const occDate = item.original_occurrence_date || item.occurrence_date!
+      return planningApi.deleteOccurrenceException(Number(item.source_id), occDate)
+    },
+    onSuccess: () => {
+      toast.success('Occurrence restored to original recurring schedule.')
+      setActiveItem(null)
+      refresh()
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail || 'Could not restore occurrence.'
+      toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+    },
+  })
   const deleteAttachmentMutation = useMutation({
     mutationFn: (attachmentId: number) => planningApi.deleteAttachment(attachmentId),
     onSuccess: (response, attachmentId) => {
@@ -532,6 +591,21 @@ export default function PlanningWorkspace() {
       recurrence_until: item.recurrence?.until || '',
     })
     setFormOpen(true)
+  }
+
+  const openRescheduleModal = (item: PlanningItem) => {
+    const itemTimeZone = item.timezone || timeZone
+    const currentStartWall = planningWallDateTime(item.start_at, itemTimeZone)
+    const currentEndWall = planningWallDateTime(item.end_at, itemTimeZone)
+    const occDate = item.occurrence_date || (currentStartWall.length >= 10 ? currentStartWall.slice(0, 10) : planningDateKey(new Date(), itemTimeZone))
+    const startTimePart = currentStartWall.length >= 16 ? currentStartWall.slice(11, 16) : '09:00'
+    const endTimePart = currentEndWall.length >= 16 ? currentEndWall.slice(11, 16) : '10:00'
+    setRescheduleForm({
+      date: occDate,
+      startTime: startTimePart,
+      endTime: endTimePart,
+    })
+    setRescheduleModalOpen(true)
   }
 
   const shiftDate = (direction: number) => {
@@ -598,10 +672,14 @@ export default function PlanningWorkspace() {
                   type="button"
                   key={item.key}
                   onClick={() => setActiveItem(item)}
-                  className="block w-full truncate rounded bg-indigo-100 px-1 py-0.5 text-left text-[10px] text-indigo-800"
-                  title={item.title}
+                  className={`block w-full truncate rounded px-1 py-0.5 text-left text-[10px] ${
+                    item.is_rescheduled
+                      ? 'border border-amber-300 bg-amber-100 font-medium text-amber-900'
+                      : 'bg-indigo-100 text-indigo-800'
+                  }`}
+                  title={`${item.title}${item.is_rescheduled && item.original_occurrence_date ? ` (Rescheduled from ${item.original_occurrence_date})` : ''}`}
                 >
-                  {item.title}
+                  {item.is_rescheduled ? '↻ ' : ''}{item.title}
                 </button>
               ))}
               {itemsForDay(day).length > 3 && <span className="px-1 text-[10px] text-slate-500">+{itemsForDay(day).length - 3} more</span>}
@@ -1207,6 +1285,7 @@ export default function PlanningWorkspace() {
         setActiveItem(null)
         setConfirmCancel(false)
         setAttachmentToRemove(null)
+        setRescheduleModalOpen(false)
       }} title={activeItem?.title || 'Activity'} size="xl">
         {activeItem && (
           <div className="space-y-4">
@@ -1220,6 +1299,16 @@ export default function PlanningWorkspace() {
               ) : (
                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
                   {sourceLabels[activeItem.source_type] || 'Linked record'} · read-only source
+                </span>
+              )}
+              {activeItem.is_rescheduled && (
+                <span
+                  data-testid="rescheduled-badge"
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900"
+                  title={activeItem.original_occurrence_date ? `Rescheduled from ${activeItem.original_occurrence_date}` : 'Rescheduled occurrence'}
+                >
+                  <Clock3 className="h-3 w-3 text-amber-700" />
+                  Rescheduled {activeItem.original_occurrence_date ? `(was ${activeItem.original_occurrence_date})` : ''}
                 </span>
               )}
             </div>
@@ -1316,6 +1405,27 @@ export default function PlanningWorkspace() {
               {isEditMode && activeItem.editable && (
                 <>
                   <button type="button" onClick={() => openEdit(activeItem)} className="rounded-lg border px-3 py-2 text-sm font-semibold text-slate-700">Edit</button>
+                  {activeItem.recurrence && activeItem.occurrence_date && (
+                    <button
+                      type="button"
+                      onClick={() => openRescheduleModal(activeItem)}
+                      disabled={rescheduleMutation.isPending || cancelOccurrenceMutation.isPending || cancelSeriesMutation.isPending}
+                      className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                    >
+                      Reschedule occurrence
+                    </button>
+                  )}
+                  {activeItem.is_rescheduled && (
+                    <button
+                      type="button"
+                      onClick={() => restoreOccurrenceMutation.mutate({ item: activeItem })}
+                      disabled={restoreOccurrenceMutation.isPending}
+                      className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100"
+                      title="Restore this occurrence to its original recurring schedule"
+                    >
+                      {restoreOccurrenceMutation.isPending ? 'Restoring…' : 'Restore original schedule'}
+                    </button>
+                  )}
                   <button type="button" onClick={() => setConfirmCancel(true)} disabled={cancelOccurrenceMutation.isPending || cancelSeriesMutation.isPending} className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700">Cancel activity</button>
                 </>
               )}
@@ -1425,6 +1535,88 @@ export default function PlanningWorkspace() {
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={rescheduleModalOpen}
+        onClose={() => setRescheduleModalOpen(false)}
+        title={`Reschedule Occurrence — ${activeItem?.title || ''}`}
+        size="md"
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            rescheduleMutation.mutate()
+          }}
+          className="space-y-4"
+        >
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <p className="font-semibold">Rescheduling Single Occurrence</p>
+            <p className="mt-0.5">
+              Original recurrence date: <span className="font-mono font-bold">{activeItem?.original_occurrence_date || activeItem?.occurrence_date}</span>.
+              Only this single occurrence will be moved. The underlying recurring series remains unchanged.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-600">
+              New Date <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              aria-label="New date"
+              value={rescheduleForm.date}
+              onChange={(e) => setRescheduleForm((prev) => ({ ...prev, date: e.target.value }))}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                Start Time <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="time"
+                required
+                aria-label="Start time"
+                value={rescheduleForm.startTime}
+                onChange={(e) => setRescheduleForm((prev) => ({ ...prev, startTime: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-600">
+                End Time
+              </label>
+              <input
+                type="time"
+                aria-label="End time"
+                value={rescheduleForm.endTime}
+                onChange={(e) => setRescheduleForm((prev) => ({ ...prev, endTime: e.target.value }))}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t pt-3">
+            <button
+              type="button"
+              onClick={() => setRescheduleModalOpen(false)}
+              className="rounded-lg border px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={rescheduleMutation.isPending || !rescheduleForm.date || !rescheduleForm.startTime}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {rescheduleMutation.isPending ? 'Rescheduling…' : 'Save reschedule'}
+            </button>
+          </div>
+        </form>
       </Modal>
 
       <div className="sr-only" aria-live="polite">

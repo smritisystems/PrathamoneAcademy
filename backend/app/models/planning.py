@@ -230,6 +230,12 @@ class ActivityRecurrenceException(Base):
         ForeignKey("activities.id", ondelete="CASCADE"), nullable=False
     )
     occurrence_date: Mapped[date] = mapped_column(Date, nullable=False)
+    rescheduled_start_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    rescheduled_end_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_by_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

@@ -783,3 +783,115 @@ async def test_planning_api_enforces_tenant_scope_and_write_permissions(
         },
     )
     assert create_response.status_code == 403
+
+
+def test_expand_activity_with_rescheduled_occurrence():
+    activity = make_recurring_activity(
+        start_at=datetime(2026, 3, 1, 10, 0, tzinfo=timezone.utc),
+        end_at=datetime(2026, 3, 1, 11, 0, tzinfo=timezone.utc),
+        recurrence_frequency="daily",
+        recurrence_interval=1,
+        recurrence_until=date(2026, 3, 5),
+    )
+    rescheduled_start = datetime(2026, 3, 3, 15, 0, tzinfo=timezone.utc)
+    rescheduled_end = datetime(2026, 3, 3, 16, 0, tzinfo=timezone.utc)
+    activity.recurrence_exceptions = [
+        ActivityRecurrenceException(
+            activity_id=activity.id,
+            occurrence_date=date(2026, 3, 3),
+            rescheduled_start_at=rescheduled_start,
+            rescheduled_end_at=rescheduled_end,
+        )
+    ]
+
+    items = expand_activity(activity, date(2026, 3, 1), date(2026, 3, 5))
+    assert len(items) == 5
+
+    rescheduled_item = next((item for item in items if item["is_rescheduled"]), None)
+    assert rescheduled_item is not None
+    assert rescheduled_item["original_occurrence_date"] == "2026-03-03"
+    assert rescheduled_item["start_at"] == rescheduled_start.isoformat()
+    assert rescheduled_item["end_at"] == rescheduled_end.isoformat()
+
+
+@pytest.mark.asyncio
+async def test_api_reschedule_occurrence_and_restore(db, client, auth_headers, test_institution):
+    create_response = await client.post(
+        "/api/v1/planning/activities",
+        headers=auth_headers,
+        json={
+            "institution_id": test_institution.id,
+            "title": "Daily Standup Reschedule Test",
+            "activity_type": "event",
+            "category": "academic",
+            "start_at": "2026-04-01T10:00:00+00:00",
+            "end_at": "2026-04-01T10:30:00+00:00",
+            "timezone": "UTC",
+            "visibility": "institution",
+            "is_published": True,
+            "recurrence": {
+                "frequency": "daily",
+                "interval": 1,
+                "until": "2026-04-05",
+                "weekdays": [],
+            },
+        },
+    )
+    assert create_response.status_code == 201, create_response.text
+    activity_id = create_response.json()["item"]["id"]
+
+    # Reschedule occurrence on 2026-04-02 to 14:00
+    reschedule_response = await client.post(
+        f"/api/v1/planning/activities/{activity_id}/exceptions",
+        headers=auth_headers,
+        json={
+            "occurrence_date": "2026-04-02",
+            "rescheduled_start_at": "2026-04-02T14:00:00+00:00",
+            "rescheduled_end_at": "2026-04-02T14:30:00+00:00",
+        },
+    )
+    assert reschedule_response.status_code == 200, reschedule_response.text
+    res_data = reschedule_response.json()
+    assert res_data["activity_id"] == activity_id
+    assert res_data["occurrence_date"] == "2026-04-02"
+    assert res_data["rescheduled_start_at"].startswith("2026-04-02T14:00:00")
+
+    # Query calendar range
+    calendar_response = await client.get(
+        "/api/v1/planning/activities",
+        headers=auth_headers,
+        params={
+            "start": "2026-04-01",
+            "end": "2026-04-05",
+            "institution_id": test_institution.id,
+        },
+    )
+    assert calendar_response.status_code == 200
+    cal_items = calendar_response.json()["items"]
+    rescheduled_entry = next((i for i in cal_items if i.get("is_rescheduled")), None)
+    assert rescheduled_entry is not None
+    assert rescheduled_entry["start_at"].startswith("2026-04-02T14:00:00")
+    assert rescheduled_entry["original_occurrence_date"] == "2026-04-02"
+
+    # Restore the occurrence by deleting the exception
+    restore_response = await client.delete(
+        f"/api/v1/planning/activities/{activity_id}/exceptions",
+        headers=auth_headers,
+        params={"occurrence_date": "2026-04-02"},
+    )
+    assert restore_response.status_code == 200
+    assert restore_response.json()["restored"] is True
+
+    # Re-query calendar: now all occurrences are back to normal
+    cal_after_restore = await client.get(
+        "/api/v1/planning/activities",
+        headers=auth_headers,
+        params={
+            "start": "2026-04-01",
+            "end": "2026-04-05",
+            "institution_id": test_institution.id,
+        },
+    )
+    items_after = cal_after_restore.json()["items"]
+    assert not any(i.get("is_rescheduled") for i in items_after)
+

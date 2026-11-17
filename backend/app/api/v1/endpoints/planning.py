@@ -67,6 +67,7 @@ from app.services.planning_service import (
     ensure_activity_visible,
     expand_activity,
     get_activity,
+    get_occurrence_dates,
     list_calendar_items,
     record_activity_audit,
     require_planning_permission,
@@ -131,6 +132,12 @@ class RecurrenceInput(BaseModel):
     interval: int = Field(default=1, ge=1, le=30)
     until: date
     weekdays: list[int] = Field(default_factory=list)
+
+
+class OccurrenceExceptionPayload(BaseModel):
+    occurrence_date: Optional[date] = None
+    rescheduled_start_at: Optional[datetime] = None
+    rescheduled_end_at: Optional[datetime] = None
 
 
 class ActivityReferenceInput(BaseModel):
@@ -645,9 +652,10 @@ async def cancel_activity(
 
 
 @router.post("/activities/{activity_id}/exceptions")
-async def cancel_occurrence(
+async def create_occurrence_exception(
     activity_id: int,
-    occurrence_date: date = Query(...),
+    payload: Optional[OccurrenceExceptionPayload] = None,
+    occurrence_date: Optional[date] = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
@@ -658,11 +666,108 @@ async def cancel_occurrence(
         raise HTTPException(status_code=403, detail="Only an activity manager may edit its recurrence.")
     if not activity.recurrence_frequency:
         raise HTTPException(status_code=422, detail="Only recurring activities can have occurrence exceptions.")
-    if occurrence_date not in {
-        date.fromisoformat(item["occurrence_date"])
-        for item in expand_activity(activity, occurrence_date, occurrence_date)
-    }:
+
+    target_date = payload.occurrence_date if (payload and payload.occurrence_date) else occurrence_date
+    if target_date is None:
+        raise HTTPException(status_code=422, detail="occurrence_date is required.")
+
+    valid_occurrences = set(get_occurrence_dates(activity, target_date, target_date))
+    if target_date not in valid_occurrences:
         raise HTTPException(status_code=422, detail="The selected date is not a scheduled occurrence.")
+
+    is_reschedule = bool(payload and payload.rescheduled_start_at)
+    res_start = None
+    res_end = None
+
+    if is_reschedule:
+        res_start = payload.rescheduled_start_at
+        res_end = payload.rescheduled_end_at
+        if res_start.tzinfo is None or res_start.utcoffset() is None:
+            raise HTTPException(status_code=422, detail="rescheduled_start_at must include timezone offset.")
+        if res_end is not None:
+            if res_end.tzinfo is None or res_end.utcoffset() is None:
+                raise HTTPException(status_code=422, detail="rescheduled_end_at must include timezone offset.")
+            if res_end <= res_start:
+                raise HTTPException(status_code=422, detail="rescheduled_end_at must be after rescheduled_start_at.")
+        else:
+            duration = (activity.end_at - activity.start_at) if (activity.start_at and activity.end_at) else timedelta(hours=1)
+            res_end = res_start + duration
+
+        assignee_ids = [a.user_id for a in activity.assignees]
+        conflicts = await check_schedule_conflicts(
+            db,
+            activity,
+            assignee_ids,
+            res_start,
+            res_end,
+            activity.location,
+            activity.division_id,
+            exclude_activity_id=activity.id,
+        )
+        if conflicts:
+            raise HTTPException(
+                status_code=409,
+                detail={"message": "Rescheduled occurrence conflicts with an existing schedule.", "conflicts": conflicts},
+            )
+
+    existing_exception = (
+        await db.execute(
+            select(ActivityRecurrenceException).where(
+                ActivityRecurrenceException.activity_id == activity.id,
+                ActivityRecurrenceException.occurrence_date == target_date,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing_exception:
+        if not is_reschedule and existing_exception.rescheduled_start_at is None:
+            raise HTTPException(status_code=409, detail="This occurrence is already cancelled.")
+        existing_exception.rescheduled_start_at = res_start
+        existing_exception.rescheduled_end_at = res_end
+        exception = existing_exception
+    else:
+        exception = ActivityRecurrenceException(
+            activity_id=activity.id,
+            occurrence_date=target_date,
+            rescheduled_start_at=res_start,
+            rescheduled_end_at=res_end,
+            created_by_id=current_user.id,
+        )
+        activity.recurrence_exceptions.append(exception)
+        db.add(exception)
+
+    activity.version += 1
+    action_name = "occurrence_rescheduled" if is_reschedule else "occurrence_cancelled"
+    audit_details = {
+        "occurrence_date": target_date.isoformat(),
+        "rescheduled_start_at": res_start.isoformat() if res_start else None,
+        "rescheduled_end_at": res_end.isoformat() if res_end else None,
+    }
+    await record_activity_audit(db, current_user, activity, action_name, None, audit_details)
+    await db.commit()
+    await db.refresh(exception)
+
+    return {
+        "activity_id": activity.id,
+        "occurrence_date": target_date.isoformat(),
+        "rescheduled_start_at": exception.rescheduled_start_at.isoformat() if exception.rescheduled_start_at else None,
+        "rescheduled_end_at": exception.rescheduled_end_at.isoformat() if exception.rescheduled_end_at else None,
+    }
+
+
+@router.delete("/activities/{activity_id}/exceptions")
+async def delete_occurrence_exception(
+    activity_id: int,
+    occurrence_date: date = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    await require_planning_permission(db, current_user, "edit")
+    activity = await get_activity(db, activity_id, current_user, lock=True)
+    await ensure_activity_visible(db, activity, current_user)
+    if not await can_manage_activity(db, activity, current_user):
+        raise HTTPException(status_code=403, detail="Only an activity manager may edit its recurrence.")
+
     existing_exception = (
         await db.execute(
             select(ActivityRecurrenceException).where(
@@ -671,25 +776,24 @@ async def cancel_occurrence(
             )
         )
     ).scalar_one_or_none()
-    if existing_exception:
-        raise HTTPException(status_code=409, detail="This occurrence is already cancelled.")
-    exception = ActivityRecurrenceException(
-        activity_id=activity.id,
-        occurrence_date=occurrence_date,
-        created_by_id=current_user.id,
-    )
-    db.add(exception)
+    if not existing_exception:
+        raise HTTPException(status_code=404, detail="No exception exists for this occurrence.")
+
+    activity.recurrence_exceptions = [
+        exc for exc in activity.recurrence_exceptions if exc.occurrence_date != occurrence_date
+    ]
+    await db.delete(existing_exception)
     activity.version += 1
     await record_activity_audit(
         db,
         current_user,
         activity,
-        "occurrence_cancelled",
-        None,
+        "occurrence_restored",
         {"occurrence_date": occurrence_date.isoformat()},
+        None,
     )
     await db.commit()
-    return {"activity_id": activity.id, "occurrence_date": occurrence_date.isoformat()}
+    return {"activity_id": activity.id, "occurrence_date": occurrence_date.isoformat(), "restored": True}
 
 
 @router.get("/activities/{activity_id}/history")

@@ -2773,6 +2773,28 @@ export const planningApi = {
       { params: { occurrence_date } }
     ),
 
+  rescheduleOccurrence: (
+    id: number | string,
+    payload: {
+      occurrence_date: string
+      rescheduled_start_at: string
+      rescheduled_end_at?: string
+    }
+  ) =>
+    apiClient.post<{
+      activity_id: number
+      occurrence_date: string
+      rescheduled_start_at: string
+      rescheduled_end_at?: string
+    }>(`/planning/activities/${id}/exceptions`, payload),
+
+  deleteOccurrenceException: (id: number | string, occurrence_date: string) =>
+    apiClient.delete<{
+      activity_id: number
+      occurrence_date: string
+      restored: boolean
+    }>(`/planning/activities/${id}/exceptions`, { params: { occurrence_date } }),
+
   getAssignees: () =>
     apiClient.get<{
       users: Array<{ id: number; name: string; role: string }>
