@@ -38,17 +38,22 @@
 
   :root.dark {
     color-scheme: dark;
-    --app-page: #081426;
-    --app-surface: #10223B;
-    --app-surface-subtle: #142943;
-    --app-text-primary: #F3F6FB;
-    --app-text-secondary: #B8C6D9;
-    --app-border: #31445F;
-    --app-focus: #FDBA74;
+    /* ── Premium Deep Navy Palette (Linear/Vercel/Notion grade) ── */
+    --app-page:            #060E1A;   /* near-black navy — deepest layer */
+    --app-surface:         #0C1B2E;   /* elevated card surface */
+    --app-surface-subtle:  #102234;   /* table headers, input bg */
+    --app-text-primary:    #EDF2F7;   /* cool crisp white */
+    --app-text-secondary:  #7A9CB8;   /* muted blue-grey */
+    --app-border:          #1A2F47;   /* barely-there, premium feel */
+    --app-focus:           #FDBA74;   /* warm orange focus ring */
     --brand-accent-accessible: #FDBA74;
-    --chart-grid: #31445F;
-    --chart-tooltip-background: #10223B;
-    --chart-tooltip-text: #F3F6FB;
+    --chart-grid:          #1A2F47;
+    --chart-tooltip-background: #0C1B2E;
+    --chart-tooltip-text:  #EDF2F7;
+    /* Premium shadow tokens */
+    --shadow-premium:      0 0 0 1px rgba(255,255,255,0.04), 0 4px 24px rgba(0,0,0,0.55);
+    --shadow-card:         0 0 0 1px rgba(255,255,255,0.05), 0 2px 12px rgba(0,0,0,0.45);
+    --shadow-dropdown:     0 0 0 1px rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.6);
   }
 
   html,
@@ -160,8 +165,11 @@
 
 /* --- TOP-LEVEL SHELL ELEMENTS (header, footer, selects) --- */
 :root.dark header:not(.print-header):not(.receipt-header) {
-  background-color: var(--app-surface) !important;
-  border-color: var(--app-border) !important;
+  background-color: rgba(6, 14, 26, 0.96) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-bottom: 1px solid rgba(26, 47, 71, 0.75) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 2px 12px rgba(0,0,0,0.4) !important;
 }
 
 /* Select / dropdown inputs in header */
@@ -326,10 +334,9 @@
 :root.dark .hover\:text-gray-900:hover,
 :root.dark .hover\:text-slate-900:hover { color: var(--app-text-primary) !important; }
 
-/* --- SHADOW / BOX-SHADOW: neutral surfaces get lighter shadow in dark mode --- */
-:root.dark .shadow-sm,
+/* --- SHADOW / BOX-SHADOW: premium dark tokens --- */
 :root.dark .shadow-xs,
-:root.dark .shadow-2xs { box-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3) !important; }
+:root.dark .shadow-2xs { box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4) !important; }
 
 /* --- CARDS AND PANELS --- */
 :root.dark .rounded-2xl.bg-white,
@@ -533,15 +540,151 @@
 
 /* --- DARK MODE SIDEBAR (#app-sidebar in :root.dark) --- */
 :root.dark #app-sidebar {
-  background-color: #0B1727 !important;
-  color: #F8FAFC !important;
-  border-right-color: #1E293B !important;
+  background-color: #0A1628 !important;   /* slightly distinct from page */
+  color: #EDF2F7 !important;
+  border-right: 1px solid #1A2F47 !important;
+  box-shadow: 1px 0 0 0 rgba(255,255,255,0.025), 2px 0 20px rgba(0,0,0,0.5) !important;
 }
 
 :root.dark #app-sidebar .bg-white\/10,
 :root.dark #app-sidebar .bg-white\/15 {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(255, 255, 255, 0.07) !important;
   color: #FFFFFF !important;
+}
+
+/* Premium dark sidebar text */
+:root.dark #app-sidebar .text-slate-300,
+:root.dark #app-sidebar .text-slate-400 {
+  color: #7A9CB8 !important;
+}
+:root.dark #app-sidebar .text-white,
+:root.dark #app-sidebar h1.text-white,
+:root.dark #app-sidebar p.text-white,
+:root.dark #app-sidebar span.text-white {
+  color: #EDF2F7 !important;
+}
+
+/* Premium dark sidebar nav hover */
+:root.dark #app-sidebar a:hover,
+:root.dark #app-sidebar button:hover {
+  background-color: rgba(255,255,255,0.05) !important;
+}
+
+/* Premium dark sidebar search */
+:root.dark #app-sidebar button[title*="Search"] {
+  background-color: rgba(26, 47, 71, 0.6) !important;
+  border-color: #1A2F47 !important;
+  color: #7A9CB8 !important;
+}
+:root.dark #app-sidebar button[title*="Search"] kbd {
+  background-color: rgba(6,14,26,0.6) !important;
+  border-color: #1A2F47 !important;
+  color: #7A9CB8 !important;
+}
+
+/* Premium dark sidebar user card */
+:root.dark #app-sidebar .bg-slate-800\/80 {
+  background-color: rgba(10, 22, 40, 0.8) !important;
+  border-color: #1A2F47 !important;
+}
+
+/* Premium dark sidebar appearance dropdown */
+:root.dark #app-sidebar #appearance-preference {
+  background-color: rgba(6, 14, 26, 0.7) !important;
+  border-color: #1A2F47 !important;
+  color: #EDF2F7 !important;
+}
+
+/* ==========================================================================
+   PREMIUM DARK MODE ELEVATION & POLISH LAYER
+   Linear / Vercel / Notion / Stripe grade premium visual quality
+   ========================================================================== */
+
+/* --- Premium shadows in dark mode --- */
+:root.dark .shadow-sm { box-shadow: var(--shadow-card) !important; }
+:root.dark .shadow-md { box-shadow: var(--shadow-premium) !important; }
+:root.dark .shadow-lg { box-shadow: var(--shadow-premium) !important; }
+:root.dark .shadow-xl { box-shadow: var(--shadow-dropdown) !important; }
+:root.dark .shadow-2xl { box-shadow: var(--shadow-dropdown) !important; }
+
+/* --- Premium card glass border in dark mode --- */
+:root.dark .card,
+:root.dark [class*="rounded-xl"][class*="border"],
+:root.dark [class*="rounded-2xl"][class*="border"],
+:root.dark [class*="rounded-lg"][class*="border"] {
+  border-color: rgba(255,255,255,0.06) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+/* --- Native select color-scheme fix (prevents white native chrome on Windows) --- */
+:root.dark select {
+  color-scheme: dark !important;
+}
+
+/* --- bg-white/XX opacity variants --- */
+:root.dark .bg-white\/5  { background-color: rgba(237,242,247,0.04) !important; }
+:root.dark .bg-white\/10 { background-color: rgba(237,242,247,0.07) !important; }
+:root.dark .bg-white\/20 { background-color: rgba(237,242,247,0.10) !important; }
+:root.dark .bg-white\/30 { background-color: rgba(237,242,247,0.14) !important; }
+:root.dark .bg-white\/80,
+:root.dark .bg-white\/90 { background-color: rgba(12,27,46,0.9) !important; }
+
+/* --- additional indigo / violet / pink / teal badge pairs --- */
+:root.dark .bg-indigo-100  { background-color: rgba(99, 102, 241, 0.15) !important; }
+:root.dark .text-indigo-800 { color: #818cf8 !important; }
+:root.dark .bg-violet-100  { background-color: rgba(139, 92, 246, 0.15) !important; }
+:root.dark .text-violet-800 { color: #c4b5fd !important; }
+:root.dark .bg-pink-100    { background-color: rgba(236, 72, 153, 0.15) !important; }
+:root.dark .text-pink-800  { color: #f9a8d4 !important; }
+:root.dark .bg-teal-100    { background-color: rgba(20, 184, 166, 0.15) !important; }
+:root.dark .text-teal-800  { color: #2dd4bf !important; }
+:root.dark .bg-cyan-100    { background-color: rgba(6, 182, 212, 0.15) !important; }
+:root.dark .text-cyan-800  { color: #22d3ee !important; }
+:root.dark .bg-sky-100     { background-color: rgba(14, 165, 233, 0.15) !important; }
+:root.dark .text-sky-800   { color: #38bdf8 !important; }
+:root.dark .bg-lime-100    { background-color: rgba(132, 204, 22, 0.15) !important; }
+:root.dark .text-lime-800  { color: #bef264 !important; }
+
+/* --- text-blue-* primary shades --- */
+:root.dark .text-blue-600  { color: #60a5fa !important; }
+:root.dark .text-blue-700  { color: #93c5fd !important; }
+:root.dark .text-blue-900  { color: #bfdbfe !important; }
+:root.dark .text-green-600 { color: #34d399 !important; }
+:root.dark .text-green-700 { color: #6ee7b7 !important; }
+:root.dark .text-red-600   { color: #f87171 !important; }
+:root.dark .text-red-700   { color: #fca5a5 !important; }
+:root.dark .text-amber-600 { color: #fbbf24 !important; }
+:root.dark .text-orange-600 { color: #fb923c !important; }
+:root.dark .text-orange-500 { color: #f97316 !important; }
+
+/* --- bg colored semantic shades (non-badge contexts, e.g. stat card icon bg) --- */
+:root.dark .bg-blue-50   { background-color: rgba(59, 130, 246, 0.10) !important; }
+:root.dark .bg-green-50  { background-color: rgba(16, 185, 129, 0.10) !important; }
+:root.dark .bg-red-50    { background-color: rgba(239, 68, 68, 0.10) !important; }
+:root.dark .bg-orange-50 { background-color: rgba(249, 115, 22, 0.10) !important; }
+:root.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15) !important; }
+:root.dark .bg-purple-50 { background-color: rgba(139, 92, 246, 0.10) !important; }
+
+/* --- Progress bar and range track in dark --- */
+:root.dark progress { accent-color: var(--app-focus); }
+:root.dark input[type="range"] { accent-color: var(--app-focus); }
+
+/* --- Popover / floating panel premium dark --- */
+:root.dark [role="listbox"],
+:root.dark [role="menu"] {
+  box-shadow: var(--shadow-dropdown) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* --- Scrollbar in dark mode — premium thin style --- */
+:root.dark ::-webkit-scrollbar { width: 6px; height: 6px; }
+:root.dark ::-webkit-scrollbar-track { background: transparent; }
+:root.dark ::-webkit-scrollbar-thumb {
+  background: rgba(26, 47, 71, 0.9);
+  border-radius: 9999px;
+}
+:root.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(42, 70, 105, 1);
 }
 
 /* Custom discreet scrollbars */
