@@ -1212,6 +1212,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                   type="button"
                   onClick={toggleAcademicOpen}
                   aria-expanded={academicOpen}
+                  aria-label="Academic Workspace"
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isAcademicActive
                       ? 'bg-white/10 text-white font-semibold shadow-sm border-l-4 border-[#F57C00]'
@@ -1437,6 +1438,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
                   type="button"
                   onClick={toggleCrmOpen}
                   aria-expanded={crmOpen}
+                  aria-label="Lead Management & CRM"
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium transition-all text-left focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     isCrmActive
                       ? 'bg-white/10 text-white shadow-sm font-semibold border-l-4 border-[#F57C00]'
