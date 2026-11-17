@@ -259,7 +259,8 @@ describe('Planning workspace view switcher accessibility', () => {
       </QueryClientProvider>,
     )
 
-    fireEvent.click(await screen.findByText('Weekly Faculty Meeting'))
+    const cards = await screen.findAllByText('Weekly Faculty Meeting')
+    fireEvent.click(cards[0])
     expect(screen.getByText('Cancel activity')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel activity' }))
