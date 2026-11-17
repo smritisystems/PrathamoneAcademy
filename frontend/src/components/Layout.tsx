@@ -202,7 +202,7 @@ export default function Layout() {
   }, [academicYears, selectedAcademicYearId, setSelectedAcademicYear])
 
   return (
-    <div className="flex h-screen h-[100dvh] w-full bg-gray-50 overflow-hidden relative print:h-auto print:overflow-visible">
+    <div className="flex h-screen h-[100dvh] w-full bg-app-page overflow-hidden relative print:h-auto print:overflow-visible">
       {!hideSidebarShell && <Sidebar />}
 
       <div
@@ -251,7 +251,7 @@ export default function Layout() {
 
           {/* Active Institution Badge with Logo & Selectors */}
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-initial">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-slate-200/90 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden" title={currentInst?.name || branding.academyName}>
+            <div className="brand-logo-plate w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-slate-200/90 p-0.5 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden" title={currentInst?.name || branding.academyName}>
               {effectiveHeaderLogo && !headerLogoFailed ? (
                 <img
                   src={effectiveHeaderLogo}

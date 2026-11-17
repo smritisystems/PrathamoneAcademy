@@ -87,7 +87,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.17-REV-227-v1.123.2-2890EC2B',
+  buildNumber: '2026.11.17-REV-228-v1.124.0-60CDE3EB',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-17',
@@ -140,11 +140,11 @@ export const BRANDING_CONFIG = {
     primaryLight: '#16428F',  // Navy Light Accent
     primaryDark: '#051535',   // Deepest Prussian Navy
     secondary: '#071C44',     // Prussian Blue Shell / Gradient Pair
-    accent: '#F57C00',        // PrathamOne Saffron Orange (Official Artwork Accent)
+    accent: '#F16906',        // PrathamOne orange accent
     gold: '#FFA726',          // Warm Amber Gold
     success: '#10b981',       // Emerald-500
     prathamNavy: '#0B2D6B',   // PrathamOne Official Deep Navy (New Logo Specification)
-    prathamOrange: '#F57C00', // PrathamOne Official Vibrant Orange (New Logo Specification)
+    prathamOrange: '#F16906', // PrathamOne official orange accent
     prathamGold: '#FFA726',   // PrathamOne Official Gold / Amber Accent
   },
   assets: {
@@ -494,7 +494,7 @@ export function applyGlobalBrandTheme(
     const root = document.documentElement
     const primary = colors.primary || '#0B2D6B'
     const secondary = colors.secondary || '#071C44'
-    const accent = colors.accent || '#F57C00'
+    const accent = colors.accent || '#F16906'
 
     const pRgb = hexToRgb(primary)
     const sRgb = hexToRgb(secondary)

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -123,7 +123,7 @@ export default function Settings() {
     favicon_url: BRANDING_CONFIG.assets.faviconUrl,
     primary_color: '#0B2D6B',
     secondary_color: '#071C44',
-    accent_color: '#F57C00',
+    accent_color: '#F16906',
   })
   const [originalProfile, setOriginalProfile] = useState<InstituteProfile | null>(null)
 
@@ -199,7 +199,7 @@ export default function Settings() {
         applyGlobalBrandTheme({
           primary: originalProfileRef.current.primary_color || '#0B2D6B',
           secondary: originalProfileRef.current.secondary_color || '#071C44',
-          accent: originalProfileRef.current.accent_color || '#F57C00',
+          accent: originalProfileRef.current.accent_color || '#F16906',
         }, originalProfileRef.current.logo_url)
       }
     }
@@ -241,7 +241,7 @@ export default function Settings() {
         applyGlobalBrandTheme({
           primary: next.primary_color || '#0B2D6B',
           secondary: next.secondary_color || '#071C44',
-          accent: next.accent_color || '#F57C00',
+          accent: next.accent_color || '#F16906',
         }, next.logo_url)
       }
       return next
@@ -267,7 +267,7 @@ export default function Settings() {
         applyGlobalBrandTheme({
           primary: originalProfile.primary_color || '#0B2D6B',
           secondary: originalProfile.secondary_color || '#071C44',
-          accent: originalProfile.accent_color || '#F57C00',
+          accent: originalProfile.accent_color || '#F16906',
         }, originalProfile.logo_url)
       }
     }
@@ -307,7 +307,7 @@ export default function Settings() {
         applyGlobalBrandTheme({
           primary: res.data.profile.primary_color || '#0B2D6B',
           secondary: res.data.profile.secondary_color || '#071C44',
-          accent: res.data.profile.accent_color || '#F57C00',
+          accent: res.data.profile.accent_color || '#F16906',
         }, res.data.profile.logo_url)
         try {
           const cached = JSON.parse(localStorage.getItem(BRANDING_STORAGE_KEY) || '{}')
@@ -318,7 +318,7 @@ export default function Settings() {
               ...(cached.colors || {}),
               primary: res.data.profile.primary_color || '#0B2D6B',
               secondary: res.data.profile.secondary_color || '#071C44',
-              accent: res.data.profile.accent_color || '#F57C00',
+              accent: res.data.profile.accent_color || '#F16906',
             },
             academyName: res.data.profile.name || cached.academyName,
             monogram: res.data.profile.short_name || cached.monogram,
@@ -1052,7 +1052,7 @@ export default function Settings() {
                               >
                                 {/* Background ambient lighting element */}
                                 <div
-                                  style={{ backgroundColor: profile.accent_color || '#F57C00' }}
+                                  style={{ backgroundColor: profile.accent_color || '#F16906' }}
                                   className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
                                 />
 
@@ -1201,13 +1201,13 @@ export default function Settings() {
                                   <div className="flex items-center gap-2">
                                     <input
                                       type="color"
-                                      value={profile.accent_color || '#F57C00'}
+                                      value={profile.accent_color || '#F16906'}
                                       onChange={(e) => handleProfileChange('accent_color', e.target.value)}
                                       className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                                     />
                                     <input
                                       type="text"
-                                      value={profile.accent_color || '#F57C00'}
+                                      value={profile.accent_color || '#F16906'}
                                       onChange={(e) => handleProfileChange('accent_color', e.target.value)}
                                       className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                                     />
@@ -1422,7 +1422,7 @@ export default function Settings() {
                           className="rounded-xl p-4 text-white shadow-md flex items-center gap-3.5 relative overflow-hidden"
                         >
                           <div
-                            style={{ backgroundColor: profile.accent_color || '#F57C00' }}
+                            style={{ backgroundColor: profile.accent_color || '#F16906' }}
                             className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full opacity-30 blur-2xl pointer-events-none"
                           />
                           <div className="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center font-bold text-lg text-primary-900 border border-white/40 shadow-sm flex-shrink-0 overflow-hidden">
@@ -1517,7 +1517,7 @@ export default function Settings() {
                               </div>
                             </div>
                             <div
-                              style={{ backgroundColor: profile.accent_color || '#F57C00' }}
+                              style={{ backgroundColor: profile.accent_color || '#F16906' }}
                               className="text-[9px] font-bold text-white px-2 py-0.5 rounded text-center"
                             >
                               Accent Status Badge
@@ -1536,7 +1536,7 @@ export default function Settings() {
                           </h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {[
-                              { name: 'Pratham Navy & Saffron (Official)', primary: '#0B2D6B', secondary: '#071C44', accent: '#F57C00' },
+                              { name: 'Pratham Navy & Saffron (Official)', primary: '#0B2D6B', secondary: '#071C44', accent: '#F16906' },
                               { name: 'Royal Blue & Indigo', primary: '#1E40AF', secondary: '#3B82F6', accent: '#8B5CF6' },
                               { name: 'Emerald Forest', primary: '#065F46', secondary: '#10B981', accent: '#059669' },
                               { name: 'Midnight Slate', primary: '#0F172A', secondary: '#38BDF8', accent: '#6366F1' },
@@ -1889,13 +1889,13 @@ export default function Settings() {
                               <div className="flex items-center gap-2">
                                 <input
                                   type="color"
-                                  value={profile.accent_color || '#F57C00'}
+                                  value={profile.accent_color || '#F16906'}
                                   onChange={(e) => handleProfileChange('accent_color', e.target.value)}
                                   className="w-7 h-7 rounded-md cursor-pointer border-0 p-0"
                                 />
                                 <input
                                   type="text"
-                                  value={profile.accent_color || '#F57C00'}
+                                  value={profile.accent_color || '#F16906'}
                                   onChange={(e) => handleProfileChange('accent_color', e.target.value)}
                                   className="w-24 px-2 py-1 text-xs font-mono uppercase border border-gray-300 rounded-md text-gray-800"
                                 />

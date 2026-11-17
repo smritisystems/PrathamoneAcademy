@@ -11,12 +11,29 @@
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Pre-hydration synchronous brand theme resolver extracted from index.html for strict CSP compliance without inline scripts.
  */
 
 (function () {
+  try {
+    var appearanceRaw = localStorage.getItem('pratham-appearance')
+    var appearance = appearanceRaw ? JSON.parse(appearanceRaw).state.preference : 'light'
+    if (appearance !== 'light' && appearance !== 'dark' && appearance !== 'system') {
+      appearance = 'light'
+    }
+    var prefersDark =
+      appearance === 'system' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    var resolvedAppearance = appearance === 'system' ? (prefersDark ? 'dark' : 'light') : appearance
+    document.documentElement.classList.toggle('dark', resolvedAppearance === 'dark')
+    document.documentElement.dataset.theme = resolvedAppearance
+  } catch (error) {
+    console.warn('[Appearance] Failed to restore saved appearance preference:', error)
+  }
+
   try {
     var authRaw = localStorage.getItem('prashant-auth')
     var instId = 1

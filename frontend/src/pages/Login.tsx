@@ -11,7 +11,7 @@
  *
  * @version     1.6.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Premium enterprise authentication portal featuring organic curved wave architecture, original PrathamOne navy/saffron theme colors, single unified Zero-Tab authentication, server-enforced role routing, and comprehensive academic curriculum spectrum overlays.
  */
@@ -78,7 +78,7 @@ export default function LoginPage() {
   // Canonical App Colors (Original Theme Only)
   const primaryBrandColor = branding.colors?.primary || '#0B2D6B'
   const secondaryBrandColor = branding.colors?.secondary || '#071C44'
-  const accentBrandColor = branding.colors?.accent || '#F57C00'
+  const accentBrandColor = branding.colors?.accent || '#F16906'
 
   useEffect(() => {
     if (token && user) {
@@ -225,7 +225,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             {/* Elevated Academy Crest / Custom Logo with High-Contrast White Enamel Tile */}
-            <div className="relative bg-white p-1.5 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-black/25 ring-2 ring-white/30 overflow-hidden">
+            <div className="brand-logo-plate relative bg-white p-1.5 w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-black/25 ring-2 ring-white/30 overflow-hidden">
               {hasValidLogo ? (
                 <img
                   src={branding.assets.logoUrl}
@@ -358,8 +358,8 @@ export default function LoginPage() {
         {/* Top Status Bar within the Right Pane */}
         <div className="relative z-10 w-full max-w-[460px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#F57C00] shadow-xs shadow-orange-500/50 animate-pulse" />
-            <span className="text-[#0B2D6B]">Account Access</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#F16906] shadow-xs shadow-orange-500/50 animate-pulse" />
+            <span className="text-[#0B2D6B] dark:text-blue-200">Account Access</span>
           </div>
           <div className="text-[11px] font-semibold text-slate-400">
             PrathamOne EduOS
@@ -385,7 +385,7 @@ export default function LoginPage() {
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="font-extrabold text-base text-[#071C44] tracking-tight truncate leading-snug">
+              <h3 className="font-extrabold text-base text-[#071C44] dark:text-slate-100 tracking-tight truncate leading-snug">
                 {branding.academyName}
               </h3>
               <p className="text-xs text-slate-500 font-medium truncate">
@@ -395,10 +395,10 @@ export default function LoginPage() {
           </div>
 
           {/* Saffron Crown Accent Bar */}
-          <div className="w-16 h-1 bg-gradient-to-r from-[#F57C00] via-[#0B2D6B] to-[#38BDF8] rounded-full mb-4" />
+          <div className="w-16 h-1 bg-gradient-to-r from-[#F16906] via-[#0B2D6B] to-[#38BDF8] rounded-full mb-4" />
 
           {/* Heading & Subtitle */}
-          <h2 className="text-3xl font-extrabold text-[#071C44] tracking-tight">
+          <h2 className="text-3xl font-extrabold text-[#071C44] dark:text-slate-100 tracking-tight">
             Welcome back
           </h2>
           <p className="text-sm text-slate-500 font-medium mt-1 mb-8">
@@ -420,7 +420,7 @@ export default function LoginPage() {
                 <input
                   id="login-username"
                   {...register('username')}
-                  className={`w-full text-sm border rounded-xl pl-10 pr-3.5 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] focus:border-[#0B2D6B] text-slate-900 placeholder-slate-400 transition-colors shadow-2xs ${errors.username ? 'border-rose-400' : 'border-slate-300'
+                  className={`w-full text-sm border rounded-xl pl-10 pr-3.5 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800 dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] dark:focus:ring-orange-300 focus:border-[#0B2D6B] dark:focus:border-orange-300 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 transition-colors shadow-2xs ${errors.username ? 'border-rose-400' : 'border-slate-300'
                     }`}
                   placeholder="Enter your email or username"
                   autoComplete="username"
@@ -448,7 +448,7 @@ export default function LoginPage() {
                   id="login-password"
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
-                  className={`w-full text-sm border rounded-xl pl-10 pr-11 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] focus:border-[#0B2D6B] text-slate-900 placeholder-slate-400 transition-colors shadow-2xs ${errors.password ? 'border-rose-400' : 'border-slate-300'
+                  className={`w-full text-sm border rounded-xl pl-10 pr-11 py-3.5 bg-slate-50/70 hover:bg-white focus:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800 dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] dark:focus:ring-orange-300 focus:border-[#0B2D6B] dark:focus:border-orange-300 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-400 transition-colors shadow-2xs ${errors.password ? 'border-rose-400' : 'border-slate-300'
                     }`}
                   placeholder="••••••••••••"
                   autoComplete="current-password"
@@ -458,7 +458,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-3.5 top-3.5 p-1 rounded-md text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] transition-colors"
+                  className="absolute right-3.5 top-3.5 p-1 rounded-md text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] dark:focus:ring-orange-300 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -477,14 +477,14 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-300 text-[#0B2D6B] focus:ring-[#0B2D6B]"
+                  className="rounded border-slate-300 text-[#0B2D6B] focus:ring-[#0B2D6B] dark:focus:ring-orange-300"
                 />
                 <span>Remember this device</span>
               </label>
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
-                className="text-xs font-semibold text-[#0B2D6B] hover:text-[#071C44] hover:underline focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] rounded-sm transition-colors cursor-pointer"
+                className="text-xs font-semibold text-[#0B2D6B] dark:text-blue-200 hover:text-[#071C44] dark:hover:text-blue-100 hover:underline focus:outline-none focus:ring-2 focus:ring-[#0B2D6B] dark:focus:ring-orange-300 rounded-sm transition-colors cursor-pointer"
               >
                 Forgot password?
               </button>
@@ -498,7 +498,7 @@ export default function LoginPage() {
                 background: 'linear-gradient(135deg, #0B2D6B 0%, #17458F 100%)',
                 boxShadow: '0 4px 14px 0 rgba(11, 45, 107, 0.35)',
               }}
-              className="w-full py-3.5 px-4 mt-3 rounded-xl text-base font-semibold text-white hover:brightness-105 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-[#F57C00] focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 mt-3 rounded-xl text-base font-semibold text-white hover:brightness-105 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-[#F16906] focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
@@ -519,7 +519,7 @@ export default function LoginPage() {
             <p className="text-xs text-slate-500">
               Need access? Contact your institute administrator.
             </p>
-            <div className="flex items-center justify-center gap-4 text-xs font-semibold text-[#0B2D6B] pt-2">
+            <div className="flex items-center justify-center gap-4 text-xs font-semibold text-[#0B2D6B] dark:text-blue-200 pt-2">
               <button
                 type="button"
                 onClick={() => setShowLoginHelp(true)}

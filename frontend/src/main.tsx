@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Vite React application entry point initializing DOM root, query client, and global styles.
  */
@@ -25,9 +25,11 @@ import App from './App'
 import './index.css'
 import { registerServiceWorker } from './registerServiceWorker'
 import { printConsoleBrandingBanner } from './utils/consoleBanner'
+import { initializeAppearance } from './store/appearanceStore'
 
 // Print official application startup banner in browser console
 printConsoleBrandingBanner()
+initializeAppearance()
 
 const queryClient = new QueryClient({
   defaultOptions: {

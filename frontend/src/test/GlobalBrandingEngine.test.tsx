@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Comprehensive test suite validating color parsing, dynamic theme variable injection, multi-tenant branding resolution, and localStorage persistence.
  */
@@ -71,6 +71,10 @@ describe('Global Branding Engine & Resolver', () => {
   })
 
   describe('applyGlobalBrandTheme', () => {
+    it('uses the approved official orange as the default accent', () => {
+      expect(BRANDING_CONFIG.colors.accent).toBe('#F16906')
+    })
+
     it('sets standard and legacy CSS custom properties on document.documentElement', () => {
       applyGlobalBrandTheme({
         primary: '#881337',

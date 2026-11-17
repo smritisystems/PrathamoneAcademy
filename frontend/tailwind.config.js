@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-17
  *
  * @description Tailwind CSS theme configuration, responsive breakpoints, and custom animation utilities.
  */
@@ -19,9 +19,18 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        app: {
+          page: 'var(--app-page)',
+          surface: 'var(--app-surface)',
+          subtle: 'var(--app-surface-subtle)',
+          text: 'var(--app-text-primary)',
+          muted: 'var(--app-text-secondary)',
+          border: 'var(--app-border)',
+        },
         primary: {
           50: 'var(--brand-primary-50, #eff6ff)',
           100: 'var(--brand-primary-100, #dbeafe)',
@@ -41,7 +50,7 @@ export default {
           light: 'var(--brand-primary-light, #16428F)',
           dark: 'var(--brand-primary-dark, #051535)',
           secondary: 'var(--brand-secondary, #071C44)',
-          accent: 'var(--brand-accent, #F57C00)',
+          accent: 'var(--brand-accent, #F16906)',
           50: 'var(--brand-primary-50, #eff6ff)',
           100: 'var(--brand-primary-100, #dbeafe)',
           200: 'var(--brand-primary-200, #bfdbfe)',
