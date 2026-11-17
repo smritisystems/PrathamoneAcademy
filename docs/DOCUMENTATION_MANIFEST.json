@@ -5,7 +5,7 @@
   "product_version": "1.0.0",
   "organization": "Smritisys & AITDL Networks",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-17T14:43:42.991183",
+  "generated_at": "2026-11-17T14:50:32.183121",
   "total_documents": 508,
   "modules_catalog": [
     {
@@ -1112,14 +1112,14 @@
       "filename": "2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "relative_path": "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "extension": ".md",
-      "size_bytes": 12507,
-      "sha256": "5925cf12169a25238c709d3d052762ca260e963d1d52196165e6cc199c165e2f",
+      "size_bytes": 12557,
+      "sha256": "2363e4b78dd18cab9607be01cefe0c41ccbefa1bd7cd1c3ffde9c54955727a11",
       "module": "01_ARCHITECTURE",
       "title": "PrathamOne EduOS — Unified Planning & Activities Workspace Proposal Review",
       "category": "ARCHITECTURE-REVIEW",
       "document_type": "REVIEW",
       "version": "1.0.0",
-      "doc_version": "1.1",
+      "doc_version": "1.2",
       "status": "Approved",
       "created_date": "2026-11-16",
       "updated_date": "2026-11-17",
@@ -1134,7 +1134,8 @@
         "timeline",
         "architecture-review",
         "autocomplete-pickers",
-        "reference-labels"
+        "reference-labels",
+        "single-occurrence-reschedule"
       ],
       "entities": [
         "Activity",
@@ -25647,6 +25648,7 @@
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN-SETTINGS_AUDIT-REPORT_PRATHAMONE-CODEX-ARCHITECTURE-AND-IMPLEMENTATION-PLAN_V1.md"
     ],
     "occurrence": [
+      "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md"
     ],
     "off": [
@@ -27925,6 +27927,7 @@
       "25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md"
     ],
     "reschedule": [
+      "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md"
     ],
     "reschedule_v1": [
@@ -28395,6 +28398,7 @@
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_TROUBLESHOOTING-REPORT_STANDALONE-INSTALLER-FIXES-AND-CODE-SIGNING_V1.md"
     ],
     "single": [
+      "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "01_ARCHITECTURE/2026-11-17_ARCHITECTURE_RESEARCH-REPORT_PLANNING-SCHEDULE-INTEGRATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-17_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_PLANNING-SINGLE-OCCURRENCE-RESCHEDULE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_ARCHITECTURE-COMPLIANCE-REPORT_V1.md",
