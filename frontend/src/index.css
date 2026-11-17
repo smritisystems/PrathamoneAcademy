@@ -152,13 +152,93 @@
   }
 }
 
-/* Compatibility bridge for existing neutral Tailwind utilities during phased migration. */
+/* ==========================================================================
+   COMPREHENSIVE DARK MODE COMPATIBILITY BRIDGE
+   Maps all hardcoded Tailwind light-palette utilities → dark CSS variables.
+   This avoids touching each of the 75+ component files individually.
+   ========================================================================== */
+
+/* --- TOP-LEVEL SHELL ELEMENTS (header, footer, selects) --- */
+:root.dark header:not(.print-header):not(.receipt-header) {
+  background-color: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+}
+
+/* Select / dropdown inputs in header */
+:root.dark header select,
+:root.dark header input {
+  background-color: var(--app-surface-subtle) !important;
+  border-color: var(--app-border) !important;
+  color: var(--app-text-primary) !important;
+}
+
+/* Top-bar icon buttons and pill buttons */
+:root.dark header button:not([class*="bg-amber"]):not([class*="bg-emerald"]):not([class*="bg-primary"]) {
+  color: var(--app-text-secondary) !important;
+}
+:root.dark header button:not([class*="bg-amber"]):not([class*="bg-emerald"]):not([class*="bg-primary"]):hover {
+  background-color: var(--app-surface-subtle) !important;
+  color: var(--app-text-primary) !important;
+}
+
+/* Top-bar "Live" environment pill in dark mode */
+:root.dark header .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #34d399 !important;
+}
+:root.dark header .text-emerald-800 { color: #34d399 !important; }
+:root.dark header .hover\:bg-emerald-100:hover { background-color: rgba(16, 185, 129, 0.2) !important; }
+
+/* Top-bar Search button kbd shortcut chip */
+:root.dark header kbd { background-color: var(--app-surface) !important; color: var(--app-text-secondary) !important; border-color: var(--app-border) !important; }
+
+/* Top-bar "Install App" link */
+:root.dark header .text-primary-700 { color: #93c5fd !important; }
+:root.dark header .bg-primary-50 { background-color: rgba(59, 130, 246, 0.12) !important; }
+:root.dark header .hover\:bg-primary-100:hover { background-color: rgba(59, 130, 246, 0.2) !important; }
+:root.dark header .border-blue-200 { border-color: rgba(59, 130, 246, 0.3) !important; }
+
+/* Top-bar marquee / ticker text */
+:root.dark header p.text-gray-600,
+:root.dark header p.text-sm,
+:root.dark header span.text-slate-500 { color: var(--app-text-secondary) !important; }
+
+/* --- FOOTER / STATUS BAR --- */
+:root.dark footer:not(.pratham-global-print-footer):not(.receipt-footer) {
+  background-color: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+}
+:root.dark footer .text-slate-800,
+:root.dark footer .text-slate-700 { color: var(--app-text-primary) !important; }
+:root.dark footer .text-slate-600,
+:root.dark footer .text-slate-500,
+:root.dark footer .text-slate-300 { color: var(--app-text-secondary) !important; }
+:root.dark footer .bg-slate-100 { background-color: var(--app-surface-subtle) !important; }
+:root.dark footer .hover\:bg-slate-200:hover { background-color: var(--app-border) !important; }
+:root.dark footer .border-slate-200,
+:root.dark footer .border-slate-200\/90 { border-color: var(--app-border) !important; }
+:root.dark footer .text-primary-700 { color: #93c5fd !important; }
+:root.dark footer .bg-white\/80 { background-color: rgba(16,34,59,0.8) !important; }
+:root.dark footer .border-blue-200\/60 { border-color: rgba(59, 130, 246, 0.25) !important; }
+
+/* --- STAT CARDS --- */
+:root.dark .bg-white.border.border-gray-200\/90 {
+  background-color: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+}
+:root.dark .text-gray-900 { color: var(--app-text-primary) !important; }
+:root.dark .text-gray-600 { color: var(--app-text-secondary) !important; }
+:root.dark .text-gray-500 { color: var(--app-text-secondary) !important; }
+:root.dark .border-gray-50 { border-color: var(--app-border) !important; }
+
+/* --- GENERAL BACKGROUND BRIDGES --- */
 :root.dark .bg-gray-50,
 :root.dark .bg-slate-50 {
   background-color: var(--app-page) !important;
 }
 
-:root.dark .bg-white:not(.brand-logo-plate) {
+:root.dark .bg-white:not(.brand-logo-plate):not(#receipt-print-area *):not(#student-id-card-printable *) {
   background-color: var(--app-surface) !important;
 }
 
@@ -176,6 +256,7 @@
   background-color: var(--app-border) !important;
 }
 
+/* --- GENERAL TEXT BRIDGES --- */
 :root.dark .text-gray-900,
 :root.dark .text-gray-800,
 :root.dark .text-gray-700,
@@ -194,6 +275,12 @@
   color: var(--app-text-secondary) !important;
 }
 
+:root.dark .text-slate-300,
+:root.dark .text-gray-300 {
+  color: rgba(184, 198, 217, 0.5) !important;
+}
+
+/* --- GENERAL BORDER BRIDGES --- */
 :root.dark .border-gray-100,
 :root.dark .border-gray-200,
 :root.dark .border-gray-300,
@@ -202,6 +289,105 @@
 :root.dark .border-slate-300 {
   border-color: var(--app-border) !important;
 }
+
+/* Slash variants e.g. border-slate-200/90 */
+:root.dark [class*="border-slate-200/"],
+:root.dark [class*="border-gray-200/"] {
+  border-color: var(--app-border) !important;
+}
+
+/* --- RING / DIVIDE BRIDGES --- */
+:root.dark .divide-gray-100 > *,
+:root.dark .divide-gray-200 > *,
+:root.dark .divide-slate-100 > *,
+:root.dark .divide-slate-200 > * {
+  border-color: var(--app-border) !important;
+}
+
+/* --- INPUT / SELECT / TEXTAREA BRIDGES --- */
+:root.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+:root.dark select,
+:root.dark textarea {
+  background-color: var(--app-surface-subtle) !important;
+  border-color: var(--app-border) !important;
+  color: var(--app-text-primary) !important;
+}
+:root.dark input::placeholder,
+:root.dark textarea::placeholder { color: var(--app-text-secondary) !important; }
+
+/* --- HOVER STATE BRIDGES --- */
+:root.dark .hover\:bg-gray-50:hover,
+:root.dark .hover\:bg-slate-50:hover { background-color: var(--app-surface-subtle) !important; }
+:root.dark .hover\:bg-gray-100:hover,
+:root.dark .hover\:bg-slate-100:hover { background-color: var(--app-surface-subtle) !important; }
+:root.dark .hover\:bg-slate-200:hover,
+:root.dark .hover\:bg-gray-200:hover { background-color: var(--app-border) !important; }
+:root.dark .hover\:bg-white:hover { background-color: var(--app-surface) !important; }
+:root.dark .hover\:text-gray-900:hover,
+:root.dark .hover\:text-slate-900:hover { color: var(--app-text-primary) !important; }
+
+/* --- SHADOW / BOX-SHADOW: neutral surfaces get lighter shadow in dark mode --- */
+:root.dark .shadow-sm,
+:root.dark .shadow-xs,
+:root.dark .shadow-2xs { box-shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3) !important; }
+
+/* --- CARDS AND PANELS --- */
+:root.dark .rounded-2xl.bg-white,
+:root.dark .rounded-xl.bg-white,
+:root.dark .rounded-lg.bg-white {
+  background-color: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+}
+
+/* --- TABLE BRIDGES --- */
+:root.dark table { color: var(--app-text-primary) !important; }
+:root.dark thead tr { background-color: var(--app-surface-subtle) !important; border-color: var(--app-border) !important; }
+:root.dark tbody tr { border-color: var(--app-border) !important; }
+:root.dark tbody tr:hover { background-color: var(--app-surface-subtle) !important; }
+:root.dark th { color: var(--app-text-secondary) !important; background-color: var(--app-surface-subtle) !important; }
+:root.dark td { color: var(--app-text-primary) !important; border-color: var(--app-border) !important; }
+
+/* --- BADGE BRIDGES (light-palette badges need dark variants) --- */
+:root.dark .bg-green-100 { background-color: rgba(16, 185, 129, 0.15) !important; }
+:root.dark .text-green-800 { color: #34d399 !important; }
+:root.dark .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.15) !important; }
+:root.dark .text-yellow-800 { color: #fbbf24 !important; }
+:root.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.15) !important; }
+:root.dark .text-red-800 { color: #f87171 !important; }
+:root.dark .bg-orange-100 { background-color: rgba(249, 115, 22, 0.15) !important; }
+:root.dark .text-orange-800 { color: #fb923c !important; }
+:root.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.15) !important; }
+:root.dark .text-blue-800 { color: #60a5fa !important; }
+:root.dark .bg-purple-100 { background-color: rgba(139, 92, 246, 0.15) !important; }
+:root.dark .text-purple-800 { color: #a78bfa !important; }
+:root.dark .bg-gray-100.text-gray-600 { background-color: var(--app-surface-subtle) !important; color: var(--app-text-secondary) !important; }
+
+/* --- DROPDOWN MENUS / POPOVERS --- */
+:root.dark [role="listbox"],
+:root.dark [role="menu"],
+:root.dark [role="dialog"] > div > div:not(#receipt-print-area):not(#student-id-card-printable) {
+  background-color: var(--app-surface) !important;
+  border-color: var(--app-border) !important;
+  color: var(--app-text-primary) !important;
+}
+:root.dark [role="option"]:hover,
+:root.dark [role="menuitem"]:hover {
+  background-color: var(--app-surface-subtle) !important;
+}
+
+/* --- VIEW MODE / EDIT MODE BANNERS --- */
+:root.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1) !important; }
+:root.dark .border-blue-200 { border-color: rgba(59, 130, 246, 0.3) !important; }
+:root.dark .text-blue-700 { color: #60a5fa !important; }
+:root.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.1) !important; }
+:root.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.3) !important; }
+:root.dark .text-amber-700 { color: #fbbf24 !important; }
+:root.dark .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.1) !important; }
+:root.dark .border-emerald-200 { border-color: rgba(16, 185, 129, 0.3) !important; }
+:root.dark .text-emerald-700 { color: #34d399 !important; }
+:root.dark .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.1) !important; }
+:root.dark .border-indigo-200 { border-color: rgba(99, 102, 241, 0.3) !important; }
+:root.dark .text-indigo-700 { color: #818cf8 !important; }
 
 :root.dark .recharts-cartesian-grid line,
 :root.dark .recharts-cartesian-grid path,
