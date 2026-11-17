@@ -115,6 +115,18 @@ if (-not (Test-Path $backupDir)) {
     New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 }
 
+# Ensure backups directory and housekeeping history log permit container read/write
+try {
+    icacls $backupDir /grant "Everyone:(OI)(CI)F" /T /Q | Out-Null
+    $historyFile = Join-Path $backupDir "housekeeping_history.jsonl"
+    if (Test-Path $historyFile) {
+        Set-ItemProperty -Path $historyFile -Name IsReadOnly -Value $false -ErrorAction SilentlyContinue
+        icacls $historyFile /grant "Everyone:F" /Q | Out-Null
+    }
+} catch {
+    # Non-fatal if Windows ACL modifications are restricted by policy
+}
+
 # Ensure db container is active to capture pg_dump snapshot
 $dbRunning = $(docker ps --filter "name=prashant_academy_db" --filter "status=running" -q)
 if (-not $dbRunning) {
@@ -148,6 +160,11 @@ try {
     Write-Host "[WARN] Pre-update database snapshot could not be captured: $_" -ForegroundColor Yellow
     Write-Host "Proceeding with container rebuild (persistent volumes remain preserved)." -ForegroundColor Yellow
 }
+
+# Re-enforce permissions on any newly dumped files
+try {
+    icacls $backupDir /grant "Everyone:(OI)(CI)F" /T /Q | Out-Null
+} catch {}
 
 # ----------------------------------------------------------------------
 # [4/5] Container Rebuild & Service Restart

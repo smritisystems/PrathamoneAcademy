@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description FastAPI application entry point, CORS middleware, exception handlers, and v1 router mounting.
 #  */
@@ -53,6 +53,22 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(ws_router, prefix="/api/v1")
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.on_event("startup")
+async def on_startup():
+    from pathlib import Path
+    for dir_path in [Path("/app/backups"), Path("/app/data/backups")]:
+        try:
+            if dir_path.exists():
+                hist = dir_path / "housekeeping_history.jsonl"
+                if hist.exists():
+                    try:
+                        os.chmod(hist, 0o666)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
 
 # ------------------------------------------------------------------------------

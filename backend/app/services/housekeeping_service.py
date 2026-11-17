@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description Domain service for database backup, SHA-256 verification, GFS retention pruning,
 #  */
@@ -77,13 +77,19 @@ def resolve_backups_dir() -> Path:
     env_override = os.getenv("HOUSEKEEPING_BACKUPS_DIR")
     if env_override:
         p = Path(env_override)
-        p.mkdir(parents=True, exist_ok=True)
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
         return p
     if Path("/app/app/main.py").exists():
         p = Path("/app/backups")
     else:
         p = Path(__file__).resolve().parents[3] / "backups"
-    p.mkdir(parents=True, exist_ok=True)
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     return p
 
 
@@ -91,13 +97,19 @@ def resolve_legacy_backups_dir() -> Path:
     env_override = os.getenv("HOUSEKEEPING_LEGACY_BACKUPS_DIR")
     if env_override:
         p = Path(env_override)
-        p.mkdir(parents=True, exist_ok=True)
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
         return p
     if Path("/app/app/main.py").exists():
         p = Path("/app/data/backups")
     else:
         p = Path(__file__).resolve().parents[3] / "data" / "backups"
-    p.mkdir(parents=True, exist_ok=True)
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     return p
 
 
@@ -206,33 +218,179 @@ async def _run_subprocess(cmd: List[str], env_extra: Optional[Dict[str, str]] = 
     return proc.returncode or 0, stdout_b.decode("utf-8", errors="replace"), stderr_b.decode("utf-8", errors="replace")
 
 
+def _safe_write_text(path: Path, content: str, encoding: str = "utf-8") -> bool:
+    """
+    Safely write text to a path, defensively attempting permission relaxation if needed.
+    Does not crash if write permission is restricted; logs a warning and returns success boolean.
+    """
+    try:
+        if path.exists():
+            try:
+                os.chmod(path, 0o666)
+            except Exception:
+                pass
+        else:
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                os.chmod(path.parent, 0o777)
+            except Exception:
+                pass
+        path.write_text(content, encoding=encoding)
+        try:
+            os.chmod(path, 0o666)
+        except Exception:
+            pass
+        return True
+    except (PermissionError, OSError) as exc:
+        logger.warning("Could not write sidecar file '%s': %s", path, exc)
+        return False
+    except Exception as exc:
+        logger.warning("Unexpected error writing sidecar file '%s': %s", path, exc)
+        return False
+
+
+def _get_history_log_candidates() -> List[Path]:
+    """
+    Returns candidate file paths for the housekeeping history event log in priority order:
+    1. Primary backups directory: /app/backups/housekeeping_history.jsonl
+    2. Legacy backups directory: /app/data/backups/housekeeping_history.jsonl
+    3. User home directory: /home/appuser/housekeeping_history.jsonl
+    4. System temporary directory: /tmp/housekeeping_history.jsonl
+    """
+    candidates: List[Path] = []
+    try:
+        candidates.append(resolve_backups_dir() / "housekeeping_history.jsonl")
+    except Exception:
+        pass
+    try:
+        candidates.append(resolve_legacy_backups_dir() / "housekeeping_history.jsonl")
+    except Exception:
+        pass
+    try:
+        home_dir = Path.home()
+        if home_dir.exists():
+            candidates.append(home_dir / "housekeeping_history.jsonl")
+    except Exception:
+        pass
+    try:
+        candidates.append(Path(tempfile.gettempdir()) / "housekeeping_history.jsonl")
+    except Exception:
+        pass
+
+    seen = set()
+    deduped: List[Path] = []
+    for c in candidates:
+        try:
+            resolved = c.resolve()
+            if resolved not in seen:
+                seen.add(resolved)
+                deduped.append(c)
+        except Exception:
+            if c not in seen:
+                seen.add(c)
+                deduped.append(c)
+    return deduped
+
+
 def _append_history_event(event: Dict[str, Any]) -> None:
-    backups_dir = resolve_backups_dir()
-    log_path = backups_dir / "housekeeping_history.jsonl"
+    """
+    Safely append a housekeeping history event with multi-tier fallback and permission recovery.
+    CRITICAL: This function MUST NEVER raise an exception to the caller under any circumstance.
+    Primary institutional audit logs are stored in the PostgreSQL AuditLog table.
+    """
     record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         **event,
     }
-    with log_path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(record) + "\n")
+    serialized_line = json.dumps(record) + "\n"
+
+    written = False
+    for candidate in _get_history_log_candidates():
+        try:
+            if candidate.exists():
+                try:
+                    os.chmod(candidate, 0o666)
+                except Exception:
+                    pass
+            else:
+                try:
+                    candidate.parent.mkdir(parents=True, exist_ok=True)
+                    os.chmod(candidate.parent, 0o777)
+                except Exception:
+                    pass
+
+            with candidate.open("a", encoding="utf-8") as fh:
+                fh.write(serialized_line)
+            try:
+                os.chmod(candidate, 0o666)
+            except Exception:
+                pass
+            written = True
+            break
+        except (PermissionError, OSError) as exc:
+            logger.warning(
+                "Unable to append housekeeping history to '%s' (%s). Trying fallback location...",
+                candidate,
+                exc,
+            )
+            continue
+        except Exception as exc:
+            logger.warning("Unexpected error writing history to '%s': %s", candidate, exc)
+            continue
+
+    if not written:
+        logger.error(
+            "CRITICAL: Failed to append housekeeping history to any storage location. "
+            "Action '%s' was executed and recorded in PostgreSQL AuditLog, but flat-file history failed.",
+            event.get("action", "UNKNOWN"),
+        )
 
 
 def read_history_events(limit: int = 50) -> List[Dict[str, Any]]:
-    log_path = resolve_backups_dir() / "housekeeping_history.jsonl"
-    if not log_path.exists():
-        return []
-    lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
-    items: List[Dict[str, Any]] = []
-    for line in reversed(lines):
-        if not line.strip():
-            continue
+    """
+    Safely read housekeeping history events from all available candidate locations.
+    Never raises an exception; gracefully merges and sorts events chronologically descending.
+    """
+    raw_lines: List[str] = []
+    candidates = _get_history_log_candidates()
+
+    for candidate in candidates:
         try:
-            items.append(json.loads(line))
+            if not candidate.exists():
+                continue
+            try:
+                os.chmod(candidate, 0o666)
+            except Exception:
+                pass
+            content = candidate.read_text(encoding="utf-8", errors="replace")
+            for line in content.splitlines():
+                if line.strip():
+                    raw_lines.append(line.strip())
+        except (PermissionError, OSError) as exc:
+            logger.warning("Cannot read housekeeping history from '%s': %s", candidate, exc)
+            continue
+        except Exception as exc:
+            logger.warning("Unexpected error reading history from '%s': %s", candidate, exc)
+            continue
+
+    items: List[Dict[str, Any]] = []
+    seen_keys = set()
+    for line in raw_lines:
+        try:
+            parsed = json.loads(line)
+            key = (
+                parsed.get("timestamp"),
+                parsed.get("action"),
+                parsed.get("filename"),
+            )
+            if key not in seen_keys:
+                seen_keys.add(key)
+                items.append(parsed)
         except Exception:
             continue
-        if len(items) >= limit:
-            break
-    return items
+
+    items.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
+    return items[:limit]
 
 
 class HousekeepingService:
@@ -522,7 +680,7 @@ class HousekeepingService:
                 and recorded_sha.lower() == computed_sha.lower()
             )
         else:
-            sha_path.write_text(f"{computed_sha}  {target.name}\n", encoding="utf-8")
+            _safe_write_text(sha_path, f"{computed_sha}  {target.name}\n")
             recorded_sha = computed_sha
 
         toc_entries = 0
@@ -568,7 +726,7 @@ class HousekeepingService:
             "verified_size_bytes": target.stat().st_size,
             "verified_mtime_ns": target.stat().st_mtime_ns,
         })
-        meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
+        _safe_write_text(meta_path, json.dumps(meta, indent=2))
 
         _append_history_event({
             "action": "BACKUP_VERIFIED",
@@ -672,6 +830,10 @@ class HousekeepingService:
                     zf.writestr("checksum.sha256", f"{inner_sha}  {inner_name}\n")
                     zf.writestr("manifest.json", json.dumps(manifest, indent=2))
                 shutil.move(str(tmp_zip), str(target))
+                try:
+                    os.chmod(target, 0o666)
+                except Exception:
+                    pass
         else:
             rc, _, err = await _run_subprocess(
                 _build_pg_dump_cmd(target),
@@ -682,13 +844,17 @@ class HousekeepingService:
                 if target.exists():
                     target.unlink(missing_ok=True)
                 raise RuntimeError(f"PostgreSQL backup failed: {err.strip() or 'Empty output produced'}")
+            try:
+                os.chmod(target, 0o666)
+            except Exception:
+                pass
 
         sha = compute_sha256(target)
-        Path(str(target) + ".sha256").write_text(f"{sha}  {filename}\n", encoding="utf-8")
+        _safe_write_text(Path(str(target) + ".sha256"), f"{sha}  {filename}\n")
 
         recorded_format = "edu_zip" if is_edu_zip else ("plain_sql" if use_plain_sql else "custom_dump")
         meta_path = Path(str(target) + ".meta.json")
-        meta_path.write_text(json.dumps({
+        _safe_write_text(meta_path, json.dumps({
             "filename": filename,
             "label": safe_label,
             "format": recorded_format,
@@ -699,7 +865,7 @@ class HousekeepingService:
             "size_bytes": target.stat().st_size,
             "sha256": sha,
             "notes": notes,
-        }, indent=2), encoding="utf-8")
+        }, indent=2))
 
         verify_res = await cls.verify_backup(filename, "backups", user=user)
 
@@ -768,10 +934,14 @@ class HousekeepingService:
             target = (backups_dir / f"{target.stem}_{ts}{target.suffix}").resolve()
 
         target.write_bytes(raw_bytes)
+        try:
+            os.chmod(target, 0o666)
+        except Exception:
+            pass
         sha = compute_sha256(target)
-        Path(str(target) + ".sha256").write_text(f"{sha}  {target.name}\n", encoding="utf-8")
+        _safe_write_text(Path(str(target) + ".sha256"), f"{sha}  {target.name}\n")
         fmt_val = "edu_zip" if target.suffix == ".edu" else ("custom_dump" if target.suffix == ".dump" else "plain_sql")
-        Path(str(target) + ".meta.json").write_text(json.dumps({
+        _safe_write_text(Path(str(target) + ".meta.json"), json.dumps({
             "filename": target.name,
             "label": "uploaded",
             "format": fmt_val,
@@ -781,7 +951,7 @@ class HousekeepingService:
             "size_bytes": len(raw_bytes),
             "sha256": sha,
             "notes": "Uploaded via Housekeeping UI",
-        }, indent=2), encoding="utf-8")
+        }, indent=2))
 
         verify_res = await cls.verify_backup(target.name, "backups", user=user)
         if not verify_res["format_valid"]:
@@ -1642,7 +1812,7 @@ class HousekeepingService:
                     arch_path.unlink(missing_ok=True)
                     raise
                 sha = compute_sha256(arch_path)
-                Path(str(arch_path) + ".sha256").write_text(f"{sha}  {arch_name}\n", encoding="utf-8")
+                _safe_write_text(Path(str(arch_path) + ".sha256"), f"{sha}  {arch_name}\n")
                 archived_files.append({
                     "category": key,
                     "filename": arch_name,

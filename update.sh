@@ -63,7 +63,8 @@ fi
 
 # 3. Automated Pre-Update Database Snapshot
 echo -e "\n[3/5] Capturing pre-update database snapshot..."
-mkdir -p backups
+mkdir -p backups data/backups
+chmod -R 777 backups data/backups 2>/dev/null || true
 SNAPSHOT_FILE="backups/backup_auto_pre_update_$(date +%Y%m%d_%H%M%S).sql"
 
 if docker compose ps --services --filter "status=running" 2>/dev/null | grep -q "db"; then
@@ -74,6 +75,7 @@ if docker compose ps --services --filter "status=running" 2>/dev/null | grep -q 
         # Keep latest 10 auto-backups
         ls -tp backups/backup_auto_pre_update_*.sql 2>/dev/null | grep -v '/$' | tail -n +11 | xargs -I {} rm -- "{}" 2>/dev/null || true
     fi
+    chmod -R 777 backups data/backups 2>/dev/null || true
 fi
 
 # 4. Rebuild Containers

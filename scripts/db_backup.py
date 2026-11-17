@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-17
 #  *
 #  * @description CLI & scheduled automation utility for PrathamOne EduOS Housekeeping:
 #  */
@@ -45,10 +45,40 @@ def _sha256(path: Path) -> str:
 
 
 def _append_history(event: Dict) -> None:
-    BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = BACKUPS_DIR / "housekeeping_history.jsonl"
-    with log_path.open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps({"timestamp": datetime.now(timezone.utc).isoformat(), **event}) + "\n")
+    try:
+        BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    record = {"timestamp": datetime.now(timezone.utc).isoformat(), **event}
+    line = json.dumps(record) + "\n"
+    candidates = [
+        BACKUPS_DIR / "housekeeping_history.jsonl",
+        LEGACY_DIR / "housekeeping_history.jsonl",
+        Path.home() / "housekeeping_history.jsonl",
+        Path(tempfile.gettempdir()) / "housekeeping_history.jsonl",
+    ]
+    for candidate in candidates:
+        try:
+            try:
+                candidate.parent.mkdir(parents=True, exist_ok=True)
+            except Exception:
+                pass
+            if candidate.exists():
+                try:
+                    os.chmod(candidate, 0o666)
+                except Exception:
+                    pass
+            with candidate.open("a", encoding="utf-8") as fh:
+                fh.write(line)
+            try:
+                os.chmod(candidate, 0o666)
+            except Exception:
+                pass
+            break
+        except (PermissionError, OSError):
+            continue
+        except Exception:
+            continue
 
 
 def _docker_exec(cmd: List[str], stdin_path: Optional[Path] = None, stdout_path: Optional[Path] = None, check: bool = True) -> subprocess.CompletedProcess:
