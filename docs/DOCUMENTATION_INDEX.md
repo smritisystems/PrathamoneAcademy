@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-18 05:03:13<br>
-**Total Indexed Items:** 542  
+**Last Reindexed:** 2026-11-18 08:55:02<br>
+**Total Indexed Items:** 543  
 
 ---
 
@@ -32,7 +32,7 @@
 | `15` | [15_INTEGRATIONS](#15_integrations) | **10** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **36** | UI/UX Design, Components & Footer |
-| `18` | [18_TESTING_QA](#18_testing_qa) | **12** | Testing, Verification & Quality Assurance |
+| `18` | [18_TESTING_QA](#18_testing_qa) | **13** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **13** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **70** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **5** | Troubleshooting, Runbooks & Recovery |
@@ -431,6 +431,7 @@
 | **EduBoard Cross-Device Lecture Compatibility & Regression Test Report** | `REPORT` | `1.0` | 2026-11-13 | `Approved` | [2026-11-13_TESTING-QA_TEST-REPORT_CROSS-DEVICE-REGRESSION-REPORT_V1.md](18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_CROSS-DEVICE-REGRESSION-REPORT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY |
 | **EduBoard Display Adaptation & Multi-Resolution Performance Report** | `REPORT` | `1.0` | 2026-11-13 | `Approved` | [2026-11-13_TESTING-QA_TEST-REPORT_DISPLAY-AND-PERFORMANCE-REPORT_V1.md](18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_DISPLAY-AND-PERFORMANCE-REPORT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT |
 | **EduBoard Universal Input Compatibility & Digitizer Test Report** | `REPORT` | `1.0` | 2026-11-13 | `Approved` | [2026-11-13_TESTING-QA_TEST-REPORT_INPUT-COMPATIBILITY-TEST-REPORT_V1.md](18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_INPUT-COMPATIBILITY-TEST-REPORT_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT |
+| **End-to-End Core User Workflows Live Verification Report** | `REPORT` | `1.0` | 2026-11-18 | `Approved` | [2026-11-18_TESTING-QA_VERIFICATION-REPORT_END-TO-END-CORE-USER-WORKFLOWS_V1.md](18_TESTING_QA/2026-11-18_TESTING-QA_VERIFICATION-REPORT_END-TO-END-CORE-USER-WORKFLOWS_V1.md) | 04_STUDENT_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 09_FEES_PAYMENTS |
 | **Fee Receipt PDF Rendering & Export Test Report** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_TESTING-QA_TEST-REPORT_RECEIPT-PDF-RENDERING_V1.md](18_TESTING_QA/2026-11-09_TESTING-QA_TEST-REPORT_RECEIPT-PDF-RENDERING_V1.md) | 09_FEES_PAYMENTS, 14_PRINTING_DOCUMENTS |
 | **PrathamOne EduBoard End-to-End Verification & QA Test Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-TEST-REPORT_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-TEST-REPORT_V1.md) | 03_ACADEMIC_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY |
 | **PrathamOne EduBoard — Greenboard, Display Modes & Pop-Out Test Report** | `TEST-REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-GREENBOARD-AND-POPOUT_V1.md](18_TESTING_QA/2026-11-12_TESTING-QA_TEST-REPORT_EDUBOARD-GREENBOARD-AND-POPOUT_V1.md) | 03_ACADEMIC_MANAGEMENT, 18_TESTING_QA |
