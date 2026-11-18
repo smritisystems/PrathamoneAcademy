@@ -62,6 +62,7 @@ import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
 import { EditModeBar, SortableHeader, TableSortSelect, TableSortOption, ContextualHelpButton } from '../components/common'
+import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import { useTableSort } from '../hooks/useTableSort'
 import toast from 'react-hot-toast'
 
@@ -1544,6 +1545,8 @@ function AttendanceContent() {
       {/* ── TAB 7: REPORTS & ANALYTICS ── */}
       {activeTab === 'reports' && (
         <div className="space-y-6">
+          {/* Universal Calculation & Decision Intelligence Engine */}
+          <ReportIntelligenceBanner reportId="student-attendance" />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
               <span className="text-xs font-semibold text-slate-500 uppercase">30-Day Institute Attendance</span>

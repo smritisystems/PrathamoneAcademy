@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Dedicated CRM Reports & Analytics Centre featuring monthly intake trajectory, lost reason Pareto analysis, counsellor performance matrix, and universal print export.
  */
@@ -27,6 +27,7 @@ import toast from 'react-hot-toast'
 import { leadsApi } from '../../api/endpoints'
 import type { CrmReportsAnalytics } from '../../types'
 import { useUniversalPrint } from '../../components/printing'
+import ReportIntelligenceBanner from '../../components/reports/ReportIntelligenceBanner'
 import CrmHeader from './CrmHeader'
 
 export default function CrmReportsPage() {
@@ -108,6 +109,9 @@ export default function CrmReportsPage() {
       />
 
       <div id="crm-reports-printable-section" className="space-y-6">
+        {/* Universal Calculation & Decision Intelligence Engine */}
+        <ReportIntelligenceBanner reportId="crm-enquiries" />
+
         {/* ─── SECTION 1: 6-MONTH MONTHLY ENQUIRY & CONVERSION TRAJECTORY ─── */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between">

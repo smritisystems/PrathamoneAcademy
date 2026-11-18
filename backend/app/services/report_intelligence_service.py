@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Universal Report Calculation & Intelligence Engine providing mathematical provenance,
 #  */
@@ -39,6 +39,9 @@ from app.models import (
     TeachingSession,
     InstitutionSetting,
     Lead,
+    CommunicationLog,
+    TimetableEntry,
+    TeacherPayroll,
 )
 from app.services.financial_governance_service import (
     FinancialGovernanceService,
@@ -102,6 +105,9 @@ class ReportIntelligenceService:
         "batch_occupancy_target": 85.0,
         "teaching_delivery_target": 95.0,
         "attrition_alert_threshold": 10.0,
+        "lead_conversion_target": 20.0,
+        "message_delivery_target": 95.0,
+        "timetable_saturation_target": 75.0,
         "decimal_precision": 2,
     }
 
@@ -236,6 +242,66 @@ class ReportIntelligenceService:
                 "explanation": "Measures the rate of premature student exits relative to total active intake.",
                 "target": 10.0,
             },
+            {
+                "id": "calc_crm_conversion_rate",
+                "name": "Lead-to-Admission Conversion Rate",
+                "report_id": "crm-enquiries",
+                "domain": "admissions",
+                "formula": "Converted Enrolled Leads / Total Qualified Inquiries * 100",
+                "latex": r"\frac{L_{admitted}}{L_{total}} \times 100",
+                "numerator_label": "Admitted Enrolled Students",
+                "denominator_label": "Total Qualified Inquiries",
+                "unit": "%",
+                "inclusion_rules": ["Prospect leads with stage = 'admitted' and linked converted_student_id"],
+                "exclusion_rules": ["Spam inquiries", "Duplicate leads"],
+                "explanation": "Measures the effectiveness of admissions counseling in converting prospect inquiries into enrolled students.",
+                "target": 20.0,
+            },
+            {
+                "id": "calc_message_delivery_rate",
+                "name": "Omnichannel Message Delivery Rate",
+                "report_id": "communication-logs",
+                "domain": "communication",
+                "formula": "Delivered Outbound Messages / Total Dispatched Messages * 100",
+                "latex": r"\frac{M_{delivered}}{M_{total}} \times 100",
+                "numerator_label": "Delivered Messages",
+                "denominator_label": "Total Dispatched Messages",
+                "unit": "%",
+                "inclusion_rules": ["Outbound SMS, WhatsApp, and Email with carrier delivery receipt"],
+                "exclusion_rules": ["Queued or draft messages"],
+                "explanation": "Calculates the proportion of parent and student notifications successfully confirmed by carrier gateways.",
+                "target": 95.0,
+            },
+            {
+                "id": "calc_timetable_saturation",
+                "name": "Timetable Slot Saturation Rate",
+                "report_id": "timetable-utilization",
+                "domain": "academics",
+                "formula": "Active Scheduled Slots / Total Available Room-Period Slots * 100",
+                "latex": r"\frac{T_{active}}{T_{available}} \times 100",
+                "numerator_label": "Active Timetable Slots",
+                "denominator_label": "Available Facility Slots",
+                "unit": "%",
+                "inclusion_rules": ["Active instructional timetable periods"],
+                "exclusion_rules": ["Deactivated timetable entries"],
+                "explanation": "Measures facility and classroom time utilization during operating institute hours.",
+                "target": 75.0,
+            },
+            {
+                "id": "calc_faculty_payroll_fee_ratio",
+                "name": "Faculty Payroll to Fee Ratio",
+                "report_id": "payroll-monthly-register",
+                "domain": "workforce",
+                "formula": "Total Faculty Payroll / Net Invoiced Fees * 100",
+                "latex": r"\frac{P_{gross}}{F_{net}} \times 100",
+                "numerator_label": "Gross Teacher Payroll Expense (₹)",
+                "denominator_label": "Net Invoiced Fees (₹)",
+                "unit": "%",
+                "inclusion_rules": ["Approved and finalized monthly teacher payroll sheets"],
+                "exclusion_rules": ["Draft unapproved payroll records"],
+                "explanation": "Evaluates instructional labor cost sustainability relative to net tuition billing.",
+                "target": 30.0,
+            },
         ]
 
     @classmethod
@@ -299,6 +365,24 @@ class ReportIntelligenceService:
         elif report_id in CONCESSION_REPORT_DEFINITIONS:
             return await cls._compute_concession_intelligence(
                 db, institution_id, report_id, academic_year_id, standard_id, division_id, thresholds
+            )
+
+        # ── 9. Admissions / CRM Pipeline ──
+        elif report_id in ["crm-enquiries", "crm-pipeline", "leads"]:
+            return await cls._compute_crm_intelligence(
+                db, institution_id, academic_year_id, thresholds
+            )
+
+        # ── 10. Communication Logs & Dispatch ──
+        elif report_id in ["communication-logs", "communication", "communication-summary"]:
+            return await cls._compute_communication_intelligence(
+                db, institution_id, thresholds
+            )
+
+        # ── 11. Timetable Room & Slot Utilization ──
+        elif report_id in ["timetable-utilization", "timetable"]:
+            return await cls._compute_timetable_intelligence(
+                db, institution_id, thresholds
             )
 
         # Generic Fallback
@@ -1142,6 +1226,320 @@ class ReportIntelligenceService:
                 "target": 15.0,
                 "actual": concession_pct,
                 "variance": SafeMath.variance(concession_pct, 15.0),
+            },
+        }
+
+    @classmethod
+    async def _compute_crm_intelligence(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        academic_year_id: Optional[int],
+        thresholds: Dict[str, float],
+    ) -> Dict[str, Any]:
+        """Compute actionable admissions and inquiry pipeline conversion intelligence."""
+        conditions = [Lead.institution_id == institution_id, Lead.is_active.is_(True)]
+        if academic_year_id:
+            conditions.append(Lead.academic_year_id == academic_year_id)
+
+        stmt = select(
+            func.count(Lead.id).label("total_leads"),
+            func.sum(case((and_(Lead.stage == "admitted", Lead.converted_student_id.isnot(None)), 1), else_=0)).label("converted_leads"),
+            func.sum(case((Lead.stage == "lost", 1), else_=0)).label("lost_leads"),
+            func.sum(case((Lead.stage.notin_(["admitted", "lost"]), 1), else_=0)).label("active_pipeline"),
+        ).where(and_(*conditions))
+
+        res = await db.execute(stmt)
+        row = res.one_or_none()
+
+        total = row.total_leads or 0 if row else 0
+        converted = int(row.converted_leads or 0) if row else 0
+        lost = int(row.lost_leads or 0) if row else 0
+        active_pipeline = int(row.active_pipeline or 0) if row else 0
+
+        conv_rate = SafeMath.divide(converted, total, multiplier=100.0)
+        target = thresholds.get("lead_conversion_target", 20.0)
+        var = SafeMath.variance(conv_rate, target)
+
+        kpis = [
+            {
+                "id": "lead_conversion_rate",
+                "label": "Lead-to-Admission Conversion Rate",
+                "value": f"{conv_rate}%",
+                "raw_value": conv_rate,
+                "unit": "%",
+                "target": f"{target}%",
+                "variance": f"{var:+0.2f}%",
+                "status": "positive" if conv_rate >= target else "warning" if conv_rate >= (target - 8.0) else "critical",
+                "explanation": {
+                    "formula": "Converted Enrolled Leads / Total Qualified Inquiries × 100",
+                    "numerator": {"label": "Admitted Enrolled Students", "value": converted},
+                    "denominator": {"label": "Total Qualified Inquiries", "value": total},
+                    "included_count": total,
+                    "excluded_count": 0,
+                    "plain_text": f"Of {total} inquiries captured, {converted} converted to enrolled students ({lost} lost, {active_pipeline} active in pipeline).",
+                },
+            },
+            {
+                "id": "active_pipeline_leads",
+                "label": "Active Pipeline Opportunities",
+                "value": f"{active_pipeline}",
+                "raw_value": active_pipeline,
+                "unit": "Leads",
+                "status": "positive" if active_pipeline > 0 else "neutral",
+                "explanation": {
+                    "formula": "Leads in counseling, demo scheduled, or application stages",
+                    "numerator": {"label": "Active Prospects", "value": active_pipeline},
+                    "denominator": {"label": "Total Leads", "value": total},
+                    "included_count": active_pipeline,
+                    "excluded_count": converted + lost,
+                    "plain_text": f"{active_pipeline} prospective students currently undergoing counseling or trial lectures.",
+                },
+            },
+            {
+                "id": "converted_admissions",
+                "label": "Confirmed Admissions",
+                "value": f"{converted}",
+                "raw_value": converted,
+                "unit": "Students",
+                "status": "positive",
+                "explanation": {
+                    "formula": "Leads with stage = 'admitted' and linked student ID",
+                    "numerator": {"label": "Converted Admissions", "value": converted},
+                    "denominator": {"label": "Total Inquiries", "value": total},
+                    "included_count": converted,
+                    "excluded_count": 0,
+                    "plain_text": f"{converted} prospect inquiries successfully finalized into tuition registrations.",
+                },
+            },
+        ]
+
+        insights = []
+        if conv_rate < target:
+            insights.append({
+                "id": "crm_conversion_below_target",
+                "title": "Admissions Conversion Pacing Below Target",
+                "severity": "warning",
+                "message": f"Conversion rate is {conv_rate}%, which is {abs(var):.2f}% below the benchmark of {target}%.",
+                "impact": "Indicates friction in counselor follow-up turnaround or demo class satisfaction.",
+                "action_label": "Review Follow-up Queue",
+                "action_route": "/crm/follow-ups",
+            })
+        else:
+            insights.append({
+                "id": "crm_healthy_velocity",
+                "title": "Healthy Admissions Pipeline Velocity",
+                "severity": "positive",
+                "message": f"Conversion rate of {conv_rate}% meets or exceeds the institutional benchmark of {target}%.",
+                "impact": "Counseling and demo trial sessions are converting inquiries effectively.",
+                "action_label": "View CRM Kanban",
+                "action_route": "/crm/pipeline",
+            })
+
+        return {
+            "report_id": "crm-enquiries",
+            "kpis": kpis,
+            "insights": insights,
+            "comparisons": {
+                "benchmark_name": "Admissions Target Conversion",
+                "target": target,
+                "actual": conv_rate,
+                "variance": var,
+            },
+        }
+
+    @classmethod
+    async def _compute_communication_intelligence(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        thresholds: Dict[str, float],
+    ) -> Dict[str, Any]:
+        """Compute delivery success and carrier latency intelligence for outbound parent notifications."""
+        stmt = select(
+            func.count(CommunicationLog.id).label("total_messages"),
+            func.sum(case((CommunicationLog.status == "delivered", 1), else_=0)).label("delivered_messages"),
+            func.sum(case((CommunicationLog.status == "failed", 1), else_=0)).label("failed_messages"),
+            func.sum(case((CommunicationLog.status == "sent", 1), else_=0)).label("sent_messages"),
+        ).where(CommunicationLog.institution_id == institution_id)
+
+        res = await db.execute(stmt)
+        row = res.one_or_none()
+
+        total = row.total_messages or 0 if row else 0
+        delivered = int(row.delivered_messages or 0) if row else 0
+        failed = int(row.failed_messages or 0) if row else 0
+
+        delivery_rate = SafeMath.divide(delivered, total, multiplier=100.0)
+        target = thresholds.get("message_delivery_target", 95.0)
+        var = SafeMath.variance(delivery_rate, target)
+
+        kpis = [
+            {
+                "id": "message_delivery_rate",
+                "label": "Message Delivery Success Rate",
+                "value": f"{delivery_rate}%",
+                "raw_value": delivery_rate,
+                "unit": "%",
+                "target": f"{target}%",
+                "variance": f"{var:+0.2f}%",
+                "status": "positive" if delivery_rate >= target else "warning" if delivery_rate >= (target - 10.0) else "critical",
+                "explanation": {
+                    "formula": "Confirmed Delivered Messages / Total Dispatched Messages × 100",
+                    "numerator": {"label": "Delivered Messages", "value": delivered},
+                    "denominator": {"label": "Total Dispatches", "value": total},
+                    "included_count": total,
+                    "excluded_count": 0,
+                    "plain_text": f"Of {total} notifications dispatched, {delivered} have carrier delivery confirmations ({failed} failed).",
+                },
+            },
+            {
+                "id": "failed_dispatches",
+                "label": "Failed Dispatches",
+                "value": f"{failed}",
+                "raw_value": failed,
+                "unit": "Alerts",
+                "status": "critical" if failed > 5 else "warning" if failed > 0 else "positive",
+                "explanation": {
+                    "formula": "Count of communication logs with status = 'failed'",
+                    "numerator": {"label": "Failed Logs", "value": failed},
+                    "denominator": {"label": "Total Logs", "value": total},
+                    "included_count": failed,
+                    "excluded_count": 0,
+                    "plain_text": f"{failed} outbound dispatches rejected by carrier gateways or invalid phone numbers.",
+                },
+            },
+        ]
+
+        insights = []
+        if delivery_rate < target or failed > 0:
+            insights.append({
+                "id": "comm_failure_alert",
+                "title": "Outbound Delivery Drops Detected",
+                "severity": "warning" if failed < 10 else "critical",
+                "message": f"{failed} messages encountered delivery failures. Current success rate is {delivery_rate}%.",
+                "impact": "Parents may miss critical attendance absence alerts or fee payment due date reminders.",
+                "action_label": "Inspect Dispatch Logs",
+                "action_route": "/communication/logs",
+            })
+        else:
+            insights.append({
+                "id": "comm_healthy",
+                "title": "Carrier Gateways Operational",
+                "severity": "positive",
+                "message": f"Delivery rate of {delivery_rate}% satisfies telecom delivery SLAs.",
+                "impact": "Parent notification reach is operating at optimal reliability.",
+                "action_label": "View Communication Center",
+                "action_route": "/communication",
+            })
+
+        return {
+            "report_id": "communication-logs",
+            "kpis": kpis,
+            "insights": insights,
+            "comparisons": {
+                "benchmark_name": "Carrier Delivery SLA",
+                "target": target,
+                "actual": delivery_rate,
+                "variance": var,
+            },
+        }
+
+    @classmethod
+    async def _compute_timetable_intelligence(
+        cls,
+        db: AsyncSession,
+        institution_id: int,
+        thresholds: Dict[str, float],
+    ) -> Dict[str, Any]:
+        """Compute facility room and timetable period occupancy saturation."""
+        stmt = (
+            select(
+                func.count(distinct(TimetableEntry.id)).label("active_slots"),
+                func.count(distinct(TimetableEntry.room_number)).label("active_rooms"),
+                func.count(distinct(TimetableEntry.teacher_id)).label("scheduled_teachers"),
+            )
+            .select_from(TimetableEntry)
+            .join(Division, TimetableEntry.division_id == Division.id)
+            .join(Standard, Division.standard_id == Standard.id)
+            .where(
+                and_(
+                    Standard.institution_id == institution_id,
+                    TimetableEntry.is_active.is_(True),
+                )
+            )
+        )
+
+        res = await db.execute(stmt)
+        row = res.one_or_none()
+
+        active_slots = int(row.active_slots or 0) if row else 0
+        active_rooms = int(row.active_rooms or 0) if row else 0
+        scheduled_teachers = int(row.scheduled_teachers or 0) if row else 0
+
+        assumed_capacity = max(active_rooms * 40, active_slots, 1)
+        sat_rate = SafeMath.divide(active_slots, assumed_capacity, multiplier=100.0)
+        target = thresholds.get("timetable_saturation_target", 75.0)
+        var = SafeMath.variance(sat_rate, target)
+
+        kpis = [
+            {
+                "id": "timetable_saturation_rate",
+                "label": "Room & Slot Saturation Rate",
+                "value": f"{sat_rate}%",
+                "raw_value": sat_rate,
+                "unit": "%",
+                "target": f"{target}%",
+                "variance": f"{var:+0.2f}%",
+                "status": "positive" if sat_rate >= target else "neutral",
+                "explanation": {
+                    "formula": "Active Scheduled Slots / Estimated Weekly Room Capacity × 100",
+                    "numerator": {"label": "Active Slots", "value": active_slots},
+                    "denominator": {"label": "Room Capacity Universe", "value": assumed_capacity},
+                    "included_count": active_slots,
+                    "excluded_count": 0,
+                    "plain_text": f"{active_slots} weekly teaching periods distributed across {active_rooms} classrooms.",
+                },
+            },
+            {
+                "id": "active_rooms_count",
+                "label": "Classrooms in Utilization",
+                "value": f"{active_rooms}",
+                "raw_value": active_rooms,
+                "unit": "Rooms",
+                "status": "positive",
+                "explanation": {
+                    "formula": "Distinct count of room numbers with active timetable slots",
+                    "numerator": {"label": "Active Rooms", "value": active_rooms},
+                    "denominator": {"label": "Total Rooms", "value": active_rooms},
+                    "included_count": active_rooms,
+                    "excluded_count": 0,
+                    "plain_text": f"{active_rooms} distinct instructional rooms currently allocated to active batches.",
+                },
+            },
+        ]
+
+        insights = [
+            {
+                "id": "timetable_insight",
+                "title": "Facility Schedule Balance",
+                "severity": "positive" if sat_rate >= 60.0 else "info",
+                "message": f"{active_slots} periods active across {active_rooms} physical rooms with {scheduled_teachers} scheduled teachers.",
+                "impact": "High timetable utilization optimizes institute physical infrastructure without scheduling conflicts.",
+                "action_label": "View Timetable Grid",
+                "action_route": "/timetable",
+            }
+        ]
+
+        return {
+            "report_id": "timetable-utilization",
+            "kpis": kpis,
+            "insights": insights,
+            "comparisons": {
+                "benchmark_name": "Classroom Utilization Target",
+                "target": target,
+                "actual": sat_rate,
+                "variance": var,
             },
         }
 

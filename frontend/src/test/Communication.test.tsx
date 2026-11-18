@@ -19,6 +19,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Communication from '../pages/Communication'
 import { communicationApi } from '../api/endpoints'
 import { useEditModeStore } from '../store/editModeStore'
@@ -206,13 +207,18 @@ describe('Communication Center Workspace', () => {
   })
 
   const renderWithRoute = (initialPath = '/communication/overview') => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
     return render(
-      <MemoryRouter initialEntries={[initialPath]}>
-        <Routes>
-          <Route path="/communication/*" element={<Communication />} />
-          <Route path="/communication" element={<Communication />} />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[initialPath]}>
+          <Routes>
+            <Route path="/communication/*" element={<Communication />} />
+            <Route path="/communication" element={<Communication />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     )
   }
 

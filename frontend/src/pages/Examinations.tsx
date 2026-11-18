@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Examinations flagship workspace featuring 7 dedicated submenus: overview, schedules, marks entry, analytics, report cards, question papers, and settings.
  */
@@ -36,6 +36,7 @@ import { EditModeBar, LockedButton, SortableHeader, TableSortSelect, TableSortOp
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import ReportCardModal from '../components/ReportCardModal'
+import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import type { ExamMarksSheet, ExamAnalyticsData } from '../types'
 import toast from 'react-hot-toast'
 
@@ -997,6 +998,8 @@ function ExaminationsContent() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'analytics' && (
         <div className="space-y-6">
+          {/* Universal Calculation & Decision Intelligence Engine */}
+          <ReportIntelligenceBanner reportId="exam-merit" />
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div>

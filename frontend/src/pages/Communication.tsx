@@ -37,6 +37,7 @@ import { useEnvironmentStore } from '../store/environmentStore'
 import { EditModeBar, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
 import { ChatWorkspaceTab } from '../components/communication/ChatWorkspaceTab'
 import { NoticeBoardTab } from '../components/communication/NoticeBoardTab'
+import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import { useBranding } from '../config/branding'
 
 export type CommunicationTab =
@@ -1754,6 +1755,8 @@ function CommunicationContent() {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {activeTab === 'history' && (
               <div className="space-y-5">
+                {/* Universal Calculation & Decision Intelligence Engine */}
+                <ReportIntelligenceBanner reportId="communication-logs" />
                 <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
                   {/* Filters */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">

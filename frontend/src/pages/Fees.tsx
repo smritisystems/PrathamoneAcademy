@@ -44,6 +44,7 @@ import {
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ConcessionTraceModal, ContextualHelpButton } from '../components/common'
+import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
 import PaymentReceiptView from '../components/PaymentReceiptView'
@@ -5363,6 +5364,8 @@ function FeesContent() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'reports' && (
         <div className="space-y-4">
+          {/* Universal Calculation & Decision Intelligence Engine */}
+          <ReportIntelligenceBanner reportId={reportType === 'defaulters' ? 'fee-defaulters' : 'collection'} />
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <button
