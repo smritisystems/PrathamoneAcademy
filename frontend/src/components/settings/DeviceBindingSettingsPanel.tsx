@@ -39,6 +39,14 @@ import {
   Cpu,
   Key,
   Network,
+  Star,
+  LogOut,
+  Eye,
+  XOctagon,
+  Download,
+  AlertTriangle,
+  FileText,
+  Users,
 } from 'lucide-react'
 import { deviceBindingApi } from '../../api/endpoints'
 import type {
@@ -47,6 +55,8 @@ import type {
   DeviceApprovalPolicy,
   DeviceManagementPermission,
   UserDeviceItem,
+  SecurityIncidentItem,
+  SecurityIncidentMetrics,
 } from '../../types'
 
 interface DeviceBindingSettingsPanelProps {
@@ -91,6 +101,20 @@ export default function DeviceBindingSettingsPanel({
   const [registering, setRegistering] = useState<boolean>(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending_approval' | 'revoked'>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [activeTab, setActiveTab] = useState<'inventory' | 'incidents'>('inventory')
+  const [incidents, setIncidents] = useState<SecurityIncidentItem[]>([])
+  const [incidentMetrics, setIncidentMetrics] = useState<SecurityIncidentMetrics>({
+    total_incidents: 0,
+    blocked_attempts: 0,
+    shadow_observations: 0,
+    revoked_sessions: 0,
+  })
+  const [loadingIncidents, setLoadingIncidents] = useState<boolean>(false)
+  const [incidentSeverity, setIncidentSeverity] = useState<'all' | 'critical' | 'warning' | 'info'>('all')
+  const [incidentSearch, setIncidentSearch] = useState<string>('')
+  const [showTerminateUserModal, setShowTerminateUserModal] = useState<boolean>(false)
+  const [targetUserIdToTerminate, setTargetUserIdToTerminate] = useState<string>('')
+  const [terminatingUserSessions, setTerminatingUserSessions] = useState<boolean>(false)
   const [agentInfo, setAgentInfo] = useState<{
     online: boolean
     primaryMac?: string
@@ -430,6 +454,154 @@ export default function DeviceBindingSettingsPanel({
     }
   }
 
+  const loadIncidents = async () => {
+    try {
+      if (!deviceBindingApi?.getIncidents) return
+      setLoadingIncidents(true)
+      const res = await deviceBindingApi.getIncidents({
+        institution_id: institutionId,
+        severity: incidentSeverity === 'all' ? undefined : incidentSeverity,
+        limit: 100,
+      })
+      if (res.data?.status === 'success') {
+        setIncidents(res.data.incidents || [])
+        setIncidentMetrics(
+          res.data.metrics || {
+            total_incidents: 0,
+            blocked_attempts: 0,
+            shadow_observations: 0,
+            revoked_sessions: 0,
+          }
+        )
+      }
+    } catch (err: any) {
+      console.warn('Could not load security incidents:', err)
+    } finally {
+      setLoadingIncidents(false)
+    }
+  }
+
+  useEffect(() => {
+    loadIncidents()
+  }, [incidentSeverity, institutionId])
+
+  const handleToggleTrust = async (deviceId: number, currentTrusted: boolean) => {
+    if (!isEditMode) {
+      setActionFeedback({
+        type: 'error',
+        text: 'Please activate Edit Mode in the top bar to modify device trust.',
+      })
+      return
+    }
+    try {
+      const res = await deviceBindingApi.setTrust(deviceId, !currentTrusted, institutionId)
+      setActionFeedback({
+        type: 'success',
+        text: res.data?.message || 'Device trust updated.',
+      })
+      loadDevices()
+      loadIncidents()
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        text: err.response?.data?.detail || 'Failed to update device trust status.',
+      })
+    }
+  }
+
+  const handleTerminateSession = async (device: UserDeviceItem) => {
+    if (!isEditMode) {
+      setActionFeedback({
+        type: 'error',
+        text: 'Please activate Edit Mode in the top bar to terminate sessions.',
+      })
+      return
+    }
+    if (
+      !window.confirm(
+        `Immediate Kill-Switch: Terminate active session for device '${device.device_name}'? The user will be immediately logged out.`
+      )
+    ) {
+      return
+    }
+    try {
+      const res = await deviceBindingApi.terminateSession(device.id, institutionId)
+      setActionFeedback({
+        type: 'success',
+        text: res.data?.message || 'Session terminated successfully.',
+      })
+      loadDevices()
+      loadIncidents()
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        text: err.response?.data?.detail || 'Failed to terminate session.',
+      })
+    }
+  }
+
+  const handleTerminateAllUserSessions = async (userId: number) => {
+    if (!isEditMode) {
+      setActionFeedback({
+        type: 'error',
+        text: 'Please activate Edit Mode in the top bar to terminate user sessions.',
+      })
+      return
+    }
+    if (
+      !window.confirm(
+        `Global User Kill-Switch: Terminate ALL active sessions across all devices for user ID ${userId}?`
+      )
+    ) {
+      return
+    }
+    try {
+      setTerminatingUserSessions(true)
+      const res = await deviceBindingApi.terminateUserSessions(userId, institutionId)
+      setActionFeedback({
+        type: 'success',
+        text: res.data?.message || 'All user sessions terminated.',
+      })
+      setShowTerminateUserModal(false)
+      setTargetUserIdToTerminate('')
+      loadDevices()
+      loadIncidents()
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        text: err.response?.data?.detail || 'Failed to terminate user sessions.',
+      })
+    } finally {
+      setTerminatingUserSessions(false)
+    }
+  }
+
+  const handleExportIncidentsCsv = () => {
+    if (!incidents.length) return
+    const headers = ['ID', 'Timestamp', 'Severity', 'Action', 'User Name', 'User Email', 'IP Address', 'User Agent', 'Details']
+    const rows = incidents.map((inc) => [
+      inc.id,
+      inc.created_at || '',
+      (inc.severity || '').toUpperCase(),
+      inc.action,
+      `"${(inc.user_name || '').replace(/"/g, '""')}"`,
+      inc.user_email || '',
+      inc.ip_address || '',
+      `"${(inc.user_agent || '').replace(/"/g, '""')}"`,
+      `"${(inc.details || '').replace(/"/g, '""')}"`,
+    ])
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `security_incidents_audit_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   const getDeviceIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case 'mobile':
@@ -452,6 +624,19 @@ export default function DeviceBindingSettingsPanel({
       const matchEmail = d.user_email?.toLowerCase().includes(q)
       const matchFp = d.device_fingerprint?.toLowerCase().includes(q)
       if (!matchName && !matchUser && !matchEmail && !matchFp) return false
+    }
+    return true
+  })
+
+  const filteredIncidents = incidents.filter((inc) => {
+    if (incidentSearch.trim()) {
+      const q = incidentSearch.toLowerCase()
+      const matchAction = inc.action?.toLowerCase().includes(q)
+      const matchDetails = inc.details?.toLowerCase().includes(q)
+      const matchUser = inc.user_name?.toLowerCase().includes(q)
+      const matchEmail = inc.user_email?.toLowerCase().includes(q)
+      const matchIp = inc.ip_address?.toLowerCase().includes(q)
+      if (!matchAction && !matchDetails && !matchUser && !matchEmail && !matchIp) return false
     }
     return true
   })
@@ -532,8 +717,59 @@ export default function DeviceBindingSettingsPanel({
         </div>
       )}
 
-      {/* SECTION 1: MASTER ACTIVATION & SAFE POLICIES */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-5">
+      {/* Workspace Navigation Sub-Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('inventory')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition ${
+            activeTab === 'inventory'
+              ? 'bg-primary-600 text-white shadow-xs'
+              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <Monitor className="w-4 h-4" />
+          <span>Hardware Inventory & Policies</span>
+          <span
+            className={`px-2 py-0.5 rounded-full text-[10px] ${
+              activeTab === 'inventory' ? 'bg-primary-700 text-white' : 'bg-slate-100 text-slate-600'
+            }`}
+          >
+            {devices.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('incidents')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition ${
+            activeTab === 'incidents'
+              ? 'bg-primary-600 text-white shadow-xs'
+              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4" />
+          <span>Security Incident Center</span>
+          {incidentMetrics.blocked_attempts > 0 ? (
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500 text-white font-extrabold animate-pulse">
+              {incidentMetrics.blocked_attempts} Blocked
+            </span>
+          ) : (
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === 'incidents' ? 'bg-primary-700 text-white' : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {incidentMetrics.total_incidents}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'inventory' ? (
+        <>
+          {/* SECTION 1: MASTER ACTIVATION & SAFE POLICIES */}
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -1019,6 +1255,7 @@ export default function DeviceBindingSettingsPanel({
                   <th className="px-3.5 py-2 font-semibold text-slate-700">Device</th>
                   <th className="px-3.5 py-2 font-semibold text-slate-700">User</th>
                   <th className="px-3.5 py-2 font-semibold text-slate-700">Fingerprint</th>
+                  <th className="px-3.5 py-2 font-semibold text-slate-700">Trust Level</th>
                   <th className="px-3.5 py-2 font-semibold text-slate-700">Status</th>
                   <th className="px-3.5 py-2 font-semibold text-slate-700">Last Used</th>
                   {isEditMode && (
@@ -1046,6 +1283,19 @@ export default function DeviceBindingSettingsPanel({
                       {d.device_fingerprint.slice(0, 12)}...
                     </td>
                     <td className="px-3.5 py-2.5">
+                      {d.is_trusted ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Star className="w-3 h-3 fill-emerald-500 text-emerald-600" />
+                          Trusted
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                          <ShieldCheck className="w-3 h-3 text-slate-400" />
+                          Standard
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3.5 py-2.5">
                       {d.status === 'active' && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
                           Active
@@ -1066,12 +1316,47 @@ export default function DeviceBindingSettingsPanel({
                       {d.last_used_at ? new Date(d.last_used_at).toLocaleDateString() : 'Never'}
                     </td>
                     {isEditMode && (
-                      <td className="px-3.5 py-2.5 text-right space-x-1">
+                      <td className="px-3.5 py-2.5 text-right space-x-1 whitespace-nowrap">
+                        {/* Trust Toggle */}
+                        {d.is_trusted ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTrust(d.id, true)}
+                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-medium transition"
+                            title="Demote to standard device"
+                          >
+                            Untrust
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTrust(d.id, false)}
+                            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded text-[10px] font-bold inline-flex items-center gap-1 transition"
+                            title="Mark as trusted device"
+                          >
+                            <Star className="w-3 h-3 text-amber-600 fill-amber-500" />
+                            Trust
+                          </button>
+                        )}
+
+                        {/* Immediate Session Termination */}
+                        {d.status === 'active' && (
+                          <button
+                            type="button"
+                            onClick={() => handleTerminateSession(d)}
+                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded text-[10px] font-bold inline-flex items-center gap-1 transition"
+                            title="Instantly terminate active device session"
+                          >
+                            <LogOut className="w-3 h-3 text-rose-600" />
+                            Kill Session
+                          </button>
+                        )}
+
                         {d.status === 'pending_approval' && (
                           <button
                             type="button"
                             onClick={() => handleApprove(d.id)}
-                            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold"
+                            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition"
                           >
                             Approve
                           </button>
@@ -1080,7 +1365,7 @@ export default function DeviceBindingSettingsPanel({
                           <button
                             type="button"
                             onClick={() => handleRevoke(d.id)}
-                            className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[10px] font-bold"
+                            className="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[10px] font-bold transition"
                           >
                             Revoke
                           </button>
@@ -1088,7 +1373,7 @@ export default function DeviceBindingSettingsPanel({
                         <button
                           type="button"
                           onClick={() => handleDelete(d.id)}
-                          className="p-1 text-rose-600 hover:bg-rose-50 rounded"
+                          className="p-1 text-rose-600 hover:bg-rose-50 rounded transition"
                           title="Delete device"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1102,6 +1387,242 @@ export default function DeviceBindingSettingsPanel({
           </div>
         )}
       </div>
+    </>
+  ) : (
+    /* SECURITY INCIDENT CENTER & LIVE MONITORING */
+    <div className="space-y-5">
+      {/* Incident Center Header & KPI Cards */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-rose-600" />
+              Security Incident Center & Live Access Monitoring
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Automated telemetry capturing blocked intrusions, shadow observations, hardware fingerprint anomalies, and session revocations.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={loadIncidents}
+              disabled={loadingIncidents}
+              className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition disabled:opacity-50"
+              title="Refresh incidents"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingIncidents ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportIncidentsCsv}
+              disabled={incidents.length === 0}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition disabled:opacity-50"
+              title="Download CSV for compliance audit"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-600" />
+              Export CSV
+            </button>
+
+            {isEditMode && (
+              <button
+                type="button"
+                onClick={() => setShowTerminateUserModal(true)}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Terminate User Sessions
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 4 KPI Metric Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-500 mb-1">
+              <span className="text-xs font-semibold">Total Incidents</span>
+              <FileText className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="text-2xl font-black text-slate-900">{incidentMetrics.total_incidents}</div>
+            <div className="text-[10px] text-slate-500 mt-1">Logged security events</div>
+          </div>
+
+          <div className="bg-rose-50/70 border border-rose-200 rounded-lg p-3.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-rose-700 mb-1">
+              <span className="text-xs font-semibold">Blocked Intrusions</span>
+              <XOctagon className="w-4 h-4 text-rose-600" />
+            </div>
+            <div className="text-2xl font-black text-rose-700">{incidentMetrics.blocked_attempts}</div>
+            <div className="text-[10px] text-rose-600 mt-1">Unapproved hardware blocked</div>
+          </div>
+
+          <div className="bg-amber-50/70 border border-amber-200 rounded-lg p-3.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-amber-700 mb-1">
+              <span className="text-xs font-semibold">Shadow Observations</span>
+              <Eye className="w-4 h-4 text-amber-600" />
+            </div>
+            <div className="text-2xl font-black text-amber-700">{incidentMetrics.shadow_observations}</div>
+            <div className="text-[10px] text-amber-600 mt-1">Audit-mode observations</div>
+          </div>
+
+          <div className="bg-purple-50/70 border border-purple-200 rounded-lg p-3.5 flex flex-col justify-between">
+            <div className="flex items-center justify-between text-purple-700 mb-1">
+              <span className="text-xs font-semibold">Revoked Sessions</span>
+              <LogOut className="w-4 h-4 text-purple-600" />
+            </div>
+            <div className="text-2xl font-black text-purple-700">{incidentMetrics.revoked_sessions}</div>
+            <div className="text-[10px] text-purple-600 mt-1">Admin-killed active sessions</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Incident Filter & Live Stream Table */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Severity Filter Tabs */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg text-xs">
+            {(['all', 'critical', 'warning', 'info'] as const).map((sev) => (
+              <button
+                key={sev}
+                type="button"
+                onClick={() => setIncidentSeverity(sev)}
+                className={`px-3 py-1 rounded-md font-semibold transition capitalize ${
+                  incidentSeverity === sev
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {sev === 'all' ? `All (${incidentMetrics.total_incidents})` : sev}
+              </button>
+            ))}
+          </div>
+
+          {/* Search filter */}
+          <div className="relative max-w-xs w-full">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search incidents, IP, user, details..."
+              value={incidentSearch}
+              onChange={(e) => setIncidentSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-primary-500"
+            />
+          </div>
+        </div>
+
+        {loadingIncidents ? (
+          <div className="text-center py-12 text-slate-400 text-xs flex items-center justify-center gap-2">
+            <RefreshCw className="w-4 h-4 animate-spin text-primary-600" />
+            Loading security incident telemetry...
+          </div>
+        ) : filteredIncidents.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-slate-200 rounded-lg">
+            <ShieldCheck className="w-9 h-9 text-emerald-500 mx-auto mb-2" />
+            <div className="text-xs font-bold text-slate-700">No Security Incidents Found</div>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              No access violations or unauthorized login attempts detected under current criteria.
+            </p>
+          </div>
+        ) : (
+          <div className="border border-slate-200 rounded-lg overflow-x-auto text-xs">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-3.5 py-2 font-semibold text-slate-700">Timestamp</th>
+                  <th className="px-3.5 py-2 font-semibold text-slate-700">Severity & Action</th>
+                  <th className="px-3.5 py-2 font-semibold text-slate-700">Target Account</th>
+                  <th className="px-3.5 py-2 font-semibold text-slate-700">Client / Network</th>
+                  <th className="px-3.5 py-2 font-semibold text-slate-700">Incident Details</th>
+                  {isEditMode && (
+                    <th className="px-3.5 py-2 font-semibold text-slate-700 text-right">Mitigation</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredIncidents.map((inc) => (
+                  <tr key={inc.id} className="hover:bg-slate-50/70 transition">
+                    <td className="px-3.5 py-2.5 text-slate-600 whitespace-nowrap text-[11px]">
+                      <div className="font-semibold text-slate-800">
+                        {inc.created_at ? new Date(inc.created_at).toLocaleTimeString() : '--'}
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {inc.created_at ? new Date(inc.created_at).toLocaleDateString() : ''}
+                      </div>
+                    </td>
+                    <td className="px-3.5 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        {inc.severity === 'critical' && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-rose-100 text-rose-800 border border-rose-300">
+                            CRITICAL
+                          </span>
+                        )}
+                        {inc.severity === 'warning' && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                            WARNING
+                          </span>
+                        )}
+                        {inc.severity === 'info' && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-700 border border-slate-300">
+                            INFO
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-mono text-[10px] font-bold text-slate-700">
+                        {inc.action}
+                      </div>
+                    </td>
+                    <td className="px-3.5 py-2.5">
+                      <div className="font-semibold text-slate-800 flex items-center gap-1">
+                        <Users className="w-3 h-3 text-slate-400" />
+                        <span>{inc.user_name || 'System / Unauthenticated'}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-mono">
+                        {inc.user_email || (inc.user_id ? `User #${inc.user_id}` : 'External IP')}
+                      </div>
+                    </td>
+                    <td className="px-3.5 py-2.5 text-[11px]">
+                      <div className="font-mono font-semibold text-slate-700">
+                        {inc.ip_address || 'Unknown IP'}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate max-w-[150px]" title={inc.user_agent}>
+                        {inc.user_agent || 'Standard Client'}
+                      </div>
+                    </td>
+                    <td className="px-3.5 py-2.5 text-slate-700 text-[11px] max-w-sm">
+                      <p className="line-clamp-2" title={inc.details}>
+                        {inc.details}
+                      </p>
+                    </td>
+                    {isEditMode && (
+                      <td className="px-3.5 py-2.5 text-right whitespace-nowrap">
+                        {inc.user_id ? (
+                          <button
+                            type="button"
+                            onClick={() => handleTerminateAllUserSessions(inc.user_id!)}
+                            className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded text-[10px] font-bold inline-flex items-center gap-1 transition"
+                            title="Revoke all active device sessions for this user"
+                          >
+                            <LogOut className="w-3 h-3 text-rose-600" />
+                            Kill User Sessions
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic">No User Scope</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )}
 
       {/* Pre-Register Hardware Modal */}
       {showAddModal && (
@@ -1216,6 +1737,65 @@ export default function DeviceBindingSettingsPanel({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Terminate User Sessions Modal */}
+      {showTerminateUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-rose-700 flex items-center gap-2">
+                <LogOut className="w-4 h-4 text-rose-600" />
+                Terminate All User Sessions
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowTerminateUserModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-slate-600">
+                Immediately revokes all active device sessions for the specified user account. The user will be instantly logged out across all hardware workstations.
+              </p>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Target User ID *
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="e.g. 1"
+                  value={targetUserIdToTerminate}
+                  onChange={(e) => setTargetUserIdToTerminate(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-rose-500 font-mono"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowTerminateUserModal(false)}
+                  className="px-3 py-1.5 border border-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!targetUserIdToTerminate || terminatingUserSessions}
+                  onClick={() => handleTerminateAllUserSessions(parseInt(targetUserIdToTerminate, 10))}
+                  className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold shadow-xs transition disabled:opacity-50"
+                >
+                  {terminatingUserSessions ? 'Terminating...' : 'Terminate All Sessions'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

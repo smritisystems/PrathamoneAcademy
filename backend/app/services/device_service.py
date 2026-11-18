@@ -519,6 +519,17 @@ class DeviceService:
                     await db.commit()
                     return True, "Shadow mode permitted unidentifiable device.", {"shadow": True}
 
+                db.add(AuditLog(
+                    institution_id=user.institution_id,
+                    user_id=user.id,
+                    action="UNAUTHORIZED_ACCESS_BLOCKED",
+                    resource_type="security_incident",
+                    ip_address=ip_addr,
+                    user_agent=u_agent,
+                    severity="critical",
+                    details=f"Blocked login attempt for '{user.email}' from missing hardware fingerprint under registered_only policy.",
+                ))
+                await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Device registration required. Unregistered devices cannot access this account.",
@@ -546,6 +557,17 @@ class DeviceService:
                     await db.commit()
                     return True, "Shadow mode permitted unrecognized device.", {"shadow": True}
 
+                db.add(AuditLog(
+                    institution_id=user.institution_id,
+                    user_id=user.id,
+                    action="UNAUTHORIZED_ACCESS_BLOCKED",
+                    resource_type="security_incident",
+                    ip_address=ip_addr,
+                    user_agent=u_agent,
+                    severity="critical",
+                    details=f"Blocked login attempt for '{user.email}' from unrecognized/revoked device (Fingerprint: {device_fingerprint[:12]}...).",
+                ))
+                await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Access denied: This device is not registered or is inactive. Contact your institution administrator.",
@@ -560,6 +582,17 @@ class DeviceService:
             if not device_fingerprint:
                 if shadow_mode:
                     return True, "Shadow mode permitted unidentifiable device.", {"shadow": True}
+                db.add(AuditLog(
+                    institution_id=user.institution_id,
+                    user_id=user.id,
+                    action="UNAUTHORIZED_ACCESS_BLOCKED",
+                    resource_type="security_incident",
+                    ip_address=ip_addr,
+                    user_agent=u_agent,
+                    severity="critical",
+                    details=f"Blocked login attempt for '{user.email}' without device identifier under admin_approval_required policy.",
+                ))
+                await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Device verification required. Missing device identifier.",
@@ -604,6 +637,17 @@ class DeviceService:
                     await db.commit()
                     return True, "Shadow mode permitted new device pending approval.", {"shadow": True}
 
+                db.add(AuditLog(
+                    institution_id=user.institution_id,
+                    user_id=user.id,
+                    action="UNAUTHORIZED_ACCESS_BLOCKED",
+                    resource_type="security_incident",
+                    ip_address=ip_addr,
+                    user_agent=u_agent,
+                    severity="warning",
+                    details=f"Login on hold for '{user.email}': New device enrolled and queued for admin approval.",
+                ))
+                await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="New device detected. This device requires administrator approval before login is permitted.",
@@ -618,6 +662,17 @@ class DeviceService:
                 )
 
             if device.status != "active":
+                db.add(AuditLog(
+                    institution_id=user.institution_id,
+                    user_id=user.id,
+                    action="UNAUTHORIZED_ACCESS_BLOCKED",
+                    resource_type="security_incident",
+                    ip_address=ip_addr,
+                    user_agent=u_agent,
+                    severity="critical",
+                    details=f"Blocked login attempt for '{user.email}' from revoked device '{device.device_name}'.",
+                ))
+                await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="This device has been revoked or blocked. Contact your institution administrator.",
@@ -628,3 +683,184 @@ class DeviceService:
             return True, "Approved device verified.", {"device_id": device.id}
 
         return True, "Policy satisfied.", {}
+
+    @staticmethod
+    async def set_device_trust(
+        db: AsyncSession,
+        device_id: int,
+        institution_id: int,
+        is_trusted: bool,
+        actor: User,
+    ) -> UserDevice:
+        """
+        Updates the trusted status of a registered device.
+        """
+        stmt = select(UserDevice).where(
+            UserDevice.id == device_id,
+            UserDevice.institution_id == institution_id,
+        )
+        device = (await db.execute(stmt)).scalar_one_or_none()
+        if not device:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found.")
+
+        device.is_trusted = is_trusted
+        trust_label = "Trusted" if is_trusted else "Standard / Untrusted"
+        audit = AuditLog(
+            institution_id=institution_id,
+            user_id=actor.id,
+            action="DEVICE_TRUST_UPDATED",
+            resource_type="user_devices",
+            resource_id=device.id,
+            severity="info",
+            details=f"Device '{device.device_name}' marked as {trust_label} by {actor.full_name}.",
+        )
+        db.add(audit)
+        await db.commit()
+        await db.refresh(device)
+        return device
+
+    @staticmethod
+    async def terminate_device_session(
+        db: AsyncSession,
+        device_id: int,
+        institution_id: int,
+        actor: User,
+    ) -> UserDevice:
+        """
+        Immediately revokes an active device session, marking it revoked and untrusted.
+        """
+        stmt = select(UserDevice).where(
+            UserDevice.id == device_id,
+            UserDevice.institution_id == institution_id,
+        )
+        device = (await db.execute(stmt)).scalar_one_or_none()
+        if not device:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found.")
+
+        device.status = "revoked"
+        device.is_trusted = False
+        device.revoked_at = datetime.now(timezone.utc)
+        device.revocation_reason = f"Session terminated immediately by {actor.full_name}"
+
+        audit = AuditLog(
+            institution_id=institution_id,
+            user_id=actor.id,
+            action="SESSION_REVOKED",
+            resource_type="security_incident",
+            resource_id=device.id,
+            severity="warning",
+            details=f"Active session for device '{device.device_name}' immediately terminated by {actor.full_name}.",
+        )
+        db.add(audit)
+        await db.commit()
+        await db.refresh(device)
+        return device
+
+    @staticmethod
+    async def terminate_user_sessions(
+        db: AsyncSession,
+        target_user_id: int,
+        institution_id: int,
+        actor: User,
+    ) -> int:
+        """
+        Terminates all active device sessions for a target user.
+        """
+        stmt = select(UserDevice).where(
+            UserDevice.user_id == target_user_id,
+            UserDevice.institution_id == institution_id,
+            UserDevice.status == "active",
+        )
+        active_devices = (await db.execute(stmt)).scalars().all()
+        now = datetime.now(timezone.utc)
+        for dev in active_devices:
+            dev.status = "revoked"
+            dev.is_trusted = False
+            dev.revoked_at = now
+            dev.revocation_reason = f"All sessions terminated by {actor.full_name}"
+
+        audit = AuditLog(
+            institution_id=institution_id,
+            user_id=actor.id,
+            action="USER_SESSIONS_REVOKED",
+            resource_type="security_incident",
+            resource_id=target_user_id,
+            severity="critical",
+            details=f"All active device sessions ({len(active_devices)}) terminated for user ID {target_user_id} by {actor.full_name}.",
+        )
+        db.add(audit)
+        await db.commit()
+        return len(active_devices)
+
+    @staticmethod
+    async def list_security_incidents(
+        db: AsyncSession,
+        institution_id: int,
+        limit: int = 50,
+        severity: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Lists security incidents, unauthorized access attempts, and audit telemetry.
+        """
+        tracked_actions = [
+            "UNAUTHORIZED_ACCESS_BLOCKED",
+            "DEVICE_LOGIN_SHADOW",
+            "DEVICE_REVOKED",
+            "DEVICE_DELETED",
+            "SESSION_REVOKED",
+            "USER_SESSIONS_REVOKED",
+            "DEVICE_TRUST_UPDATED",
+            "DEVICE_REGISTERED",
+            "DEVICE_APPROVED",
+        ]
+
+        stmt = (
+            select(AuditLog, User.email, User.first_name, User.last_name)
+            .outerjoin(User, AuditLog.user_id == User.id)
+            .where(
+                AuditLog.institution_id == institution_id,
+                AuditLog.action.in_(tracked_actions),
+            )
+        )
+        if severity:
+            stmt = stmt.where(AuditLog.severity == severity)
+
+        stmt = stmt.order_by(desc(AuditLog.created_at)).limit(limit)
+        rows = (await db.execute(stmt)).all()
+
+        incidents = []
+        blocked_count = 0
+        shadow_count = 0
+        revoked_count = 0
+
+        for audit, email, fn, ln in rows:
+            user_name = f"{fn or ''} {ln or ''}".strip() or "System / Unknown"
+            if audit.action == "UNAUTHORIZED_ACCESS_BLOCKED":
+                blocked_count += 1
+            elif audit.action == "DEVICE_LOGIN_SHADOW":
+                shadow_count += 1
+            elif audit.action in ("SESSION_REVOKED", "DEVICE_REVOKED", "USER_SESSIONS_REVOKED"):
+                revoked_count += 1
+
+            incidents.append({
+                "id": audit.id,
+                "action": audit.action,
+                "severity": audit.severity,
+                "details": audit.details,
+                "ip_address": audit.ip_address,
+                "user_agent": audit.user_agent,
+                "user_id": audit.user_id,
+                "user_email": email,
+                "user_name": user_name,
+                "created_at": audit.created_at.isoformat() if audit.created_at else None,
+            })
+
+        return {
+            "metrics": {
+                "total_incidents": len(incidents),
+                "blocked_attempts": blocked_count,
+                "shadow_observations": shadow_count,
+                "revoked_sessions": revoked_count,
+            },
+            "incidents": incidents,
+        }

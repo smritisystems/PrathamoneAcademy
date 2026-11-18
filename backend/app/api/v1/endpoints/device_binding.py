@@ -252,3 +252,118 @@ async def delete_device(
         db=db, device_id=device_id, institution_id=target_id, actor=current_user
     )
     return {"status": "success", "message": "Device record removed successfully."}
+
+
+class DeviceTrustPayload(BaseModel):
+    is_trusted: bool
+
+
+@router.put("/devices/{device_id}/trust")
+async def set_device_trust(
+    device_id: int,
+    payload: DeviceTrustPayload,
+    institution_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "principal", "sysadmin")),
+):
+    """
+    Toggles trusted device status (Trusted vs Standard / Untrusted).
+    """
+    target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
+
+    device = await DeviceService.set_device_trust(
+        db=db,
+        device_id=device_id,
+        institution_id=target_id,
+        is_trusted=payload.is_trusted,
+        actor=current_user,
+    )
+    return {
+        "status": "success",
+        "message": f"Device trust updated to {'Trusted' if device.is_trusted else 'Standard'}.",
+        "device": {
+            "id": device.id,
+            "device_name": device.device_name,
+            "is_trusted": device.is_trusted,
+            "status": device.status,
+        },
+    }
+
+
+@router.post("/devices/{device_id}/terminate-session")
+async def terminate_device_session(
+    device_id: int,
+    institution_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Immediately terminates active session for a specific device.
+    """
+    target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
+
+    device = await DeviceService.terminate_device_session(
+        db=db, device_id=device_id, institution_id=target_id, actor=current_user
+    )
+    return {
+        "status": "success",
+        "message": f"Active session for device '{device.device_name}' immediately terminated.",
+        "device": {
+            "id": device.id,
+            "device_name": device.device_name,
+            "status": device.status,
+            "is_trusted": device.is_trusted,
+        },
+    }
+
+
+class TerminateUserSessionsPayload(BaseModel):
+    user_id: int
+
+
+@router.post("/sessions/terminate-user")
+async def terminate_user_sessions(
+    payload: TerminateUserSessionsPayload,
+    institution_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "principal", "sysadmin")),
+):
+    """
+    Terminates all active device sessions for a target user account.
+    """
+    target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
+
+    count = await DeviceService.terminate_user_sessions(
+        db=db,
+        target_user_id=payload.user_id,
+        institution_id=target_id,
+        actor=current_user,
+    )
+    return {
+        "status": "success",
+        "message": f"Terminated {count} active device session(s) for user ID {payload.user_id}.",
+        "terminated_count": count,
+    }
+
+
+@router.get("/incidents")
+async def list_security_incidents(
+    institution_id: Optional[int] = Query(None),
+    severity: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "principal", "sysadmin")),
+):
+    """
+    Fetches real-time security incidents, unauthorized access attempts, and audit telemetry.
+    """
+    target_id = institution_id or current_user.institution_id or 1
+    check_institution_access(target_id, current_user)
+
+    data = await DeviceService.list_security_incidents(
+        db=db, institution_id=target_id, limit=limit, severity=severity
+    )
+    return {"status": "success", **data}

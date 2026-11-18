@@ -5,7 +5,7 @@
   "product_version": "1.0.0",
   "organization": "Smritisys & AITDL Networks",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-19T05:00:24.640535",
+  "generated_at": "2026-11-19T05:23:44.601100",
   "total_documents": 559,
   "modules_catalog": [
     {
@@ -8567,8 +8567,8 @@
       "filename": "2026-11-19_RBAC-SECURITY_SPECIFICATION_OPTIONAL-DEVICE-BINDING-ARCHITECTURE_V1.md",
       "relative_path": "12_RBAC_SECURITY/2026-11-19_RBAC-SECURITY_SPECIFICATION_OPTIONAL-DEVICE-BINDING-ARCHITECTURE_V1.md",
       "extension": ".md",
-      "size_bytes": 5996,
-      "sha256": "8f31a299f62ac821d55139c5f7f58375b63d8712e7637ea67a86340da1655440",
+      "size_bytes": 9108,
+      "sha256": "897e1fafb9cbfd9418d8d87a3bbf3846e677c0058f51c915190964760a044283",
       "module": "12_RBAC_SECURITY",
       "title": "Optional Device-Wise Security Binding Architectural Specification",
       "category": "SPECIFICATION",
@@ -8596,6 +8596,10 @@
         "/api/v1/security/device-binding/settings",
         "/api/v1/security/device-binding/disable",
         "/api/v1/security/device-binding/devices",
+        "/api/v1/security/device-binding/devices/{id}/trust",
+        "/api/v1/security/device-binding/devices/{id}/terminate-session",
+        "/api/v1/security/device-binding/sessions/terminate-user",
+        "/api/v1/security/device-binding/incidents",
         "/api/v1/auth/login"
       ],
       "related_modules": [

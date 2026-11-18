@@ -14,7 +14,7 @@ organization: "Smritisys & AITDL Networks"
 status: "Approved"
 tags: ["device-binding", "security", "multi-tenant", "authentication", "safe-disable"]
 entities: ["UserDevice", "InstitutionSetting", "AuditLog"]
-api_routes: ["/api/v1/security/device-binding/settings", "/api/v1/security/device-binding/disable", "/api/v1/security/device-binding/devices", "/api/v1/auth/login"]
+api_routes: ["/api/v1/security/device-binding/settings", "/api/v1/security/device-binding/disable", "/api/v1/security/device-binding/devices", "/api/v1/security/device-binding/devices/{id}/trust", "/api/v1/security/device-binding/devices/{id}/terminate-session", "/api/v1/security/device-binding/sessions/terminate-user", "/api/v1/security/device-binding/incidents", "/api/v1/auth/login"]
 related_modules: ["13_SYSADMIN_SETTINGS", "16_DATABASE_API", "25_BUSINESS_REQUIREMENTS"]
 ---
 
@@ -119,3 +119,45 @@ When an authorized administrator disables Device Binding:
 | `/api/v1/security/device-binding/devices/{id}/approve` | `PUT` | Admin / SysAdmin | Authorize a pending device |
 | `/api/v1/security/device-binding/devices/{id}/revoke` | `PUT` | Admin / Owner | Revoke an active device |
 | `/api/v1/security/device-binding/devices/{id}` | `DELETE` | Admin / Owner | Remove a device record |
+| `/api/v1/security/device-binding/devices/{id}/trust` | `PUT` | Admin / SysAdmin | Toggle trusted workstation status (`is_trusted`) |
+| `/api/v1/security/device-binding/devices/{id}/terminate-session` | `POST` | Authenticated | Immediately terminate active device session |
+| `/api/v1/security/device-binding/sessions/terminate-user` | `POST` | Admin / SysAdmin | Emergency kill-switch: terminate all sessions for a user |
+| `/api/v1/security/device-binding/incidents` | `GET` | Admin / SysAdmin | Telemetry stream & KPI metrics for security incidents |
+
+---
+
+## 6. TRUSTED DEVICE MANAGEMENT
+
+The system differentiates between standard enrolled hardware and designated institutional workstations:
+- **`is_trusted` Flag:** Boolean indicator stored on canonical `user_devices` records.
+- **Visual Badging:** Distinctive `⭐ Trusted` badge versus `🛡️ Standard` profile.
+- **1-Click Administrative Elevation:** In Scoped Edit Mode, administrators can elevate verified corporate hardware to Trusted status or demote devices instantly.
+- **Security Implications:** Trusted devices can bypass frequent step-up verification prompts while standard devices remain subject to adaptive step-up authentication.
+
+---
+
+## 7. IMMEDIATE SESSION REVOCATION (EMERGENCY KILL-SWITCH)
+
+To safeguard institutional data against compromised devices or insider threats:
+1. **Device-Level Kill-Switch (`POST /devices/{id}/terminate-session`):**
+   - Transitions `user_devices.status` immediately to `revoked`.
+   - Clears `is_trusted` flag.
+   - Logs `SESSION_REVOKED` in `audit_logs` with actor attribution.
+   - User's active session is terminated instantly upon next request.
+2. **Account-Level Kill-Switch (`POST /sessions/terminate-user`):**
+   - Revokes all active devices associated with a target user ID.
+   - Logs `USER_SESSIONS_REVOKED` with `severity="critical"`.
+   - Requires explicit modal confirmation in Edit Mode.
+
+---
+
+## 8. SECURITY INCIDENT CENTER & REAL-TIME MONITORING
+
+A dedicated executive workspace tab inside `Settings → Security & Device Binding`:
+- **4 Real-Time KPI Metric Cards:**
+  1. **Total Incidents:** Cumulative count of all tracked access events and security violations.
+  2. **Blocked Intrusions (Critical Red):** Unauthorized access attempts blocked due to unapproved or unregistered hardware fingerprints.
+  3. **Shadow Observations (Amber):** Non-compliant logins recorded under shadow mode without disrupting user workflow.
+  4. **Revoked Sessions (Purple):** Total sessions immediately terminated by administrators.
+- **Interactive Incident Stream:** Detailed table rendering exact timestamps, severity pills (`CRITICAL`, `WARNING`, `INFO`), target user email, client IP address, user agent, and complete policy violation details.
+- **Compliance Export:** Generates structured CSV audit files for institutional accreditation and cybersecurity compliance records.

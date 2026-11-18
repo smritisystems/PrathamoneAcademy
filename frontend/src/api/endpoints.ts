@@ -42,7 +42,7 @@ import type {
   StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
   SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
-  DeviceBindingSettings, UserDeviceItem, RegisterDevicePayload,
+  DeviceBindingSettings, UserDeviceItem, RegisterDevicePayload, SecurityIncidentsResponse,
   NoticeBoardItem,
   MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
   ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem, AutomationTriggerStatus, StudentIdCardData, ScanCheckinResult,
@@ -2114,6 +2114,33 @@ export const deviceBindingApi = {
     apiClient.delete<{ status: string; message: string }>(
       `/security/device-binding/devices/${deviceId}`,
       { params: institution_id ? { institution_id } : {} }
+    ),
+
+  setTrust: (deviceId: number, isTrusted: boolean, institutionId?: number) =>
+    apiClient.put<{ status: string; message: string; device: any }>(
+      `/security/device-binding/devices/${deviceId}/trust`,
+      { is_trusted: isTrusted },
+      { params: institutionId ? { institution_id: institutionId } : {} }
+    ),
+
+  terminateSession: (deviceId: number, institutionId?: number) =>
+    apiClient.post<{ status: string; message: string; device: any }>(
+      `/security/device-binding/devices/${deviceId}/terminate-session`,
+      {},
+      { params: institutionId ? { institution_id: institutionId } : {} }
+    ),
+
+  terminateUserSessions: (userId: number, institutionId?: number) =>
+    apiClient.post<{ status: string; message: string; terminated_count: number }>(
+      '/security/device-binding/sessions/terminate-user',
+      { user_id: userId },
+      { params: institutionId ? { institution_id: institutionId } : {} }
+    ),
+
+  getIncidents: (params?: { institution_id?: number; severity?: string; limit?: number }) =>
+    apiClient.get<SecurityIncidentsResponse>(
+      '/security/device-binding/incidents',
+      { params }
     ),
 }
 

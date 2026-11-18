@@ -2871,6 +2871,32 @@ export interface RegisterDevicePayload {
   user_id?: number
 }
 
+export interface SecurityIncidentItem {
+  id: number
+  action: string
+  severity: 'critical' | 'warning' | 'info' | string
+  details: string
+  ip_address?: string
+  user_agent?: string
+  user_id?: number
+  user_email?: string
+  user_name?: string
+  created_at?: string
+}
+
+export interface SecurityIncidentMetrics {
+  total_incidents: number
+  blocked_attempts: number
+  shadow_observations: number
+  revoked_sessions: number
+}
+
+export interface SecurityIncidentsResponse {
+  status: string
+  metrics: SecurityIncidentMetrics
+  incidents: SecurityIncidentItem[]
+}
+
 // ─── Centralized Communication & Sharing Module ──────────────────────────────
 
 export interface NoticeBoardItem {

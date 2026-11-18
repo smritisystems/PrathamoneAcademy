@@ -28,6 +28,10 @@ vi.mock('../api/endpoints', () => ({
     revokeDevice: vi.fn(),
     deleteDevice: vi.fn(),
     safeDisable: vi.fn(),
+    setTrust: vi.fn(),
+    terminateSession: vi.fn(),
+    terminateUserSessions: vi.fn(),
+    getIncidents: vi.fn(),
   },
 }))
 
@@ -82,6 +86,33 @@ describe('DeviceBindingSettingsPanel', () => {
     vi.clearAllMocks()
     vi.mocked(deviceBindingApi.getDevices).mockResolvedValue({
       data: { status: 'success', count: mockDevices.length, devices: mockDevices },
+    } as any)
+    vi.mocked(deviceBindingApi.getIncidents).mockResolvedValue({
+      data: {
+        status: 'success',
+        metrics: {
+          total_incidents: 2,
+          blocked_attempts: 1,
+          shadow_observations: 1,
+          revoked_sessions: 0,
+        },
+        incidents: [
+          {
+            id: 1,
+            action: 'UNAUTHORIZED_ACCESS_BLOCKED',
+            severity: 'critical',
+            details: 'Blocked unauthorized login attempt from unregistered hardware fingerprint',
+            ip_address: '185.220.101.45',
+            created_at: '2026-11-19T04:55:00Z',
+          },
+        ],
+      },
+    } as any)
+    vi.mocked(deviceBindingApi.setTrust).mockResolvedValue({
+      data: { status: 'success', message: 'Device trust updated to Standard.' },
+    } as any)
+    vi.mocked(deviceBindingApi.terminateSession).mockResolvedValue({
+      data: { status: 'success', message: 'Session terminated.' },
     } as any)
   })
 
@@ -238,6 +269,74 @@ describe('DeviceBindingSettingsPanel', () => {
     await waitFor(() => {
       expect(screen.queryByText('Teacher Windows Surface')).toBeNull()
       expect(screen.getByText('Classroom iPad')).toBeDefined()
+    })
+  })
+
+  it('10. Displays Trusted device badge and triggers setTrust on Untrust toggle', async () => {
+    render(
+      <DeviceBindingSettingsPanel
+        settings={mockSettings}
+        onChange={vi.fn()}
+        isEditMode={true}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Teacher Windows Surface')).toBeDefined()
+    })
+
+    expect(screen.getByText('Trusted')).toBeDefined()
+    const untrustBtn = screen.getByRole('button', { name: 'Untrust' })
+    fireEvent.click(untrustBtn)
+
+    await waitFor(() => {
+      expect(deviceBindingApi.setTrust).toHaveBeenCalledWith(101, false, undefined)
+    })
+  })
+
+  it('11. Triggers immediate session termination when clicking Kill Session in Edit Mode', async () => {
+    window.confirm = vi.fn().mockReturnValue(true)
+
+    render(
+      <DeviceBindingSettingsPanel
+        settings={mockSettings}
+        onChange={vi.fn()}
+        isEditMode={true}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Teacher Windows Surface')).toBeDefined()
+    })
+
+    const killBtn = screen.getByRole('button', { name: /Kill Session/i })
+    fireEvent.click(killBtn)
+
+    await waitFor(() => {
+      expect(deviceBindingApi.terminateSession).toHaveBeenCalledWith(101, undefined)
+    })
+  })
+
+  it('12. Switches to Security Incident Center tab and renders 4 KPI metric cards', async () => {
+    render(
+      <DeviceBindingSettingsPanel
+        settings={mockSettings}
+        onChange={vi.fn()}
+        isEditMode={true}
+      />
+    )
+
+    const incidentTabBtn = screen.getByRole('button', { name: /Security Incident Center/i })
+    fireEvent.click(incidentTabBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText('Security Incident Center & Live Access Monitoring')).toBeDefined()
+      expect(screen.getByText('Total Incidents')).toBeDefined()
+      expect(screen.getByText('Blocked Intrusions')).toBeDefined()
+      expect(screen.getByText('Shadow Observations')).toBeDefined()
+      expect(screen.getByText('Revoked Sessions')).toBeDefined()
+      expect(screen.getByText(/Blocked unauthorized login attempt/i)).toBeDefined()
+      expect(screen.getByRole('button', { name: /Export CSV/i })).toBeDefined()
     })
   })
 })
