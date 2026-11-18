@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Integration tests for Canonical Two-Row Global Print Footer Standard and Universal Print Engine Governance.
  */
@@ -58,7 +58,7 @@ describe('Global Print Footer & Governance Engine (RULE 010 & Global Print Stand
       expect(row1.textContent).toContain('Document ID: DOC-001')
       expect(row1.textContent).toContain('Page 1 of 2')
 
-      // ── Row 2 (Center-Aligned): Created by + PrathamOne logo ──
+      // ── Row 2 (Center-Aligned): Powered by + PrathamOne logo ──
       const row2 = screen.getByTestId('print-footer-row-2')
       expect(row2).toBeDefined()
       expect(row2.className).toContain('text-center')
@@ -145,7 +145,7 @@ describe('Global Print Footer & Governance Engine (RULE 010 & Global Print Stand
       expect(screen.getByTestId('print-footer-row-2')).toBeDefined()
     })
 
-    it('shows the Created by label beside the full software logo in the minimal footer', () => {
+    it('shows the Powered by label beside the full software logo in the minimal footer', () => {
       renderWithClient(<PrintBrandingFooter />)
 
       const footer = screen.getByTestId('print-share-branding-footer')

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -3158,7 +3158,7 @@ function FeesContent() {
                     <PrintBrandingFooter
                       fixedBottom={false}
                       showDivider={false}
-                      customText="PrathamOne EduOS · Coaching Institute Edition · Powered and managed by SmritiSys & AITDL Networks"
+                      customText="PrathamOne EduOS · Coaching Institute Edition · Powered and managed by"
                     />
                   </footer>
                 </article>

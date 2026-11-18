@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Vitest test suite validating all 8 Fees & Payments dedicated workspace routes, view-first locks, and training isolation.
  */
@@ -272,7 +272,8 @@ describe('Fees & Payments Dedicated Workspace Submenu Suite', () => {
     expect(await screen.findByText('Fee Invoice INV-TEST-0901')).toBeDefined()
     expect(screen.getByRole('article', { name: 'Printable fee invoice' })).toBeDefined()
     expect(screen.getByText('PrathamOne EduOS · Coaching Institute Edition')).toBeDefined()
-    expect(screen.getByText(/Powered and managed by SmritiSys & AITDL Networks/)).toBeDefined()
+    expect(screen.getByText(/Powered and managed by/)).toBeDefined()
+    expect(screen.queryByText(/SmritiSys & AITDL Networks/)).toBeNull()
     expect(screen.getByAltText('PrathamOne EduOS logo')).toBeDefined()
     expect(screen.getByText('Annual Tuition')).toBeDefined()
     const printSpy = vi.spyOn(printReceipt, 'printReceiptElement').mockReturnValue(true)

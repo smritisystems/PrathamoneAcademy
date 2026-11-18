@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Unit and DOM integration tests for isolated fee receipt printing and container isolation.
  */
@@ -168,7 +168,7 @@ describe('Receipt Printing Specification & Container Isolation', () => {
     invoice.innerHTML = `
       <footer class="fee-invoice-footer">
         <p>PrathamOne EduOS · Coaching Institute Edition</p>
-        <p>Powered and managed by SmritiSys &amp; AITDL Networks</p>
+        <p>Powered and managed by</p>
         <img src="/artwork/prathamone.svg" alt="PrathamOne EduOS logo" />
       </footer>
     `;
@@ -182,7 +182,8 @@ describe('Receipt Printing Specification & Container Isolation', () => {
       .map((style) => style.textContent || '')
       .join('\n');
 
-    expect(printableFooter?.textContent).toContain('Powered and managed by SmritiSys & AITDL Networks');
+    expect(printableFooter?.textContent).toContain('Powered and managed by');
+    expect(printableFooter?.textContent).not.toContain('SmritiSys & AITDL Networks');
     expect(printableFooter?.querySelector('img[alt="PrathamOne EduOS logo"]')).not.toBeNull();
     expect(printStyles).toContain('#print-root footer.fee-invoice-footer');
     expect(printStyles).toContain('visibility: visible !important');

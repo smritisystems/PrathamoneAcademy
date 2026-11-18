@@ -11,7 +11,7 @@
  *
  * @version     2.1.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Canonical Global Print Footer component enforcing two-row right/center aligned standard with absolute bottom positioning and spacer reservation across all printable outputs.
  */
@@ -44,7 +44,7 @@ export interface PrintFooterProps {
 
   /**
    * Attribution label displayed beside the PrathamOne logo.
-   * Defaults to 'Created by'.
+   * Defaults to 'Powered by'.
    */
   softwareBrandingText?: string
 
@@ -113,7 +113,7 @@ export interface PrintFooterProps {
  * - Row 1 (Right-Aligned): Confidential · Document ID: DOC-001 · Page 1 of 2
  *   Readable text size (~9.5px / 8pt), dark-grey (#475569 / slate-600), right-aligned.
  *
- * - Row 2 (Center-Aligned): Created by [PrathamOne logo lockup]
+ * - Row 2 (Center-Aligned): Powered by [PrathamOne logo lockup]
  *   Very small typography (7–8px / 6–6.5pt), subtle light-grey (#94a3b8 / slate-400), center-aligned.
  *
  * Anchored to the physical bottom of every page with reserved document-flow spacer to prevent overlap.

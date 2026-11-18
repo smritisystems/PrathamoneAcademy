@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Master branding configuration and dynamic identity resolver for PrathamOne Academy and tenant institutions.
  */
@@ -56,9 +56,13 @@ export const PRINT_SHARE_BRANDING = {
   suiteName: 'PrathamOne EduOS — Coaching Institute Edition',
   domain: 'prathamone.com',
   url: 'https://prathamone.com',
+  poweredBy: 'Powered by',
+  poweredAndManagedBy: ' · Powered and managed by',
 } as const
 
-export const PRINT_FOOTER_BRANDING_TEXT = 'Created by' as const
+export const PRINT_FOOTER_BRANDING_TEXT = 'Powered by' as const
+export const PRINT_POWERED_BY_TEXT = 'Powered by' as const
+export const PRINT_POWERED_AND_MANAGED_BY_TEXT = ' · Powered and managed by' as const
 
 const PRODUCT_BRAND_ASSET_ROOT = '/artwork/18112026/03'
 const PRODUCT_BRAND_SHARED_ROOT = '/artwork/18112026'
@@ -120,7 +124,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.18-REV-248-v1.134.1-BDCF0EB2',
+  buildNumber: '2026.11.18-REV-249-v1.135.0-3BCC6F4D',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-18',

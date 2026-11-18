@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Integration tests verifying reusable printable document branding headers, seals, and authorized signatories.
  */
@@ -137,7 +137,7 @@ describe('Printable Document Branding Components', () => {
   })
 
   describe('PrintBrandingFooter Component', () => {
-    it('renders the Created by label and full logo lockup at the bottom', () => {
+    it('renders the Powered by label and full logo lockup at the bottom', () => {
       renderWithQueryClient(<PrintBrandingFooter />)
 
       const footer = screen.getByTestId('print-share-branding-footer')
