@@ -20,6 +20,7 @@ import React from 'react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, act, within } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import CommunicationPage from '../pages/Communication'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
@@ -242,22 +243,32 @@ describe('Communication Center Dedicated Submenus & Workspaces Suite', () => {
   })
 
   const renderWithRouter = (initialPath = '/communication/overview') => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
     return render(
-      <MemoryRouter initialEntries={[initialPath]}>
-        <Routes>
-          <Route path="/communication" element={<CommunicationPage />} />
-          <Route path="/communication/overview" element={<CommunicationPage />} />
-          <Route path="/communication/broadcasts" element={<CommunicationPage />} />
-          <Route path="/communication/compose" element={<CommunicationPage />} />
-          <Route path="/communication/whatsapp" element={<CommunicationPage />} />
-          <Route path="/communication/templates" element={<CommunicationPage />} />
-          <Route path="/communication/history" element={<CommunicationPage />} />
-          <Route path="/communication/automations" element={<CommunicationPage />} />
-          <Route path="/communication/gateways" element={<CommunicationPage />} />
-          <Route path="/communication/diagnostics" element={<CommunicationPage />} />
-          <Route path="/communication/settings" element={<CommunicationPage />} />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[initialPath]}>
+          <Routes>
+            <Route path="/communication" element={<CommunicationPage />} />
+            <Route path="/communication/overview" element={<CommunicationPage />} />
+            <Route path="/communication/broadcasts" element={<CommunicationPage />} />
+            <Route path="/communication/compose" element={<CommunicationPage />} />
+            <Route path="/communication/whatsapp" element={<CommunicationPage />} />
+            <Route path="/communication/templates" element={<CommunicationPage />} />
+            <Route path="/communication/history" element={<CommunicationPage />} />
+            <Route path="/communication/automations" element={<CommunicationPage />} />
+            <Route path="/communication/gateways" element={<CommunicationPage />} />
+            <Route path="/communication/diagnostics" element={<CommunicationPage />} />
+            <Route path="/communication/settings" element={<CommunicationPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     )
   }
 

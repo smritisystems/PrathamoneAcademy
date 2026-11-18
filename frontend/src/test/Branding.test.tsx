@@ -81,18 +81,21 @@ describe('Centralized Application Branding & Identity System', () => {
     expect(colors.success).toMatch(/^#[0-9a-fA-F]{6}$/)
   })
 
-  it('uses the supplied 14112026 artwork for software branding', () => {
-    const artworkRoot = '/artwork/14112026'
+  it('uses the supplied 18112026 artwork for software branding', () => {
+    const artworkRoot = '/artwork/18112026/03'
     expect(BRANDING_CONFIG.assets.horizontalLogoTransparentUrl).toBe(
-      `${artworkRoot}/batch_g1-4_1080.png`
+      `${artworkRoot}/batch_g2.png`
     )
-    expect(BRANDING_CONFIG.assets.softwareLogoSvgUrl).toBe(`${artworkRoot}/batch_g1-4_1080.svg`)
-    expect(BRANDING_CONFIG.assets.appIconUrl).toBe('/artwork/16112026/001/path8-5-8.png')
+    expect(BRANDING_CONFIG.assets.softwareLogoSvgUrl).toBe(`${artworkRoot}/batch_g2.svg`)
+    expect(BRANDING_CONFIG.assets.appIconUrl).toBe('/icons/icon-512x512.png')
     expect(BRANDING_CONFIG.assets.softwareIconSvgUrl).toBe(
-      '/artwork/16112026/001/path8-5-8.svg'
+      `${artworkRoot}/batch_path1-9.svg`
     )
-    expect(BRANDING_CONFIG.assets.faviconUrl).toBe(BRANDING_CONFIG.assets.appIconUrl)
+    expect(BRANDING_CONFIG.assets.faviconUrl).toBe('/icons/icon-32x32.png')
     expect(BRANDING_CONFIG.assets.academyLogoUrl).toBe('/media/logo/prashant-academy-logo.svg')
+    expect(BRANDING_CONFIG.assets.promotionalVideoUrl).toBe('/artwork/VIDEOS/V2.mp4')
+    expect(BRANDING_CONFIG.assets.promotionalVideoV1Url).toBe('/artwork/VIDEOS/V1.mp4')
+    expect(BRANDING_CONFIG.assets.promotionalVideoV2Url).toBe('/artwork/VIDEOS/V2.mp4')
 
     const resolved = resolveBranding({
       id: 1,
@@ -101,9 +104,9 @@ describe('Centralized Application Branding & Identity System', () => {
     })
     expect(resolved.assets.logoUrl).toBe('/media/logo/prashant-academy-logo.svg')
     expect(resolved.assets.horizontalLogoTransparentUrl).toBe(
-      `${artworkRoot}/batch_g1-4_1080.png`
+      `${artworkRoot}/batch_g2.png`
     )
-    expect(resolved.assets.faviconUrl).toBe(BRANDING_CONFIG.assets.appIconUrl)
+    expect(resolved.assets.faviconUrl).toBe(BRANDING_CONFIG.assets.faviconUrl)
 
     expect(resolveBranding({ favicon_url: '/tenant/favicon.png' }).assets.faviconUrl)
       .toBe('/tenant/favicon.png')

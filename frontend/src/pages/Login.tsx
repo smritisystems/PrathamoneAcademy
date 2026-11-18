@@ -11,7 +11,7 @@
  *
  * @version     1.6.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Premium enterprise authentication portal featuring organic curved wave architecture, original PrathamOne navy/saffron theme colors, single unified Zero-Tab authentication, server-enforced role routing, and comprehensive academic curriculum spectrum overlays.
  */
@@ -362,8 +362,14 @@ export default function LoginPage() {
             <span className="w-2.5 h-2.5 rounded-full bg-[#F16906] shadow-xs shadow-orange-500/50 animate-pulse" />
             <span className="text-app-muted">Account Access</span>
           </div>
-          <div className="text-[11px] font-semibold text-slate-400">
-            PrathamOne EduOS
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+            <img
+              src={branding.assets.softwareIconSvgUrl}
+              alt=""
+              aria-hidden="true"
+              className="w-3.5 h-3.5 object-contain opacity-75"
+            />
+            <span>PrathamOne EduOS</span>
           </div>
         </div>
 

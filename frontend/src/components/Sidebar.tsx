@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Collapsible multi-state sidebar navigation supporting expanded, icon-rail, and mobile drawer modes.
  */
@@ -858,7 +858,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
             <div className="px-3.5 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
               <div className="flex items-center min-w-0 pr-2">
                 <img
-                  src="/artwork/16112026/001/fl3.svg"
+                  src={branding.assets.horizontalLogoDarkUrl || branding.assets.softwareLogoSvgUrl}
                   alt="PrathamOne EduOS"
                   className="h-6 w-auto max-w-[170px] object-contain"
                 />
@@ -868,7 +868,7 @@ const isStaffActive = location.pathname.startsWith('/staff')
           ) : (
             <div className="py-2.5 px-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-center" title={`${branding.suiteName} ${branding.versionDisplay}`}>
               <img
-                src="/artwork/16112026/001/fl3.svg"
+                src={branding.assets.softwareIconWhiteSvgUrl || branding.assets.softwareIconSvgUrl}
                 alt="PrathamOne EduOS"
                 className="h-5 w-auto max-w-[54px] object-contain opacity-90 hover:opacity-100 transition-opacity"
               />
@@ -2726,7 +2726,7 @@ if (item.to === '/staff') {
           <div className="px-3.5 py-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-between text-[10px] text-slate-400">
             <div className="flex items-center min-w-0 pr-2">
               <img
-                src="/artwork/16112026/001/fl3.svg"
+                src={branding.assets.horizontalLogoDarkUrl || branding.assets.softwareLogoSvgUrl}
                 alt="PrathamOne EduOS"
                 className="h-6 w-auto max-w-[170px] object-contain"
               />
@@ -2736,7 +2736,7 @@ if (item.to === '/staff') {
         ) : (
           <div className="py-2.5 px-2 border-t border-slate-800/60 bg-slate-950/70 flex items-center justify-center" title={`${branding.suiteName} ${branding.versionDisplay}`}>
             <img
-              src="/artwork/16112026/001/fl3.svg"
+              src={branding.assets.softwareIconWhiteSvgUrl || branding.assets.softwareIconSvgUrl}
               alt="PrathamOne EduOS"
               className="h-5 w-auto max-w-[54px] object-contain opacity-90 hover:opacity-100 transition-opacity"
             />

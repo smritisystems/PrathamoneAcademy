@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Official customer-facing Help & About Centre portal unifying Getting Started, Module Guides, Tutorials, FAQs, Support Centre, About Product, About Company, Version Info, Legal & Compliance, Admin System Info, and Content Governance.
  */
@@ -61,6 +61,7 @@ import ProductVersionSection from '../components/help/ProductVersionSection'
 import LegalComplianceSection from '../components/help/LegalComplianceSection'
 import SystemInfoSection from '../components/help/SystemInfoSection'
 import HelpGovernanceSection from '../components/help/HelpGovernanceSection'
+import ProductVideoTourCard from '../components/help/ProductVideoTourCard'
 
 function resolveActiveTab(pathname: string, search: string): HelpWorkspaceTab {
   if (pathname === '/about' || pathname.startsWith('/help/about-product')) return 'about_product'
@@ -523,6 +524,12 @@ export default function HelpCentre() {
             </div>
           ) : (
             <>
+              {/* Official 3D Promotional Motion Graphic Tour */}
+              <ProductVideoTourCard
+                title="PrathamOne EduOS — System Walkthrough & Feature Tour"
+                subtitle="Watch the 3D kinetic video overview highlighting core interconnected modules: Admissions CRM, Fee Counter, Academic Analytics, and Mobile Apps."
+              />
+
               {/* 5 Main Help Pillars */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[

@@ -330,7 +330,7 @@ export default function Footer() {
               <span className="hidden md:inline text-slate-300 select-none">·</span>
               <div className="hidden md:flex items-center gap-1 shrink-0">
                 <img
-                  src={BRANDING_CONFIG.assets.softwareIconUrl}
+                  src={BRANDING_CONFIG.assets.softwareIconSvgUrl || BRANDING_CONFIG.assets.softwareIconUrl}
                   alt="PrathamOne EduOS"
                   className="w-4 h-4 object-contain"
                 />

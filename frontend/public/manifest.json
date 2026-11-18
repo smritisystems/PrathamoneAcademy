@@ -16,7 +16,7 @@
   ],
   "icons": [
     {
-      "src": "/artwork/16112026/001/path8-5-8.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
@@ -28,13 +28,13 @@
       "purpose": "maskable"
     },
     {
-      "src": "/artwork/16112026/001/path8-5-8_192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/artwork/16112026/001/path8-5-8.svg",
+      "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -46,28 +46,28 @@
       "short_name": "Students",
       "description": "View and manage active student admissions and profiles",
       "url": "/students",
-      "icons": [{ "src": "/artwork/16112026/001/path8-5-8_192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Fees & Payments",
       "short_name": "Fees",
       "description": "Fee collection, receipts register, and payment tracking",
       "url": "/fees",
-      "icons": [{ "src": "/artwork/16112026/001/path8-5-8_192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Attendance Register",
       "short_name": "Attendance",
       "description": "Mark and monitor daily student and batch attendance",
       "url": "/attendance",
-      "icons": [{ "src": "/artwork/16112026/001/path8-5-8_192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Academic Structure",
       "short_name": "Academic",
       "description": "Manage boards, standards, subjects, batches, and timetable",
       "url": "/academic",
-      "icons": [{ "src": "/artwork/16112026/001/path8-5-8_192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

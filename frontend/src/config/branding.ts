@@ -60,12 +60,45 @@ export const PRINT_SHARE_BRANDING = {
 
 export const PRINT_FOOTER_BRANDING_TEXT = 'Created by' as const
 
-const PRODUCT_BRAND_ASSET_ROOT = '/artwork/14112026'
-const PRODUCT_LOGO_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g1-4_1080.png`
-const PRODUCT_LOGO_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g1-4_1080.svg`
-const PRODUCT_APP_ICON_URL = '/artwork/16112026/001/path8-5-8.png'
-const PRODUCT_APP_ICON_SVG_URL = '/artwork/16112026/001/path8-5-8.svg'
-const PRODUCT_APP_ICON_192_URL = PRODUCT_APP_ICON_URL
+const PRODUCT_BRAND_ASSET_ROOT = '/artwork/18112026/03'
+const PRODUCT_BRAND_SHARED_ROOT = '/artwork/18112026'
+
+// Canonical Full Horizontal Lockup (With Tagline — Master)
+const PRODUCT_LOGO_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g2.png`
+const PRODUCT_LOGO_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_g2.svg`
+const PRODUCT_LOGO_RETINA_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path2-2-1.png`
+
+// Compact Horizontal Lockup (Without Tagline — High Legibility for 32px-48px App Navbars)
+const PRODUCT_LOGO_COMPACT_URL = `${PRODUCT_BRAND_SHARED_ROOT}/batch_path3-8-7.png`
+
+// Standalone Vector Icon Mark (Emblem Only — No Typography)
+const PRODUCT_APP_ICON_URL = '/icons/icon-512x512.png'
+const PRODUCT_APP_ICON_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-9.svg`
+const PRODUCT_APP_ICON_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-8.svg`
+const PRODUCT_APP_ICON_192_URL = '/icons/icon-192x192.png'
+const PRODUCT_APP_ICON_32_URL = '/icons/icon-32x32.png'
+
+// Stacked / Vertical Lockup Suite
+const PRODUCT_LOGO_STACKED_NAVY_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-1-6.png`
+const PRODUCT_LOGO_STACKED_NAVY_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-1-6.svg`
+const PRODUCT_LOGO_STACKED_WHITE_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-1-84.png`
+const PRODUCT_LOGO_STACKED_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path1-1-84.svg`
+
+// Monochrome Horizontal Variants
+const PRODUCT_LOGO_MONO_BLACK_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path3-8-8.svg`
+const PRODUCT_LOGO_MONO_WHITE_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path3-8-8-1.svg`
+const PRODUCT_LOGO_MONO_AMBER_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path3-8-8-2.svg`
+const PRODUCT_LOGO_MONO_NAVY_SVG_URL = `${PRODUCT_BRAND_ASSET_ROOT}/batch_path3-8-8-6.svg`
+
+// Integrated Badges & Tiles
+const PRODUCT_LOGO_BADGE_NAVY_URL = `${PRODUCT_BRAND_SHARED_ROOT}/LOGO.PNG`
+const PRODUCT_LOGO_BADGE_BLACK_URL = `${PRODUCT_BRAND_SHARED_ROOT}/LOGO2.PNG.png`
+const PRODUCT_APP_TILE_NAVY_SVG_URL = `${PRODUCT_BRAND_SHARED_ROOT}/batch_rect6-1.svg`
+const PRODUCT_APP_TILE_WHITE_SVG_URL = `${PRODUCT_BRAND_SHARED_ROOT}/batch_rect6-4.svg`
+const PRODUCT_TAGLINE_AMBER_URL = `${PRODUCT_BRAND_SHARED_ROOT}/batch_text6-1.png`
+const PRODUCT_PROMOTIONAL_VIDEO_V1_URL = '/artwork/VIDEOS/V1.mp4'
+const PRODUCT_PROMOTIONAL_VIDEO_V2_URL = '/artwork/VIDEOS/V2.mp4'
+const PRODUCT_PROMOTIONAL_VIDEO_URL = PRODUCT_PROMOTIONAL_VIDEO_V2_URL
 
 /**
  * Static baseline branding tokens for PrathamOne Academy suite
@@ -87,7 +120,7 @@ export const BRANDING_CONFIG = {
   monogram: 'PA' as string,
   version: pkg.version || '1.0.0',
   versionDisplay: `v${pkg.version || '1.0.0'}`,
-  buildNumber: '2026.11.18-REV-243-v1.132.0-94D6BB50',
+  buildNumber: '2026.11.18-REV-244-v1.132.1-E9D350B0',
   releaseChannel: 'Release Candidate',
   releaseStatus: 'Minor Release Candidate',
   releaseDate: '2026-11-18',
@@ -153,8 +186,8 @@ export const BRANDING_CONFIG = {
     academyLogoPngUrl: '/media/logo/prashant-academy-logo.png' as string,
     logoUrl: '/media/logo/prashant-academy-logo.svg' as string,
     logoDarkUrl: '/media/logo/prashant-academy-logo.svg' as string,
-    faviconUrl: PRODUCT_APP_ICON_192_URL as string,
-    faviconPngUrl: PRODUCT_APP_ICON_192_URL as string,
+    faviconUrl: PRODUCT_APP_ICON_32_URL as string,
+    faviconPngUrl: PRODUCT_APP_ICON_32_URL as string,
     faviconIcoUrl: '/favicon.ico' as string,
     icon192Url: PRODUCT_APP_ICON_192_URL as string,
     icon512Url: PRODUCT_APP_ICON_URL as string,
@@ -164,33 +197,57 @@ export const BRANDING_CONFIG = {
     softwareLogoSvgUrl: PRODUCT_LOGO_SVG_URL as string,
     softwareLogoUrl: PRODUCT_LOGO_URL as string,
     softwareLogoPngUrl: PRODUCT_LOGO_URL as string,
+    softwareLogoRetinaUrl: PRODUCT_LOGO_RETINA_URL as string,
+    softwareLogoCompactUrl: PRODUCT_LOGO_COMPACT_URL as string,
     softwareIconSvgUrl: PRODUCT_APP_ICON_SVG_URL as string,
+    softwareIconWhiteSvgUrl: PRODUCT_APP_ICON_WHITE_SVG_URL as string,
     softwareIconUrl: PRODUCT_APP_ICON_URL as string,
     softwareIconPngUrl: PRODUCT_APP_ICON_URL as string,
+    // Vertical / Stacked Variants
+    stackedNavyUrl: PRODUCT_LOGO_STACKED_NAVY_URL as string,
+    stackedNavySvgUrl: PRODUCT_LOGO_STACKED_NAVY_SVG_URL as string,
+    stackedWhiteUrl: PRODUCT_LOGO_STACKED_WHITE_URL as string,
+    stackedWhiteSvgUrl: PRODUCT_LOGO_STACKED_WHITE_SVG_URL as string,
+    // Monochrome Suite
+    monoBlackSvgUrl: PRODUCT_LOGO_MONO_BLACK_SVG_URL as string,
+    monoWhiteSvgUrl: PRODUCT_LOGO_MONO_WHITE_SVG_URL as string,
+    monoAmberSvgUrl: PRODUCT_LOGO_MONO_AMBER_SVG_URL as string,
+    monoNavySvgUrl: PRODUCT_LOGO_MONO_NAVY_SVG_URL as string,
+    // Badges & Tiles
+    badgeNavyUrl: PRODUCT_LOGO_BADGE_NAVY_URL as string,
+    badgeBlackUrl: PRODUCT_LOGO_BADGE_BLACK_URL as string,
+    appTileNavySvgUrl: PRODUCT_APP_TILE_NAVY_SVG_URL as string,
+    appTileWhiteSvgUrl: PRODUCT_APP_TILE_WHITE_SVG_URL as string,
+    taglineAmberUrl: PRODUCT_TAGLINE_AMBER_URL as string,
+    // Motion Graphics & Video Assets
+    promotionalVideoUrl: PRODUCT_PROMOTIONAL_VIDEO_URL as string,
+    promotionalVideoV1Url: PRODUCT_PROMOTIONAL_VIDEO_V1_URL as string,
+    promotionalVideoV2Url: PRODUCT_PROMOTIONAL_VIDEO_V2_URL as string,
     // Official Circular Seal (Emblem Seal)
     sealMarkUrl: '/media/logo/prathamone-eduos-seal.png' as string,
     sealMarkTransparentUrl: '/media/logo/prathamone-eduos-seal-transparent.png' as string,
     // Parent Brand Master Logo
     masterLogoUrl: PRODUCT_LOGO_URL as string,
     masterLogoTransparentUrl: PRODUCT_LOGO_URL as string,
-    masterLogoDarkUrl: PRODUCT_LOGO_URL as string,
+    masterLogoDarkUrl: PRODUCT_LOGO_MONO_WHITE_SVG_URL as string,
     // Product Brand Primary Logo
     primaryLogoUrl: PRODUCT_LOGO_URL as string,
     primaryLogoTransparentUrl: PRODUCT_LOGO_URL as string,
-    primaryLogoDarkUrl: PRODUCT_LOGO_URL as string,
+    primaryLogoDarkUrl: PRODUCT_LOGO_MONO_WHITE_SVG_URL as string,
     // Horizontal Lockup Logo
     horizontalLogoUrl: PRODUCT_LOGO_URL as string,
     horizontalLogoTransparentUrl: PRODUCT_LOGO_URL as string,
-    horizontalLogoDarkUrl: PRODUCT_LOGO_URL as string,
+    horizontalLogoDarkUrl: PRODUCT_LOGO_MONO_WHITE_SVG_URL as string,
+    horizontalLogoCompactUrl: PRODUCT_LOGO_COMPACT_URL as string,
     // Official Symbol Mark (New Square Emblem)
-    symbolMarkUrl: PRODUCT_APP_ICON_URL as string,
-    symbolMarkTransparentUrl: PRODUCT_APP_ICON_URL as string,
-    symbolMarkDarkUrl: PRODUCT_APP_ICON_URL as string,
+    symbolMarkUrl: PRODUCT_APP_ICON_SVG_URL as string,
+    symbolMarkTransparentUrl: PRODUCT_APP_ICON_SVG_URL as string,
+    symbolMarkDarkUrl: PRODUCT_APP_ICON_WHITE_SVG_URL as string,
     // Legacy / Convenience aliases
     prathamOneLogoUrl: PRODUCT_LOGO_URL as string,
     prathamOneLogoTransparentUrl: PRODUCT_LOGO_URL as string,
-    prathamOneMarkUrl: PRODUCT_APP_ICON_URL as string,
-    prathamOneMarkTransparentUrl: PRODUCT_APP_ICON_URL as string,
+    prathamOneMarkUrl: PRODUCT_APP_ICON_SVG_URL as string,
+    prathamOneMarkTransparentUrl: PRODUCT_APP_ICON_SVG_URL as string,
     prathamOneAppIcon512: PRODUCT_APP_ICON_URL as string,
     prathamOneAppIcon192: PRODUCT_APP_ICON_192_URL as string,
   },

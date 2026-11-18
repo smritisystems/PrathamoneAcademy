@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Customer-facing About PrathamOne EduOS product identity, vision, philosophy, capabilities, modules, and deployment summary.
  */
@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { HelpProductAndVersionResponse } from '../../types'
+import ProductVideoTourCard from './ProductVideoTourCard'
 
 interface AboutProductSectionProps {
   data: HelpProductAndVersionResponse | null
@@ -60,6 +61,12 @@ export default function AboutProductSection({ data }: AboutProductSectionProps) 
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{product.product_name}</h1>
         <p className="mt-3 text-sm text-slate-200 leading-relaxed max-w-3xl">{product.introduction}</p>
       </div>
+
+      {/* Official 3D Promotional Motion Graphic Tour */}
+      <ProductVideoTourCard
+        title="PrathamOne EduOS — Official System Tour & Architecture"
+        subtitle="Watch the 3D kinetic video overview highlighting core interconnected modules: Admissions CRM, Fee Counter, Academic Analytics, and Mobile Apps."
+      />
 
       {/* Vision, Mission & Product Philosophy */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
