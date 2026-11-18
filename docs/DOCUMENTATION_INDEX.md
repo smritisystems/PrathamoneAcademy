@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-19 00:05:35<br>
-**Total Indexed Items:** 555<br>
+**Last Reindexed:** 2026-11-19 00:20:59<br>
+**Total Indexed Items:** 556<br>
 
 ---
 
@@ -36,7 +36,7 @@
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **14** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **70** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **5** | Troubleshooting, Runbooks & Recovery |
-| `22` | [22_USER_MANUALS](#22_user_manuals) | **12** | User Manuals & Operating Guides |
+| `22` | [22_USER_MANUALS](#22_user_manuals) | **13** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
@@ -564,6 +564,7 @@
 
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
+| **Client Site System Update & Zero-Data-Loss Operational Procedure** | `MANUAL` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_USER-MANUAL_CLIENT-UPDATE-AND-ZERO-DATA-LOSS-PROCEDURE_V1.md](22_USER_MANUALS/2026-11-19_USER-MANUAL_CLIENT-UPDATE-AND-ZERO-DATA-LOSS-PROCEDURE_V1.md) | 13_SYSADMIN_SETTINGS, 19_RELEASES_CHANGELOG |
 | **License Issuance and Activation Guide** | `GUIDE` | `1.5` | 2026-11-14 | `Draft` | [2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md](22_USER_MANUALS/2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md) | 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 16_DATABASE_API |
 | **PrathamOne Academy — Complete User Manual Creation & Delivery Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md](22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md) | - |
 | **PrathamOne EduOS v1.88.0 — User Manuals & Documentation Refresh Report** | `REPORT` | `1.1` | 2026-11-12 | `Approved` | [2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md](22_USER_MANUALS/2026-11-12_USER_MANUALS_IMPLEMENTATION-REPORT_V1-88-0-MANUAL-REFRESH_V1.md) | 18_TESTING_QA, 22_USER_MANUALS, 24_AI_AGENT_KNOWLEDGE |
