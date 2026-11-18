@@ -693,7 +693,9 @@
 }
 :root.dark .text-red-700,
 :root.dark .text-red-800,
-:root.dark .text-red-900 {
+:root.dark .text-red-900,
+:root.dark .text-red-950,
+:root.dark [class*="text-red-950"] {
   color: #f87171 !important;
 }
 :root.dark .text-teal-700,
@@ -707,7 +709,17 @@
   color: #67e8f9 !important;
 }
 :root.dark .text-blue-800,
-:root.dark .text-blue-900 {
+:root.dark .text-blue-900,
+:root.dark .text-blue-950,
+:root.dark [class*="text-blue-800"],
+:root.dark [class*="text-blue-900"],
+:root.dark [class*="text-blue-950"],
+:root.dark .text-primary-800,
+:root.dark .text-primary-900,
+:root.dark .text-primary-950,
+:root.dark [class*="text-primary-800"],
+:root.dark [class*="text-primary-900"],
+:root.dark [class*="text-primary-950"] {
   color: #93c5fd !important;
 }
 
@@ -772,6 +784,14 @@
 :root.dark .bg-rose-100 {
   background-color: rgba(244, 63, 94, 0.12) !important;
 }
+:root.dark .bg-red-50,
+:root.dark .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}
+:root.dark .bg-blue-50,
+:root.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
 :root.dark .bg-amber-50,
 :root.dark .bg-amber-100 {
   background-color: rgba(245, 158, 11, 0.12) !important;
@@ -815,6 +835,16 @@
 :root.dark .border-primary-100,
 :root.dark .border-primary-200,
 :root.dark [class*="border-primary-"] {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+:root.dark .border-red-100,
+:root.dark .border-red-200,
+:root.dark [class*="border-red-"] {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+:root.dark .border-blue-100,
+:root.dark .border-blue-200,
+:root.dark [class*="border-blue-"] {
   border-color: rgba(59, 130, 246, 0.3) !important;
 }
 
