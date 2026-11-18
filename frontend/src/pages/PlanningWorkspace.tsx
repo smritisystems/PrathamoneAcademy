@@ -436,10 +436,10 @@ export default function PlanningWorkspace() {
   const queryParams = useMemo(() => ({
     start: calendarDateKey(startDate),
     end: calendarDateKey(endDate),
-    include_sources: true,
+    include_sources: view !== 'kanban',
     include_cancelled: statusFilter === 'cancelled',
     institution_id: selectedInstitutionId || undefined,
-  }), [startDate, endDate, selectedInstitutionId, statusFilter])
+  }), [startDate, endDate, selectedInstitutionId, statusFilter, view])
 
   const { data: activitiesResponse, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ['planning-activities', queryParams],
@@ -471,11 +471,13 @@ export default function PlanningWorkspace() {
     queryKey: ['planning-academic-years', selectedInstitutionId],
     queryFn: () => academicYearsApi.list(selectedInstitutionId ?? undefined),
     enabled: formOpen,
+    staleTime: 300_000,
   })
   const { data: standardsResponse, isLoading: areStandardsLoading, isError: areStandardsError } = useQuery({
     queryKey: ['planning-standards', selectedInstitutionId],
     queryFn: () => standardsApi.list({ institution_id: selectedInstitutionId ?? undefined }),
     enabled: formOpen,
+    staleTime: 300_000,
   })
   const standards = standardsResponse?.data || []
   const standardIds = useMemo(() => new Set(standards.map((standard) => standard.id)), [standards])
@@ -483,6 +485,7 @@ export default function PlanningWorkspace() {
     queryKey: ['planning-divisions', selectedInstitutionId],
     queryFn: () => divisionsApi.list(),
     enabled: formOpen,
+    staleTime: 300_000,
   })
   const divisions = (divisionsResponse?.data || []).filter((division) => standardIds.has(division.standard_id))
   const selectedDivision = divisions.find((division) => division.id === form.division_id)
@@ -490,6 +493,7 @@ export default function PlanningWorkspace() {
     queryKey: ['planning-subjects', selectedInstitutionId, selectedDivision?.standard_id],
     queryFn: () => subjectsApi.list({ standard_id: selectedDivision!.standard_id }),
     enabled: formOpen && !!selectedDivision,
+    staleTime: 300_000,
   })
 
   const { data: studentSearchResults, isFetching: isSearchingStudents } = useQuery({

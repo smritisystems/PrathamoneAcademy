@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-17
+#  * @updated     2026-11-18
 #  *
 #  * @description Institution-scoped planning activity APIs, safe attachments, recurrence exceptions, and audit history.
 #  */
@@ -371,6 +371,7 @@ async def list_activities(
         start,
         end,
         include_cancelled=include_cancelled,
+        include_sources=include_sources,
         data_environment=data_environment,
     )
     if not include_sources:

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Enterprise Release & Change Management workspace governing change tracking, automated release notes, pre-flight validations, approvals, and deployment lifecycles.
  */
@@ -22,7 +22,7 @@ import {
   GitBranch, GitCommit, Tag, Shield, CheckCircle2, XCircle, AlertTriangle,
   RefreshCw, Play, Check, Rocket, RotateCcw, FileText, Layers,
   ChevronRight, Calendar, UserCheck, Eye, Edit3, Lock, Server,
-  Sparkles, History, Filter, ArrowUpRight, Database
+  Sparkles, History, Filter, ArrowUpRight, Database, DownloadCloud, Zap, ShieldCheck
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { releasesApi } from '../api/endpoints'
@@ -30,6 +30,7 @@ import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { EditModeBar } from '../components/common'
 import { useBranding } from '../config/branding'
+import SystemUpdateModal from '../components/releases/SystemUpdateModal'
 import type {
   SystemReleaseListItem,
   SystemReleaseDetail,
@@ -47,6 +48,9 @@ export default function Releases() {
 
   // Navigation tab: 'lifecycle' | 'history' | 'current' | 'audit'
   const [activeTab, setActiveTab] = useState<'lifecycle' | 'history' | 'current' | 'audit'>('lifecycle')
+
+  // System 1-Click Update Modal
+  const [updateModalOpen, setUpdateModalOpen] = useState(false)
 
   // History filtering & inspection
   const [statusFilter, setStatusFilter] = useState<string>('')
@@ -113,6 +117,16 @@ export default function Releases() {
     queryKey: ['releases-audit', selectedReleaseId],
     queryFn: () => (selectedReleaseId ? releasesApi.getAudit(selectedReleaseId).then((r) => r.data) : []),
     enabled: activeTab === 'audit' && !!selectedReleaseId,
+  })
+
+  // 6. System 1-Click Update Check
+  const {
+    data: updateCheck,
+    isLoading: isCheckingUpdate,
+    refetch: refetchUpdateCheck,
+  } = useQuery({
+    queryKey: ['system-update-check'],
+    queryFn: () => releasesApi.checkUpdate().then((r) => r.data),
   })
 
   // ─── Mutations ─────────────────────────────────────────────────────────────
@@ -255,6 +269,7 @@ export default function Releases() {
     refetchCurrent()
     refetchPending()
     refetchHistory()
+    refetchUpdateCheck()
     if (selectedReleaseId) queryClient.invalidateQueries({ queryKey: ['releases-detail', selectedReleaseId] })
     toast.success('Release & change metrics refreshed')
   }
@@ -357,6 +372,97 @@ export default function Releases() {
               title="Refresh release metrics"
             >
               <RefreshCw className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => {
+                if (!isEditMode) {
+                  toast.error('Please activate Edit Mode above to perform system updates.')
+                  return
+                }
+                setUpdateModalOpen(true)
+              }}
+              className="flex items-center gap-2 px-3.5 py-2.5 bg-gradient-to-r from-indigo-600 to-primary-600 hover:from-indigo-500 hover:to-primary-500 text-white rounded-xl text-xs font-semibold shadow-md transition"
+              title="1-Click System Update"
+            >
+              <Zap className="w-4 h-4 text-amber-300" />
+              <span>System Update</span>
+              {updateCheck?.update_available && (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── 1-Click System Update & Safe Rollback Engine Card ──────────────── */}
+      <div className={`rounded-2xl border p-5 shadow-sm transition overflow-hidden ${
+        updateCheck?.update_available
+          ? 'bg-gradient-to-r from-indigo-900/10 via-primary-900/10 to-purple-900/10 border-indigo-200'
+          : 'bg-white border-slate-200/80'
+      }`}>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`p-1.5 rounded-lg border ${
+                updateCheck?.update_available
+                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              }`}>
+                {updateCheck?.update_available ? (
+                  <DownloadCloud className="w-4 h-4 text-indigo-600 animate-bounce" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                )}
+              </span>
+              <h2 className="text-base font-bold text-slate-900">
+                {updateCheck?.update_available
+                  ? `Verified Release Update Ready · v${updateCheck.latest_version}`
+                  : `PrathamOne EduOS is Fully Up to Date · v${currentRelease?.version || branding.version}`}
+              </h2>
+              {updateCheck?.update_available ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                  Update Ready
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Zero Downtime Armed
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
+              {updateCheck?.update_available
+                ? `A new verified version is ready for installation. Non-technical 1-click update automatically takes a safe snapshot of all student, fee, and academic data before executing backward-compatible migrations with automatic rollback protection.`
+                : `Your system is running the latest verified production build. The automated database backup snapshot and safe rollback protection engine are continuously active.`}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (!isEditMode) {
+                  toast.error('Please activate Edit Mode above to trigger system updates.')
+                  return
+                }
+                setUpdateModalOpen(true)
+              }}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-sm transition ${
+                updateCheck?.update_available
+                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300'
+              }`}
+            >
+              {updateCheck?.update_available ? (
+                <>
+                  <Zap className="w-4 h-4 text-amber-300" />
+                  Install Update Now (1-Click)
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 text-slate-600" />
+                  Inspect Update Engine & Logs
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -1173,6 +1279,14 @@ export default function Releases() {
           </div>
         </div>
       )}
+
+      {/* 1-Click System Update Modal */}
+      <SystemUpdateModal
+        isOpen={updateModalOpen}
+        onClose={() => setUpdateModalOpen(false)}
+        updateInfo={updateCheck || null}
+        onUpdateCompleted={refreshAll}
+      />
     </div>
   )
 }

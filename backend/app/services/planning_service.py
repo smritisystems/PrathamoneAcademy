@@ -682,6 +682,7 @@ async def list_calendar_items(
     end: date,
     *,
     include_cancelled: bool = False,
+    include_sources: bool = True,
     data_environment: str = "PRODUCTION",
 ) -> list[dict[str, Any]]:
     if end < start or (end - start).days > 370:
@@ -739,184 +740,185 @@ async def list_calendar_items(
         for occurrence in expand_activity(activity, start, end, reference_labels=ref_labels)
     ]
 
-    if is_sysadmin(user) or await has_permission(db, user, "examinations", "view"):
-        exams = await db.execute(
-            select(Examination)
-            .join(AcademicYear, AcademicYear.id == Examination.academic_year_id)
+    if include_sources:
+        if is_sysadmin(user) or await has_permission(db, user, "examinations", "view"):
+            exams = await db.execute(
+                select(Examination)
+                .join(AcademicYear, AcademicYear.id == Examination.academic_year_id)
+                .where(
+                    AcademicYear.institution_id == institution.id,
+                    Examination.is_active.is_(True),
+                    Examination.start_date.isnot(None),
+                    Examination.start_date <= end,
+                    or_(Examination.end_date.is_(None), Examination.end_date >= start),
+                )
+            )
+            for exam in exams.scalars().all():
+                event_start_date = max(exam.start_date, start)
+                event_end_date = min(exam.end_date or exam.start_date, end)
+                event_start = datetime.combine(event_start_date, time.min, tzinfo=local_zone)
+                event_end = datetime.combine(event_end_date + timedelta(days=1), time.min, tzinfo=local_zone)
+                items.append(
+                    _projected_item(
+                        "examination",
+                        exam.id,
+                        exam.name,
+                        "event",
+                        "academic",
+                        event_start.astimezone(timezone.utc),
+                        event_end.astimezone(timezone.utc),
+                        all_day=True,
+                        timezone_name=institution.timezone or "Asia/Kolkata",
+                    )
+                )
+
+        weekdays = {index: name for index, name in enumerate(
+            ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+        )}
+        timetable_rows = await db.execute(
+            select(TimetableEntry, Division.name, Subject.name)
+            .join(Division, Division.id == TimetableEntry.division_id)
+            .join(Standard, Standard.id == Division.standard_id)
+            .join(Subject, Subject.id == TimetableEntry.subject_id)
             .where(
-                AcademicYear.institution_id == institution.id,
-                Examination.is_active.is_(True),
-                Examination.start_date.isnot(None),
-                Examination.start_date <= end,
-                or_(Examination.end_date.is_(None), Examination.end_date >= start),
+                Standard.institution_id == institution.id,
+                TimetableEntry.is_active.is_(True),
             )
         )
-        for exam in exams.scalars().all():
-            event_start_date = max(exam.start_date, start)
-            event_end_date = min(exam.end_date or exam.start_date, end)
-            event_start = datetime.combine(event_start_date, time.min, tzinfo=local_zone)
-            event_end = datetime.combine(event_end_date + timedelta(days=1), time.min, tzinfo=local_zone)
-            items.append(
-                _projected_item(
-                    "examination",
-                    exam.id,
-                    exam.name,
-                    "event",
-                    "academic",
-                    event_start.astimezone(timezone.utc),
-                    event_end.astimezone(timezone.utc),
-                    all_day=True,
-                    timezone_name=institution.timezone or "Asia/Kolkata",
+        timetable_entries = timetable_rows.all()
+        day_names = {name.casefold(): index for index, name in weekdays.items()}
+        current_day = start
+        while current_day <= end:
+            for timetable, division_name, subject_name in timetable_entries:
+                if day_names.get(timetable.day_of_week.casefold()) != current_day.weekday():
+                    continue
+                local_start_time = _time_from_string(timetable.start_time, time(9, 0))
+                local_end_time = _time_from_string(timetable.end_time, time(10, 0))
+                local_start_at = datetime.combine(current_day, local_start_time, tzinfo=local_zone)
+                local_end_at = datetime.combine(current_day, local_end_time, tzinfo=local_zone)
+                items.append(
+                    _projected_item(
+                        "timetable_entry",
+                        timetable.id,
+                        f"{subject_name} · {division_name}",
+                        "event",
+                        "academic",
+                        local_start_at.astimezone(timezone.utc),
+                        local_end_at.astimezone(timezone.utc),
+                        location=timetable.room_number,
+                        division_id=timetable.division_id,
+                        subject_id=timetable.subject_id,
+                        occurrence_date=current_day,
+                        timezone_name=institution.timezone or "Asia/Kolkata",
+                    )
+                )
+            current_day += timedelta(days=1)
+
+        from app.services.homework_service import HomeworkService
+
+        if await HomeworkService.check_permission(db, user, "view"):
+            homework_rows = await db.execute(
+                select(HomeworkAssignment, Division.name)
+                .outerjoin(Division, Division.id == HomeworkAssignment.division_id)
+                .where(
+                    HomeworkAssignment.institution_id == institution.id,
+                    HomeworkAssignment.status == "published",
+                    HomeworkAssignment.is_template.is_(False),
+                    HomeworkAssignment.due_date >= start,
+                    HomeworkAssignment.due_date <= end,
                 )
             )
+            for homework, division_name in homework_rows.all():
+                due_time = _time_from_string(homework.due_time, time(23, 59))
+                local_due = datetime.combine(homework.due_date, due_time, tzinfo=local_zone)
+                items.append(
+                    _projected_item(
+                        "homework_assignment",
+                        homework.id,
+                        f"Homework due: {homework.title}",
+                        "task",
+                        "academic",
+                        None,
+                        None,
+                        due_at=local_due.astimezone(timezone.utc),
+                        division_id=homework.division_id,
+                        subject_id=homework.subject_id,
+                        timezone_name=institution.timezone or "Asia/Kolkata",
+                    )
+                )
 
-    weekdays = {index: name for index, name in enumerate(
-        ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-    )}
-    timetable_rows = await db.execute(
-        select(TimetableEntry, Division.name, Subject.name)
-        .join(Division, Division.id == TimetableEntry.division_id)
-        .join(Standard, Standard.id == Division.standard_id)
-        .join(Subject, Subject.id == TimetableEntry.subject_id)
-        .where(
-            Standard.institution_id == institution.id,
-            TimetableEntry.is_active.is_(True),
-        )
-    )
-    timetable_entries = timetable_rows.all()
-    day_names = {name.casefold(): index for index, name in weekdays.items()}
-    current_day = start
-    while current_day <= end:
-        for timetable, division_name, subject_name in timetable_entries:
-            if day_names.get(timetable.day_of_week.casefold()) != current_day.weekday():
-                continue
-            local_start_time = _time_from_string(timetable.start_time, time(9, 0))
-            local_end_time = _time_from_string(timetable.end_time, time(10, 0))
-            local_start_at = datetime.combine(current_day, local_start_time, tzinfo=local_zone)
-            local_end_at = datetime.combine(current_day, local_end_time, tzinfo=local_zone)
-            items.append(
-                _projected_item(
-                    "timetable_entry",
-                    timetable.id,
-                    f"{subject_name} · {division_name}",
-                    "event",
-                    "academic",
-                    local_start_at.astimezone(timezone.utc),
-                    local_end_at.astimezone(timezone.utc),
-                    location=timetable.room_number,
-                    division_id=timetable.division_id,
-                    subject_id=timetable.subject_id,
-                    occurrence_date=current_day,
-                    timezone_name=institution.timezone or "Asia/Kolkata",
+        crm_environment = data_environment.upper()
+        if crm_environment in ("PRODUCTION", "TRAINING") and await has_resource_access(
+            db, user, "leads", "read", LEAD_READ_ROLES
+        ):
+            source_start = start_local.astimezone(timezone.utc)
+            source_end = end_local.astimezone(timezone.utc)
+            follow_up_rows = await db.execute(
+                select(LeadFollowUp)
+                .join(Lead, Lead.id == LeadFollowUp.lead_id)
+                .where(
+                    LeadFollowUp.institution_id == institution.id,
+                    Lead.institution_id == institution.id,
+                    Lead.is_active.is_(True),
+                    LeadFollowUp.status == "scheduled",
+                    LeadFollowUp.scheduled_at >= source_start,
+                    LeadFollowUp.scheduled_at < source_end,
+                    Lead.data_environment == crm_environment,
+                    LeadFollowUp.data_environment == crm_environment,
                 )
             )
-        current_day += timedelta(days=1)
+            for follow_up in follow_up_rows.scalars().all():
+                scheduled_at = _aware_utc(follow_up.scheduled_at)
+                if scheduled_at is None:
+                    continue
+                follow_up_type = follow_up.follow_up_type.replace("_", " ").title()
+                items.append(
+                    _projected_item(
+                        "lead_follow_up",
+                        follow_up.id,
+                        f"CRM follow-up · {follow_up_type}",
+                        "event",
+                        "administrative",
+                        scheduled_at,
+                        None,
+                        timezone_name=institution.timezone or "Asia/Kolkata",
+                    )
+                )
 
-    from app.services.homework_service import HomeworkService
-
-    if await HomeworkService.check_permission(db, user, "view"):
-        homework_rows = await db.execute(
-            select(HomeworkAssignment, Division.name)
-            .outerjoin(Division, Division.id == HomeworkAssignment.division_id)
-            .where(
-                HomeworkAssignment.institution_id == institution.id,
-                HomeworkAssignment.status == "published",
-                HomeworkAssignment.is_template.is_(False),
-                HomeworkAssignment.due_date >= start,
-                HomeworkAssignment.due_date <= end,
-            )
-        )
-        for homework, division_name in homework_rows.all():
-            due_time = _time_from_string(homework.due_time, time(23, 59))
-            local_due = datetime.combine(homework.due_date, due_time, tzinfo=local_zone)
-            items.append(
-                _projected_item(
-                    "homework_assignment",
-                    homework.id,
-                    f"Homework due: {homework.title}",
-                    "task",
-                    "academic",
-                    None,
-                    None,
-                    due_at=local_due.astimezone(timezone.utc),
-                    division_id=homework.division_id,
-                    subject_id=homework.subject_id,
-                    timezone_name=institution.timezone or "Asia/Kolkata",
+            demo_rows = await db.execute(
+                select(LeadDemoClass)
+                .join(Lead, Lead.id == LeadDemoClass.lead_id)
+                .options(selectinload(LeadDemoClass.subject))
+                .where(
+                    LeadDemoClass.institution_id == institution.id,
+                    Lead.institution_id == institution.id,
+                    Lead.is_active.is_(True),
+                    LeadDemoClass.status == "scheduled",
+                    LeadDemoClass.scheduled_at >= source_start,
+                    LeadDemoClass.scheduled_at < source_end,
+                    Lead.data_environment == crm_environment,
+                    LeadDemoClass.data_environment == crm_environment,
                 )
             )
-
-    crm_environment = data_environment.upper()
-    if crm_environment in ("PRODUCTION", "TRAINING") and await has_resource_access(
-        db, user, "leads", "read", LEAD_READ_ROLES
-    ):
-        source_start = start_local.astimezone(timezone.utc)
-        source_end = end_local.astimezone(timezone.utc)
-        follow_up_rows = await db.execute(
-            select(LeadFollowUp)
-            .join(Lead, Lead.id == LeadFollowUp.lead_id)
-            .where(
-                LeadFollowUp.institution_id == institution.id,
-                Lead.institution_id == institution.id,
-                Lead.is_active.is_(True),
-                LeadFollowUp.status == "scheduled",
-                LeadFollowUp.scheduled_at >= source_start,
-                LeadFollowUp.scheduled_at < source_end,
-                Lead.data_environment == crm_environment,
-                LeadFollowUp.data_environment == crm_environment,
-            )
-        )
-        for follow_up in follow_up_rows.scalars().all():
-            scheduled_at = _aware_utc(follow_up.scheduled_at)
-            if scheduled_at is None:
-                continue
-            follow_up_type = follow_up.follow_up_type.replace("_", " ").title()
-            items.append(
-                _projected_item(
-                    "lead_follow_up",
-                    follow_up.id,
-                    f"CRM follow-up · {follow_up_type}",
-                    "event",
-                    "administrative",
-                    scheduled_at,
-                    None,
-                    timezone_name=institution.timezone or "Asia/Kolkata",
+            for demo_class in demo_rows.scalars().all():
+                scheduled_at = _aware_utc(demo_class.scheduled_at)
+                if scheduled_at is None:
+                    continue
+                subject_name = demo_class.subject.name if demo_class.subject else None
+                title = f"CRM demo class · {subject_name}" if subject_name else "CRM demo class"
+                items.append(
+                    _projected_item(
+                        "lead_demo_class",
+                        demo_class.id,
+                        title,
+                        "event",
+                        "academic",
+                        scheduled_at,
+                        None,
+                        subject_id=demo_class.subject_id,
+                        timezone_name=institution.timezone or "Asia/Kolkata",
+                    )
                 )
-            )
-
-        demo_rows = await db.execute(
-            select(LeadDemoClass)
-            .join(Lead, Lead.id == LeadDemoClass.lead_id)
-            .options(selectinload(LeadDemoClass.subject))
-            .where(
-                LeadDemoClass.institution_id == institution.id,
-                Lead.institution_id == institution.id,
-                Lead.is_active.is_(True),
-                LeadDemoClass.status == "scheduled",
-                LeadDemoClass.scheduled_at >= source_start,
-                LeadDemoClass.scheduled_at < source_end,
-                Lead.data_environment == crm_environment,
-                LeadDemoClass.data_environment == crm_environment,
-            )
-        )
-        for demo_class in demo_rows.scalars().all():
-            scheduled_at = _aware_utc(demo_class.scheduled_at)
-            if scheduled_at is None:
-                continue
-            subject_name = demo_class.subject.name if demo_class.subject else None
-            title = f"CRM demo class · {subject_name}" if subject_name else "CRM demo class"
-            items.append(
-                _projected_item(
-                    "lead_demo_class",
-                    demo_class.id,
-                    title,
-                    "event",
-                    "academic",
-                    scheduled_at,
-                    None,
-                    subject_id=demo_class.subject_id,
-                    timezone_name=institution.timezone or "Asia/Kolkata",
-                )
-            )
 
     items.sort(
         key=lambda item: (

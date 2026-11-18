@@ -24,6 +24,7 @@ import Releases from '../pages/Releases'
 import { resolvePageTitle } from '../components/Footer'
 import { releasesApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
+import { useEditModeStore } from '../store/editModeStore'
 
 describe('Release & Change Management Workspace Specifications', () => {
   let queryClient: QueryClient
@@ -163,11 +164,31 @@ describe('Release & Change Management Workspace Specifications', () => {
       selectedAcademicYearId: 1,
     })
 
+    useEditModeStore.setState({ scopes: {} })
+
     vi.spyOn(releasesApi, 'getCurrent').mockResolvedValue(mockCurrentRelease as any)
     vi.spyOn(releasesApi, 'getPendingChanges').mockResolvedValue(mockPendingChanges as any)
     vi.spyOn(releasesApi, 'list').mockResolvedValue(mockHistory as any)
     vi.spyOn(releasesApi, 'get').mockResolvedValue(mockDetail as any)
     vi.spyOn(releasesApi, 'getAudit').mockResolvedValue({ data: [] } as any)
+    vi.spyOn(releasesApi, 'checkUpdate').mockResolvedValue({
+      data: {
+        current_version: '1.0.0',
+        latest_version: '1.0.0',
+        update_available: false,
+        backup_engine_ready: true,
+      },
+    } as any)
+    vi.spyOn(releasesApi, 'getUpdateStatus').mockResolvedValue({
+      data: {
+        active: false,
+        progress_percent: 0,
+        current_step: 'idle',
+        status: 'idle',
+        status_message: 'Ready',
+        logs: [],
+      },
+    } as any)
   })
 
   afterEach(() => {
@@ -251,5 +272,21 @@ describe('Release & Change Management Workspace Specifications', () => {
 
     expect(await screen.findByText('Generate Release Candidate Draft')).toBeDefined()
     expect(screen.getByPlaceholderText('e.g. 6.99.2 or 7.0.0')).toBeDefined()
+  })
+
+  it('renders 1-Click System Update banner and opens update modal when Edit Mode is active', async () => {
+    renderComponent()
+
+    expect(await screen.findByText(/PrathamOne EduOS is Fully Up to Date/i)).toBeDefined()
+    expect(screen.getByText(/Zero Downtime Armed/i)).toBeDefined()
+
+    // Enable Edit Mode to open update modal
+    fireEvent.click(screen.getByRole('button', { name: /Enable Edit Mode/i }))
+    const updateBtn = screen.getByRole('button', { name: /Inspect Update Engine & Logs/i })
+    fireEvent.click(updateBtn)
+
+    expect(await screen.findByText('PrathamOne EduOS System Update')).toBeDefined()
+    expect(screen.getByText('Pre-flight checks & storage verified')).toBeDefined()
+    expect(screen.getByText('Full safe backup of student and fee data created')).toBeDefined()
   })
 })

@@ -50,6 +50,7 @@ import type {
   WithdrawalReportItem, WithdrawalAnalyticsResponse,
   SystemReleaseCurrent, SystemReleaseListItem, SystemReleaseDetail,
   PendingChangesResponse, ReleaseAuditLogItem,
+  SystemUpdateCheckResponse, SystemUpdateStatusResponse,
   PaymentWorkflowConfig, RefundRecord, PaymentAuditLog,
   PaymentGatewayConfig, OnlineOrderResponse, OnlinePaymentVerifyPayload, OnlinePaymentVerifyResult,
   NavigationConfigResponse, NavigationSuggestion, RecentVisitItem, NavigationPolicy, NavigationPreference,
@@ -2206,6 +2207,18 @@ export const releasesApi = {
 
   getAudit: (id: number | string) =>
     apiClient.get<ReleaseAuditLogItem[]>(`/releases/${id}/audit`),
+
+  checkUpdate: () =>
+    apiClient.get<SystemUpdateCheckResponse>('/releases/check-update'),
+
+  getUpdateStatus: () =>
+    apiClient.get<SystemUpdateStatusResponse>('/releases/update-status'),
+
+  applyUpdate: (data: { target_version: string; offline_package_path?: string }) =>
+    apiClient.post<{ message: string; target_version: string; status: string }>('/releases/apply-update', data),
+
+  resetUpdateStatus: () =>
+    apiClient.post<{ message: string }>('/releases/reset-update-status'),
 }
 
 

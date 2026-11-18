@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description API endpoints for Release & Change Management, automated release notes, version tracking, pre-flight validations, and production approvals.
 #  */
@@ -22,12 +22,14 @@ from sqlalchemy import select, func, desc, or_
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 import json
+import asyncio
 
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role
 from app.models.release import SystemRelease
 from app.models.user import User, AuditLog
 from app.services.release_service import ReleaseService
+from app.services.updater_service import UpdaterService, update_tracker
 
 router = APIRouter()
 
@@ -60,6 +62,88 @@ class ReleaseUpdate(BaseModel):
 class ReleaseRollbackRequest(BaseModel):
     reason: str = Field(min_length=10, description="Comprehensive justification for rolling back this release")
     target_version: Optional[str] = None
+
+
+class ApplyUpdateRequest(BaseModel):
+    target_version: str
+    offline_package_path: Optional[str] = None
+
+
+class SnapshotRollbackRequest(BaseModel):
+    snapshot_filename: str
+    reason: str = Field(default="Administrator manual rollback to pre-update snapshot")
+
+
+@router.get("/check-update")
+async def check_available_update(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Checks if a newer release of PrathamOne EduOS is available for 1-click update.
+    Returns current version, available version, release highlights, and auto-update capability.
+    """
+    return await UpdaterService.check_available_update(db)
+
+
+@router.get("/update-status")
+async def get_update_status(
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Returns live streaming progress status, active step, percent (0-100), and logs for the update modal.
+    """
+    return await update_tracker.get_state()
+
+
+@router.post("/apply-update")
+async def apply_system_update(
+    payload: ApplyUpdateRequest,
+    current_user: User = Depends(require_role("superadmin", "sysadmin", "admin")),
+):
+    """
+    Initiates the 1-click fail-safe system update.
+    Runs pre-flight checks, creates safe database snapshot, updates schema, and tests health.
+    Automatically rolls back upon any error with guaranteed zero data loss.
+    """
+    if not is_authorized_release_manager(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: Initiating system updates requires SuperAdmin or SysAdmin authority.",
+        )
+
+    state = await update_tracker.get_state()
+    if state["active"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A system update is already actively in progress.",
+        )
+
+    # Launch background update orchestration pipeline
+    asyncio.create_task(
+        UpdaterService.run_update_pipeline(
+            target_version=payload.target_version,
+            user_id=current_user.id,
+            offline_package_path=payload.offline_package_path,
+        )
+    )
+
+    return {
+        "message": f"System update to v{payload.target_version} initiated successfully.",
+        "target_version": payload.target_version,
+        "status": "in_progress",
+    }
+
+
+@router.post("/reset-update-status")
+async def reset_update_status(
+    current_user: User = Depends(require_role("superadmin", "sysadmin", "admin")),
+):
+    """
+    Resets the update tracker state after a completed or dismissed update dialog.
+    """
+    await update_tracker.reset()
+    return {"message": "Update status reset successfully."}
 
 
 @router.get("/current")

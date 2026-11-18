@@ -3424,6 +3424,34 @@ export interface ReleaseAuditLogItem {
   created_at: string
 }
 
+export interface SystemUpdateCheckResponse {
+  current_version: string
+  latest_version: string
+  next_target_version?: string
+  update_available: boolean
+  release_title: string
+  release_date: string
+  highlights: string[]
+  is_critical_security: boolean
+  can_auto_update: boolean
+}
+
+export interface SystemUpdateStatusResponse {
+  active: boolean
+  progress_percent: number
+  current_step: string
+  step_number: number
+  total_steps: number
+  status: 'idle' | 'in_progress' | 'success' | 'rolled_back' | 'failed'
+  status_message: string
+  target_version: string | null
+  snapshot_path: string | null
+  error: string | null
+  logs: string[]
+  started_at: string | null
+  completed_at: string | null
+}
+
 // ─── Payment Gateway & Online Checkout (Razorpay & UPI) ──────────────────────
 
 export interface PaymentGatewayConfig {
