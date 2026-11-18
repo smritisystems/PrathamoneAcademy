@@ -2817,7 +2817,13 @@ export type AllSettingsState = Record<string, Record<string, any>>
 
 // ─── Optional Device-Wise Security Binding ───────────────────────────
 export type DeviceBindingPolicyMode = 'disabled' | 'optional_registration' | 'registered_only' | 'admin_approval_required'
-export type DeviceVerificationMethod = 'device_fingerprint' | 'totp_otp' | 'device_fingerprint_and_otp' | 'hardware_token'
+export type DeviceVerificationMethod =
+  | 'device_fingerprint'
+  | 'webauthn_tpm'
+  | 'native_agent_mac'
+  | 'totp_otp'
+  | 'device_fingerprint_and_otp'
+  | 'hardware_token'
 export type DeviceApprovalPolicy = 'admin_approval' | 'auto_approve' | 'otp_verified'
 export type DeviceManagementPermission = 'admin_only' | 'user_self_service' | 'admin_and_manager'
 export type DeviceStatus = 'active' | 'pending_approval' | 'revoked' | 'blocked'
