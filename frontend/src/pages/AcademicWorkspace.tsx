@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Flagship Academic Structure & Batch Management workspace featuring 9 tabs, tree view, and batch cards.
  */
@@ -37,7 +37,7 @@ import {
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
 import { useEnvironmentStore } from '../store/environmentStore'
-import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, ContextualHelpButton } from '../components/common'
+import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, ContextualHelpButton, BatchCapacityBulletMeter } from '../components/common'
 import Modal from '../components/Modal'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import toast from 'react-hot-toast'
@@ -2138,6 +2138,16 @@ export default function AcademicWorkspace() {
                                   </div>
                                 </div>
 
+                                {/* Stephen Few Seating Capacity Bullet Meter */}
+                                <div className="mt-3 pt-2.5 border-t border-gray-100">
+                                  <BatchCapacityBulletMeter
+                                    enrolled={batch.enrolled_count || 0}
+                                    capacity={batch.capacity || 40}
+                                    targetPercentage={85}
+                                    compact={true}
+                                  />
+                                </div>
+
                                 <div className="mt-4 pt-3 border-t border-gray-100 space-y-2 text-xs text-gray-600">
                                   <div className="flex items-center gap-2.5">
                                     <BookOpen className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
@@ -2231,13 +2241,13 @@ export default function AcademicWorkspace() {
                                 </td>
                                 <td className="py-3 px-3 text-gray-600">{b.schedule_timing}</td>
                                 <td className="py-3 px-3 font-semibold text-gray-800">{b.room_number}</td>
-                                <td className="py-3 px-3">
-                                  <span className="font-bold text-gray-900">
-                                    {b.enrolled_count || 0} / {b.capacity || 40}
-                                  </span>
-                                  <span className="text-[10px] text-gray-500 ml-1">
-                                    ({b.occupancy_percentage || 0}%)
-                                  </span>
+                                <td className="py-3 px-3 min-w-[150px]">
+                                  <BatchCapacityBulletMeter
+                                    enrolled={b.enrolled_count || 0}
+                                    capacity={b.capacity || 40}
+                                    targetPercentage={85}
+                                    compact={true}
+                                  />
                                 </td>
                                 <td className="py-3 px-3">
                                   <span

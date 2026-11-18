@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Dedicated CRM Overview workspace featuring top KPI metrics, live enquiry funnel, overdue follow-up queues, source distribution, and counsellor leaderboard.
  */
@@ -36,6 +36,7 @@ import { useEditModeStore } from '../../store/editModeStore'
 import CrmHeader from './CrmHeader'
 import { NewLeadModal, FollowUpModal, DemoClassModal, ConvertToAdmissionModal, getStageBadge, getPriorityBadge } from './CrmModals'
 import LeadDossierDrawer from './LeadDossierDrawer'
+import { AdmissionsFunnelChart } from '../../components/common'
 
 export default function CrmOverviewPage() {
   const navigate = useNavigate()
@@ -239,52 +240,14 @@ export default function CrmOverviewPage() {
         </div>
 
         {/* Right 7/12: Pipeline Stage Distribution Funnel */}
-        <div className="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-primary-600" />
-              <h3 className="text-sm font-black text-slate-900">Admissions Pipeline Funnel</h3>
-            </div>
-            <Link
-              to="/leads/pipeline"
-              className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
-            >
-              <span>Open Kanban Board</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="space-y-3 pt-1">
-            {[
-              { key: 'new_enquiry', label: 'New Enquiry', color: 'bg-primary-500' },
-              { key: 'contacted', label: 'Contacted', color: 'bg-amber-500' },
-              { key: 'counselling_demo', label: 'Counselling & Demo', color: 'bg-purple-500' },
-              { key: 'interested', label: 'Interested / Trial', color: 'bg-emerald-500' },
-              { key: 'admission_pending', label: 'Admission Pending', color: 'bg-orange-500' },
-              { key: 'converted', label: 'Converted to Admission', color: 'bg-teal-500' },
-            ].map((stage) => {
-              const count = metrics?.pipeline_counts?.[stage.key] ?? 0
-              const total = metrics?.total_leads || 1
-              const pct = Math.round((count / total) * 100)
-              return (
-                <div key={stage.key} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="text-slate-700">{stage.label}</span>
-                    <span className="font-mono text-slate-500">
-                      {count} ({pct}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div
-                      className={`${stage.color} h-2 rounded-full transition-all duration-500`}
-                      style={{ width: `${Math.max(pct, 2)}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        <AdmissionsFunnelChart
+          pipelineCounts={metrics?.pipeline_counts || {}}
+          totalLeads={metrics?.total_leads || 0}
+          conversionRate={metrics?.conversion_rate || 0}
+          onSelectStage={(stageKey) => navigate(`/leads/pipeline?stage=${stageKey}`)}
+          onNavigatePipeline={() => navigate('/leads/pipeline')}
+          className="lg:col-span-7"
+        />
       </div>
 
       {/* ─── ROW 3: RECENT ENQUIRIES REGISTER & DOSSIER DOCKED PANEL ───────── */}

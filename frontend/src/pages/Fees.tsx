@@ -43,7 +43,7 @@ import {
 } from '../api/endpoints'
 import { useAuthStore, isUserAdmin, isUserSysAdmin, hasPermission } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ConcessionTraceModal, ContextualHelpButton } from '../components/common'
+import { EditModeBar, LockedButton, LockedIconButton, SortableHeader, TableSortSelect, TableSortOption, ConcessionTraceModal, ContextualHelpButton, AgingReceivablesStackedBar } from '../components/common'
 import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
 import { useTableSort } from '../hooks/useTableSort'
 import Modal from '../components/Modal'
@@ -3715,6 +3715,29 @@ function FeesContent() {
                     )}
                   </div>
                 </div>
+
+                {/* 2.5. AGING RECEIVABLES STACKED BAR CHART */}
+                <AgingReceivablesStackedBar
+                  defaulters={defaultersList}
+                  totalOutstanding={overviewData.summary.total_recoverable_outstanding ?? overviewData.summary.total_outstanding}
+                  currencyFormatter={(val) => fmt(val)}
+                  activeBracket={defaulterAgingFilter}
+                  onSelectBracket={(bracket) => {
+                    if (bracket === '90+' || bracket === '61-90') {
+                      setDefaulterAgingFilter('60+')
+                    } else if (bracket === '1-30' || bracket === '31-60') {
+                      setDefaulterAgingFilter(bracket)
+                    } else {
+                      setDefaulterAgingFilter('all')
+                    }
+                    setActiveTab('defaulters')
+                    navigate('/fees/defaulters')
+                  }}
+                  onNavigateDefaulters={() => {
+                    setActiveTab('defaulters')
+                    navigate('/fees/defaulters')
+                  }}
+                />
 
                 {/* 3. BOTTOM ROW: RECENT PAYMENTS TABLE */}
                 <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs">

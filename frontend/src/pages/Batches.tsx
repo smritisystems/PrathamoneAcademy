@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Batch directory page redirected to Academic Workspace batch management tab.
  */
@@ -22,7 +22,7 @@ import { CalendarDays, Plus, Users, Layers, CheckCircle, Lock } from 'lucide-rea
 import { standardsApi, divisionsApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
 import { useEditModeStore } from '../store/editModeStore'
-import { EditModeBar } from '../components/common'
+import { EditModeBar, BatchCapacityBulletMeter } from '../components/common'
 import Modal from '../components/Modal'
 import toast from 'react-hot-toast'
 
@@ -133,15 +133,29 @@ export default function BatchesPage() {
 
       {/* Batches Grid */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
           <div>
             <h2 className="text-base font-semibold text-gray-900">
               {selectedStdObj?.name ? `${selectedStdObj.name} — Batches` : 'Batches'}
             </h2>
             <p className="text-xs text-gray-500">
-              Total {batches.length} active batch{batches.length === 1 ? '' : 'es'}
+              Total {batches.length} active batch{batches.length === 1 ? '' : 'es'} •{' '}
+              {batches.reduce((sum: number, b: any) => sum + (b.student_count || 0), 0)} total enrolled
             </p>
           </div>
+          {batches.length > 0 && (
+            <div className="w-full sm:w-72 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                Standard Capacity Saturation
+              </span>
+              <BatchCapacityBulletMeter
+                enrolled={batches.reduce((sum: number, b: any) => sum + (b.student_count || 0), 0)}
+                capacity={batches.reduce((sum: number, b: any) => sum + (b.capacity || 40), 0)}
+                targetPercentage={85}
+                compact={true}
+              />
+            </div>
+          )}
         </div>
 
         {isLoading ? (
@@ -181,24 +195,15 @@ export default function BatchesPage() {
                     </div>
                   </div>
 
-                  {/* Occupancy Progress */}
-                  <div className="mt-4">
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>Occupancy</span>
-                      <span className="font-semibold text-gray-700">{percent}%</span>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          percent >= 90
-                            ? 'bg-red-500'
-                            : percent >= 70
-                            ? 'bg-amber-500'
-                            : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
+                  {/* Stephen Few Seating Capacity Bullet Meter */}
+                  <div className="mt-4 pt-3 border-t border-slate-100">
+                    <BatchCapacityBulletMeter
+                      enrolled={count}
+                      capacity={cap}
+                      targetPercentage={85}
+                      showBadge={true}
+                      showScale={true}
+                    />
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">

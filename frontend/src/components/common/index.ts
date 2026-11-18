@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Central export index for shared common components including View-First Edit Mode governance tools.
  */
@@ -47,3 +47,23 @@ export type { TableSortSelectProps, TableSortOption } from './TableSortSelect'
 export { default as ContextualHelpButton, resolveContextualHelpPath } from './ContextualHelpButton'
 
 export { ConcessionTraceModal } from './ConcessionTraceModal'
+
+export { default as AgingReceivablesStackedBar } from './AgingReceivablesStackedBar'
+export type {
+  AgingReceivablesStackedBarProps,
+  AgingBucket,
+  AgingBracketId,
+  DefaulterRecord,
+} from './AgingReceivablesStackedBar'
+
+export { default as AdmissionsFunnelChart } from './AdmissionsFunnelChart'
+export type {
+  AdmissionsFunnelChartProps,
+  FunnelStageConfig,
+} from './AdmissionsFunnelChart'
+
+export { default as BatchCapacityBulletMeter } from './BatchCapacityBulletMeter'
+export type {
+  BatchCapacityBulletMeterProps,
+} from './BatchCapacityBulletMeter'
+
