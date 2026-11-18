@@ -203,4 +203,41 @@ describe('DeviceBindingSettingsPanel', () => {
       expect(deviceBindingApi.approveDevice).toHaveBeenCalledWith(102, undefined)
     })
   })
+
+  it('8. Renders Register This Device and Add Device buttons', async () => {
+    render(
+      <DeviceBindingSettingsPanel
+        settings={mockSettings}
+        onChange={vi.fn()}
+        isEditMode={true}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Register This Device/i })).toBeDefined()
+      expect(screen.getByRole('button', { name: /Add Device/i })).toBeDefined()
+    })
+  })
+
+  it('9. Filters inventory devices by status filter tab', async () => {
+    render(
+      <DeviceBindingSettingsPanel
+        settings={mockSettings}
+        onChange={vi.fn()}
+        isEditMode={true}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Teacher Windows Surface')).toBeDefined()
+    })
+
+    const pendingBtn = screen.getByRole('button', { name: /Pending Approval \(1\)/i })
+    fireEvent.click(pendingBtn)
+
+    await waitFor(() => {
+      expect(screen.queryByText('Teacher Windows Surface')).toBeNull()
+      expect(screen.getByText('Classroom iPad')).toBeDefined()
+    })
+  })
 })

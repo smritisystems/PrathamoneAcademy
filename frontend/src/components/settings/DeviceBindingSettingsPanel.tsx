@@ -34,6 +34,8 @@ import {
   Check,
   X,
   Radio,
+  Plus,
+  Search,
 } from 'lucide-react'
 import { deviceBindingApi } from '../../api/endpoints'
 import type {
@@ -78,6 +80,130 @@ export default function DeviceBindingSettingsPanel({
     text: string
   } | null>(null)
   const [safeDisabling, setSafeDisabling] = useState<boolean>(false)
+  const [showAddModal, setShowAddModal] = useState<boolean>(false)
+  const [newDeviceName, setNewDeviceName] = useState<string>('')
+  const [newDeviceType, setNewDeviceType] = useState<string>('desktop')
+  const [newUserId, setNewUserId] = useState<string>('')
+  const [registering, setRegistering] = useState<boolean>(false)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending_approval' | 'revoked'>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
+
+  const detectClientEnvironment = () => {
+    if (typeof window === 'undefined') {
+      return {
+        os: 'Desktop OS',
+        browser: 'Web Browser',
+        deviceType: 'desktop',
+        fingerprint: 'fp_generic_' + Math.random().toString(36).substring(2, 10),
+      }
+    }
+    const ua = navigator.userAgent || ''
+    let os = 'Windows 11 / 10'
+    if (ua.includes('Win')) os = 'Windows 11 / 10'
+    else if (ua.includes('Mac')) os = 'macOS'
+    else if (ua.includes('Linux')) os = 'Linux'
+    else if (ua.includes('Android')) os = 'Android'
+    else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS'
+
+    let browser = 'Chrome'
+    if (ua.includes('Edg/')) browser = 'Microsoft Edge'
+    else if (ua.includes('Chrome/')) browser = 'Google Chrome'
+    else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Apple Safari'
+    else if (ua.includes('Firefox/')) browser = 'Mozilla Firefox'
+
+    let deviceType = 'desktop'
+    if (/iPad|Tablet/i.test(ua)) {
+      deviceType = 'tablet'
+    } else if (/Mobi|Android/i.test(ua)) {
+      deviceType = 'mobile'
+    }
+
+    const raw = `${ua}-${navigator.language || ''}-${window.innerWidth || 1920}x${window.innerHeight || 1080}`
+    let hash = 0
+    for (let i = 0; i < raw.length; i++) {
+      hash = (hash << 5) - hash + raw.charCodeAt(i)
+      hash |= 0
+    }
+    const fingerprint = `fp_${Math.abs(hash).toString(16)}_${Date.now().toString(36).slice(-4)}`
+
+    return { os, browser, deviceType, fingerprint }
+  }
+
+  const handleRegisterCurrentDevice = async () => {
+    if (!isEditMode) {
+      setActionFeedback({
+        type: 'error',
+        text: 'Please activate Edit Mode in the top bar to register devices.',
+      })
+      return
+    }
+    const env = detectClientEnvironment()
+    const defaultName = `Workstation (${env.browser} / ${env.os})`
+    try {
+      setRegistering(true)
+      await deviceBindingApi.registerDevice(
+        {
+          device_name: defaultName,
+          device_type: env.deviceType,
+          fingerprint: env.fingerprint,
+          browser_info: env.browser,
+          os_info: env.os,
+        },
+        institutionId
+      )
+      setActionFeedback({
+        type: 'success',
+        text: `Device '${defaultName}' registered successfully.`,
+      })
+      await loadDevices()
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        text: err.response?.data?.detail || 'Failed to register current device.',
+      })
+    } finally {
+      setRegistering(false)
+    }
+  }
+
+  const handleAddCustomDevice = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isEditMode) return
+    if (!newDeviceName.trim()) {
+      setActionFeedback({ type: 'error', text: 'Device name is required.' })
+      return
+    }
+    try {
+      setRegistering(true)
+      const fp = 'fp_manual_' + Math.random().toString(36).substring(2, 10)
+      await deviceBindingApi.registerDevice(
+        {
+          device_name: newDeviceName.trim(),
+          device_type: newDeviceType,
+          fingerprint: fp,
+          browser_info: 'Pre-Enrolled Hardware',
+          os_info: newDeviceType === 'tablet' ? 'Interactive OS' : 'Managed Client',
+          user_id: newUserId ? parseInt(newUserId, 10) : undefined,
+        },
+        institutionId
+      )
+      setActionFeedback({
+        type: 'success',
+        text: `Device '${newDeviceName.trim()}' pre-registered successfully.`,
+      })
+      setShowAddModal(false)
+      setNewDeviceName('')
+      setNewUserId('')
+      await loadDevices()
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        text: err.response?.data?.detail || 'Failed to add device.',
+      })
+    } finally {
+      setRegistering(false)
+    }
+  }
 
   const loadDevices = async () => {
     try {
@@ -180,6 +306,19 @@ export default function DeviceBindingSettingsPanel({
         return <Monitor className="w-4 h-4 text-slate-600" />
     }
   }
+
+  const filteredDevices = devices.filter((d) => {
+    if (statusFilter !== 'all' && d.status !== statusFilter) return false
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const matchName = d.device_name?.toLowerCase().includes(q)
+      const matchUser = d.user_name?.toLowerCase().includes(q)
+      const matchEmail = d.user_email?.toLowerCase().includes(q)
+      const matchFp = d.device_fingerprint?.toLowerCase().includes(q)
+      if (!matchName && !matchUser && !matchEmail && !matchFp) return false
+    }
+    return true
+  })
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -516,7 +655,7 @@ export default function DeviceBindingSettingsPanel({
 
       {/* SECTION 4: REGISTERED DEVICES INVENTORY */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Laptop className="w-4 h-4 text-primary-600" />
@@ -526,19 +665,135 @@ export default function DeviceBindingSettingsPanel({
               Hardware profiles and access status across all institution users.
             </p>
           </div>
-          <button
-            onClick={loadDevices}
-            disabled={loadingDevices}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-            title="Refresh device list"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loadingDevices ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleRegisterCurrentDevice}
+              disabled={registering}
+              title={isEditMode ? 'Register this computer / browser' : 'Enable Edit Mode to register'}
+              className="px-2.5 py-1.5 rounded-lg border border-primary-200 text-primary-700 bg-primary-50 hover:bg-primary-100 text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-60"
+            >
+              <Monitor className="w-3.5 h-3.5" />
+              {registering ? 'Registering...' : 'Register This Device'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!isEditMode) {
+                  setActionFeedback({
+                    type: 'error',
+                    text: 'Please enable Edit Mode in the top bar to add hardware devices.',
+                  })
+                  return
+                }
+                setShowAddModal(true)
+              }}
+              title={isEditMode ? 'Add hardware device profile' : 'Enable Edit Mode to add'}
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Device
+            </button>
+            <button
+              onClick={loadDevices}
+              disabled={loadingDevices}
+              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
+              title="Refresh device list"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingDevices ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
-        {devices.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 text-xs">
-            No devices registered yet. Devices registered by users or administrators will appear here.
+        {/* Filter and Search Bar */}
+        {devices.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div className="flex items-center gap-1 bg-slate-100/70 p-0.5 rounded-lg text-[11px]">
+              {(['all', 'active', 'pending_approval', 'revoked'] as const).map((st) => {
+                const count =
+                  st === 'all'
+                    ? devices.length
+                    : devices.filter((d) => d.status === st).length
+                const labels: Record<string, string> = {
+                  all: 'All',
+                  active: 'Active',
+                  pending_approval: 'Pending Approval',
+                  revoked: 'Revoked',
+                }
+                return (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-2.5 py-1 rounded-md font-medium transition ${
+                      statusFilter === st
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {labels[st]} ({count})
+                  </button>
+                )
+              })}
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search device or user..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-7 pr-3 py-1 text-xs border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary-500 w-48"
+              />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-1.5" />
+            </div>
+          </div>
+        )}
+
+        {/* Empty State vs Devices Table */}
+        {filteredDevices.length === 0 ? (
+          <div className="py-8 px-4 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-3">
+            <div className="w-10 h-10 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+              <Laptop className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-800">
+                {devices.length === 0
+                  ? 'No devices registered yet'
+                  : 'No devices match the selected filter'}
+              </h4>
+              <p className="text-[11px] text-slate-500 max-w-md mx-auto mt-0.5">
+                {devices.length === 0
+                  ? 'Devices registered by users or administrators will appear here. Device Binding is strictly optional and starts empty by default.'
+                  : 'Try selecting a different status filter or clearing your search term.'}
+              </p>
+            </div>
+            {devices.length === 0 && (
+              isEditMode ? (
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleRegisterCurrentDevice}
+                    disabled={registering}
+                    className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition disabled:opacity-50"
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    {registering ? 'Registering...' : 'Register This Device'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(true)}
+                    className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Device
+                  </button>
+                </div>
+              ) : (
+                <p className="text-[11px] text-amber-700 font-medium">
+                  Activate Edit Mode in the top bar to register or pre-authorize hardware profiles.
+                </p>
+              )
+            )}
           </div>
         ) : (
           <div className="border border-slate-200 rounded-lg overflow-x-auto text-xs">
@@ -556,7 +811,7 @@ export default function DeviceBindingSettingsPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {devices.map((d) => (
+                {filteredDevices.map((d) => (
                   <tr key={d.id} className="hover:bg-slate-50/60 transition">
                     <td className="px-3.5 py-2.5">
                       <div className="flex items-center gap-2 font-medium text-slate-900">
@@ -631,6 +886,94 @@ export default function DeviceBindingSettingsPanel({
           </div>
         )}
       </div>
+
+      {/* Pre-Register Hardware Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Laptop className="w-4 h-4 text-primary-600" />
+                Pre-Register Hardware Device
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddCustomDevice} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Device Friendly Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Classroom 102 Smart Board, Faculty Tab"
+                  value={newDeviceName}
+                  onChange={(e) => setNewDeviceName(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Device Type
+                  </label>
+                  <select
+                    value={newDeviceType}
+                    onChange={(e) => setNewDeviceType(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary-500"
+                  >
+                    <option value="desktop">Desktop Workstation</option>
+                    <option value="laptop">Laptop Computer</option>
+                    <option value="tablet">Tablet / Smart Panel</option>
+                    <option value="mobile">Mobile Phone</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Assign User ID (Optional)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Leave blank for Admin"
+                    value={newUserId}
+                    onChange={(e) => setNewUserId(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-500">
+                A cryptographic device fingerprint will be generated and marked active for this institutional profile.
+              </p>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-3 py-1.5 border border-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={registering}
+                  className="px-4 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold shadow-xs transition disabled:opacity-50"
+                >
+                  {registering ? 'Adding...' : 'Add Device'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
