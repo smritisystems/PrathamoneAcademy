@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-18
+#  * @updated     2026-11-19
 #  *
 #  * @description SQLAlchemy ORM models package exporting all database entity definitions.
 #  */
@@ -52,6 +52,7 @@ from app.models.staff import (
 from app.models.settings import (
     InstitutionSetting, LookupItem, SettingAuditLog
 )
+from app.models.device import UserDevice
 from app.models.release import SystemRelease
 from app.models.communication import (
     MessageTemplate, CommunicationLog, SharedDocumentToken
@@ -150,6 +151,7 @@ __all__ = [
     "InstitutionSetting",
     "LookupItem",
     "SettingAuditLog",
+    "UserDevice",
     "MessageTemplate",
     "CommunicationLog",
     "SharedDocumentToken",

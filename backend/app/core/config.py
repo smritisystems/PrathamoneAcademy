@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.135.2"
-    BUILD_NUMBER: str = "2026.11.18-REV-251-v1.135.2-621F9234"
+    VERSION: str = "1.136.0"
+    BUILD_NUMBER: str = "2026.11.18-REV-252-v1.136.0-B4B6971F"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-18"
@@ -63,6 +63,11 @@ class Settings(BaseSettings):
     CODEX_NEW_USER_DEFAULT: bool = False
     CODEX_AUTO_ENABLE_ON_UPDATE: bool = False
     CODEX_AUTO_ENABLE_ON_INSTALL: bool = False
+
+    # PRATHAMONE Optional Device-Wise Security Binding (Opt-in only, System Default: DISABLED)
+    DEVICE_BINDING_SYSTEM_DEFAULT: bool = False
+    DEVICE_BINDING_SHADOW_MODE_DEFAULT: bool = True
+    DEVICE_BINDING_MAX_DEVICES_DEFAULT: int = 3
     ALLOWED_ORIGINS: Any = [
         "http://localhost:5173",
         "http://localhost:3000",

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -2814,6 +2814,56 @@ export interface SettingAuditLogItem {
 }
 
 export type AllSettingsState = Record<string, Record<string, any>>
+
+// ─── Optional Device-Wise Security Binding ───────────────────────────
+export type DeviceBindingPolicyMode = 'disabled' | 'optional_registration' | 'registered_only' | 'admin_approval_required'
+export type DeviceVerificationMethod = 'device_fingerprint' | 'totp_otp' | 'device_fingerprint_and_otp' | 'hardware_token'
+export type DeviceApprovalPolicy = 'admin_approval' | 'auto_approve' | 'otp_verified'
+export type DeviceManagementPermission = 'admin_only' | 'user_self_service' | 'admin_and_manager'
+export type DeviceStatus = 'active' | 'pending_approval' | 'revoked' | 'blocked'
+
+export interface DeviceBindingSettings {
+  enable_device_binding: boolean
+  policy_mode: DeviceBindingPolicyMode
+  verification_method: DeviceVerificationMethod
+  max_registered_devices: number
+  new_device_approval_policy: DeviceApprovalPolicy
+  otp_verification_required: boolean
+  device_management_permissions: DeviceManagementPermission
+  shadow_mode: boolean
+}
+
+export interface UserDeviceItem {
+  id: number
+  institution_id: number
+  user_id: number
+  user_name?: string
+  user_email?: string
+  device_fingerprint: string
+  device_name: string
+  device_type: 'desktop' | 'laptop' | 'mobile' | 'tablet' | 'smartboard' | 'other'
+  browser_info?: string
+  os_info?: string
+  ip_address?: string
+  status: DeviceStatus
+  is_trusted: boolean
+  approved_by_id?: number
+  approved_at?: string
+  last_used_at?: string
+  registered_at: string
+  revoked_at?: string
+  revocation_reason?: string
+}
+
+export interface RegisterDevicePayload {
+  fingerprint: string
+  device_name: string
+  device_type?: string
+  browser_info?: string
+  os_info?: string
+  ip_address?: string
+  user_id?: number
+}
 
 // ─── Centralized Communication & Sharing Module ──────────────────────────────
 

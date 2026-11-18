@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -42,6 +42,7 @@ import type {
   StaffDailyAttendanceResponse, StaffLeaveItem, StaffDocumentTemplate, StaffDocumentRenderResponse,
   SysAdminOverview, SecurityAuditLogItem, SecurityAuditLogsResponse, UniversalEditPayload, SystemSettings,
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState,
+  DeviceBindingSettings, UserDeviceItem, RegisterDevicePayload,
   NoticeBoardItem,
   MessageTemplateItem, CommunicationLogItem, CommunicationLogsResponse,
   ShareDocumentPayload, ShareDocumentResponse, RecipientItem, SendMessagePayload, ChannelDiagnostics, AutomationRules, FeeReminderQueueItem, AutomationTriggerStatus, StudentIdCardData, ScanCheckinResult,
@@ -2059,6 +2060,61 @@ export const settingsApi = {
 
   resetDefaults: (category: string) =>
     apiClient.post<{ status: string; message: string }>(`/settings/reset-defaults?category=${category}`),
+}
+
+// ─── Optional Device-Wise Security Binding ───────────────────────────
+export const deviceBindingApi = {
+  getSettings: (institution_id?: number) =>
+    apiClient.get<{ status: string; settings: DeviceBindingSettings }>('/security/device-binding/settings', {
+      params: institution_id ? { institution_id } : {},
+    }),
+
+  updateSettings: (data: Partial<DeviceBindingSettings>, institution_id?: number) =>
+    apiClient.put<{ status: string; message: string; settings: DeviceBindingSettings }>(
+      '/security/device-binding/settings',
+      data,
+      { params: institution_id ? { institution_id } : {} }
+    ),
+
+  safeDisable: (institution_id?: number) =>
+    apiClient.post<{ status: string; message: string; settings: DeviceBindingSettings }>(
+      '/security/device-binding/disable',
+      {},
+      { params: institution_id ? { institution_id } : {} }
+    ),
+
+  getDevices: (params?: { user_id?: number; status?: string; institution_id?: number }) =>
+    apiClient.get<{ status: string; count: number; devices: UserDeviceItem[] }>(
+      '/security/device-binding/devices',
+      { params }
+    ),
+
+  registerDevice: (data: RegisterDevicePayload, institution_id?: number) =>
+    apiClient.post<{ status: string; message: string; device: any }>(
+      '/security/device-binding/devices',
+      data,
+      { params: institution_id ? { institution_id } : {} }
+    ),
+
+  approveDevice: (deviceId: number, institution_id?: number) =>
+    apiClient.put<{ status: string; message: string; device: any }>(
+      `/security/device-binding/devices/${deviceId}/approve`,
+      {},
+      { params: institution_id ? { institution_id } : {} }
+    ),
+
+  revokeDevice: (deviceId: number, reason?: string, institution_id?: number) =>
+    apiClient.put<{ status: string; message: string; device: any }>(
+      `/security/device-binding/devices/${deviceId}/revoke`,
+      { reason },
+      { params: institution_id ? { institution_id } : {} }
+    ),
+
+  deleteDevice: (deviceId: number, institution_id?: number) =>
+    apiClient.delete<{ status: string; message: string }>(
+      `/security/device-binding/devices/${deviceId}`,
+      { params: institution_id ? { institution_id } : {} }
+    ),
 }
 
 // ─── Centralized Communication & Sharing Module ──────────────────────────────

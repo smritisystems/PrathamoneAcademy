@@ -11,13 +11,13 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
 
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   Building2, Palette, GraduationCap, UserCheck, Users, CreditCard,
@@ -28,6 +28,7 @@ import {
   GitFork, ShieldCheck, Download, KeyRound, Sparkles, Compass
 } from 'lucide-react'
 import NavigationSettingsPanel from '../components/settings/NavigationSettingsPanel'
+import DeviceBindingSettingsPanel from '../components/settings/DeviceBindingSettingsPanel'
 import { settingsApi } from '../api/endpoints'
 import type {
   InstituteProfile, LookupItem, LookupsResponse, SettingAuditLogItem, AllSettingsState
@@ -69,6 +70,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   { id: 'lookups', title: 'General Lookups', subtitle: 'Dropdown values, categories & reference lists', icon: Sliders, group: 'system' },
   { id: 'system', title: 'System Parameters', subtitle: 'Numbering, defaults, policies & feature flags', icon: SlidersHorizontal, group: 'system' },
   { id: 'permissions', title: 'Users & Permissions', subtitle: 'Roles, access rights & security', icon: Shield, group: 'system' },
+  { id: 'security', title: 'Security & Device Binding', subtitle: 'Authentication policies, device verification & access control', icon: ShieldCheck, group: 'system' },
   { id: 'integrations', title: 'Integrations', subtitle: 'Payment, messaging & external services', icon: Link2, group: 'system' },
   { id: 'codex', title: 'CodeX Configuration Studio', subtitle: 'Numeric coding, value obfuscation & scope activation', icon: KeyRound, group: 'system' },
   { id: 'maintenance', title: 'Data & Maintenance', subtitle: 'Import, export, backup & audit logs', icon: Database, group: 'system' },
@@ -85,9 +87,20 @@ export default function Settings() {
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
 
   // Navigation & Category Search
-  const [activeCategory, setActiveCategory] = useState<string>('profile')
+  const [searchParams] = useSearchParams()
+  const [activeCategory, setActiveCategory] = useState<string>(() => {
+    const qCat = searchParams.get('category') || searchParams.get('tab')
+    return qCat && SETTINGS_CATEGORIES.some((c) => c.id === qCat) ? qCat : 'profile'
+  })
   const [categorySearch, setCategorySearch] = useState<string>('')
   const [globalSearch, setGlobalSearch] = useState<string>('')
+
+  useEffect(() => {
+    const qCat = searchParams.get('category') || searchParams.get('tab')
+    if (qCat && SETTINGS_CATEGORIES.some((c) => c.id === qCat)) {
+      setActiveCategory(qCat)
+    }
+  }, [searchParams])
 
   // Sub-tabs for Institute Profile
   const [profileSubTab, setProfileSubTab] = useState<'basic' | 'address' | 'branches' | 'affiliations' | 'compliance'>('basic')
@@ -2824,6 +2837,19 @@ export default function Settings() {
                         </div>
                       </div>
                     </div>
+                  )}
+
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {/* SECTION 13B: SECURITY & DEVICE BINDING                      */}
+                  {/* ─────────────────────────────────────────────────────────── */}
+                  {activeCategory === 'security' && (
+                    <DeviceBindingSettingsPanel
+                      settings={allSettings.security || {}}
+                      onChange={(k, v) => handleSettingChange('security', k, v)}
+                      isEditMode={isEditMode}
+                      institutionId={profile.id}
+                      onRefresh={fetchAllData}
+                    />
                   )}
 
                   {/* ─────────────────────────────────────────────────────────── */}

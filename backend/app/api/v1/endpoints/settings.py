@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-19
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
@@ -176,6 +176,16 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "backup_status": "Verified Healthy",
         "auto_vacuum_enabled": True,
         "log_retention_days": 90,
+    },
+    "security": {
+        "enable_device_binding": False,
+        "policy_mode": "disabled",
+        "verification_method": "device_fingerprint",
+        "max_registered_devices": 3,
+        "new_device_approval_policy": "admin_approval",
+        "otp_verification_required": False,
+        "device_management_permissions": "admin_only",
+        "shadow_mode": True,
     },
 }
 

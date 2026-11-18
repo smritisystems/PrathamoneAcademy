@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-19
 #  *
 #  * @description API endpoints for user authentication, password verification, and JWT session issuance.
 #  */
@@ -129,6 +129,19 @@ async def login(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Optional Device-Wise Security Binding evaluation (Default: Disabled)
+    device_fp = request.headers.get("x-device-fingerprint") or request.headers.get("x-device-id")
+    client_info = {
+        "ip_address": request.client.host if request.client else None,
+        "user_agent": request.headers.get("user-agent"),
+        "device_name": request.headers.get("x-device-name", "Web Browser"),
+        "device_type": request.headers.get("x-device-type", "desktop"),
+        "browser_info": request.headers.get("x-device-browser"),
+        "os_info": request.headers.get("x-device-os"),
+    }
+    from app.services.device_service import DeviceService
+    await DeviceService.validate_device_login(db, user, device_fp, client_info)
 
     await db.execute(
         update(User)
