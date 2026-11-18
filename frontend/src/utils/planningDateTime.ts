@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Timezone-aware planning date and local wall-time conversions.
  */
@@ -24,16 +24,38 @@ type WallTime = {
   minute: number
 }
 
+// Module-level singleton cache for Intl.DateTimeFormat instances to eliminate quadratic allocation overhead
+const formatterCache = new Map<string, Intl.DateTimeFormat>()
+
+function getCachedFormatter(timeZone: string): Intl.DateTimeFormat {
+  let formatter = formatterCache.get(timeZone)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+    formatterCache.set(timeZone, formatter)
+  }
+  return formatter
+}
+
 const partsInZone = (value: Date, timeZone: string): WallTime => {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(value)
+  // Fast path for UTC avoiding expensive Intl initialization
+  if (timeZone === 'UTC') {
+    return {
+      year: value.getUTCFullYear(),
+      month: value.getUTCMonth() + 1,
+      day: value.getUTCDate(),
+      hour: value.getUTCHours(),
+      minute: value.getUTCMinutes(),
+    }
+  }
+  const parts = getCachedFormatter(timeZone).formatToParts(value)
   const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((item) => item.type === type)?.value)
   return {
     year: part('year'),
@@ -48,6 +70,13 @@ const dateKeyFromParts = ({ year, month, day }: WallTime) =>
   `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
 export function planningDateKey(value: Date, timeZone: string): string {
+  // Direct fast path for UTC key representation
+  if (timeZone === 'UTC') {
+    const y = value.getUTCFullYear()
+    const m = String(value.getUTCMonth() + 1).padStart(2, '0')
+    const d = String(value.getUTCDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
   return dateKeyFromParts(partsInZone(value, timeZone))
 }
 

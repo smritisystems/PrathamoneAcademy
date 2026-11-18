@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-17
+#  * @updated     2026-11-18
 #  *
 #  * @description Planning activity authorization, recurrence expansion, conflict detection, and read-only module projections.
 #  */
@@ -22,7 +22,7 @@ from typing import Any, Optional
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import HTTPException, status
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -686,8 +686,29 @@ async def list_calendar_items(
 ) -> list[dict[str, Any]]:
     if end < start or (end - start).days > 370:
         raise HTTPException(status_code=422, detail="Calendar range must be between 1 and 371 days.")
+    local_zone = _local_zone(institution.timezone or "Asia/Kolkata")
+    start_local = datetime.combine(start, time.min, tzinfo=local_zone)
+    end_local = datetime.combine(end + timedelta(days=1), time.min, tzinfo=local_zone)
+    # Add a generous 1-day safety buffer on each side in UTC to encompass any activity-specific timezone offsets
+    query_window_start_utc = (start_local - timedelta(days=1)).astimezone(timezone.utc)
+    query_window_end_utc = (end_local + timedelta(days=1)).astimezone(timezone.utc)
+
     assigned_ids = select(ActivityAssignee.activity_id).where(
         ActivityAssignee.user_id == user.id
+    )
+    date_filter = or_(
+        Activity.recurrence_frequency.isnot(None),
+        and_(Activity.start_at.is_(None), Activity.due_at.is_(None)),
+        and_(
+            Activity.start_at.isnot(None),
+            Activity.start_at < query_window_end_utc,
+            func.coalesce(Activity.end_at, Activity.start_at) >= query_window_start_utc,
+        ),
+        and_(
+            Activity.due_at.isnot(None),
+            Activity.due_at >= query_window_start_utc,
+            Activity.due_at < query_window_end_utc,
+        ),
     )
     query = (
         select(Activity)
@@ -699,6 +720,7 @@ async def list_calendar_items(
         )
         .where(
             Activity.institution_id == institution.id,
+            date_filter,
             or_(
                 and_(Activity.visibility == "institution", Activity.is_published.is_(True)),
                 Activity.created_by_id == user.id,
@@ -716,10 +738,6 @@ async def list_calendar_items(
         for activity in activities
         for occurrence in expand_activity(activity, start, end, reference_labels=ref_labels)
     ]
-
-    local_zone = _local_zone(institution.timezone or "Asia/Kolkata")
-    start_local = datetime.combine(start, time.min, tzinfo=local_zone)
-    end_local = datetime.combine(end + timedelta(days=1), time.min, tzinfo=local_zone)
 
     if is_sysadmin(user) or await has_permission(db, user, "examinations", "view"):
         exams = await db.execute(

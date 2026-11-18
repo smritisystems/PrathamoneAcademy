@@ -11,12 +11,12 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Unified, responsive planning workspace with calendar, Kanban, agenda, and timeline views.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, ArrowRight, CalendarDays, Clock3, GripVertical, KanbanSquare,
@@ -362,7 +362,12 @@ export default function PlanningWorkspace() {
   const queryClient = useQueryClient()
   const { selectedInstitutionId, selectedAcademicYearId, user } = useAuthStore()
   const isEditMode = useEditModeStore((state) => !!state.scopes[editScope])
-  const [view, setView] = useState<PlanningView>('agenda')
+  const [view, setView] = useState<PlanningView>(() => {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(min-width: 768px)').matches) {
+      return 'calendar'
+    }
+    return 'agenda'
+  })
   const [focusDate, setFocusDate] = useState(() =>
     parsePlanningDateKey(planningDateKey(new Date(), 'Asia/Kolkata')),
   )
@@ -391,7 +396,6 @@ export default function PlanningWorkspace() {
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)')
     const updateView = () => setView((current) => current === 'agenda' && media.matches ? 'calendar' : current)
-    updateView()
     media.addEventListener('change', updateView)
     return () => media.removeEventListener('change', updateView)
   }, [])
@@ -437,13 +441,20 @@ export default function PlanningWorkspace() {
     institution_id: selectedInstitutionId || undefined,
   }), [startDate, endDate, selectedInstitutionId, statusFilter])
 
-  const { data: activitiesResponse, isLoading, isError, refetch } = useQuery({
+  const { data: activitiesResponse, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ['planning-activities', queryParams],
     queryFn: () => planningApi.listActivities(queryParams),
+    staleTime: 60_000,
+    gcTime: 300_000,
+    placeholderData: (prev) => prev,
   })
   const timeZone = activitiesResponse?.data.timezone || 'Asia/Kolkata'
+  const prevTimeZoneRef = useRef(timeZone)
   useEffect(() => {
-    setFocusDate(parsePlanningDateKey(planningDateKey(new Date(), timeZone)))
+    if (prevTimeZoneRef.current !== timeZone) {
+      prevTimeZoneRef.current = timeZone
+      setFocusDate(parsePlanningDateKey(planningDateKey(new Date(), timeZone)))
+    }
   }, [timeZone])
   useEffect(() => {
     setConfirmCancel(false)
@@ -558,6 +569,22 @@ export default function PlanningWorkspace() {
       .toLowerCase().includes(normalized)
   }), [items, search, statusFilter, typeFilter])
 
+  const itemsByDateKey = useMemo(() => {
+    const map = new Map<string, PlanningItem[]>()
+    for (const item of filteredItems) {
+      const key = itemDateKey(item, timeZone)
+      if (key) {
+        let list = map.get(key)
+        if (!list) {
+          list = []
+          map.set(key, list)
+        }
+        list.push(item)
+      }
+    }
+    return map
+  }, [filteredItems, timeZone])
+
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['planning-activities'] })
   const createMutation = useMutation({
     mutationFn: (payload: PlanningPayload) => planningApi.createActivity(payload),
@@ -587,12 +614,41 @@ export default function PlanningWorkspace() {
   const statusMutation = useMutation({
     mutationFn: ({ item, status }: { item: PlanningItem; status: PlanningStatus }) =>
       planningApi.transitionActivity(Number(item.source_id), { status, expected_version: item.version || 1 }),
+    onMutate: async ({ item, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['planning-activities'] })
+      const previousData = queryClient.getQueriesData({ queryKey: ['planning-activities'] })
+      queryClient.setQueriesData({ queryKey: ['planning-activities'] }, (old: any) => {
+        if (!old?.data?.items) return old
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            items: old.data.items.map((i: PlanningItem) => {
+              if (i.key === item.key || (i.source_type === 'activity' && Number(i.source_id) === Number(item.source_id))) {
+                return { ...i, status }
+              }
+              return i
+            }),
+          },
+        }
+      })
+      return { previousData }
+    },
+    onError: (error: any, _variables, context) => {
+      if (context?.previousData) {
+        for (const [key, val] of context.previousData) {
+          queryClient.setQueryData(key, val)
+        }
+      }
+      toast.error(error.response?.data?.detail || 'Could not update status.')
+    },
     onSuccess: () => {
       toast.success('Activity status updated.')
       setActiveItem(null)
+    },
+    onSettled: () => {
       refresh()
     },
-    onError: (error: any) => toast.error(error.response?.data?.detail || 'Could not update status.'),
   })
   const cancelOccurrenceMutation = useMutation({
     mutationFn: async ({ item, occurrenceDate }: { item: PlanningItem; occurrenceDate: string }) => {
@@ -693,12 +749,46 @@ export default function PlanningWorkspace() {
         rescheduled_end_at: endIso,
       })
     },
-    onSuccess: () => {
-      refresh()
+    onMutate: async ({ activityId, occurrenceDate, startIso, endIso }) => {
+      await queryClient.cancelQueries({ queryKey: ['planning-activities'] })
+      const previousData = queryClient.getQueriesData({ queryKey: ['planning-activities'] })
+      queryClient.setQueriesData({ queryKey: ['planning-activities'] }, (old: any) => {
+        if (!old?.data?.items) return old
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            items: old.data.items.map((i: PlanningItem) => {
+              if (
+                Number(i.source_id) === activityId &&
+                (i.occurrence_date === occurrenceDate || i.original_occurrence_date === occurrenceDate)
+              ) {
+                return {
+                  ...i,
+                  start_at: startIso,
+                  end_at: endIso || null,
+                  is_rescheduled: true,
+                  original_occurrence_date: i.original_occurrence_date || occurrenceDate,
+                }
+              }
+              return i
+            }),
+          },
+        }
+      })
+      return { previousData }
     },
-    onError: (error: any) => {
+    onError: (error: any, _variables, context) => {
+      if (context?.previousData) {
+        for (const [key, val] of context.previousData) {
+          queryClient.setQueryData(key, val)
+        }
+      }
       const msg = error.response?.data?.detail?.message || error.response?.data?.detail || 'Could not reschedule occurrence.'
       toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+    },
+    onSettled: () => {
+      refresh()
     },
   })
 
@@ -720,12 +810,42 @@ export default function PlanningWorkspace() {
         ...(endIso ? { end_at: endIso } : {}),
       })
     },
-    onSuccess: () => {
-      refresh()
+    onMutate: async ({ activityId, startIso, endIso }) => {
+      await queryClient.cancelQueries({ queryKey: ['planning-activities'] })
+      const previousData = queryClient.getQueriesData({ queryKey: ['planning-activities'] })
+      queryClient.setQueriesData({ queryKey: ['planning-activities'] }, (old: any) => {
+        if (!old?.data?.items) return old
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            items: old.data.items.map((i: PlanningItem) => {
+              if (Number(i.source_id) === activityId && i.source_type === 'activity') {
+                return {
+                  ...i,
+                  start_at: startIso !== undefined ? startIso : i.start_at,
+                  end_at: endIso !== undefined ? endIso : i.end_at,
+                  version: (i.version || 1) + 1,
+                }
+              }
+              return i
+            }),
+          },
+        }
+      })
+      return { previousData }
     },
-    onError: (error: any) => {
+    onError: (error: any, _variables, context) => {
+      if (context?.previousData) {
+        for (const [key, val] of context.previousData) {
+          queryClient.setQueryData(key, val)
+        }
+      }
       const msg = error.response?.data?.detail?.message || error.response?.data?.detail || 'Could not update activity schedule.'
       toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+    },
+    onSettled: () => {
+      refresh()
     },
   })
 
@@ -977,9 +1097,7 @@ export default function PlanningWorkspace() {
     ? calendarDateLabel(focusDate, { month: 'long', year: 'numeric' })
     : `${calendarDateLabel(startDate, { month: 'short', day: 'numeric' })} – ${calendarDateLabel(endDate, { month: 'short', day: 'numeric', year: 'numeric' })}`
 
-  const itemsForDay = (day: Date) => filteredItems.filter((item) => {
-    return itemDateKey(item, timeZone) === calendarDateKey(day)
-  })
+  const itemsForDay = (day: Date) => itemsByDateKey.get(calendarDateKey(day)) || []
 
   const openFormSubmit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -1014,6 +1132,7 @@ export default function PlanningWorkspace() {
       <div className="grid grid-cols-7">
         {calendarDays.map((day) => {
           const dateKey = calendarDateKey(day)
+          const dayItems = itemsForDay(day)
           const isOver = dragOverTarget === dateKey
           return (
             <div
@@ -1031,7 +1150,7 @@ export default function PlanningWorkspace() {
                 {day.getUTCDate()}
               </button>
               <div className="space-y-1">
-                {itemsForDay(day).slice(0, 3).map((item) => (
+                {dayItems.slice(0, 3).map((item) => (
                   <button
                     type="button"
                     key={item.key || item.id}
@@ -1050,7 +1169,7 @@ export default function PlanningWorkspace() {
                     {item.is_rescheduled ? '↻ ' : ''}{item.title}
                   </button>
                 ))}
-                {itemsForDay(day).length > 3 && <span className="px-1 text-[10px] text-slate-500">+{itemsForDay(day).length - 3} more</span>}
+                {dayItems.length > 3 && <span className="px-1 text-[10px] text-slate-500">+{dayItems.length - 3} more</span>}
               </div>
             </div>
           )
@@ -1495,13 +1614,21 @@ export default function PlanningWorkspace() {
             <option value="event">Events</option>
             <option value="holiday">Holidays</option>
           </select>
-          <button type="button" onClick={() => refetch()} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" aria-label="Refresh activities"><RefreshCw className="h-4 w-4" /></button>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+            aria-label="Refresh activities"
+            title={isFetching ? 'Updating activities…' : 'Refresh activities'}
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin text-indigo-600' : ''}`} />
+          </button>
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading && !activitiesResponse ? (
         <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-500">Loading activities…</div>
-      ) : isError ? (
+      ) : isError && !activitiesResponse ? (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-sm text-rose-800">
           Planning activities could not be loaded. Check access or retry.
           <button type="button" onClick={() => refetch()} className="ml-2 font-semibold underline">Retry</button>

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-17
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Regression tests for Planning workspace accessibility and linked schedule projections.
  */
@@ -639,6 +639,88 @@ describe('Planning workspace view switcher accessibility', () => {
         90,
         expect.objectContaining({
           occurrence_date: '2026-11-18',
+        }),
+      )
+    })
+  })
+
+  it('optimistically updates activity status when dragged onto a Kanban status column', async () => {
+    const activityItem: PlanningItem = {
+      id: 55,
+      key: 'activity:55:once',
+      source_type: 'activity',
+      source_id: 55,
+      title: 'Prepare Exam Papers',
+      description: 'Mathematics paper set 1',
+      activity_type: 'task',
+      category: 'academic',
+      start_at: null,
+      end_at: null,
+      due_at: '2026-11-20T17:00:00Z',
+      occurrence_date: null,
+      timezone: 'Asia/Kolkata',
+      all_day: false,
+      location: null,
+      priority: 'high',
+      status: 'todo',
+      allowed_transitions: ['in_progress', 'completed', 'cancelled'],
+      visibility: 'institution',
+      is_published: true,
+      academic_year_id: 8,
+      division_id: null,
+      subject_id: null,
+      assignees: [],
+      attachments: [],
+      references: [],
+      recurrence: null,
+      version: 1,
+      created_by_id: 1,
+      created_at: null,
+      updated_at: null,
+      editable: true,
+    }
+    mockPlanningData.items = [activityItem]
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <PlanningWorkspace />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    // Switch to Kanban
+    fireEvent.click(screen.getByRole('button', { name: 'Kanban' }))
+
+    const card = await screen.findByRole('article', { name: 'Prepare Exam Papers' })
+    expect(card).toBeTruthy()
+
+    // Find In Progress column header
+    const inProgressColumn = screen.getByRole('heading', { name: 'In Progress' }).closest('section')
+    expect(inProgressColumn).toBeTruthy()
+
+    // Drag item to In Progress
+    const mockDataTransfer = {
+      setData: vi.fn(),
+      getData: (type: string) => (type === 'text/planning-activity-id' ? '55' : ''),
+      effectAllowed: '',
+      dropEffect: '',
+    }
+
+    fireEvent.drop(inProgressColumn!, {
+      dataTransfer: mockDataTransfer,
+      preventDefault: vi.fn(),
+    })
+
+    await waitFor(() => {
+      expect(vi.mocked(planningApi.transitionActivity)).toHaveBeenCalledWith(
+        55,
+        expect.objectContaining({
+          status: 'in_progress',
         }),
       )
     })
