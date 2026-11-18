@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-11
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Housekeeping Workspace for automated & on-demand PostgreSQL database backup, SHA-256 verification, GFS pruning, sandbox restore drills, guarded production restoration, VACUUM maintenance, SSOT ledger parity, and scheduler policies.
  */
@@ -24,18 +24,28 @@ import {
   Archive,
   Bell,
   Calendar,
+  Check,
   CheckCircle2,
   Clock,
+  Cloud,
   Copy,
   Database,
   Download,
+  Edit3,
+  ExternalLink,
   Eye,
   FileCheck2,
   FolderMinus,
+  FolderSync,
+  Globe,
   HardDrive,
+  Laptop,
   Lock,
   Mail,
+  Network,
   Play,
+  Plus,
+  Radio,
   RefreshCw,
   RotateCcw,
   Save,
@@ -53,6 +63,9 @@ import { EditModeBar, LockedButton } from '../components/common'
 import { useEditModeStore } from '../store/editModeStore'
 import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import type {
+  BackupDestination,
+  BackupDispatchResult,
+  DestinationTestResult,
   HousekeepingAlertNotifyResponse,
   HousekeepingAlertsSummary,
   HousekeepingBackupItem,
@@ -209,14 +222,38 @@ export default function Housekeeping() {
   const [dispatchingAlert, setDispatchingAlert] = useState(false)
   const [lastAlertDispatch, setLastAlertDispatch] = useState<HousekeepingAlertNotifyResponse | null>(null)
 
+  // Multi-Destination Backup & Cloud Sync state
+  const [destinations, setDestinations] = useState<BackupDestination[]>([])
+  const [destinationModalOpen, setDestinationModalOpen] = useState(false)
+  const [destForm, setDestForm] = useState<Partial<BackupDestination>>({
+    name: 'Secondary Storage Drive',
+    type: 'local_path',
+    path: '',
+    endpoint_url: '',
+    bucket_name: '',
+    region: 'auto',
+    access_key_id: '',
+    secret_access_key: '',
+    is_enabled: true,
+    retention_days: 30,
+  })
+  const [savingDestination, setSavingDestination] = useState(false)
+  const [testingDestinationId, setTestingDestinationId] = useState<string | null>(null)
+  const [testingModalDest, setTestingModalDest] = useState(false)
+  const [modalTestResult, setModalTestResult] = useState<DestinationTestResult | null>(null)
+  const [inlineTestResults, setInlineTestResults] = useState<Record<string, DestinationTestResult>>({})
+  const [dispatchingDestId, setDispatchingDestId] = useState<string | null>(null)
+  const [lastDispatchResult, setLastDispatchResult] = useState<BackupDispatchResult | null>(null)
+
   const loadWorkspaceData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     try {
-      const [ovRes, bkRes, histRes, storRes] = await Promise.all([
+      const [ovRes, bkRes, histRes, storRes, destRes] = await Promise.all([
         housekeepingApi.getOverview(),
         housekeepingApi.listBackups(),
         housekeepingApi.getHistory(40),
         housekeepingApi.getStorage?.().catch(() => null),
+        housekeepingApi.getDestinations().catch(() => ({ data: { destinations: [] } })),
       ])
       setOverview(ovRes.data)
       if (ovRes.data.storage) {
@@ -230,6 +267,7 @@ export default function Housekeeping() {
       const list = bkRes.data.backups || []
       setBackups(list)
       setHistory(histRes.data.events || [])
+      setDestinations(destRes?.data?.destinations || [])
       if (ovRes.data.policy) {
         setPolicyForm((prev) => ({ ...prev, ...ovRes.data.policy }))
         setCleanupRetentionDays(Number(ovRes.data.policy.log_retention_days || 90))
@@ -267,6 +305,149 @@ export default function Housekeeping() {
       toast.success(`${label} copied to clipboard`)
     } catch {
       toast.error('Clipboard copy unavailable in this browser context')
+    }
+  }
+
+  const handleOpenAddDestination = (presetType: 'local_path' | 'network_share' | 'gdrive_sync' | 's3_compatible' = 'local_path') => {
+    const presets: Record<string, { name: string; path?: string; endpoint?: string; bucket?: string }> = {
+      local_path: { name: 'Secondary USB / HDD Storage', path: 'D:\\PrashantAcademy_Backups' },
+      network_share: { name: 'Office Network Share / NAS', path: '\\\\192.168.1.150\\Backups\\POeduOS' },
+      gdrive_sync: { name: 'Institute Google Drive Sync', path: 'G:\\My Drive\\PrathamOne_Backups' },
+      s3_compatible: { name: 'Cloudflare R2 Cold Storage Vault', endpoint: 'https://<account-id>.r2.cloudflarestorage.com', bucket: 'prashant-academy-vault' },
+    }
+    const def = presets[presetType]
+    setDestForm({
+      name: def.name,
+      type: presetType,
+      path: def.path || '',
+      endpoint_url: def.endpoint || '',
+      bucket_name: def.bucket || '',
+      region: 'auto',
+      access_key_id: '',
+      secret_access_key: '',
+      is_enabled: true,
+      retention_days: 30,
+    })
+    setModalTestResult(null)
+    setDestinationModalOpen(true)
+  }
+
+  const handleOpenEditDestination = (dest: BackupDestination) => {
+    setDestForm({ ...dest })
+    setModalTestResult(null)
+    setDestinationModalOpen(true)
+  }
+
+  const handleTestModalDestination = async () => {
+    setTestingModalDest(true)
+    setModalTestResult(null)
+    try {
+      const res = await housekeepingApi.testDestination(destForm)
+      setModalTestResult(res.data)
+      if (res.data.success) {
+        toast.success(res.data.message)
+      } else {
+        toast.error(res.data.message || res.data.error || 'Test probe failed')
+      }
+    } catch (err: any) {
+      const msg = getApiError(err, 'Failed to test destination connectivity')
+      setModalTestResult({ success: false, error: msg, message: msg })
+      toast.error(msg)
+    } finally {
+      setTestingModalDest(false)
+    }
+  }
+
+  const handleTestInlineDestination = async (dest: BackupDestination) => {
+    setTestingDestinationId(dest.id)
+    try {
+      const res = await housekeepingApi.testDestination(dest)
+      setInlineTestResults((prev) => ({ ...prev, [dest.id]: res.data }))
+      if (res.data.success) {
+        toast.success(`${dest.name}: ${res.data.message}`)
+      } else {
+        toast.error(`${dest.name}: ${res.data.message || res.data.error}`)
+      }
+    } catch (err: any) {
+      const msg = getApiError(err, 'Test probe failed')
+      setInlineTestResults((prev) => ({ ...prev, [dest.id]: { success: false, error: msg, message: msg } }))
+      toast.error(msg)
+    } finally {
+      setTestingDestinationId(null)
+    }
+  }
+
+  const handleSaveDestination = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!canManage) {
+      toast.error('SysAdmin privilege required to configure backup destinations.')
+      return
+    }
+    setSavingDestination(true)
+    try {
+      const res = await housekeepingApi.saveDestination(destForm)
+      toast.success(res.data.message || 'Backup destination saved.')
+      setDestinationModalOpen(false)
+      const refreshed = await housekeepingApi.getDestinations()
+      setDestinations(refreshed.data.destinations || [])
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Failed to save backup destination'))
+    } finally {
+      setSavingDestination(false)
+    }
+  }
+
+  const handleDeleteDestination = async (dest: BackupDestination) => {
+    if (!canManage) {
+      toast.error('SysAdmin privilege required to remove backup destinations.')
+      return
+    }
+    if (!window.confirm(`Are you sure you want to remove the destination "${dest.name}"? Historical archives on the target will be preserved.`)) {
+      return
+    }
+    try {
+      await housekeepingApi.deleteDestination(dest.id)
+      toast.success(`Removed destination "${dest.name}".`)
+      setDestinations((prev) => prev.filter((d) => d.id !== dest.id))
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Failed to remove backup destination'))
+    }
+  }
+
+  const handleToggleDestination = async (dest: BackupDestination) => {
+    if (!canManage) return
+    try {
+      await housekeepingApi.saveDestination({ ...dest, is_enabled: !dest.is_enabled })
+      setDestinations((prev) =>
+        prev.map((d) => (d.id === dest.id ? { ...d, is_enabled: !dest.is_enabled } : d))
+      )
+      toast.success(`${dest.name} is now ${!dest.is_enabled ? 'Active' : 'Paused'}.`)
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Failed to toggle destination status'))
+    }
+  }
+
+  const handleDispatchToDestinations = async () => {
+    if (!canManage) {
+      toast.error('SysAdmin privilege required to dispatch backups.')
+      return
+    }
+    const latest = backups.find((b) => b.source === 'backups') || backups[0]
+    if (!latest) {
+      toast.error('No verified backup found in catalog to replicate.')
+      return
+    }
+    setDispatchingDestId('all')
+    try {
+      const res = await housekeepingApi.dispatchBackup({ filename: latest.filename })
+      setLastDispatchResult(res.data)
+      toast.success(`Dispatched ${latest.filename} to ${res.data.dispatched_count} destination(s).`)
+      const refreshed = await housekeepingApi.getDestinations()
+      setDestinations(refreshed.data.destinations || [])
+    } catch (err: any) {
+      toast.error(getApiError(err, 'Failed to dispatch backup to destinations'))
+    } finally {
+      setDispatchingDestId(null)
     }
   }
 
@@ -1160,6 +1341,302 @@ export default function Housekeeping() {
               </button>
             </div>
           )}
+
+          {/* Multi-Path Backup Destinations & Cloud Sync Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <FolderSync className="w-4 h-4 text-primary-600" />
+                  <span>Multi-Path Backup Destinations & Cloud Sync</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Industry standard 3-2-1 backup replication: mirror verified .edu packages simultaneously across secondary local disks, office NAS network shares, Google Drive, or Cloudflare R2 / AWS S3.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {destinations.length > 0 && (
+                  <LockedButton
+                    isEditMode={isEditMode}
+                    isAuthorized={canManage}
+                    disabled={dispatchingDestId !== null}
+                    onClick={() => handleDispatchToDestinations()}
+                    icon={RefreshCw}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {dispatchingDestId === 'all' ? 'Replicating...' : 'Sync Now'}
+                  </LockedButton>
+                )}
+                <LockedButton
+                  isEditMode={isEditMode}
+                  isAuthorized={canManage}
+                  onClick={() => handleOpenAddDestination('local_path')}
+                  icon={Plus}
+                  variant="primary"
+                  size="sm"
+                >
+                  Add Destination
+                </LockedButton>
+              </div>
+            </div>
+
+            {lastDispatchResult && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-950 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Replicated <strong>{lastDispatchResult.filename}</strong> to {lastDispatchResult.dispatched_count} destination(s).
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLastDispatchResult(null)}
+                  className="font-semibold underline text-emerald-800 hover:text-emerald-950"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            {destinations.length === 0 ? (
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 text-center space-y-4">
+                <div className="max-w-md mx-auto space-y-1">
+                  <div className="inline-flex p-3 rounded-2xl bg-primary-50 text-primary-600 mb-1">
+                    <Cloud className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">Zero Secondary Backup Paths Registered</h3>
+                  <p className="text-xs text-slate-500">
+                    Your database currently writes backups only to the local drive. Click a preset below to register a secondary location and protect against local drive failures or ransomware:
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-w-4xl mx-auto pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAddDestination('local_path')}
+                    className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-primary-500 hover:shadow-xs transition text-left space-y-1.5 group"
+                  >
+                    <div className="flex items-center gap-2 text-slate-900 font-bold text-xs group-hover:text-primary-600">
+                      <HardDrive className="w-4 h-4 text-slate-600 group-hover:text-primary-600" />
+                      <span>Secondary Disk / USB</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      Fast local mirroring to drive D:\ or attached external USB storage.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAddDestination('network_share')}
+                    className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-primary-500 hover:shadow-xs transition text-left space-y-1.5 group"
+                  >
+                    <div className="flex items-center gap-2 text-slate-900 font-bold text-xs group-hover:text-primary-600">
+                      <Network className="w-4 h-4 text-emerald-600" />
+                      <span>Office Network NAS</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      High-speed Gigabit LAN copy to Synology, QNAP, or Windows SMB UNC share.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAddDestination('gdrive_sync')}
+                    className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-primary-500 hover:shadow-xs transition text-left space-y-1.5 group"
+                  >
+                    <div className="flex items-center gap-2 text-slate-900 font-bold text-xs group-hover:text-primary-600">
+                      <Laptop className="w-4 h-4 text-sky-600" />
+                      <span>Google Drive (Desktop)</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      Zero-API sync using Google Drive client. Accessible from mobile phone app!
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAddDestination('s3_compatible')}
+                    className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-primary-500 hover:shadow-xs transition text-left space-y-1.5 group"
+                  >
+                    <div className="flex items-center gap-2 text-slate-900 font-bold text-xs group-hover:text-primary-600">
+                      <Cloud className="w-4 h-4 text-purple-600" />
+                      <span>Cloudflare R2 / S3</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      Offsite immutable cloud vault with $0 egress restore fees and S3 API.
+                    </p>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {destinations.map((dest) => {
+                  const testRes = inlineTestResults[dest.id]
+                  const isTesting = testingDestinationId === dest.id
+                  const typeMeta = {
+                    local_path: { label: 'Local / USB Drive', icon: HardDrive, color: 'text-slate-700 bg-slate-100' },
+                    network_share: { label: 'Network UNC (NAS)', icon: Network, color: 'text-emerald-700 bg-emerald-100' },
+                    gdrive_sync: { label: 'Google Drive Sync', icon: Laptop, color: 'text-sky-700 bg-sky-100' },
+                    s3_compatible: { label: 'Cloudflare R2 / S3', icon: Cloud, color: 'text-purple-700 bg-purple-100' },
+                  }[dest.type] || { label: dest.type, icon: HardDrive, color: 'text-slate-700 bg-slate-100' }
+                  const IconComp = typeMeta.icon
+
+                  return (
+                    <div
+                      key={dest.id}
+                      className={`border rounded-2xl p-4 flex flex-col justify-between space-y-3 transition ${
+                        !dest.is_enabled
+                          ? 'bg-slate-50/60 border-slate-200 opacity-70'
+                          : dest.last_sync_status === 'failed'
+                          ? 'bg-rose-50/30 border-rose-200'
+                          : 'bg-white border-slate-200 shadow-2xs hover:border-primary-300'
+                      }`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`p-1.5 rounded-lg ${typeMeta.color}`}>
+                              <IconComp className="w-4 h-4" />
+                            </span>
+                            <div>
+                              <h4 className="text-xs font-bold text-slate-900 leading-snug">{dest.name}</h4>
+                              <span className="text-[10px] text-slate-500 font-medium">{typeMeta.label}</span>
+                            </div>
+                          </div>
+
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                              !dest.is_enabled
+                                ? 'bg-slate-100 text-slate-600'
+                                : dest.last_sync_status === 'success'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : dest.last_sync_status === 'failed'
+                                ? 'bg-rose-100 text-rose-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                !dest.is_enabled
+                                  ? 'bg-slate-400'
+                                  : dest.last_sync_status === 'success'
+                                  ? 'bg-emerald-600'
+                                  : dest.last_sync_status === 'failed'
+                                  ? 'bg-rose-600'
+                                  : 'bg-amber-600'
+                              }`}
+                            />
+                            <span>
+                              {!dest.is_enabled
+                                ? 'Paused'
+                                : dest.last_sync_status === 'success'
+                                ? 'Active & Synced'
+                                : dest.last_sync_status === 'failed'
+                                ? 'Sync Error'
+                                : 'Ready'}
+                            </span>
+                          </span>
+                        </div>
+
+                        <div className="bg-slate-50 border border-slate-200/70 rounded-xl px-2.5 py-1.5 font-mono text-[11px] text-slate-700 truncate">
+                          {dest.path || dest.bucket_name ? (
+                            <span>{dest.path || `s3://${dest.bucket_name}`}</span>
+                          ) : (
+                            <span className="text-slate-400 italic">No path configured</span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500 pt-0.5">
+                          <div>
+                            Retention: <strong className="text-slate-700">{dest.retention_days} days</strong>
+                          </div>
+                          <div className="text-right truncate">
+                            Synced:{' '}
+                            <strong className="text-slate-700">
+                              {dest.last_sync_time ? formatDateTime(dest.last_sync_time) : 'Never'}
+                            </strong>
+                          </div>
+                        </div>
+
+                        {dest.last_error && (
+                          <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 text-[11px] text-rose-800">
+                            <strong>Sync Alert:</strong> {dest.last_error}
+                          </div>
+                        )}
+
+                        {testRes && (
+                          <div
+                            className={`border rounded-lg p-2 text-[11px] ${
+                              testRes.success
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                                : 'bg-rose-50 border-rose-200 text-rose-900'
+                            }`}
+                          >
+                            <div className="font-semibold flex items-center gap-1">
+                              {testRes.success ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              ) : (
+                                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                              )}
+                              <span>{testRes.success ? 'Probe Verified' : 'Probe Failed'}</span>
+                            </div>
+                            <div className="text-[10px] opacity-90 mt-0.5">{testRes.message}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          disabled={isTesting}
+                          onClick={() => handleTestInlineDestination(dest)}
+                          className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-[11px] font-semibold text-slate-700 inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          <Activity className={`w-3 h-3 ${isTesting ? 'animate-spin text-primary-600' : 'text-slate-500'}`} />
+                          <span>{isTesting ? 'Probing...' : 'Test Path'}</span>
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                          <LockedButton
+                            isEditMode={isEditMode}
+                            isAuthorized={canManage}
+                            onClick={() => handleToggleDestination(dest)}
+                            variant="ghost"
+                            size="xs"
+                          >
+                            <Radio className={`w-3.5 h-3.5 ${dest.is_enabled ? 'text-emerald-600' : 'text-slate-400'}`} />
+                          </LockedButton>
+
+                          <LockedButton
+                            isEditMode={isEditMode}
+                            isAuthorized={canManage}
+                            onClick={() => handleOpenEditDestination(dest)}
+                            variant="ghost"
+                            size="xs"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-slate-600" />
+                          </LockedButton>
+
+                          <LockedButton
+                            isEditMode={isEditMode}
+                            isAuthorized={canManage}
+                            onClick={() => handleDeleteDestination(dest)}
+                            variant="ghost"
+                            size="xs"
+                            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </LockedButton>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Backups Catalog Table */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-3">
@@ -2252,6 +2729,267 @@ export default function Housekeeping() {
                 <span>{executingCleanup ? 'Archiving & Purging...' : 'Confirm Archive & Purge'}</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── CONFIGURE BACKUP DESTINATION MODAL ────────────────────────────── */}
+      {destinationModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Configure Backup Destination"
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+        >
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 my-8">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-primary-50 text-primary-600">
+                  <FolderSync className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {destForm.id ? 'Edit Backup Destination' : 'Configure Backup Destination'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Register secondary storage path for automated 3-2-1 backup fan-out and zero data loss.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDestinationModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-500"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveDestination} className="space-y-4 text-xs">
+              {/* Preset Selector */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Destination Preset</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'local_path', label: 'Local / USB', icon: HardDrive },
+                    { id: 'network_share', label: 'Network NAS', icon: Network },
+                    { id: 'gdrive_sync', label: 'Google Drive', icon: Laptop },
+                    { id: 's3_compatible', label: 'Cloud R2/S3', icon: Cloud },
+                  ].map((p) => {
+                    const Icon = p.icon
+                    const isSelected = destForm.type === p.id
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          const hints: Record<string, { name: string; path?: string; endpoint?: string; bucket?: string }> = {
+                            local_path: { name: 'Secondary Storage Drive', path: 'D:\\PrashantAcademy_Backups' },
+                            network_share: { name: 'Office Synology NAS', path: '\\\\192.168.1.150\\Backups\\POeduOS' },
+                            gdrive_sync: { name: 'Institute Google Drive (Cloud)', path: 'G:\\My Drive\\PrathamOne_Backups' },
+                            s3_compatible: { name: 'Cloudflare R2 Cold Storage', endpoint: 'https://<account-id>.r2.cloudflarestorage.com', bucket: 'prashant-academy-vault' },
+                          }
+                          const h = hints[p.id]
+                          setDestForm({
+                            ...destForm,
+                            type: p.id as any,
+                            name: destForm.name && !destForm.name.startsWith('Unnamed') ? destForm.name : h.name,
+                            path: p.id !== 's3_compatible' ? (destForm.path || h.path) : '',
+                            endpoint_url: p.id === 's3_compatible' ? (destForm.endpoint_url || h.endpoint) : '',
+                            bucket_name: p.id === 's3_compatible' ? (destForm.bucket_name || h.bucket) : '',
+                          })
+                          setModalTestResult(null)
+                        }}
+                        className={`p-2 rounded-xl border text-center flex flex-col items-center gap-1 transition ${
+                          isSelected
+                            ? 'bg-primary-50 border-primary-500 text-primary-900 font-bold'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isSelected ? 'text-primary-600' : 'text-slate-500'}`} />
+                        <span className="text-[11px]">{p.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Destination Name */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Destination Name</label>
+                <input
+                  type="text"
+                  required
+                  value={destForm.name || ''}
+                  onChange={(e) => setDestForm({ ...destForm, name: e.target.value })}
+                  placeholder="e.g. Office Synology NAS or Director Google Drive"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              {/* Path or S3 configuration */}
+              {destForm.type !== 's3_compatible' ? (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    {destForm.type === 'local_path'
+                      ? 'Local / External Drive Path'
+                      : destForm.type === 'network_share'
+                      ? 'Network Share / NAS Path (UNC)'
+                      : 'Google Drive Desktop Sync Folder Path'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={destForm.path || ''}
+                    onChange={(e) => setDestForm({ ...destForm, path: e.target.value })}
+                    placeholder={
+                      destForm.type === 'local_path'
+                        ? 'D:\\PrashantAcademy_Backups or E:\\USB_Archive'
+                        : destForm.type === 'network_share'
+                        ? '\\\\192.168.1.150\\Backups\\POeduOS'
+                        : 'G:\\My Drive\\PrathamOne_Backups'
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {destForm.type === 'local_path' && 'Drive partition or external hard disk path on host system.'}
+                    {destForm.type === 'network_share' && 'Standard Windows UNC format (\\\\server\\share\\folder) or mounted volume.'}
+                    {destForm.type === 'gdrive_sync' && 'Folder synced by official Google Drive for Desktop client. Files auto-sync to cloud!'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 bg-purple-50/40 border border-purple-100 rounded-2xl p-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Endpoint URL</label>
+                      <input
+                        type="url"
+                        required
+                        value={destForm.endpoint_url || ''}
+                        onChange={(e) => setDestForm({ ...destForm, endpoint_url: e.target.value })}
+                        placeholder="https://<account-id>.r2.cloudflarestorage.com"
+                        className="w-full px-3 py-1.5 rounded-xl border border-slate-300 font-mono text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Bucket Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={destForm.bucket_name || ''}
+                        onChange={(e) => setDestForm({ ...destForm, bucket_name: e.target.value })}
+                        placeholder="prashant-academy-vault"
+                        className="w-full px-3 py-1.5 rounded-xl border border-slate-300 font-mono text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Access Key ID</label>
+                      <input
+                        type="text"
+                        value={destForm.access_key_id || ''}
+                        onChange={(e) => setDestForm({ ...destForm, access_key_id: e.target.value })}
+                        placeholder="R2 / S3 Access Key ID"
+                        className="w-full px-3 py-1.5 rounded-xl border border-slate-300 font-mono text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Secret Access Key</label>
+                      <input
+                        type="password"
+                        value={destForm.secret_access_key || ''}
+                        onChange={(e) => setDestForm({ ...destForm, secret_access_key: e.target.value })}
+                        placeholder="Leave blank to keep existing key"
+                        className="w-full px-3 py-1.5 rounded-xl border border-slate-300 font-mono text-xs"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-purple-900">
+                    💡 Cloudflare R2 provides $0.00 egress restore fees and native S3 API compatibility.
+                  </p>
+                </div>
+              )}
+
+              {/* Retention & Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Retention Window (days)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={destForm.retention_days ?? 30}
+                    onChange={(e) => setDestForm({ ...destForm, retention_days: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div className="flex items-center pt-5">
+                  <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-800 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={destForm.is_enabled ?? true}
+                      onChange={(e) => setDestForm({ ...destForm, is_enabled: e.target.checked })}
+                      className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span>Enable Automated Fan-Out to this destination</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Test Probe Box */}
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-500">Live test verifies directory access and file write permissions.</span>
+                  <button
+                    type="button"
+                    disabled={testingModalDest}
+                    onClick={handleTestModalDestination}
+                    className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold inline-flex items-center gap-1.5"
+                  >
+                    <Activity className={`w-3.5 h-3.5 ${testingModalDest ? 'animate-spin text-primary-600' : 'text-slate-500'}`} />
+                    <span>{testingModalDest ? 'Running Probe...' : 'Test Path & Permissions'}</span>
+                  </button>
+                </div>
+
+                {modalTestResult && (
+                  <div
+                    className={`border rounded-xl p-3 text-xs ${
+                      modalTestResult.success
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
+                        : 'bg-rose-50 border-rose-200 text-rose-950'
+                    }`}
+                  >
+                    <div className="font-bold flex items-center gap-1.5">
+                      {modalTestResult.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                      )}
+                      <span>{modalTestResult.success ? 'Path & Permission Test Succeeded' : 'Permission / Path Check Failed'}</span>
+                    </div>
+                    <div className="text-[11px] opacity-90 mt-1">{modalTestResult.message}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setDestinationModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingDestination}
+                  className="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{savingDestination ? 'Saving...' : 'Save Destination'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

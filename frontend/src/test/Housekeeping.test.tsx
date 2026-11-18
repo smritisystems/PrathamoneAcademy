@@ -52,6 +52,11 @@ vi.mock('../api/endpoints', async () => {
       downloadLogArchive: vi.fn(),
       getAlerts: vi.fn(),
       dispatchAlertEmail: vi.fn(),
+      getDestinations: vi.fn(),
+      saveDestination: vi.fn(),
+      deleteDestination: vi.fn(),
+      testDestination: vi.fn(),
+      dispatchBackup: vi.fn(),
     },
   }
 })
@@ -215,6 +220,7 @@ describe('Housekeeping Workspace & Module Governance', () => {
     vi.mocked(housekeepingApi.listBackups).mockResolvedValue({ data: { backups: mockBackups } } as any)
     vi.mocked(housekeepingApi.getHistory).mockResolvedValue({ data: { events: [] } } as any)
     vi.mocked(housekeepingApi.getStorage).mockResolvedValue({ data: mockStorage } as any)
+    vi.mocked(housekeepingApi.getDestinations).mockResolvedValue({ data: { destinations: [] } } as any)
   })
 
   it('registers housekeeping module strictly for authorized admins/sysadmins and hides from students', () => {
@@ -274,6 +280,19 @@ describe('Housekeeping Workspace & Module Governance', () => {
           label: 'manual',
         })
       )
+    })
+  })
+
+  it('renders Multi-Path Backup Destinations card and preset options in backups tab', async () => {
+    renderHousekeeping('/housekeeping/backups')
+
+    await waitFor(() => {
+      expect(screen.getByText('Multi-Path Backup Destinations & Cloud Sync')).toBeDefined()
+      expect(screen.getByText('Zero Secondary Backup Paths Registered')).toBeDefined()
+      expect(screen.getByText('Secondary Disk / USB')).toBeDefined()
+      expect(screen.getByText('Office Network NAS')).toBeDefined()
+      expect(screen.getByText('Google Drive (Desktop)')).toBeDefined()
+      expect(screen.getByText('Cloudflare R2 / S3')).toBeDefined()
     })
   })
 

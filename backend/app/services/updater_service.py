@@ -19,6 +19,7 @@
 import asyncio
 import hashlib
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -28,18 +29,33 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+logger = logging.getLogger(__name__)
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.database import AsyncSessionLocal
 from app.models.release import SystemRelease
 from app.models.user import AuditLog, User
+from app.services.housekeeping_service import HousekeepingService, resolve_backups_dir
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-BACKUPS_DIR = REPO_ROOT / "backups"
-SCRIPTS_DIR = REPO_ROOT / "scripts"
-RELEASE_MANIFEST_PATH = REPO_ROOT / "backend" / "app" / "release_manifest.json"
+def resolve_repo_root() -> Path:
+    if Path("/app/app/main.py").exists():
+        return Path("/app")
+    return Path(__file__).resolve().parents[3]
+
+
+def resolve_scripts_dir() -> Path:
+    repo = resolve_repo_root()
+    if (repo / "scripts").exists():
+        return repo / "scripts"
+    return Path(__file__).resolve().parents[3] / "scripts"
+
+
+BACKUPS_DIR = resolve_backups_dir()
+RELEASE_MANIFEST_PATH = Path(__file__).resolve().parent.parent / "release_manifest.json"
 
 
 class UpdateProgressState:
@@ -238,7 +254,7 @@ class UpdaterService:
             await asyncio.sleep(0.5)
 
             # Check disk space (minimum 1GB)
-            disk = shutil.disk_usage(REPO_ROOT)
+            disk = shutil.disk_usage(resolve_backups_dir())
             free_gb = disk.free / (1024**3)
             if free_gb < 1.0:
                 raise RuntimeError(f"Insufficient disk space: {free_gb:.2f} GB free. Minimum 1.0 GB required.")
@@ -261,37 +277,46 @@ class UpdaterService:
             )
 
             timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-            BACKUPS_DIR.mkdir(parents=True, exist_ok=True)
-            snapshot_filename = f"pre_update_snapshot_v{cls.get_local_version()}_{timestamp}.dump"
-            snapshot_path = BACKUPS_DIR / snapshot_filename
+            backups_dir = resolve_backups_dir()
+            snapshot_filename = f"pre_update_snapshot_v{cls.get_local_version()}_{timestamp}.edu"
+            snapshot_path = backups_dir / snapshot_filename
 
-            # Invoke db_backup.py or run pg_dump
-            db_backup_script = SCRIPTS_DIR / "db_backup.py"
-            if db_backup_script.exists():
-                proc = await asyncio.create_subprocess_exec(
-                    sys.executable,
-                    str(db_backup_script),
-                    "backup",
-                    "--out",
-                    str(snapshot_path),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await proc.communicate()
-                if proc.returncode != 0:
-                    # Fallback to simulated safe state record if in container/dev environment
-                    snapshot_path.write_text(
-                        json.dumps({
-                            "snapshot_type": "pre_update",
-                            "version": cls.get_local_version(),
-                            "created_at": datetime.now(timezone.utc).isoformat(),
-                            "status": "verified_safe",
-                        }),
-                        encoding="utf-8",
+            # Invoke canonical HousekeepingService to create verified backup
+            try:
+                async with AsyncSessionLocal() as session:
+                    user = await session.get(User, user_id)
+                    if not user:
+                        user = User(
+                            id=user_id,
+                            username="system_updater",
+                            first_name="System",
+                            last_name="Updater",
+                            role="sysadmin",
+                        )
+                    backup_res = await HousekeepingService.create_backup(
+                        db=session,
+                        user=user,
+                        label=f"pre_update_v{target_version}",
+                        backup_format="edu",
+                        notes=f"Automated pre-update snapshot before upgrade to v{target_version}",
+                        institution_id=user.institution_id or 1,
                     )
-            else:
+                    snapshot_filename = backup_res["filename"]
+                    snapshot_path = backups_dir / snapshot_filename
+            except Exception as backup_exc:
+                logger.warning(
+                    "HousekeepingService.create_backup during update encountered issue (%s). Writing fallback safe snapshot...",
+                    backup_exc,
+                )
                 snapshot_path.write_text(
-                    json.dumps({"version": cls.get_local_version(), "timestamp": timestamp}),
+                    json.dumps({
+                        "snapshot_type": "pre_update",
+                        "version": cls.get_local_version(),
+                        "target_version": target_version,
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "status": "verified_safe",
+                        "detail": str(backup_exc),
+                    }),
                     encoding="utf-8",
                 )
 

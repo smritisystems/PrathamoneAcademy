@@ -102,3 +102,17 @@ async def test_updater_api_endpoints(client: AsyncClient, auth_headers: dict):
     assert res_reset.status_code == 200
     reset_data = res_reset.json()
     assert reset_data["message"] == "Update status reset successfully."
+
+
+@pytest.mark.asyncio
+async def test_run_update_pipeline_executes_without_permission_error():
+    """Verify run_update_pipeline completes backup and migration steps without Permission denied: '/backups'."""
+    await UpdaterService.run_update_pipeline(
+        target_version="1.134.1",
+        user_id=1,
+    )
+    state = await update_tracker.get_state()
+    assert "Permission denied: '/backups'" not in str(state.get("error"))
+    assert state["status"] == "success"
+    assert state["progress_percent"] == 100
+

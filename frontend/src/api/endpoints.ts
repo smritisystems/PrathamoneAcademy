@@ -74,6 +74,7 @@ import type {
   HousekeepingStorageTelemetry, HousekeepingCleanOrphansResponse,
   HousekeepingLogCleanupPreview, HousekeepingLogCleanupExecuteResponse,
   HousekeepingAlertsSummary, HousekeepingAlertNotifyResponse,
+  BackupDestination, DestinationTestResult, BackupDispatchResult,
   HelpCategory, HelpArticleSummary, HelpArticleDetail, HelpArticleRevision,
   HelpSearchResponse, ContextualHelpResolution, HelpProductAndVersionResponse,
   HelpSystemInfoResponse, SupportRequestItem,
@@ -1999,6 +2000,29 @@ export const housekeepingApi = {
 
   dispatchAlertEmail: (data?: { recipient_email?: string }, institutionId?: number) =>
     apiClient.post<HousekeepingAlertNotifyResponse>('/housekeeping/alerts/notify', data || {}, {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  getDestinations: (institutionId?: number) =>
+    apiClient.get<{ destinations: BackupDestination[] }>('/housekeeping/destinations', {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  saveDestination: (data: Partial<BackupDestination>, institutionId?: number) =>
+    apiClient.post<{ destination: BackupDestination; message: string }>('/housekeeping/destinations', data, {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  deleteDestination: (destId: string, institutionId?: number) =>
+    apiClient.delete<{ success: boolean; message: string }>(`/housekeeping/destinations/${encodeURIComponent(destId)}`, {
+      params: institutionId ? { institution_id: institutionId } : undefined,
+    }),
+
+  testDestination: (data: Partial<BackupDestination>) =>
+    apiClient.post<DestinationTestResult>('/housekeeping/destinations/test', data),
+
+  dispatchBackup: (data: { filename?: string; source?: string }, institutionId?: number) =>
+    apiClient.post<BackupDispatchResult>('/housekeeping/backups/dispatch', data, {
       params: institutionId ? { institution_id: institutionId } : undefined,
     }),
 }

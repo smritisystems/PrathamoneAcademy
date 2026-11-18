@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-17
+#  * @updated     2026-11-18
 #  *
 #  * @description CLI & scheduled automation utility for PrathamOne EduOS Housekeeping:
 #  */
@@ -241,12 +241,21 @@ def cmd_backup(args: argparse.Namespace) -> int:
     if not ok:
         raise RuntimeError(f"Backup verification FAILED for {target}")
 
-    if args.mirror_dir:
-        mdir = Path(args.mirror_dir)
-        mdir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(target, mdir / filename)
-        shutil.copy2(str(target) + ".sha256", mdir / f"{filename}.sha256")
-        print(f"[HOUSEKEEPING] Mirrored offsite copy -> {mdir / filename}")
+    dest_paths = list(args.destinations or [])
+    if args.mirror_dir and args.mirror_dir not in dest_paths:
+        dest_paths.append(args.mirror_dir)
+
+    for d_raw in dest_paths:
+        try:
+            mdir = Path(d_raw)
+            mdir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(target, mdir / filename)
+            shutil.copy2(str(target) + ".sha256", mdir / f"{filename}.sha256")
+            if (Path(str(target) + ".meta.json")).exists():
+                shutil.copy2(str(target) + ".meta.json", mdir / f"{filename}.meta.json")
+            print(f"[HOUSEKEEPING] Mirrored backup to destination -> {mdir / filename}")
+        except Exception as exc:
+            print(f"[HOUSEKEEPING WARNING] Failed to mirror to '{d_raw}': {exc}", file=sys.stderr)
 
     _append_history({
         "action": "CLI_BACKUP_CREATED",
@@ -554,6 +563,7 @@ def main() -> int:
     p_bk.add_argument("--format", choices=["edu", "edu_sql", "custom", "plain_sql"], default="edu")
     p_bk.add_argument("--notes", default=None)
     p_bk.add_argument("--mirror-dir", default=None)
+    p_bk.add_argument("--destinations", nargs="*", default=[], help="One or more destination directory paths to replicate verified backup")
     p_bk.add_argument("--prune", action="store_true")
     p_bk.add_argument("--retain-daily", type=int, default=7)
     p_bk.add_argument("--retain-weekly", type=int, default=4)

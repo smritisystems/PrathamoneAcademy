@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Protected REST API endpoints for the Housekeeping Module: DB backups, verification, retention pruning, sandbox restore drills, guarded production restore, vacuum maintenance, and backup schedules.
 #  */
@@ -117,6 +117,35 @@ class LogCleanupExecuteRequest(BaseModel):
 
 class AlertNotifyRequest(BaseModel):
     recipient_email: Optional[str] = None
+
+
+class DestinationInput(BaseModel):
+    id: Optional[str] = None
+    name: str = Field(min_length=1, max_length=100)
+    type: str = Field(default="local_path", pattern="^(local_path|network_share|gdrive_sync|s3_compatible)$")
+    path: Optional[str] = None
+    endpoint_url: Optional[str] = None
+    bucket_name: Optional[str] = None
+    region: Optional[str] = "auto"
+    access_key_id: Optional[str] = None
+    secret_access_key: Optional[str] = None
+    is_enabled: bool = True
+    retention_days: int = Field(default=30, ge=1, le=365)
+
+
+class DestinationTestRequest(BaseModel):
+    type: str = Field(default="local_path", pattern="^(local_path|network_share|gdrive_sync|s3_compatible)$")
+    path: Optional[str] = None
+    endpoint_url: Optional[str] = None
+    bucket_name: Optional[str] = None
+    region: Optional[str] = "auto"
+    access_key_id: Optional[str] = None
+    secret_access_key: Optional[str] = None
+
+
+class BackupDispatchRequest(BaseModel):
+    filename: Optional[str] = None
+    source: str = Field(default="backups")
 
 
 @router.get("/overview")
@@ -452,3 +481,90 @@ async def dispatch_housekeeping_alert_email(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/destinations")
+async def get_backup_destinations(
+    institution_id: Optional[int] = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_view_or_backup_access),
+):
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
+    destinations = await HousekeepingService.get_backup_destinations(db, institution_id=inst_id, redact_secrets=True)
+    return {"destinations": destinations}
+
+
+@router.post("/destinations")
+async def save_backup_destination(
+    payload: DestinationInput,
+    institution_id: Optional[int] = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_access),
+):
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
+    try:
+        saved = await HousekeepingService.save_backup_destination(
+            db=db,
+            user=current_user,
+            institution_id=inst_id,
+            dest_data=payload.dict(),
+        )
+        return {"destination": saved, "message": "Destination saved successfully."}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.delete("/destinations/{dest_id}")
+async def delete_backup_destination(
+    dest_id: str,
+    institution_id: Optional[int] = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_access),
+):
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
+    success = await HousekeepingService.delete_backup_destination(
+        db=db,
+        user=current_user,
+        institution_id=inst_id,
+        dest_id=dest_id,
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Destination not found.")
+    return {"success": True, "message": "Destination deleted successfully."}
+
+
+@router.post("/destinations/test")
+async def test_backup_destination(
+    payload: DestinationTestRequest,
+    _current_user: User = Depends(_require_housekeeping_access),
+):
+    return HousekeepingService.test_destination(payload.dict())
+
+
+@router.post("/backups/dispatch")
+async def dispatch_existing_backup(
+    payload: BackupDispatchRequest,
+    institution_id: Optional[int] = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(_require_housekeeping_access),
+):
+    inst_id = _resolve_housekeeping_inst_id(institution_id, current_user)
+    target_filename = payload.filename
+    if not target_filename:
+        backups = HousekeepingService.list_backups()
+        if not backups:
+            raise HTTPException(status_code=404, detail="No backup archives available to dispatch.")
+        target_filename = backups[0]["filename"]
+    safe_path = HousekeepingService.resolve_safe_path(target_filename, payload.source)
+    if not safe_path.exists():
+        raise HTTPException(status_code=404, detail=f"Backup file '{target_filename}' not found.")
+    dispatched = await HousekeepingService.dispatch_to_destinations(
+        backup_file=safe_path,
+        db=db,
+        institution_id=inst_id,
+    )
+    return {
+        "filename": target_filename,
+        "dispatched_count": len(dispatched),
+        "results": dispatched,
+    }

@@ -4924,6 +4924,48 @@ export interface HousekeepingOverview {
   }
 }
 
+export interface BackupDestination {
+  id: string
+  name: string
+  type: 'local_path' | 'network_share' | 'gdrive_sync' | 's3_compatible'
+  path?: string | null
+  endpoint_url?: string | null
+  bucket_name?: string | null
+  region?: string
+  access_key_id?: string | null
+  secret_access_key?: string | null
+  is_enabled: boolean
+  retention_days: number
+  last_sync_status?: 'idle' | 'success' | 'failed' | 'syncing'
+  last_sync_time?: string | null
+  last_error?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export interface DestinationTestResult {
+  success: boolean
+  latency_ms?: number
+  free_bytes?: number
+  free_human?: string
+  message: string
+  error?: string
+}
+
+export interface BackupDispatchResult {
+  filename: string
+  dispatched_count: number
+  results: Array<{
+    id: string
+    name: string
+    type: string
+    status: 'success' | 'failed'
+    dest_path?: string
+    error?: string
+    synced_at: string
+  }>
+}
+
 export interface HousekeepingCreateBackupResponse {
   filename: string
   source: string
@@ -4934,6 +4976,15 @@ export interface HousekeepingCreateBackupResponse {
   toc_entries: number
   created_at: string
   mirror_copied: string | null
+  destinations_dispatched?: Array<{
+    id: string
+    name: string
+    type: string
+    status: 'success' | 'failed'
+    dest_path?: string
+    error?: string
+    synced_at: string
+  }>
 }
 
 export interface HousekeepingVerifyResponse {

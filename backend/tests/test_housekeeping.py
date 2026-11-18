@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-17
+#  * @updated     2026-11-18
 #  *
 #  * @description Backend integration & governance test suite for the Housekeeping module (RBAC, backups, checksum verification, GFS pruning, restore guards, VACUUM, reconciliation, settings sync, and navigation registry).
 #  */
@@ -891,4 +891,152 @@ def test_safe_write_text_resilience(tmp_path):
     test_file = tmp_path / "safe_write.meta.json"
     assert housekeeping_service_module._safe_write_text(test_file, '{"test": 1}') is True
     assert test_file.read_text(encoding="utf-8") == '{"test": 1}'
+
+
+@pytest.mark.asyncio
+async def test_backup_destination_crud_and_redaction(db, test_institution):
+    """Verify adding, updating, retrieving, and deleting multi-path backup destinations."""
+    admin_user = User(
+        username="dest_admin",
+        email="dest_admin@test.com",
+        hashed_password="hash",
+        first_name="Dest",
+        last_name="Admin",
+        role="sysadmin",
+        institution_id=test_institution.id,
+    )
+    db.add(admin_user)
+    await db.commit()
+
+    # 1. Initially empty
+    destinations = await HousekeepingService.get_backup_destinations(db, institution_id=test_institution.id)
+    assert isinstance(destinations, list)
+
+    # 2. Add local path destination
+    dest1 = await HousekeepingService.save_backup_destination(
+        db=db,
+        user=admin_user,
+        institution_id=test_institution.id,
+        dest_data={
+            "name": "Secondary USB Vault",
+            "type": "local_path",
+            "path": "/tmp/test_vault_usb",
+            "is_enabled": True,
+            "retention_days": 14,
+        },
+    )
+    assert dest1["id"].startswith("dest_")
+    assert dest1["name"] == "Secondary USB Vault"
+
+    # 3. Add S3 destination with secret key
+    dest2 = await HousekeepingService.save_backup_destination(
+        db=db,
+        user=admin_user,
+        institution_id=test_institution.id,
+        dest_data={
+            "name": "Cloudflare R2 Cold Storage",
+            "type": "s3_compatible",
+            "endpoint_url": "https://r2.test.com",
+            "bucket_name": "prashant-vault",
+            "access_key_id": "AKIA_TEST",
+            "secret_access_key": "SUPER_SECRET_12345",
+            "is_enabled": True,
+            "retention_days": 60,
+        },
+    )
+    assert dest2["secret_access_key"] == "********"
+
+    # 4. Retrieve with redaction
+    all_dest = await HousekeepingService.get_backup_destinations(db, institution_id=test_institution.id, redact_secrets=True)
+    r2 = next(d for d in all_dest if d["id"] == dest2["id"])
+    assert r2["secret_access_key"] == "********"
+
+    # 5. Delete destination
+    ok = await HousekeepingService.delete_backup_destination(db, admin_user, test_institution.id, dest1["id"])
+    assert ok is True
+    remaining = await HousekeepingService.get_backup_destinations(db, institution_id=test_institution.id)
+    assert not any(d["id"] == dest1["id"] for d in remaining)
+
+
+def test_test_destination_probe_logic(tmp_path):
+    """Verify test_destination probe checks directory writability and S3 formats."""
+    # 1. Valid local directory probe
+    test_dir = tmp_path / "valid_dest"
+    test_dir.mkdir(parents=True, exist_ok=True)
+    res_valid = HousekeepingService.test_destination({
+        "type": "local_path",
+        "path": str(test_dir),
+    })
+    assert res_valid["success"] is True
+    assert "latency_ms" in res_valid
+    assert res_valid["latency_ms"] >= 0
+
+    # 2. Empty path rejected
+    res_empty = HousekeepingService.test_destination({"type": "network_share", "path": ""})
+    assert res_empty["success"] is False
+    assert "cannot be empty" in res_empty["error"]
+
+    # 3. Valid S3 configuration
+    res_s3 = HousekeepingService.test_destination({
+        "type": "s3_compatible",
+        "endpoint_url": "https://account.r2.cloudflarestorage.com",
+        "bucket_name": "my-bucket",
+    })
+    assert res_s3["success"] is True
+
+    # 4. Invalid S3 configuration
+    res_s3_bad = HousekeepingService.test_destination({
+        "type": "s3_compatible",
+        "endpoint_url": "ftp://bad-url",
+        "bucket_name": "my-bucket",
+    })
+    assert res_s3_bad["success"] is False
+
+
+@pytest.mark.asyncio
+async def test_dispatch_to_destinations_fan_out(tmp_path):
+    """Verify dispatch_to_destinations copies archive and sidecars with SHA-256 verification."""
+    source_dir = tmp_path / "source_backups"
+    source_dir.mkdir()
+    backup_file = source_dir / "POeduOS_test.edu"
+    backup_file.write_text("DUMMY_DATABASE_PAYLOAD_CONTENT", encoding="utf-8")
+    sha_file = source_dir / "POeduOS_test.edu.sha256"
+    sha_file.write_text(f"{housekeeping_service_module.compute_sha256(backup_file)}  POeduOS_test.edu\n", encoding="utf-8")
+    meta_file = source_dir / "POeduOS_test.edu.meta.json"
+    meta_file.write_text('{"label": "test"}', encoding="utf-8")
+
+    dest_dir = tmp_path / "secondary_mirror"
+    destinations = [
+        {
+            "id": "dest_test_1",
+            "name": "Mirror 1",
+            "type": "local_path",
+            "path": str(dest_dir),
+            "is_enabled": True,
+        },
+        {
+            "id": "dest_test_disabled",
+            "name": "Disabled Mirror",
+            "type": "local_path",
+            "path": str(tmp_path / "disabled"),
+            "is_enabled": False,
+        },
+        {
+            "id": "dest_test_r2",
+            "name": "Cloud R2",
+            "type": "s3_compatible",
+            "bucket_name": "cloud-vault",
+            "is_enabled": True,
+        },
+    ]
+
+    results = await HousekeepingService.dispatch_to_destinations(backup_file=backup_file, destinations=destinations)
+    assert len(results) == 2
+    assert results[0]["status"] == "success"
+    assert (dest_dir / "POeduOS_test.edu").exists()
+    assert (dest_dir / "POeduOS_test.edu.sha256").exists()
+    assert (dest_dir / "POeduOS_test.edu.meta.json").exists()
+    assert results[1]["status"] == "success"
+    assert results[1]["dest_path"] == "s3://cloud-vault/POeduOS_test.edu"
+
 
