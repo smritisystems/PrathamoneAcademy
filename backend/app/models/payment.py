@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description SQLAlchemy models defining financial transactions, ERP payment workflow lifecycle, receipt versioning, and refunds.
 #  */
@@ -27,6 +27,8 @@ from sqlalchemy import (
     Text,
     Integer,
     and_,
+    CheckConstraint,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 from datetime import datetime, date
@@ -132,7 +134,11 @@ class PaymentAllocation(Base):
     invoice_id: Mapped[int] = mapped_column(
         ForeignKey("fee_invoices.id"), nullable=False, index=True
     )
-    # installment_id retired in P1 consolidation; allocations map to invoice_id
+    installment_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("fee_invoice_installments.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
     allocated_amount: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), nullable=False
     )
@@ -146,20 +152,9 @@ class PaymentAllocation(Base):
     invoice: Mapped["FeeInvoice"] = relationship(
         "FeeInvoice", back_populates="allocations"
     )
-
-    def __init__(self, **kwargs):
-        kwargs.pop("installment_id", None)
-        super().__init__(**kwargs)
-
-    @property
-    def installment_id(self) -> Optional[int]:
-        """Retired legacy attribute in P1 consolidation."""
-        return None
-
-    @property
-    def installment(self):
-        """Retired legacy relationship in P1 consolidation."""
-        return None
+    installment: Mapped[Optional["FeeInvoiceInstallment"]] = relationship(
+        "FeeInvoiceInstallment", back_populates="allocations"
+    )
 
 
 class PaymentReceipt(Base):
@@ -248,9 +243,49 @@ class Refund(Base):
     payment: Mapped[Optional["Payment"]] = relationship("Payment", back_populates="refunds")
     invoice: Mapped[Optional["FeeInvoice"]] = relationship("FeeInvoice")
     enrollment: Mapped[Optional["StudentEnrollment"]] = relationship("StudentEnrollment")
-    processed_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[processed_by_id])
-    requested_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[requested_by_id])
-    approved_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[approved_by_id])
+    allocations: Mapped[list["RefundAllocation"]] = relationship(
+        "RefundAllocation", back_populates="refund", order_by="RefundAllocation.id"
+    )
+    processed_by: Mapped[Optional["User"]] = relationship(
+        "User", foreign_keys=[processed_by_id]
+    )
+    requested_by: Mapped[Optional["User"]] = relationship(
+        "User", foreign_keys=[requested_by_id]
+    )
+    approved_by: Mapped[Optional["User"]] = relationship(
+        "User", foreign_keys=[approved_by_id]
+    )
+
+
+class RefundAllocation(Base):
+    __tablename__ = "refund_allocations"
+    __table_args__ = (
+        UniqueConstraint(
+            "refund_id",
+            "payment_allocation_id",
+            name="uq_refund_allocation_original_payment_allocation",
+        ),
+        CheckConstraint("amount > 0", name="ck_refund_allocation_amount_positive"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    refund_id: Mapped[int] = mapped_column(
+        ForeignKey("refunds.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    payment_allocation_id: Mapped[int] = mapped_column(
+        ForeignKey("payment_allocations.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    refund: Mapped["Refund"] = relationship("Refund", back_populates="allocations")
+    payment_allocation: Mapped["PaymentAllocation"] = relationship(
+        "PaymentAllocation"
+    )
 
 
 class FinancialPeriod(Base):

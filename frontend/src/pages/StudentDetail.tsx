@@ -146,7 +146,6 @@ export default function StudentDetailPage() {
   const [adjustForm, setAdjustForm] = useState({
     fee_structure_id: 0,
     package_amount: '',
-    concession_amount: '0',
     reason: '',
     remarks: '',
   })
@@ -170,15 +169,9 @@ export default function StudentDetailPage() {
               : (data as any).assigned_structure
                 ? String((data as any).assigned_structure.base_amount)
                 : '0'
-      const currentConcession =
-        data.concession_amount !== null && data.concession_amount !== undefined
-          ? String(data.concession_amount)
-          : '0'
-
       setAdjustForm({
         fee_structure_id: data.current_structure?.id || (data as any).assigned_structure?.id || (data.available_structures?.[0]?.id ?? 0),
         package_amount: currentPkg,
-        concession_amount: currentConcession,
         reason: '',
         remarks: '',
       })
@@ -205,17 +198,8 @@ export default function StudentDetailPage() {
       return
     }
     const pkg = parseFloat(adjustForm.package_amount)
-    const conc = parseFloat(adjustForm.concession_amount) || 0
-    if (isNaN(pkg) || pkg < 0) {
+    if (isNaN(pkg) || pkg <= 0) {
       setAdjustFeesError('Please enter a valid package amount.')
-      return
-    }
-    if (conc < 0) {
-      setAdjustFeesError('Concession amount cannot be negative.')
-      return
-    }
-    if (conc > pkg) {
-      setAdjustFeesError('Concession amount cannot exceed total package fee.')
       return
     }
 
@@ -225,7 +209,6 @@ export default function StudentDetailPage() {
       const res = await feesApi.adjustStudentFees(studentId, {
         fee_structure_id: adjustForm.fee_structure_id || undefined,
         custom_amount: pkg,
-        concession_amount: conc,
         reason: adjustForm.reason.trim(),
         remarks: adjustForm.remarks.trim() || undefined,
       })
@@ -2579,69 +2562,27 @@ export default function StudentDetailPage() {
                     </p>
                   </div>
 
-                  {/* Two columns: Package Amount & Concession */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1">
                         Agreed Package Amount (₹) *
                       </label>
                       <input
                         type="number"
-                        min="0"
-                        step="any"
+                        min="0.01"
+                        step="0.01"
                         required
                         value={adjustForm.package_amount}
                         onChange={(e) => setAdjustForm((p) => ({ ...p, package_amount: e.target.value }))}
                         className="w-full text-xs font-bold border border-gray-300 rounded-xl px-3 py-2 text-gray-900 focus:ring-2 focus:ring-primary-500"
                       />
-                      <span className="text-[10px] text-gray-500">Agreed gross fee for academic year</span>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1">
-                        Concession / Discount (₹)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        value={adjustForm.concession_amount}
-                        onChange={(e) => setAdjustForm((p) => ({ ...p, concession_amount: e.target.value }))}
-                        className="w-full text-xs font-bold border border-gray-300 rounded-xl px-3 py-2 text-emerald-700 focus:ring-2 focus:ring-primary-500"
-                      />
-                      <span className="text-[10px] text-gray-500">Management / sibling concession</span>
+                      <span className="text-[10px] text-gray-500">Assigned gross fee for the academic year; this does not change an issued invoice.</span>
                     </div>
                   </div>
 
-                  {/* Live Calculation Preview Banner */}
-                  {(() => {
-                    const pkg = parseFloat(adjustForm.package_amount) || 0
-                    const conc = parseFloat(adjustForm.concession_amount) || 0
-                    const net = Math.max(0, pkg - conc)
-                    const paid = feeDetails?.current_invoice?.paid_amount || (feeDetails as any)?.invoice?.paid_amount || 0
-                    const newBal = Math.max(0, net - paid)
-
-                    return (
-                      <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200 rounded-xl p-3 text-xs">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-gray-600 font-medium">New Net Fee:</span>
-                          <span className="font-extrabold text-primary-900 text-sm">
-                            {fmt(net)}
-                            <span className="text-[11px] font-normal text-gray-500 ml-1.5">
-                              (₹{pkg} - ₹{conc})
-                            </span>
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-blue-100">
-                          <span className="text-gray-500">New Outstanding Balance:</span>
-                          <span className="font-bold text-rose-700">
-                            {fmt(newBal)}
-                            <span className="text-gray-400 font-normal ml-1">(after ₹{paid} paid)</span>
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })()}
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] text-amber-900">
+                    Concessions and scholarships must be submitted through the governed Concessions workflow. Issued invoices keep their financial snapshot; use Fee Invoicing to issue a new invoice with a persisted schedule.
+                  </div>
 
                   {/* Mandatory Reason */}
                   <div>

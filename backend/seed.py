@@ -643,7 +643,7 @@ async def seed(bootstrap_only: bool = False):
                 city="Mumbai",
                 state="Maharashtra",
                 pincode="400002",
-                phone="+91-9876543210",
+                phone="+91 8779 123 007",
                 email="rahul.sharma@prathamone.com",
                 admission_date=date(2024, 6, 1),
             )
@@ -656,7 +656,7 @@ async def seed(bootstrap_only: bool = False):
                 first_name="Suresh",
                 last_name="Sharma",
                 occupation="Business",
-                phone="+91-9876543211",
+                phone="+91 8779 123 007",
                 email="suresh.sharma@prathamone.com",
                 annual_income=500000.0,
                 is_primary=True,

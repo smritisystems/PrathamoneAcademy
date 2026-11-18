@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description SQLAlchemy models defining fee structures, fee categories, invoices, installments, and fee concessions.
 #  */
@@ -29,6 +29,7 @@ from sqlalchemy import (
     Integer,
     Index,
     UniqueConstraint,
+    CheckConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime, date
@@ -179,6 +180,11 @@ class FeeInvoice(Base):
     allocations: Mapped[list["PaymentAllocation"]] = relationship(
         "PaymentAllocation", back_populates="invoice"
     )
+    installments: Mapped[list["FeeInvoiceInstallment"]] = relationship(
+        "FeeInvoiceInstallment",
+        back_populates="invoice",
+        order_by="FeeInvoiceInstallment.installment_number",
+    )
     concession_allocations: Mapped[list["FeeConcessionAllocation"]] = relationship(
         "FeeConcessionAllocation", back_populates="invoice"
     )
@@ -186,10 +192,58 @@ class FeeInvoice(Base):
         "StudentConcessionApplication", back_populates="invoice"
     )
 
-    @property
-    def installments(self) -> list["FeeInvoiceItem"]:
-        """Backward compatibility property mapping legacy installments to invoice items."""
-        return self.items
+class FeeInvoiceInstallment(Base):
+    __tablename__ = "fee_invoice_installments"
+    __table_args__ = (
+        UniqueConstraint(
+            "invoice_id", "installment_number", name="uq_fee_invoice_installment_number"
+        ),
+        CheckConstraint(
+            "installment_number > 0",
+            name="ck_fee_invoice_installment_number_positive",
+        ),
+        CheckConstraint("amount >= 0", name="ck_fee_invoice_installment_amount_nonnegative"),
+        CheckConstraint("paid_amount >= 0", name="ck_fee_invoice_installment_paid_nonnegative"),
+        CheckConstraint(
+            "outstanding_amount >= 0",
+            name="ck_fee_invoice_installment_outstanding_nonnegative",
+        ),
+        Index("ix_fee_invoice_installments_due_date", "due_date"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    invoice_id: Mapped[int] = mapped_column(
+        ForeignKey("fee_invoices.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    installment_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    description: Mapped[str] = mapped_column(String(200), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    paid_amount: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), nullable=False, default=Decimal("0.00"), server_default="0"
+    )
+    outstanding_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="unpaid", server_default="unpaid"
+    )
+    late_fee_applied: Mapped[Decimal] = mapped_column(
+        Numeric(12, 2), nullable=False, default=Decimal("0.00"), server_default="0"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    invoice: Mapped["FeeInvoice"] = relationship(
+        "FeeInvoice", back_populates="installments"
+    )
+    allocations: Mapped[list["PaymentAllocation"]] = relationship(
+        "PaymentAllocation", back_populates="installment"
+    )
 
 
 class FeeInvoiceItem(Base):
@@ -489,8 +543,9 @@ class SponsorSettlement(Base):
     )
 
 
-# [DEPRECATED & RETIRED IN P1] FeeInstallment alias for backward compatibility
-FeeInstallment = FeeInvoiceItem
+# Backward-compatible import name; installment records are persisted independently
+# from invoice line items.
+FeeInstallment = FeeInvoiceInstallment
 
 
 # [DEPRECATED & RETIRED IN P1] Backward compatibility stubs

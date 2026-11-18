@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Domain service for Razorpay & UPI payment gateway integration, cryptographic signature verification, dynamic UPI QR generation, and automated receipt posting.
 #  */
@@ -176,6 +176,17 @@ async def create_gateway_order(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Amount (₹{amount}) cannot exceed current invoice outstanding balance (₹{invoice.outstanding_amount}).",
         )
+    if installment_id is not None:
+        installment = await db.get(FeeInstallment, installment_id)
+        if (
+            not installment
+            or installment.invoice_id != invoice.id
+            or amount > installment.outstanding_amount
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Installment must belong to this invoice and have sufficient outstanding balance.",
+            )
 
     # Fetch Student & Enforce Institution Ownership
     student = await db.get(Student, invoice.student_id)
@@ -373,10 +384,22 @@ async def verify_and_post_gateway_payment(
             order_meta.get("invoice_id") != invoice.id
             or order_meta.get("institution_id") != institution_id
             or Decimal(str(order_meta.get("amount", "0"))) != Decimal(str(amount))
+            or order_meta.get("installment_id") != installment_id
         ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Payment payload does not match server-issued order details.",
+            )
+    if installment_id is not None:
+        installment = await db.get(FeeInstallment, installment_id)
+        if (
+            not installment
+            or installment.invoice_id != invoice.id
+            or amount > installment.outstanding_amount
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Installment must belong to this invoice and have sufficient outstanding balance.",
             )
 
     # 4. Create Canonical Payment Record

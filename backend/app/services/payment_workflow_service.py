@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Service managing payment lifecycle states, ERP approval rules, audited modifications, receipt versioning, and refunds.
 #  */
@@ -25,7 +25,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 
-from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund
+from app.models.payment import (
+    Payment,
+    PaymentAllocation,
+    PaymentReceipt,
+    Refund,
+    RefundAllocation,
+)
 from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
 from app.models.settings import InstitutionSetting
@@ -162,37 +168,155 @@ async def execute_refund_disbursement(
     """
     if refund.status not in ("requested", "approved"):
         raise HTTPException(status_code=400, detail=f"Cannot disburse refund in '{refund.status}' state")
+    if refund.payment_id is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Refund has no originating payment and cannot be reconciled.",
+        )
+    await db.execute(
+        select(Payment)
+        .where(Payment.id == refund.payment_id)
+        .with_for_update(of=Payment)
+    )
+
+    refund_allocations = (
+        await db.execute(
+            select(RefundAllocation)
+            .where(RefundAllocation.refund_id == refund.id)
+            .order_by(RefundAllocation.id)
+            .with_for_update()
+        )
+    ).scalars().all()
+    if not refund_allocations:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "This refund has no persisted invoice allocation. Historical refund "
+                "allocations are not inferred during disbursement."
+            ),
+        )
+    if sum(
+        (Decimal(str(allocation.amount)) for allocation in refund_allocations),
+        Decimal("0.00"),
+    ) != refund.amount:
+        raise HTTPException(
+            status_code=409,
+            detail="Persisted refund allocations do not equal the refund amount.",
+        )
+
+    original_allocations: Dict[int, PaymentAllocation] = {}
+    refund_by_payment_allocation: Dict[int, Decimal] = {}
+    for refund_allocation in refund_allocations:
+        original = (
+            await db.execute(
+                select(PaymentAllocation)
+                .where(PaymentAllocation.id == refund_allocation.payment_allocation_id)
+                .with_for_update()
+            )
+        ).scalar_one_or_none()
+        if not original or original.payment_id != refund.payment_id:
+            raise HTTPException(
+                status_code=409,
+                detail="Refund allocation does not reference an allocation from its original payment.",
+            )
+        original_allocations[original.id] = original
+        refund_by_payment_allocation[original.id] = (
+            refund_by_payment_allocation.get(original.id, Decimal("0.00"))
+            + Decimal(str(refund_allocation.amount))
+        )
+
+    invoice_amounts: Dict[int, Decimal] = {}
+    installment_amounts: Dict[int, Decimal] = {}
+    invoice_snapshots: Dict[int, FeeInvoice] = {}
+    installment_snapshots: Dict[int, FeeInstallment] = {}
+    for allocation_id, amount in refund_by_payment_allocation.items():
+        original = original_allocations[allocation_id]
+        reserved_total = (
+            await db.execute(
+                select(func.coalesce(func.sum(RefundAllocation.amount), 0))
+                .join(Refund, RefundAllocation.refund_id == Refund.id)
+                .where(
+                    Refund.payment_id == refund.payment_id,
+                    Refund.status.in_(["requested", "approved", "completed"]),
+                    RefundAllocation.payment_allocation_id == allocation_id,
+                )
+            )
+        ).scalar_one()
+        if Decimal(str(reserved_total or 0)) > original.allocated_amount:
+            raise HTTPException(
+                status_code=409,
+                detail="Active refunds exceed the original payment allocation.",
+            )
+        invoice_amounts[original.invoice_id] = (
+            invoice_amounts.get(original.invoice_id, Decimal("0.00")) + amount
+        )
+        if original.installment_id is not None:
+            installment_amounts[original.installment_id] = (
+                installment_amounts.get(
+                    original.installment_id, Decimal("0.00")
+                )
+                + amount
+            )
+
+    for invoice_id, amount in invoice_amounts.items():
+        invoice = (
+            await db.execute(
+                select(FeeInvoice)
+                .where(FeeInvoice.id == invoice_id)
+                .with_for_update(of=FeeInvoice)
+            )
+        ).scalar_one_or_none()
+        if not invoice or invoice.paid_amount < amount:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Refund cannot be reconciled against invoice {invoice_id}'s paid balance.",
+            )
+        invoice_snapshots[invoice_id] = invoice
+
+    for installment_id, amount in installment_amounts.items():
+        installment = (
+            await db.execute(
+                select(FeeInstallment)
+                .where(FeeInstallment.id == installment_id)
+                .with_for_update()
+            )
+        ).scalar_one_or_none()
+        if not installment or installment.paid_amount < amount:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Refund cannot be reconciled against installment {installment_id}'s paid balance.",
+            )
+        installment_snapshots[installment_id] = installment
+
+    for invoice_id, amount in invoice_amounts.items():
+        invoice = invoice_snapshots[invoice_id]
+        invoice.paid_amount -= amount
+        invoice.outstanding_amount = min(
+            invoice.net_amount, invoice.outstanding_amount + amount
+        )
+        if invoice.status not in ("cancelled", "written_off"):
+            invoice.status = (
+                "unpaid"
+                if invoice.paid_amount == Decimal("0.00")
+                else "partial"
+            )
+
+    for installment_id, amount in installment_amounts.items():
+        installment = installment_snapshots[installment_id]
+        installment.paid_amount -= amount
+        installment.outstanding_amount = min(
+            installment.amount, installment.outstanding_amount + amount
+        )
+        installment.status = (
+            "unpaid"
+            if installment.paid_amount == Decimal("0.00")
+            else "partial"
+        )
 
     now = datetime.now(timezone.utc)
     refund.status = "completed"
     refund.processed_by_id = current_user_id
     refund.updated_at = now
-
-    # Synchronize FeeInvoice ledger with row-level lock
-    invoice = None
-    if refund.invoice_id:
-        inv_res = await db.execute(
-            select(FeeInvoice).where(FeeInvoice.id == refund.invoice_id).with_for_update(of=FeeInvoice)
-        )
-        invoice = inv_res.scalar_one_or_none()
-    elif refund.payment_id:
-        alloc_res = await db.execute(
-            select(PaymentAllocation).where(PaymentAllocation.payment_id == refund.payment_id)
-        )
-        alloc = alloc_res.scalars().first()
-        if alloc:
-            inv_res = await db.execute(
-                select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id).with_for_update(of=FeeInvoice)
-            )
-            invoice = inv_res.scalar_one_or_none()
-
-    if invoice:
-        invoice.paid_amount = max(Decimal("0.00"), invoice.paid_amount - refund.amount)
-        invoice.outstanding_amount = min(invoice.net_amount, invoice.net_amount - invoice.paid_amount)
-        if invoice.paid_amount <= Decimal("0.01"):
-            invoice.status = "unpaid"
-        else:
-            invoice.status = "partial"
 
     await log_payment_audit(
         db,
@@ -203,9 +327,20 @@ async def execute_refund_disbursement(
         new_data={
             "refund_id": refund.id,
             "refund_amount": float(refund.amount),
-            "invoice_id": invoice.id if invoice else None,
-            "invoice_new_paid": float(invoice.paid_amount) if invoice else None,
-            "invoice_new_outstanding": float(invoice.outstanding_amount) if invoice else None,
+            "invoice_balances": {
+                str(invoice_id): {
+                    "paid": float(invoice.paid_amount),
+                    "outstanding": float(invoice.outstanding_amount),
+                }
+                for invoice_id, invoice in invoice_snapshots.items()
+            },
+            "installment_balances": {
+                str(installment_id): {
+                    "paid": float(installment.paid_amount),
+                    "outstanding": float(installment.outstanding_amount),
+                }
+                for installment_id, installment in installment_snapshots.items()
+            },
         },
         reason=f"Refund #{refund.id} disbursed; invoice receivable ledger synchronized",
     )
@@ -259,37 +394,210 @@ async def execute_payment_posting(
         select(PaymentAllocation).where(PaymentAllocation.payment_id == payment.id)
     )
     allocations = alloc_res.scalars().all()
+    allocations_by_invoice: Dict[int, List[PaymentAllocation]] = {}
+    for allocation in allocations:
+        allocations_by_invoice.setdefault(allocation.invoice_id, []).append(allocation)
 
-    # Apply allocations to invoices & installments with row-level lock
-    for alloc in allocations:
-        inv_res = await db.execute(
-            select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id).with_for_update(of=FeeInvoice)
+    for invoice_id, invoice_allocations_for_invoice in allocations_by_invoice.items():
+        invoice_wide = [
+            allocation
+            for allocation in invoice_allocations_for_invoice
+            if allocation.installment_id is None
+        ]
+        if not invoice_wide:
+            continue
+        invoice = (
+            await db.execute(
+                select(FeeInvoice)
+                .where(FeeInvoice.id == invoice_id)
+                .with_for_update(of=FeeInvoice)
+            )
+        ).scalar_one_or_none()
+        if not invoice:
+            raise HTTPException(status_code=404, detail=f"Invoice {invoice_id} not found")
+        scheduled_installments = (
+            await db.execute(
+                select(FeeInstallment)
+                .where(FeeInstallment.invoice_id == invoice_id)
+                .order_by(FeeInstallment.due_date, FeeInstallment.installment_number)
+                .with_for_update()
+            )
+        ).scalars().all()
+        if not scheduled_installments:
+            continue
+
+        explicit_totals: Dict[int, Decimal] = {}
+        for allocation in invoice_allocations_for_invoice:
+            if allocation.installment_id is not None:
+                explicit_totals[allocation.installment_id] = (
+                    explicit_totals.get(
+                        allocation.installment_id, Decimal("0.00")
+                    )
+                    + allocation.allocated_amount
+                )
+        available = []
+        for installment in scheduled_installments:
+            remaining = (
+                Decimal(str(installment.outstanding_amount))
+                - explicit_totals.get(installment.id, Decimal("0.00"))
+            )
+            if remaining > 0:
+                available.append((installment, remaining))
+        invoice_wide_amount = sum(
+            (allocation.allocated_amount for allocation in invoice_wide),
+            Decimal("0.00"),
         )
-        invoice = inv_res.scalar_one_or_none()
+        if invoice_wide_amount <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Payment allocations must be positive currency amounts.",
+            )
+        if invoice_wide_amount > sum(
+            (amount for _, amount in available), Decimal("0.00")
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Invoice-wide payment exceeds the remaining scheduled installment balances.",
+            )
+
+        remaining_to_allocate = invoice_wide_amount
+        splits = []
+        for installment, available_amount in available:
+            if remaining_to_allocate <= 0:
+                break
+            amount = min(remaining_to_allocate, available_amount)
+            splits.append((installment, amount))
+            remaining_to_allocate -= amount
+
+        source_allocation = invoice_wide[0]
+        source_allocation.installment_id = splits[0][0].id
+        source_allocation.allocated_amount = splits[0][1]
+        normalized_allocations = []
+        for installment, amount in splits[1:]:
+            normalized_allocations.append(
+                PaymentAllocation(
+                    payment_id=payment.id,
+                    invoice_id=invoice_id,
+                    installment_id=installment.id,
+                    allocated_amount=amount,
+                )
+            )
+        db.add_all(normalized_allocations)
+        for redundant_allocation in invoice_wide[1:]:
+            await db.delete(redundant_allocation)
+        allocations = [
+            allocation
+            for allocation in allocations
+            if allocation not in invoice_wide[1:]
+        ]
+        await db.flush()
+        allocations.extend(normalized_allocations)
+
+    if sum((a.allocated_amount for a in allocations), Decimal("0.00")) != payment.amount:
+        raise HTTPException(
+            status_code=400,
+            detail="Payment allocations must equal the payment amount before posting.",
+        )
+
+    invoice_allocations: Dict[int, Decimal] = {}
+    installment_allocations: Dict[int, Decimal] = {}
+    invoices: Dict[int, FeeInvoice] = {}
+    installments: Dict[int, FeeInstallment] = {}
+    for alloc in allocations:
+        if alloc.allocated_amount <= 0 or alloc.allocated_amount != alloc.allocated_amount.quantize(Decimal("0.01")):
+            raise HTTPException(status_code=400, detail="Payment allocations must be positive currency amounts.")
+        invoice = invoices.get(alloc.invoice_id)
+        if invoice is None:
+            inv_res = await db.execute(
+                select(FeeInvoice)
+                .where(FeeInvoice.id == alloc.invoice_id)
+                .with_for_update(of=FeeInvoice)
+            )
+            invoice = inv_res.scalar_one_or_none()
         if not invoice:
             raise HTTPException(status_code=404, detail=f"Invoice {alloc.invoice_id} not found")
-
-        invoice.paid_amount = invoice.paid_amount + alloc.allocated_amount
-        invoice.outstanding_amount = max(
-            invoice.outstanding_amount - alloc.allocated_amount, Decimal("0.00")
+        invoices[alloc.invoice_id] = invoice
+        if invoice.student_id != payment.student_id:
+            raise HTTPException(status_code=400, detail="Payment allocation invoice belongs to another student.")
+        if invoice.status in ("cancelled", "written_off"):
+            raise HTTPException(status_code=400, detail=f"Invoice {invoice.invoice_number} is not payable.")
+        invoice_allocations[alloc.invoice_id] = (
+            invoice_allocations.get(alloc.invoice_id, Decimal("0.00"))
+            + alloc.allocated_amount
         )
-        if invoice.outstanding_amount <= Decimal("0.01"):
-            invoice.status = "paid"
-        elif invoice.paid_amount > Decimal("0"):
-            invoice.status = "partial"
 
         if alloc.installment_id:
-            inst_res = await db.execute(
-                select(FeeInstallment).where(FeeInstallment.id == alloc.installment_id)
+            installment = installments.get(alloc.installment_id)
+            if installment is None:
+                inst_res = await db.execute(
+                    select(FeeInstallment)
+                    .where(FeeInstallment.id == alloc.installment_id)
+                    .with_for_update()
+                )
+                installment = inst_res.scalar_one_or_none()
+            if not installment or installment.invoice_id != alloc.invoice_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Installment {alloc.installment_id} does not belong to invoice {alloc.invoice_id}.",
+                )
+            installments[alloc.installment_id] = installment
+            installment_allocations[alloc.installment_id] = (
+                installment_allocations.get(alloc.installment_id, Decimal("0.00"))
+                + alloc.allocated_amount
             )
-            installment = inst_res.scalar_one_or_none()
-            if installment:
-                installment.paid_amount = installment.paid_amount + alloc.allocated_amount
-                remaining = installment.amount - installment.paid_amount
-                if remaining <= Decimal("0.01"):
-                    installment.status = "paid"
-                elif installment.paid_amount > Decimal("0"):
-                    installment.status = "partial"
+
+    for invoice_id, amount in invoice_allocations.items():
+        invoice = invoices[invoice_id]
+        if amount > invoice.outstanding_amount:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Allocation exceeds current invoice balance ({invoice.outstanding_amount}).",
+            )
+        schedule_res = await db.execute(
+            select(FeeInstallment.id)
+            .where(FeeInstallment.invoice_id == invoice_id)
+            .with_for_update()
+        )
+        scheduled_ids = set(schedule_res.scalars().all())
+        has_invoice_wide_allocation = any(
+            alloc.invoice_id == invoice_id and alloc.installment_id is None
+            for alloc in allocations
+        )
+        if scheduled_ids and has_invoice_wide_allocation:
+            raise HTTPException(
+                status_code=400,
+                detail="Scheduled invoices require payment allocations linked to installments.",
+            )
+
+    for installment_id, amount in installment_allocations.items():
+        installment = installments[installment_id]
+        if amount > installment.outstanding_amount:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Allocation exceeds current installment balance ({installment.outstanding_amount}).",
+            )
+
+    for invoice_id, amount in invoice_allocations.items():
+        invoice = invoices[invoice_id]
+        invoice.paid_amount += amount
+        invoice.outstanding_amount = max(
+            Decimal("0.00"), invoice.outstanding_amount - amount
+        )
+        if invoice.outstanding_amount == Decimal("0.00"):
+            invoice.status = "paid"
+        elif invoice.paid_amount > Decimal("0.00"):
+            invoice.status = "partial"
+
+    for installment_id, amount in installment_allocations.items():
+        installment = installments[installment_id]
+        installment.paid_amount += amount
+        installment.outstanding_amount = max(
+            Decimal("0.00"), installment.outstanding_amount - amount
+        )
+        if installment.outstanding_amount == Decimal("0.00"):
+            installment.status = "paid"
+        elif installment.paid_amount > Decimal("0.00"):
+            installment.status = "partial"
 
     # Generate sequential receipt number conforming to institute rules
     receipt_number = await generate_next_receipt_number(
@@ -474,6 +782,27 @@ async def execute_payment_edit(
         )
         allocations_changed = "allocations" in update_data and update_data["allocations"] is not None
 
+        if amount_changed or method_changed or allocations_changed:
+            has_refund_allocations = (
+                await db.execute(
+                    select(RefundAllocation.id)
+                    .join(
+                        PaymentAllocation,
+                        RefundAllocation.payment_allocation_id == PaymentAllocation.id,
+                    )
+                    .where(PaymentAllocation.payment_id == payment.id)
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if has_refund_allocations is not None:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "A payment with refund allocation history cannot be financially "
+                        "edited because its original allocation records are immutable."
+                    ),
+                )
+
         # Fetch current valid receipt
         curr_receipt = None
         if "receipts" in payment.__dict__ and payment.receipts:
@@ -562,6 +891,9 @@ async def execute_payment_edit(
                 inst = inst_res.scalar_one_or_none()
                 if inst:
                     inst.paid_amount = max(Decimal("0.00"), inst.paid_amount - old_a.allocated_amount)
+                    inst.outstanding_amount = min(
+                        inst.amount, inst.outstanding_amount + old_a.allocated_amount
+                    )
                     inst.status = "unpaid" if inst.paid_amount <= Decimal("0.00") else "partial"
 
         # 2. Update payment attributes
@@ -660,7 +992,10 @@ async def execute_payment_edit(
                 inst = inst_res.scalar_one_or_none()
                 if inst:
                     inst.paid_amount = inst.paid_amount + alloc_amt
-                    if inst.paid_amount >= inst.amount - Decimal("0.01"):
+                    inst.outstanding_amount = max(
+                        Decimal("0.00"), inst.outstanding_amount - alloc_amt
+                    )
+                    if inst.outstanding_amount == Decimal("0.00"):
                         inst.status = "paid"
                     elif inst.paid_amount > Decimal("0.00"):
                         inst.status = "partial"

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -92,7 +92,7 @@ def apply_report_environment_filter(query, model, data_env: str):
         return query.where(model.is_demo == False)
     return query
 from app.models.payment import Payment, PaymentReceipt, Refund
-from app.models.fee import FeeInvoice
+from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
 from app.models.division import Division
 from app.models.standard import Standard
@@ -1480,7 +1480,7 @@ async def fee_defaulters_aging_report(
         .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
         .outerjoin(Division, StudentEnrollment.division_id == Division.id)
         .where(
-            FeeInvoice.status.in_(["unpaid", "overdue", "partially_paid", "partial"]),
+            FeeInvoice.status.in_(["unpaid", "overdue", "partially_paid", "partial", "pending"]),
             FeeInvoice.due_date < today,
         )
     )
@@ -1498,28 +1498,73 @@ async def fee_defaulters_aging_report(
     res = await db.execute(query.order_by(FeeInvoice.due_date))
     rows = res.all()
 
+    invoice_ids = list({invoice.id for invoice, *_ in rows})
+    schedules_by_invoice: Dict[int, List[FeeInstallment]] = {}
+    if invoice_ids:
+        schedule_rows = (
+            await db.execute(
+                select(FeeInstallment)
+                .where(FeeInstallment.invoice_id.in_(invoice_ids))
+                .order_by(FeeInstallment.due_date, FeeInstallment.installment_number)
+            )
+        ).scalars().all()
+        for installment in schedule_rows:
+            schedules_by_invoice.setdefault(installment.invoice_id, []).append(
+                installment
+            )
+
     records = []
     for inv, s, enr, std, div in rows:
-        days = (today - inv.due_date).days if inv.due_date else 0
-        if days < min_days_overdue:
-            continue
+        invoice_schedules = schedules_by_invoice.get(inv.id, [])
+        overdue_schedules = [
+            installment
+            for installment in invoice_schedules
+            if installment.outstanding_amount > 0 and installment.due_date < today
+        ]
+        if overdue_schedules:
+            receivables = [
+                (
+                    installment.id,
+                    f"{inv.invoice_number} — {installment.description}",
+                    installment.due_date,
+                    installment.outstanding_amount,
+                )
+                for installment in overdue_schedules
+            ]
+        elif not invoice_schedules and inv.outstanding_amount > 0:
+            receivables = [
+                (
+                    None,
+                    f"Invoice {inv.invoice_number}",
+                    inv.due_date,
+                    inv.outstanding_amount,
+                )
+            ]
+        else:
+            receivables = []
 
-        records.append({
-            "installment_id": inv.id,
-            "invoice_id": inv.id,
-            "student_id": s.id,
-            "admission_number": s.admission_number,
-            "student_name": f"{s.first_name} {s.last_name}",
-            "standard_name": std.name if std else "N/A",
-            "division_name": div.name if div else "N/A",
-            "guardian_phone": s.phone or "N/A",
-            "installment_name": f"Invoice {inv.invoice_number}",
-            "due_date": inv.due_date.isoformat() if inv.due_date else None,
-            "days_overdue": days,
-            "overdue_amount": float(inv.outstanding_amount),
-            "total_outstanding": float(inv.outstanding_amount),
-            "status": "Severely Overdue" if days > 60 else ("Overdue" if days > 30 else "Grace Period"),
-        })
+        for installment_id, name, due_date, amount in receivables:
+            if due_date is None:
+                continue
+            days = (today - due_date).days
+            if days < min_days_overdue:
+                continue
+            records.append({
+                "installment_id": installment_id,
+                "invoice_id": inv.id,
+                "student_id": s.id,
+                "admission_number": s.admission_number,
+                "student_name": f"{s.first_name} {s.last_name}",
+                "standard_name": std.name if std else "N/A",
+                "division_name": div.name if div else "N/A",
+                "guardian_phone": s.phone or "N/A",
+                "installment_name": name,
+                "due_date": due_date.isoformat(),
+                "days_overdue": days,
+                "overdue_amount": float(amount),
+                "total_outstanding": float(inv.outstanding_amount),
+                "status": "Severely Overdue" if days > 60 else ("Overdue" if days > 30 else "Grace Period"),
+            })
 
     return await CodeXService.mask_records_list(
         db=db,

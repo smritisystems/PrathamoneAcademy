@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -317,22 +317,49 @@ export interface FeeStructure {
   is_active?: boolean
 }
 
+export interface FeeAssignment {
+  id: number
+  student_id: number
+  fee_structure_id: number
+  academic_year_id: number
+  custom_amount: number | null
+  concession_amount: number
+  fee_structure_name: string | null
+  fee_amount: number | null
+  installments_count: number
+  remarks?: string | null
+}
+
 export interface FeeInvoice {
   id: number
   invoice_number: string
   student_id: number
+  student_name?: string
+  admission_number?: string
+  student_phone?: string | null
+  assignment_id?: number
   academic_year_id?: number
   total_amount: number
   discount_amount: number
   net_amount: number
   paid_amount: number
   outstanding_amount: number
-  status: 'unpaid' | 'partial' | 'paid' | 'cancelled' | 'overdue'
+  status: 'unpaid' | 'partial' | 'paid' | 'cancelled' | 'overdue' | 'pending' | 'written_off' | string
   issue_date: string
   due_date?: string
   notes?: string
   items?: FeeInvoiceItem[]
   installments?: FeeInstallment[]
+}
+
+export interface FeeInvoiceCreatePayload {
+  student_id: number
+  assignment_id: number
+  academic_year_id: number
+  issue_date: string
+  due_date?: string
+  notes?: string
+  installments: { description: string; due_date: string; amount: number }[]
 }
 
 export interface FeeInvoiceItem {
@@ -422,6 +449,7 @@ export interface RefundRecord {
   enrollment_id?: number
   payment_id?: number
   amount: number
+  allocations?: { invoice_id: number; amount: number }[]
   reason: string
   status: 'requested' | 'approved' | 'rejected' | 'processed' | 'completed' | string
   refund_method?: string

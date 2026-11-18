@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Service layer providing message templating, channel dispatch adapters (WhatsApp, Email, SMS), automated fee reminders, attendance alerts, homework notifications, examination schedules, and secure document sharing.
 #  */
@@ -227,7 +227,10 @@ async def generate_fee_reminder_queue(
     stmt = (
         select(FeeInvoice, Student)
         .join(Student, FeeInvoice.student_id == Student.id)
-        .options(selectinload(Student.guardians))
+        .options(
+            selectinload(Student.guardians),
+            selectinload(FeeInvoice.installments),
+        )
         .where(
             and_(
                 Student.institution_id == institution_id,
@@ -235,7 +238,12 @@ async def generate_fee_reminder_queue(
                 (FeeInvoice.net_amount - FeeInvoice.paid_amount) >= min_balance
             )
         )
-        .order_by(Student.first_name, Student.last_name)
+        .order_by(
+            Student.first_name,
+            Student.last_name,
+            FeeInvoice.due_date,
+            FeeInvoice.id,
+        )
     )
 
     result = await db.execute(stmt)
@@ -249,8 +257,24 @@ async def generate_fee_reminder_queue(
             continue
         seen_students.add(student.id)
 
-        pending_amt = float(invoice.net_amount - invoice.paid_amount)
-        due_str = invoice.due_date.strftime("%d-%b-%Y") if invoice.due_date else "Immediate"
+        pending_installments = sorted(
+            (
+                installment
+                for installment in invoice.installments
+                if installment.outstanding_amount > 0
+            ),
+            key=lambda installment: (
+                installment.due_date,
+                installment.installment_number,
+            ),
+        )
+        if pending_installments:
+            next_installment = pending_installments[0]
+            pending_amt = float(next_installment.outstanding_amount)
+            due_str = next_installment.due_date.strftime("%d-%b-%Y")
+        else:
+            pending_amt = float(invoice.outstanding_amount)
+            due_str = invoice.due_date.strftime("%d-%b-%Y") if invoice.due_date else "Immediate"
 
         # Resolve guardian contact
         guardian_name = "Parent / Guardian"

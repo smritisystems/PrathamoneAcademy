@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -28,7 +28,14 @@ import re
 
 from app.core.database import get_db
 from app.core.deps import get_current_active_user, require_role, is_sysadmin, check_institution_access, has_permission, require_permission, get_user_permissions
-from app.models.payment import Payment, PaymentAllocation, PaymentReceipt, Refund, FinancialPeriod
+from app.models.payment import (
+    Payment,
+    PaymentAllocation,
+    PaymentReceipt,
+    Refund,
+    RefundAllocation,
+    FinancialPeriod,
+)
 from app.models.fee import FeeInvoice, FeeInstallment
 from app.models.student import Student
 from app.models.enrollment import StudentEnrollment
@@ -58,6 +65,7 @@ from app.services.payment_workflow_service import (
     execute_refund_disbursement,
     check_financial_period_open,
 )
+from app.services.financial_allocation import allocate_proportionally
 from pydantic import BaseModel, Field
 
 router = APIRouter()
@@ -122,7 +130,7 @@ class AllocationInput(BaseModel):
 class PaymentCreate(BaseModel):
     student_id: int
     academic_year_id: int
-    amount: Decimal
+    amount: Decimal = Field(gt=0)
     payment_date: date
     payment_method: str
     transaction_reference: Optional[str] = None
@@ -136,7 +144,7 @@ class PaymentCreate(BaseModel):
 
 
 class PaymentUpdate(BaseModel):
-    amount: Optional[Decimal] = None
+    amount: Optional[Decimal] = Field(default=None, gt=0)
     payment_date: Optional[date] = None
     payment_method: Optional[str] = None
     transaction_reference: Optional[str] = None
@@ -155,6 +163,7 @@ class ReversalRequest(BaseModel):
 
 class RefundRequest(BaseModel):
     amount: Decimal
+    invoice_id: Optional[int] = None
     refund_method: str = "bank_transfer"
     reason: str
     reference_number: Optional[str] = None
@@ -165,6 +174,180 @@ class RefundRequest(BaseModel):
 
 class RefundRejectRequest(BaseModel):
     reason: str
+
+
+async def _normalize_payment_allocations(
+    db: AsyncSession,
+    student_id: int,
+    allocations: List[AllocationInput],
+    *,
+    restore_payment_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    grouped: Dict[int, List[AllocationInput]] = {}
+    for allocation in allocations:
+        if (
+            allocation.amount <= 0
+            or allocation.amount != allocation.amount.quantize(Decimal("0.01"))
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Payment allocations must be positive currency amounts with at most two decimal places.",
+            )
+        grouped.setdefault(allocation.invoice_id, []).append(allocation)
+
+    old_invoice_amounts: Dict[int, Decimal] = {}
+    old_installment_amounts: Dict[int, Decimal] = {}
+    if restore_payment_id is not None:
+        old_rows = (
+            await db.execute(
+                select(PaymentAllocation).where(
+                    PaymentAllocation.payment_id == restore_payment_id
+                )
+            )
+        ).scalars().all()
+        for row in old_rows:
+            old_invoice_amounts[row.invoice_id] = (
+                old_invoice_amounts.get(row.invoice_id, Decimal("0.00"))
+                + Decimal(str(row.allocated_amount))
+            )
+            if row.installment_id is not None:
+                old_installment_amounts[row.installment_id] = (
+                    old_installment_amounts.get(
+                        row.installment_id, Decimal("0.00")
+                    )
+                    + Decimal(str(row.allocated_amount))
+                )
+
+    normalized: List[Dict[str, Any]] = []
+    for invoice_id, invoice_allocations in grouped.items():
+        invoice = (
+            await db.execute(
+                select(FeeInvoice)
+                .where(FeeInvoice.id == invoice_id)
+                .with_for_update(of=FeeInvoice)
+            )
+        ).scalar_one_or_none()
+        if not invoice:
+            raise HTTPException(status_code=404, detail=f"Invoice {invoice_id} not found")
+        if invoice.student_id != student_id:
+            raise HTTPException(status_code=400, detail="Invoice does not belong to this student")
+        if invoice.status in ("cancelled", "written_off"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invoice {invoice.invoice_number} is not eligible for payment.",
+            )
+
+        invoice_amount = sum(
+            (allocation.amount for allocation in invoice_allocations),
+            Decimal("0.00"),
+        )
+        invoice_remaining = (
+            Decimal(str(invoice.outstanding_amount))
+            + old_invoice_amounts.get(invoice_id, Decimal("0.00"))
+        )
+        if invoice_amount > invoice_remaining:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Allocation amount {invoice_amount} exceeds invoice balance "
+                    f"{invoice_remaining}."
+                ),
+            )
+
+        installments = (
+            await db.execute(
+                select(FeeInstallment)
+                .where(FeeInstallment.invoice_id == invoice_id)
+                .order_by(FeeInstallment.due_date, FeeInstallment.installment_number)
+                .with_for_update()
+            )
+        ).scalars().all()
+        installments_by_id = {installment.id: installment for installment in installments}
+        explicit_by_installment: Dict[int, Decimal] = {}
+        invoice_wide_amount = Decimal("0.00")
+
+        for allocation in invoice_allocations:
+            if allocation.installment_id is None:
+                invoice_wide_amount += allocation.amount
+                continue
+            installment = installments_by_id.get(allocation.installment_id)
+            if not installment:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Installment {allocation.installment_id} not found for invoice {invoice_id}.",
+                )
+            explicit_by_installment[installment.id] = (
+                explicit_by_installment.get(installment.id, Decimal("0.00"))
+                + allocation.amount
+            )
+
+        if not installments:
+            if explicit_by_installment:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Historical unscheduled invoices accept invoice-level allocations only.",
+                )
+            normalized.append(
+                {
+                    "invoice_id": invoice_id,
+                    "installment_id": None,
+                    "amount": invoice_amount,
+                }
+            )
+            continue
+
+        allocated_for_installments: Dict[int, Decimal] = {}
+        for installment_id, amount in explicit_by_installment.items():
+            installment = installments_by_id[installment_id]
+            remaining = (
+                Decimal(str(installment.outstanding_amount))
+                + old_installment_amounts.get(installment_id, Decimal("0.00"))
+            )
+            if amount > remaining:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Allocation exceeds installment balance ({remaining}).",
+                )
+            allocated_for_installments[installment_id] = amount
+
+        available = []
+        for installment in installments:
+            remaining = (
+                Decimal(str(installment.outstanding_amount))
+                + old_installment_amounts.get(installment.id, Decimal("0.00"))
+                - allocated_for_installments.get(installment.id, Decimal("0.00"))
+            )
+            if remaining > 0:
+                available.append((installment, remaining))
+        total_available = sum((amount for _, amount in available), Decimal("0.00"))
+        if invoice_wide_amount > total_available:
+            raise HTTPException(
+                status_code=400,
+                detail="Invoice-wide payment exceeds the remaining scheduled installment balances.",
+            )
+
+        remaining_to_allocate = invoice_wide_amount
+        for installment, available_amount in available:
+            if remaining_to_allocate <= 0:
+                break
+            amount = min(remaining_to_allocate, available_amount)
+            allocated_for_installments[installment.id] = (
+                allocated_for_installments.get(installment.id, Decimal("0.00"))
+                + amount
+            )
+            remaining_to_allocate -= amount
+
+        normalized.extend(
+            {
+                "invoice_id": invoice_id,
+                "installment_id": installment_id,
+                "amount": amount,
+            }
+            for installment_id, amount in allocated_for_installments.items()
+            if amount > 0
+        )
+
+    return normalized
 
 
 class OnlineOrderCreate(BaseModel):
@@ -292,8 +475,10 @@ async def create_payment(
             }
 
     # 1. Validate allocation total equals payment amount
-    total_allocated = sum(a.amount for a in data.allocations)
-    if abs(total_allocated - data.amount) > Decimal("0.01"):
+    total_allocated = sum(
+        (a.amount for a in data.allocations), Decimal("0.00")
+    )
+    if total_allocated != data.amount:
         raise HTTPException(
             status_code=400,
             detail=f"Total allocation ({total_allocated}) must equal payment amount ({data.amount})",
@@ -308,38 +493,9 @@ async def create_payment(
         raise HTTPException(status_code=404, detail="Student not found")
     check_institution_access(target_student.institution_id, current_user)
 
-    # Validate each allocation against invoice & installment
-    for alloc in data.allocations:
-        inv_result = await db.execute(
-            select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id)
-        )
-        invoice = inv_result.scalar_one_or_none()
-        if not invoice:
-            raise HTTPException(status_code=404, detail=f"Invoice {alloc.invoice_id} not found")
-        if invoice.student_id != data.student_id:
-            raise HTTPException(status_code=400, detail="Invoice does not belong to this student")
-        if alloc.amount > invoice.outstanding_amount + Decimal("0.01"):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Allocation amount {alloc.amount} exceeds outstanding balance {invoice.outstanding_amount}",
-            )
-
-        if alloc.installment_id:
-            inst_result = await db.execute(
-                select(FeeInstallment).where(
-                    FeeInstallment.id == alloc.installment_id,
-                    FeeInstallment.invoice_id == alloc.invoice_id,
-                )
-            )
-            installment = inst_result.scalar_one_or_none()
-            if not installment:
-                raise HTTPException(status_code=404, detail=f"Installment {alloc.installment_id} not found")
-            remaining = installment.amount - installment.paid_amount
-            if alloc.amount > remaining + Decimal("0.01"):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Allocation exceeds installment balance ({remaining})",
-                )
+    normalized_allocations = await _normalize_payment_allocations(
+        db, data.student_id, data.allocations
+    )
 
     effective_inst_id = getattr(current_user, "institution_id", None) or 1
     settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
@@ -358,12 +514,12 @@ async def create_payment(
         db.add(payment)
         await db.flush()
 
-        for alloc in data.allocations:
+        for alloc in normalized_allocations:
             db.add(PaymentAllocation(
                 payment_id=payment.id,
-                invoice_id=alloc.invoice_id,
-                installment_id=alloc.installment_id,
-                allocated_amount=alloc.amount,
+                invoice_id=alloc["invoice_id"],
+                installment_id=alloc["installment_id"],
+                allocated_amount=alloc["amount"],
             ))
 
         await db.commit()
@@ -388,12 +544,12 @@ async def create_payment(
         db.add(payment)
         await db.flush()
 
-        for alloc in data.allocations:
+        for alloc in normalized_allocations:
             db.add(PaymentAllocation(
                 payment_id=payment.id,
-                invoice_id=alloc.invoice_id,
-                installment_id=alloc.installment_id,
-                allocated_amount=alloc.amount,
+                invoice_id=alloc["invoice_id"],
+                installment_id=alloc["installment_id"],
+                allocated_amount=alloc["amount"],
             ))
 
         await db.commit()
@@ -427,12 +583,12 @@ async def create_payment(
         db.add(payment)
         await db.flush()
 
-        for alloc in data.allocations:
+        for alloc in normalized_allocations:
             db.add(PaymentAllocation(
                 payment_id=payment.id,
-                invoice_id=alloc.invoice_id,
-                installment_id=alloc.installment_id,
-                allocated_amount=alloc.amount,
+                invoice_id=alloc["invoice_id"],
+                installment_id=alloc["installment_id"],
+                allocated_amount=alloc["amount"],
             ))
 
         await db.commit()
@@ -457,12 +613,12 @@ async def create_payment(
     db.add(payment)
     await db.flush()
 
-    for alloc in data.allocations:
+    for alloc in normalized_allocations:
         db.add(PaymentAllocation(
             payment_id=payment.id,
-            invoice_id=alloc.invoice_id,
-            installment_id=alloc.installment_id,
-            allocated_amount=alloc.amount,
+            invoice_id=alloc["invoice_id"],
+            installment_id=alloc["installment_id"],
+            allocated_amount=alloc["amount"],
         ))
 
     receipt = await execute_payment_posting(
@@ -902,8 +1058,60 @@ async def update_payment(
             )
 
     update_dict = data.model_dump(exclude_unset=True, exclude={"reason", "edit_reason"})
-    if "allocations" in update_dict and update_dict["allocations"]:
-        update_dict["allocations"] = [a.model_dump() for a in data.allocations]
+    allocations_to_normalize = data.allocations
+    if (
+        allocations_to_normalize is None
+        and data.amount is not None
+        and data.amount != payment.amount
+    ):
+        if not payment.allocations:
+            raise HTTPException(
+                status_code=400,
+                detail="Payment amount cannot be changed because the payment has no invoice allocations.",
+            )
+        try:
+            scaled = allocate_proportionally(
+                data.amount,
+                [
+                    (
+                        allocation,
+                        Decimal(str(allocation.allocated_amount)),
+                        (allocation.invoice_id, allocation.id),
+                    )
+                    for allocation in payment.allocations
+                ],
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        allocations_to_normalize = [
+            AllocationInput(
+                invoice_id=allocation.invoice_id,
+                installment_id=allocation.installment_id,
+                amount=amount,
+            )
+            for allocation, amount in scaled
+        ]
+
+    if allocations_to_normalize is not None:
+        edited_amount = data.amount if data.amount is not None else payment.amount
+        requested_total = sum(
+            (allocation.amount for allocation in allocations_to_normalize),
+            Decimal("0.00"),
+        )
+        if requested_total != edited_amount:
+            raise HTTPException(
+                status_code=400,
+                detail="Updated payment allocations must equal the updated payment amount.",
+            )
+        restore_payment_id = (
+            payment.id if payment.status in ("posted", "completed") else None
+        )
+        update_dict["allocations"] = await _normalize_payment_allocations(
+            db,
+            payment.student_id,
+            allocations_to_normalize,
+            restore_payment_id=restore_payment_id,
+        )
 
     effective_inst_id = getattr(current_user, "institution_id", None) or 1
 
@@ -1090,6 +1298,87 @@ async def create_payment_refund(
             detail=f"Requested refund (₹{data.amount}) exceeds remaining refundable balance (₹{max_refundable})",
         )
 
+    original_allocations = sorted(
+        payment.allocations, key=lambda allocation: allocation.id
+    )
+    if not original_allocations:
+        raise HTTPException(
+            status_code=409,
+            detail="This payment has no invoice allocation history; a refund cannot be reconciled safely.",
+        )
+
+    active_refunds = (
+        await db.execute(
+            select(Refund).where(
+                Refund.payment_id == payment_id,
+                Refund.status.in_(["requested", "approved", "completed"]),
+            )
+        )
+    ).scalars().all()
+    active_refund_ids = [refund_row.id for refund_row in active_refunds]
+    already_refunded: Dict[int, Decimal] = {}
+    if active_refund_ids:
+        prior_allocations = (
+            await db.execute(
+                select(RefundAllocation).where(
+                    RefundAllocation.refund_id.in_(active_refund_ids)
+                )
+            )
+        ).scalars().all()
+        allocated_refund_ids = {row.refund_id for row in prior_allocations}
+        if any(refund_row.id not in allocated_refund_ids for refund_row in active_refunds):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "A prior refund has no persisted invoice allocation. Resolve that legacy "
+                    "refund from authoritative records before requesting another refund."
+                ),
+            )
+        for refund_allocation in prior_allocations:
+            already_refunded[refund_allocation.payment_allocation_id] = (
+                already_refunded.get(
+                    refund_allocation.payment_allocation_id, Decimal("0.00")
+                )
+                + Decimal(str(refund_allocation.amount))
+            )
+
+    eligible_allocations = []
+    for allocation in original_allocations:
+        if data.invoice_id is not None and allocation.invoice_id != data.invoice_id:
+            continue
+        remaining_amount = (
+            Decimal(str(allocation.allocated_amount))
+            - already_refunded.get(allocation.id, Decimal("0.00"))
+        )
+        if remaining_amount > 0:
+            eligible_allocations.append((allocation, remaining_amount))
+    if data.invoice_id is not None and not any(
+        allocation.invoice_id == data.invoice_id
+        for allocation in original_allocations
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="The selected invoice was not part of this payment.",
+        )
+    eligible_total = sum(
+        (remaining for _, remaining in eligible_allocations), Decimal("0.00")
+    )
+    if data.amount > eligible_total:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Requested refund exceeds the remaining refundable amount ({eligible_total}).",
+        )
+    try:
+        refund_splits = allocate_proportionally(
+            data.amount,
+            [
+                (allocation, remaining, (allocation.invoice_id, allocation.id))
+                for allocation, remaining in eligible_allocations
+            ],
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     effective_inst_id = getattr(current_user, "institution_id", None) or 1
     settings = await get_payment_workflow_settings(db, institution_id=effective_inst_id)
 
@@ -1109,7 +1398,7 @@ async def create_payment_refund(
         institution_id=effective_inst_id,
         student_id=payment.student_id,
         payment_id=payment.id,
-        invoice_id=payment.allocations[0].invoice_id if payment.allocations else None,
+        invoice_id=data.invoice_id,
         amount=data.amount,
         refund_date=date.today(),
         refund_method=data.refund_method,
@@ -1125,6 +1414,15 @@ async def create_payment_refund(
     )
     db.add(refund)
     await db.flush()
+    for allocation, amount in refund_splits:
+        if amount > 0:
+            db.add(
+                RefundAllocation(
+                    refund_id=refund.id,
+                    payment_allocation_id=allocation.id,
+                    amount=amount,
+                )
+            )
 
     if initial_status == "completed":
         refund.status = "approved"
@@ -1297,6 +1595,29 @@ async def list_refunds(
 
     query = query.order_by(desc(Refund.refund_date), desc(Refund.id))
     rows = (await db.execute(query)).all()
+    refund_ids = [refund_row.id for refund_row, _, _ in rows]
+    allocation_details: Dict[int, List[Dict[str, Any]]] = {}
+    if refund_ids:
+        refund_rows = (
+            await db.execute(
+                select(
+                    RefundAllocation.refund_id,
+                    PaymentAllocation.invoice_id,
+                    func.sum(RefundAllocation.amount).label("amount"),
+                )
+                .join(
+                    PaymentAllocation,
+                    RefundAllocation.payment_allocation_id == PaymentAllocation.id,
+                )
+                .where(RefundAllocation.refund_id.in_(refund_ids))
+                .group_by(RefundAllocation.refund_id, PaymentAllocation.invoice_id)
+                .order_by(RefundAllocation.refund_id, PaymentAllocation.invoice_id)
+            )
+        ).all()
+        for refund_id, invoice_id, amount in refund_rows:
+            allocation_details.setdefault(refund_id, []).append(
+                {"invoice_id": invoice_id, "amount": float(amount)}
+            )
 
     return [
         {
@@ -1307,6 +1628,7 @@ async def list_refunds(
             "payment_id": r.payment_id,
             "receipt_number": rec_num,
             "amount": float(r.amount),
+            "allocations": allocation_details.get(r.id, []),
             "refund_date": str(r.refund_date),
             "refund_method": r.refund_method,
             "reason": r.reason,
@@ -1686,7 +2008,7 @@ async def get_payment(
         payment.student.institution_id if payment.student else None,
         current_user,
     )
-    
+
     curr_rec = next((r for r in payment.receipts if r.status == "valid"), None) if payment.receipts else None
     return {
         "id": payment.id,
@@ -1743,6 +2065,21 @@ async def reverse_payment(
 
     # Only posted/completed payments affected ledger balances
     if payment.status in ("posted", "completed"):
+        active_refund = (
+            await db.execute(
+                select(Refund.id)
+                .where(
+                    Refund.payment_id == payment.id,
+                    Refund.status.in_(["requested", "approved", "completed"]),
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if active_refund is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="A payment with an active or completed refund cannot be reversed.",
+            )
         for alloc in payment.allocations:
             inv_result = await db.execute(
                 select(FeeInvoice).where(FeeInvoice.id == alloc.invoice_id).with_for_update(of=FeeInvoice)
@@ -1768,6 +2105,10 @@ async def reverse_payment(
                 if installment:
                     installment.paid_amount = max(
                         installment.paid_amount - alloc.allocated_amount, Decimal("0")
+                    )
+                    installment.outstanding_amount = min(
+                        installment.amount,
+                        installment.outstanding_amount + alloc.allocated_amount,
                     )
                     if installment.paid_amount <= Decimal("0"):
                         installment.status = "unpaid"

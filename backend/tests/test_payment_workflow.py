@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Test suite verifying payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refunds.
 #  */
@@ -20,8 +20,15 @@ import pytest
 from decimal import Decimal
 from datetime import date
 from sqlalchemy import select
-from app.models.payment import Payment, PaymentReceipt, Refund
-from app.models.fee import FeeInvoice
+from app.models.payment import (
+    Payment,
+    PaymentAllocation,
+    PaymentReceipt,
+    Refund,
+    RefundAllocation,
+)
+from app.models.fee import FeeInvoice, FeeInvoiceInstallment
+from app.models.fee import StudentFeeAssignment
 from app.models.user import AuditLog, User, Role
 from app.core.security import get_password_hash, create_access_token
 
@@ -139,6 +146,344 @@ async def test_simple_mode_payment_posting(
     inv = inv_res.scalar_one()
     assert inv.paid_amount == Decimal("4000.00")
     assert inv.outstanding_amount == Decimal("20000.00")
+
+
+@pytest.mark.asyncio
+async def test_invoice_wide_payment_allocates_oldest_installments_first(
+    client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
+):
+    invoice = test_fee_invoice["invoice"]
+    first = FeeInvoiceInstallment(
+        invoice_id=invoice.id,
+        installment_number=1,
+        description="First due",
+        amount=Decimal("10000.00"),
+        paid_amount=Decimal("0.00"),
+        outstanding_amount=Decimal("10000.00"),
+        due_date=date(2026, 1, 1),
+        status="unpaid",
+    )
+    second = FeeInvoiceInstallment(
+        invoice_id=invoice.id,
+        installment_number=2,
+        description="Second due",
+        amount=Decimal("14000.00"),
+        paid_amount=Decimal("0.00"),
+        outstanding_amount=Decimal("14000.00"),
+        due_date=date(2026, 2, 1),
+        status="unpaid",
+    )
+    db.add_all([first, second])
+    await db.flush()
+
+    response = await client.post(
+        "/api/v1/payments/",
+        json={
+            "student_id": test_student.id,
+            "academic_year_id": test_academic_year.id,
+            "amount": 12000.0,
+            "payment_date": str(date.today()),
+            "payment_method": "cash",
+            "action": "post",
+            "allocations": [{"invoice_id": invoice.id, "amount": 12000.0}],
+        },
+        headers=auth_headers,
+    )
+    assert response.status_code == 201
+
+    payment_allocations = (
+        await db.execute(
+            select(PaymentAllocation)
+            .where(PaymentAllocation.payment_id == response.json()["payment_id"])
+            .order_by(PaymentAllocation.id)
+        )
+    ).scalars().all()
+    assert [
+        (allocation.installment_id, allocation.allocated_amount)
+        for allocation in payment_allocations
+    ] == [
+        (first.id, Decimal("10000.00")),
+        (second.id, Decimal("2000.00")),
+    ]
+
+    await db.refresh(first)
+    await db.refresh(second)
+    assert first.outstanding_amount == Decimal("0.00")
+    assert second.outstanding_amount == Decimal("12000.00")
+
+
+@pytest.mark.asyncio
+async def test_posting_legacy_invoice_wide_allocation_normalizes_schedule(
+    client, auth_headers, test_student, test_academic_year, test_fee_invoice, db
+):
+    invoice = test_fee_invoice["invoice"]
+    response = await client.post(
+        "/api/v1/payments/",
+        json={
+            "student_id": test_student.id,
+            "academic_year_id": test_academic_year.id,
+            "amount": 12000.0,
+            "payment_date": str(date.today()),
+            "payment_method": "cash",
+            "action": "draft",
+            "allocations": [{"invoice_id": invoice.id, "amount": 12000.0}],
+        },
+        headers=auth_headers,
+    )
+    assert response.status_code == 201
+    payment_id = response.json()["payment_id"]
+
+    first = FeeInvoiceInstallment(
+        invoice_id=invoice.id,
+        installment_number=1,
+        description="First due",
+        amount=Decimal("10000.00"),
+        paid_amount=Decimal("0.00"),
+        outstanding_amount=Decimal("10000.00"),
+        due_date=date(2026, 1, 1),
+        status="unpaid",
+    )
+    second = FeeInvoiceInstallment(
+        invoice_id=invoice.id,
+        installment_number=2,
+        description="Second due",
+        amount=Decimal("14000.00"),
+        paid_amount=Decimal("0.00"),
+        outstanding_amount=Decimal("14000.00"),
+        due_date=date(2026, 2, 1),
+        status="unpaid",
+    )
+    db.add_all([first, second])
+    await db.flush()
+
+    submit_response = await client.post(
+        f"/api/v1/payments/{payment_id}/submit", headers=auth_headers
+    )
+    assert submit_response.status_code == 200
+    post_response = await client.post(
+        f"/api/v1/payments/{payment_id}/post", headers=auth_headers
+    )
+    assert post_response.status_code == 200
+
+    allocations = (
+        await db.execute(
+            select(PaymentAllocation)
+            .where(PaymentAllocation.payment_id == payment_id)
+            .order_by(PaymentAllocation.id)
+        )
+    ).scalars().all()
+    assert [
+        (allocation.installment_id, allocation.allocated_amount)
+        for allocation in allocations
+    ] == [
+        (first.id, Decimal("10000.00")),
+        (second.id, Decimal("2000.00")),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_invoice_creation_persists_required_schedule(
+    client, auth_headers, test_fee_invoice, db
+):
+    existing = test_fee_invoice["invoice"]
+    existing.status = "cancelled"
+    await db.flush()
+    assignment = await db.get(StudentFeeAssignment, existing.assignment_id)
+
+    mismatch_response = await client.post(
+        "/api/v1/fees/invoices",
+        json={
+            "student_id": existing.student_id,
+            "assignment_id": existing.assignment_id,
+            "academic_year_id": existing.academic_year_id,
+            "issue_date": "2026-01-01",
+            "installments": [
+                {
+                    "description": "Incomplete schedule",
+                    "due_date": "2026-01-15",
+                    "amount": 100.0,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert mismatch_response.status_code == 422
+
+    response = await client.post(
+        "/api/v1/fees/invoices",
+        json={
+            "student_id": existing.student_id,
+            "assignment_id": existing.assignment_id,
+            "academic_year_id": existing.academic_year_id,
+            "issue_date": "2026-01-01",
+            "installments": [
+                {
+                    "description": "First installment",
+                    "due_date": "2026-01-15",
+                    "amount": 12000.0,
+                },
+                {
+                    "description": "Second installment",
+                    "due_date": "2026-02-15",
+                    "amount": 12000.0,
+                },
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert response.status_code == 201
+    invoice_id = response.json()["id"]
+    assert response.json()["net_amount"] == 24000.0
+    assert len(response.json()["installments"]) == 2
+    assert assignment is not None
+    assert sum(
+        installment["amount"] for installment in response.json()["installments"]
+    ) == float(assignment.custom_amount or 24000)
+
+    duplicate_response = await client.post(
+        "/api/v1/fees/invoices",
+        json={
+            "student_id": existing.student_id,
+            "assignment_id": existing.assignment_id,
+            "academic_year_id": existing.academic_year_id,
+            "issue_date": "2026-01-01",
+            "installments": [
+                {
+                    "description": "Incomplete schedule",
+                    "due_date": "2026-01-15",
+                    "amount": 100.0,
+                }
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert duplicate_response.status_code == 409
+    created_invoice = await db.get(FeeInvoice, invoice_id)
+    assert created_invoice is not None
+
+
+@pytest.mark.asyncio
+async def test_invoice_list_and_detail_include_student_identity_for_printing(
+    client, auth_headers, test_fee_invoice, test_student
+):
+    invoice = test_fee_invoice["invoice"]
+
+    list_response = await client.get(
+        f"/api/v1/fees/invoices?academic_year_id={invoice.academic_year_id}",
+        headers=auth_headers,
+    )
+    assert list_response.status_code == 200
+    listed_invoice = next(
+        item for item in list_response.json() if item["id"] == invoice.id
+    )
+    expected_name = " ".join(
+        part
+        for part in (
+            test_student.first_name,
+            test_student.middle_name,
+            test_student.last_name,
+        )
+        if part
+    )
+    assert listed_invoice["student_name"] == expected_name
+    assert listed_invoice["admission_number"] == test_student.admission_number
+
+    detail_response = await client.get(
+        f"/api/v1/fees/invoices/{invoice.id}",
+        headers=auth_headers,
+    )
+    assert detail_response.status_code == 200
+    assert detail_response.json()["student_name"] == expected_name
+    assert detail_response.json()["admission_number"] == test_student.admission_number
+
+
+@pytest.mark.asyncio
+async def test_refund_is_proportionally_reconciled_across_payment_invoices(
+    client,
+    auth_headers,
+    reviewer_headers,
+    test_student,
+    test_academic_year,
+    test_fee_invoice,
+    db,
+):
+    first_invoice = test_fee_invoice["invoice"]
+    second_invoice = FeeInvoice(
+        invoice_number="TEST-REFUND-SECOND",
+        student_id=test_student.id,
+        assignment_id=first_invoice.assignment_id,
+        academic_year_id=test_academic_year.id,
+        total_amount=Decimal("12000.00"),
+        discount_amount=Decimal("0.00"),
+        net_amount=Decimal("12000.00"),
+        paid_amount=Decimal("0.00"),
+        outstanding_amount=Decimal("12000.00"),
+        issue_date=date.today(),
+        due_date=date.today(),
+        status="unpaid",
+    )
+    db.add(second_invoice)
+    await db.flush()
+
+    payment_response = await client.post(
+        "/api/v1/payments/",
+        json={
+            "student_id": test_student.id,
+            "academic_year_id": test_academic_year.id,
+            "amount": 6000.0,
+            "payment_date": str(date.today()),
+            "payment_method": "bank_transfer",
+            "action": "post",
+            "allocations": [
+                {"invoice_id": first_invoice.id, "amount": 2000.0},
+                {"invoice_id": second_invoice.id, "amount": 4000.0},
+            ],
+        },
+        headers=auth_headers,
+    )
+    assert payment_response.status_code == 201
+    payment_id = payment_response.json()["payment_id"]
+
+    refund_response = await client.post(
+        f"/api/v1/payments/{payment_id}/refunds",
+        json={
+            "amount": 3000.0,
+            "refund_method": "bank_transfer",
+            "reason": "Partial refund across invoices",
+        },
+        headers=auth_headers,
+    )
+    assert refund_response.status_code == 200
+    refund_id = refund_response.json()["refund_id"]
+
+    approval_response = await client.post(
+        f"/api/v1/payments/refunds/{refund_id}/approve",
+        headers=reviewer_headers,
+    )
+    assert approval_response.status_code == 200
+    process_response = await client.post(
+        f"/api/v1/payments/refunds/{refund_id}/process",
+        headers=auth_headers,
+    )
+    assert process_response.status_code == 200
+
+    refund_allocations = (
+        await db.execute(
+            select(RefundAllocation).where(
+                RefundAllocation.refund_id == refund_id
+            )
+        )
+    ).scalars().all()
+    assert sorted(allocation.amount for allocation in refund_allocations) == [
+        Decimal("1000.00"),
+        Decimal("2000.00"),
+    ]
+    await db.refresh(first_invoice)
+    await db.refresh(second_invoice)
+    assert first_invoice.paid_amount == Decimal("1000.00")
+    assert first_invoice.outstanding_amount == Decimal("23000.00")
+    assert second_invoice.paid_amount == Decimal("2000.00")
+    assert second_invoice.outstanding_amount == Decimal("10000.00")
 
 
 @pytest.mark.asyncio

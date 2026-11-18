@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-10
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description Authoritative business logic engine for fee concessions, merit scholarships, eligibility evaluation, stacking rules, and ledger synchronization.
 #  */
@@ -32,6 +32,7 @@ from app.models.fee import (
     SponsorSettlement,
     StudentFeeAssignment,
     FeeInvoice,
+    FeeInvoiceInstallment,
     FeeInvoiceItem,
     FeeStructure,
 )
@@ -46,6 +47,7 @@ from app.services.sequence import (
     generate_next_sponsor_settlement_ref,
 )
 from app.services.financial_governance_service import FinancialGovernanceService
+from app.services.financial_allocation import allocate_proportionally
 
 
 class ConcessionEligibilityService:
@@ -578,26 +580,62 @@ class ConcessionWorkflowService:
         items = items_res.scalars().all()
         if not items:
             return
-        if len(items) == 1:
-            items[0].discount_amount = new_discount
-            items[0].net_amount = max(Decimal("0.00"), items[0].amount - new_discount)
-            return
+        total_item_amount = sum((Decimal(str(item.amount or 0)) for item in items), Decimal("0"))
+        if new_discount < 0 or new_discount > total_item_amount:
+            raise ValueError("Concession amount exceeds the invoice line-item total.")
+        if precision != 2:
+            raise ValueError("Financial concession allocation requires two-decimal currency precision.")
 
-        total_item_amount = sum(Decimal(str(it.amount or 0)) for it in items)
-        if total_item_amount <= 0:
-            return
-        allocated_so_far = Decimal("0.00")
-        q_fmt = Decimal("1" if precision <= 0 else f"0.{'0' * precision}")
-        for idx, it in enumerate(items):
-            if idx == len(items) - 1:
-                it_disc = max(Decimal("0.00"), new_discount - allocated_so_far)
-            else:
-                it_disc = (new_discount * (Decimal(str(it.amount)) / total_item_amount)).quantize(
-                    q_fmt, rounding=ROUND_HALF_UP
-                )
-                allocated_so_far += it_disc
+        weights = [
+            (item, Decimal(str(item.amount or 0)), (item.id,))
+            for item in items
+        ]
+        for it, it_disc in allocate_proportionally(new_discount, weights):
             it.discount_amount = it_disc
             it.net_amount = max(Decimal("0.00"), it.amount - it_disc)
+
+    @staticmethod
+    async def _reconcile_invoice_installments(
+        db: AsyncSession, invoice: FeeInvoice, new_net_amount: Decimal
+    ) -> None:
+        rows = (
+            await db.execute(
+                select(FeeInvoiceInstallment)
+                .where(FeeInvoiceInstallment.invoice_id == invoice.id)
+                .order_by(
+                    FeeInvoiceInstallment.due_date,
+                    FeeInvoiceInstallment.installment_number,
+                )
+                .with_for_update()
+            )
+        ).scalars().all()
+        if not rows:
+            return
+
+        weights = [
+            (
+                installment,
+                Decimal(str(installment.amount or 0)),
+                (installment.due_date, installment.installment_number),
+            )
+            for installment in rows
+        ]
+        if not any(weight > 0 for _, weight, _ in weights):
+            raise ValueError("Cannot reconcile concessions against an empty installment schedule.")
+
+        for installment, amount in allocate_proportionally(new_net_amount, weights):
+            installment.amount = amount
+            installment.outstanding_amount = max(
+                Decimal("0.00"), amount - Decimal(str(installment.paid_amount or 0))
+            )
+            if amount == Decimal("0.00"):
+                installment.status = "paid"
+            elif installment.outstanding_amount == Decimal("0.00"):
+                installment.status = "paid"
+            elif installment.paid_amount > Decimal("0.00"):
+                installment.status = "partial"
+            else:
+                installment.status = "unpaid"
 
     @classmethod
     async def approve_application(
@@ -821,6 +859,7 @@ class ConcessionWorkflowService:
         invoice.notes = (invoice.notes or "") + f" | Concession #{app.application_number} applied (-₹{alloc_amt:,.2f})"
 
         await cls._reconcile_invoice_items_discount(db, invoice, new_discount)
+        await cls._reconcile_invoice_installments(db, invoice, new_net)
 
         # Synchronize StudentFeeAssignment concession_amount
         assign_stmt = (
@@ -929,6 +968,7 @@ class ConcessionWorkflowService:
                 )
                 invoice.notes = (invoice.notes or "") + f" | Concession #{app.application_number} {target_status} (+₹{amt:,.2f})"
                 await cls._reconcile_invoice_items_discount(db, invoice, reverted_discount)
+                await cls._reconcile_invoice_installments(db, invoice, reverted_net)
 
             assign_res = await db.execute(
                 select(StudentFeeAssignment).where(

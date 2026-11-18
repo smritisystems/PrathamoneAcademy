@@ -213,7 +213,7 @@
 :root.dark header span.text-slate-500 { color: var(--app-text-secondary) !important; }
 
 /* --- FOOTER / STATUS BAR --- */
-:root.dark footer:not(.pratham-global-print-footer):not(.receipt-footer) {
+:root.dark footer:not(.pratham-global-print-footer):not(.receipt-footer):not(.fee-invoice-footer) {
   background-color: var(--app-surface) !important;
   border-color: var(--app-border) !important;
 }
@@ -925,7 +925,7 @@
   aside,
   header:not(.print-header):not(.receipt-header),
   nav,
-  footer:not(.pratham-global-print-footer):not(.receipt-footer),
+  footer:not(.pratham-global-print-footer):not(.receipt-footer):not(.fee-invoice-footer),
   .print-controls-panel {
     display: none !important;
   }

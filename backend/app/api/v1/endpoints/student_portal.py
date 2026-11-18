@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description API endpoints dedicated to authenticated student dashboard views, digital homework, attendance calendar, and report cards.
 #  */
@@ -780,6 +780,7 @@ async def get_student_fees(
         select(FeeInvoice)
         .options(
             selectinload(FeeInvoice.items),
+            selectinload(FeeInvoice.installments),
         )
         .where(FeeInvoice.student_id == student.id, FeeInvoice.status != "cancelled")
         .order_by(desc(FeeInvoice.id))
@@ -925,9 +926,11 @@ async def get_student_fees(
                     {
                         "id": inst.id,
                         "installment_number": inst.installment_number,
+                        "description": inst.description,
                         "due_date": str(inst.due_date),
                         "amount": float(inst.amount),
                         "paid_amount": float(inst.paid_amount),
+                        "outstanding_amount": float(inst.outstanding_amount),
                         "status": inst.status,
                     }
                     for inst in inv.installments

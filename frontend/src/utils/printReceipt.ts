@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Isolated receipt printing utility for high-fidelity A5 portrait voucher generation.
  */
@@ -197,6 +197,27 @@ export function printReceiptElement(
               opacity: 1 !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
+            }
+            #print-root header.fee-invoice-header {
+              display: block !important;
+            }
+            #print-root footer.fee-invoice-footer {
+              display: block !important;
+              visibility: visible !important;
+            }
+            #print-root[data-paper-size="A5"] .fee-invoice-brand-row {
+              grid-template-columns: minmax(0, 1fr) auto !important;
+              align-items: center !important;
+            }
+            #print-root[data-paper-size="A5"] .fee-invoice-mark {
+              min-width: 0 !important;
+              text-align: right !important;
+            }
+            #print-root[data-paper-size="A5"] .fee-invoice-parties {
+              grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) !important;
+            }
+            #print-root[data-paper-size="A5"] .fee-invoice-totals {
+              grid-template-columns: minmax(0, 1fr) minmax(200px, 0.85fr) !important;
             }
             #print-root .receipt-seal {
               display: flex !important;

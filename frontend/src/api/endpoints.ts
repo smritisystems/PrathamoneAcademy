@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-18
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -22,7 +22,7 @@ import type {
   DirectChatUserItem,
   PaymentPermissions,
   Institution, AcademicYear, Board, Standard, Division,
-  Student, FeeCategory, FeeStructure, FeeInvoice,
+  Student, FeeCategory, FeeStructure, FeeAssignment, FeeInvoice, FeeInvoiceCreatePayload,
   FeeInstallment, Payment, Receipt, DashboardStats, OutstandingDrilldownResponse, DashboardAnalyticsData,
   DashboardCollectionTrendsResponse,
   FeeCollectionRow, OutstandingRow, PaginatedResponse, User,
@@ -517,7 +517,7 @@ export const discountsApi = {
 
 export const feeAssignmentsApi = {
   list: (params?: { student_id?: number | string; academic_year_id?: number | string }) =>
-    apiClient.get('/fees/assignments', { params }),
+    apiClient.get<FeeAssignment[]>('/fees/assignments', { params }),
   create: (data: Record<string, unknown>) => apiClient.post('/fees/assignments', data),
 }
 
@@ -527,7 +527,7 @@ export const invoicesApi = {
   list: (params?: { student_id?: number | string; academic_year_id?: number | string; status?: string }) =>
     apiClient.get<FeeInvoice[]>('/fees/invoices', { params }),
   get: (id: number | string) => apiClient.get<FeeInvoice>(`/fees/invoices/${id}`),
-  create: (data: Record<string, unknown>) => apiClient.post<FeeInvoice>('/fees/invoices', data),
+  create: (data: FeeInvoiceCreatePayload) => apiClient.post<FeeInvoice>('/fees/invoices', data),
 }
 
 // ─── Installments ─────────────────────────────────────────────────────────────
@@ -927,6 +927,7 @@ export const paymentsApi = {
     apiClient.post('/payments/receipts/bulk-pdf-zip', { receipt_numbers: receiptNumbers, ...options }, { responseType: 'blob' }),
   requestRefund: (paymentId: number | string, data: {
     amount: number
+    invoice_id?: number
     reason: string
     refund_method?: string
     reference_number?: string

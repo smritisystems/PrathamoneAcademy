@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Unit and DOM integration tests for isolated fee receipt printing and container isolation.
  */
@@ -159,6 +159,59 @@ describe('Receipt Printing Specification & Container Isolation', () => {
     const cssA5 = Array.from(docA5.querySelectorAll('style')).map((s) => s.textContent || '').join('\n');
     expect(cssA5).toContain('size: A5 portrait');
     expect(cssA5).toContain('max-width: 136mm');
+  });
+
+  it('keeps fee invoice branding footer visible in the isolated print iframe', () => {
+    const invoice = document.createElement('div');
+    invoice.id = 'fee-invoice-print-area';
+    invoice.setAttribute('data-paper-size', 'A4');
+    invoice.innerHTML = `
+      <footer class="fee-invoice-footer">
+        <p>PrathamOne EduOS · Coaching Institute Edition</p>
+        <p>Powered and managed by SmritiSys &amp; AITDL Networks</p>
+        <img src="/artwork/prathamone.svg" alt="PrathamOne EduOS logo" />
+      </footer>
+    `;
+    document.body.appendChild(invoice);
+
+    expect(printReceiptElement({ elementId: invoice.id, paperSize: 'A4' })).toBe(true);
+
+    const iframe = document.getElementById('receipt-isolated-print-frame') as HTMLIFrameElement;
+    const printableFooter = iframe.contentDocument?.querySelector('footer.fee-invoice-footer');
+    const printStyles = Array.from(iframe.contentDocument?.querySelectorAll('style') || [])
+      .map((style) => style.textContent || '')
+      .join('\n');
+
+    expect(printableFooter?.textContent).toContain('Powered and managed by SmritiSys & AITDL Networks');
+    expect(printableFooter?.querySelector('img[alt="PrathamOne EduOS logo"]')).not.toBeNull();
+    expect(printStyles).toContain('#print-root footer.fee-invoice-footer');
+    expect(printStyles).toContain('visibility: visible !important');
+  });
+
+  it('keeps the fee invoice in a compact two-column layout for A5 print', () => {
+    const invoice = document.createElement('div');
+    invoice.id = 'fee-invoice-print-area';
+    invoice.innerHTML = `
+      <header class="fee-invoice-header">
+        <div class="fee-invoice-brand-row"></div>
+        <div class="fee-invoice-mark"></div>
+      </header>
+      <div class="fee-invoice-parties"></div>
+      <div class="fee-invoice-totals"></div>
+    `;
+    document.body.appendChild(invoice);
+
+    expect(printReceiptElement({ elementId: invoice.id, paperSize: 'A5' })).toBe(true);
+
+    const iframe = document.getElementById('receipt-isolated-print-frame') as HTMLIFrameElement;
+    const printStyles = Array.from(iframe.contentDocument?.querySelectorAll('style') || [])
+      .map((style) => style.textContent || '')
+      .join('\n');
+
+    expect(iframe.contentDocument?.querySelector('#print-root')?.getAttribute('data-paper-size')).toBe('A5');
+    expect(printStyles).toContain('#print-root[data-paper-size="A5"] .fee-invoice-brand-row');
+    expect(printStyles).toContain('#print-root[data-paper-size="A5"] .fee-invoice-parties');
+    expect(printStyles).toContain('#print-root[data-paper-size="A5"] .fee-invoice-totals');
   });
 
   it('PaymentReceiptView marks header with .print-header and matches selected paper size on container & embedded print CSS', () => {

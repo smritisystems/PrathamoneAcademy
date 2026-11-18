@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Attendance management workspace transforming daily batch roll call, QR terminals, registers, and absenteeism into dedicated functional views.
  */
@@ -1446,9 +1446,9 @@ function AttendanceContent() {
 
             <div className="divide-y divide-slate-100">
               {[
-                { name: 'Rohan Mehra', adm: 'ADM-2026-015', std: 'Class 10', rate: '64%', consecutive: 3, phone: '+91 98111 22334' },
-                { name: 'Priya Kulkarni', adm: 'ADM-2026-022', std: 'Class 10', rate: '71%', consecutive: 1, phone: '+91 98222 33445' },
-                { name: 'Vikram Patel', adm: 'ADM-2026-031', std: 'Class 9', rate: '58%', consecutive: 4, phone: '+91 98333 44556' },
+                { name: 'Rohan Mehra', adm: 'ADM-2026-015', std: 'Class 10', rate: '64%', consecutive: 3, phone: '+91 8779 123 007' },
+                { name: 'Priya Kulkarni', adm: 'ADM-2026-022', std: 'Class 10', rate: '71%', consecutive: 1, phone: '+91 8779 123 007' },
+                { name: 'Vikram Patel', adm: 'ADM-2026-031', std: 'Class 9', rate: '58%', consecutive: 4, phone: '+91 8779 123 007' },
               ].map((d, idx) => (
                 <div key={idx} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div className="flex items-center gap-3">

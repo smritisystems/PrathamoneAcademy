@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-17
+#  * @updated     2026-11-18
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -47,11 +47,14 @@ from app.models.board import Board
 from app.models.division import Division
 from app.models.subject import Subject, SubjectMapping
 from app.models.academic_year import AcademicYear
-from app.models.fee import FeeStructure, StudentFeeAssignment, FeeInvoice, FeeInvoiceItem
+from app.models.fee import FeeStructure, StudentFeeAssignment
 from app.models.communication import CommunicationLog
 from app.models.institution import Institution
 from app.models.settings import InstitutionSetting
-from app.services.sequence import generate_next_invoice_number
+from app.services.fee_invoice_service import (
+    FeeInvoiceScheduleInput,
+    issue_fee_invoice,
+)
 from app.services.concession_service import ConcessionWorkflowService
 
 router = APIRouter()
@@ -2198,37 +2201,24 @@ async def convert_lead_to_admission(
             db.add(existing_assign)
             await db.flush()
 
-            inv_num = await generate_next_invoice_number(db, effective_inst_id, eff_ay_id)
-            inv_obj = FeeInvoice(
-                invoice_number=inv_num,
-                student_id=student.id,
-                assignment_id=existing_assign.id,
-                academic_year_id=eff_ay_id,
-                total_amount=target_fs.amount,
-                discount_amount=Decimal("0.00"),
-                net_amount=target_fs.amount,
-                paid_amount=Decimal("0.00"),
-                outstanding_amount=target_fs.amount,
-                status="unpaid",
-                issue_date=data.admission_date or date.today(),
-                due_date=(data.admission_date or date.today()) + timedelta(days=30),
+            invoice_issue_date = data.admission_date or date.today()
+            invoice = await issue_fee_invoice(
+                db,
+                student=student,
+                assignment=existing_assign,
+                structure=target_fs,
+                issue_date=invoice_issue_date,
+                installments=[
+                    FeeInvoiceScheduleInput(
+                        description=target_fs.name,
+                        due_date=invoice_issue_date + timedelta(days=30),
+                        amount=Decimal(str(target_fs.amount)),
+                    )
+                ],
                 notes=f"Admission Fee Invoice via Lead {lead.lead_number}",
+                actor=current_user,
             )
-            db.add(inv_obj)
-            await db.flush()
-            db.add(
-                FeeInvoiceItem(
-                    institution_id=student.institution_id,
-                    invoice_id=inv_obj.id,
-                    fee_structure_id=target_fs.id,
-                    structure_name=target_fs.name,
-                    description=target_fs.name,
-                    amount=target_fs.amount,
-                    discount_amount=Decimal("0.00"),
-                    net_amount=target_fs.amount,
-                )
-            )
-            created_invoice_number = inv_num
+            created_invoice_number = invoice.invoice_number
 
     # Update Lead status
     lead.stage = "converted"
@@ -2405,81 +2395,81 @@ async def seed_initial_leads_if_empty(db: AsyncSession, institution_id: Optional
     demo_leads = [
         # New Enquiry
         {
-            "num": "LD-0286", "fn": "Aarav", "ln": "Sharma", "phone": "+91 98765 43210", "email": "aarav.sharma@gmail.com",
+            "num": "LD-0286", "fn": "Aarav", "ln": "Sharma", "phone": "+91 8779 123 007", "email": "aarav.sharma@gmail.com",
             "course": "JEE Foundation", "stage": "new_enquiry", "priority": "hot", "src": "Website",
             "std": std_map.get(10), "board": board_map.get("CBSE"), "follow_up": now + timedelta(hours=2),
-            "school": "St. Xavier High School", "parent": "Sunil Sharma", "p_phone": "+91 98765 43211", "notes": "Interested in 2-year integrated JEE Foundation coaching."
+            "school": "St. Xavier High School", "parent": "Sunil Sharma", "p_phone": "+91 8779 123 007", "notes": "Interested in 2-year integrated JEE Foundation coaching."
         },
         {
-            "num": "LD-0285", "fn": "Riya", "ln": "Patil", "phone": "+91 98201 55433", "email": "riya.patil@outlook.com",
+            "num": "LD-0285", "fn": "Riya", "ln": "Patil", "phone": "+91 8779 123 007", "email": "riya.patil@outlook.com",
             "course": "Maths + Science", "stage": "new_enquiry", "priority": "warm", "src": "Walk-in",
             "std": std_map.get(9), "board": board_map.get("SSC"), "follow_up": now + timedelta(hours=3),
-            "school": "Vidya Bhavan", "parent": "Sanjay Patil", "p_phone": "+91 98201 55434", "notes": "Parents visited institute, requested fee breakdown."
+            "school": "Vidya Bhavan", "parent": "Sanjay Patil", "p_phone": "+91 8779 123 007", "notes": "Parents visited institute, requested fee breakdown."
         },
         # Contacted
         {
-            "num": "LD-0284", "fn": "Vedant", "ln": "Gokhale", "phone": "+91 97690 11223", "email": "vedant.g@gmail.com",
+            "num": "LD-0284", "fn": "Vedant", "ln": "Gokhale", "phone": "+91 8779 123 007", "email": "vedant.g@gmail.com",
             "course": "CA Foundation", "stage": "contacted", "priority": "hot", "src": "Referral",
             "std": std_map.get(11), "board": board_map.get("HSC"), "follow_up": now + timedelta(days=1),
-            "school": "D.G. Ruparel College", "parent": "Anand Gokhale", "p_phone": "+91 97690 11224", "notes": "Called yesterday. Student interested in weekend CA foundation batch."
+            "school": "D.G. Ruparel College", "parent": "Anand Gokhale", "p_phone": "+91 8779 123 007", "notes": "Called yesterday. Student interested in weekend CA foundation batch."
         },
         {
-            "num": "LD-0283", "fn": "Ira", "ln": "Deshmukh", "phone": "+91 99870 66554", "email": "ira.deshmukh@gmail.com",
+            "num": "LD-0283", "fn": "Ira", "ln": "Deshmukh", "phone": "+91 8779 123 007", "email": "ira.deshmukh@gmail.com",
             "course": "All Subjects", "stage": "contacted", "priority": "warm", "src": "Phone Enquiry",
             "std": std_map.get(8), "board": board_map.get("CBSE"), "follow_up": now - timedelta(hours=5),
-            "school": "Delhi Public School", "parent": "Meena Deshmukh", "p_phone": "+91 99870 66555", "notes": "Contacted via phone. Follow-up overdue for counselling slot."
+            "school": "Delhi Public School", "parent": "Meena Deshmukh", "p_phone": "+91 8779 123 007", "notes": "Contacted via phone. Follow-up overdue for counselling slot."
         },
         # Counselling / Demo
         {
-            "num": "LD-0282", "fn": "Kavya", "ln": "Mehta", "phone": "+91 98203 44556", "email": "kavya.m@gmail.com",
+            "num": "LD-0282", "fn": "Kavya", "ln": "Mehta", "phone": "+91 8779 123 007", "email": "kavya.m@gmail.com",
             "course": "JEE / NEET", "stage": "counselling_demo", "priority": "hot", "src": "WhatsApp",
             "std": std_map.get(10), "board": board_map.get("CBSE"), "follow_up": now + timedelta(days=2),
-            "school": "Podar International", "parent": "Rajesh Mehta", "p_phone": "+91 98203 44557", "notes": "Trial Physics demo class scheduled."
+            "school": "Podar International", "parent": "Rajesh Mehta", "p_phone": "+91 8779 123 007", "notes": "Trial Physics demo class scheduled."
         },
         {
-            "num": "LD-0281", "fn": "Arjun", "ln": "Naik", "phone": "+91 99308 77110", "email": "arjun.naik@gmail.com",
+            "num": "LD-0281", "fn": "Arjun", "ln": "Naik", "phone": "+91 8779 123 007", "email": "arjun.naik@gmail.com",
             "course": "Science Stream", "stage": "counselling_demo", "priority": "warm", "src": "Social Media",
             "std": std_map.get(11), "board": board_map.get("HSC"), "follow_up": now + timedelta(days=2),
-            "school": "Kirti College", "parent": "Vikas Naik", "p_phone": "+91 99308 77111", "notes": "Counselling scheduled with Academic Director."
+            "school": "Kirti College", "parent": "Vikas Naik", "p_phone": "+91 8779 123 007", "notes": "Counselling scheduled with Academic Director."
         },
         # Interested
         {
-            "num": "LD-0280", "fn": "Saanvi", "ln": "Kulkarni", "phone": "+91 98702 33445", "email": "saanvi.k@gmail.com",
+            "num": "LD-0280", "fn": "Saanvi", "ln": "Kulkarni", "phone": "+91 8779 123 007", "email": "saanvi.k@gmail.com",
             "course": "Class 9 Foundation", "stage": "interested", "priority": "hot", "src": "Website",
             "std": std_map.get(9), "board": board_map.get("CBSE"), "follow_up": now + timedelta(days=1),
-            "school": "Ryan International", "parent": "Pradeep Kulkarni", "p_phone": "+91 98702 33446", "notes": "Attended Maths demo. Very satisfied, discussing fee payment plan."
+            "school": "Ryan International", "parent": "Pradeep Kulkarni", "p_phone": "+91 8779 123 007", "notes": "Attended Maths demo. Very satisfied, discussing fee payment plan."
         },
         {
-            "num": "LD-0279", "fn": "Parth", "ln": "More", "phone": "+91 98675 22110", "email": "parth.more@gmail.com",
+            "num": "LD-0279", "fn": "Parth", "ln": "More", "phone": "+91 8779 123 007", "email": "parth.more@gmail.com",
             "course": "Board Exam Prep", "stage": "interested", "priority": "warm", "src": "Referral",
             "std": std_map.get(10), "board": board_map.get("SSC"), "follow_up": now + timedelta(days=3),
-            "school": "Balmohan Vidyamandir", "parent": "Ganesh More", "p_phone": "+91 98675 22111", "notes": "Interested in test series and weekend crash course."
+            "school": "Balmohan Vidyamandir", "parent": "Ganesh More", "p_phone": "+91 8779 123 007", "notes": "Interested in test series and weekend crash course."
         },
         # Admission Pending
         {
-            "num": "LD-0278", "fn": "Mihir", "ln": "Joshi", "phone": "+91 98209 66550", "email": "mihir.joshi@gmail.com",
+            "num": "LD-0278", "fn": "Mihir", "ln": "Joshi", "phone": "+91 8779 123 007", "email": "mihir.joshi@gmail.com",
             "course": "Foundation Batch", "stage": "admission_pending", "priority": "hot", "src": "Website",
             "std": std_map.get(8), "board": board_map.get("CBSE"), "follow_up": now + timedelta(hours=4),
-            "school": "Army Public School", "parent": "Col. Ashok Joshi", "p_phone": "+91 98209 66551", "notes": "Token amount discussed. Awaiting registration form submission."
+            "school": "Army Public School", "parent": "Col. Ashok Joshi", "p_phone": "+91 8779 123 007", "notes": "Token amount discussed. Awaiting registration form submission."
         },
         {
-            "num": "LD-0277", "fn": "Diya", "ln": "Sutar", "phone": "+91 99670 11440", "email": "diya.sutar@gmail.com",
+            "num": "LD-0277", "fn": "Diya", "ln": "Sutar", "phone": "+91 8779 123 007", "email": "diya.sutar@gmail.com",
             "course": "ICSE Science & Maths", "stage": "admission_pending", "priority": "hot", "src": "Walk-in",
             "std": std_map.get(9), "board": board_map.get("ICSE"), "follow_up": now + timedelta(days=1),
-            "school": "Bombay Scottish", "parent": "Nitin Sutar", "p_phone": "+91 99670 11441", "notes": "Admission confirmed verbally. Documents pending."
+            "school": "Bombay Scottish", "parent": "Nitin Sutar", "p_phone": "+91 8779 123 007", "notes": "Admission confirmed verbally. Documents pending."
         },
         # Converted
         {
-            "num": "LD-0276", "fn": "Advait", "ln": "Pendse", "phone": "+91 98201 77880", "email": "advait.pendse@gmail.com",
+            "num": "LD-0276", "fn": "Advait", "ln": "Pendse", "phone": "+91 8779 123 007", "email": "advait.pendse@gmail.com",
             "course": "CBSE Class 10 Comprehensive", "stage": "converted", "priority": "warm", "src": "Website",
             "std": std_map.get(10), "board": board_map.get("CBSE"), "follow_up": None,
-            "school": "St. Anne High School", "parent": "Makarand Pendse", "p_phone": "+91 98201 77881", "notes": "Admitted on 24 Oct 2026."
+            "school": "St. Anne High School", "parent": "Makarand Pendse", "p_phone": "+91 8779 123 007", "notes": "Admitted on 24 Oct 2026."
         },
         {
-            "num": "LD-0275", "fn": "Neha", "ln": "Karnik", "phone": "+91 99306 44882", "email": "neha.karnik@gmail.com",
+            "num": "LD-0275", "fn": "Neha", "ln": "Karnik", "phone": "+91 8779 123 007", "email": "neha.karnik@gmail.com",
             "course": "Class 11 Science & JEE", "stage": "converted", "priority": "warm", "src": "Referral",
             "std": std_map.get(11), "board": board_map.get("HSC"), "follow_up": None,
-            "school": "Sathaye College", "parent": "Dr. Karnik", "p_phone": "+91 99306 44883", "notes": "Admitted on 22 Oct 2026."
+            "school": "Sathaye College", "parent": "Dr. Karnik", "p_phone": "+91 8779 123 007", "notes": "Admitted on 22 Oct 2026."
         },
     ]
 

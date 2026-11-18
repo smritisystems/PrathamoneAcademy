@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
@@ -34,7 +34,7 @@ import { useTableSort } from '../hooks/useTableSort'
 import { Lock } from 'lucide-react'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
 import Modal from '../components/Modal'
-import type { PaymentTransactionItem, PaymentAuditLog } from '../types'
+import type { Payment, PaymentTransactionItem, PaymentAuditLog } from '../types'
 import toast from 'react-hot-toast'
 
 const fmt = (n: number | string | undefined | null) =>
@@ -160,6 +160,7 @@ export default function Payments() {
     reason: '',
     reference_note: '',
   })
+  const [refundInvoiceId, setRefundInvoiceId] = useState<number | ''>('')
 
   // Approval Modal State
   const [approvalModalOpen, setApprovalModalOpen] = useState(false)
@@ -389,6 +390,18 @@ export default function Payments() {
       toast.error(err?.response?.data?.detail || 'Failed to process refund')
     },
   })
+  const { data: refundPaymentDetails } = useQuery({
+    queryKey: ['payment-refund-details', refundingPayment?.id],
+    queryFn: async () => {
+      if (!refundingPayment) throw new Error('No payment selected for refund.')
+      const response = await paymentsApi.get(refundingPayment.id)
+      return response.data
+    },
+    enabled: refundModalOpen && refundingPayment !== null,
+  })
+  const refundInvoiceIds = Array.from(
+    new Set((refundPaymentDetails?.allocations || []).map((allocation) => allocation.invoice_id)),
+  )
 
   const handleOpenReverse = (payment: PaymentTransactionItem) => {
     if (!isEditMode) {
@@ -460,6 +473,7 @@ export default function Payments() {
       return
     }
     setRefundingPayment(payment)
+    setRefundInvoiceId('')
     const maxRefund = Number(payment.refundable_balance ?? payment.amount)
     setRefundForm({
       amount: maxRefund,
@@ -486,6 +500,7 @@ export default function Payments() {
       paymentId: refundingPayment.id,
       data: {
         amount: Number(refundForm.amount),
+        invoice_id: refundInvoiceId || undefined,
         refund_method: refundForm.refund_method,
         reason: refundForm.reason.trim(),
         reference_number: refundForm.reference_note.trim() || undefined,
@@ -1158,6 +1173,7 @@ export default function Payments() {
                   <th className="py-2.5 px-3">Date</th>
                   <th className="py-2.5 px-3">Method</th>
                   <th className="py-2.5 px-3 text-right">Amount</th>
+                  <th className="py-2.5 px-3">Invoice Allocation</th>
                   <th className="py-2.5 px-3">Status</th>
                   <th className="py-2.5 px-3">Reason</th>
                   <th className="py-2.5 px-3 text-right">Actions</th>
@@ -1171,6 +1187,15 @@ export default function Payments() {
                     <td className="py-2 px-3 text-gray-600">{rf.refund_date}</td>
                     <td className="py-2 px-3 uppercase">{rf.refund_method}</td>
                     <td className="py-2 px-3 text-right font-bold text-rose-700">{fmt(rf.amount)}</td>
+                    <td className="py-2 px-3 text-gray-600">
+                      {rf.allocations?.length
+                        ? rf.allocations.map((allocation: { invoice_id: number; amount: number }) => (
+                            <span key={allocation.invoice_id} className="block">
+                              Invoice #{allocation.invoice_id}: {fmt(allocation.amount)}
+                            </span>
+                          ))
+                        : <span className="text-amber-700">Legacy allocation unavailable</span>}
+                    </td>
                     <td className="py-2 px-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                         rf.status === 'completed'
@@ -1463,6 +1488,24 @@ export default function Payments() {
               className="input w-full"
               required
             />
+          </div>
+
+          <div>
+            <label className="label">Invoice Allocation</label>
+            <select
+              value={refundInvoiceId}
+              onChange={(event) => setRefundInvoiceId(event.target.value ? Number(event.target.value) : '')}
+              className="input w-full bg-white"
+              disabled={refundInvoiceIds.length === 0}
+            >
+              <option value="">Proportional across original invoice allocations</option>
+              {refundInvoiceIds.map((invoiceId) => (
+                <option key={invoiceId} value={invoiceId}>Invoice #{invoiceId}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-gray-500">
+              Choosing one invoice scopes the refund to that invoice; otherwise the refund is allocated proportionally across the original payment allocations.
+            </p>
           </div>
 
           <div>

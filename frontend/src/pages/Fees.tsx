@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-18
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -36,7 +36,7 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer, LabelList
 } from 'recharts'
 import {
-  feesApi, paymentsApi, feeCategoriesApi, feeStructuresApi,
+  feesApi, paymentsApi, feeCategoriesApi, feeStructuresApi, feeAssignmentsApi,
   studentsApi, invoicesApi, reportsApi, academicYearsApi, boardsApi,
   standardsApi, divisionsApi, settingsApi, concessionsApi,
   ConcessionType, ConcessionApplication, ConcessionEligibilityResult
@@ -51,9 +51,11 @@ import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import { printReceiptElement } from '../utils/printReceipt'
 import { useBranding } from '../config/branding'
+import { PrintBrandingFooter } from '../components/PrintDocumentBranding'
 import type {
   FeeRegisterEntry, FeeRegisterInstallment, PaymentReceiptListItem,
-  PaymentTransactionItem, FeeCategory, FeeStructure, Student, FeeInvoice,
+  PaymentTransactionItem, FeeCategory, FeeStructure, FeeAssignment, FeeInvoice,
+  FeeInvoiceCreatePayload,
   PaymentMethodDistribution, TopOverdueAccount, RecentPayment
 } from '../types'
 import toast from 'react-hot-toast'
@@ -87,6 +89,53 @@ export const FEES_TABS: { id: TabKey; label: string; icon: React.ElementType; ro
 ]
 
 export const TABS = FEES_TABS
+
+type InvoiceInstallmentDraft = {
+  description: string
+  due_date: string
+  amount: string
+}
+
+const localDateValue = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const formatFeeInvoiceDate = (value?: string) => {
+  if (!value) return '—'
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
+  if (!year || !month || !day) return value
+  return new Date(year, month - 1, day).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const buildInvoiceSchedule = (
+  amount: number,
+  count: number,
+  issueDate: string,
+): InvoiceInstallmentDraft[] => {
+  const totalCents = Math.round(amount * 100)
+  const baseCents = Math.floor(totalCents / count)
+  const remainderCents = totalCents % count
+  const [year, month, day] = issueDate.split('-').map(Number)
+
+  return Array.from({ length: count }, (_, index) => {
+    const due = new Date(year, month - 1 + index, 1)
+    const lastDay = new Date(due.getFullYear(), due.getMonth() + 1, 0).getDate()
+    due.setDate(Math.min(day, lastDay))
+    const cents = baseCents + (index < remainderCents ? 1 : 0)
+    return {
+      description: `Installment ${index + 1}`,
+      due_date: localDateValue(due),
+      amount: (cents / 100).toFixed(2),
+    }
+  })
+}
 
 export const fmt = (n: number | string | undefined | null) =>
   new Intl.NumberFormat('en-IN', {
@@ -171,6 +220,8 @@ function FeesContent() {
   const isEditMode = useEditModeStore((s) => !!s.scopes[editScope])
   const { selectedAcademicYearId, selectedInstitutionId, user } = useAuthStore()
   const canEdit = isUserAdmin(user)
+  const canIssueFeeInvoice = ['superadmin', 'sysadmin', 'super_admin', 'admin', 'accountant', 'principal']
+    .includes((user?.role || '').toLowerCase())
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -1162,6 +1213,180 @@ function FeesContent() {
         .then((r) => r.data),
     enabled: activeTab === 'register' || activeTab === 'invoicing',
   })
+
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
+  const [invoicingView, setInvoicingView] = useState<'register' | 'issued'>('register')
+  const [invoiceListSearch, setInvoiceListSearch] = useState('')
+  const [invoiceListStatus, setInvoiceListStatus] = useState('all')
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null)
+  const [invoiceStudentId, setInvoiceStudentId] = useState<number | null>(null)
+  const [invoiceStudentName, setInvoiceStudentName] = useState('')
+  const [invoiceAssignmentId, setInvoiceAssignmentId] = useState<number | null>(null)
+  const [invoiceScheduleAssignmentId, setInvoiceScheduleAssignmentId] = useState<number | null>(null)
+  const [invoiceIssueDate, setInvoiceIssueDate] = useState(localDateValue(new Date()))
+  const [invoiceSchedule, setInvoiceSchedule] = useState<InvoiceInstallmentDraft[]>([])
+  const {
+    data: invoiceAssignments = [],
+    isLoading: loadingInvoiceAssignments,
+    isError: invoiceAssignmentsFailed,
+  } = useQuery({
+    queryKey: ['invoice-assignments', invoiceStudentId, appliedFilters.academicYearId],
+    queryFn: () =>
+      feeAssignmentsApi
+        .list({
+          student_id: invoiceStudentId ?? undefined,
+          academic_year_id: appliedFilters.academicYearId ?? undefined,
+        })
+        .then((response) => response.data),
+    enabled: isInvoiceModalOpen && invoiceStudentId !== null,
+  })
+
+  const selectedInvoiceAssignment = invoiceAssignments.find(
+    (assignment) => assignment.id === invoiceAssignmentId,
+  )
+  const selectedInvoiceAmount = selectedInvoiceAssignment
+    ? selectedInvoiceAssignment.custom_amount ?? selectedInvoiceAssignment.fee_amount ?? 0
+    : 0
+
+  const {
+    data: issuedInvoices = [],
+    isLoading: loadingIssuedInvoices,
+    isError: issuedInvoicesFailed,
+  } = useQuery({
+    queryKey: ['fee-invoices', appliedFilters.academicYearId],
+    queryFn: () =>
+      invoicesApi
+        .list({ academic_year_id: appliedFilters.academicYearId ?? undefined })
+        .then((response) => response.data),
+    enabled: activeTab === 'invoicing' && invoicingView === 'issued',
+  })
+
+  const filteredIssuedInvoices = useMemo(() => {
+    const search = invoiceListSearch.trim().toLowerCase()
+    return issuedInvoices.filter((invoice) => {
+      const matchesSearch = !search || [
+        invoice.invoice_number,
+        invoice.student_name,
+        invoice.admission_number,
+      ].some((value) => value?.toLowerCase().includes(search))
+      const matchesStatus = invoiceListStatus === 'all' || invoice.status === invoiceListStatus
+      return matchesSearch && matchesStatus
+    })
+  }, [issuedInvoices, invoiceListSearch, invoiceListStatus])
+
+  const {
+    data: selectedInvoice,
+    isLoading: loadingSelectedInvoice,
+    isError: selectedInvoiceFailed,
+  } = useQuery({
+    queryKey: ['fee-invoice-detail', selectedInvoiceId],
+    queryFn: () => invoicesApi.get(selectedInvoiceId!).then((response) => response.data),
+    enabled: selectedInvoiceId !== null,
+  })
+
+  useEffect(() => {
+    if (!isInvoiceModalOpen || invoiceAssignments.length === 0) return
+    const assignmentId = invoiceAssignmentId ?? invoiceAssignments[0].id
+    const assignment = invoiceAssignments.find((item) => item.id === assignmentId)
+    if (!assignment) return
+    if (invoiceAssignmentId === null) setInvoiceAssignmentId(assignmentId)
+    if (invoiceScheduleAssignmentId !== assignmentId) {
+      const amount = assignment.custom_amount ?? assignment.fee_amount ?? 0
+      setInvoiceSchedule(
+        buildInvoiceSchedule(
+          amount,
+          Math.max(1, assignment.installments_count || 1),
+          invoiceIssueDate,
+        ),
+      )
+      setInvoiceScheduleAssignmentId(assignmentId)
+    }
+  }, [
+    isInvoiceModalOpen,
+    invoiceAssignments,
+    invoiceAssignmentId,
+    invoiceScheduleAssignmentId,
+    invoiceIssueDate,
+  ])
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: (payload: FeeInvoiceCreatePayload) => invoicesApi.create(payload),
+    onSuccess: async (response) => {
+      toast.success(`Invoice ${response.data.invoice_number} issued successfully`)
+      setIsInvoiceModalOpen(false)
+      setInvoiceStudentId(null)
+      setInvoiceAssignmentId(null)
+      setInvoiceScheduleAssignmentId(null)
+      setInvoiceSchedule([])
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['fee-register'] }),
+        queryClient.invalidateQueries({ queryKey: ['fee-invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['collect-invoices'] }),
+        queryClient.invalidateQueries({ queryKey: ['fees-overview'] }),
+      ])
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Unable to issue fee invoice')
+    },
+  })
+
+  const openInvoiceModal = (studentId: number, studentName: string) => {
+    if (!isEditMode) {
+      toast.error('Activate Edit Mode to issue a fee invoice.')
+      return
+    }
+    setInvoiceStudentId(studentId)
+    setInvoiceStudentName(studentName)
+    setInvoiceAssignmentId(null)
+    setInvoiceScheduleAssignmentId(null)
+    setInvoiceIssueDate(localDateValue(new Date()))
+    setInvoiceSchedule([])
+    setIsInvoiceModalOpen(true)
+  }
+
+  const updateInvoiceSchedule = (
+    index: number,
+    field: keyof InvoiceInstallmentDraft,
+    value: string,
+  ) => {
+    setInvoiceSchedule((current) =>
+      current.map((installment, currentIndex) =>
+        currentIndex === index
+          ? { ...installment, [field]: value }
+          : installment,
+      ),
+    )
+  }
+
+  const invoiceScheduleCents = invoiceSchedule.reduce(
+    (total, installment) => total + Math.round(Number(installment.amount) * 100),
+    0,
+  )
+  const selectedInvoiceAmountCents = Math.round(selectedInvoiceAmount * 100)
+
+  const submitInvoice = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!invoiceStudentId || !selectedInvoiceAssignment) return
+    createInvoiceMutation.mutate({
+      student_id: invoiceStudentId,
+      assignment_id: selectedInvoiceAssignment.id,
+      academic_year_id: selectedInvoiceAssignment.academic_year_id,
+      issue_date: invoiceIssueDate,
+      installments: invoiceSchedule.map((installment) => ({
+        ...installment,
+        amount: Number(installment.amount),
+      })),
+    })
+  }
+
+  const printSelectedInvoice = (paperSize: 'A4' | 'A5') => {
+    if (!selectedInvoice) return
+    printReceiptElement({
+      elementId: 'fee-invoice-print-area',
+      documentTitle: `Fee Invoice ${selectedInvoice.invoice_number}`,
+      paperSize,
+    })
+  }
 
   const REGISTER_SORT_OPTIONS: TableSortOption[] = [
     { key: 'outstanding_amount', label: 'Balance Due', type: 'number' as const, defaultDirection: 'desc' as const },
@@ -2602,7 +2827,364 @@ function FeesContent() {
   return (
     <div className="space-y-5 pb-12">
       {/* Global View-First & Explicit Edit Mode Governance Bar */}
-      <EditModeBar scope={editScope} title="Fee Schedules & Accounting Centre" isDirty={isNewStructureModalOpen || isEditStructureModalOpen || isNewCategoryModalOpen || isEditReceiptModalOpen} />
+      <EditModeBar scope={editScope} title="Fee Schedules & Accounting Centre" isDirty={isInvoiceModalOpen || isNewStructureModalOpen || isEditStructureModalOpen || isNewCategoryModalOpen || isEditReceiptModalOpen} />
+
+      {isInvoiceModalOpen && (
+        <Modal
+          isOpen={isInvoiceModalOpen}
+          onClose={() => setIsInvoiceModalOpen(false)}
+          title="Issue Fee Invoice"
+          size="lg"
+        >
+          <form onSubmit={submitInvoice} className="space-y-4">
+            <div className="rounded-xl border border-primary-100 bg-primary-50/60 p-3">
+              <p className="text-xs font-bold text-slate-800">{invoiceStudentName}</p>
+              <p className="text-[11px] text-slate-500">A numbered invoice and its installment schedule will be issued as one transaction.</p>
+            </div>
+
+            {loadingInvoiceAssignments ? (
+              <p className="py-6 text-center text-xs text-slate-500">Loading fee assignments...</p>
+            ) : invoiceAssignmentsFailed ? (
+              <p role="alert" className="py-4 text-xs text-red-700">Fee assignments could not be loaded. Close and retry.</p>
+            ) : invoiceAssignments.length === 0 ? (
+              <p className="py-4 text-xs text-amber-700">No fee assignment exists for this student in the selected academic year.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Fee Assignment *</label>
+                    <select
+                      value={invoiceAssignmentId ?? ''}
+                      onChange={(event) => setInvoiceAssignmentId(Number(event.target.value))}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs"
+                      required
+                    >
+                      {invoiceAssignments.map((assignment: FeeAssignment) => (
+                        <option key={assignment.id} value={assignment.id}>
+                          {assignment.fee_structure_name || `Fee Structure #${assignment.fee_structure_id}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Issue Date *</label>
+                    <input
+                      type="date"
+                      value={invoiceIssueDate}
+                      onChange={(event) => setInvoiceIssueDate(event.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                  <span className="text-xs font-semibold text-slate-600">Assigned invoice amount</span>
+                  <span className="text-sm font-black text-slate-900">{fmt(selectedInvoiceAmount)}</span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-slate-700">Installment Schedule</h3>
+                    <span className={`text-xs font-bold ${invoiceScheduleCents === selectedInvoiceAmountCents ? 'text-emerald-700' : 'text-red-700'}`}>
+                      Scheduled {fmt(invoiceScheduleCents / 100)} / {fmt(selectedInvoiceAmount)}
+                    </span>
+                  </div>
+                  {invoiceSchedule.map((installment, index) => (
+                    <div key={`${invoiceScheduleAssignmentId}-${index}`} className="grid grid-cols-1 sm:grid-cols-[1fr_150px_130px] gap-2 rounded-xl border border-slate-200 p-2.5">
+                      <input
+                        aria-label={`Installment ${index + 1} description`}
+                        value={installment.description}
+                        onChange={(event) => updateInvoiceSchedule(index, 'description', event.target.value)}
+                        className="min-w-0 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs"
+                        required
+                      />
+                      <input
+                        aria-label={`Installment ${index + 1} due date`}
+                        type="date"
+                        value={installment.due_date}
+                        onChange={(event) => updateInvoiceSchedule(index, 'due_date', event.target.value)}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs"
+                        required
+                      />
+                      <input
+                        aria-label={`Installment ${index + 1} amount`}
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={installment.amount}
+                        onChange={(event) => updateInvoiceSchedule(index, 'amount', event.target.value)}
+                        className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 text-xs text-right"
+                        required
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+              <button
+                type="button"
+                onClick={() => setIsInvoiceModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              {invoiceAssignments.length > 0 && !invoiceAssignmentsFailed && (
+                <button
+                  type="submit"
+                  disabled={
+                    createInvoiceMutation.isPending ||
+                    !selectedInvoiceAssignment ||
+                    selectedInvoiceAmountCents <= 0 ||
+                    invoiceSchedule.length === 0 ||
+                    invoiceScheduleCents !== selectedInvoiceAmountCents
+                  }
+                  className="px-4 py-2 rounded-xl bg-primary-600 text-white text-xs font-bold hover:bg-primary-700 disabled:opacity-50"
+                >
+                  {createInvoiceMutation.isPending ? 'Issuing...' : 'Issue Invoice'}
+                </button>
+              )}
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {selectedInvoiceId !== null && (
+        <Modal
+          isOpen
+          onClose={() => setSelectedInvoiceId(null)}
+          title={selectedInvoice ? `Fee Invoice ${selectedInvoice.invoice_number}` : 'Fee Invoice Preview'}
+          size="2xl"
+        >
+          {loadingSelectedInvoice ? (
+            <div className="p-10 text-center text-xs text-slate-500">Loading invoice details...</div>
+          ) : selectedInvoiceFailed || !selectedInvoice ? (
+            <div role="alert" className="p-8 text-center text-xs text-red-700">
+              Invoice details could not be loaded. Close the preview and try again.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div
+                id="fee-invoice-print-area"
+                data-paper-size="A4"
+                className="mx-auto max-w-[190mm] text-slate-900"
+              >
+                <article
+                  aria-label="Printable fee invoice"
+                  className="fee-invoice-sheet overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10"
+                >
+                  <header className="fee-invoice-header relative overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 px-7 py-7 text-white sm:px-9 sm:py-8">
+                    <div className="pointer-events-none absolute -right-12 -top-20 h-56 w-56 rounded-full border-[24px] border-white/5" />
+                    <div className="pointer-events-none absolute -bottom-28 right-28 h-48 w-48 rounded-full border-[18px] border-amber-300/10" />
+                    <div className="fee-invoice-brand-row relative grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <div className="flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-xl bg-white p-2.5 shadow-lg shadow-black/20">
+                          <img
+                            src={branding.assets.logoUrl}
+                            alt={`${branding.academyName} logo`}
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.22em] text-amber-200">
+                            PrathamOne EduOS · Coaching Institute Edition
+                          </p>
+                          <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">{branding.academyName}</h1>
+                          {branding.institutionAddress && (
+                            <p className="mt-1 max-w-md text-[10px] leading-relaxed text-slate-300">
+                              {branding.institutionAddress}
+                            </p>
+                          )}
+                          <p className="mt-1 text-[10px] text-slate-300">
+                            {[branding.institutionPhone, branding.institutionEmail].filter(Boolean).join(' · ')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="fee-invoice-mark sm:min-w-[180px] sm:text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-amber-200">Fee Invoice</p>
+                        <p className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">INVOICE</p>
+                        <span className="mt-3 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-white">
+                          {selectedInvoice.status.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="relative mt-6 h-px bg-gradient-to-r from-amber-200/80 via-white/20 to-transparent" />
+                  </header>
+
+                  <div className="fee-invoice-parties grid gap-3 bg-slate-50 px-6 py-5 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] sm:px-8">
+                    <section className="rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-indigo-700">Bill To</p>
+                      <h2 className="mt-2 text-lg font-extrabold tracking-tight text-slate-900">
+                        {selectedInvoice.student_name || `Student #${selectedInvoice.student_id}`}
+                      </h2>
+                      <div className="mt-2 space-y-1 text-[10px] text-slate-600">
+                        <p><span className="font-semibold text-slate-800">Admission No.</span> {selectedInvoice.admission_number || '—'}</p>
+                        {selectedInvoice.student_phone && (
+                          <p><span className="font-semibold text-slate-800">Phone</span> {selectedInvoice.student_phone}</p>
+                        )}
+                      </div>
+                    </section>
+                    <section className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-4">
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-500">Invoice No.</p>
+                        <p className="mt-1 break-all text-xs font-extrabold text-slate-900">{selectedInvoice.invoice_number}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-500">Issue Date</p>
+                        <p className="mt-1 text-xs font-bold text-slate-900">{formatFeeInvoiceDate(selectedInvoice.issue_date)}</p>
+                      </div>
+                      <div className="col-span-2 border-t border-slate-100 pt-2">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-500">Payment Due By</p>
+                        <p className="mt-1 text-xs font-bold text-slate-900">{formatFeeInvoiceDate(selectedInvoice.due_date)}</p>
+                      </div>
+                    </section>
+                  </div>
+
+                  <section className="px-6 pb-2 pt-5 sm:px-8">
+                    <div className="mb-3 flex items-end justify-between gap-3">
+                      <div>
+                        <p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-indigo-700">Fee details</p>
+                        <h3 className="mt-1 text-base font-extrabold text-slate-900">Invoice summary</h3>
+                      </div>
+                      <p className="text-[9px] font-medium text-slate-500">Amounts in Indian Rupees (INR)</p>
+                    </div>
+                    <table className="w-full border-separate border-spacing-0 text-left text-[10px]">
+                      <thead>
+                        <tr className="bg-slate-900 text-[9px] uppercase tracking-[0.1em] text-white">
+                          <th className="rounded-l-lg px-3 py-3 font-bold">Description</th>
+                          <th className="px-3 py-3 text-right font-bold">Amount</th>
+                          <th className="px-3 py-3 text-right font-bold">Concession</th>
+                          <th className="rounded-r-lg px-3 py-3 text-right font-bold">Net Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-slate-700">
+                        {selectedInvoice.items?.length ? selectedInvoice.items.map((item) => (
+                          <tr key={item.id} className="bg-white">
+                            <td className="border-b border-slate-100 px-3 py-3 font-semibold">{item.description}</td>
+                            <td className="border-b border-slate-100 px-3 py-3 text-right tabular-nums">{fmt(item.amount)}</td>
+                            <td className="border-b border-slate-100 px-3 py-3 text-right tabular-nums">{fmt(item.discount_amount)}</td>
+                            <td className="border-b border-slate-100 px-3 py-3 text-right font-extrabold tabular-nums text-slate-900">{fmt(item.net_amount)}</td>
+                          </tr>
+                        )) : (
+                          <tr className="bg-white">
+                            <td className="border-b border-slate-100 px-3 py-3 font-semibold">Fee obligation</td>
+                            <td className="border-b border-slate-100 px-3 py-3 text-right tabular-nums">{fmt(selectedInvoice.total_amount)}</td>
+                            <td className="border-b border-slate-100 px-3 py-3 text-right tabular-nums">{fmt(selectedInvoice.discount_amount)}</td>
+                            <td className="border-b border-slate-100 px-3 py-3 text-right font-extrabold tabular-nums text-slate-900">{fmt(selectedInvoice.net_amount)}</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </section>
+
+                  <div className="fee-invoice-totals grid gap-5 px-6 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(220px,0.85fr)] sm:px-8">
+                    <section className="self-end rounded-xl border border-indigo-100 bg-indigo-50/70 p-4">
+                      <p className="text-[9px] font-extrabold uppercase tracking-[0.16em] text-indigo-800">Payment reference</p>
+                      <p className="mt-2 text-[10px] leading-relaxed text-slate-600">
+                        Please quote invoice number <span className="font-bold text-slate-900">{selectedInvoice.invoice_number}</span> when making a fee payment.
+                      </p>
+                      <p className="mt-2 text-[9px] text-slate-500">This is a computer-generated invoice.</p>
+                    </section>
+                    <section className="rounded-xl border border-slate-200 bg-white p-4 text-[10px]">
+                      <div className="flex justify-between py-1 text-slate-600">
+                        <span>Gross Amount</span><span className="font-semibold tabular-nums text-slate-900">{fmt(selectedInvoice.total_amount)}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-100 py-1.5 text-slate-600">
+                        <span>Concessions</span><span className="font-semibold tabular-nums text-slate-900">{fmt(selectedInvoice.discount_amount)}</span>
+                      </div>
+                      <div className="flex justify-between py-2 font-extrabold text-slate-900">
+                        <span>Invoice Total</span><span className="tabular-nums">{fmt(selectedInvoice.net_amount)}</span>
+                      </div>
+                      <div className="flex justify-between py-1 text-emerald-700">
+                        <span>Paid to Date</span><span className="font-bold tabular-nums">{fmt(selectedInvoice.paid_amount)}</span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-gradient-to-r from-indigo-950 to-slate-900 px-3.5 py-3 text-white">
+                        <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-indigo-100">Balance Due</span>
+                        <span className="text-base font-black tabular-nums">{fmt(selectedInvoice.outstanding_amount)}</span>
+                      </div>
+                    </section>
+                  </div>
+
+                  {selectedInvoice.installments && selectedInvoice.installments.length > 0 && (
+                    <section className="px-6 pb-5 sm:px-8">
+                      <div className="mb-3">
+                        <p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-indigo-700">Payment plan</p>
+                        <h3 className="mt-1 text-sm font-extrabold text-slate-900">Installment schedule</h3>
+                      </div>
+                      <table className="w-full border-separate border-spacing-0 text-left text-[9px]">
+                        <thead>
+                          <tr className="bg-slate-100 uppercase tracking-[0.08em] text-slate-600">
+                            <th className="rounded-l-md px-2.5 py-2.5 font-bold">Installment</th>
+                            <th className="px-2.5 py-2.5 font-bold">Due Date</th>
+                            <th className="px-2.5 py-2.5 text-right font-bold">Amount</th>
+                            <th className="px-2.5 py-2.5 text-right font-bold">Paid</th>
+                            <th className="rounded-r-md px-2.5 py-2.5 text-right font-bold">Outstanding</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-slate-700">
+                          {selectedInvoice.installments.map((installment) => (
+                            <tr key={installment.id} className="bg-white">
+                              <td className="border-b border-slate-100 px-2.5 py-2.5 font-medium">
+                                {installment.description || `Installment ${installment.installment_number}`}
+                              </td>
+                              <td className="border-b border-slate-100 px-2.5 py-2.5">{formatFeeInvoiceDate(installment.due_date)}</td>
+                              <td className="border-b border-slate-100 px-2.5 py-2.5 text-right tabular-nums">{fmt(installment.amount)}</td>
+                              <td className="border-b border-slate-100 px-2.5 py-2.5 text-right tabular-nums">{fmt(installment.paid_amount)}</td>
+                              <td className="border-b border-slate-100 px-2.5 py-2.5 text-right font-bold tabular-nums">
+                                {installment.outstanding_amount == null ? '—' : fmt(installment.outstanding_amount)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </section>
+                  )}
+
+                  {selectedInvoice.notes && (
+                    <section className="mx-6 mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 sm:mx-8">
+                      <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-amber-800">Invoice note</p>
+                      <p className="mt-1 text-[10px] leading-relaxed text-amber-950">{selectedInvoice.notes}</p>
+                    </section>
+                  )}
+
+                  <footer className="fee-invoice-footer border-t border-slate-200 bg-slate-50 px-6 py-4 text-center sm:px-8">
+                    <p className="text-[9px] font-semibold text-slate-700">{branding.academyName} · {branding.branchName}</p>
+                    <p className="mt-1 text-[8px] text-slate-500">
+                      Please quote the invoice number when making a fee payment. This is a computer-generated invoice.
+                    </p>
+                    <PrintBrandingFooter
+                      fixedBottom={false}
+                      showDivider={false}
+                      customText="PrathamOne EduOS · Coaching Institute Edition · Powered and managed by SmritiSys & AITDL Networks"
+                    />
+                  </footer>
+                </article>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => printSelectedInvoice('A4')}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-xs font-bold text-white hover:bg-primary-700"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print / Reprint A4
+                </button>
+                <button
+                  type="button"
+                  onClick={() => printSelectedInvoice('A5')}
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary-600 px-4 py-2 text-xs font-bold text-primary-700 hover:bg-primary-50"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print / Reprint A5
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP HEADER & BREADCRUMBS                                               */}
@@ -3555,6 +4137,43 @@ function FeesContent() {
       {/* ────────────────────────────────────────────────────────────────────────── */}
       {(activeTab === 'invoicing' || activeTab === 'register') && (
         <div className="space-y-4">
+          {activeTab === 'invoicing' && (
+            <div
+              role="tablist"
+              aria-label="Invoice views"
+              className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-xs"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={invoicingView === 'register'}
+                onClick={() => setInvoicingView('register')}
+                className={`rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
+                  invoicingView === 'register'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Fee Register
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={invoicingView === 'issued'}
+                onClick={() => setInvoicingView('issued')}
+                className={`rounded-xl px-3 py-2 text-xs font-bold transition-colors ${
+                  invoicingView === 'issued'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Issued Invoices
+              </button>
+            </div>
+          )}
+
+          {(activeTab !== 'invoicing' || invoicingView === 'register') && (
+            <>
           {/* Controls Bar */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap">
@@ -3737,6 +4356,24 @@ function FeesContent() {
                         </td>
                         <td className="py-2.5 px-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">
+                            {activeTab === 'invoicing' && canIssueFeeInvoice && (
+                              <button
+                                type="button"
+                                disabled={!isEditMode}
+                                onClick={() => openInvoiceModal(row.student_id, row.student_name)}
+                                title={isEditMode ? 'Issue invoice for this student' : 'Activate Edit Mode to issue an invoice'}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                  isEditMode
+                                    ? 'bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white'
+                                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                }`}
+                              >
+                                <span className="inline-flex items-center gap-1">
+                                  {!isEditMode && <Lock className="w-3 h-3" />}
+                                  Issue Invoice
+                                </span>
+                              </button>
+                            )}
                             {row.outstanding_amount > 0 && (
                               <button
                                 type="button"
@@ -3768,6 +4405,108 @@ function FeesContent() {
               </div>
             )}
           </div>
+            </>
+          )}
+
+          {activeTab === 'invoicing' && invoicingView === 'issued' && (
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="search"
+                    value={invoiceListSearch}
+                    onChange={(event) => setInvoiceListSearch(event.target.value)}
+                    placeholder="Search invoice, student, or admission no..."
+                    aria-label="Search issued invoices"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs sm:w-80"
+                  />
+                  <select
+                    value={invoiceListStatus}
+                    onChange={(event) => setInvoiceListStatus(event.target.value)}
+                    aria-label="Filter invoices by status"
+                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
+                  >
+                    <option value="all">All statuses</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="partial">Partial</option>
+                    <option value="paid">Paid</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="written_off">Written off</option>
+                  </select>
+                </div>
+                <span className="text-xs font-semibold text-slate-500">
+                  {filteredIssuedInvoices.length} Invoices
+                </span>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+                {loadingIssuedInvoices ? (
+                  <div className="p-10 text-center text-xs text-slate-500">Loading issued invoices...</div>
+                ) : issuedInvoicesFailed ? (
+                  <div role="alert" className="p-10 text-center text-xs text-red-700">
+                    Issued invoices could not be loaded. Please retry.
+                  </div>
+                ) : filteredIssuedInvoices.length === 0 ? (
+                  <div className="p-10 text-center text-xs text-slate-500">
+                    No issued invoices match the selected filters.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[900px] text-left text-xs">
+                      <thead className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                        <tr>
+                          <th className="px-3 py-3">Invoice</th>
+                          <th className="px-3 py-3">Student</th>
+                          <th className="px-3 py-3">Issue Date</th>
+                          <th className="px-3 py-3">Due Date</th>
+                          <th className="px-3 py-3 text-right">Amount</th>
+                          <th className="px-3 py-3 text-right">Paid</th>
+                          <th className="px-3 py-3 text-right">Balance</th>
+                          <th className="px-3 py-3 text-center">Status</th>
+                          <th className="px-3 py-3 text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredIssuedInvoices.map((invoice) => (
+                          <tr key={invoice.id} className="text-slate-700">
+                            <td className="px-3 py-3 font-mono font-bold text-slate-900">
+                              {invoice.invoice_number}
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className="block font-semibold text-slate-900">
+                                {invoice.student_name || `Student #${invoice.student_id}`}
+                              </span>
+                              <span className="text-[10px] text-slate-500">
+                                {invoice.admission_number || 'Admission no. unavailable'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">{formatFeeInvoiceDate(invoice.issue_date)}</td>
+                            <td className="px-3 py-3">{formatFeeInvoiceDate(invoice.due_date)}</td>
+                            <td className="px-3 py-3 text-right font-semibold">{fmt(invoice.net_amount)}</td>
+                            <td className="px-3 py-3 text-right text-emerald-700">{fmt(invoice.paid_amount)}</td>
+                            <td className="px-3 py-3 text-right font-semibold text-orange-700">{fmt(invoice.outstanding_amount)}</td>
+                            <td className="px-3 py-3 text-center">
+                              <InvoiceStatusBadge status={invoice.status} />
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedInvoiceId(invoice.id)}
+                                className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2.5 py-1.5 font-bold text-primary-700 hover:bg-primary-100"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Preview / Print
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

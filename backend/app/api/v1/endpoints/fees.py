@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-18
 #  *
 #  * @description API endpoints for fee obligations, payment collections, receipts, trends, and ledger reconciliation.
 #  */
@@ -46,10 +46,10 @@ from app.models.board import Board
 from app.models.standard import Standard
 from app.models.division import Division
 from app.models.academic_year import AcademicYear
-from app.models.payment import Payment, PaymentReceipt
+from app.models.payment import Payment, PaymentAllocation, PaymentReceipt
 from app.services.codex_service import CodeXService
-from app.services.sequence import generate_next_invoice_number
 from app.services.concession_service import ConcessionWorkflowService
+from app.services.fee_invoice_service import issue_fee_invoice
 from app.services.financial_governance_service import (
     FinancialGovernanceService,
     FinancialFilter,
@@ -61,7 +61,7 @@ from app.services.student_metrics import (
     get_authoritative_student_counts_by_batch,
     get_student_reconciliation_diagnostic,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import date, datetime, timezone
 from decimal import Decimal
 import uuid
@@ -154,30 +154,31 @@ class ScholarshipCreate(BaseModel):
 
 
 class FeeAssignmentCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     student_id: int
     fee_structure_id: int
     academic_year_id: int
-    discount_id: Optional[int] = None
-    scholarship_id: Optional[int] = None
     custom_amount: Optional[Decimal] = None
-    concession_amount: Decimal = Decimal("0")
     remarks: Optional[str] = None
 
 
 class InstallmentConfig(BaseModel):
-    description: str
+    description: str = Field(min_length=1)
     due_date: date
-    amount: Decimal
+    amount: Decimal = Field(gt=0)
 
 
 class InvoiceCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     student_id: int
     assignment_id: int
     academic_year_id: int
     issue_date: date
     due_date: Optional[date] = None
     notes: Optional[str] = None
-    installments: Optional[List[InstallmentConfig]] = None
+    installments: List[InstallmentConfig] = Field(min_length=1)
 
 
 class CancelInvoiceRequest(BaseModel):
@@ -326,8 +327,10 @@ async def list_discounts(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    """Consolidated: Returns active student fee concession schemes from assignments."""
-    return []
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Legacy discounts are retired. Use the governed fee concession workflow.",
+    )
 
 
 @router.post("/discounts", status_code=201)
@@ -336,7 +339,10 @@ async def create_discount(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
 ):
-    return {"id": 1, "name": data.name, "message": "Concession rule acknowledged"}
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Legacy discounts are retired. Create and approve a fee concession instead.",
+    )
 
 
 # ---------- Scholarships (Consolidated SSOT) ----------
@@ -346,8 +352,10 @@ async def list_scholarships(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    """Consolidated: Returns active scholarship concessions."""
-    return []
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Legacy scholarships are retired. Use the governed fee concession workflow.",
+    )
 
 
 @router.post("/scholarships", status_code=201)
@@ -356,7 +364,10 @@ async def create_scholarship(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
 ):
-    return {"id": 1, "name": data.name, "message": "Scholarship rule acknowledged"}
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Legacy scholarships are retired. Create and approve a fee concession instead.",
+    )
 
 
 # ---------- Fee Assignments ----------
@@ -376,7 +387,11 @@ async def list_fee_assignments(
     elif not is_sysadmin(current_user) and role not in FEE_STAFF_VIEW_ROLES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
 
-    query = select(StudentFeeAssignment).join(Student, StudentFeeAssignment.student_id == Student.id)
+    query = (
+        select(StudentFeeAssignment)
+        .options(selectinload(StudentFeeAssignment.fee_structure))
+        .join(Student, StudentFeeAssignment.student_id == Student.id)
+    )
     if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
         query = query.where(Student.institution_id == current_user.institution_id)
     if student_id:
@@ -391,7 +406,11 @@ async def list_fee_assignments(
             "student_id": a.student_id,
             "fee_structure_id": a.fee_structure_id,
             "academic_year_id": a.academic_year_id,
+            "custom_amount": float(a.custom_amount) if a.custom_amount is not None else None,
             "concession_amount": float(a.concession_amount),
+            "fee_structure_name": a.fee_structure.name if a.fee_structure else None,
+            "fee_amount": float(a.fee_structure.amount) if a.fee_structure else None,
+            "installments_count": a.fee_structure.installments_count if a.fee_structure else 1,
             "remarks": a.remarks,
         }
         for a in assignments
@@ -404,7 +423,27 @@ async def create_fee_assignment(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
 ):
-    assignment = StudentFeeAssignment(**data.model_dump())
+    student = await db.get(Student, data.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    check_institution_access(student.institution_id, current_user)
+    structure = await db.get(FeeStructure, data.fee_structure_id)
+    if not structure:
+        raise HTTPException(status_code=404, detail="Fee structure not found")
+    if structure.academic_year_id != data.academic_year_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Fee structure and assignment must use the same academic year.",
+        )
+    if structure.institution_id != student.institution_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Fee structure and student must belong to the same institution.",
+        )
+    assignment = StudentFeeAssignment(
+        **data.model_dump(),
+        concession_amount=Decimal("0.00"),
+    )
     db.add(assignment)
     await db.commit()
     await db.refresh(assignment)
@@ -440,6 +479,7 @@ async def get_student_fee_details(
 
     inv_res = await db.execute(
         select(FeeInvoice)
+        .options(selectinload(FeeInvoice.installments))
         .where(FeeInvoice.student_id == student_id)
         .order_by(desc(FeeInvoice.created_at))
     )
@@ -467,6 +507,20 @@ async def get_student_fee_details(
         "paid_amount": float(invoice.paid_amount) if invoice else 0.0,
         "outstanding_amount": float(invoice.outstanding_amount) if invoice else 0.0,
         "status": invoice.status if invoice else "none",
+        "due_date": str(invoice.due_date) if invoice and invoice.due_date else None,
+        "installments": [
+            {
+                "id": installment.id,
+                "installment_number": installment.installment_number,
+                "description": installment.description,
+                "amount": float(installment.amount),
+                "paid_amount": float(installment.paid_amount),
+                "outstanding_amount": float(installment.outstanding_amount),
+                "due_date": str(installment.due_date),
+                "status": installment.status,
+            }
+            for installment in invoice.installments
+        ] if invoice else [],
     } if invoice else None
 
     return {
@@ -506,6 +560,14 @@ async def adjust_student_fees(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A mandatory audit reason is strictly required to adjust student fees.",
         )
+    if data.concession_amount is not None and data.concession_amount > Decimal("0.00"):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Concessions must use the governed concession application and approval "
+                "workflow; direct fee adjustments cannot apply discounts."
+            ),
+        )
 
     student_res = await db.execute(select(Student).where(Student.id == student_id))
     student = student_res.scalar_one_or_none()
@@ -539,12 +601,43 @@ async def adjust_student_fees(
     if not fs_obj:
         raise HTTPException(status_code=404, detail="Selected fee structure not found")
 
-    old_custom = float(assignment.custom_amount) if (assignment and assignment.custom_amount is not None) else float(fs_obj.amount)
-    old_concession = float(assignment.concession_amount) if assignment else 0.0
+    old_custom = assignment.custom_amount if assignment else None
+    package_amt = (
+        data.custom_amount
+        if data.custom_amount is not None
+        else (
+            assignment.custom_amount
+            if assignment and assignment.custom_amount is not None
+            else fs_obj.amount
+        )
+    )
+    if package_amt <= Decimal("0.00") or package_amt != package_amt.quantize(Decimal("0.01")):
+        raise HTTPException(
+            status_code=422,
+            detail="Assigned fee amount must be a positive currency amount.",
+        )
 
-    package_amt = data.custom_amount if data.custom_amount is not None else (assignment.custom_amount if assignment and assignment.custom_amount is not None else fs_obj.amount)
-    disc_amt = data.concession_amount if data.concession_amount is not None else (assignment.concession_amount if assignment else Decimal("0"))
-    net_amt = max(Decimal("0"), package_amt - disc_amt)
+    existing_invoice_id = None
+    if assignment:
+        existing_invoice_id = (
+            await db.execute(
+                select(FeeInvoice.id)
+                .where(
+                    FeeInvoice.assignment_id == assignment.id,
+                    FeeInvoice.status != "cancelled",
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+    if existing_invoice_id is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "An issued invoice already exists for this fee assignment. Its financial "
+                "snapshot cannot be changed here; use the governed concession workflow "
+                "or authorized invoice cancellation."
+            ),
+        )
 
     if not assignment:
         assignment = StudentFeeAssignment(
@@ -552,131 +645,53 @@ async def adjust_student_fees(
             fee_structure_id=target_structure_id,
             academic_year_id=ay_id,
             custom_amount=package_amt,
-            concession_amount=disc_amt,
             remarks=data.remarks or reason,
         )
         db.add(assignment)
         await db.flush()
     else:
-        if data.fee_structure_id:
-            assignment.fee_structure_id = data.fee_structure_id
+        assignment.fee_structure_id = target_structure_id
         assignment.custom_amount = package_amt
-        assignment.concession_amount = disc_amt
         if data.remarks:
             assignment.remarks = data.remarks
 
-    # Synchronize active FeeInvoice
-    inv_res = await db.execute(
-        select(FeeInvoice)
-        .where(
-            FeeInvoice.student_id == student_id,
-            FeeInvoice.assignment_id == assignment.id,
+    db.add(
+        AuditLog(
+            user_id=current_user.id,
+            institution_id=student.institution_id
+            or getattr(current_user, "institution_id", None),
+            action="STUDENT_FEE_ASSIGNMENT_ADJUSTMENT",
+            resource_type="student_fee_assignment",
+            resource_id=assignment.id,
+            old_data=json.dumps(
+                {"custom_amount": str(old_custom) if old_custom is not None else None}
+            ),
+            new_data=json.dumps(
+                {
+                    "custom_amount": float(package_amt),
+                    "fee_structure_id": assignment.fee_structure_id,
+                }
+            ),
+            severity="INFO",
+            details=(
+                f"Fee assignment adjusted for Student #{student_id}: "
+                f"₹{package_amt}. Reason: {reason}"
+            ),
         )
     )
-    invoice = inv_res.scalar_one_or_none()
-
-    if not invoice:
-        # Check if any invoice exists for student
-        any_inv_res = await db.execute(
-            select(FeeInvoice).where(FeeInvoice.student_id == student_id).order_by(desc(FeeInvoice.created_at))
-        )
-        invoice = any_inv_res.scalar_one_or_none()
-
-    if not invoice:
-        inv_number = await generate_next_invoice_number(db, institution_id=getattr(student, "institution_id", 1), academic_year_id=ay_id)
-        invoice = FeeInvoice(
-            invoice_number=inv_number,
-            student_id=student_id,
-            assignment_id=assignment.id,
-            academic_year_id=ay_id,
-            total_amount=package_amt,
-            discount_amount=disc_amt,
-            net_amount=net_amt,
-            paid_amount=Decimal("0"),
-            outstanding_amount=net_amt,
-            status="unpaid",
-            issue_date=date.today(),
-            notes=f"Adjusted: {reason}",
-        )
-        db.add(invoice)
-        await db.flush()
-    else:
-        invoice.assignment_id = assignment.id
-        invoice.total_amount = package_amt
-        invoice.discount_amount = disc_amt
-        invoice.net_amount = net_amt
-        overpayment_credit = max(Decimal("0"), invoice.paid_amount - net_amt)
-        invoice.outstanding_amount = max(Decimal("0"), net_amt - invoice.paid_amount)
-        if invoice.outstanding_amount == Decimal("0"):
-            invoice.status = "paid"
-        elif invoice.paid_amount > Decimal("0"):
-            invoice.status = "partial"
-        else:
-            invoice.status = "unpaid"
-        credit_note = f" [Credit Surplus ₹{overpayment_credit:,.2f}]" if overpayment_credit > 0 else ""
-        invoice.notes = (invoice.notes or "") + f" | Adjusted by {current_user.username}: {reason}{credit_note}"
-
-    # Synchronize invoice line items proportionally including discount_amount
-    await ConcessionWorkflowService._reconcile_invoice_items_discount(db, invoice, disc_amt)
-    items_res = await db.execute(select(FeeInvoiceItem).where(FeeInvoiceItem.invoice_id == invoice.id))
-    inv_items = items_res.scalars().all()
-    if inv_items:
-        if len(inv_items) == 1:
-            inv_items[0].amount = package_amt
-            inv_items[0].discount_amount = disc_amt
-            inv_items[0].net_amount = net_amt
-            inv_items[0].description = f"Annual Academic & Coaching Tuition Fee (Adjusted: {reason})"
-    else:
-        new_item = FeeInvoiceItem(
-            institution_id=student.institution_id,
-            invoice_id=invoice.id,
-            fee_structure_id=assignment.fee_structure_id,
-            structure_name=fs_obj.name,
-            amount=package_amt,
-            discount_amount=disc_amt,
-            net_amount=net_amt,
-            description=f"Annual Academic & Coaching Tuition Fee (Adjusted: {reason})",
-        )
-        db.add(new_item)
-
-    # Log audit entry
-    audit = AuditLog(
-        user_id=current_user.id,
-        institution_id=student.institution_id or getattr(current_user, "institution_id", None),
-        action="STUDENT_FEE_ADJUSTMENT",
-        resource_type="student_fee",
-        resource_id=student_id,
-        old_data=json.dumps({"custom_amount": old_custom, "concession_amount": old_concession}),
-        new_data=json.dumps({
-            "custom_amount": float(package_amt),
-            "concession_amount": float(disc_amt),
-            "net_amount": float(net_amt),
-            "paid_amount": float(invoice.paid_amount),
-            "outstanding_amount": float(invoice.outstanding_amount),
-            "fee_structure_id": assignment.fee_structure_id,
-            "invoice_number": invoice.invoice_number,
-        }),
-        severity="INFO",
-        details=f"Fee adjusted for Student #{student_id} ({student.first_name} {student.last_name}) to Net: ₹{net_amt}. Reason: {reason}",
-    )
-    db.add(audit)
-
     await db.commit()
     await db.refresh(assignment)
-    await db.refresh(invoice)
-
     return {
         "success": True,
-        "message": f"Fees successfully adjusted for {student.first_name} {student.last_name}",
+        "message": (
+            f"Fee assignment updated for {student.first_name} {student.last_name}. "
+            "Issue an invoice from Fee Invoicing and provide its persisted schedule."
+        ),
         "student_id": student_id,
         "assignment_id": assignment.id,
         "package_amount": float(package_amt),
-        "concession_amount": float(disc_amt),
-        "net_amount": float(net_amt),
-        "paid_amount": float(invoice.paid_amount),
-        "outstanding_amount": float(invoice.outstanding_amount),
-        "invoice_number": invoice.invoice_number,
-        "status": invoice.status,
+        "invoice_number": None,
+        "status": "assignment_updated",
     }
 
 
@@ -698,7 +713,11 @@ async def list_invoices(
     elif not is_sysadmin(current_user) and role not in FEE_STAFF_VIEW_ROLES:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    query = select(FeeInvoice).join(Student, FeeInvoice.student_id == Student.id)
+    query = (
+        select(FeeInvoice, Student)
+        .options(selectinload(FeeInvoice.installments))
+        .join(Student, FeeInvoice.student_id == Student.id)
+    )
     if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
         query = query.where(Student.institution_id == current_user.institution_id)
     if student_id:
@@ -708,12 +727,21 @@ async def list_invoices(
     if status:
         query = query.where(FeeInvoice.status == status)
     result = await db.execute(query.order_by(FeeInvoice.created_at.desc()))
-    invoices = result.scalars().all()
+    invoices = result.all()
     inv_list = [
         {
             "id": inv.id,
             "invoice_number": inv.invoice_number,
             "student_id": inv.student_id,
+            "student_name": " ".join(
+                part
+                for part in (student.first_name, student.middle_name, student.last_name)
+                if part
+            ),
+            "admission_number": student.admission_number,
+            "student_phone": student.phone,
+            "assignment_id": inv.assignment_id,
+            "academic_year_id": inv.academic_year_id,
             "total_amount": float(inv.total_amount),
             "discount_amount": float(inv.discount_amount),
             "net_amount": float(inv.net_amount),
@@ -722,8 +750,21 @@ async def list_invoices(
             "status": inv.status,
             "issue_date": str(inv.issue_date),
             "due_date": str(inv.due_date) if inv.due_date else None,
+            "installments": [
+                {
+                    "id": installment.id,
+                    "installment_number": installment.installment_number,
+                    "description": installment.description,
+                    "amount": float(installment.amount),
+                    "paid_amount": float(installment.paid_amount),
+                    "outstanding_amount": float(installment.outstanding_amount),
+                    "due_date": str(installment.due_date),
+                    "status": installment.status,
+                }
+                for installment in inv.installments
+            ],
         }
-        for inv in invoices
+        for inv, student in invoices
     ]
     user_inst_id = getattr(current_user, "institution_id", None) or 1
     return await CodeXService.mask_records_list(
@@ -743,13 +784,44 @@ async def create_fee_invoice(
     current_user=Depends(require_role("superadmin", "admin", "accountant", "principal")),
 ):
     assignment_result = await db.execute(
-        select(StudentFeeAssignment).where(
-            StudentFeeAssignment.id == data.assignment_id
-        )
+        select(StudentFeeAssignment)
+        .where(StudentFeeAssignment.id == data.assignment_id)
+        .with_for_update(of=StudentFeeAssignment)
     )
     assignment = assignment_result.scalar_one_or_none()
     if not assignment:
         raise HTTPException(status_code=404, detail="Fee assignment not found")
+    if (
+        assignment.student_id != data.student_id
+        or assignment.academic_year_id != data.academic_year_id
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Fee assignment does not match the requested student and academic year.",
+        )
+    existing_invoice = (
+        await db.execute(
+            select(FeeInvoice.id)
+            .where(
+                FeeInvoice.assignment_id == assignment.id,
+                FeeInvoice.status != "cancelled",
+            )
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if existing_invoice is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "This fee assignment already has an issued invoice. Cancel that invoice "
+                "through the authorized workflow before issuing a replacement."
+            ),
+        )
+
+    student = await db.get(Student, assignment.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Assigned student not found")
+    check_institution_access(student.institution_id, current_user)
 
     structure_result = await db.execute(
         select(FeeStructure).where(FeeStructure.id == assignment.fee_structure_id)
@@ -757,98 +829,73 @@ async def create_fee_invoice(
     structure = structure_result.scalar_one_or_none()
     if not structure:
         raise HTTPException(status_code=404, detail="Fee structure not found")
-
-    base_amount = assignment.custom_amount or structure.amount
-    discount_amount = Decimal("0")
-
-    if assignment.discount_id:
-        discount_result = await db.execute(
-            select(Discount).where(Discount.id == assignment.discount_id)
+    if (
+        structure.academic_year_id != data.academic_year_id
+        or structure.institution_id != student.institution_id
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Fee structure must match the student's institution and academic year.",
         )
-        discount = discount_result.scalar_one_or_none()
-        if discount:
-            if discount.discount_type == "percentage":
-                discount_amount += base_amount * discount.value / 100
-            else:
-                discount_amount += discount.value
-
-    if assignment.scholarship_id:
-        scholarship_result = await db.execute(
-            select(Scholarship).where(Scholarship.id == assignment.scholarship_id)
+    if any(not installment.description.strip() for installment in data.installments):
+        raise HTTPException(
+            status_code=422,
+            detail="Installment descriptions cannot be blank.",
         )
-        scholarship = scholarship_result.scalar_one_or_none()
-        if scholarship:
-            discount_amount += scholarship.amount
+    earliest_due_date = min(installment.due_date for installment in data.installments)
+    if data.due_date is not None and data.due_date != earliest_due_date:
+        raise HTTPException(
+            status_code=422,
+            detail="Invoice due_date must equal the earliest scheduled installment due date.",
+        )
 
-    discount_amount += assignment.concession_amount
-    net_amount = max(base_amount - discount_amount, Decimal("0"))
-
-    invoice_number = await generate_next_invoice_number(
+    invoice = await issue_fee_invoice(
         db,
-        institution_id=getattr(student, "institution_id", 1),
-        academic_year_id=data.academic_year_id,
-    )
-
-    invoice = FeeInvoice(
-        invoice_number=invoice_number,
-        student_id=data.student_id,
-        assignment_id=data.assignment_id,
-        academic_year_id=data.academic_year_id,
-        total_amount=base_amount,
-        discount_amount=discount_amount,
-        net_amount=net_amount,
-        paid_amount=Decimal("0"),
-        outstanding_amount=net_amount,
+        student=student,
+        assignment=assignment,
+        structure=structure,
         issue_date=data.issue_date,
-        due_date=data.due_date,
+        installments=data.installments,
         notes=data.notes,
-        status="unpaid",
+        actor=current_user,
     )
-    db.add(invoice)
-    await db.flush()
-
-    item = FeeInvoiceItem(
-        institution_id=getattr(student, "institution_id", None),
-        invoice_id=invoice.id,
-        fee_structure_id=structure.id,
-        structure_name=structure.name,
-        description=structure.name,
-        amount=base_amount,
-        discount_amount=discount_amount,
-        net_amount=net_amount,
-    )
-    db.add(item)
-
-    if data.installments:
-        for i, inst in enumerate(data.installments, 1):
-            installment = FeeInstallment(
-                invoice_id=invoice.id,
-                installment_number=i,
-                description=inst.description,
-                amount=inst.amount,
-                paid_amount=Decimal("0"),
-                due_date=inst.due_date,
-                status="unpaid",
-            )
-            db.add(installment)
-    else:
-        installment = FeeInstallment(
-            invoice_id=invoice.id,
-            installment_number=1,
-            description="Full Payment",
-            amount=net_amount,
-            paid_amount=Decimal("0"),
-            due_date=data.due_date or data.issue_date,
-            status="unpaid",
-        )
-        db.add(installment)
 
     await db.commit()
+    await db.refresh(invoice)
+    persisted_installments = (
+        await db.execute(
+            select(FeeInstallment)
+            .where(FeeInstallment.invoice_id == invoice.id)
+            .order_by(FeeInstallment.installment_number)
+        )
+    ).scalars().all()
     return {
         "id": invoice.id,
-        "invoice_number": invoice_number,
-        "net_amount": float(net_amount),
-        "outstanding": float(net_amount),
+        "invoice_number": invoice.invoice_number,
+        "student_id": invoice.student_id,
+        "assignment_id": invoice.assignment_id,
+        "academic_year_id": invoice.academic_year_id,
+        "total_amount": float(invoice.total_amount),
+        "discount_amount": float(invoice.discount_amount),
+        "net_amount": float(invoice.net_amount),
+        "paid_amount": float(invoice.paid_amount),
+        "outstanding_amount": float(invoice.outstanding_amount),
+        "status": invoice.status,
+        "issue_date": str(invoice.issue_date),
+        "due_date": str(invoice.due_date),
+        "installments": [
+            {
+                "id": installment.id,
+                "installment_number": installment.installment_number,
+                "description": installment.description,
+                "amount": float(installment.amount),
+                "paid_amount": float(installment.paid_amount),
+                "outstanding_amount": float(installment.outstanding_amount),
+                "due_date": str(installment.due_date),
+                "status": installment.status,
+            }
+            for installment in persisted_installments
+        ],
     }
 
 
@@ -875,17 +922,32 @@ async def get_invoice(
 ):
     result = await db.execute(
         select(FeeInvoice)
-        .options(selectinload(FeeInvoice.items))
+        .options(
+            selectinload(FeeInvoice.items),
+            selectinload(FeeInvoice.installments),
+        )
         .where(FeeInvoice.id == invoice_id)
     )
     invoice = result.scalar_one_or_none()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     await _authorize_invoice_access(db, invoice, current_user, allow_student_self=True)
+    student = await db.get(Student, invoice.student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Invoice student not found")
     return {
         "id": invoice.id,
         "invoice_number": invoice.invoice_number,
         "student_id": invoice.student_id,
+        "student_name": " ".join(
+            part
+            for part in (student.first_name, student.middle_name, student.last_name)
+            if part
+        ),
+        "admission_number": student.admission_number,
+        "student_phone": student.phone,
+        "assignment_id": invoice.assignment_id,
+        "academic_year_id": invoice.academic_year_id,
         "total_amount": float(invoice.total_amount),
         "discount_amount": float(invoice.discount_amount),
         "net_amount": float(invoice.net_amount),
@@ -912,6 +974,7 @@ async def get_invoice(
                 "description": inst.description,
                 "amount": float(inst.amount),
                 "paid_amount": float(inst.paid_amount),
+                "outstanding_amount": float(inst.outstanding_amount),
                 "due_date": str(inst.due_date),
                 "status": inst.status,
                 "late_fee_applied": float(inst.late_fee_applied),
@@ -927,71 +990,17 @@ async def delete_fee_invoice(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(require_role("superadmin", "admin", "principal", "sysadmin")),
 ):
-    """
-    POLICY RULE B & C:
-    Permanent deletion of a fee invoice is permitted ONLY when it is an unposted/unpaid draft
-    with zero payments, zero allocations, and zero ledger impact.
-    Once issued, partially paid, or posted, permanent deletion is strictly blocked.
-    """
-    res = await db.execute(
-        select(FeeInvoice)
-        .options(selectinload(FeeInvoice.allocations), selectinload(FeeInvoice.items))
-        .where(FeeInvoice.id == invoice_id)
-    )
-    invoice = res.scalar_one_or_none()
-    if not invoice:
+    invoice = await db.get(FeeInvoice, invoice_id)
+    if invoice is None:
         raise HTTPException(status_code=404, detail="Fee invoice not found")
     await _authorize_invoice_access(db, invoice, current_user)
-
-    # If any payments have been recorded or allocations exist, block deletion
-    if (invoice.paid_amount and invoice.paid_amount > Decimal("0")) or len(invoice.allocations) > 0:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Posted Transaction Protection Violation: Cannot permanently delete invoice '{invoice.invoice_number}'. "
-                f"Recorded payments of ₹{invoice.paid_amount:,.2f} exist on this invoice. "
-                "In compliance with Immutable Numbering Policy, posted billing transactions cannot be erased. "
-                "Use the Payment Reversal and Invoice Cancellation workflow instead."
-            ),
-        )
-
-    # If the invoice was already issued/posted or cancelled, block permanent delete to retain numbering continuity
-    if invoice.status in ("paid", "partial", "cancelled"):
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Cannot permanently delete invoice '{invoice.invoice_number}' in '{invoice.status}' status. "
-                "Issued and cancelled document numbers are immutable. Use cancellation if required."
-            ),
-        )
-
-    # For unposted/unpaid draft invoices with 0 payments: allow deletion
-    audit = AuditLog(
-        user_id=current_user.id,
-        action="delete_draft_invoice",
-        resource_type="fee_invoice",
-        resource_id=invoice.id,
-        old_data=json.dumps({
-            "invoice_number": invoice.invoice_number,
-            "student_id": invoice.student_id,
-            "total_amount": float(invoice.total_amount),
-            "status": invoice.status,
-        }),
-        details=f"Draft invoice '{invoice.invoice_number}' permanently deleted by {current_user.username}",
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=(
+            f"Issued invoice '{invoice.invoice_number}' is immutable and cannot be deleted. "
+            "Use the authorized invoice cancellation workflow."
+        ),
     )
-    db.add(audit)
-
-    # Delete invoice line items
-    for item in invoice.items:
-        await db.delete(item)
-    await db.delete(invoice)
-    await db.commit()
-
-    return {
-        "success": True,
-        "message": f"Draft invoice '{invoice.invoice_number}' deleted successfully.",
-        "invoice_id": invoice_id,
-    }
 
 
 @router.post("/invoices/{invoice_id}/cancel")
@@ -1019,12 +1028,21 @@ async def cancel_fee_invoice(
     if invoice.status == "cancelled":
         raise HTTPException(status_code=400, detail=f"Invoice '{invoice.invoice_number}' is already cancelled")
 
-    if invoice.paid_amount and invoice.paid_amount > Decimal("0"):
+    allocation_res = await db.execute(
+        select(PaymentAllocation.id)
+        .join(Payment, Payment.id == PaymentAllocation.payment_id)
+        .where(
+            PaymentAllocation.invoice_id == invoice.id,
+            Payment.status.in_(["draft", "submitted", "approved", "posted", "completed"]),
+        )
+        .limit(1)
+    )
+    if invoice.paid_amount and invoice.paid_amount > Decimal("0") or allocation_res.scalar_one_or_none():
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Cannot cancel invoice '{invoice.invoice_number}' because it has ₹{invoice.paid_amount:,.2f} "
-                "in recorded payments. Please reverse or refund the payments before cancelling the invoice."
+                f"Cannot cancel invoice '{invoice.invoice_number}' while it has a balance-affecting payment "
+                "allocation. Reverse the payment and resolve any refund request first."
             ),
         )
 
@@ -1064,7 +1082,7 @@ async def list_installments(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
-    """Consolidated: Queries canonical FeeInvoiceItem line items."""
+    """Return persisted installment schedules; historical unscheduled invoices return no rows."""
     role = (getattr(current_user, "role", "") or "").strip().lower()
     if role == "student":
         own_sid = getattr(current_user, "student_id", None)
@@ -1074,27 +1092,36 @@ async def list_installments(
     elif not is_sysadmin(current_user) and role not in FEE_STAFF_VIEW_ROLES:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    query = select(FeeInvoiceItem).join(FeeInvoice).join(Student, FeeInvoice.student_id == Student.id)
+    query = (
+        select(FeeInstallment)
+        .join(FeeInvoice, FeeInstallment.invoice_id == FeeInvoice.id)
+        .join(Student, FeeInvoice.student_id == Student.id)
+    )
     if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
         query = query.where(Student.institution_id == current_user.institution_id)
     if invoice_id:
-        query = query.where(FeeInvoiceItem.invoice_id == invoice_id)
+        query = query.where(FeeInvoice.id == invoice_id)
     if student_id:
         query = query.where(FeeInvoice.student_id == student_id)
-    result = await db.execute(query)
+    if status:
+        query = query.where(FeeInstallment.status == status)
+    result = await db.execute(
+        query.order_by(FeeInstallment.due_date, FeeInstallment.installment_number)
+    )
     items = result.scalars().all()
     return [
         {
-            "id": i.id,
-            "invoice_id": i.invoice_id,
-            "installment_number": idx + 1,
-            "description": i.description or f"Installment #{idx + 1}",
-            "amount": float(i.amount),
-            "paid_amount": float(i.amount),
-            "due_date": "",
-            "status": "active",
+            "id": installment.id,
+            "invoice_id": installment.invoice_id,
+            "installment_number": installment.installment_number,
+            "description": installment.description,
+            "amount": float(installment.amount),
+            "paid_amount": float(installment.paid_amount),
+            "outstanding_amount": float(installment.outstanding_amount),
+            "due_date": str(installment.due_date),
+            "status": installment.status,
         }
-        for idx, i in enumerate(items)
+        for installment in items
     ]
 
 
@@ -1690,7 +1717,10 @@ async def get_fee_register(
             func.count(Payment.id).label("payment_count"),
             func.max(Payment.payment_date).label("last_payment_date"),
         )
-        .options(selectinload(FeeInvoice.items))
+        .options(
+            selectinload(FeeInvoice.items),
+            selectinload(FeeInvoice.installments),
+        )
         .join(Student, FeeInvoice.student_id == Student.id)
         .join(AcademicYear, FeeInvoice.academic_year_id == AcademicYear.id)
         .outerjoin(
