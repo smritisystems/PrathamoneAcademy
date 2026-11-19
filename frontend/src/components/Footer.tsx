@@ -603,10 +603,12 @@ export default function Footer() {
       )}
 
       {/* Popout Software License & Registration Details Dialog */}
-      <LicenseDetailsModal
-        isOpen={showLicenseModal}
-        onClose={() => setShowLicenseModal(false)}
-      />
+      {showLicenseModal && (
+        <LicenseDetailsModal
+          isOpen={showLicenseModal}
+          onClose={() => setShowLicenseModal(false)}
+        />
+      )}
     </footer>
   )
 }

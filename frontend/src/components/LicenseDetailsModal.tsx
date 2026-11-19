@@ -78,6 +78,24 @@ export default function LicenseDetailsModal({ isOpen, onClose }: LicenseDetailsM
     retry: false,
   })
 
+  // Validity countdown calculation
+  const expiresAt = licenseStatus?.expires_at
+  const expirationText = useMemo(() => {
+    if (!expiresAt) return 'Perpetual Commercial License'
+    const expDate = new Date(expiresAt)
+    if (isNaN(expDate.getTime())) return expiresAt
+    const now = new Date()
+    const diffDays = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    const formatted = expDate.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+    if (diffDays < 0) return `Expired on ${formatted} (${Math.abs(diffDays)} days ago)`
+    if (diffDays === 0) return `Expires Today (${formatted})`
+    return `Valid until ${formatted} (${diffDays} days remaining)`
+  }, [expiresAt])
+
   // Keyboard accessibility: Escape to dismiss
   useEffect(() => {
     if (!isOpen) return
@@ -139,24 +157,6 @@ export default function LicenseDetailsModal({ isOpen, onClose }: LicenseDetailsM
       setTimeout(() => setCopied(false), 2500)
     }
   }
-
-  // Validity countdown calculation
-  const expiresAt = licenseStatus?.expires_at
-  const expirationText = useMemo(() => {
-    if (!expiresAt) return 'Perpetual Commercial License'
-    const expDate = new Date(expiresAt)
-    if (isNaN(expDate.getTime())) return expiresAt
-    const now = new Date()
-    const diffDays = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    const formatted = expDate.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-    if (diffDays < 0) return `Expired on ${formatted} (${Math.abs(diffDays)} days ago)`
-    if (diffDays === 0) return `Expires Today (${formatted})`
-    return `Valid until ${formatted} (${diffDays} days remaining)`
-  }, [expiresAt])
 
   const licenseMode = licenseStatus?.mode || 'active'
   const isGrace = licenseMode === 'grace'
