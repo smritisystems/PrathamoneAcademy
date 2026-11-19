@@ -132,13 +132,16 @@ async def login(
 
     # Optional Device-Wise Security Binding evaluation (Default: Disabled)
     device_fp = request.headers.get("x-device-fingerprint") or request.headers.get("x-device-id")
+    device_name = request.headers.get("x-device-name")
+    device_consent = request.headers.get("x-device-consent", "").strip().lower() in ("true", "1", "yes")
     client_info = {
         "ip_address": request.client.host if request.client else None,
         "user_agent": request.headers.get("user-agent"),
-        "device_name": request.headers.get("x-device-name", "Web Browser"),
+        "device_name": device_name or "Web Browser",
         "device_type": request.headers.get("x-device-type", "desktop"),
         "browser_info": request.headers.get("x-device-browser"),
         "os_info": request.headers.get("x-device-os"),
+        "device_consent": device_consent,
     }
     from app.services.device_service import DeviceService
     await DeviceService.validate_device_login(db, user, device_fp, client_info)

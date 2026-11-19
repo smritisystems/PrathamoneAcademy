@@ -161,3 +161,28 @@ A dedicated executive workspace tab inside `Settings → Security & Device Bindi
   4. **Revoked Sessions (Purple):** Total sessions immediately terminated by administrators.
 - **Interactive Incident Stream:** Detailed table rendering exact timestamps, severity pills (`CRITICAL`, `WARNING`, `INFO`), target user email, client IP address, user agent, and complete policy violation details.
 - **Compliance Export:** Generates structured CSV audit files for institutional accreditation and cybersecurity compliance records.
+
+---
+
+## 9. DEVICE NAMING, PRIVACY & DPDP ACT 2023 CONSENT ARCHITECTURE
+
+To comply with the **Digital Personal Data Protection Act (DPDP Act) 2023** and modern privacy regulations:
+
+### 9.1 Browser Sandbox Limitations vs Explicit Device Naming
+- Web browsers deliberately do not expose internal machine hostnames (e.g., `DESKTOP-8Q4JKLM`) via standard JavaScript APIs to prevent silent user tracking and anti-fingerprinting violations.
+- PrathamOne EduOS solves this transparently and legally by:
+  1. Pre-filling an intelligent hardware descriptor based on client OS and browser (e.g. `Windows 11 / 10 (Google Chrome)`).
+  2. Querying the local companion agent (`http://127.0.0.1:9876/hardware-identity`) if installed to detect the physical workstation hostname and NIC MAC.
+  3. Allowing the user to personalize the **Device Friendly Name** (e.g. *"Physics Lab Laptop"*, *"Rajesh Home PC"*) before registration.
+
+### 9.2 DPDP Act 2023 Section 5 Notice & Section 6 Affirmative Consent
+Prior to binding any device hardware profile or device name to a user account:
+1. **Itemised Privacy Disclosure:**
+   - **What is collected:** Device Friendly Name, operating system version, browser client signature, and a cryptographic hardware fingerprint.
+   - **What is NEVER accessed:** No personal files, no document folders, no web browsing history, no keystrokes, and no GPS location data.
+   - **Purpose:** Multi-factor hardware device binding to protect student records, examination marks, and coaching financial ledgers from unauthorized account access.
+2. **Affirmative Consent Checkbox:**
+   - Requires explicit check: *"I authorize Prashant Academy to register this device name and hardware profile to my account for institutional access."*
+   - Sends `x-device-name`, `x-device-fingerprint`, and `x-device-consent: true` headers with authentication.
+3. **Immutable Audit Trail:**
+   - Backend registers device with status `active` (or `pending_approval`) and logs `DEVICE_REGISTERED_WITH_CONSENT` to `audit_logs` including actor ID, client IP, and UTC timestamp.

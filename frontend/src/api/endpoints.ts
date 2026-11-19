@@ -91,16 +91,35 @@ import type { FormCatalogItem, RenderedFormPayload, FormAuditLogItem } from '../
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const authApi = {
-  login: (username: string, password: string) => {
+  login: (
+    username: string,
+    password: string,
+    deviceMeta?: {
+      fingerprint?: string
+      name?: string
+      type?: string
+      browser?: string
+      os?: string
+      consent?: boolean
+    }
+  ) => {
     const form = new FormData()
     form.append('username', username)
     form.append('password', password)
+    const customHeaders: Record<string, string> = { 'Content-Type': 'multipart/form-data' }
+    if (deviceMeta?.fingerprint) customHeaders['x-device-fingerprint'] = deviceMeta.fingerprint
+    if (deviceMeta?.name) customHeaders['x-device-name'] = deviceMeta.name
+    if (deviceMeta?.type) customHeaders['x-device-type'] = deviceMeta.type
+    if (deviceMeta?.browser) customHeaders['x-device-browser'] = deviceMeta.browser
+    if (deviceMeta?.os) customHeaders['x-device-os'] = deviceMeta.os
+    if (deviceMeta?.consent) customHeaders['x-device-consent'] = 'true'
+
     return apiClient.post<{
       access_token: string
       token_type: string
       user: User
     }>('/auth/login', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: customHeaders,
     })
   },
   logout: () => apiClient.post<{ message: string }>('/auth/logout'),

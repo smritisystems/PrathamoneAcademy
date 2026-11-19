@@ -500,6 +500,22 @@ class DeviceService:
                 if device and device.status == "active":
                     device.last_used_at = datetime.now(timezone.utc)
                     await db.commit()
+                elif not device and info.get("device_consent"):
+                    try:
+                        await DeviceService.register_device(
+                            db,
+                            institution_id=user.institution_id,
+                            user_id=user.id,
+                            fingerprint=device_fingerprint,
+                            device_name=info.get("device_name", "Workstation"),
+                            device_type=info.get("device_type", "desktop"),
+                            browser_info=info.get("browser_info"),
+                            os_info=info.get("os_info"),
+                            ip_address=ip_addr,
+                            status_override="active",
+                        )
+                    except HTTPException:
+                        pass
             return True, "Optional device registration active; login permitted.", {"mode": "optional_registration"}
 
         # 3. Mode: Registered Devices Only
@@ -532,7 +548,7 @@ class DeviceService:
                 await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Device registration required. Unregistered devices cannot access this account.",
+                    detail="DEVICE_CONSENT_REQUIRED: Device registration and consent required. Unregistered devices cannot access this account.",
                 )
 
             stmt = select(UserDevice).where(
@@ -542,7 +558,72 @@ class DeviceService:
             )
             device = (await db.execute(stmt)).scalar_one_or_none()
 
-            if not device or device.status != "active":
+            if not device:
+                device_consent = bool(info.get("device_consent", False))
+                perm = settings.get("device_management_permissions", "admin_only")
+                can_self_register = (perm == "user_allowed") or (user.role in ("admin", "principal", "sysadmin", "staff", "teacher"))
+
+                if device_consent and can_self_register:
+                    try:
+                        registered_dev = await DeviceService.register_device(
+                            db,
+                            institution_id=user.institution_id,
+                            user_id=user.id,
+                            fingerprint=device_fingerprint,
+                            device_name=info.get("device_name", "Registered Workstation"),
+                            device_type=info.get("device_type", "desktop"),
+                            browser_info=info.get("browser_info"),
+                            os_info=info.get("os_info"),
+                            ip_address=ip_addr,
+                            status_override="active",
+                        )
+                        db.add(AuditLog(
+                            institution_id=user.institution_id,
+                            user_id=user.id,
+                            action="DEVICE_REGISTERED_WITH_CONSENT",
+                            resource_type="auth",
+                            ip_address=ip_addr,
+                            user_agent=u_agent,
+                            severity="info",
+                            details=f"Device '{registered_dev.device_name}' bound to user account with explicit DPDP Act 2023 consent.",
+                        ))
+                        await db.commit()
+                        return True, "Device registered with consent.", {"device_id": registered_dev.id}
+                    except HTTPException as reg_err:
+                        raise reg_err
+
+                if not device_consent:
+                    if shadow_mode:
+                        db.add(AuditLog(
+                            institution_id=user.institution_id,
+                            user_id=user.id,
+                            action="DEVICE_LOGIN_SHADOW",
+                            resource_type="auth",
+                            ip_address=ip_addr,
+                            user_agent=u_agent,
+                            severity="warning",
+                            details=f"Shadow Mode: Login permitted for unconsented device (fingerprint: {device_fingerprint[:12]}...).",
+                        ))
+                        await db.commit()
+                        return True, "Shadow mode permitted unconsented device.", {"shadow": True}
+
+                    db.add(AuditLog(
+                        institution_id=user.institution_id,
+                        user_id=user.id,
+                        action="UNAUTHORIZED_ACCESS_BLOCKED",
+                        resource_type="security_incident",
+                        ip_address=ip_addr,
+                        user_agent=u_agent,
+                        severity="warning",
+                        details=f"Login paused for '{user.email}': Device registration & consent confirmation required.",
+                    ))
+                    await db.commit()
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="DEVICE_CONSENT_REQUIRED: Please confirm your device name and authorize hardware registration to access Prashant Academy.",
+                    )
+
+            if device.status != "active":
                 if shadow_mode:
                     db.add(AuditLog(
                         institution_id=user.institution_id,
@@ -552,10 +633,10 @@ class DeviceService:
                         ip_address=ip_addr,
                         user_agent=u_agent,
                         severity="warning",
-                        details=f"Shadow Mode: Login permitted for unrecognized/inactive device (fingerprint: {device_fingerprint[:12]}...).",
+                        details=f"Shadow Mode: Login permitted for revoked/inactive device '{device.device_name}'.",
                     ))
                     await db.commit()
-                    return True, "Shadow mode permitted unrecognized device.", {"shadow": True}
+                    return True, "Shadow mode permitted inactive device.", {"shadow": True}
 
                 db.add(AuditLog(
                     institution_id=user.institution_id,
@@ -565,12 +646,12 @@ class DeviceService:
                     ip_address=ip_addr,
                     user_agent=u_agent,
                     severity="critical",
-                    details=f"Blocked login attempt for '{user.email}' from unrecognized/revoked device (Fingerprint: {device_fingerprint[:12]}...).",
+                    details=f"Blocked login attempt for '{user.email}' from inactive/revoked device '{device.device_name}'.",
                 ))
                 await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied: This device is not registered or is inactive. Contact your institution administrator.",
+                    detail=f"Access denied: Device '{device.device_name}' has been revoked or is inactive. Contact your administrator.",
                 )
 
             device.last_used_at = datetime.now(timezone.utc)
@@ -595,7 +676,7 @@ class DeviceService:
                 await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Device verification required. Missing device identifier.",
+                    detail="DEVICE_CONSENT_REQUIRED: Device verification required. Missing device identifier.",
                 )
 
             stmt = select(UserDevice).where(
@@ -606,14 +687,23 @@ class DeviceService:
             device = (await db.execute(stmt)).scalar_one_or_none()
 
             if not device:
-                # Auto-register as pending approval
+                device_consent = bool(info.get("device_consent", False))
+                if not device_consent:
+                    if shadow_mode:
+                        return True, "Shadow mode permitted device.", {"shadow": True}
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="DEVICE_CONSENT_REQUIRED: Please confirm your device name and authorize hardware registration to request access.",
+                    )
+
+                # Auto-register as pending approval with explicit user consent
                 try:
                     await DeviceService.register_device(
                         db,
                         institution_id=user.institution_id,
                         user_id=user.id,
                         fingerprint=device_fingerprint,
-                        device_name=info.get("device_name", "Unapproved Device"),
+                        device_name=info.get("device_name", "Pending Corporate Workstation"),
                         device_type=info.get("device_type", "desktop"),
                         browser_info=info.get("browser_info"),
                         os_info=info.get("os_info"),
@@ -645,12 +735,12 @@ class DeviceService:
                     ip_address=ip_addr,
                     user_agent=u_agent,
                     severity="warning",
-                    details=f"Login on hold for '{user.email}': New device enrolled and queued for admin approval.",
+                    details=f"Login on hold for '{user.email}': Device registration submitted with user consent and queued for admin approval.",
                 ))
                 await db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="New device detected. This device requires administrator approval before login is permitted.",
+                    detail="DEVICE_PENDING_APPROVAL: Device registration submitted with your consent. Administrator approval is required before you can sign in.",
                 )
 
             if device.status == "pending_approval":

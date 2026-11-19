@@ -5,7 +5,7 @@
   "product_version": "1.0.0",
   "organization": "Smritisys & AITDL Networks",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-19T05:23:44.601100",
+  "generated_at": "2026-11-19T05:45:41.404714",
   "total_documents": 559,
   "modules_catalog": [
     {
@@ -8567,8 +8567,8 @@
       "filename": "2026-11-19_RBAC-SECURITY_SPECIFICATION_OPTIONAL-DEVICE-BINDING-ARCHITECTURE_V1.md",
       "relative_path": "12_RBAC_SECURITY/2026-11-19_RBAC-SECURITY_SPECIFICATION_OPTIONAL-DEVICE-BINDING-ARCHITECTURE_V1.md",
       "extension": ".md",
-      "size_bytes": 9108,
-      "sha256": "897e1fafb9cbfd9418d8d87a3bbf3846e677c0058f51c915190964760a044283",
+      "size_bytes": 11172,
+      "sha256": "ca2c54590b1f270391402d55377c9815ec4ed9891b0e4ec67c07d547210d8d8b",
       "module": "12_RBAC_SECURITY",
       "title": "Optional Device-Wise Security Binding Architectural Specification",
       "category": "SPECIFICATION",

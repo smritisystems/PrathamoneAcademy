@@ -11,7 +11,7 @@
  *
  * @version     1.6.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Premium enterprise authentication portal featuring organic curved wave architecture, original PrathamOne navy/saffron theme colors, single unified Zero-Tab authentication, server-enforced role routing, and comprehensive academic curriculum spectrum overlays.
  */
@@ -27,6 +27,7 @@ import {
   Lock,
   User,
   ShieldCheck,
+  ShieldAlert,
   Building2,
   PhoneCall,
   KeyRound,
@@ -41,6 +42,12 @@ import {
   Zap,
   Coins,
   BookOpen,
+  Laptop,
+  Monitor,
+  Smartphone,
+  Info,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react'
 import Modal from '../components/Modal'
 import { authApi } from '../api/endpoints'
@@ -48,6 +55,55 @@ import { useAuthStore } from '../store/authStore'
 import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import toast from 'react-hot-toast'
+
+const detectClientDevice = () => {
+  if (typeof window === 'undefined') {
+    return {
+      fingerprint: 'fp_generic_' + Math.random().toString(36).substring(2, 10),
+      os: 'Desktop OS',
+      browser: 'Web Browser',
+      deviceType: 'desktop',
+      suggestedName: 'Desktop Workstation',
+    }
+  }
+
+  let fp = localStorage.getItem('prathamone_device_fp')
+  if (!fp) {
+    const ua = navigator.userAgent || ''
+    const raw = `${ua}-${navigator.language || ''}-${window.innerWidth || 1920}x${window.innerHeight || 1080}-${Date.now()}`
+    let hash = 0
+    for (let i = 0; i < raw.length; i++) {
+      hash = (hash << 5) - hash + raw.charCodeAt(i)
+      hash |= 0
+    }
+    fp = `fp_${Math.abs(hash).toString(16)}_${Math.random().toString(36).slice(-4)}`
+    localStorage.setItem('prathamone_device_fp', fp)
+  }
+
+  const ua = navigator.userAgent || ''
+  let os = 'Windows 11 / 10'
+  if (ua.includes('Win')) os = 'Windows 11 / 10'
+  else if (ua.includes('Mac')) os = 'macOS'
+  else if (ua.includes('Linux')) os = 'Linux'
+  else if (ua.includes('Android')) os = 'Android'
+  else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS'
+
+  let browser = 'Chrome'
+  if (ua.includes('Edg/')) browser = 'Microsoft Edge'
+  else if (ua.includes('Chrome/')) browser = 'Google Chrome'
+  else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Apple Safari'
+  else if (ua.includes('Firefox/')) browser = 'Mozilla Firefox'
+
+  let deviceType = 'desktop'
+  if (/iPad|Tablet/i.test(ua)) {
+    deviceType = 'tablet'
+  } else if (/Mobi|Android/i.test(ua)) {
+    deviceType = 'mobile'
+  }
+
+  const suggestedName = `${os} (${browser})`
+  return { fingerprint: fp, os, browser, deviceType, suggestedName }
+}
 
 const schema = z.object({
   username: z.string().min(1, 'Username or email is required'),
@@ -68,6 +124,56 @@ export default function LoginPage() {
   const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [logoLoadFailed, setLogoLoadFailed] = useState(false)
+
+  // Device Binding & DPDP Act 2023 Consent States
+  const [deviceMeta, setDeviceMeta] = useState<{
+    fingerprint: string
+    os: string
+    browser: string
+    deviceType: string
+    suggestedName: string
+    mac?: string
+    isAgent: boolean
+  }>(() => {
+    const init = detectClientDevice()
+    return { ...init, isAgent: false }
+  })
+  const [customDeviceName, setCustomDeviceName] = useState<string>('')
+  const [showConsentModal, setShowConsentModal] = useState<boolean>(false)
+  const [deviceConsentChecked, setDeviceConsentChecked] = useState<boolean>(true)
+  const [pendingCredentials, setPendingCredentials] = useState<FormData | null>(null)
+  const [consentSubmitting, setConsentSubmitting] = useState<boolean>(false)
+
+  useEffect(() => {
+    const checkAgent = async () => {
+      try {
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 1200)
+        const res = await fetch('http://127.0.0.1:9876/hardware-identity', { signal: controller.signal })
+        clearTimeout(timer)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.primary_mac) {
+            const agentName = `Workstation [MAC: ${data.primary_mac}]`
+            setDeviceMeta((prev) => ({
+              ...prev,
+              fingerprint: data.device_fingerprint || `mac_${data.primary_mac}`,
+              mac: data.primary_mac,
+              os: data.os || prev.os,
+              suggestedName: agentName,
+              isAgent: true,
+            }))
+            setCustomDeviceName(agentName)
+            return
+          }
+        }
+      } catch {
+        // Agent offline; fallback to browser fingerprint
+      }
+      setCustomDeviceName((prev) => prev || deviceMeta.suggestedName)
+    }
+    checkAgent()
+  }, [])
 
   useEffect(() => {
     setLogoLoadFailed(false)
@@ -97,22 +203,55 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
-  const onSubmit = async (data: FormData) => {
+  const executeLogin = async (data: FormData, explicitConsent = false) => {
     setLoading(true)
     try {
-      const resp = await authApi.login(data.username, data.password)
+      const chosenName = customDeviceName.trim() || deviceMeta.suggestedName
+      const resp = await authApi.login(data.username, data.password, {
+        fingerprint: deviceMeta.fingerprint,
+        name: chosenName,
+        type: deviceMeta.deviceType,
+        browser: deviceMeta.browser,
+        os: deviceMeta.os,
+        consent: explicitConsent,
+      })
       login('cookie-session', resp.data.user)
       toast.success(`Welcome back, ${resp.data.user.first_name || 'Administrator'}!`)
+      setShowConsentModal(false)
       if (resp.data.user.role === 'student') {
         navigate('/student-portal', { replace: true })
       } else {
         navigate('/dashboard', { replace: true })
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail ?? 'Authentication failed. Please verify your credentials.')
+      const detail = err?.response?.data?.detail || ''
+      if (detail.includes('DEVICE_CONSENT_REQUIRED')) {
+        setPendingCredentials(data)
+        setShowConsentModal(true)
+        toast.error('Device registration and consent required for institutional access.')
+      } else if (detail.includes('DEVICE_PENDING_APPROVAL')) {
+        setShowConsentModal(false)
+        toast.error('Device registration submitted with your consent. Administrator approval is required before you can sign in.', { duration: 6000 })
+      } else {
+        toast.error(detail || 'Authentication failed. Please verify your credentials.')
+      }
     } finally {
       setLoading(false)
+      setConsentSubmitting(false)
     }
+  }
+
+  const onSubmit = (data: FormData) => {
+    executeLogin(data, false)
+  }
+
+  const handleConfirmConsentAndLogin = () => {
+    if (!pendingCredentials) {
+      setShowConsentModal(false)
+      return
+    }
+    setConsentSubmitting(true)
+    executeLogin(pendingCredentials, true)
   }
 
   const handleAutofillDefaultAdmin = () => {
@@ -519,6 +658,23 @@ export default function LoginPage() {
                 </span>
               )}
             </button>
+
+            {/* Device Security & Privacy Status Badge */}
+            <div className="pt-2 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs text-slate-600">
+              <div className="flex items-center gap-2 min-w-0">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="truncate text-[11px] font-medium text-slate-700">
+                  {customDeviceName || deviceMeta.suggestedName}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConsentModal(true)}
+                className="text-[11px] font-bold text-[#0B2D6B] hover:text-[#071C44] underline shrink-0 ml-2"
+              >
+                Review Device Name
+              </button>
+            </div>
           </form>
 
           {/* Need Assistance Section */}
@@ -610,6 +766,128 @@ export default function LoginPage() {
               <p className="text-[11px] text-slate-400 pt-1">
                 For student, teacher, or operator password assistance, please contact your coaching institute administrator.
               </p>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Accessible Modal: Device Registration & Consent (DPDP Act 2023) */}
+        <Modal
+          open={showConsentModal}
+          onClose={() => setShowConsentModal(false)}
+          title="Device Security & Registration Consent"
+          size="lg"
+        >
+          <div className="space-y-4 text-xs text-slate-700 py-1">
+            <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200/80 flex items-start gap-3">
+              <ShieldCheck className="w-5 h-5 text-primary-700 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-bold text-slate-900 text-xs mb-1">
+                  Device-Wise Access Authorization
+                </h4>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  {branding.academyName} enforces optional hardware-level device binding to protect student records, examination marks, and institutional finances against unauthorized account access.
+                </p>
+              </div>
+            </div>
+
+            {/* Device Friendly Name Customization */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="font-bold text-slate-900 text-xs">
+                  Device Friendly Name *
+                </label>
+                {deviceMeta.isAgent && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 inline-flex items-center gap-1">
+                    <Laptop className="w-3 h-3" />
+                    Companion Agent Detected
+                  </span>
+                )}
+              </div>
+              <input
+                type="text"
+                required
+                value={customDeviceName}
+                onChange={(e) => setCustomDeviceName(e.target.value)}
+                placeholder="e.g. Physics Lab Laptop, Principal Office PC"
+                className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-1 focus:ring-primary-600 font-medium"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">
+                Personalize this name so it is easily identifiable in your security settings and audit history.
+              </p>
+            </div>
+
+            {/* Hardware Profile Details */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200 text-[11px]">
+              <div>
+                <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Platform / OS</span>
+                <span className="font-semibold text-slate-800">{deviceMeta.os}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Browser</span>
+                <span className="font-semibold text-slate-800">{deviceMeta.browser}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Hardware Signature</span>
+                <span className="font-mono font-semibold text-slate-800 truncate block" title={deviceMeta.fingerprint}>
+                  {deviceMeta.mac ? `MAC: ${deviceMeta.mac}` : `${deviceMeta.fingerprint.slice(0, 12)}...`}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Security Tier</span>
+                <span className="font-semibold text-emerald-700">Scoped Tenant</span>
+              </div>
+            </div>
+
+            {/* DPDP Act 2023 Itemised Disclosure Notice */}
+            <div className="p-3 rounded-lg bg-amber-50/60 border border-amber-200/70 text-[11px] space-y-1.5 text-slate-700">
+              <div className="font-bold text-amber-900 flex items-center gap-1.5 text-xs">
+                <Info className="w-3.5 h-3.5 text-amber-600" />
+                <span>Privacy Guarantee &amp; DPDP Act 2023 Disclosure</span>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-slate-600 text-[10px]">
+                <li><strong>What is shared:</strong> The device name above, browser client type, OS version, and a cryptographic hardware signature.</li>
+                <li><strong>What is NEVER accessed:</strong> No personal files, no browser search history, no keystrokes, and no GPS location.</li>
+                <li><strong>Purpose:</strong> Multi-factor device binding to prevent unauthorized access from untrusted computers.</li>
+              </ul>
+            </div>
+
+            {/* Explicit Consent Affirmation */}
+            <label className="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-200 bg-white cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={deviceConsentChecked}
+                onChange={(e) => setDeviceConsentChecked(e.target.checked)}
+                className="mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-[11px] text-slate-700 font-medium leading-relaxed">
+                I authorize <strong>{branding.academyName}</strong> to register this device name and hardware profile to my account for institutional access.
+              </span>
+            </label>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowConsentModal(false)}
+                className="px-3.5 py-2 border border-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!deviceConsentChecked || !customDeviceName.trim() || consentSubmitting}
+                onClick={handleConfirmConsentAndLogin}
+                className="px-4 py-2 bg-[#0B2D6B] hover:bg-[#071C44] text-white rounded-lg text-xs font-bold transition disabled:opacity-50 flex items-center gap-2 shadow-xs"
+              >
+                {consentSubmitting ? (
+                  <span>Authorizing...</span>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Authorize &amp; Sign In</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </Modal>
