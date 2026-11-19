@@ -147,8 +147,8 @@ def render_scene_frame(
             ch_x = (width - ch_w) // 2
             ch_y = height - 150
             draw.rounded_rectangle([ch_x, ch_y, ch_x + ch_w, ch_y + ch_h], radius=16, fill=(15, 23, 42, 245), outline=(241, 105, 6, 255), width=2)
-            draw.text((ch_x + 36, ch_y + 16), "PRIYA SHARMA", font=get_font(24, bold=True), fill=(255, 255, 255, 255))
-            draw.text((ch_x + 36, ch_y + 48), "Senior Solutions Specialist • PrathamOne EduOS", font=get_font(15), fill=(203, 213, 225, 255))
+            draw.text((ch_x + 36, ch_y + 16), "PRASHANT TEJAM", font=get_font(24, bold=True), fill=(255, 255, 255, 255))
+            draw.text((ch_x + 36, ch_y + 48), "Founder, Dean & Owner • Prashant Academy", font=get_font(15), fill=(203, 213, 225, 255))
 
         elif mode == "pip" and presenter_img:
             pip_w = int(width * 0.16)
@@ -161,8 +161,8 @@ def render_scene_frame(
             frame.paste(p_face, (pip_x + 6, pip_y + 6))
 
             # Nameplate
-            draw.text((pip_x + 14, pip_y + pip_h - 44), "Priya Sharma", font=get_font(13, bold=True), fill=(255, 255, 255, 255))
-            draw.text((pip_x + 14, pip_y + pip_h - 24), "AI Solutions Specialist", font=get_font(10), fill=(148, 163, 184, 255))
+            draw.text((pip_x + 14, pip_y + pip_h - 44), "Prashant Tejam", font=get_font(13, bold=True), fill=(255, 255, 255, 255))
+            draw.text((pip_x + 14, pip_y + pip_h - 24), "Founder, Dean & Owner", font=get_font(10), fill=(148, 163, 184, 255))
 
             # Animated Equalizer
             eq_x = pip_x + pip_w - 45

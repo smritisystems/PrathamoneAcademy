@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-19 12:06:51<br>
-**Total Indexed Items:** 604<br>
+**Last Reindexed:** 2026-11-19 23:45:13<br>
+**Total Indexed Items:** 660<br>
 
 ---
 
@@ -14,10 +14,10 @@
 
 | Module # | Module Directory | Registered Documents | Description |
 |---|---|---|---|
-| `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **10** | Product Overview & Vision |
-| `01` | [01_ARCHITECTURE](#01_architecture) | **17** | System Architecture & Workflows |
+| `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **18** | Product Overview & Vision |
+| `01` | [01_ARCHITECTURE](#01_architecture) | **18** | System Architecture & Workflows |
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **11** | Installation & Deployment |
-| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **29** | Academic Structure & Courses |
+| `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **30** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **21** | Student Directory & Admissions |
 | `05` | [05_TEACHER_MANAGEMENT](#05_teacher_management) | **7** | Teacher & Faculty Directory |
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
@@ -41,7 +41,7 @@
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
 | `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **176** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **222** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -53,13 +53,21 @@
 |---|---|---|---|---|---|---|
 | **Coaching Institute Policy Framework** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md](00_PRODUCT_OVERVIEW/2026-11-03_PRODUCT_OVERVIEW_POLICY-FRAMEWORK_COACHING-INSTITUTE-POLICY-FRAMEWORK_V1.md) | - |
 | **Prashant Academy — Documentation Index** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md](00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md) | - |
+| **Prashant Academy — Master Commercial Production Report: Photorealistic Indian Faculty Showcase & Official Artwork Integration** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_PRASHANT-ACADEMY-MASTER-COMMERCIAL_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_PRASHANT-ACADEMY-MASTER-COMMERCIAL_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
 | **PrathamOne & PrathamOne EduOS Brand Architecture Specification** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md) | frontend.config, frontend.components, 14_PRINTING_DOCUMENTS |
 | **PrathamOne & PrathamOne EduOS Brand Asset Register & Master Specifications** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md) | frontend.config, frontend.components, 17_UI_UX_DESIGN |
+| **PrathamOne EduOS 20-Module Coaching Institute Presentation Guide** | `GUIDE` | `1.0` | 2026-11-19 | `Draft` | [2026-11-19_PRODUCT-OVERVIEW_PRESENTATION-GUIDE_20-MODULES_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_PRESENTATION-GUIDE_20-MODULES_V1.md) | 00_PRODUCT_OVERVIEW, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 14_PRINTING_DOCUMENTS, 16_DATABASE_API, 18_TESTING_QA, 25_BUSINESS_REQUIREMENTS |
+| **PrathamOne EduOS Institute Operations and Data Control Presentation Guide** | `GUIDE` | `1.0` | 2026-11-19 | `Draft` | [2026-11-19_PRODUCT-OVERVIEW_PRESENTATION-GUIDE_INSTITUTE-OPERATIONS-AND-DATA-CONTROL_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_PRESENTATION-GUIDE_INSTITUTE-OPERATIONS-AND-DATA-CONTROL_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 12_RBAC_SECURITY, 16_DATABASE_API, 18_TESTING_QA, 25_BUSINESS_REQUIREMENTS |
 | **PrathamOne EduOS Official Brand Identity & Logo Assets Specification** | `SPECIFICATION` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md](00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md) | 17_UI_UX_DESIGN, 14_PRINTING_DOCUMENTS |
+| **PrathamOne EduOS — 20-Module Enterprise Master Presentation & Verbatim Speaker Transcripts (Light Premium Edition)** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_20-MODULES-EXECUTIVE-TRANSCRIPT_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_20-MODULES-EXECUTIVE-TRANSCRIPT_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS |
 | **PrathamOne EduOS — Centralized Documentation Hub** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [README.md](README.md) | - |
 | **PrathamOne EduOS — Cinematic Television Advertisement Proof of Concept & Production Feasibility Report** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 17_UI_UX_DESIGN, 16_DATABASE_API |
 | **PrathamOne EduOS — Cinematic Television Advertisement Studio V2 Master Production Report** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 07_ATTENDANCE, 09_FEES_PAYMENTS |
+| **PrathamOne EduOS — Cinematic Television Advertisement Studio V3: Realistic Teacher Intro & Official Artwork Showcase** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_TEACHER-INTRO-AND-OFFICIAL-ARTWORK-COMMERCIAL_V3.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_TEACHER-INTRO-AND-OFFICIAL-ARTWORK-COMMERCIAL_V3.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 07_ATTENDANCE, 09_FEES_PAYMENTS |
+| **PrathamOne EduOS — Coaching Institute Pitch Deck & Presentation Specification** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_COACHING-PITCH-DECK-PRESENTATION_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_COACHING-PITCH-DECK-PRESENTATION_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
+| **PrathamOne EduOS — Commercial Short Preview Production Report: Institute Intro & Indian Academic Director Showcase** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_INSTITUTE-COMMERCIAL-SHORT-PREVIEW_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_INSTITUTE-COMMERCIAL-SHORT-PREVIEW_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
 | **PrathamOne EduOS — Documentation Governance & Naming Rules** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) | - |
+| **PrathamOne EduOS — Google Flow & Veo 2 Scene Builder Prompt Pack and Commercial Studio Ingestion** | `SPECIFICATION` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_SPECIFICATION_GOOGLE-FLOW-VEO-PROMPT-PACK_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_SPECIFICATION_GOOGLE-FLOW-VEO-PROMPT-PACK_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
 | **Strategic Product Roadmap — Prashant Academy** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md](00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md) | - |
 
 
@@ -67,6 +75,7 @@
 
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
+| **Architectural Feasibility & Engineering Report: Native In-App Lecture Recording vs OBS Studio Integration** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_ARCHITECTURE_FEASIBILITY-REPORT_NATIVE-IN-APP-RECORDING-AND-OBS-STREAMING_V1.md](01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-REPORT_NATIVE-IN-APP-RECORDING-AND-OBS-STREAMING_V1.md) | 03_ACADEMIC_MANAGEMENT, 14_PRINTING_DOCUMENTS, 16_DATABASE_API |
 | **Detailed Workflow Specifications** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ARCHITECTURE_SPECIFICATION_WORKFLOW-SPECIFICATIONS_V1.md](01_ARCHITECTURE/2026-11-03_ARCHITECTURE_SPECIFICATION_WORKFLOW-SPECIFICATIONS_V1.md) | - |
 | **Global Branding & Appearance Architecture Specification** | `SPECIFICATION` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md) | 01_ARCHITECTURE, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
 | **Global Data Inventory — Complete Software & Schema Census** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
@@ -114,6 +123,7 @@
 | **Canonical Subject Architecture Final Integrity Audit & Regression Verification Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md) | 03_ACADEMIC_MANAGEMENT, 08_EXAMINATION, 12_RBAC_SECURITY |
 | **Course, Batch, and Enrollment Rules** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_COURSE-BATCH-ENROLLMENT-RULES_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_COURSE-BATCH-ENROLLMENT-RULES_V1.md) | - |
 | **EduBoard Canvas Viewport Sizing & PDF Export Cropping Forensic Audit** | `REPORT` | `1.0` | 2026-11-13 | `Approved` | [2026-11-13_ACADEMIC-MANAGEMENT_FORENSIC-AUDIT_EDUBOARD-CANVAS-CROPPING-AND-PDF-EXPORT-ANALYSIS_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-13_ACADEMIC-MANAGEMENT_FORENSIC-AUDIT_EDUBOARD-CANVAS-CROPPING-AND-PDF-EXPORT-ANALYSIS_V1.md) | 03_ACADEMIC_MANAGEMENT, 14_PRINTING_DOCUMENTS |
+| **EduBoard Native In-App Lecture Recording Implementation Report** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_EDUBOARD-NATIVE-IN-APP-RECORDING_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-19_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_EDUBOARD-NATIVE-IN-APP-RECORDING_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 14_PRINTING_DOCUMENTS |
 | **EduBoard Subject Deduplication & Canonical Mapping Forensic Audit** | `REPORT` | `1.0` | 2026-11-13 | `Approved` | [2026-11-13_ACADEMIC-MANAGEMENT_FORENSIC-AUDIT_EDUBOARD-SUBJECT-DEDUPLICATION-AND-MAPPING-ANALYSIS_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-13_ACADEMIC-MANAGEMENT_FORENSIC-AUDIT_EDUBOARD-SUBJECT-DEDUPLICATION-AND-MAPPING-ANALYSIS_V1.md) | 03_ACADEMIC_MANAGEMENT, 08_EXAMINATION, 16_DATABASE_API |
 | **EduBoard Universal Device Compatibility Matrix** | `MATRIX` | `1.0` | 2026-11-13 | `Approved` | [2026-11-13_ACADEMIC-MANAGEMENT_COMPATIBILITY-MATRIX_DEVICE-COMPATIBILITY-MATRIX_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-13_ACADEMIC-MANAGEMENT_COMPATIBILITY-MATRIX_DEVICE-COMPATIBILITY-MATRIX_V1.md) | 01_ARCHITECTURE, 18_TESTING_QA |
 | **Homework & Assignment Management Enhancement — Final Acceptance Report** | `REPORT` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md](03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY, 19_RELEASES_CHANGELOG |
@@ -640,30 +650,27 @@
 | Asset Filename | Subdirectory | Size | Relative Link |
 |---|---|---|---|
 | `01_ch01_corridor_walk_chyron_8.0s.jpg` | `assets/commercial/inspection_frames` | 264.7 KB | [01_ch01_corridor_walk_chyron_8.0s.jpg](assets/commercial/inspection_frames/01_ch01_corridor_walk_chyron_8.0s.jpg) |
-| `01_ch01_opening_presenter_00m05s_5.0s.jpg` | `assets/commercial/inspection_frames` | 256.9 KB | [01_ch01_opening_presenter_00m05s_5.0s.jpg](assets/commercial/inspection_frames/01_ch01_opening_presenter_00m05s_5.0s.jpg) |
 | `01_login_screen.png` | `assets/screenshots` | 1185.9 KB | [01_login_screen.png](assets/screenshots/01_login_screen.png) |
 | `02_ch02_smartboard_presentation_26.0s.jpg` | `assets/commercial/inspection_frames` | 267.6 KB | [02_ch02_smartboard_presentation_26.0s.jpg](assets/commercial/inspection_frames/02_ch02_smartboard_presentation_26.0s.jpg) |
-| `02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg` | `assets/commercial/inspection_frames` | 259.9 KB | [02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg](assets/commercial/inspection_frames/02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg) |
+| `02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg` | `assets/commercial/inspection_frames` | 260.2 KB | [02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg](assets/commercial/inspection_frames/02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg) |
 | `02_dashboard_overview.png` | `assets/screenshots` | 377.9 KB | [02_dashboard_overview.png](assets/screenshots/02_dashboard_overview.png) |
 | `03_academic_workspace.png` | `assets/screenshots` | 345.5 KB | [03_academic_workspace.png](assets/screenshots/03_academic_workspace.png) |
 | `03_ch03_executive_dashboard_pip_45.0s.jpg` | `assets/commercial/inspection_frames` | 309.6 KB | [03_ch03_executive_dashboard_pip_45.0s.jpg](assets/commercial/inspection_frames/03_ch03_executive_dashboard_pip_45.0s.jpg) |
-| `03_ch04_student_directory_search_01m05s_65.0s.jpg` | `assets/commercial/inspection_frames` | 265.3 KB | [03_ch04_student_directory_search_01m05s_65.0s.jpg](assets/commercial/inspection_frames/03_ch04_student_directory_search_01m05s_65.0s.jpg) |
+| `03_ch04_student_directory_search_01m05s_65.0s.jpg` | `assets/commercial/inspection_frames` | 270.5 KB | [03_ch04_student_directory_search_01m05s_65.0s.jpg](assets/commercial/inspection_frames/03_ch04_student_directory_search_01m05s_65.0s.jpg) |
 | `03b_ch04_student_search_active_72.0s.jpg` | `assets/commercial/inspection_frames` | 138.3 KB | [03b_ch04_student_search_active_72.0s.jpg](assets/commercial/inspection_frames/03b_ch04_student_search_active_72.0s.jpg) |
 | `03c_ch04_student_search_aarav_filtered_68.0s.jpg` | `assets/commercial/inspection_frames` | 159.8 KB | [03c_ch04_student_search_aarav_filtered_68.0s.jpg](assets/commercial/inspection_frames/03c_ch04_student_search_aarav_filtered_68.0s.jpg) |
 | `04_ch04_student_search_view_lock_70.0s.jpg` | `assets/commercial/inspection_frames` | 236.2 KB | [04_ch04_student_search_view_lock_70.0s.jpg](assets/commercial/inspection_frames/04_ch04_student_search_view_lock_70.0s.jpg) |
-| `04_ch05_fee_collection_analytics_01m30s_90.0s.jpg` | `assets/commercial/inspection_frames` | 271.2 KB | [04_ch05_fee_collection_analytics_01m30s_90.0s.jpg](assets/commercial/inspection_frames/04_ch05_fee_collection_analytics_01m30s_90.0s.jpg) |
+| `04_ch05_fee_collection_analytics_01m30s_90.0s.jpg` | `assets/commercial/inspection_frames` | 278.6 KB | [04_ch05_fee_collection_analytics_01m30s_90.0s.jpg](assets/commercial/inspection_frames/04_ch05_fee_collection_analytics_01m30s_90.0s.jpg) |
 | `04_courses_management.png` | `assets/screenshots` | 393.0 KB | [04_courses_management.png](assets/screenshots/04_courses_management.png) |
 | `05_ch05_fee_collection_pip_92.0s.jpg` | `assets/commercial/inspection_frames` | 301.2 KB | [05_ch05_fee_collection_pip_92.0s.jpg](assets/commercial/inspection_frames/05_ch05_fee_collection_pip_92.0s.jpg) |
-| `05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg` | `assets/commercial/inspection_frames` | 255.8 KB | [05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg](assets/commercial/inspection_frames/05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg) |
+| `05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg` | `assets/commercial/inspection_frames` | 256.0 KB | [05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg](assets/commercial/inspection_frames/05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg) |
 | `05_subjects_management.png` | `assets/screenshots` | 221.2 KB | [05_subjects_management.png](assets/screenshots/05_subjects_management.png) |
 | `06_ch06_eduboard_greenboard_115.0s.jpg` | `assets/commercial/inspection_frames` | 316.2 KB | [06_ch06_eduboard_greenboard_115.0s.jpg](assets/commercial/inspection_frames/06_ch06_eduboard_greenboard_115.0s.jpg) |
-| `06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg` | `assets/commercial/inspection_frames` | 233.0 KB | [06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg](assets/commercial/inspection_frames/06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg) |
+| `06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg` | `assets/commercial/inspection_frames` | 234.9 KB | [06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg](assets/commercial/inspection_frames/06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg) |
 | `06_students_directory.png` | `assets/screenshots` | 374.7 KB | [06_students_directory.png](assets/screenshots/06_students_directory.png) |
 | `07_ch07_attendance_terminal_135.0s.jpg` | `assets/commercial/inspection_frames` | 279.5 KB | [07_ch07_attendance_terminal_135.0s.jpg](assets/commercial/inspection_frames/07_ch07_attendance_terminal_135.0s.jpg) |
-| `07_ch08_onprem_vs_cloud_architecture_02m26s_146.0s.jpg` | `assets/commercial/inspection_frames` | 250.4 KB | [07_ch08_onprem_vs_cloud_architecture_02m26s_146.0s.jpg](assets/commercial/inspection_frames/07_ch08_onprem_vs_cloud_architecture_02m26s_146.0s.jpg) |
 | `07_student_admission_form.png` | `assets/screenshots` | 279.8 KB | [07_student_admission_form.png](assets/screenshots/07_student_admission_form.png) |
 | `08_ch08_brand_climax_closing_card_160.0s.jpg` | `assets/commercial/inspection_frames` | 249.5 KB | [08_ch08_brand_climax_closing_card_160.0s.jpg](assets/commercial/inspection_frames/08_ch08_brand_climax_closing_card_160.0s.jpg) |
-| `08_ch08_brand_climax_endcard_02m40s_160.0s.jpg` | `assets/commercial/inspection_frames` | 173.3 KB | [08_ch08_brand_climax_endcard_02m40s_160.0s.jpg](assets/commercial/inspection_frames/08_ch08_brand_climax_endcard_02m40s_160.0s.jpg) |
 | `08_student_detail_profile.png` | `assets/screenshots` | 331.5 KB | [08_student_detail_profile.png](assets/screenshots/08_student_detail_profile.png) |
 | `09_student_edit_modal.png` | `assets/screenshots` | 394.0 KB | [09_student_edit_modal.png](assets/screenshots/09_student_edit_modal.png) |
 | `10_student_exit_modal.png` | `assets/screenshots` | 365.5 KB | [10_student_exit_modal.png](assets/screenshots/10_student_exit_modal.png) |
@@ -689,9 +696,22 @@
 | `25_branding_settings_preview.png` | `assets/screenshots` | 478.4 KB | [25_branding_settings_preview.png](assets/screenshots/25_branding_settings_preview.png) |
 | `26_communication_center.png` | `assets/screenshots` | 338.5 KB | [26_communication_center.png](assets/screenshots/26_communication_center.png) |
 | `27_releases_and_version_audit.png` | `assets/screenshots` | 517.1 KB | [27_releases_and_version_audit.png](assets/screenshots/27_releases_and_version_audit.png) |
+| `PrathamOne_EduOS_20_Module_Guide.pdf` | `assets/commercial` | 3320.7 KB | [PrathamOne_EduOS_20_Module_Guide.pdf](assets/commercial/PrathamOne_EduOS_20_Module_Guide.pdf) |
+| `PrathamOne_EduOS_20_Module_Guide.pptx` | `assets/commercial` | 5742.0 KB | [PrathamOne_EduOS_20_Module_Guide.pptx](assets/commercial/PrathamOne_EduOS_20_Module_Guide.pptx) |
+| `PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf` | `assets/commercial` | 912.8 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf) |
+| `PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx` | `assets/commercial` | 4426.5 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx) |
+| `PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx` | `assets/commercial` | 3794.7 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx) |
+| `PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf` | `assets/commercial` | 231.5 KB | [PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf](assets/commercial/PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf) |
+| `PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx` | `assets/commercial` | 340.6 KB | [PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx](assets/commercial/PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx) |
+| `PrathamOne_EduOS_Pitch_Deck.pdf` | `assets/commercial` | 786.1 KB | [PrathamOne_EduOS_Pitch_Deck.pdf](assets/commercial/PrathamOne_EduOS_Pitch_Deck.pdf) |
+| `PrathamOne_EduOS_Pitch_Deck.pptx` | `assets/commercial` | 3725.2 KB | [PrathamOne_EduOS_Pitch_Deck.pptx](assets/commercial/PrathamOne_EduOS_Pitch_Deck.pptx) |
 | `actual_values_accountant_dashboard.png` | `assets/screenshots` | 376.4 KB | [actual_values_accountant_dashboard.png](assets/screenshots/actual_values_accountant_dashboard.png) |
 | `actual_values_admin_dashboard.png` | `assets/screenshots` | 377.1 KB | [actual_values_admin_dashboard.png](assets/screenshots/actual_values_admin_dashboard.png) |
 | `actual_values_fees_ledger.png` | `assets/screenshots` | 429.1 KB | [actual_values_fees_ledger.png](assets/screenshots/actual_values_fees_ledger.png) |
+| `admissions.jpg` | `assets/commercial/module_screenshots` | 277.2 KB | [admissions.jpg](assets/commercial/module_screenshots/admissions.jpg) |
+| `admissions.png` | `assets/commercial/module_screenshots` | 198.0 KB | [admissions.png](assets/commercial/module_screenshots/admissions.png) |
+| `attendance.jpg` | `assets/commercial/module_screenshots` | 252.3 KB | [attendance.jpg](assets/commercial/module_screenshots/attendance.jpg) |
+| `attendance.png` | `assets/commercial/module_screenshots` | 252.6 KB | [attendance.png](assets/commercial/module_screenshots/attendance.png) |
 | `codex_active_decoder_modal.png` | `assets/screenshots` | 397.8 KB | [codex_active_decoder_modal.png](assets/screenshots/codex_active_decoder_modal.png) |
 | `codex_active_master_on.png` | `assets/screenshots` | 394.1 KB | [codex_active_master_on.png](assets/screenshots/codex_active_master_on.png) |
 | `codex_active_user_view_comparison.png` | `assets/screenshots` | 401.6 KB | [codex_active_user_view_comparison.png](assets/screenshots/codex_active_user_view_comparison.png) |
@@ -702,6 +722,14 @@
 | `codex_working_features_activation.png` | `assets/screenshots` | 429.8 KB | [codex_working_features_activation.png](assets/screenshots/codex_working_features_activation.png) |
 | `codex_working_general_overview.png` | `assets/screenshots` | 390.2 KB | [codex_working_general_overview.png](assets/screenshots/codex_working_general_overview.png) |
 | `codex_working_live_sandbox.png` | `assets/screenshots` | 398.0 KB | [codex_working_live_sandbox.png](assets/screenshots/codex_working_live_sandbox.png) |
+| `communication.jpg` | `assets/commercial/module_screenshots` | 276.3 KB | [communication.jpg](assets/commercial/module_screenshots/communication.jpg) |
+| `communication.png` | `assets/commercial/module_screenshots` | 272.7 KB | [communication.png](assets/commercial/module_screenshots/communication.png) |
+| `concessions.jpg` | `assets/commercial/module_screenshots` | 283.4 KB | [concessions.jpg](assets/commercial/module_screenshots/concessions.jpg) |
+| `concessions.png` | `assets/commercial/module_screenshots` | 283.9 KB | [concessions.png](assets/commercial/module_screenshots/concessions.png) |
+| `courses.jpg` | `assets/commercial/module_screenshots` | 241.5 KB | [courses.jpg](assets/commercial/module_screenshots/courses.jpg) |
+| `courses.png` | `assets/commercial/module_screenshots` | 271.9 KB | [courses.png](assets/commercial/module_screenshots/courses.png) |
+| `dashboard.jpg` | `assets/commercial/module_screenshots` | 260.5 KB | [dashboard.jpg](assets/commercial/module_screenshots/dashboard.jpg) |
+| `dashboard.png` | `assets/commercial/module_screenshots` | 267.8 KB | [dashboard.png](assets/commercial/module_screenshots/dashboard.png) |
 | `dashboard_codex_active.png` | `assets/screenshots` | 375.3 KB | [dashboard_codex_active.png](assets/screenshots/dashboard_codex_active.png) |
 | `dashboard_codex_decoder_modal.png` | `assets/screenshots` | 426.7 KB | [dashboard_codex_decoder_modal.png](assets/screenshots/dashboard_codex_decoder_modal.png) |
 | `dashboard_codex_fully_obfuscated.png` | `assets/screenshots` | 382.3 KB | [dashboard_codex_fully_obfuscated.png](assets/screenshots/dashboard_codex_fully_obfuscated.png) |
@@ -712,6 +740,8 @@
 | `dashboard_view_drilldown_modal.png` | `assets/screenshots` | 500.9 KB | [dashboard_view_drilldown_modal.png](assets/screenshots/dashboard_view_drilldown_modal.png) |
 | `dashboard_view_middle.png` | `assets/screenshots` | 478.3 KB | [dashboard_view_middle.png](assets/screenshots/dashboard_view_middle.png) |
 | `dashboard_view_top.png` | `assets/screenshots` | 495.7 KB | [dashboard_view_top.png](assets/screenshots/dashboard_view_top.png) |
+| `eduboard.jpg` | `assets/commercial/module_screenshots` | 192.7 KB | [eduboard.jpg](assets/commercial/module_screenshots/eduboard.jpg) |
+| `eduboard.png` | `assets/commercial/module_screenshots` | 243.9 KB | [eduboard.png](assets/commercial/module_screenshots/eduboard.png) |
 | `eduboard_classic_greenboard.png` | `assets` | 176.5 KB | [eduboard_classic_greenboard.png](assets/eduboard_classic_greenboard.png) |
 | `eduboard_crash_recovery.png` | `assets` | 199.3 KB | [eduboard_crash_recovery.png](assets/eduboard_crash_recovery.png) |
 | `eduboard_pdf_presentation.png` | `assets` | 247.1 KB | [eduboard_pdf_presentation.png](assets/eduboard_pdf_presentation.png) |
@@ -724,16 +754,26 @@
 | `eduboard_v188_rc2_tablet_layout.png` | `assets` | 144.2 KB | [eduboard_v188_rc2_tablet_layout.png](assets/eduboard_v188_rc2_tablet_layout.png) |
 | `eduboard_view_mode.png` | `assets` | 177.0 KB | [eduboard_view_mode.png](assets/eduboard_view_mode.png) |
 | `eduboard_whiteboard_shapes.png` | `assets` | 187.1 KB | [eduboard_whiteboard_shapes.png](assets/eduboard_whiteboard_shapes.png) |
+| `examinations.jpg` | `assets/commercial/module_screenshots` | 234.7 KB | [examinations.jpg](assets/commercial/module_screenshots/examinations.jpg) |
+| `examinations.png` | `assets/commercial/module_screenshots` | 228.2 KB | [examinations.png](assets/commercial/module_screenshots/examinations.png) |
+| `fees.jpg` | `assets/commercial/module_screenshots` | 268.8 KB | [fees.jpg](assets/commercial/module_screenshots/fees.jpg) |
+| `fees.png` | `assets/commercial/module_screenshots` | 325.3 KB | [fees.png](assets/commercial/module_screenshots/fees.png) |
 | `fix1_receipt_edit_modal.png` | `assets/screenshots` | 246.1 KB | [fix1_receipt_edit_modal.png](assets/screenshots/fix1_receipt_edit_modal.png) |
 | `fix1_receipts_with_edit_button.png` | `assets/screenshots` | 218.3 KB | [fix1_receipts_with_edit_button.png](assets/screenshots/fix1_receipts_with_edit_button.png) |
 | `fix2_fee_plan_edit_modal.png` | `assets/screenshots` | 218.9 KB | [fix2_fee_plan_edit_modal.png](assets/screenshots/fix2_fee_plan_edit_modal.png) |
 | `fix2_fee_plans_with_edit_button.png` | `assets/screenshots` | 207.5 KB | [fix2_fee_plans_with_edit_button.png](assets/screenshots/fix2_fee_plans_with_edit_button.png) |
 | `fix3_adjust_student_fees_modal.png` | `assets/screenshots` | 263.4 KB | [fix3_adjust_student_fees_modal.png](assets/screenshots/fix3_adjust_student_fees_modal.png) |
 | `fix3_student_profile_fees_tab.png` | `assets/screenshots` | 205.2 KB | [fix3_student_profile_fees_tab.png](assets/screenshots/fix3_student_profile_fees_tab.png) |
+| `forms.jpg` | `assets/commercial/module_screenshots` | 284.3 KB | [forms.jpg](assets/commercial/module_screenshots/forms.jpg) |
+| `forms.png` | `assets/commercial/module_screenshots` | 273.4 KB | [forms.png](assets/commercial/module_screenshots/forms.png) |
 | `guide_step1_payments_unlock.png` | `assets/screenshots` | 209.7 KB | [guide_step1_payments_unlock.png](assets/screenshots/guide_step1_payments_unlock.png) |
 | `guide_step2_unlock_modal.png` | `assets/screenshots` | 239.8 KB | [guide_step2_unlock_modal.png](assets/screenshots/guide_step2_unlock_modal.png) |
 | `guide_step3_payments_edit_active.png` | `assets/screenshots` | 236.0 KB | [guide_step3_payments_edit_active.png](assets/screenshots/guide_step3_payments_edit_active.png) |
 | `guide_step4_fee_structure_editor.png` | `assets/screenshots` | 223.2 KB | [guide_step4_fee_structure_editor.png](assets/screenshots/guide_step4_fee_structure_editor.png) |
+| `homework.jpg` | `assets/commercial/module_screenshots` | 242.1 KB | [homework.jpg](assets/commercial/module_screenshots/homework.jpg) |
+| `homework.png` | `assets/commercial/module_screenshots` | 250.2 KB | [homework.png](assets/commercial/module_screenshots/homework.png) |
+| `import_export.jpg` | `assets/commercial/module_screenshots` | 243.2 KB | [import_export.jpg](assets/commercial/module_screenshots/import_export.jpg) |
+| `import_export.png` | `assets/commercial/module_screenshots` | 288.3 KB | [import_export.png](assets/commercial/module_screenshots/import_export.png) |
 | `modern_dashboard_step1_overview.png` | `assets` | 242.4 KB | [modern_dashboard_step1_overview.png](assets/modern_dashboard_step1_overview.png) |
 | `modern_dashboard_step2_stream_donut.png` | `assets` | 207.0 KB | [modern_dashboard_step2_stream_donut.png](assets/modern_dashboard_step2_stream_donut.png) |
 | `modern_dashboard_step3_mobile.png` | `assets` | 87.3 KB | [modern_dashboard_step3_mobile.png](assets/modern_dashboard_step3_mobile.png) |
@@ -765,8 +805,8 @@
 | `prathamone-app-icon-192.png` | `assets/branding` | 59.4 KB | [prathamone-app-icon-192.png](assets/branding/prathamone-app-icon-192.png) |
 | `prathamone-app-icon-512.png` | `assets/branding` | 309.3 KB | [prathamone-app-icon-512.png](assets/branding/prathamone-app-icon-512.png) |
 | `prathamone-eduos-horizontal-dark.png` | `assets/branding` | 894.1 KB | [prathamone-eduos-horizontal-dark.png](assets/branding/prathamone-eduos-horizontal-dark.png) |
-| `prathamone-eduos-horizontal-transparent.png` | `assets/branding` | 74.1 KB | [prathamone-eduos-horizontal-transparent.png](assets/branding/prathamone-eduos-horizontal-transparent.png) |
-| `prathamone-eduos-horizontal.png` | `assets/branding` | 74.1 KB | [prathamone-eduos-horizontal.png](assets/branding/prathamone-eduos-horizontal.png) |
+| `prathamone-eduos-horizontal-transparent.png` | `assets/branding` | 288.3 KB | [prathamone-eduos-horizontal-transparent.png](assets/branding/prathamone-eduos-horizontal-transparent.png) |
+| `prathamone-eduos-horizontal.png` | `assets/branding` | 288.3 KB | [prathamone-eduos-horizontal.png](assets/branding/prathamone-eduos-horizontal.png) |
 | `prathamone-eduos-logo-original.jpg` | `assets/branding` | 34.8 KB | [prathamone-eduos-logo-original.jpg](assets/branding/prathamone-eduos-logo-original.jpg) |
 | `prathamone-eduos-logo-transparent.png` | `assets/branding` | 190.3 KB | [prathamone-eduos-logo-transparent.png](assets/branding/prathamone-eduos-logo-transparent.png) |
 | `prathamone-eduos-logo.png` | `assets/branding` | 162.7 KB | [prathamone-eduos-logo.png](assets/branding/prathamone-eduos-logo.png) |
@@ -781,10 +821,20 @@
 | `prathamone-master-logo-transparent.png` | `assets/branding` | 1256.3 KB | [prathamone-master-logo-transparent.png](assets/branding/prathamone-master-logo-transparent.png) |
 | `prathamone-master-logo.png` | `assets/branding` | 1155.9 KB | [prathamone-master-logo.png](assets/branding/prathamone-master-logo.png) |
 | `prathamone-symbol-icon-dark.png` | `assets/branding` | 111.8 KB | [prathamone-symbol-icon-dark.png](assets/branding/prathamone-symbol-icon-dark.png) |
-| `prathamone-symbol-icon-transparent.png` | `assets/branding` | 21.7 KB | [prathamone-symbol-icon-transparent.png](assets/branding/prathamone-symbol-icon-transparent.png) |
-| `prathamone-symbol-icon.png` | `assets/branding` | 21.7 KB | [prathamone-symbol-icon.png](assets/branding/prathamone-symbol-icon.png) |
+| `prathamone-symbol-icon-transparent.png` | `assets/branding` | 17.4 KB | [prathamone-symbol-icon-transparent.png](assets/branding/prathamone-symbol-icon-transparent.png) |
+| `prathamone-symbol-icon.png` | `assets/branding` | 17.4 KB | [prathamone-symbol-icon.png](assets/branding/prathamone-symbol-icon.png) |
 | `prathamone_cinematic_commercial_poc_24s.mp4` | `assets/commercial` | 27760.3 KB | [prathamone_cinematic_commercial_poc_24s.mp4](assets/commercial/prathamone_cinematic_commercial_poc_24s.mp4) |
-| `prathamone_commercial_master_1080p.mp4` | `assets/commercial` | 102599.2 KB | [prathamone_commercial_master_1080p.mp4](assets/commercial/prathamone_commercial_master_1080p.mp4) |
+| `prathamone_commercial_master_1080p.mp4` | `assets/commercial` | 172819.2 KB | [prathamone_commercial_master_1080p.mp4](assets/commercial/prathamone_commercial_master_1080p.mp4) |
+| `reports.jpg` | `assets/commercial/module_screenshots` | 263.7 KB | [reports.jpg](assets/commercial/module_screenshots/reports.jpg) |
+| `reports.png` | `assets/commercial/module_screenshots` | 294.1 KB | [reports.png](assets/commercial/module_screenshots/reports.png) |
+| `results.jpg` | `assets/commercial/module_screenshots` | 264.9 KB | [results.jpg](assets/commercial/module_screenshots/results.jpg) |
+| `results.png` | `assets/commercial/module_screenshots` | 291.7 KB | [results.png](assets/commercial/module_screenshots/results.png) |
+| `scholarships.jpg` | `assets/commercial/module_screenshots` | 268.8 KB | [scholarships.jpg](assets/commercial/module_screenshots/scholarships.jpg) |
+| `scholarships.png` | `assets/commercial/module_screenshots` | 325.3 KB | [scholarships.png](assets/commercial/module_screenshots/scholarships.png) |
+| `settings.jpg` | `assets/commercial/module_screenshots` | 295.3 KB | [settings.jpg](assets/commercial/module_screenshots/settings.jpg) |
+| `settings.png` | `assets/commercial/module_screenshots` | 374.1 KB | [settings.png](assets/commercial/module_screenshots/settings.png) |
+| `staff.jpg` | `assets/commercial/module_screenshots` | 253.0 KB | [staff.jpg](assets/commercial/module_screenshots/staff.jpg) |
+| `staff.png` | `assets/commercial/module_screenshots` | 240.4 KB | [staff.png](assets/commercial/module_screenshots/staff.png) |
 | `stock_shot_0.5s.jpg` | `assets/commercial` | 125.0 KB | [stock_shot_0.5s.jpg](assets/commercial/stock_shot_0.5s.jpg) |
 | `stock_shot_1.5s.jpg` | `assets/commercial` | 122.4 KB | [stock_shot_1.5s.jpg](assets/commercial/stock_shot_1.5s.jpg) |
 | `stock_shot_10.5s.jpg` | `assets/commercial` | 136.6 KB | [stock_shot_10.5s.jpg](assets/commercial/stock_shot_10.5s.jpg) |
@@ -797,6 +847,8 @@
 | `stock_shot_7.5s.jpg` | `assets/commercial` | 190.2 KB | [stock_shot_7.5s.jpg](assets/commercial/stock_shot_7.5s.jpg) |
 | `stock_shot_8.5s.jpg` | `assets/commercial` | 184.5 KB | [stock_shot_8.5s.jpg](assets/commercial/stock_shot_8.5s.jpg) |
 | `stock_shot_9.5s.jpg` | `assets/commercial` | 183.5 KB | [stock_shot_9.5s.jpg](assets/commercial/stock_shot_9.5s.jpg) |
+| `students.jpg` | `assets/commercial/module_screenshots` | 248.7 KB | [students.jpg](assets/commercial/module_screenshots/students.jpg) |
+| `students.png` | `assets/commercial/module_screenshots` | 231.0 KB | [students.png](assets/commercial/module_screenshots/students.png) |
 | `tab1_monthly_payroll.png` | `assets/screenshots` | 252.0 KB | [tab1_monthly_payroll.png](assets/screenshots/tab1_monthly_payroll.png) |
 | `tab2_session_register.png` | `assets/screenshots` | 228.7 KB | [tab2_session_register.png](assets/screenshots/tab2_session_register.png) |
 | `tab3_profiles_and_rates.png` | `assets/screenshots` | 225.7 KB | [tab3_profiles_and_rates.png](assets/screenshots/tab3_profiles_and_rates.png) |
@@ -813,6 +865,10 @@
 | `tab_8_operations.png` | `assets/screenshots` | 374.3 KB | [tab_8_operations.png](assets/screenshots/tab_8_operations.png) |
 | `test_students_directory.jpg` | `assets/commercial/inspection_frames` | 188.5 KB | [test_students_directory.jpg](assets/commercial/inspection_frames/test_students_directory.jpg) |
 | `test_students_directory_loaded.jpg` | `assets/commercial/inspection_frames` | 269.7 KB | [test_students_directory_loaded.jpg](assets/commercial/inspection_frames/test_students_directory_loaded.jpg) |
+| `timetable.jpg` | `assets/commercial/module_screenshots` | 282.8 KB | [timetable.jpg](assets/commercial/module_screenshots/timetable.jpg) |
+| `timetable.png` | `assets/commercial/module_screenshots` | 271.0 KB | [timetable.png](assets/commercial/module_screenshots/timetable.png) |
+| `training.jpg` | `assets/commercial/module_screenshots` | 259.0 KB | [training.jpg](assets/commercial/module_screenshots/training.jpg) |
+| `training.png` | `assets/commercial/module_screenshots` | 281.7 KB | [training.png](assets/commercial/module_screenshots/training.png) |
 | `video_studio_live_interface.png` | `assets/screenshots` | 817.2 KB | [video_studio_live_interface.png](assets/screenshots/video_studio_live_interface.png) |
 | `video_studio_login_test.png` | `assets/screenshots` | 817.2 KB | [video_studio_login_test.png](assets/screenshots/video_studio_login_test.png) |
 

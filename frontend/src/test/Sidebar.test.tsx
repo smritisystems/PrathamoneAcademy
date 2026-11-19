@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Vitest test suite verifying sidebar collapse/expand states, keyboard shortcuts, and active links.
  */
@@ -80,7 +80,7 @@ describe('Collapsible & Responsive Sidebar Component', () => {
 
     // Institute branding
     expect(screen.getByText('Prashant Academy')).toBeDefined()
-    expect(screen.getByText('The Power of Enterprise Education. The Simplicity of WhatsApp.')).toBeDefined()
+    expect(screen.getByText('COACHING MANAGEMENT. SIMPLIFIED.')).toBeDefined()
 
     // Main navigation items
     expect(screen.getByRole('link', { name: /dashboard/i })).toBeDefined()

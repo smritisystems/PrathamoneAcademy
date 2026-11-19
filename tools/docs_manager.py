@@ -12,7 +12,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-18
+#  * @updated     2026-11-19
 #  *
 #  * @description Centralized documentation management, auto-organization, indexing, search, and validation engine.
 #  */
@@ -723,7 +723,7 @@ def cmd_reindex(args):
             continue
 
         for f in sorted(files):
-            if f in {".gitkeep", "DOCUMENTATION_INDEX.md", "DOCUMENTATION_MANIFEST.json"}:
+            if f in {".gitkeep", "DOCUMENTATION_INDEX.md", "DOCUMENTATION_MANIFEST.json"} or f.startswith("~$"):
                 continue
             ext = os.path.splitext(f)[1].lower()
             file_path = os.path.join(root, f)

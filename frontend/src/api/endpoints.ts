@@ -3234,6 +3234,38 @@ export const eduboardApi = {
     })
   },
 
+  uploadRecording: (
+    boardId: number,
+    blob: Blob,
+    options?: { filename?: string; title?: string; publish_to_study_materials?: boolean },
+  ) => {
+    const fd = new FormData()
+    const fname = options?.filename || `lecture_rec_${boardId}_${Date.now()}.webm`
+    fd.append('file', blob, fname)
+    if (options?.title) {
+      fd.append('title', options.title)
+    }
+    fd.append('publish_to_study_materials', String(options?.publish_to_study_materials ?? true))
+    return apiClient.post<{
+      attachment: {
+        id: number
+        board_id: number
+        original_filename: string
+        file_size_bytes: number
+        mime_type: string
+        download_url: string
+      }
+      study_material?: {
+        id: number
+        title: string
+        file_type: string
+      } | null
+      message: string
+    }>(`/eduboard/boards/${boardId}/recording`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
   fetchAttachmentBlob: (attachmentId: number) =>
     apiClient.get<Blob>(`/eduboard/attachments/${attachmentId}/download`, { responseType: 'blob' }),
 

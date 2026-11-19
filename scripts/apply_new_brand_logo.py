@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-13
-#  * @updated     2026-11-16
+#  * @updated     2026-11-19
 #  *
 #  * @description Production asset generator and branding synchronizer that installs the new PrathamOne logo and icon from frontend/public/logo into global software branding, favicons, PWA icons, and media assets.
 #  */
@@ -31,11 +31,19 @@ os.makedirs(MEDIA_LOGO_DIR, exist_ok=True)
 os.makedirs(ICONS_DIR, exist_ok=True)
 os.makedirs(DOCS_BRANDING_DIR, exist_ok=True)
 
-SOURCE_LOGO_SVG = os.path.join(LOGO_DIR, "logoone.svg")
-SOURCE_LOGO_1080 = os.path.join(LOGO_DIR, "logoone1080.png")
-SOURCE_LOGO_256 = os.path.join(LOGO_DIR, "logoone256.png")
-SOURCE_ICON_SVG = os.path.join(LOGO_DIR, "logo_rect2-7-9-1.svg")
-SOURCE_ICON_PNG = os.path.join(LOGO_DIR, "logo_rect2-7-9-1.png")
+ARTWORK_18112026_DIR = os.path.join(PUBLIC_DIR, "artwork", "18112026")
+
+# Official Artwork 18112026 sources with fallbacks
+OFFICIAL_LOGO_PNG = os.path.join(ARTWORK_18112026_DIR, "batch_g6.png") if os.path.exists(os.path.join(ARTWORK_18112026_DIR, "batch_g6.png")) else os.path.join(ARTWORK_18112026_DIR, "LOGO.PNG")
+OFFICIAL_LOGO_SVG = os.path.join(ARTWORK_18112026_DIR, "batch_g6.svg")
+OFFICIAL_ICON_PNG = os.path.join(ARTWORK_18112026_DIR, "03", "icon-512.png") if os.path.exists(os.path.join(ARTWORK_18112026_DIR, "03", "icon-512.png")) else os.path.join(ARTWORK_18112026_DIR, "batch_path1.png")
+OFFICIAL_ICON_SVG = os.path.join(ARTWORK_18112026_DIR, "batch_path1.svg")
+
+SOURCE_LOGO_SVG = OFFICIAL_LOGO_SVG if os.path.exists(OFFICIAL_LOGO_SVG) else os.path.join(LOGO_DIR, "logoone.svg")
+SOURCE_LOGO_1080 = OFFICIAL_LOGO_PNG if os.path.exists(OFFICIAL_LOGO_PNG) else os.path.join(LOGO_DIR, "logoone1080.png")
+SOURCE_LOGO_256 = OFFICIAL_LOGO_PNG if os.path.exists(OFFICIAL_LOGO_PNG) else os.path.join(LOGO_DIR, "logoone256.png")
+SOURCE_ICON_SVG = OFFICIAL_ICON_SVG if os.path.exists(OFFICIAL_ICON_SVG) else os.path.join(LOGO_DIR, "logo_rect2-7-9-1.svg")
+SOURCE_ICON_PNG = OFFICIAL_ICON_PNG if os.path.exists(OFFICIAL_ICON_PNG) else os.path.join(LOGO_DIR, "logo_rect2-7-9-1.png")
 
 print(f"[INFO] Source Logo 1080: {SOURCE_LOGO_1080} (exists={os.path.exists(SOURCE_LOGO_1080)})")
 print(f"[INFO] Source Icon SVG:  {SOURCE_ICON_SVG} (exists={os.path.exists(SOURCE_ICON_SVG)})")

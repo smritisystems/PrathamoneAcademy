@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-12
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Interactive Konva + React-Konva + PDF.js multi-mode classroom canvas supporting Classic Greenboard/Blackboard chalk rendering, Digital Whiteboard, Grid/Ruled surfaces, non-destructive PDF annotations, Fit-to-Screen, keyboard shortcuts, and collapsible/dockable/floating toolbar integration.
  */
@@ -158,12 +158,14 @@ export default function EduBoardCanvas({
   // Auto-align tool/color contrast when switching page into dark or light surface
   useEffect(() => {
     const darkPalette = new Set(['#ffffff', '#fde047', '#f9a8d4', '#67e8f9', '#86efac'])
-    if (isDarkBoard && !darkPalette.has(storeActiveColor)) {
+    const currentColor = useEduBoardDisplayStore.getState().activeColor
+    const currentTool = useEduBoardDisplayStore.getState().activeTool
+    if (isDarkBoard && !darkPalette.has(currentColor)) {
       setStoreActiveColor('#ffffff')
-      if (storeActiveTool === 'pen') setStoreActiveTool('chalk')
-    } else if (!isDarkBoard && storeActiveColor === '#ffffff') {
+      if (currentTool === 'pen') setStoreActiveTool('chalk')
+    } else if (!isDarkBoard && currentColor === '#ffffff') {
       setStoreActiveColor('#111827')
-      if (storeActiveTool === 'chalk') setStoreActiveTool('pen')
+      if (currentTool === 'chalk') setStoreActiveTool('pen')
     }
   }, [isDarkBoard]) // intentionally scoped to surface polarity switch only
 

@@ -1,0 +1,162 @@
+[
+  {
+    "module_id": "dashboard",
+    "module_name": "Dashboard",
+    "route": "/dashboard",
+    "script": "Welcome to Pratham One Edu O-S, your institute command centre. Live academic, attendance, and fee insights bring the day into focus.",
+    "badge_title": "Executive Dashboard",
+    "badge_subtitle": "A live view of institute performance"
+  },
+  {
+    "module_id": "students",
+    "module_name": "Students",
+    "route": "/students/directory",
+    "script": "Find every learner in one trusted student directory. Search profiles, review enrolments, and follow each student's journey.",
+    "badge_title": "Student Management",
+    "badge_subtitle": "Profiles, enrolments, and student records"
+  },
+  {
+    "module_id": "admissions",
+    "module_name": "Admissions",
+    "route": "/leads/pipeline",
+    "script": "Guide each enquiry from first contact to admission with a clear, organised pipeline. Keep follow-ups and prospective learners in view.",
+    "badge_title": "Admissions",
+    "badge_subtitle": "From enquiry to enrolled learner"
+  },
+  {
+    "module_id": "fees",
+    "module_name": "Fees",
+    "route": "/fees/collection",
+    "script": "Track fee collections, outstanding balances, and payment activity in one place. Clear analytics help your team understand every inflow.",
+    "badge_title": "Fees and Payments",
+    "badge_subtitle": "Collections, balances, and payment insights"
+  },
+  {
+    "module_id": "concessions",
+    "module_name": "Concessions",
+    "route": "/fees/concessions",
+    "script": "Review concession and waiver requests through a governed workflow. Each approved benefit stays connected to its student and financial record.",
+    "badge_title": "Concessions and Waivers",
+    "badge_subtitle": "Governed requests and clear audit trails"
+  },
+  {
+    "module_id": "scholarships",
+    "module_name": "Scholarships",
+    "route": "/fees/overview",
+    "script": "See academy and sponsor-funded scholarships alongside the wider fee picture. Keep student benefits visible without losing financial clarity.",
+    "badge_title": "Scholarships",
+    "badge_subtitle": "Academy awards and sponsor-funded benefits"
+  },
+  {
+    "module_id": "attendance",
+    "module_name": "Attendance",
+    "route": "/attendance/overview",
+    "script": "Follow daily attendance, monthly registers, and absence alerts from one workspace. The U-P-I Q-R terminal makes check-in quick and traceable.",
+    "badge_title": "Attendance",
+    "badge_subtitle": "Daily registers and U-P-I Q-R check-in"
+  },
+  {
+    "module_id": "timetable",
+    "module_name": "Timetable",
+    "route": "/academic/timetable",
+    "script": "Build clear weekly schedules for classes, rooms, and faculty. Give teachers and students a dependable view of what comes next.",
+    "badge_title": "Timetable",
+    "badge_subtitle": "Weekly schedules for classes and faculty"
+  },
+  {
+    "module_id": "examinations",
+    "module_name": "Examinations",
+    "route": "/examinations/overview",
+    "script": "Organise exam schedules, question papers, and marks in a single workflow. Keep assessment activity consistent across every class.",
+    "badge_title": "Examinations",
+    "badge_subtitle": "Schedules, assessments, and marks"
+  },
+  {
+    "module_id": "results",
+    "module_name": "Results",
+    "route": "/examinations/report-cards",
+    "script": "Review class performance and prepare clear student report cards. Share verified results with confidence and consistent grading.",
+    "badge_title": "Results and Report Cards",
+    "badge_subtitle": "Performance insights and verified results"
+  },
+  {
+    "module_id": "staff",
+    "module_name": "Staff",
+    "route": "/staff/directory",
+    "script": "Keep staff profiles, responsibilities, attendance, and leave records together. Give your institute team a dependable people directory.",
+    "badge_title": "Staff Management",
+    "badge_subtitle": "People, duties, attendance, and leave"
+  },
+  {
+    "module_id": "communication",
+    "module_name": "Communication",
+    "route": "/communication/overview",
+    "script": "Coordinate notices, message templates, and communication history from one workspace. Keep institute updates organised across channels.",
+    "badge_title": "Communication",
+    "badge_subtitle": "Notices, templates, and message history"
+  },
+  {
+    "module_id": "reports",
+    "module_name": "Reports",
+    "route": "/reports",
+    "script": "Turn academic, attendance, and financial activity into useful reports. Explore operational insights and prepare data for export.",
+    "badge_title": "Reports and Analytics",
+    "badge_subtitle": "Operational, academic, and financial insights"
+  },
+  {
+    "module_id": "settings",
+    "module_name": "Settings",
+    "route": "/settings",
+    "script": "Manage institute preferences, access controls, and workspace configuration in one central area. Clear settings help your team work consistently.",
+    "badge_title": "Administration and Settings",
+    "badge_subtitle": "Institute preferences and workspace controls"
+  },
+  {
+    "module_id": "courses",
+    "module_name": "Courses",
+    "route": "/courses/repository",
+    "script": "Organise course materials, notes, question banks, and learning resources. Keep teaching content discoverable for the whole institute.",
+    "badge_title": "Courses and Study Materials",
+    "badge_subtitle": "A shared library for teaching resources"
+  },
+  {
+    "module_id": "homework",
+    "module_name": "Homework",
+    "route": "/homework",
+    "script": "Keep assignments, submissions, and checking activity together. Teachers can follow homework progress from assignment to review.",
+    "badge_title": "Homework",
+    "badge_subtitle": "Assignments, submissions, and review"
+  },
+  {
+    "module_id": "eduboard",
+    "module_name": "EduBoard",
+    "route": "/eduboard/4",
+    "script": "Bring lessons to life on the Digital Whiteboard and Greenboard. Present classroom ideas with a flexible, interactive teaching space.",
+    "badge_title": "EduBoard",
+    "badge_subtitle": "Digital Whiteboard and Greenboard"
+  },
+  {
+    "module_id": "forms",
+    "module_name": "Forms",
+    "route": "/forms/overview",
+    "script": "Prepare consistent admission forms, identity cards, and academic documents. Preview print-ready materials before sharing them.",
+    "badge_title": "Forms and Documents",
+    "badge_subtitle": "Preview forms, identity cards, and records"
+  },
+  {
+    "module_id": "import_export",
+    "module_name": "Import_Export",
+    "route": "/import-export",
+    "script": "Move institute data through guided import and export tools. Review templates and job status before handling a data exchange.",
+    "badge_title": "Import and Export",
+    "badge_subtitle": "Guided data exchange and job tracking"
+  },
+  {
+    "module_id": "training",
+    "module_name": "Training",
+    "route": "/training",
+    "script": "Explore staff practice in a protected training workspace. Switch to the P-A-zero-zero-one demo sandbox to learn without changing live records.",
+    "badge_title": "Training Sandbox",
+    "badge_subtitle": "A safe place to practise workflows"
+  }
+]

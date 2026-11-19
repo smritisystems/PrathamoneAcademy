@@ -120,9 +120,9 @@ export const VERIFIED_ASSET_VAULT: VerifiedAssetItem[] = [
     aspectRatio: '1:1',
     recommendedDuration: 8.0,
     defaultHeadline: 'Built for High-Growth Academies',
-    defaultSubtitle: 'The Power of Enterprise Education. The Simplicity of WhatsApp.',
+    defaultSubtitle: 'Coaching Management. Simplified.',
     defaultScript:
-      'Engineered for excellence. Experience the power of enterprise education with the simplicity of WhatsApp. Upgrade your coaching academy today.',
+      'Engineered for excellence. Experience enterprise education simplified. Upgrade your coaching academy today.',
     suggestedCallouts: [
       { text: '100% Data Integrity', x: 50, y: 75 },
     ],

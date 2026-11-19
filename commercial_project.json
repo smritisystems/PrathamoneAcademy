@@ -1,6 +1,6 @@
 {
   "project_meta": {
-    "project_name": "PrathamOne EduOS Flagship Commercial Master (Broadcast Studio Edition V2)",
+    "project_name": "PrathamOne EduOS Flagship Commercial Master (Teacher Intro & Feature Showcase V3)",
     "version": "1.0.0",
     "resolution": [1920, 1080],
     "fps": 30,
@@ -24,7 +24,7 @@
   },
   "branding": {
     "primary_tagline": "COACHING MANAGEMENT. SIMPLIFIED.",
-    "secondary_tagline": "The Power of Enterprise Education. The Simplicity of WhatsApp.",
+    "secondary_tagline": "Educational ERP, Simplified.",
     "attribution": "Smritisys & AITDL Networks • Jawahar R. Mallah",
     "colors": {
       "prussian_navy": "#0B2D6B",
@@ -35,46 +35,48 @@
   },
   "scenes": [
     {
-      "scene_id": "chapter_01_the_struggle",
-      "name": "Chapter 01: The Operational Struggle",
-      "duration_sec": 18.0,
-      "video_source": "data/commercial/presenter/presenter_01_opening_1080p.mp4",
+      "scene_id": "teacher_01_classroom_intro",
+      "name": "Chapter 01: The Educator's Reality — Teacher Intro",
+      "duration_sec": 18.5,
+      "video_source": "assets/presenter/teacher_01_classroom_intro.mp4",
       "source_start_sec": 0.0,
-      "voiceover": "assets/audio/vo_01_opening.wav",
+      "voiceover": "assets/audio/vo_01_teacher_intro.wav",
+      "conform_to_voiceover": true,
       "device_frame": false,
       "apply_crop": false,
       "lower_third": {
         "enabled": true,
-        "name": "PRIYA SHARMA",
-        "title": "Solutions Specialist  •  PrathamOne EduOS",
+        "name": "PROF. RAJESH SHARMA",
+        "title": "Senior Faculty & Academic Director  •  Prashant Academy",
         "fade_in_time": 0.5,
-        "fade_out_time": 4.5
+        "fade_out_time": 6.5
       },
       "callouts": [
         {
-          "title": "42% OF ADMIN TIME LOST",
-          "subtitle": "Disconnected Spreadsheets & Manual Registers",
-          "start_sec": 5.0,
-          "end_sec": 14.0,
+          "title": "TEACHERS DESERVE FREEDOM",
+          "subtitle": "Zero Manual Registers • Zero Fragmented Follow-ups",
+          "start_sec": 7.0,
+          "end_sec": 16.5,
           "position": { "x": 120, "y": 890 }
         }
       ]
     },
     {
-      "scene_id": "chapter_02_the_awakening",
-      "name": "Chapter 02: The Awakening & Platform Intro",
-      "duration_sec": 18.0,
-      "video_source": "data/commercial/presenter/presenter_02_intro_1080p.mp4",
+      "scene_id": "brand_reveal",
+      "name": "Chapter 02: Meet PrathamOne EduOS — Enterprise Simplicity",
+      "duration_sec": 10.0,
+      "video_source": "frontend/public/artwork/VIDEOS/V1.mp4",
       "source_start_sec": 0.0,
-      "voiceover": "assets/audio/vo_02_intro.wav",
+      "voiceover": "assets/audio/vo_02_brand_reveal.wav",
+      "conform_to_voiceover": true,
       "device_frame": false,
       "apply_crop": false,
       "callouts": [
         {
           "title": "MEET PRATHAMONE EduOS™",
-          "subtitle": "Enterprise Power. Everyday Simplicity.",
-          "start_sec": 3.0,
-          "end_sec": 14.0,
+          "subtitle": "Coaching Management. Simplified.",
+          "start_sec": 1.5,
+          "end_sec": 8.5,
           "position": { "x": 120, "y": 890 }
         }
       ]
@@ -82,18 +84,25 @@
     {
       "scene_id": "chapter_03_executive_pulse",
       "name": "Chapter 03: Executive Pulse & Real-Time Dashboard",
-      "duration_sec": 22.0,
+      "duration_sec": 20.0,
       "video_source": "assets/captures/demo_03_dashboard_1080p.mp4",
       "source_start_sec": 0.8,
       "voiceover": "assets/audio/vo_03_dashboard.wav",
       "device_frame": true,
       "device_scale": 0.88,
       "apply_crop": true,
+      "presenter_pip": {
+        "enabled": false,
+        "video_source": "assets/presenter/teacher_02_pip_guide.mp4",
+        "source_start_sec": 0.0,
+        "start_sec": 0.5,
+        "end_sec": 19.5
+      },
       "callouts": [
         {
           "sync_event": "dashboard_kpi_collections",
-          "start_sec": 2.5,
-          "end_sec": 17.0,
+          "start_sec": 2.0,
+          "end_sec": 16.0,
           "title": "LIVE PULSE: REAL-TIME OPERATIONS",
           "subtitle": "Rs. 18.6L Collections & 92.8% Daily Attendance",
           "position": { "x": 120, "y": 890 }
@@ -103,13 +112,20 @@
     {
       "scene_id": "chapter_04_student_dossier",
       "name": "Chapter 04: Master Student Directory & DPDP Compliance",
-      "duration_sec": 24.0,
+      "duration_sec": 22.0,
       "video_source": "assets/captures/demo_04_students_1080p.mp4",
       "source_start_sec": 0.8,
-      "voiceover": "assets/audio/vo_04a_students_and_fees.wav",
+      "voiceover": "assets/audio/vo_04_students.wav",
       "device_frame": true,
       "device_scale": 0.88,
       "apply_crop": true,
+      "presenter_pip": {
+        "enabled": false,
+        "video_source": "assets/presenter/teacher_02_pip_guide.mp4",
+        "source_start_sec": 20.0,
+        "start_sec": 0.5,
+        "end_sec": 21.5
+      },
       "callouts": [
         {
           "sync_event": "students_directory_settled",
@@ -121,8 +137,8 @@
         },
         {
           "sync_event": "student_search_aarav_filtered",
-          "start_sec": 9.5,
-          "end_sec": 21.0,
+          "start_sec": 8.5,
+          "end_sec": 19.0,
           "title": "SUB-SECOND STUDENT SEARCH",
           "subtitle": "Instant Filter, Canonical Master Dossier & Masked Aadhaar",
           "position": { "x": 120, "y": 890 }
@@ -132,13 +148,20 @@
     {
       "scene_id": "chapter_05_zero_leakage_fees",
       "name": "Chapter 05: Zero-Leakage Fee Counter & Revenue Inflow",
-      "duration_sec": 22.0,
+      "duration_sec": 20.0,
       "video_source": "assets/captures/demo_05_fees_1080p.mp4",
       "source_start_sec": 0.8,
-      "voiceover": "assets/audio/vo_05_benefits.wav",
+      "voiceover": "assets/audio/vo_05_fees.wav",
       "device_frame": true,
       "device_scale": 0.88,
       "apply_crop": true,
+      "presenter_pip": {
+        "enabled": false,
+        "video_source": "assets/presenter/teacher_02_pip_guide.mp4",
+        "source_start_sec": 42.0,
+        "start_sec": 0.5,
+        "end_sec": 19.5
+      },
       "callouts": [
         {
           "sync_event": "fee_tab_settled",
@@ -150,8 +173,8 @@
         },
         {
           "sync_event": "fee_payment_donut_hover",
-          "start_sec": 11.5,
-          "end_sec": 20.0,
+          "start_sec": 10.5,
+          "end_sec": 18.5,
           "title": "MULTI-MODE RECONCILIATION",
           "subtitle": "Bank 59.3%, UPI 24.6%, Cheque 2% Live Distribution",
           "position": { "x": 120, "y": 890 }
@@ -160,19 +183,26 @@
     },
     {
       "scene_id": "chapter_06_eduboard_classroom",
-      "name": "Chapter 06: EduBoard Interactive Classroom",
+      "name": "Chapter 06: EduBoard Interactive Classroom & Vector Diagrams",
       "duration_sec": 20.0,
       "video_source": "assets/captures/demo_06_eduboard_1080p.mp4",
       "source_start_sec": 2.5,
-      "voiceover": "assets/audio/vo_04b_eduboard_and_attendance.wav",
+      "voiceover": "assets/audio/vo_06_eduboard_attendance.wav",
       "device_frame": true,
       "device_scale": 0.88,
       "apply_crop": true,
+      "presenter_pip": {
+        "enabled": false,
+        "video_source": "assets/presenter/teacher_02_pip_guide.mp4",
+        "source_start_sec": 62.0,
+        "start_sec": 0.5,
+        "end_sec": 19.5
+      },
       "callouts": [
         {
           "sync_event": "eduboard_vector_r_hover",
-          "start_sec": 3.5,
-          "end_sec": 18.0,
+          "start_sec": 3.0,
+          "end_sec": 17.5,
           "title": "EDUBOARD INTERACTIVE CLASSROOM",
           "subtitle": "Tactile Digital Greenboard, Precision Geometry & LaTeX Math",
           "position": { "x": 120, "y": 890 }
@@ -181,19 +211,26 @@
     },
     {
       "scene_id": "chapter_07_attendance_hub",
-      "name": "Chapter 07: Attendance Hub & QR Check-In Terminal",
-      "duration_sec": 20.0,
+      "name": "Chapter 07: QR Attendance Terminal & Test Series Reports",
+      "duration_sec": 18.0,
       "video_source": "assets/captures/demo_07_attendance_1080p.mp4",
       "source_start_sec": 0.8,
-      "voiceover": "assets/audio/vo_07_offline_online.wav",
+      "voiceover": "assets/audio/vo_07_exams_reports.wav",
       "device_frame": true,
       "device_scale": 0.88,
       "apply_crop": true,
+      "presenter_pip": {
+        "enabled": false,
+        "video_source": "assets/presenter/teacher_02_pip_guide.mp4",
+        "source_start_sec": 82.0,
+        "start_sec": 0.5,
+        "end_sec": 17.5
+      },
       "callouts": [
         {
           "sync_event": "attendance_qr_modal_opened",
-          "start_sec": 4.5,
-          "end_sec": 18.0,
+          "start_sec": 3.5,
+          "end_sec": 16.5,
           "title": "INSTANT QR CHECK-IN TERMINAL",
           "subtitle": "Sub-Second Badges & Automated Parent WhatsApp Alerts",
           "position": { "x": 120, "y": 890 }
@@ -201,15 +238,34 @@
       ]
     },
     {
-      "scene_id": "chapter_08_data_sovereignty_climax",
-      "name": "Chapter 08: Data Ownership & Brand Climax",
-      "duration_sec": 24.0,
-      "video_source": "data/commercial/motion/deployment_and_endcard_1080p.mp4",
+      "scene_id": "teacher_03_closing",
+      "name": "Chapter 08: Educator Endorsement & Data Sovereignty",
+      "duration_sec": 16.0,
+      "video_source": "assets/presenter/teacher_03_closing.mp4",
       "source_start_sec": 0.0,
-      "voiceover": "assets/audio/vo_08_deployment_climax.wav",
+      "voiceover": "assets/audio/vo_08_deployment_closing.wav",
+      "conform_to_voiceover": true,
       "device_frame": false,
       "apply_crop": false,
-      "is_closing": false
+      "callouts": [
+        {
+          "title": "AIR-GAPPED CAMPUS SERVER OR CLOUD",
+          "subtitle": "100% Data Custody • Zero Vendor Lock-In",
+          "start_sec": 2.0,
+          "end_sec": 14.5,
+          "position": { "x": 120, "y": 890 }
+        }
+      ]
+    },
+    {
+      "scene_id": "closing_endcard",
+      "name": "Chapter 09: Master Brand Crest & Official End-Card",
+      "duration_sec": 13.0,
+      "video_source": "data/commercial/motion/brand_reveal_official_1080p.mp4",
+      "source_start_sec": 0.0,
+      "device_frame": false,
+      "apply_crop": false,
+      "is_closing": true
     }
   ]
 }

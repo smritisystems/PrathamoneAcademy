@@ -68,7 +68,6 @@ An exhaustive audit of the existing codebase (`frontend/src`, `backend/app`, `do
 - **Official Product Name:** PrathamOne EduOS (Coaching Institute Edition)
 - **Client Deployment:** Prashant Academy Coaching Institute
 - **Master Marketing Tagline:** **Coaching Management. Simplified.**
-- **Secondary Enterprise Descriptor:** The Power of Enterprise Education. The Simplicity of WhatsApp.
 - **Color Tokens:**
   - `Brand Navy (Primary):` `#0B2D6B` (Prussian gradient anchor `#071C44`, Deepest `#051535`)
   - `Accent Orange (Vibrant):` `#F16906` (High-contrast CTA and indicator)

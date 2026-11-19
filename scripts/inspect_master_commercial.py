@@ -24,16 +24,16 @@ INPUT_VIDEO = "frontend/public/media/commercial/prathamone_commercial_master_108
 FRAMES_DIR = Path("docs/assets/commercial/inspection_frames")
 FRAMES_DIR.mkdir(parents=True, exist_ok=True)
 
-# Timestamps to inspect across all 8 chapters
+# Exact chapter inspection timestamps specified in commercial directive:
+# 00:05, 00:15, 00:30, 01:00, 01:30, 02:00, 02:28
 SAMPLE_TIMESTAMPS = [
-    (5.0, "ch01_opening_presenter_00m05s"),
-    (40.0, "ch03_executive_dashboard_kpis_00m40s"),
-    (65.0, "ch04_student_directory_search_01m05s"),
-    (90.0, "ch05_fee_collection_analytics_01m30s"),
-    (108.0, "ch06_fresh_eduboard_greenboard_01m48s"),
-    (128.0, "ch07_attendance_qr_terminal_02m08s"),
-    (146.0, "ch08_onprem_vs_cloud_architecture_02m26s"),
-    (160.0, "ch08_brand_climax_endcard_02m40s"),
+    (5.0, "ch01_teacher_classroom_intro_00m05s"),
+    (15.0, "ch02_official_brand_reveal_00m15s"),
+    (30.0, "ch03_executive_dashboard_pip_00m30s"),
+    (60.0, "ch04_student_directory_pip_01m00s"),
+    (90.0, "ch05_fee_counter_ledger_pip_01m30s"),
+    (120.0, "ch06_eduboard_classroom_pip_02m00s"),
+    (148.0, "ch08_teacher_closing_endorsement_02m28s"),
 ]
 
 def main():

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-12
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Main interactive PrathamOne EduBoard workspace for Classic Chalk/Greenboard, Digital Whiteboard, and PDF Presentation teaching, with View-First governance, scoped IndexedDB crash recovery, debounced revision sync, conflict resolution, templates, and PDF export.
  */
@@ -53,6 +53,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Video,
+  Square,
 } from 'lucide-react'
 import { eduboardApi } from '../api/endpoints'
 import { useAuthStore } from '../store/authStore'
@@ -65,7 +67,13 @@ import Modal from '../components/Modal'
 import EduBoardCanvas, { parseSceneJson } from '../components/eduboard/EduBoardCanvas'
 import EduBoardPopoutMenu from '../components/eduboard/EduBoardPopoutMenu'
 import EduBoardDeviceDiagnosticsModal from '../components/eduboard/EduBoardDeviceDiagnosticsModal'
+import EduBoardRecordingModal from '../components/eduboard/EduBoardRecordingModal'
 import { useDeviceCapabilities } from '../utils/deviceCapabilities'
+import {
+  EduBoardCanvasRecorder,
+  type EduBoardRecordingProgress,
+  type RecorderState,
+} from '../utils/eduboardRecorder'
 import {
   clearRecoverySnapshot,
   loadRecoverySnapshot,
@@ -136,6 +144,23 @@ export default function EduBoardWorkspace() {
   const [showPrefsModal, setShowPrefsModal] = useState<boolean>(false)
   const [showDeviceDiagnosticsModal, setShowDeviceDiagnosticsModal] = useState<boolean>(false)
   const deviceProfile = useDeviceCapabilities()
+
+  // Native In-App Canvas & WebRTC Recorder state
+  const recorderRef = useRef<EduBoardCanvasRecorder | null>(null)
+  const [recorderState, setRecorderState] = useState<RecorderState>('inactive')
+  const [recorderProgress, setRecorderProgress] = useState<EduBoardRecordingProgress>({
+    state: 'inactive',
+    durationSeconds: 0,
+    bytesRecorded: 0,
+    chunksCount: 0,
+  })
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null)
+  const [recordedMime, setRecordedMime] = useState<string>('video/webm')
+  const [recordingAudioEnabled, setRecordingAudioEnabled] = useState<boolean>(true)
+  const [recordingWebcamEnabled, setRecordingWebcamEnabled] = useState<boolean>(false)
+  const [showRecordingModal, setShowRecordingModal] = useState<boolean>(false)
+  const [isPublishingRecording, setIsPublishingRecording] = useState<boolean>(false)
+  const [publishRecordingSuccess, setPublishRecordingSuccess] = useState<boolean>(false)
   const [uploadingDoc, setUploadingDoc] = useState<boolean>(false)
   const [actionBanner, setActionBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [blockedPopoutFallback, setBlockedPopoutFallback] = useState<{ url: string; label: string } | null>(null)
@@ -767,6 +792,134 @@ export default function EduBoardWorkspace() {
     }
   }
 
+  // ── Native In-App Canvas & WebRTC Audio Auto-Tuning Handlers ──
+  const handleStartRecording = async () => {
+    if (!localBoard) {
+      setActionBanner({ type: 'error', text: 'Please select or create an EduBoard before recording.' })
+      return
+    }
+
+    // Locate active HTML5 Konva canvas element in workspace
+    const canvas = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null
+    if (!canvas) {
+      setActionBanner({ type: 'error', text: 'EduBoard canvas surface not found. Please ensure board is visible.' })
+      return
+    }
+
+    try {
+      const recorder = new EduBoardCanvasRecorder()
+      recorderRef.current = recorder
+
+      recorder.onProgress = (prog) => {
+        setRecorderProgress(prog)
+      }
+
+      recorder.onStateChange = (st) => {
+        setRecorderState(st)
+      }
+
+      recorder.onError = (err) => {
+        setActionBanner({ type: 'error', text: `Recorder error: ${err.message}` })
+      }
+
+      setRecordedBlob(null)
+      setPublishRecordingSuccess(false)
+
+      await recorder.start(
+        canvas,
+        {
+          boardId: localBoard.id,
+          title: localBoard.title,
+          academicYearId: localBoard.academic_year_id ?? undefined,
+          standardId: localBoard.standard_id ?? undefined,
+          divisionId: localBoard.division_id ?? undefined,
+          subjectId: localBoard.subject_id ?? undefined,
+          timetableEntryId: localBoard.timetable_entry_id ?? undefined,
+          teacherUserId: localBoard.teacher_user_id,
+        },
+        {
+          enabled: recordingAudioEnabled,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          highPassFilterCutoffHz: 80,
+          compressorEnabled: true,
+        },
+        {
+          fps: 30,
+          webcamEnabled: recordingWebcamEnabled,
+        }
+      )
+
+      setShowRecordingModal(true)
+      setActionBanner({
+        type: 'success',
+        text: 'Lecture recording started with AI acoustic auto-tuning (AGC + Noise Cut).',
+      })
+    } catch (err: any) {
+      setActionBanner({
+        type: 'error',
+        text: `Failed to start recording: ${err?.message || 'Permission denied or media error'}`,
+      })
+    }
+  }
+
+  const handlePauseRecording = () => {
+    recorderRef.current?.pause()
+  }
+
+  const handleResumeRecording = () => {
+    recorderRef.current?.resume()
+  }
+
+  const handleStopRecording = async () => {
+    if (!recorderRef.current) return
+    try {
+      const res = await recorderRef.current.stop()
+      setRecordedBlob(res.blob)
+      setRecordedMime(res.mimeType)
+      setShowRecordingModal(true)
+      setActionBanner({
+        type: 'success',
+        text: `Recording finished (${Math.round(res.durationSeconds)}s). Ready to review & publish.`,
+      })
+    } catch (err: any) {
+      setActionBanner({ type: 'error', text: `Failed to finalize recording: ${err?.message || 'Unknown error'}` })
+    }
+  }
+
+  const handleDiscardRecording = () => {
+    setRecordedBlob(null)
+    setRecorderProgress({ state: 'inactive', durationSeconds: 0, bytesRecorded: 0, chunksCount: 0 })
+    setShowRecordingModal(false)
+    setActionBanner({ type: 'success', text: 'Lecture recording discarded.' })
+  }
+
+  const handlePublishRecording = async (title: string, publishToStudyMaterials: boolean) => {
+    if (!localBoard || !recordedBlob) return
+    setIsPublishingRecording(true)
+    try {
+      await eduboardApi.uploadRecording(localBoard.id, recordedBlob, {
+        title,
+        publish_to_study_materials: publishToStudyMaterials,
+      })
+      setPublishRecordingSuccess(true)
+      queryClient.invalidateQueries({ queryKey: ['eduboard', localBoard.id] })
+      queryClient.invalidateQueries({ queryKey: ['studyMaterials'] })
+      setActionBanner({
+        type: 'success',
+        text: 'Lecture recording successfully published to EduBoard and Student Portal Study Materials!',
+      })
+    } catch (err: any) {
+      setActionBanner({
+        type: 'error',
+        text: err?.response?.data?.detail || 'Failed to upload and publish lecture recording.',
+      })
+    } finally {
+      setIsPublishingRecording(false)
+    }
+  }
+
   const handleRestoreRevision = async (revId: number) => {
     if (!localBoard || !isEditMode) return
     try {
@@ -952,6 +1105,49 @@ export default function EduBoardWorkspace() {
                 <FileDown className="w-3.5 h-3.5" /> Export PDF
               </button>
 
+              {/* Native In-App Lecture Recorder Button & Status Pill */}
+              {recorderState === 'inactive' ? (
+                <button
+                  type="button"
+                  onClick={() => void handleStartRecording()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors shadow-sm"
+                  title="Record Classroom Lecture (Native In-App 1080p with AGC + Noise Cut)"
+                >
+                  <Video className="w-3.5 h-3.5 text-rose-600" /> Record Lecture
+                </button>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-600 text-white shadow-sm shadow-rose-200 animate-fadeIn">
+                  <span className="relative flex h-2 w-2">
+                    {recorderState === 'recording' && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    )}
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                  </span>
+                  <span className="font-mono text-[11px] font-bold">
+                    {Math.floor(recorderProgress.durationSeconds / 60)
+                      .toString()
+                      .padStart(2, '0')}
+                    :
+                    {(recorderProgress.durationSeconds % 60).toString().padStart(2, '0')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowRecordingModal(true)}
+                    className="px-1.5 py-0.5 rounded text-[10px] bg-rose-700 hover:bg-rose-800 text-rose-100 hover:text-white"
+                  >
+                    Open
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleStopRecording()}
+                    className="p-1 hover:bg-rose-700 rounded text-white"
+                    title="Stop & Finish Recording"
+                  >
+                    <Square className="w-3 h-3 fill-current" />
+                  </button>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => {
@@ -1049,6 +1245,25 @@ export default function EduBoardWorkspace() {
 
               {isFocusOrFullscreen && (
                 <>
+                  {recorderState !== 'inactive' && (
+                    <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold bg-rose-600 text-white shadow-sm">
+                      <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                      <span className="font-mono text-[11px]">
+                        {Math.floor(recorderProgress.durationSeconds / 60)
+                          .toString()
+                          .padStart(2, '0')}
+                        :
+                        {(recorderProgress.durationSeconds % 60).toString().padStart(2, '0')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowRecordingModal(true)}
+                        className="text-[10px] underline ml-1 hover:text-rose-100"
+                      >
+                        Controls
+                      </button>
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => setFocusDrawer(focusDrawer === 'pages' ? 'none' : 'pages')}
@@ -2044,6 +2259,28 @@ export default function EduBoardWorkspace() {
         profile={deviceProfile}
         wsState={wsState}
         hasUnsavedChanges={isDirty}
+      />
+
+      {/* ── Native In-App Lecture Recording Modal ── */}
+      <EduBoardRecordingModal
+        isOpen={showRecordingModal}
+        onClose={() => setShowRecordingModal(false)}
+        board={localBoard}
+        recorderState={recorderState}
+        progress={recorderProgress}
+        recordedBlob={recordedBlob}
+        mimeType={recordedMime}
+        audioEnabled={recordingAudioEnabled}
+        onToggleAudio={() => setRecordingAudioEnabled(!recordingAudioEnabled)}
+        webcamEnabled={recordingWebcamEnabled}
+        onToggleWebcam={() => setRecordingWebcamEnabled((prev) => !prev)}
+        onPause={handlePauseRecording}
+        onResume={handleResumeRecording}
+        onStop={() => void handleStopRecording()}
+        onDiscard={handleDiscardRecording}
+        onPublish={handlePublishRecording}
+        isPublishing={isPublishingRecording}
+        publishSuccess={publishRecordingSuccess}
       />
     </div>
   )

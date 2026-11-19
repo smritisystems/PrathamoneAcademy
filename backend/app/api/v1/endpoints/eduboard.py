@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-12
-#  * @updated     2026-11-16
+#  * @updated     2026-11-19
 #  *
 #  * @description FastAPI REST router exposing /api/v1/eduboard endpoints for interactive teaching boards, autosave/concurrency sync, PDF attachments & export, revisions, analytics, and read-only Student Portal access.
 #  */
@@ -519,6 +519,34 @@ async def upload_eduboard_attachment(
         "sha256_checksum": att.sha256_checksum,
         "created_pages_count": res["created_pages_count"],
     }
+
+
+@router.post("/boards/{board_id}/recording", status_code=status.HTTP_201_CREATED)
+async def upload_eduboard_recording(
+    board_id: int,
+    file: UploadFile = File(...),
+    title: Optional[str] = Form(None),
+    publish_to_study_materials: bool = Form(True),
+    institution_id: int = Depends(enforce_institution_access),
+    data_env: str = Depends(get_data_environment),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Save and register a Native In-App Canvas & WebRTC lecture recording.
+    Optionally publishes automatically to the Student Portal / Study Materials.
+    """
+    res = await EduBoardService.upload_recording(
+        db,
+        current_user,
+        institution_id,
+        data_env,
+        board_id,
+        file,
+        title=title,
+        publish_to_study_materials=publish_to_study_materials,
+    )
+    return res
 
 
 @router.get("/attachments/{attachment_id}/download")

@@ -13,7 +13,7 @@
 #  * @created     2026-11-19
 #  * @updated     2026-11-19
 #  *
-#  * @description Synthesizes broadcast-quality Indian English voiceovers using edge-tts en-IN-NeerjaNeural and standardizes them into 48kHz 16-bit stereo WAV format.
+#  * @description Synthesizes broadcast-quality Indian English teacher voiceovers using edge-tts en-IN-PrabhatNeural and standardizes them into 48kHz 16-bit stereo WAV format.
 #  */
 
 import os
@@ -33,7 +33,7 @@ COMMERCIAL_VO_DIR = Path("data/commercial/audio")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 COMMERCIAL_VO_DIR.mkdir(parents=True, exist_ok=True)
 
-VOICE = "en-IN-NeerjaNeural"
+VOICE = "en-IN-PrabhatNeural"
 RATE = "-4%"
 
 
@@ -44,9 +44,7 @@ def convert_to_48k_stereo_wav(mp3_path: Path, wav_path: Path):
     filter_chain = (
         "highpass=f=85,"                                # Remove muddy low rumble
         "equalizer=f=320:t=q:w=1.5:g=-3,"               # Cut boxy midrange
-        "equalizer=f=4500:t=q:w=1.2:g=3.5,"             # Crisp vocal clarity/presence
-        "equalizer=f=7200:t=q:w=2.0:g=-2.5,"            # Tame sibilant hiss ('s' / 't' band)
-        "equalizer=f=10000:t=q:w=1.0:g=1.5,"            # Subtle broadcast air without harshness
+        "equalizer=f=4500:t=q:w=1.2:g=4.5,"             # Crisp teacher vocal clarity/presence
         "acompressor=threshold=-18dB:ratio=3:attack=10:release=120,"
         "loudnorm=I=-16:TP=-1.5:LRA=7"                  # Broadcast loudness standard (-16 LUFS)
     )
@@ -62,7 +60,7 @@ def convert_to_48k_stereo_wav(mp3_path: Path, wav_path: Path):
     ]
 
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"  Mastered 48kHz Broadcast WAV: {wav_path} ({wav_path.stat().st_size} bytes)")
+    print(f"  Mastered 48kHz Broadcast WAV: {wav_path.name} ({wav_path.stat().st_size} bytes)")
 
 
 async def generate_chapter_audio(item: dict):
@@ -86,7 +84,7 @@ async def generate_chapter_audio(item: dict):
 
 async def main():
     print("=================================================================")
-    print(f"  SYNTHESIZING NEURAL INDIAN ENGLISH VOICEOVERS ({VOICE})")
+    print(f"  SYNTHESIZING NEURAL INDIAN TEACHER VOICEOVERS ({VOICE})")
     print("=================================================================")
 
     if not SCRIPT_FILE.exists():
@@ -97,7 +95,7 @@ async def main():
         await generate_chapter_audio(item)
 
     print("\n=================================================================")
-    print("  ALL NEURAL VOICEOVERS GENERATED SUCCESSFULLY!")
+    print("  ALL NEURAL TEACHER VOICEOVERS GENERATED SUCCESSFULLY!")
     print(f"  Primary Dir : {OUTPUT_DIR.resolve()}")
     print(f"  Mirror Dir  : {COMMERCIAL_VO_DIR.resolve()}")
     print("=================================================================")

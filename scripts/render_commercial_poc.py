@@ -173,10 +173,10 @@ def draw_lower_third(frame_idx, total_scene_frames):
     ol_draw.rounded_rectangle([bx + 14, by + 18, bx + 22, by + bh - 18], radius=4, fill=(241, 105, 6, int(255 * alpha)))
 
     # Presenter Name
-    ol_draw.text((bx + 38, by + 18), "PRIYA SHARMA", font=font_title_bold, fill=(255, 255, 255, int(255 * alpha)))
+    ol_draw.text((bx + 38, by + 18), "PRASHANT TEJAM", font=font_title_bold, fill=(255, 255, 255, int(255 * alpha)))
 
     # Title & Role
-    ol_draw.text((bx + 38, by + 60), "Solutions Specialist  •  PrathamOne EduOS", font=font_subtitle, fill=(203, 213, 225, int(240 * alpha)))
+    ol_draw.text((bx + 38, by + 60), "Founder, Dean & Owner  •  Prashant Academy", font=font_subtitle, fill=(203, 213, 225, int(240 * alpha)))
 
     # Animated Voice Equalizer
     eq_x = bx + bw - 140
@@ -270,7 +270,7 @@ def draw_closing_tagline(progress):
     ol_draw.text((bx + (bw - w1) // 2, cy + 18), t1, font=font_hero_bold, fill=(255, 255, 255, int(255 * alpha)))
 
     # Tagline line 2
-    t2 = "The Power of Enterprise Education. The Simplicity of WhatsApp."
+    t2 = "Educational ERP, Simplified."
     bbox2 = font_hero_sub.getbbox(t2)
     w2 = bbox2[2] - bbox2[0]
     ol_draw.text((bx + (bw - w2) // 2, cy + 68), t2, font=font_hero_sub, fill=(251, 191, 36, int(240 * alpha)))

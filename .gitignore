@@ -32,6 +32,7 @@ wheels/
 !data/*.sql
 pgdata/
 backups/
+backend/uploads/eduboard/10/
 
 # Node / Frontend
 node_modules/
@@ -65,6 +66,7 @@ pnpm-debug.log*
 htmlcov/
 .vitest_cache/
 scratch/
+scratch_frames/
 
 # Commercial Video Production (Heavy binary media & recordings)
 *.mp4

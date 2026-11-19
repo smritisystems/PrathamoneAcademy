@@ -786,7 +786,7 @@ function buildMaster120Scenes(): VideoSceneDefinition[] {
       id: 'sc-10-closing',
       order: 10,
       title: 'PrathamOne EduOS — Call to Action',
-      subtitle: 'The Power of Enterprise Education. The Simplicity of WhatsApp.',
+      subtitle: 'Coaching Management. Simplified.',
       duration: 12.0,
       transition: 'dip-navy',
       transitionDuration: 0.6,
@@ -834,7 +834,7 @@ function buildMaster120Scenes(): VideoSceneDefinition[] {
       },
       narration: {
         script:
-          'PrathamOne EduOS. The power of enterprise education with the simplicity of WhatsApp. Upgrade your coaching academy today.',
+          'PrathamOne EduOS. Coaching management simplified. Upgrade your coaching academy today.',
         rate: 1.0,
         pitch: 1.0,
         volume: 1.0,

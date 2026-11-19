@@ -1,0 +1,165 @@
+{
+  "recording_path": "assets/captures/synced_demo_recording.webm",
+  "modules": [
+    {
+      "module_id": "dashboard",
+      "start_sec": 12.219984,
+      "end_sec": 23.619984,
+      "wav_path": "assets/audio/modules/vo_dashboard.wav",
+      "badge_title": "Executive Dashboard",
+      "badge_subtitle": "A live view of institute performance"
+    },
+    {
+      "module_id": "students",
+      "start_sec": 39.249849,
+      "end_sec": 50.049849,
+      "wav_path": "assets/audio/modules/vo_students.wav",
+      "badge_title": "Student Management",
+      "badge_subtitle": "Profiles, enrolments, and student records"
+    },
+    {
+      "module_id": "admissions",
+      "start_sec": 52.359469,
+      "end_sec": 63.183469,
+      "wav_path": "assets/audio/modules/vo_admissions.wav",
+      "badge_title": "Admissions",
+      "badge_subtitle": "From enquiry to enrolled learner"
+    },
+    {
+      "module_id": "fees",
+      "start_sec": 68.11221,
+      "end_sec": 79.27221,
+      "wav_path": "assets/audio/modules/vo_fees.wav",
+      "badge_title": "Fees and Payments",
+      "badge_subtitle": "Collections, balances, and payment insights"
+    },
+    {
+      "module_id": "concessions",
+      "start_sec": 80.144502,
+      "end_sec": 90.896502,
+      "wav_path": "assets/audio/modules/vo_concessions.wav",
+      "badge_title": "Concessions and Waivers",
+      "badge_subtitle": "Governed requests and clear audit trails"
+    },
+    {
+      "module_id": "scholarships",
+      "start_sec": 93.04918,
+      "end_sec": 104.71318,
+      "wav_path": "assets/audio/modules/vo_scholarships.wav",
+      "badge_title": "Scholarships",
+      "badge_subtitle": "Academy awards and sponsor-funded benefits"
+    },
+    {
+      "module_id": "attendance",
+      "start_sec": 105.880389,
+      "end_sec": 117.184389,
+      "wav_path": "assets/audio/modules/vo_attendance.wav",
+      "badge_title": "Attendance",
+      "badge_subtitle": "Daily registers and U-P-I Q-R check-in"
+    },
+    {
+      "module_id": "timetable",
+      "start_sec": 124.849073,
+      "end_sec": 135.553073,
+      "wav_path": "assets/audio/modules/vo_timetable.wav",
+      "badge_title": "Timetable",
+      "badge_subtitle": "Weekly schedules for classes and faculty"
+    },
+    {
+      "module_id": "examinations",
+      "start_sec": 136.973853,
+      "end_sec": 148.181853,
+      "wav_path": "assets/audio/modules/vo_examinations.wav",
+      "badge_title": "Examinations",
+      "badge_subtitle": "Schedules, assessments, and marks"
+    },
+    {
+      "module_id": "results",
+      "start_sec": 149.021555,
+      "end_sec": 159.149555,
+      "wav_path": "assets/audio/modules/vo_results.wav",
+      "badge_title": "Results and Report Cards",
+      "badge_subtitle": "Performance insights and verified results"
+    },
+    {
+      "module_id": "staff",
+      "start_sec": 161.101696,
+      "end_sec": 172.333696,
+      "wav_path": "assets/audio/modules/vo_staff.wav",
+      "badge_title": "Staff Management",
+      "badge_subtitle": "People, duties, attendance, and leave"
+    },
+    {
+      "module_id": "communication",
+      "start_sec": 174.34554,
+      "end_sec": 185.67354,
+      "wav_path": "assets/audio/modules/vo_communication.wav",
+      "badge_title": "Communication",
+      "badge_subtitle": "Notices, templates, and message history"
+    },
+    {
+      "module_id": "reports",
+      "start_sec": 188.695477,
+      "end_sec": 200.119477,
+      "wav_path": "assets/audio/modules/vo_reports.wav",
+      "badge_title": "Reports and Analytics",
+      "badge_subtitle": "Operational, academic, and financial insights"
+    },
+    {
+      "module_id": "settings",
+      "start_sec": 208.888312,
+      "end_sec": 220.912312,
+      "wav_path": "assets/audio/modules/vo_settings.wav",
+      "badge_title": "Administration and Settings",
+      "badge_subtitle": "Institute preferences and workspace controls"
+    },
+    {
+      "module_id": "courses",
+      "start_sec": 222.786956,
+      "end_sec": 233.706956,
+      "wav_path": "assets/audio/modules/vo_courses.wav",
+      "badge_title": "Courses and Study Materials",
+      "badge_subtitle": "A shared library for teaching resources"
+    },
+    {
+      "module_id": "homework",
+      "start_sec": 236.017664,
+      "end_sec": 246.073664,
+      "wav_path": "assets/audio/modules/vo_homework.wav",
+      "badge_title": "Homework",
+      "badge_subtitle": "Assignments, submissions, and review"
+    },
+    {
+      "module_id": "eduboard",
+      "start_sec": 248.85838,
+      "end_sec": 259.29838,
+      "wav_path": "assets/audio/modules/vo_eduboard.wav",
+      "badge_title": "EduBoard",
+      "badge_subtitle": "Digital Whiteboard and Greenboard"
+    },
+    {
+      "module_id": "forms",
+      "start_sec": 261.441383,
+      "end_sec": 272.049383,
+      "wav_path": "assets/audio/modules/vo_forms.wav",
+      "badge_title": "Forms and Documents",
+      "badge_subtitle": "Preview forms, identity cards, and records"
+    },
+    {
+      "module_id": "import_export",
+      "start_sec": 273.667815,
+      "end_sec": 283.963815,
+      "wav_path": "assets/audio/modules/vo_import_export.wav",
+      "badge_title": "Import and Export",
+      "badge_subtitle": "Guided data exchange and job tracking"
+    },
+    {
+      "module_id": "training",
+      "start_sec": 285.51645,
+      "end_sec": 296.77245,
+      "wav_path": "assets/audio/modules/vo_training.wav",
+      "badge_title": "Training Sandbox",
+      "badge_subtitle": "A safe place to practise workflows"
+    }
+  ]
+}

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Enterprise Study Materials & Digital Content management hub comprising 8 dedicated workspaces, live database persistence, and Rule 010 View-First governance.
  */
@@ -412,6 +412,22 @@ function CoursesContent() {
     () => materialsData?.items?.filter((m) => m.file_type === 'Question Bank' || m.file_type === 'Assignment') ?? [],
     [materialsData?.items]
   )
+
+  const videoLectureMaterials = useMemo(
+    () =>
+      materialsData?.items?.filter(
+        (m) =>
+          m.file_type === 'Video' ||
+          m.file_type === 'Lecture Recording' ||
+          m.file_type === 'Video Lecture' ||
+          m.file_url.endsWith('.webm') ||
+          m.file_url.endsWith('.mp4') ||
+          m.file_url.includes('/eduboard/attachments/'),
+      ) ?? [],
+    [materialsData?.items]
+  )
+
+  const [activeVideoPlayer, setActiveVideoPlayer] = useState<StudyMaterialItem | null>(null)
 
   const filteredPrograms = useMemo(
     () =>
@@ -1388,91 +1404,116 @@ function CoursesContent() {
       {/* ─── TAB 6: VIDEO LECTURES & DIGITAL STREAM ──────────────────────────── */}
       {activeTab === 'video-lectures' && (
         <div className="space-y-4 animate-fade-in">
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-bold text-slate-800">Recorded Video Lectures & Stream References</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Classroom recordings, animated visual demonstrations, and video solutions
+                Classroom recordings from EduBoard, animated visual demonstrations, and video solutions
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => handleTabChange('upload', '/courses/upload')}
-              className="btn-primary text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5"
-            >
-              <Video className="w-3.5 h-3.5" />
-              <span>Register Video Link</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/eduboard"
+                className="btn-primary text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5"
+              >
+                <Video className="w-3.5 h-3.5" />
+                <span>Launch EduBoard Recorder</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => handleTabChange('upload', '/courses/upload')}
+                className="btn-secondary text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5"
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Register External Video</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              {
-                id: 'vid-1',
-                title: 'Rotational Dynamics & Moment of Inertia Masterclass',
-                subject: 'Physics',
-                standard: 'Standard 12',
-                duration: '1h 45m',
-                faculty: 'Prof. R. Deshmukh',
-                url: 'https://youtube.com',
-              },
-              {
-                id: 'vid-2',
-                title: 'Chemical Equilibrium & Le Chatelier Principle',
-                subject: 'Chemistry',
-                standard: 'Standard 11',
-                duration: '1h 20m',
-                faculty: 'Dr. Anita Joshi',
-                url: 'https://youtube.com',
-              },
-              {
-                id: 'vid-3',
-                title: 'Calculus: Integration by Parts & Partial Fractions',
-                subject: 'Mathematics',
-                standard: 'Standard 12',
-                duration: '2h 10m',
-                faculty: 'Prof. V. Sharma',
-                url: 'https://youtube.com',
-              },
-              {
-                id: 'vid-4',
-                title: 'Human Reproduction & Embryonic Development',
-                subject: 'Biology',
-                standard: 'Standard 12',
-                duration: '1h 15m',
-                faculty: 'Dr. Sneha Patil',
-                url: 'https://youtube.com',
-              },
-            ].map((vid) => (
-              <div key={vid.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
-                <div className="h-32 bg-slate-900 relative flex items-center justify-center text-white">
-                  <PlayCircle className="w-12 h-12 text-white/80 hover:text-white transition cursor-pointer" />
-                  <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-[10px] font-mono font-bold">
-                    {vid.duration}
-                  </span>
-                </div>
-                <div className="p-4 space-y-2">
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="font-semibold text-primary-600">{vid.subject}</span>
-                    <span className="text-slate-400">{vid.standard}</span>
-                  </div>
-                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{vid.title}</h4>
-                  <p className="text-[11px] text-slate-500">Instructor: {vid.faculty}</p>
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
-                    <a
-                      href={vid.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1"
-                    >
-                      <span>Stream Lecture</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                </div>
+          {videoLectureMaterials.length === 0 ? (
+            <div className="bg-white p-12 rounded-2xl border border-dashed border-slate-300 text-center space-y-3">
+              <Video className="w-12 h-12 text-slate-300 mx-auto" />
+              <h4 className="text-sm font-bold text-slate-800">No Recorded Video Lectures Yet</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Record live classroom lectures in PrathamOne EduBoard with AI acoustic auto-tuning (AGC + Noise Cut),
+                or register video recordings directly into the repository.
+              </p>
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <Link
+                  to="/eduboard"
+                  className="btn-primary text-xs py-2 px-4 rounded-lg inline-flex items-center gap-1.5"
+                >
+                  <Video className="w-4 h-4" />
+                  <span>Launch EduBoard to Record</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('upload', '/courses/upload')}
+                  className="btn-secondary text-xs py-2 px-3 rounded-lg inline-flex items-center gap-1.5"
+                >
+                  <UploadCloud className="w-4 h-4" />
+                  <span>Upload Existing Video</span>
+                </button>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {videoLectureMaterials.map((vid) => (
+                <div key={vid.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs hover:shadow-md transition-shadow">
+                  <div
+                    onClick={() => setActiveVideoPlayer(vid)}
+                    className="h-36 bg-slate-900 relative flex items-center justify-center text-white cursor-pointer group"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+                    <PlayCircle className="w-14 h-14 text-white/80 group-hover:text-white group-hover:scale-110 transition-transform z-10" />
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-rose-600/90 text-white text-[10px] font-bold uppercase tracking-wider z-10">
+                      {vid.file_type}
+                    </span>
+                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono font-bold text-slate-200 z-10">
+                      {formatBytes(vid.file_size_bytes)}
+                    </span>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="font-semibold text-primary-600">{vid.subject_name || 'Subject'}</span>
+                      <span className="text-slate-400">{vid.standard_name || 'All Standards'}</span>
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-900 line-clamp-1" title={vid.title}>
+                      {vid.title}
+                    </h4>
+                    {vid.description && (
+                      <p className="text-[11px] text-slate-500 line-clamp-2">{vid.description}</p>
+                    )}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {vid.created_at ? new Date(vid.created_at).toLocaleDateString() : 'Lecture Capture'}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setActiveVideoPlayer(vid)}
+                          className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary-50 hover:bg-primary-100"
+                        >
+                          <PlayCircle className="w-3.5 h-3.5" />
+                          <span>Watch</span>
+                        </button>
+                        <a
+                          href={vid.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download
+                          className="p-1 rounded text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                          title="Download Video File"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1868,6 +1909,63 @@ function CoursesContent() {
           </div>
         </Modal>
       )}
+
+      {/* ─── Video Lecture In-App Stream Player Modal ─── */}
+      <Modal
+        isOpen={!!activeVideoPlayer}
+        onClose={() => setActiveVideoPlayer(null)}
+        title={activeVideoPlayer?.title || 'Lecture Video Player'}
+      >
+        <div className="space-y-3">
+          {activeVideoPlayer && (
+            <>
+              <div className="rounded-xl overflow-hidden bg-black shadow-inner">
+                <video
+                  src={activeVideoPlayer.file_url}
+                  controls
+                  autoPlay
+                  className="w-full max-h-[65vh] object-contain mx-auto"
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
+                <div>
+                  <span className="font-semibold text-slate-900">{activeVideoPlayer.standard_name}</span>
+                  {activeVideoPlayer.subject_name && ` • ${activeVideoPlayer.subject_name}`}
+                  <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                    {activeVideoPlayer.file_type}
+                  </span>
+                </div>
+                <div className="font-mono text-[11px] text-slate-500">
+                  {formatBytes(activeVideoPlayer.file_size_bytes)}
+                </div>
+              </div>
+              {activeVideoPlayer.description && (
+                <p className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  {activeVideoPlayer.description}
+                </p>
+              )}
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <a
+                  href={activeVideoPlayer.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="btn-secondary text-xs py-1.5 px-3 rounded-lg inline-flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download File
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setActiveVideoPlayer(null)}
+                  className="btn-primary text-xs py-1.5 px-3 rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-12
-#  * @updated     2026-11-16
+#  * @updated     2026-11-19
 #  *
 #  * @description Domain service for PrathamOne EduBoard: RBAC & scope enforcement, PRODUCTION/TRAINING isolation, page & revision concurrency, attachment storage, PyMuPDF rendering/PDF export, notifications, and analytics.
 #  */
@@ -48,7 +48,7 @@ from app.models.eduboard import (
     EduBoardRevision,
 )
 from app.models.enrollment import StudentEnrollment
-from app.models.portal import TimetableEntry
+from app.models.portal import StudyMaterial, TimetableEntry
 from app.models.settings import InstitutionSetting
 from app.models.staff import TeacherAssignment
 from app.models.standard import Standard
@@ -58,12 +58,14 @@ from app.models.teacher_payroll import TeachingSession
 from app.models.user import AuditLog, User
 from app.services.homework_service import HomeworkService, _get_writable_upload_root
 
-EDUBOARD_ALLOWED_EXTENSIONS: Set[str] = {"pdf", "png", "jpg", "jpeg", "webp"}
+EDUBOARD_ALLOWED_EXTENSIONS: Set[str] = {"pdf", "png", "jpg", "jpeg", "webp", "webm", "mp4"}
 EDUBOARD_MIME_PREFIXES: Tuple[str, ...] = (
     "application/pdf",
     "image/png",
     "image/jpeg",
     "image/webp",
+    "video/webm",
+    "video/mp4",
     "application/octet-stream",
 )
 EDUBOARD_BOARD_MODES: Set[str] = {"classic", "whiteboard", "presentation"}
@@ -1377,7 +1379,7 @@ class EduBoardService:
             is_demo=is_demo,
             board_id=board.id,
             uploader_user_id=user.id,
-            attachment_role=attachment_role if attachment_role in {"source_document", "canvas_image", "exported_pdf"} else "source_document",
+            attachment_role=attachment_role if attachment_role in {"source_document", "canvas_image", "exported_pdf", "lecture_recording"} else "source_document",
             original_filename=orig_name[:255],
             stored_filename=stored_name[:255],
             storage_path=str(dest_path),
@@ -2319,3 +2321,112 @@ class EduBoardService:
             },
             ttl_minutes=60,
         )
+
+    @staticmethod
+    async def upload_recording(
+        db: AsyncSession,
+        user: User,
+        institution_id: int,
+        data_env: str,
+        board_id: int,
+        upload: UploadFile,
+        title: Optional[str] = None,
+        publish_to_study_materials: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Processes Native In-App Canvas & WebRTC lecture recordings, saves to institution
+        storage, creates immutable EduBoardAttachment, and optionally registers in StudyMaterial.
+        """
+        is_demo = data_env == "TRAINING"
+        board = await EduBoardService.get_board_or_404(db, board_id, institution_id, is_demo=is_demo)
+        await EduBoardService.require_permission_or_403(db, user, "edit", board=board)
+
+        # Allow recordings up to 500 MB (smart VBR is ~350 MB/hour)
+        max_bytes = 500 * 1024 * 1024
+
+        orig_name = Path(upload.filename or "lecture_recording.webm").name
+        safe_base = re.sub(r"[^A-Za-z0-9._-]+", "_", orig_name).strip("._") or "lecture_recording.webm"
+        ext = Path(safe_base).suffix.lower().lstrip(".")
+        if ext not in {"webm", "mp4", "mkv"}:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported recording format '.{ext or 'none'}'. Supported: webm, mp4.",
+            )
+
+        content = await upload.read(max_bytes + 1)
+        if not content:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Recording payload is empty.")
+        if len(content) > max_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Recording file exceeds 500 MB limit.",
+            )
+
+        mime = (upload.content_type or "video/webm").lower().strip()
+        checksum = hashlib.sha256(content).hexdigest()
+        inst_dir = _resolve_eduboard_upload_root() / str(institution_id) / "recordings"
+        inst_dir.mkdir(parents=True, exist_ok=True)
+        stored_name = f"{uuid.uuid4().hex}_{safe_base}"
+        dest_path = inst_dir / stored_name
+
+        with open(dest_path, "wb") as fp:
+            fp.write(content)
+
+        att = EduBoardAttachment(
+            institution_id=institution_id,
+            is_demo=is_demo,
+            board_id=board.id,
+            uploader_user_id=user.id,
+            attachment_role="lecture_recording",
+            original_filename=orig_name[:255],
+            stored_filename=stored_name[:255],
+            storage_path=str(dest_path),
+            mime_type=mime[:150],
+            extension=ext[:20],
+            file_size_bytes=len(content),
+            sha256_checksum=checksum,
+            page_count=None,
+            is_immutable=True,
+        )
+        db.add(att)
+        await db.flush()
+
+        study_material_record = None
+        if publish_to_study_materials and board.standard_id and board.subject_id:
+            sm_title = (title or f"Lecture: {board.title}").strip()[:200]
+            desc = f"EduBoard Lecture Recording for {board.topic or board.title}. Teacher: {user.full_name or 'Faculty'}."
+            material = StudyMaterial(
+                institution_id=institution_id,
+                standard_id=board.standard_id,
+                subject_id=board.subject_id,
+                subject_mapping_id=board.subject_mapping_id,
+                division_id=board.division_id,
+                title=sm_title,
+                description=desc,
+                file_type="Lecture Recording",
+                file_url=f"/api/v1/eduboard/attachments/{att.id}/download",
+                file_size_bytes=len(content),
+            )
+            db.add(material)
+            await db.flush()
+            study_material_record = {
+                "id": material.id,
+                "title": material.title,
+                "file_type": material.file_type,
+            }
+
+        await db.commit()
+        await db.refresh(att)
+
+        return {
+            "attachment": {
+                "id": att.id,
+                "board_id": att.board_id,
+                "original_filename": att.original_filename,
+                "file_size_bytes": att.file_size_bytes,
+                "mime_type": att.mime_type,
+                "download_url": f"/api/v1/eduboard/attachments/{att.id}/download",
+            },
+            "study_material": study_material_record,
+            "message": "Lecture recording saved and published successfully.",
+        }

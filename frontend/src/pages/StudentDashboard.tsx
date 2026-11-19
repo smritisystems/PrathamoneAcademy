@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Dedicated student portal dashboard presenting enrolled courses, timetable, and exam results.
  */
@@ -25,7 +25,7 @@ import {
   AlertCircle, Download, ChevronRight, Save, RefreshCw, ShieldAlert,
   FileCheck, Upload, MessageSquare, Paperclip, AlertTriangle, CheckCircle2,
   XCircle, Send, Sparkles, Presentation, Printer, ChevronLeft, Check, X,
-  Trophy, FileSpreadsheet
+  Trophy, FileSpreadsheet, PlayCircle, Video
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { studentPortalApi, studentsApi, homeworkApi, eduboardApi } from '../api/endpoints'
@@ -269,6 +269,7 @@ export default function StudentDashboardPage() {
   const [submitFileName, setSubmitFileName] = useState('')
   const [uploadedSubmissionFiles, setUploadedSubmissionFiles] = useState<HomeworkSubmissionFile[]>([])
   const [isUploadingSubFile, setIsUploadingSubFile] = useState(false)
+  const [selectedVideoPlayback, setSelectedVideoPlayback] = useState<StudyMaterialItem | null>(null)
 
   const { data: homeworkData, isLoading: isLoadingHomework, refetch: refetchHomework } = useQuery({
     queryKey: ['student-portal-homework', effectiveId, homeworkFilter],
@@ -1815,14 +1816,30 @@ export default function StudentDashboardPage() {
                   </div>
                   <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-[11px] text-gray-400">Class: {mat.standard_name}</span>
-                    <a
-                      href={mat.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
-                    >
-                      <Download className="w-3.5 h-3.5" /> Download
-                    </a>
+                    <div className="flex items-center gap-1.5">
+                      {(mat.file_type === 'Lecture Recording' ||
+                        mat.file_type === 'Video' ||
+                        mat.file_type === 'Video Lecture' ||
+                        mat.file_url.endsWith('.webm') ||
+                        mat.file_url.endsWith('.mp4') ||
+                        mat.file_url.includes('/eduboard/attachments/')) && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVideoPlayback(mat)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                        >
+                          <PlayCircle className="w-3.5 h-3.5" /> Watch Video
+                        </button>
+                      )}
+                      <a
+                        href={mat.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </a>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -2778,6 +2795,63 @@ export default function StudentDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* ─── Student In-App Video Lecture Stream Player ─── */}
+      <Modal
+        isOpen={!!selectedVideoPlayback}
+        onClose={() => setSelectedVideoPlayback(null)}
+        title={selectedVideoPlayback?.title || 'Classroom Video Lecture'}
+      >
+        <div className="space-y-3">
+          {selectedVideoPlayback && (
+            <>
+              <div className="rounded-xl overflow-hidden bg-black shadow-inner">
+                <video
+                  src={selectedVideoPlayback.file_url}
+                  controls
+                  autoPlay
+                  className="w-full max-h-[65vh] object-contain mx-auto"
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-600 pt-1">
+                <div>
+                  <span className="font-semibold text-gray-900">{selectedVideoPlayback.standard_name}</span>
+                  {selectedVideoPlayback.subject_name && ` • ${selectedVideoPlayback.subject_name}`}
+                  <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                    {selectedVideoPlayback.file_type}
+                  </span>
+                </div>
+                <div className="font-mono text-[11px] text-gray-500">
+                  {(selectedVideoPlayback.file_size_bytes / (1024 * 1024)).toFixed(1)} MB
+                </div>
+              </div>
+              {selectedVideoPlayback.description && (
+                <p className="text-xs text-gray-500 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                  {selectedVideoPlayback.description}
+                </p>
+              )}
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <a
+                  href={selectedVideoPlayback.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 inline-flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setSelectedVideoPlayback(null)}
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold bg-primary-600 text-white hover:bg-primary-700"
+                >
+                  Done
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }
