@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Master View-First & Explicit Edit Mode banner and toggle component enforcing global read-only default and explicit modification authorization.
  */
@@ -107,7 +107,7 @@ export default function EditModeBar({
   if (!isEditMode) {
     if (compact) {
       return (
-        <div className="flex items-center gap-2">
+        <div className="no-print print:hidden flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
             <Eye className="w-3.5 h-3.5 text-slate-500" />
             <span>View Mode (Locked)</span>
@@ -141,7 +141,7 @@ export default function EditModeBar({
     }
 
     return (
-      <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs mb-4">
+      <div className="no-print print:hidden bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs mb-4">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-slate-200/70 flex items-center justify-center text-slate-600">
             <Eye className="w-4 h-4" />
@@ -192,7 +192,7 @@ export default function EditModeBar({
   // EDIT MODE ACTIVE RENDERING (EXPLICIT MUTATION STATE)
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-amber-500/10 border-2 border-amber-500/80 rounded-xl p-3 md:px-4 md:py-3 shadow-sm mb-4 transition-all">
+    <div className="no-print print:hidden bg-amber-500/10 border-2 border-amber-500/80 rounded-xl p-3 md:px-4 md:py-3 shadow-sm mb-4 transition-all">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Status & Warning Notice */}
         <div className="flex items-center gap-2.5">

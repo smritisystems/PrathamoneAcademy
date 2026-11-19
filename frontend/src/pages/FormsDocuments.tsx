@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Centralized Print Forms & KYC Document Studio comprising 8 dedicated workspaces, A4 template engine, direct URL synchronization, and Rule 010 View-First governance.
  */
@@ -353,8 +353,10 @@ function FormsDocumentsContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Global View-First & Explicit Edit Mode Governance Bar */}
-      <EditModeBar scope={editScope} title="Printable Forms & Official Documents Studio" />
+      {/* Global View-First & Explicit Edit Mode Governance Bar (Hidden during Print) */}
+      <div className="no-print print:hidden">
+        <EditModeBar scope={editScope} title="Printable Forms & Official Documents Studio" />
+      </div>
 
       {/* Training Mode Banner */}
       {isTrainingMode && (
