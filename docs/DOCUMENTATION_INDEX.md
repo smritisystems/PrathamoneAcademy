@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-19 11:34:36<br>
-**Total Indexed Items:** 603<br>
+**Last Reindexed:** 2026-11-19 12:06:51<br>
+**Total Indexed Items:** 604<br>
 
 ---
 
@@ -31,7 +31,7 @@
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **14** | Document Generation & Print Engine |
 | `15` | [15_INTEGRATIONS](#15_integrations) | **10** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
-| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **39** | UI/UX Design, Components & Footer |
+| `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **40** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **14** | Testing, Verification & Quality Assurance |
 | `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **14** | Releases, Versioning & Changelogs |
 | `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **70** | Forensic Audits & Data Health |
@@ -408,6 +408,7 @@
 | **Branding Decision Record: Official Orange Accent** | `DECISION-RECORD` | `1.0` | 2026-11-17 | `Approved for Initial Implementation` | [2026-11-17_UI-UX-DESIGN_BRANDING-DECISION_BLOOD-RED-ACCENT_V1.md](17_UI_UX_DESIGN/2026-11-17_UI-UX-DESIGN_BRANDING-DECISION_BLOOD-RED-ACCENT_V1.md) | 17_UI_UX_DESIGN, 13_SYSADMIN_SETTINGS |
 | **Design Token Specification for Official Branding and Themes** | `SPECIFICATION` | `1.0` | 2026-11-17 | `Approved for Initial Implementation` | [2026-11-17_UI-UX-DESIGN_TOKEN-SPECIFICATION_OFFICIAL-BRANDING-AND-THEMES_V1.md](17_UI_UX_DESIGN/2026-11-17_UI-UX-DESIGN_TOKEN-SPECIFICATION_OFFICIAL-BRANDING-AND-THEMES_V1.md) | 17_UI_UX_DESIGN, 13_SYSADMIN_SETTINGS |
 | **Existing UI and Theme Architecture Audit — Official Branding and Light/Dark Theme** | `AUDIT` | `1.0` | 2026-11-17 | `For Approval` | [2026-11-17_UI-UX-DESIGN_AUDIT-REPORT_OFFICIAL-BRANDING-AND-THEME-ARCHITECTURE_V1.md](17_UI_UX_DESIGN/2026-11-17_UI-UX-DESIGN_AUDIT-REPORT_OFFICIAL-BRANDING-AND-THEME-ARCHITECTURE_V1.md) | 17_UI_UX_DESIGN, 13_SYSADMIN_SETTINGS, 11_REPORTS_EXPORTS, 14_PRINTING_DOCUMENTS |
+| **Footer License Popout Modal and Unmasked Serial Number Architecture** | `SPECIFICATION` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_UI-UX-DESIGN_SPECIFICATION_FOOTER-LICENSE-POPOUT-AND-UNMASKED-SERIAL-NUMBER_V1.md](17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_SPECIFICATION_FOOTER-LICENSE-POPOUT-AND-UNMASKED-SERIAL-NUMBER_V1.md) | UI/UX Design, Help & About, Security & RBAC |
 | **Global Ascending / Descending Table Sorting & Filter Control Implementation Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md](17_UI_UX_DESIGN/2026-11-10_UI-UX_IMPLEMENTATION-REPORT_GLOBAL-ASC-DESC-TABLE-SORTING_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS |
 | **Global Branding Visual Validation & Acceptance Report** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md](17_UI_UX_DESIGN/2026-11-08_UI-UX-DESIGN_REPORT_GLOBAL-BRANDING-VISUAL-VALIDATION-REPORT_V1.md) | 01_ARCHITECTURE, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
 | **Institute Overview Messaging and E-Commerce Artifact Elimination Governance** | `REPORT` | `1.0` | 2026-11-17 | `Approved` | [2026-11-17_UI_UX_DESIGN_FEATURE-REPORT_INSTITUTE-OVERVIEW-MESSAGING-GOVERNANCE_V1.md](17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_FEATURE-REPORT_INSTITUTE-OVERVIEW-MESSAGING-GOVERNANCE_V1.md) | 00_PRODUCT_OVERVIEW, 10_FINANCE_ACCOUNTING |

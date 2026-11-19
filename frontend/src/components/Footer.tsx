@@ -11,7 +11,7 @@
  *
  * @version     1.2.0
  * @created     2026-11-04
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Collapsible full-width application footer displaying tenant branch, current route, product edition, live system metrics, and parent organization branding.
  */
@@ -25,6 +25,7 @@ import { institutionsApi } from '../api/endpoints'
 import { APP_CONFIG, BRANDING_CONFIG } from '../config/appConfig'
 import { findModuleByPath } from '../config/modules'
 import OrganizationBranding from './OrganizationBranding'
+import LicenseDetailsModal from './LicenseDetailsModal'
 import { useBottomBarDrawerStore } from '../store/bottomBarDrawerStore'
 
 export const FOOTER_COLLAPSED_KEY = 'pratham_footer_collapsed'
@@ -225,6 +226,7 @@ export default function Footer() {
   const { activeDrawer, toggleDrawer } = useBottomBarDrawerStore()
   const isOnline = useLiveConnectionStatus()
   const [showAboutModal, setShowAboutModal] = useState(false)
+  const [showLicenseModal, setShowLicenseModal] = useState(false)
   const isNoticesActive = location.pathname.startsWith('/communication/notices') || location.pathname === '/notices'
 
   // Initialize collapse state: check localStorage first, else default to mobile (< 768px)
@@ -339,9 +341,13 @@ export default function Footer() {
               <span className="hidden md:inline text-slate-300 select-none">·</span>
               <Link
                 to="/help/version"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setShowLicenseModal(true)
+                }}
                 aria-label="Software license details"
-                title="View license status, validity, and deployment details"
-                className="hidden md:inline text-primary-700 hover:text-primary-900 hover:underline font-semibold shrink-0"
+                title="View license status, unmasked serial number, and registration details"
+                className="hidden md:inline text-primary-700 hover:text-primary-900 hover:underline font-semibold shrink-0 cursor-pointer"
               >
                 License details
               </Link>
@@ -438,9 +444,13 @@ export default function Footer() {
                 <span className="text-blue-200 select-none">·</span>
                 <Link
                   to="/help/version"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setShowLicenseModal(true)
+                  }}
                   aria-label="Software license details"
-                  title="View license status, validity, and deployment details"
-                  className="text-primary-700 hover:text-primary-900 hover:underline font-semibold"
+                  title="View license status, unmasked serial number, and registration details"
+                  className="text-primary-700 hover:text-primary-900 hover:underline font-semibold cursor-pointer"
                 >
                   License details
                 </Link>
@@ -591,6 +601,12 @@ export default function Footer() {
           </div>
         </div>
       )}
+
+      {/* Popout Software License & Registration Details Dialog */}
+      <LicenseDetailsModal
+        isOpen={showLicenseModal}
+        onClose={() => setShowLicenseModal(false)}
+      />
     </footer>
   )
 }

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-16
+#  * @updated     2026-11-19
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -695,11 +695,7 @@ async def get_license_status(
         "offline_validity_days": payload.get("offline_validity_days") if payload else None,
         "refresh_status": refresh_status,
         "evaluation_policy": payload.get("evaluation_policy") if payload else None,
-        "registration": (
-            _license_registration(institution, current_user)
-            if current_user.role == "admin" or is_sysadmin(current_user)
-            else None
-        ),
+        "registration": _license_registration(institution, current_user),
         "error": context["error"],
     }
 
