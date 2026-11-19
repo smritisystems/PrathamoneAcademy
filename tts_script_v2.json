@@ -1,0 +1,38 @@
+[
+  {
+    "chapter_id": "01_opening",
+    "tts_text": "Great educators change lives... yet too many coaching institutes spend half their day wrestling with disconnected spreadsheets, manual fee registers, and fragmented parent updates."
+  },
+  {
+    "chapter_id": "02_intro",
+    "tts_text": "Meet Pratham One Edu O-S — the unified operating system engineered specifically for modern coaching academies. Enterprise power, with the everyday simplicity of WhatsApp."
+  },
+  {
+    "chapter_id": "03_dashboard",
+    "tts_text": "From the moment you log in, your entire institute comes into focus. Live revenue collections, daily student attendance, and batch capacity — updated in real time across every branch."
+  },
+  {
+    "chapter_id": "04a_students_and_fees",
+    "tts_text": "Search any student record in under a second, backed by one canonical profile identity and role-based privacy locks. And at the fee counter, automated installment schedules, U-P-I Q-R tracking, and instant digital receipts eliminate reconciliation errors."
+  },
+  {
+    "chapter_id": "04b_eduboard_and_attendance",
+    "tts_text": "Empower your faculty with EduBoard for interactive digital teaching, alongside one-tap Q-R attendance terminals that trigger instant WhatsApp alerts to parents."
+  },
+  {
+    "chapter_id": "05_benefits",
+    "tts_text": "When admissions, fees, academics, and parent communication speak one language, administrative overhead drops — freeing your team to focus purely on student results."
+  },
+  {
+    "chapter_id": "06_deployment",
+    "tts_text": "Your institute's data belongs to you. Deploy Pratham One Edu O-S on your own on-premises campus servers for complete institutional custody — or choose our cloud and hybrid architecture for multi-branch scale."
+  },
+  {
+    "chapter_id": "07_offline_online",
+    "tts_text": "Built for real-world campus conditions: local L-A-N operations keep front-desk billing and attendance running smoothly on your local network, syncing seamlessly whenever internet connectivity is active."
+  },
+  {
+    "chapter_id": "08_closing",
+    "tts_text": "Run your institute with clarity and confidence. Pratham One Edu O-S — Coaching Management. Simplified."
+  }
+]

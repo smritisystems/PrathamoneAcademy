@@ -5,8 +5,8 @@
   "product_version": "1.0.0",
   "organization": "Smritisys & AITDL Networks",
   "product_architect": "Jawahar R Mallah",
-  "generated_at": "2026-11-19T06:53:44.013247",
-  "total_documents": 565,
+  "generated_at": "2026-11-19T11:34:36.033530",
+  "total_documents": 603,
   "modules_catalog": [
     {
       "id": "00_PRODUCT_OVERVIEW",
@@ -772,6 +772,105 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "00_PRODUCT_OVERVIEW_2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1_md",
+      "filename": "2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "relative_path": "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "extension": ".md",
+      "size_bytes": 16937,
+      "sha256": "bc26bf5103fdb6d422540668c09a1676126328521c662fa630d7b615058f1ec6",
+      "module": "00_PRODUCT_OVERVIEW",
+      "title": "PrathamOne EduOS — Cinematic Television Advertisement Proof of Concept & Production Feasibility Report",
+      "category": "IMPLEMENTATION-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [
+        "cinematic-commercial",
+        "television-advertisement",
+        "ai-presenter",
+        "live-software-demo",
+        "motion-graphics",
+        "cost-analysis",
+        "production-stack"
+      ],
+      "entities": [
+        "CommercialProduction",
+        "AiSpokesperson",
+        "LiveSoftwareShowcase",
+        "MultiTrackAudioMixer"
+      ],
+      "api_routes": [
+        "/api/v1/video-studio/render",
+        "/api/v1/auth/login",
+        "/dashboard",
+        "/students",
+        "/fees"
+      ],
+      "related_modules": [
+        "00_PRODUCT_OVERVIEW",
+        "01_ARCHITECTURE",
+        "17_UI_UX_DESIGN",
+        "16_DATABASE_API"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "00_PRODUCT_OVERVIEW_2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1_md",
+      "filename": "2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
+      "relative_path": "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
+      "extension": ".md",
+      "size_bytes": 6269,
+      "sha256": "9a490c3af45ac5d684b3dad00ff5298ab94cd0ebd311f06d989c6671d8b629a3",
+      "module": "00_PRODUCT_OVERVIEW",
+      "title": "PrathamOne EduOS — Cinematic Television Advertisement Studio V2 Master Production Report",
+      "category": "IMPLEMENTATION-REPORT",
+      "document_type": "REPORT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [
+        "cinematic-commercial",
+        "television-advertisement",
+        "ai-presenter",
+        "live-software-demo",
+        "motion-graphics",
+        "v2-master",
+        "production-stack"
+      ],
+      "entities": [
+        "CommercialProduction",
+        "AiSpokesperson",
+        "LiveSoftwareShowcase",
+        "MultiTrackAudioMixer",
+        "EduBoardCanvas"
+      ],
+      "api_routes": [
+        "/api/v1/auth/login",
+        "/dashboard",
+        "/students",
+        "/eduboard",
+        "/attendance"
+      ],
+      "related_modules": [
+        "00_PRODUCT_OVERVIEW",
+        "01_ARCHITECTURE",
+        "07_ATTENDANCE",
+        "09_FEES_PAYMENTS"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "01_ARCHITECTURE_2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1_md",
       "filename": "2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md",
       "relative_path": "01_ARCHITECTURE/2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md",
@@ -1500,6 +1599,57 @@
         "17_UI_UX_DESIGN",
         "16_DATABASE_API",
         "13_SYSADMIN_SETTINGS"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
+      "id": "01_ARCHITECTURE_2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1_md",
+      "filename": "2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
+      "relative_path": "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
+      "extension": ".md",
+      "size_bytes": 20410,
+      "sha256": "1717872b897bff24aa11d98398132a3507aedbde4052557210125c0bbbf33fa3",
+      "module": "01_ARCHITECTURE",
+      "title": "PrathamOne EduOS — Master Cinematic Television Commercial Architecture & 8-Chapter Production Blueprint",
+      "category": "SPECIFICATION",
+      "document_type": "BLUEPRINT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [
+        "cinematic-commercial",
+        "television-advertisement",
+        "declarative-manifest",
+        "8-chapter-storyboard",
+        "on-premises-architecture",
+        "video-compositor"
+      ],
+      "entities": [
+        "CommercialDirectorEngine",
+        "DeclarativeTimelineManifest",
+        "KioskCaptureSuite",
+        "OnPremisesSyncBridge"
+      ],
+      "api_routes": [
+        "/api/v1/video-studio/render",
+        "/dashboard",
+        "/students",
+        "/fees",
+        "/attendance",
+        "/eduboard",
+        "/communication"
+      ],
+      "related_modules": [
+        "00_PRODUCT_OVERVIEW",
+        "01_ARCHITECTURE",
+        "17_UI_UX_DESIGN",
+        "16_DATABASE_API",
+        "25_BUSINESS_REQUIREMENTS"
       ],
       "product": "PrathamOne EduOS",
       "edition": "Coaching Institute Edition"
@@ -16895,6 +17045,49 @@
       "edition": "Coaching Institute Edition"
     },
     {
+      "id": "21_TROUBLESHOOTING_2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1_md",
+      "filename": "2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
+      "relative_path": "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
+      "extension": ".md",
+      "size_bytes": 6506,
+      "sha256": "7ca2921fd01060c96b8518cd1dce7580dd8000a767c0b568727831f0cbeca9f4",
+      "module": "21_TROUBLESHOOTING",
+      "title": "License Authority Configuration and Client Activation Guide",
+      "category": "TROUBLESHOOTING-GUIDE",
+      "document_type": "GUIDE",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [
+        "licensing",
+        "troubleshooting",
+        "activation",
+        "authority-url",
+        "offline-activation"
+      ],
+      "entities": [
+        "License",
+        "Institution",
+        "LicenseActivationPanel"
+      ],
+      "api_routes": [
+        "/api/v1/license/activate",
+        "/api/v1/license/status",
+        "/api/v1/license/offline-request",
+        "/api/v1/license/offline-import"
+      ],
+      "related_modules": [
+        "12_RBAC_SECURITY",
+        "13_SYSADMIN_SETTINGS"
+      ],
+      "product": "PrathamOne EduOS",
+      "edition": "Coaching Institute Edition"
+    },
+    {
       "id": "22_USER_MANUALS_2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1_md",
       "filename": "2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "relative_path": "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
@@ -19343,6 +19536,788 @@
       "related_modules": []
     },
     {
+      "id": "assets_commercial_prathamone_cinematic_commercial_poc_24s_mp4",
+      "filename": "prathamone_cinematic_commercial_poc_24s.mp4",
+      "relative_path": "assets/commercial/prathamone_cinematic_commercial_poc_24s.mp4",
+      "extension": ".mp4",
+      "size_bytes": 28426517,
+      "sha256": "3a5359aef71f4da1c8027dcb826c7b29477a4238304adef92cb8b1b1cefe0c79",
+      "module": "assets",
+      "title": "prathamone_cinematic_commercial_poc_24s.mp4",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_prathamone_commercial_master_1080p_mp4",
+      "filename": "prathamone_commercial_master_1080p.mp4",
+      "relative_path": "assets/commercial/prathamone_commercial_master_1080p.mp4",
+      "extension": ".mp4",
+      "size_bytes": 105061564,
+      "sha256": "fa4959a8efa51f03bdc0f3a31cec8630034e0ca10cc0e7b35c5f32f5496da0ed",
+      "module": "assets",
+      "title": "prathamone_commercial_master_1080p.mp4",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_0_5s_jpg",
+      "filename": "stock_shot_0.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_0.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 127956,
+      "sha256": "9dfaf89387046c69c3eaa02f1f1397f20563553bcd0e5bebd4da115573ff43ef",
+      "module": "assets",
+      "title": "stock_shot_0.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_1_5s_jpg",
+      "filename": "stock_shot_1.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_1.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 125357,
+      "sha256": "893c25e9dabaaa8ea32356eab41971ae17af28df5d6c394fc2d784a7a55c421a",
+      "module": "assets",
+      "title": "stock_shot_1.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_10_5s_jpg",
+      "filename": "stock_shot_10.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_10.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 139883,
+      "sha256": "fb9a395ec8d6256ae52ba8a10819271fc08b284904dee46144bf69b4c7e1cdcc",
+      "module": "assets",
+      "title": "stock_shot_10.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_11_5s_jpg",
+      "filename": "stock_shot_11.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_11.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 140376,
+      "sha256": "aa3cd26e1fd3ee2079a7344ca6dea900f97de57c12c3a20df2c67fd3c4067c88",
+      "module": "assets",
+      "title": "stock_shot_11.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_2_5s_jpg",
+      "filename": "stock_shot_2.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_2.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 139500,
+      "sha256": "2990ec73fc04ebb84484a46d18e18ae4577720191b0a90ce2f4191a6db6b841c",
+      "module": "assets",
+      "title": "stock_shot_2.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_3_5s_jpg",
+      "filename": "stock_shot_3.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_3.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 143934,
+      "sha256": "6a12486884d7799a5232099270617ccc545544bb82dcb16b2335f52451e93226",
+      "module": "assets",
+      "title": "stock_shot_3.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_4_5s_jpg",
+      "filename": "stock_shot_4.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_4.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 153802,
+      "sha256": "9ce900e0f181ce578a3968cfbfc63f3978ae496d18d00b560a60003f8f0af759",
+      "module": "assets",
+      "title": "stock_shot_4.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_5_5s_jpg",
+      "filename": "stock_shot_5.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_5.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 158512,
+      "sha256": "86edab7dee7cafd834c77af58e6dd08eb83c9343e04ec5a14263f850ed5595d8",
+      "module": "assets",
+      "title": "stock_shot_5.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_6_5s_jpg",
+      "filename": "stock_shot_6.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_6.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 157514,
+      "sha256": "f1f6c79ef7139bb126d75b3743687ccfd271e9afb67039d29b32d53a5aa67697",
+      "module": "assets",
+      "title": "stock_shot_6.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_7_5s_jpg",
+      "filename": "stock_shot_7.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_7.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 194797,
+      "sha256": "ddafdd5925aee8d0c5bf986e42b671edb08b7c81d0fdd8f45fedc519449426ca",
+      "module": "assets",
+      "title": "stock_shot_7.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_8_5s_jpg",
+      "filename": "stock_shot_8.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_8.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 188893,
+      "sha256": "63ab977076d901abea7617c3b8f15e430c6e28c2a06b3fa34b46afb432d2cc63",
+      "module": "assets",
+      "title": "stock_shot_8.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_stock_shot_9_5s_jpg",
+      "filename": "stock_shot_9.5s.jpg",
+      "relative_path": "assets/commercial/stock_shot_9.5s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 187893,
+      "sha256": "e90cd89f6b584bf9ebbb6c8a34e169231470ad31065c209feea992f9c5f908ee",
+      "module": "assets",
+      "title": "stock_shot_9.5s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_01_ch01_corridor_walk_chyron_8_0s_jpg",
+      "filename": "01_ch01_corridor_walk_chyron_8.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/01_ch01_corridor_walk_chyron_8.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 271057,
+      "sha256": "d952f4a6c4f2ae72783f8c44b788074b9d8f03982b4042eec4bfd60d475cd746",
+      "module": "assets",
+      "title": "01_ch01_corridor_walk_chyron_8.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_01_ch01_opening_presenter_00m05s_5_0s_jpg",
+      "filename": "01_ch01_opening_presenter_00m05s_5.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/01_ch01_opening_presenter_00m05s_5.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 263081,
+      "sha256": "dbad82f6e8c035ca1f716fb92760d4a7a38a7c6f52ffe97eaf20769a631ffc37",
+      "module": "assets",
+      "title": "01_ch01_opening_presenter_00m05s_5.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_02_ch02_smartboard_presentation_26_0s_jpg",
+      "filename": "02_ch02_smartboard_presentation_26.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/02_ch02_smartboard_presentation_26.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 273974,
+      "sha256": "c012bbb5a0e71215d09590139d07f47af86bdc151fe1400bf7bdabc48e64863c",
+      "module": "assets",
+      "title": "02_ch02_smartboard_presentation_26.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_02_ch03_executive_dashboard_kpis_00m40s_40_0s_jpg",
+      "filename": "02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 266162,
+      "sha256": "6ab1fa9c2908c3135b192ec5f63eb98ba743b5184d9abda11fd9fb8df2d19a1e",
+      "module": "assets",
+      "title": "02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_03_ch03_executive_dashboard_pip_45_0s_jpg",
+      "filename": "03_ch03_executive_dashboard_pip_45.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/03_ch03_executive_dashboard_pip_45.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 317040,
+      "sha256": "949a51ca86362c89d3a53448f3c54d8abe66f2c092200770593046214768b8bc",
+      "module": "assets",
+      "title": "03_ch03_executive_dashboard_pip_45.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_03_ch04_student_directory_search_01m05s_65_0s_jpg",
+      "filename": "03_ch04_student_directory_search_01m05s_65.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/03_ch04_student_directory_search_01m05s_65.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 271695,
+      "sha256": "5980ab528537ae44041015370a2153ef57cb5b03f10e3aa297385bf8df41b5fc",
+      "module": "assets",
+      "title": "03_ch04_student_directory_search_01m05s_65.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_03b_ch04_student_search_active_72_0s_jpg",
+      "filename": "03b_ch04_student_search_active_72.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/03b_ch04_student_search_active_72.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 141592,
+      "sha256": "a64c0bb8f6fc34a9211f2bbdd87061981010196af76af794f80a9579622c3f3d",
+      "module": "assets",
+      "title": "03b_ch04_student_search_active_72.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_03c_ch04_student_search_aarav_filtered_68_0s_jpg",
+      "filename": "03c_ch04_student_search_aarav_filtered_68.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/03c_ch04_student_search_aarav_filtered_68.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 163652,
+      "sha256": "94bd94476b6f57337dcd34ffb94666597140e3501d831ef0380841cc08c6818d",
+      "module": "assets",
+      "title": "03c_ch04_student_search_aarav_filtered_68.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_04_ch04_student_search_view_lock_70_0s_jpg",
+      "filename": "04_ch04_student_search_view_lock_70.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/04_ch04_student_search_view_lock_70.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 241891,
+      "sha256": "526a1bf9ab256489f0793c3e1cc28c59b0d80176639b7348f3b51273b1045868",
+      "module": "assets",
+      "title": "04_ch04_student_search_view_lock_70.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_04_ch05_fee_collection_analytics_01m30s_90_0s_jpg",
+      "filename": "04_ch05_fee_collection_analytics_01m30s_90.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/04_ch05_fee_collection_analytics_01m30s_90.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 277709,
+      "sha256": "425eb487262e39e4a16e4943893fbffd3ce000d5cce686c3d0ebeb5a12fa31d2",
+      "module": "assets",
+      "title": "04_ch05_fee_collection_analytics_01m30s_90.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_05_ch05_fee_collection_pip_92_0s_jpg",
+      "filename": "05_ch05_fee_collection_pip_92.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/05_ch05_fee_collection_pip_92.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 308418,
+      "sha256": "d71353bd6d9b9048d52c0a3b7f3e2a641cb6cc08f8ed17737ed279be8a8fef53",
+      "module": "assets",
+      "title": "05_ch05_fee_collection_pip_92.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_05_ch06_fresh_eduboard_greenboard_01m48s_108_0s_jpg",
+      "filename": "05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 261982,
+      "sha256": "c3855c4913df564608fd27752e29f8b98ebfbff890ca80676ccc21ff98790b4f",
+      "module": "assets",
+      "title": "05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_06_ch06_eduboard_greenboard_115_0s_jpg",
+      "filename": "06_ch06_eduboard_greenboard_115.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/06_ch06_eduboard_greenboard_115.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 323801,
+      "sha256": "2c785a48422873f48490cbd86922263ed33a2e78b24e9ee749229d1a0b08ee77",
+      "module": "assets",
+      "title": "06_ch06_eduboard_greenboard_115.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_06_ch07_attendance_qr_terminal_02m08s_128_0s_jpg",
+      "filename": "06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 238613,
+      "sha256": "426b69f024fb31d0a37161d1b7ac1292037d52000cef8e6b219a5a0f20c2197d",
+      "module": "assets",
+      "title": "06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_07_ch07_attendance_terminal_135_0s_jpg",
+      "filename": "07_ch07_attendance_terminal_135.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/07_ch07_attendance_terminal_135.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 286241,
+      "sha256": "b1c11d64a8e03692df6b54bc82fe1779dc17c19cca4f7eff73ca53dc4d52e50f",
+      "module": "assets",
+      "title": "07_ch07_attendance_terminal_135.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_07_ch08_onprem_vs_cloud_architecture_02m26s_146_0s_jpg",
+      "filename": "07_ch08_onprem_vs_cloud_architecture_02m26s_146.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/07_ch08_onprem_vs_cloud_architecture_02m26s_146.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 256387,
+      "sha256": "cae5f701956cf62e643ff73f953b20e442f414a1bbdb1a9baed8f0cc90269efe",
+      "module": "assets",
+      "title": "07_ch08_onprem_vs_cloud_architecture_02m26s_146.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_08_ch08_brand_climax_closing_card_160_0s_jpg",
+      "filename": "08_ch08_brand_climax_closing_card_160.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/08_ch08_brand_climax_closing_card_160.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 255512,
+      "sha256": "3451a84822eecf55698db93f9723ae5e57765c4d0954e22ec0f56a124866a518",
+      "module": "assets",
+      "title": "08_ch08_brand_climax_closing_card_160.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_08_ch08_brand_climax_endcard_02m40s_160_0s_jpg",
+      "filename": "08_ch08_brand_climax_endcard_02m40s_160.0s.jpg",
+      "relative_path": "assets/commercial/inspection_frames/08_ch08_brand_climax_endcard_02m40s_160.0s.jpg",
+      "extension": ".jpg",
+      "size_bytes": 177445,
+      "sha256": "e320819ef4e59d057acbaac1f3182ba40b1507d9bfcf5393c23b40c9a91a47b2",
+      "module": "assets",
+      "title": "08_ch08_brand_climax_endcard_02m40s_160.0s.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_test_students_directory_jpg",
+      "filename": "test_students_directory.jpg",
+      "relative_path": "assets/commercial/inspection_frames/test_students_directory.jpg",
+      "extension": ".jpg",
+      "size_bytes": 192981,
+      "sha256": "c0485dab26181d00b52400d89ee1b0a05f1ba56f8f754d56280e86e39f38061f",
+      "module": "assets",
+      "title": "test_students_directory.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
+      "id": "assets_commercial_inspection_frames_test_students_directory_loaded_jpg",
+      "filename": "test_students_directory_loaded.jpg",
+      "relative_path": "assets/commercial/inspection_frames/test_students_directory_loaded.jpg",
+      "extension": ".jpg",
+      "size_bytes": 276144,
+      "sha256": "a1db0f3149d2bd49cc851564ed1a1c81110f4c79cbca01d48baea86390f8d397",
+      "module": "assets",
+      "title": "test_students_directory_loaded.jpg",
+      "category": "DOCUMENT",
+      "document_type": "DOCUMENT",
+      "version": "1.0.0",
+      "doc_version": "1.0",
+      "status": "Approved",
+      "created_date": "2026-11-19",
+      "updated_date": "2026-11-19",
+      "author": "Jawahar R Mallah",
+      "organization": "Smritisys & AITDL Networks",
+      "tags": [],
+      "entities": [],
+      "api_routes": [],
+      "related_modules": []
+    },
+    {
       "id": "assets_screenshots_01_login_screen_png",
       "filename": "01_login_screen.png",
       "relative_path": "assets/screenshots/01_login_screen.png",
@@ -21270,8 +22245,20 @@
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_HELP-AND-ABOUT-CENTRE-DEEP-ANALYSIS_V1.md"
     ],
+    "01_ch01_corridor_walk_chyron_8": [
+      "assets/commercial/inspection_frames/01_ch01_corridor_walk_chyron_8.0s.jpg"
+    ],
+    "01_ch01_opening_presenter_00m05s_5": [
+      "assets/commercial/inspection_frames/01_ch01_opening_presenter_00m05s_5.0s.jpg"
+    ],
     "01_login_screen": [
       "assets/screenshots/01_login_screen.png"
+    ],
+    "02_ch02_smartboard_presentation_26": [
+      "assets/commercial/inspection_frames/02_ch02_smartboard_presentation_26.0s.jpg"
+    ],
+    "02_ch03_executive_dashboard_kpis_00m40s_40": [
+      "assets/commercial/inspection_frames/02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg"
     ],
     "02_dashboard_overview": [
       "assets/screenshots/02_dashboard_overview.png"
@@ -21309,6 +22296,12 @@
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_CORE-BUSINESS-RULES_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_POLICY-DECISION-REGISTER_V1.md"
+    ],
+    "03_ch03_executive_dashboard_pip_45": [
+      "assets/commercial/inspection_frames/03_ch03_executive_dashboard_pip_45.0s.jpg"
+    ],
+    "03_ch04_student_directory_search_01m05s_65": [
+      "assets/commercial/inspection_frames/03_ch04_student_directory_search_01m05s_65.0s.jpg"
     ],
     "03_database_api_specification_database": [
       "16_DATABASE_API/2026-11-03_DATABASE_API_SPECIFICATION_DATABASE-DESIGN-AND-SCHEMA_V1.md"
@@ -21365,6 +22358,12 @@
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md"
     ],
+    "03b_ch04_student_search_active_72": [
+      "assets/commercial/inspection_frames/03b_ch04_student_search_active_72.0s.jpg"
+    ],
+    "03c_ch04_student_search_aarav_filtered_68": [
+      "assets/commercial/inspection_frames/03c_ch04_student_search_aarav_filtered_68.0s.jpg"
+    ],
     "041": [
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md"
     ],
@@ -21391,6 +22390,12 @@
     ],
     "04_business_requirements_implementation": [
       "25_BUSINESS_REQUIREMENTS/2026-11-04_BUSINESS_REQUIREMENTS_IMPLEMENTATION-PLAN_ORIGINAL-IMPLEMENTATION-PLAN_V1.md"
+    ],
+    "04_ch04_student_search_view_lock_70": [
+      "assets/commercial/inspection_frames/04_ch04_student_search_view_lock_70.0s.jpg"
+    ],
+    "04_ch05_fee_collection_analytics_01m30s_90": [
+      "assets/commercial/inspection_frames/04_ch05_fee_collection_analytics_01m30s_90.0s.jpg"
     ],
     "04_courses_management": [
       "assets/screenshots/04_courses_management.png"
@@ -21479,6 +22484,12 @@
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-SYSTEM-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_PHASE1-REMEDIATION-AND-PRE-MIGRATION-REPORT_V1.md"
     ],
+    "05_ch05_fee_collection_pip_92": [
+      "assets/commercial/inspection_frames/05_ch05_fee_collection_pip_92.0s.jpg"
+    ],
+    "05_ch06_fresh_eduboard_greenboard_01m48s_108": [
+      "assets/commercial/inspection_frames/05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg"
+    ],
     "05_fees_payments_implementation": [
       "09_FEES_PAYMENTS/2026-11-05_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEES-AND-PAYMENTS-WORKFLOW-IMPLEMENTATION-REPORT_V1.md",
       "09_FEES_PAYMENTS/2026-11-05_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FORENSIC-FEE-LEDGER-RECONCILIATION-REPORT_V1.md"
@@ -21513,6 +22524,12 @@
     ],
     "06_audits_compliance_audit": [
       "20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md"
+    ],
+    "06_ch06_eduboard_greenboard_115": [
+      "assets/commercial/inspection_frames/06_ch06_eduboard_greenboard_115.0s.jpg"
+    ],
+    "06_ch07_attendance_qr_terminal_02m08s_128": [
+      "assets/commercial/inspection_frames/06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg"
     ],
     "06_examination_implementation": [
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-PLAN_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md",
@@ -21615,6 +22632,12 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEACHER-STAFF-DASHBOARD-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md"
     ],
+    "07_ch07_attendance_terminal_135": [
+      "assets/commercial/inspection_frames/07_ch07_attendance_terminal_135.0s.jpg"
+    ],
+    "07_ch08_onprem_vs_cloud_architecture_02m26s_146": [
+      "assets/commercial/inspection_frames/07_ch08_onprem_vs_cloud_architecture_02m26s_146.0s.jpg"
+    ],
     "07_printing": [
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-AND-PDF-GOVERNANCE-ENGINE_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_GLOBAL-PRINT-FOOTER-ABSOLUTE-BOTTOM-ALIGNMENT_V1.md"
@@ -21678,6 +22701,12 @@
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_AUDIT_GLOBAL-HARDCODED-BRANDING-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_COMPLETION-MATRIX_CRM-SUBMENU-WORKSPACES_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md"
+    ],
+    "08_ch08_brand_climax_closing_card_160": [
+      "assets/commercial/inspection_frames/08_ch08_brand_climax_closing_card_160.0s.jpg"
+    ],
+    "08_ch08_brand_climax_endcard_02m40s_160": [
+      "assets/commercial/inspection_frames/08_ch08_brand_climax_endcard_02m40s_160.0s.jpg"
     ],
     "08_examination_completion": [
       "08_EXAMINATION/2026-11-08_EXAMINATION_COMPLETION-MATRIX_EXAM-SUBMENU-WORKSPACES_V1.md"
@@ -22105,14 +23134,24 @@
     "19_architecture_feasibility": [
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md"
     ],
+    "19_architecture_specification_cinematic": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "19_printing": [
       "14_PRINTING_DOCUMENTS/2026-11-19_PRINTING-DOCUMENTS_IMPLEMENTATION-REPORT_PRINT-BRANDING-GOVERNANCE-UPDATE_V1.md"
+    ],
+    "19_product": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md"
     ],
     "19_rbac": [
       "12_RBAC_SECURITY/2026-11-19_RBAC-SECURITY_SPECIFICATION_OPTIONAL-DEVICE-BINDING-ARCHITECTURE_V1.md"
     ],
     "19_sysadmin": [
       "13_SYSADMIN_SETTINGS/2026-11-19_SYSADMIN-SETTINGS_USER-MANUAL_DEVICE-BINDING-SECURITY-GUIDE_V1.md"
+    ],
+    "19_troubleshooting_guide_license": [
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md"
     ],
     "19_ui": [
       "17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_IMPLEMENTATION-REPORT_HALF-WIDTH-VIDEO-TOUR-SPLIT-LAYOUT_V1.md",
@@ -22132,6 +23171,8 @@
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-03_ARCHITECTURE_ARCHITECTURE-DESIGN_SYSTEM-ARCHITECTURE_V1.md",
       "01_ARCHITECTURE/2026-11-03_ARCHITECTURE_SPECIFICATION_WORKFLOW-SPECIFICATIONS_V1.md",
       "01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md",
@@ -22148,6 +23189,7 @@
       "01_ARCHITECTURE/2026-11-18_ARCHITECTURE_PERFORMANCE-AUDIT_PLANNING-ACTIVITIES-LATENCY-RESOLUTION_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_EVALUATION-REPORT_AI-PRESENTER-PROVIDERS_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_PRODUCTION-DEPLOYMENT-GUIDE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_CUSTOMER-DEPLOYMENT-SYNCHRONIZATION-REPORT_V1.md",
@@ -22511,6 +23553,7 @@
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md",
       "21_TROUBLESHOOTING/2026-11-16_TROUBLESHOOTING_POSTMORTEM_CUSTOMER-TELEMETRY-WS500-FEE422-BACKUP504-ROOT-CAUSE-ANALYSIS_V1.md",
       "21_TROUBLESHOOTING/2026-11-17_TROUBLESHOOTING_INCIDENT-REPORT_BACKUP-PERMISSION-DENIED-RESOLUTION_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
       "22_USER_MANUALS/2026-11-06_USER_MANUALS_IMPLEMENTATION-REPORT_PRATHAMONE-ACADEMY-USER-MANUAL-COMPLETION-REPORT_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md",
@@ -22745,9 +23788,11 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CODEX-INTEGRATION-READINESS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-14_AUDITS-COMPLIANCE_AUDIT-REPORT_LICENSE-KEY-ISSUANCE-AND-ACTIVATION-READINESS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-14_AUDITS-COMPLIANCE_AUDIT-REPORT_UNIFIED-LICENSING-AND-IP-PROTECTION_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
       "22_USER_MANUALS/2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md"
     ],
     "activation_v1": [
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
       "22_USER_MANUALS/2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md"
     ],
     "activities": [
@@ -22827,6 +23872,11 @@
     "advanced": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_ADVANCED-DASHBOARD-ANALYTICS-AND-INSIGHTS_V1.md"
     ],
+    "advertisement": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "agenda": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md"
     ],
@@ -22840,6 +23890,10 @@
     "aidirectorpreset": [
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
       "17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_IMPLEMENTATION-REPORT_PRATHAMONE-VIDEO-STUDIO_V1.md"
+    ],
+    "aispokesperson": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md"
     ],
     "aitdl": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md",
@@ -22883,6 +23937,7 @@
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_FORENSIC-AUDIT_KHUSHI-RECONCILIATION-AND-ALLOCATION-ENGINE_V1.md"
     ],
     "analysis": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
       "01_ARCHITECTURE/2026-11-17_ARCHITECTURE_RESEARCH-REPORT_PLANNING-SCHEDULE-INTEGRATION_V1.md",
       "01_ARCHITECTURE/2026-11-18_ARCHITECTURE_PERFORMANCE-AUDIT_PLANNING-ACTIVITIES-LATENCY-RESOLUTION_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-GAP-ANALYSIS_V1.md",
@@ -23073,6 +24128,7 @@
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_BACKUP-AND-RESTORE-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
       "22_USER_MANUALS/2026-11-07_USER_MANUALS_USER-MANUAL_WORKFORCE-MANAGEMENT-AND-CODEX-OPERATIONAL-GUIDE_V1.md",
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md",
       "22_USER_MANUALS/2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md",
@@ -23198,6 +24254,7 @@
       "01_ARCHITECTURE/2026-11-17_ARCHITECTURE_RESEARCH-REPORT_PLANNING-SCHEDULE-INTEGRATION_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_EVALUATION-REPORT_AI-PRESENTER-PROVIDERS_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_RESEARCH-REPORT_ZERO-KNOWLEDGE-NEXT-NEXT-WINDOWS-INSTALLER-ARCHITECTURE_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_AUDIT-REPORT_CANONICAL-SUBJECT-ARCHITECTURE-FINAL-INTEGRITY_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_SUBJECT-MASTER-ARCHITECTURE-AND-MAPPINGS_V1.md",
@@ -23628,6 +24685,9 @@
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_OUTSTANDING-CALCULATION-ENGINE_V1.md",
       "15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md"
     ],
+    "authority": [
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md"
+    ],
     "auto": [
       "19_RELEASES_CHANGELOG/2026-11-10_RELEASES_AUDIT-REPORT_AUTO-VERSIONING-AND-RELEASE-ENGINE-VERIFICATION_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-18_RELEASES_SPECIFICATION_ONE-CLICK-AUTOMATED-UPDATE-AND-ROLLBACK-ENGINE_V1.md"
@@ -23750,6 +24810,7 @@
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_MULTI-SERVER-LICENSING-MIRROR-AND-CRM-DECOUPLING_V1.md",
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_SMART-INSTALLER-DRIVE-SELECTION-AND-FOLDER-ARCHITECTURE_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ARCHITECTURE-BLUEPRINT_MODERN-EXECUTIVE-DASHBOARD-INSPIRATION_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md",
@@ -24091,6 +25152,9 @@
     "channel": [
       "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_EDUBOARD-POPOUT-WINDOW_V1.md"
     ],
+    "chapter": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "chart": [
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_CHART-AND-ANALYTICS-VALIDATION_V1.md"
@@ -24130,6 +25194,11 @@
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md"
     ],
+    "cinematic": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "circulars": [
       "15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_NOTICE-BOARD-MANAGER-AND-CIRCULARS_V1.md"
     ],
@@ -24168,6 +25237,7 @@
     "client": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_FORENSIC-AUDIT-AND-CORRECTION-REPORT_CLIENT-FEEDBACK-RECONCILIATION_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-18_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_MULTI-DESTINATION-BACKUP-AND-CLOUD-SYNC-ENGINE_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
       "22_USER_MANUALS/2026-11-19_USER-MANUAL_CLIENT-UPDATE-AND-ZERO-DATA-LOSS-PROCEDURE_V1.md"
     ],
     "cloud": [
@@ -24357,6 +25427,18 @@
     "commerce": [
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_FEATURE-REPORT_INSTITUTE-OVERVIEW-MESSAGING-GOVERNANCE_V1.md"
     ],
+    "commercial": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
+    "commercialdirectorengine": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
+    "commercialproduction": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md"
+    ],
     "commitment": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_FORENSIC-AUDIT_KHUSHI-RECONCILIATION-AND-ALLOCATION-ENGINE_V1.md"
     ],
@@ -24528,12 +25610,18 @@
     "compose": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_INTEGRATION-INFRASTRUCTURE-AUDIT_V1.md"
     ],
+    "compositor": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "comprehensive": [
       "11_REPORTS_EXPORTS/2026-11-11_REPORTS-EXPORTS_AUDIT-REPORT_UNIVERSAL-CALCULATION-AND-INTELLIGENCE-ENGINE_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-06_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_SYSADMIN-COMPREHENSIVE-VERIFIED-AUDIT-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-04_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_COMPREHENSIVE-AUDIT-AND-REMEDIATION-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MISSING-FUNCTIONALITY-REPORT_V1.md",
       "25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md"
+    ],
+    "concept": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md"
     ],
     "concession": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-PLAN_FEE-CONCESSION-AND-SCHOLARSHIP-ENGINE_V1.md",
@@ -24555,7 +25643,8 @@
     ],
     "configuration": [
       "13_SYSADMIN_SETTINGS/2026-11-05_SYSADMIN_SETTINGS_IMPLEMENTATION-REPORT_INSTITUTE-SETTINGS-AND-CONFIGURATION-REPORT_V1.md",
-      "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_TROUBLESHOOTING-REPORT_CODEX-CONFIGURATION-LOAD-RESOLUTION_V1.md"
+      "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_TROUBLESHOOTING-REPORT_CODEX-CONFIGURATION-LOAD-RESOLUTION_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md"
     ],
     "conflict_detection": [
       "03_ACADEMIC_MANAGEMENT/2026-11-13_ACADEMIC-MANAGEMENT_FEATURE-REPORT_TIMETABLE-AND-ACADEMIC-SCHEDULING-STUDIO_V1.md"
@@ -24619,6 +25708,9 @@
     ],
     "corrections": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_PLAN_REMEDIATION-PLAN_V1.md"
+    ],
+    "cost": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md"
     ],
     "count": [
       "04_STUDENT_MANAGEMENT/2026-11-05_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-COUNT-RECONCILIATION-DIAGNOSTIC-REPORT_V1.md"
@@ -24887,6 +25979,12 @@
     "decision_blood": [
       "17_UI_UX_DESIGN/2026-11-17_UI-UX-DESIGN_BRANDING-DECISION_BLOOD-RED-ACCENT_V1.md"
     ],
+    "declarative": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
+    "declarativetimelinemanifest": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "decoupling": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_MULTI-SERVER-LICENSING-MIRROR-AND-CRM-DECOUPLING_V1.md"
     ],
@@ -24957,6 +26055,8 @@
       "22_USER_MANUALS/2026-11-11_USER-MANUALS_IMPLEMENTATION-REPORT_HELP-AND-ABOUT-CENTRE_V1.md"
     ],
     "demo": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-07_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_GLOBAL-TRAINING-AND-DEMO-ENVIRONMENT_V1.md"
     ],
     "denied": [
@@ -25191,6 +26291,9 @@
     "director": [
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
       "17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_IMPLEMENTATION-REPORT_PRATHAMONE-VIDEO-STUDIO_V1.md"
+    ],
+    "director_v1": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
     ],
     "directory": [
       "05_TEACHER_MANAGEMENT/2026-11-09_STAFF-HR_COMPLETION-MATRIX_STAFF-SUBMENU-WORKSPACES_V1.md",
@@ -25489,6 +26592,7 @@
       "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES_EDUBOARD-RELEASE-NOTES_V1.md"
     ],
     "eduboardcanvas": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-13_ACADEMIC-MANAGEMENT_FORENSIC-AUDIT_EDUBOARD-CANVAS-CROPPING-AND-PDF-EXPORT-ANALYSIS_V1.md",
       "18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_DISPLAY-AND-PERFORMANCE-REPORT_V1.md",
       "18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_INPUT-COMPATIBILITY-TEST-REPORT_V1.md"
@@ -25535,8 +26639,11 @@
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_FULL-HYBRID-CHAT-AND-DOUBT-RESOLUTION-ENGINE_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_TECHNICAL-SPECIFICATION_PURE-NATIVE-WIN32-EXE-LAUNCHER-ARCHITECTURE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_TROUBLESHOOTING-REPORT_STANDALONE-INSTALLER-FIXES-AND-CODE-SIGNING_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-07_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_EMPLOYEE-DOSSIER-ENHANCEMENT_V1.md",
@@ -25989,6 +27096,7 @@
       "17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_SPECIFICATION_UNIVERSAL-APP-ICON-CONTRAST-AND-INTEGRATION_V1.md"
     ],
     "feasibility": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_RESEARCH-REPORT_ZERO-KNOWLEDGE-NEXT-NEXT-WINDOWS-INSTALLER-ARCHITECTURE_V1.md"
     ],
@@ -26771,6 +27879,8 @@
       "08_EXAMINATION/2026-11-06_EXAMINATION_IMPLEMENTATION-REPORT_GRAPHICAL-REPORT-CARDS-EXAM-ANALYTICS_V1.md"
     ],
     "graphics": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
       "17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_IMPLEMENTATION-REPORT_PRATHAMONE-VIDEO-STUDIO_V1.md"
     ],
@@ -26807,6 +27917,7 @@
       "09_FEES_PAYMENTS/2026-11-18_FEES-PAYMENTS_USER-GUIDE_REFUNDS-AND-REVERSALS-WORKFLOW_V1.md",
       "14_PRINTING_DOCUMENTS/2026-11-07_PRINTING_DOCUMENTS_USER-MANUAL_UNIVERSAL-PRINT-AND-PAGE-LAYOUT-GUIDE_V1.md",
       "17_UI_UX_DESIGN/2026-11-07_UI-UX-DESIGN_GUIDE_PRATHAMONE-EDUOS-BRAND-GUIDELINES_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
       "22_USER_MANUALS/2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md"
     ],
     "guide_eduboard": [
@@ -27333,6 +28444,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-14_AUDITS-COMPLIANCE_AUDIT-REPORT_WHOLE-SOFTWARE-TECHNICAL-ASSESSMENT_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
       "22_USER_MANUALS/2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md"
     ],
     "institutional": [
@@ -27515,7 +28627,39 @@
       "22_USER_MANUALS/2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md"
     ],
     "jpg": [
-      "assets/branding/prathamone-eduos-logo-original.jpg"
+      "assets/branding/prathamone-eduos-logo-original.jpg",
+      "assets/commercial/inspection_frames/01_ch01_corridor_walk_chyron_8.0s.jpg",
+      "assets/commercial/inspection_frames/01_ch01_opening_presenter_00m05s_5.0s.jpg",
+      "assets/commercial/inspection_frames/02_ch02_smartboard_presentation_26.0s.jpg",
+      "assets/commercial/inspection_frames/02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg",
+      "assets/commercial/inspection_frames/03_ch03_executive_dashboard_pip_45.0s.jpg",
+      "assets/commercial/inspection_frames/03_ch04_student_directory_search_01m05s_65.0s.jpg",
+      "assets/commercial/inspection_frames/03b_ch04_student_search_active_72.0s.jpg",
+      "assets/commercial/inspection_frames/03c_ch04_student_search_aarav_filtered_68.0s.jpg",
+      "assets/commercial/inspection_frames/04_ch04_student_search_view_lock_70.0s.jpg",
+      "assets/commercial/inspection_frames/04_ch05_fee_collection_analytics_01m30s_90.0s.jpg",
+      "assets/commercial/inspection_frames/05_ch05_fee_collection_pip_92.0s.jpg",
+      "assets/commercial/inspection_frames/05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg",
+      "assets/commercial/inspection_frames/06_ch06_eduboard_greenboard_115.0s.jpg",
+      "assets/commercial/inspection_frames/06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg",
+      "assets/commercial/inspection_frames/07_ch07_attendance_terminal_135.0s.jpg",
+      "assets/commercial/inspection_frames/07_ch08_onprem_vs_cloud_architecture_02m26s_146.0s.jpg",
+      "assets/commercial/inspection_frames/08_ch08_brand_climax_closing_card_160.0s.jpg",
+      "assets/commercial/inspection_frames/08_ch08_brand_climax_endcard_02m40s_160.0s.jpg",
+      "assets/commercial/inspection_frames/test_students_directory.jpg",
+      "assets/commercial/inspection_frames/test_students_directory_loaded.jpg",
+      "assets/commercial/stock_shot_0.5s.jpg",
+      "assets/commercial/stock_shot_1.5s.jpg",
+      "assets/commercial/stock_shot_10.5s.jpg",
+      "assets/commercial/stock_shot_11.5s.jpg",
+      "assets/commercial/stock_shot_2.5s.jpg",
+      "assets/commercial/stock_shot_3.5s.jpg",
+      "assets/commercial/stock_shot_4.5s.jpg",
+      "assets/commercial/stock_shot_5.5s.jpg",
+      "assets/commercial/stock_shot_6.5s.jpg",
+      "assets/commercial/stock_shot_7.5s.jpg",
+      "assets/commercial/stock_shot_8.5s.jpg",
+      "assets/commercial/stock_shot_9.5s.jpg"
     ],
     "jwt": [
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md"
@@ -27536,6 +28680,9 @@
     ],
     "khushi": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_FORENSIC-AUDIT_KHUSHI-RECONCILIATION-AND-ALLOCATION-ENGINE_V1.md"
+    ],
+    "kioskcapturesuite": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
     ],
     "knowledge": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_IMPLEMENTATION-REPORT_ZERO-KNOWLEDGE-NEXT-NEXT-WINDOWS-INSTALLER_V1.md",
@@ -27650,7 +28797,11 @@
       "19_RELEASES_CHANGELOG/2026-11-14_RELEASES_CHANGELOG_RELEASE-NOTES_SIGNED-LICENSE-CONTROL-PLANE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-14_AUDITS-COMPLIANCE_AUDIT-REPORT_LICENSE-KEY-ISSUANCE-AND-ACTIVATION-READINESS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-14_AUDITS-COMPLIANCE_AUDIT-REPORT_UNIFIED-LICENSING-AND-IP-PROTECTION_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md",
       "22_USER_MANUALS/2026-11-14_USER-MANUALS_GUIDE_LICENSE-ISSUANCE-AND-ACTIVATION_V1.md"
+    ],
+    "licenseactivationpanel": [
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md"
     ],
     "licenseartifact": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_MULTI-SERVER-LICENSING-MIRROR-AND-CRM-DECOUPLING_V1.md",
@@ -27669,7 +28820,8 @@
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_MULTI-SERVER-LICENSING-MIRROR-AND-CRM-DECOUPLING_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-14_RELEASES_CHANGELOG_RELEASE-NOTES_SIGNED-LICENSE-CONTROL-PLANE_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-14_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-D1-SCHEMA-DRIFT-AND-BASELINE-PLAN_V1.md",
-      "20_AUDITS_COMPLIANCE/2026-11-14_AUDITS-COMPLIANCE_AUDIT-REPORT_UNIFIED-LICENSING-AND-IP-PROTECTION_V1.md"
+      "20_AUDITS_COMPLIANCE/2026-11-14_AUDITS-COMPLIANCE_AUDIT-REPORT_UNIFIED-LICENSING-AND-IP-PROTECTION_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md"
     ],
     "lifecycle": [
       "04_STUDENT_MANAGEMENT/2026-11-05_STUDENT_MANAGEMENT_IMPLEMENTATION-REPORT_STUDENT-LIFECYCLE-AND-WITHDRAWAL-ANALYTICS-REPORT_V1.md",
@@ -27702,9 +28854,15 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DISCONNECTED-API-AND-DATABASE-REGISTER_V1.md"
     ],
     "live": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_ACCEPTANCE-REPORT_PLANNING-RESCHEDULE-BROWSER-AUDIT_V1.md",
       "18_TESTING_QA/2026-11-18_TESTING-QA_VERIFICATION-REPORT_END-TO-END-CORE-USER-WORKFLOWS_V1.md",
       "19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES_V1-88-0-RC2_V1.md"
+    ],
+    "livesoftwareshowcase": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md"
     ],
     "load": [
       "13_SYSADMIN_SETTINGS/2026-11-11_SYSADMIN-SETTINGS_TROUBLESHOOTING-REPORT_CODEX-CONFIGURATION-LOAD-RESOLUTION_V1.md"
@@ -27889,6 +29047,9 @@
     "manager": [
       "15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_NOTICE-BOARD-MANAGER-AND-CIRCULARS_V1.md"
     ],
+    "manifest": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "manual": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_INSTALLATION-GUIDE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_PRODUCTION-DEPLOYMENT-GUIDE_V1.md",
@@ -28033,6 +29194,8 @@
     ],
     "master": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-07_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_SUBJECT-MASTER-ARCHITECTURE-AND-MAPPINGS_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-09_ACADEMIC-MANAGEMENT_REPORT_SUBJECT-MASTER-CANONICALIZATION_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_SUBJECT-MASTER-DEDUPLICATION-AND-DATA-CONSOLIDATION_V1.md",
@@ -28045,6 +29208,9 @@
       "assets/branding/prathamone-master-logo-dark.png",
       "assets/branding/prathamone-master-logo-transparent.png",
       "assets/branding/prathamone-master-logo.png"
+    ],
+    "master_v1": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md"
     ],
     "masterdata": [
       "25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md"
@@ -28315,8 +29481,14 @@
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_IMPLEMENTATION-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES_V1.md"
     ],
     "motion": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
       "17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_IMPLEMENTATION-REPORT_PRATHAMONE-VIDEO-STUDIO_V1.md"
+    ],
+    "mp4": [
+      "assets/commercial/prathamone_cinematic_commercial_poc_24s.mp4",
+      "assets/commercial/prathamone_commercial_master_1080p.mp4"
     ],
     "multi": [
       "01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md",
@@ -28338,6 +29510,10 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_SECURITY-PERMISSION-AUDIT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_AUDIT-REPORT_FULL-PLATFORM-SECURITY-ARCHITECTURE-AND-RECOMMENDATIONS_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT2-P1-HARDENING_V1.md"
+    ],
+    "multitrackaudiomixer": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md"
     ],
     "name": [
       "09_FEES_PAYMENTS/2026-11-10_FEES-PAYMENTS_IMPLEMENTATION-REPORT_NETHAN-RECEIPT-TYPOS-RECONCILIATION_V1.md"
@@ -28497,7 +29673,8 @@
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_RESEARCH-REPORT_ZERO-KNOWLEDGE-NEXT-NEXT-WINDOWS-INSTALLER-ARCHITECTURE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-16_INSTALLATION-DEPLOYMENT_IMPLEMENTATION-REPORT_CANONICAL-WIDELOGO-AND-AUTHENTICODE-PIPELINE_V1.md",
       "18_TESTING_QA/2026-11-13_TESTING-QA_TEST-REPORT_CROSS-DEVICE-REGRESSION-REPORT_V1.md",
-      "19_RELEASES_CHANGELOG/2026-11-14_RELEASES_CHANGELOG_RELEASE-NOTES_SIGNED-LICENSE-CONTROL-PLANE_V1.md"
+      "19_RELEASES_CHANGELOG/2026-11-14_RELEASES_CHANGELOG_RELEASE-NOTES_SIGNED-LICENSE-CONTROL-PLANE_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md"
     ],
     "one": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_GITHUB-PUSH-AND-DOCKER-INSTALLER-REPORT_V1.md",
@@ -28507,6 +29684,9 @@
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_ONLINE-PAYMENT-GATEWAY_V1.md",
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-REPORT_ONLINE-PAYMENT-GATEWAY_V1.md",
       "09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_COMPLETION-MATRIX_WORKSPACES_V1.md"
+    ],
+    "onpremisessyncbridge": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
     ],
     "operational": [
       "09_FEES_PAYMENTS/2026-11-18_FEES-PAYMENTS_USER-GUIDE_REFUNDS-AND-REVERSALS-WORKFLOW_V1.md",
@@ -28584,6 +29764,10 @@
       "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_SYSTEM-INDEX-OVERVIEW_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI_UX_DESIGN_FEATURE-REPORT_INSTITUTE-OVERVIEW-MESSAGING-GOVERNANCE_V1.md",
       "assets/2026-11-12_homework_studio-overview.png"
+    ],
+    "overview_report_cinematic": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md"
     ],
     "overview_specification_official": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md"
@@ -29318,6 +30502,9 @@
       "assets/screenshots/video_studio_live_interface.png",
       "assets/screenshots/video_studio_login_test.png"
     ],
+    "poc_v1": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md"
+    ],
     "point": [
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md"
     ],
@@ -29426,11 +30613,14 @@
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ARCHITECTURE_V1.md",
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_PRATHAMONE-BRAND-ASSET-REGISTER_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-12_ARCHITECTURE_SYSTEM-DESIGN_EDUBOARD-ARCHITECTURE_V1.md",
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md",
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_FULL-HYBRID-CHAT-AND-DOUBT-RESOLUTION-ENGINE_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_EVALUATION-REPORT_AI-PRESENTER-PROVIDERS_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_CUSTOMER-DEPLOYMENT-SYNCHRONIZATION-REPORT_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_GITHUB-PUSH-AND-DOCKER-INSTALLER-REPORT_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_TECHNICAL-SPECIFICATION_PURE-NATIVE-WIN32-EXE-LAUNCHER-ARCHITECTURE_V1.md",
@@ -29568,6 +30758,12 @@
     "prathamone_academy_sysadmin_manual": [
       "22_USER_MANUALS/PrathamOne_Academy_Sysadmin_Manual.pdf"
     ],
+    "prathamone_cinematic_commercial_poc_24s": [
+      "assets/commercial/prathamone_cinematic_commercial_poc_24s.mp4"
+    ],
+    "prathamone_commercial_master_1080p": [
+      "assets/commercial/prathamone_commercial_master_1080p.mp4"
+    ],
     "prathamoneeduos": [
       "00_PRODUCT_OVERVIEW/2026-11-07_PRODUCT-OVERVIEW_SPECIFICATION_OFFICIAL-BRANDING-AND-LOGO-ASSETS_V1.md",
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_SMART-INSTALLER-DRIVE-SELECTION-AND-FOLDER-ARCHITECTURE_V1.md"
@@ -29588,6 +30784,9 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ARCHITECTURE-GUIDE_EDUBOARD-DISPLAY-MODES_V1.md",
       "17_UI_UX_DESIGN/2026-11-17_UI-UX-DESIGN_THEME-ARCHITECTURE_IMPLEMENTATION-PROPOSAL_V1.md"
     ],
+    "premises": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "premium": [
       "14_PRINTING_DOCUMENTS/2026-11-05_PRINTING_DOCUMENTS_IMPLEMENTATION-REPORT_OFFICIAL-FEE-RECEIPT-A5-REDESIGN-REPORT_V1.md",
       "17_UI_UX_DESIGN/2026-11-16_UI-UX-DESIGN_IMPLEMENTATION-REPORT_PREMIUM-ANIMATED-LOGIN-UI-REFINEMENT_V1.md",
@@ -29599,6 +30798,8 @@
       "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_IMPLEMENTATION-REPORT_EDUBOARD-POPOUT-WINDOW_V1.md"
     ],
     "presenter": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_EVALUATION-REPORT_AI-PRESENTER-PROVIDERS_V1.md",
       "22_USER_MANUALS/2026-11-19_USER-MANUALS_USER-MANUAL_AI-VIDEO-PRESENTER-STUDIO_V1.md"
     ],
@@ -29731,7 +30932,10 @@
       "17_UI_UX_DESIGN/2026-11-17_UI-UX-DESIGN_BRANDING-DECISION_BLOOD-RED-ACCENT_V1.md"
     ],
     "production": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-03_INSTALLATION_DEPLOYMENT_DEVELOPER-MANUAL_PRODUCTION-DEPLOYMENT-GUIDE_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-09_DEPLOYMENT_READINESS-REPORT_FINANCIAL-GOVERNANCE_V1.md",
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-PRODUCTION-READINESS_V1.md",
@@ -29773,6 +30977,9 @@
     ],
     "promotional": [
       "17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_IMPLEMENTATION-REPORT_HALF-WIDTH-VIDEO-TOUR-SPLIT-LAYOUT_V1.md"
+    ],
+    "proof": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md"
     ],
     "proposal": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_REVIEW_UNIFIED-PLANNING-ACTIVITIES-WORKSPACE_V1.md"
@@ -30279,6 +31486,8 @@
       "09_FEES_PAYMENTS/2026-11-04_FEES_PAYMENTS_IMPLEMENTATION-REPORT_FEE-RECORDS-REPLACEMENT-REPORT_V1.md"
     ],
     "report": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_CUSTOMER-DEPLOYMENT-SYNCHRONIZATION-REPORT_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-04_INSTALLATION_DEPLOYMENT_IMPLEMENTATION-REPORT_GITHUB-PUSH-AND-DOCKER-INSTALLER-REPORT_V1.md",
       "02_INSTALLATION_DEPLOYMENT/2026-11-09_DEPLOYMENT_READINESS-REPORT_FINANCIAL-GOVERNANCE_V1.md",
@@ -31613,6 +32822,8 @@
       "01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-FIELD-DEDUPLICATION-AUDIT_V1.md"
     ],
     "software": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-11_ACADEMIC-MANAGEMENT_AUDIT-REPORT_HOMEWORK-ASSIGNMENT-SYSTEM-AUDIT_V1.md",
       "12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_RULE-010-COMPLETE-SOFTWARE-WIDE-COVERAGE_V1.md",
@@ -31834,6 +33045,10 @@
     "stability": [
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md"
     ],
+    "stack": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md"
+    ],
     "staff": [
       "01_ARCHITECTURE/2026-11-16_ARCHITECTURE_TECHNICAL-BLUEPRINT_FULL-HYBRID-CHAT-AND-DOUBT-RESOLUTION-ENGINE_V1.md",
       "05_TEACHER_MANAGEMENT/2026-11-06_TEACHER-MANAGEMENT_AUDIT-REPORT_WORKFORCE-DASHBOARDS-AND-PROFILES-ARCHITECTURE_V1.md",
@@ -32035,12 +33250,51 @@
     "step": [
       "09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md"
     ],
+    "stock_shot_0": [
+      "assets/commercial/stock_shot_0.5s.jpg"
+    ],
+    "stock_shot_1": [
+      "assets/commercial/stock_shot_1.5s.jpg"
+    ],
+    "stock_shot_10": [
+      "assets/commercial/stock_shot_10.5s.jpg"
+    ],
+    "stock_shot_11": [
+      "assets/commercial/stock_shot_11.5s.jpg"
+    ],
+    "stock_shot_2": [
+      "assets/commercial/stock_shot_2.5s.jpg"
+    ],
+    "stock_shot_3": [
+      "assets/commercial/stock_shot_3.5s.jpg"
+    ],
+    "stock_shot_4": [
+      "assets/commercial/stock_shot_4.5s.jpg"
+    ],
+    "stock_shot_5": [
+      "assets/commercial/stock_shot_5.5s.jpg"
+    ],
+    "stock_shot_6": [
+      "assets/commercial/stock_shot_6.5s.jpg"
+    ],
+    "stock_shot_7": [
+      "assets/commercial/stock_shot_7.5s.jpg"
+    ],
+    "stock_shot_8": [
+      "assets/commercial/stock_shot_8.5s.jpg"
+    ],
+    "stock_shot_9": [
+      "assets/commercial/stock_shot_9.5s.jpg"
+    ],
     "stopprathamoneexe": [
       "02_INSTALLATION_DEPLOYMENT/2026-11-15_INSTALLATION-DEPLOYMENT_TECHNICAL-SPECIFICATION_PURE-NATIVE-WIN32-EXE-LAUNCHER-ARCHITECTURE_V1.md"
     ],
     "storage": [
       "13_SYSADMIN_SETTINGS/2026-11-18_SYSADMIN-SETTINGS_IMPLEMENTATION-REPORT_MULTI-DESTINATION-BACKUP-AND-CLOUD-SYNC-ENGINE_V1.md",
       "13_SYSADMIN_SETTINGS/2026-11-18_SYSADMIN-SETTINGS_SPECIFICATION_MULTI-DESTINATION-BACKUP-AND-CLOUD-SYNC-ENGINE_V1.md"
+    ],
+    "storyboard": [
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
     ],
     "strategic": [
       "00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md",
@@ -32272,6 +33526,7 @@
       "20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_TEST-EXECUTION-REPORT_V1.md"
     ],
     "studio": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_EVALUATION-REPORT_AI-PRESENTER-PROVIDERS_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
       "03_ACADEMIC_MANAGEMENT/2026-11-13_ACADEMIC-MANAGEMENT_FEATURE-REPORT_TIMETABLE-AND-ACADEMIC-SCHEDULING-STUDIO_V1.md",
@@ -32731,6 +33986,11 @@
     "telemetry": [
       "21_TROUBLESHOOTING/2026-11-16_TROUBLESHOOTING_POSTMORTEM_CUSTOMER-TELEMETRY-WS500-FEE422-BACKUP504-ROOT-CAUSE-ANALYSIS_V1.md"
     ],
+    "television": [
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-POC_V1.md",
+      "00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md"
+    ],
     "templates": [
       "15_INTEGRATIONS/2026-11-09_COMMUNICATION-CENTER_COMPLETION-MATRIX_WORKSPACES_V1.md"
     ],
@@ -32778,6 +34038,12 @@
       "20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_AUTOMATED-TEST-REPORT_V1.md",
       "20_AUDITS_COMPLIANCE/2026-11-12_AUDITS-COMPLIANCE_REMEDIATION-REPORT_SPRINT3-SESSION-SSOT-PERFORMANCE_V1.md",
       "26_ARCHIVED/legacy_root/ACCEPTANCE_CRITERIA.md"
+    ],
+    "test_students_directory": [
+      "assets/commercial/inspection_frames/test_students_directory.jpg"
+    ],
+    "test_students_directory_loaded": [
+      "assets/commercial/inspection_frames/test_students_directory_loaded.jpg"
     ],
     "testing": [
       "03_ACADEMIC_MANAGEMENT/2026-11-12_ACADEMIC-MANAGEMENT_ACCEPTANCE-REPORT_HOMEWORK-AND-ASSIGNMENT-ENHANCEMENT_V1.md",
@@ -32967,7 +34233,8 @@
       "21_TROUBLESHOOTING/2026-11-03_TROUBLESHOOTING_DEVELOPER-MANUAL_TROUBLESHOOTING-RUNBOOK_V1.md",
       "21_TROUBLESHOOTING/2026-11-11_TROUBLESHOOTING_POSTMORTEM_CODEX-FRESH-INSTALLATION-500-ROOT-CAUSE-ANALYSIS_V1.md",
       "21_TROUBLESHOOTING/2026-11-16_TROUBLESHOOTING_POSTMORTEM_CUSTOMER-TELEMETRY-WS500-FEE422-BACKUP504-ROOT-CAUSE-ANALYSIS_V1.md",
-      "21_TROUBLESHOOTING/2026-11-17_TROUBLESHOOTING_INCIDENT-REPORT_BACKUP-PERMISSION-DENIED-RESOLUTION_V1.md"
+      "21_TROUBLESHOOTING/2026-11-17_TROUBLESHOOTING_INCIDENT-REPORT_BACKUP-PERMISSION-DENIED-RESOLUTION_V1.md",
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md"
     ],
     "truth": [
       "01_ARCHITECTURE/2026-11-17_ARCHITECTURE_RESEARCH-REPORT_PLANNING-SCHEDULE-INTEGRATION_V1.md",
@@ -33045,6 +34312,9 @@
     ],
     "ups": [
       "04_STUDENT_MANAGEMENT/2026-11-07_STUDENT-MANAGEMENT_AUDIT-REPORT_LEAD-MANAGEMENT-AND-CRM-GAP-ANALYSIS_V1.md"
+    ],
+    "url": [
+      "21_TROUBLESHOOTING/2026-11-19_TROUBLESHOOTING_GUIDE_LICENSE-AUTHORITY-ACTIVATION_V1.md"
     ],
     "user": [
       "03_ACADEMIC_MANAGEMENT/2026-11-03_ACADEMIC_MANAGEMENT_SPECIFICATION_STANDARDS-USER-MANUAL_V1.md",
@@ -33251,6 +34521,7 @@
     "video": [
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_EVALUATION-REPORT_AI-PRESENTER-PROVIDERS_V1.md",
       "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-AUDIT_PRATHAMONE-VIDEO-STUDIO_V1.md",
+      "01_ARCHITECTURE/2026-11-19_ARCHITECTURE_SPECIFICATION_CINEMATIC-COMMERCIAL-DIRECTOR_V1.md",
       "17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_IMPLEMENTATION-REPORT_HALF-WIDTH-VIDEO-TOUR-SPLIT-LAYOUT_V1.md",
       "17_UI_UX_DESIGN/2026-11-19_UI-UX-DESIGN_IMPLEMENTATION-REPORT_PRATHAMONE-VIDEO-STUDIO_V1.md",
       "22_USER_MANUALS/2026-11-19_USER-MANUALS_USER-MANUAL_AI-VIDEO-PRESENTER-STUDIO_V1.md"

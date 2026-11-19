@@ -1,0 +1,62 @@
+[
+  {
+    "event": "dashboard_settled",
+    "t": 1.0
+  },
+  {
+    "event": "dashboard_kpi_collections",
+    "t": 2.5
+  },
+  {
+    "event": "dashboard_kpi_attendance",
+    "t": 5.5
+  },
+  {
+    "event": "students_directory_settled",
+    "t": 1.0
+  },
+  {
+    "event": "student_search_start",
+    "t": 7.0
+  },
+  {
+    "event": "student_search_aarav_filtered",
+    "t": 9.5
+  },
+  {
+    "event": "fee_tab_settled",
+    "t": 1.5
+  },
+  {
+    "event": "fee_inflow_chart_hover",
+    "t": 4.0
+  },
+  {
+    "event": "fee_payment_donut_hover",
+    "t": 11.5
+  },
+  {
+    "event": "eduboard_canvas_settled",
+    "t": 1.0
+  },
+  {
+    "event": "eduboard_vector_r_hover",
+    "t": 3.5
+  },
+  {
+    "event": "eduboard_formulae_hover",
+    "t": 12.5
+  },
+  {
+    "event": "attendance_overview_settled",
+    "t": 1.0
+  },
+  {
+    "event": "attendance_qr_modal_opened",
+    "t": 4.5
+  },
+  {
+    "event": "attendance_qr_scan_complete",
+    "t": 9.0
+  }
+]

@@ -43,16 +43,16 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "The Power of Enterprise Education. The Simplicity of WhatsApp."
-    VERSION: str = "1.142.0"
-    BUILD_NUMBER: str = "2026.11.19-REV-258-v1.142.0-185E3E8C"
+    VERSION: str = "1.143.0"
+    BUILD_NUMBER: str = "2026.11.19-REV-259-v1.143.0-9459962F"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-19"
     AUTHOR: str = "Jawahar R Mallah"
     ORGANIZATION: str = "Smritisys & AITDL Networks"
-    LICENSE_AUTHORITY_URL: str = ""
+    LICENSE_AUTHORITY_URL: str = "https://smritisys.com"
     LICENSE_PRODUCT_CODE: str = "prathamone-eduos"
-    LICENSE_PUBLIC_KEYS_JSON: str = "{}"
+    LICENSE_PUBLIC_KEYS_JSON: str = '{"smritisys-ed25519-2026-11":"GWsJlKHUjTYmSDpi8JmsGb43NoR6S1qL1jIy1jzBC4w"}'
     LICENSE_ENFORCEMENT_STAGE: str = "shadow"
     DEBUG: bool = False
 

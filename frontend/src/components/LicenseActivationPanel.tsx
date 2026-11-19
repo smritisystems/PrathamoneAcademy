@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-14
- * @updated     2026-11-16
+ * @updated     2026-11-19
  *
  * @description Institution-scoped activation and refresh of signed software licenses.
  */
@@ -142,7 +142,12 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
         : 'Signed license verified and activated.')
     },
     onError: (error: any) => {
-      toast.error(`License activation or refresh failed: ${error.response?.data?.detail || error.message}`)
+      const detail = error.response?.data?.detail || error.message || ''
+      if (typeof detail === 'string' && detail.includes('License authority URL is not configured')) {
+        toast.error('License authority URL is not configured on the server. Configure LICENSE_AUTHORITY_URL in server .env, or use the Offline Activation workflow below for air-gapped sites.')
+      } else {
+        toast.error(`License activation or refresh failed: ${detail}`)
+      }
     },
   })
 

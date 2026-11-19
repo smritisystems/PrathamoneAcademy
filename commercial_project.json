@@ -1,0 +1,215 @@
+{
+  "project_meta": {
+    "project_name": "PrathamOne EduOS Flagship Commercial Master (Broadcast Studio Edition V2)",
+    "version": "1.0.0",
+    "resolution": [1920, 1080],
+    "fps": 30,
+    "global_ui_crop": {
+      "enabled": true,
+      "crop_box": [0, 86, 1920, 1040],
+      "note": "Crops top Chromium bar and bottom OS taskbar"
+    },
+    "watermark": {
+      "enabled": true,
+      "text": "PRATHAMONE EduOS™",
+      "opacity": 0.85
+    }
+  },
+  "audio_master": {
+    "bgm_track": "assets/audio/bgm_master.wav",
+    "bgm_base_gain": 0.85,
+    "bgm_ducked_gain": 0.12,
+    "ducking_fade_ms": 350,
+    "voice_gain": 0.95
+  },
+  "branding": {
+    "primary_tagline": "COACHING MANAGEMENT. SIMPLIFIED.",
+    "secondary_tagline": "The Power of Enterprise Education. The Simplicity of WhatsApp.",
+    "attribution": "Smritisys & AITDL Networks • Jawahar R. Mallah",
+    "colors": {
+      "prussian_navy": "#0B2D6B",
+      "deep_navy": "#051535",
+      "vibrant_orange": "#F16906",
+      "emerald_green": "#10B981"
+    }
+  },
+  "scenes": [
+    {
+      "scene_id": "chapter_01_the_struggle",
+      "name": "Chapter 01: The Operational Struggle",
+      "duration_sec": 18.0,
+      "video_source": "data/commercial/presenter/presenter_01_opening_1080p.mp4",
+      "source_start_sec": 0.0,
+      "voiceover": "assets/audio/vo_01_opening.wav",
+      "device_frame": false,
+      "apply_crop": false,
+      "lower_third": {
+        "enabled": true,
+        "name": "PRIYA SHARMA",
+        "title": "Solutions Specialist  •  PrathamOne EduOS",
+        "fade_in_time": 0.5,
+        "fade_out_time": 4.5
+      },
+      "callouts": [
+        {
+          "title": "42% OF ADMIN TIME LOST",
+          "subtitle": "Disconnected Spreadsheets & Manual Registers",
+          "start_sec": 5.0,
+          "end_sec": 14.0,
+          "position": { "x": 120, "y": 890 }
+        }
+      ]
+    },
+    {
+      "scene_id": "chapter_02_the_awakening",
+      "name": "Chapter 02: The Awakening & Platform Intro",
+      "duration_sec": 18.0,
+      "video_source": "data/commercial/presenter/presenter_02_intro_1080p.mp4",
+      "source_start_sec": 0.0,
+      "voiceover": "assets/audio/vo_02_intro.wav",
+      "device_frame": false,
+      "apply_crop": false,
+      "callouts": [
+        {
+          "title": "MEET PRATHAMONE EduOS™",
+          "subtitle": "Enterprise Power. Everyday Simplicity.",
+          "start_sec": 3.0,
+          "end_sec": 14.0,
+          "position": { "x": 120, "y": 890 }
+        }
+      ]
+    },
+    {
+      "scene_id": "chapter_03_executive_pulse",
+      "name": "Chapter 03: Executive Pulse & Real-Time Dashboard",
+      "duration_sec": 22.0,
+      "video_source": "assets/captures/demo_03_dashboard_1080p.mp4",
+      "source_start_sec": 0.8,
+      "voiceover": "assets/audio/vo_03_dashboard.wav",
+      "device_frame": true,
+      "device_scale": 0.88,
+      "apply_crop": true,
+      "callouts": [
+        {
+          "sync_event": "dashboard_kpi_collections",
+          "start_sec": 2.5,
+          "end_sec": 17.0,
+          "title": "LIVE PULSE: REAL-TIME OPERATIONS",
+          "subtitle": "Rs. 18.6L Collections & 92.8% Daily Attendance",
+          "position": { "x": 120, "y": 890 }
+        }
+      ]
+    },
+    {
+      "scene_id": "chapter_04_student_dossier",
+      "name": "Chapter 04: Master Student Directory & DPDP Compliance",
+      "duration_sec": 24.0,
+      "video_source": "assets/captures/demo_04_students_1080p.mp4",
+      "source_start_sec": 0.8,
+      "voiceover": "assets/audio/vo_04a_students_and_fees.wav",
+      "device_frame": true,
+      "device_scale": 0.88,
+      "apply_crop": true,
+      "callouts": [
+        {
+          "sync_event": "students_directory_settled",
+          "start_sec": 1.0,
+          "end_sec": 7.0,
+          "title": "RULE 010: VIEW-FIRST SAFETY LOCK",
+          "subtitle": "Read-Only Protection Prevents Accidental Mutation",
+          "position": { "x": 120, "y": 890 }
+        },
+        {
+          "sync_event": "student_search_aarav_filtered",
+          "start_sec": 9.5,
+          "end_sec": 21.0,
+          "title": "SUB-SECOND STUDENT SEARCH",
+          "subtitle": "Instant Filter, Canonical Master Dossier & Masked Aadhaar",
+          "position": { "x": 120, "y": 890 }
+        }
+      ]
+    },
+    {
+      "scene_id": "chapter_05_zero_leakage_fees",
+      "name": "Chapter 05: Zero-Leakage Fee Counter & Revenue Inflow",
+      "duration_sec": 22.0,
+      "video_source": "assets/captures/demo_05_fees_1080p.mp4",
+      "source_start_sec": 0.8,
+      "voiceover": "assets/audio/vo_05_benefits.wav",
+      "device_frame": true,
+      "device_scale": 0.88,
+      "apply_crop": true,
+      "callouts": [
+        {
+          "sync_event": "fee_tab_settled",
+          "start_sec": 1.5,
+          "end_sec": 10.0,
+          "title": "AUTOMATED FEE COUNTER & LEDGER",
+          "subtitle": "Rs. 28.5L Invoiced • Split Heads & Immutable Ledger",
+          "position": { "x": 120, "y": 890 }
+        },
+        {
+          "sync_event": "fee_payment_donut_hover",
+          "start_sec": 11.5,
+          "end_sec": 20.0,
+          "title": "MULTI-MODE RECONCILIATION",
+          "subtitle": "Bank 59.3%, UPI 24.6%, Cheque 2% Live Distribution",
+          "position": { "x": 120, "y": 890 }
+        }
+      ]
+    },
+    {
+      "scene_id": "chapter_06_eduboard_classroom",
+      "name": "Chapter 06: EduBoard Interactive Classroom",
+      "duration_sec": 20.0,
+      "video_source": "assets/captures/demo_06_eduboard_1080p.mp4",
+      "source_start_sec": 2.5,
+      "voiceover": "assets/audio/vo_04b_eduboard_and_attendance.wav",
+      "device_frame": true,
+      "device_scale": 0.88,
+      "apply_crop": true,
+      "callouts": [
+        {
+          "sync_event": "eduboard_vector_r_hover",
+          "start_sec": 3.5,
+          "end_sec": 18.0,
+          "title": "EDUBOARD INTERACTIVE CLASSROOM",
+          "subtitle": "Tactile Digital Greenboard, Precision Geometry & LaTeX Math",
+          "position": { "x": 120, "y": 890 }
+        }
+      ]
+    },
+    {
+      "scene_id": "chapter_07_attendance_hub",
+      "name": "Chapter 07: Attendance Hub & QR Check-In Terminal",
+      "duration_sec": 20.0,
+      "video_source": "assets/captures/demo_07_attendance_1080p.mp4",
+      "source_start_sec": 0.8,
+      "voiceover": "assets/audio/vo_07_offline_online.wav",
+      "device_frame": true,
+      "device_scale": 0.88,
+      "apply_crop": true,
+      "callouts": [
+        {
+          "sync_event": "attendance_qr_modal_opened",
+          "start_sec": 4.5,
+          "end_sec": 18.0,
+          "title": "INSTANT QR CHECK-IN TERMINAL",
+          "subtitle": "Sub-Second Badges & Automated Parent WhatsApp Alerts",
+          "position": { "x": 120, "y": 890 }
+        }
+      ]
+    },
+    {
+      "scene_id": "chapter_08_data_sovereignty_climax",
+      "name": "Chapter 08: Data Ownership & Brand Climax",
+      "duration_sec": 24.0,
+      "video_source": "data/commercial/motion/deployment_and_endcard_1080p.mp4",
+      "source_start_sec": 0.0,
+      "voiceover": "assets/audio/vo_08_deployment_climax.wav",
+      "device_frame": false,
+      "apply_crop": false,
+      "is_closing": false
+    }
+  ]
+}

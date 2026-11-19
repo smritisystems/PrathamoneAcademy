@@ -66,3 +66,13 @@ htmlcov/
 .vitest_cache/
 scratch/
 
+# Commercial Video Production (Heavy binary media & recordings)
+*.mp4
+*.webm
+*.wav
+assets/audio/
+assets/presenter/
+data/commercial/
+data/temp_commercial_recordings/
+temp_inspect/
+
