@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-17
+ * @updated     2026-11-19
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -43,6 +43,7 @@ import {
   HelpCircle,
   Presentation,
   CalendarDays,
+  Film,
   LucideIcon,
 } from 'lucide-react'
 import type { User, NavigationModule, NavigationSubItem } from '../types'
@@ -361,6 +362,17 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
     icon: Download,
     iconName: 'Download',
     description: 'Install progressive web application for desktop and mobile offline access.',
+    subItems: [],
+  },
+  {
+    id: 'video_studio',
+    label: 'Video Studio',
+    category: 'tools',
+    defaultPath: '/video-studio',
+    icon: Film,
+    iconName: 'Film',
+    description: 'AI Product Video Director and standalone visual video editor for marketing and software demonstrations.',
+    badge: 'NEW',
     subItems: [],
   },
   {

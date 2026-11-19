@@ -61,6 +61,7 @@ from app.api.v1.endpoints import (
     chat as chat_endpoint,
     planning,
     device_binding,
+    video_studio,
 )
 
 auth_router = APIRouter()
@@ -135,4 +136,5 @@ api_router.include_router(eduboard.router, prefix="/eduboard", tags=["eduboard"]
 api_router.include_router(license_endpoint.router, prefix="/license", tags=["license"])
 api_router.include_router(chat_endpoint.router, prefix="", tags=["chat"])
 api_router.include_router(device_binding.router, prefix="/security/device-binding", tags=["security-device-binding"])
+api_router.include_router(video_studio.router, prefix="/video-studio", tags=["video-studio"])
 

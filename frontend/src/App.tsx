@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-19
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -76,6 +76,7 @@ const HomeworkWorkspacePage = lazyWithRetry(() => import('./pages/HomeworkWorksp
 const PlanningWorkspacePage = lazyWithRetry(() => import('./pages/PlanningWorkspace'), 'PlanningWorkspace')
 const EduBoardWorkspacePage = lazyWithRetry(() => import('./pages/EduBoardWorkspace'), 'EduBoardWorkspace')
 const EduBoardWindowPage = lazyWithRetry(() => import('./pages/EduBoardWindowPage'), 'EduBoardWindowPage')
+const VideoStudioPage = lazyWithRetry(() => import('./pages/VideoStudio'), 'VideoStudio')
 
 function PageLoader() {
   return (
@@ -154,6 +155,22 @@ export default function App() {
               </ErrorBoundary>
             </PrivateRoute>
           }
+        />
+        <Route
+          path="/video-studio"
+          element={
+            <PrivateRoute>
+              <ErrorBoundary fallbackTitle="PrathamOne Video Studio Error">
+                <Suspense fallback={<PageLoader />}>
+                  <VideoStudioPage />
+                </Suspense>
+              </ErrorBoundary>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/studio"
+          element={<Navigate to="/video-studio" replace />}
         />
         <Route
           path="/"
