@@ -19,7 +19,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, X, ChevronDown, ChevronUp, MessageSquare, Presentation, Bell } from 'lucide-react'
+import { Building2, X, ChevronDown, ChevronUp, ChevronRight, MessageSquare, Presentation, Bell } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { institutionsApi } from '../api/endpoints'
 import { APP_CONFIG, BRANDING_CONFIG } from '../config/appConfig'
@@ -123,6 +123,220 @@ export function resolvePageTitle(pathname: string, search: string): string {
   }
 
   return 'Workspace'
+}
+
+export interface FooterBreadcrumbItem {
+  label: string
+  to?: string
+  isCurrent?: boolean
+}
+
+/**
+ * Dynamically resolves hierarchical breadcrumb path for bottom bar navigation.
+ */
+export function resolveBreadcrumbs(pathname: string, search: string): FooterBreadcrumbItem[] {
+  const cleanPath = pathname.replace(/\/+$/, '') || '/'
+
+  // 1. Root / Dashboard
+  if (cleanPath === '/' || cleanPath === '/dashboard') {
+    return [{ label: 'Dashboard', to: '/dashboard', isCurrent: true }]
+  }
+
+  const crumbs: FooterBreadcrumbItem[] = [
+    { label: 'Dashboard', to: '/dashboard' },
+  ]
+
+  // 2. Dynamic academic tab routes
+  if (cleanPath === '/academic' || cleanPath.startsWith('/academic/')) {
+    const params = new URLSearchParams(search)
+    const tab = params.get('tab')
+    crumbs.push({ label: 'Academic Structure', to: '/academic' })
+
+    const academicTabMap: Record<string, string> = {
+      boards: 'Boards',
+      classes: 'Classes / Standards',
+      subjects: 'Subjects',
+      batches: 'Batches',
+      timetable: 'Timetable',
+      enrollment: 'Enrollment',
+      reports: 'Academic Reports',
+      settings: 'Academic Settings',
+    }
+
+    if (tab && academicTabMap[tab]) {
+      crumbs.push({ label: academicTabMap[tab], isCurrent: true })
+    } else if (cleanPath !== '/academic') {
+      const sub = cleanPath.replace('/academic/', '')
+      const subKey = sub.split('/')[0]
+      if (academicTabMap[subKey]) {
+        crumbs.push({ label: academicTabMap[subKey], isCurrent: true })
+      } else {
+        crumbs.push({ label: resolvePageTitle(cleanPath, search), isCurrent: true })
+      }
+    } else {
+      crumbs[crumbs.length - 1].isCurrent = true
+      crumbs[crumbs.length - 1].to = undefined
+    }
+    return crumbs
+  }
+
+  // 3. Known routes
+  if (cleanPath === '/students/add') {
+    crumbs.push({ label: 'Students', to: '/students' })
+    crumbs.push({ label: 'Admissions', isCurrent: true })
+    return crumbs
+  }
+
+  if (cleanPath.startsWith('/students/')) {
+    crumbs.push({ label: 'Students', to: '/students' })
+    crumbs.push({ label: 'Student Profile', isCurrent: true })
+    return crumbs
+  }
+
+  if (cleanPath.startsWith('/users/')) {
+    crumbs.push({ label: 'Workforce', to: '/workforce' })
+    crumbs.push({ label: 'User Profile', isCurrent: true })
+    return crumbs
+  }
+
+  if (cleanPath.startsWith('/fees/collect/')) {
+    crumbs.push({ label: 'Fees & Payments', to: '/fees' })
+    crumbs.push({ label: 'Fee Collection', isCurrent: true })
+    return crumbs
+  }
+
+  if (cleanPath.startsWith('/receipts/')) {
+    crumbs.push({ label: 'Fees & Payments', to: '/fees' })
+    crumbs.push({ label: 'Fee Receipt', isCurrent: true })
+    return crumbs
+  }
+
+  if (cleanPath.startsWith('/communication/notices') || cleanPath === '/notices') {
+    crumbs.push({ label: 'Communication', to: '/communication' })
+    crumbs.push({ label: 'Notice Board', isCurrent: true })
+    return crumbs
+  }
+
+  if (cleanPath.startsWith('/help/')) {
+    crumbs.push({ label: 'Help Centre', to: '/help' })
+    crumbs.push({ label: resolvePageTitle(cleanPath, search), isCurrent: true })
+    return crumbs
+  }
+
+  if (cleanPath === '/releases' || cleanPath === '/admin/releases') {
+    crumbs.push({ label: 'Releases & Changes', isCurrent: true })
+    return crumbs
+  }
+
+  if (cleanPath === '/student/dashboard' || cleanPath === '/student-portal') {
+    crumbs.push({ label: 'Student Portal', isCurrent: true })
+    return crumbs
+  }
+
+  // 4. Resolve from Canonical Module Registry (SSOT)
+  const matchedModule = findModuleByPath(cleanPath)
+  if (matchedModule) {
+    if (matchedModule.defaultPath.toLowerCase() === cleanPath.toLowerCase()) {
+      crumbs.push({ label: matchedModule.label, isCurrent: true })
+      return crumbs
+    }
+
+    crumbs.push({ label: matchedModule.label, to: matchedModule.defaultPath })
+    const exactSub = matchedModule.subItems.find(
+      (s) => s.to.toLowerCase() === cleanPath.toLowerCase()
+    )
+    if (exactSub) {
+      crumbs.push({ label: exactSub.label, isCurrent: true })
+      return crumbs
+    }
+
+    const prefixSub = matchedModule.subItems.find(
+      (s) => cleanPath.toLowerCase().startsWith(s.to.toLowerCase() + '/')
+    )
+    if (prefixSub) {
+      crumbs.push({ label: prefixSub.label, isCurrent: true })
+      return crumbs
+    }
+
+    crumbs.push({ label: resolvePageTitle(cleanPath, search), isCurrent: true })
+    return crumbs
+  }
+
+  // 5. Dynamic fallback
+  const segments = cleanPath.split('/').filter(Boolean)
+  if (segments.length > 1) {
+    const parent = segments[0]
+      .split(/[-_]/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+    crumbs.push({ label: parent, to: `/${segments[0]}` })
+  }
+  crumbs.push({ label: resolvePageTitle(cleanPath, search), isCurrent: true })
+  return crumbs
+}
+
+interface FooterBreadcrumbsProps {
+  breadcrumbs: FooterBreadcrumbItem[]
+  isCollapsed?: boolean
+}
+
+/**
+ * Renders an accessible, responsive breadcrumb trail inside the bottom status bar.
+ */
+function FooterBreadcrumbs({ breadcrumbs, isCollapsed }: FooterBreadcrumbsProps) {
+  if (!breadcrumbs || breadcrumbs.length === 0) return null
+
+  return (
+    <nav
+      aria-label="Bottom Bar Breadcrumb"
+      data-testid="footer-breadcrumbs"
+      className="flex items-center gap-1 min-w-0"
+    >
+      <span className="text-slate-400 font-medium shrink-0 hidden xs:inline select-none">
+        {isCollapsed ? 'Workspace:' : 'Path:'}
+      </span>
+
+      <div className="flex items-center gap-1 min-w-0">
+        {breadcrumbs.map((crumb, index) => {
+          const isLast = index === breadcrumbs.length - 1
+          const isFirst = index === 0
+
+          return (
+            <div key={`${crumb.label}-${index}`} className="flex items-center gap-1 min-w-0 shrink-0">
+              {index > 0 && (
+                <ChevronRight
+                  className="w-2.5 h-2.5 text-slate-400 shrink-0 select-none"
+                  aria-hidden="true"
+                />
+              )}
+
+              {isLast ? (
+                <span
+                  data-testid="footer-page-title"
+                  className="font-semibold text-primary-700 bg-white/90 px-1.5 py-0.2 rounded border border-blue-200/70 truncate max-w-[130px] xs:max-w-[160px] sm:max-w-[220px] md:max-w-none shadow-2xs"
+                  title={`Current Location: ${crumb.label}`}
+                >
+                  {crumb.label}
+                </span>
+              ) : (
+                <Link
+                  to={crumb.to || '/'}
+                  title={`Navigate back to ${crumb.label}`}
+                  className="text-slate-600 hover:text-primary-700 hover:underline font-medium transition-colors truncate max-w-[90px] sm:max-w-[140px] md:max-w-none"
+                >
+                  {isFirst && isCollapsed ? (
+                    <span className="hidden sm:inline">{crumb.label}</span>
+                  ) : (
+                    <span>{crumb.label}</span>
+                  )}
+                </Link>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </nav>
+  )
 }
 
 /**
@@ -288,6 +502,10 @@ export default function Footer() {
     return resolvePageTitle(location.pathname, location.search)
   }, [location.pathname, location.search])
 
+  const breadcrumbs = useMemo(() => {
+    return resolveBreadcrumbs(location.pathname, location.search)
+  }, [location.pathname, location.search])
+
   const userRole = useMemo(() => {
     if (!user?.role) return 'Admin'
     return user.role.charAt(0).toUpperCase() + user.role.slice(1)
@@ -317,18 +535,7 @@ export default function Footer() {
               data-testid="footer-product-system-group"
               className="flex items-center gap-1.5 min-w-0 rounded-lg border border-blue-100 bg-primary-50/40 px-1.5 py-0.5"
             >
-              <div
-                className="flex items-center gap-1 min-w-0 max-w-[130px] xs:max-w-[160px] sm:max-w-none"
-                title={`Active Workspace: ${currentPageTitle}`}
-              >
-                <span className="text-slate-500 shrink-0">Workspace:</span>
-                <span
-                  data-testid="footer-page-title"
-                  className="font-semibold text-primary-700 bg-white/80 px-1.5 py-0.2 rounded border border-blue-200/60 truncate"
-                >
-                  {currentPageTitle}
-                </span>
-              </div>
+              <FooterBreadcrumbs breadcrumbs={breadcrumbs} isCollapsed />
               <span className="hidden md:inline text-slate-300 select-none">·</span>
               <div className="hidden md:flex items-center gap-1 shrink-0">
                 <img
@@ -422,18 +629,7 @@ export default function Footer() {
                 data-testid="footer-product-system-group"
                 className="flex items-center gap-x-1.5 gap-y-1 flex-wrap min-w-0 rounded-lg border border-blue-100 bg-primary-50/40 px-2 py-1 text-slate-600"
               >
-                <div
-                  className="flex items-center gap-1 min-w-0"
-                  title={`Active Workspace: ${currentPageTitle}`}
-                >
-                  <span className="text-slate-500 font-medium">Workspace:</span>
-                  <span
-                    data-testid="footer-page-title"
-                    className="font-semibold text-primary-700 bg-white/80 px-1.5 py-0.2 rounded border border-blue-200/60"
-                  >
-                    {currentPageTitle}
-                  </span>
-                </div>
+                <FooterBreadcrumbs breadcrumbs={breadcrumbs} />
                 <span className="text-blue-200 select-none">·</span>
                 <img
                   src={BRANDING_CONFIG.assets.softwareLogoSvgUrl}

@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-04
- * @updated     2026-11-18
+ * @updated     2026-11-19
  *
  * @description Comprehensive unit and specification tests verifying footer sections, dynamic page title resolution, connection status, user roles, versioning, and AITDL parent branding.
  */
@@ -20,7 +20,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, act, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import Footer, { resolvePageTitle, FOOTER_COLLAPSED_KEY } from '../components/Footer'
+import Footer, { resolvePageTitle, resolveBreadcrumbs, FOOTER_COLLAPSED_KEY } from '../components/Footer'
 import { useAuthStore } from '../store/authStore'
 import { APP_CONFIG, BRANDING_CONFIG } from '../config/appConfig'
 
@@ -100,6 +100,51 @@ describe('Application Footer Specifications', () => {
     expect(resolvePageTitle('/notices', '')).toBe('Notice Board')
     expect(resolvePageTitle('/communication', '')).toBe('Communication Center')
     expect(resolvePageTitle('/custom-analytics-overview', '')).toBe('Custom Analytics Overview')
+  })
+
+  it('correctly resolves hierarchical breadcrumb trails dynamically', () => {
+    // 1. Root / Dashboard
+    expect(resolveBreadcrumbs('/', '')).toEqual([
+      { label: 'Dashboard', to: '/dashboard', isCurrent: true },
+    ])
+
+    // 2. Academic structure with tabs
+    expect(resolveBreadcrumbs('/academic', '?tab=classes')).toEqual([
+      { label: 'Dashboard', to: '/dashboard' },
+      { label: 'Academic Structure', to: '/academic' },
+      { label: 'Classes / Standards', isCurrent: true },
+    ])
+
+    // 3. Nested fee collection
+    expect(resolveBreadcrumbs('/fees/collect/129', '')).toEqual([
+      { label: 'Dashboard', to: '/dashboard' },
+      { label: 'Fees & Payments', to: '/fees' },
+      { label: 'Fee Collection', isCurrent: true },
+    ])
+
+    // 4. Student profile
+    expect(resolveBreadcrumbs('/students/142', '')).toEqual([
+      { label: 'Dashboard', to: '/dashboard' },
+      { label: 'Students', to: '/students' },
+      { label: 'Student Profile', isCurrent: true },
+    ])
+  })
+
+  it('renders interactive breadcrumbs with clickable ancestor links and current page badge in both collapsed and expanded footers', () => {
+    // 1. Expanded footer
+    renderFooter('/academic?tab=classes')
+
+    const breadcrumbsNav = screen.getByTestId('footer-breadcrumbs')
+    expect(breadcrumbsNav).toBeDefined()
+
+    const dashboardLink = within(breadcrumbsNav).getByRole('link', { name: 'Dashboard' })
+    expect(dashboardLink.getAttribute('href')).toBe('/dashboard')
+
+    const academicLink = within(breadcrumbsNav).getByRole('link', { name: 'Academic Structure' })
+    expect(academicLink.getAttribute('href')).toBe('/academic')
+
+    const currentBadge = within(breadcrumbsNav).getByTestId('footer-page-title')
+    expect(currentBadge.textContent).toBe('Classes / Standards')
   })
 
   it('renders the software logo, edition, license details link, and verified website', () => {
