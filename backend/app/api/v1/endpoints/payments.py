@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description API endpoints for payment workflow lifecycle (Draft, Submitted, Approved, Posted), audited edits, receipt supersession, reprints, and refund workflows.
 #  */
@@ -2633,8 +2633,8 @@ async def get_institution_dict(db: AsyncSession, institution_id: Optional[int]) 
         "city": "Mumbai",
         "state": "Maharashtra",
         "pincode": "400095",
-        "phone": "+91-7021789907",
-        "email": "tejam.prashnat@gmail.com",
+        "phone": "+91 8779 123 007",
+        "email": "info@prashantacademy.com",
         "tax_id": "AABCP1234K",
         "print_receipt_logo": print_logo,
         "print_receipt_tagline": print_tagline,

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-21
  *
  * @description Master application shell component providing header navigation, collapsible sidebar, and main view outlet.
  */
@@ -23,15 +23,16 @@ import { ChevronDown, Menu, PanelLeft, PanelLeftOpen, Download, Search, Sliders 
 import Sidebar from './Sidebar'
 import Footer from './Footer'
 import { RouteErrorBoundary } from './RouteErrorBoundary'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore, isUserSysAdmin } from '../store/authStore'
 import { useSidebarStore } from '../store/sidebarStore'
 import { useEduBoardDisplayStore } from '../store/eduboardDisplayStore'
 import { useNavigationStore } from '../store/navigationStore'
 import { useNavigationTracker } from '../hooks/useNavigationTracker'
 import GlobalNavigationSearch from './navigation/GlobalNavigationSearch'
 import MenuCustomizerModal from './navigation/MenuCustomizerModal'
+import InitialLaunchActivationModal from './InitialLaunchActivationModal'
 import { useEditModeStore } from '../store/editModeStore'
-import { institutionsApi, academicYearsApi } from '../api/endpoints'
+import { institutionsApi, academicYearsApi, licenseApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
 import { useBranding } from '../config/branding'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -126,6 +127,31 @@ export default function Layout() {
   const [headerLogoFailed, setHeaderLogoFailed] = useState(false)
   const currentInst = institutions.find((i) => i.id === selectedInstitutionId) ?? institutions[0]
   const effectiveHeaderLogo = currentInst?.logo_url || branding.assets.logoUrl
+
+  // Initial launch license activation prompt evaluation
+  const [isInitialLicenseModalOpen, setIsInitialLicenseModalOpen] = useState(false)
+  const user = useAuthStore((s) => s.user)
+  const isSysAdmin = isUserSysAdmin(user)
+  const isInstitutionAdmin = (user?.role || '').toLowerCase() === 'admin' || isSysAdmin
+
+  const { data: licenseStatus } = useQuery({
+    queryKey: ['license-status', selectedInstitutionId],
+    queryFn: () => licenseApi.getStatus(selectedInstitutionId ?? undefined).then((res) => res.data),
+    enabled: !!token && !isTrainingMode,
+    staleTime: 60_000,
+    retry: false,
+  })
+
+  useEffect(() => {
+    if (!licenseStatus || isTrainingMode || !isInstitutionAdmin) return
+    const isDeferred = sessionStorage.getItem('prathamone-initial-license-prompt-deferred') === 'true'
+    const needsActivation =
+      licenseStatus.mode === 'unactivated' ||
+      (licenseStatus.mode === 'evaluation' && !licenseStatus.document_id)
+    if (needsActivation && !isDeferred) {
+      setIsInitialLicenseModalOpen(true)
+    }
+  }, [licenseStatus, isTrainingMode, isInstitutionAdmin])
 
   useEffect(() => {
     setHeaderLogoFailed(false)
@@ -417,6 +443,14 @@ export default function Layout() {
       {/* Global Navigation Engine Overlays */}
       <GlobalNavigationSearch />
       <MenuCustomizerModal />
+
+      {/* Initial Launch License Activation Modal */}
+      <InitialLaunchActivationModal
+        isOpen={isInitialLicenseModalOpen}
+        onClose={() => setIsInitialLicenseModalOpen(false)}
+        licenseStatus={licenseStatus}
+        institutionId={selectedInstitutionId ?? undefined}
+      />
     </div>
   )
 }

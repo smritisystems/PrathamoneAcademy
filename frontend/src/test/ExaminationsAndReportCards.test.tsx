@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-06
- * @updated     2026-11-16
+ * @updated     2026-11-21
  *
  * @description Vitest test suite for Examinations workspace, Marks Entry grid, Performance Analytics, and Graphical Report Cards.
  */
@@ -72,7 +72,7 @@ describe('Examinations, Marks Entry, Analytics and Report Cards', () => {
       division_name: 'Division A',
       roll_number: '10A01',
       guardian_name: 'Rajesh Sharma',
-      guardian_phone: '9876543210',
+      guardian_phone: '8779123007',
     },
     examination: {
       id: 1,

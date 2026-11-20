@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Pytest suite testing student portal authentication, schedule views, and results queries.
 #  */
@@ -91,7 +91,7 @@ async def portal_seed(db, test_institution, test_academic_year):
         last_name="Sharma",
         date_of_birth=date(2008, 5, 12),
         gender="male",
-        phone="9876543210",
+        phone="8779123007",
         email=f"rohan_{suffix}@prathamone.com",
         admission_date=date(2024, 6, 1),
         is_active=True,

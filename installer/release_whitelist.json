@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "product": "PrathamOne EduOS",
+  "edition": "Coaching Institute Edition",
+  "version": "1.0.0",
+  "author": "Jawahar R. Mallah",
+  "organization": "Smritisys & AITDL Networks",
+  "description": "Authoritative production release whitelist specification. Enforces strict zero-bloat packaging for Windows desktop installer and container images.",
+  "whitelist": {
+    "frontend": {
+      "required_directories": [
+        "assets"
+      ],
+      "allowed_root_files": [
+        "index.html",
+        "offline.html",
+        "manifest.webmanifest",
+        "manifest.json",
+        "favicon.ico",
+        "favicon.png",
+        "favicon.svg",
+        "sw.js",
+        "prehydrate-brand.js"
+      ],
+      "allowed_artwork_directories": [
+        "artwork/CSM",
+        "artwork/16112026/001"
+      ],
+      "allowed_artwork_files": [
+        "artwork/prathamone.svg",
+        "artwork/16112026/001/2.svg"
+      ],
+      "allowed_media_files": [
+        "media/premium-login-mockup.svg",
+        "media/premium-login-mockup-mobile.svg",
+        "media/animated-boards-subjects.svg",
+        "media/animated-boards-subjects-mobile.svg"
+      ],
+      "allowed_extensions": [
+        ".js",
+        ".mjs",
+        ".css",
+        ".svg",
+        ".png",
+        ".ico",
+        ".woff",
+        ".woff2",
+        ".html",
+        ".json",
+        ".webmanifest"
+      ]
+    },
+    "backend": {
+      "required_directories": [
+        "app",
+        "alembic"
+      ],
+      "allowed_root_files": [
+        "alembic.ini",
+        "seed.py",
+        "requirements.txt"
+      ],
+      "allowed_extensions": [
+        ".py",
+        ".pyd",
+        ".sql",
+        ".ini",
+        ".json"
+      ]
+    },
+    "launcher": {
+      "allowed_files": [
+        "PrathamOne.exe",
+        "StopPrathamOne.exe",
+        "PrathamOneLauncher.bat",
+        "StopPrathamOne.bat"
+      ]
+    }
+  },
+  "forbidden": {
+    "extensions": [
+      ".log",
+      ".tmp",
+      ".bak",
+      ".pdb",
+      ".map",
+      ".md",
+      ".pyc",
+      ".pyo",
+      ".orig",
+      ".swp",
+      ".swo",
+      ".mp4",
+      ".mov",
+      ".avi",
+      ".wmv",
+      ".mkv",
+      ".zip",
+      ".tar.gz",
+      ".rar",
+      ".7z",
+      ".psd",
+      ".ai",
+      ".pptx",
+      ".docx",
+      ".DS_Store",
+      "Thumbs.db",
+      "desktop.ini"
+    ],
+    "directories": [
+      "media/commercial",
+      "media/studio",
+      "media/motion",
+      "artwork/18112026",
+      "artwork/15112026",
+      "artwork/14112026",
+      "artwork/VIDEOS",
+      "Final_Selected",
+      "New folder",
+      "tests",
+      ".pytest_cache",
+      "__pycache__",
+      "htmlcov",
+      "venv",
+      ".venv",
+      "scratch",
+      "scratch_frames"
+    ],
+    "file_patterns": [
+      "^\\.env.*$",
+      "^.*_test\\..*$",
+      "^.*Master Logo.*\\.png$",
+      "^.*Gemini_Generated_.*$",
+      "^.*Code_Generated_.*$"
+    ],
+    "max_file_size_mb": 15.0
+  }
+}

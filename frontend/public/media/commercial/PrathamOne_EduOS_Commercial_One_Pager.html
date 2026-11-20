@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrathamOne EduOS — Commercial Executive Brief & One-Pager</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap');
+
+    :root {
+      --navy-900: #0B2559;
+      --navy-800: #133E87;
+      --navy-700: #1E51A4;
+      --gold-600: #B45309;
+      --gold-500: #D97706;
+      --gold-100: #FEF3C7;
+      --gold-50:  #FFFBEB;
+      --slate-900: #0F172A;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-100: #F1F5F9;
+      --slate-50:  #F8FAFC;
+      --emerald-600: #059669;
+      --crimson-600: #E11D48;
+      --border: #E2E8F0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: #E2E8F0;
+      color: var(--slate-900);
+      line-height: 1.45;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .sheet {
+      width: 210mm;
+      min-height: 297mm;
+      background: #FFFFFF;
+      box-shadow: 0 20px 40px -15px rgba(11, 37, 89, 0.15);
+      border-radius: 8px;
+      padding: 12mm 14mm;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    @media print {
+      body { background: transparent; padding: 0; }
+      .sheet { box-shadow: none; border-radius: 0; width: 100%; min-height: 100vh; padding: 10mm 12mm; }
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--navy-900);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    .brand-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--navy-900);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-badge {
+      background: var(--gold-500);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .tagline {
+      font-size: 11.5px;
+      color: var(--slate-600);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .edition-tag {
+      text-align: right;
+      font-size: 11px;
+      color: var(--slate-600);
+      font-weight: 500;
+    }
+    .edition-tag strong {
+      color: var(--navy-900);
+      display: block;
+      font-size: 13px;
+    }
+
+    /* Hero / Pitch Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, var(--navy-900) 0%, var(--navy-800) 100%);
+      color: #FFFFFF;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hero-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 4px;
+    }
+    .hero-text p {
+      font-size: 12px;
+      color: #CBD5E1;
+      max-width: 540px;
+    }
+    .hero-stat {
+      text-align: right;
+      border-left: 2px solid rgba(255, 255, 255, 0.15);
+      padding-left: 18px;
+    }
+    .hero-stat .stat-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #FBBF24;
+    }
+    .hero-stat .stat-lbl {
+      font-size: 10px;
+      color: #E2E8F0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Core Problem vs Solution Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      background: var(--slate-50);
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-title.pain { color: var(--crimson-600); }
+    .card-title.solution { color: var(--emerald-600); }
+    .bullet-list {
+      list-style: none;
+      font-size: 11px;
+      color: var(--slate-700);
+    }
+    .bullet-list li {
+      margin-bottom: 4px;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .bullet-list li strong { color: var(--slate-900); }
+
+    /* The 20-in-1 Modules Matrix */
+    .section-head {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy-900);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1.5px solid var(--border);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section-head span {
+      font-size: 10.5px;
+      color: var(--gold-600);
+      font-weight: 600;
+    }
+    .modules-matrix {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+    .mod-pill {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 10.5px;
+      border-left: 3px solid var(--navy-800);
+    }
+    .mod-pill strong {
+      display: block;
+      color: var(--navy-900);
+      font-size: 11px;
+    }
+    .mod-pill span {
+      font-size: 9.5px;
+      color: var(--slate-600);
+    }
+
+    /* Killer Differentiators Table */
+    .diff-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
+      margin-bottom: 14px;
+    }
+    .diff-table th {
+      background: var(--navy-900);
+      color: #FFFFFF;
+      padding: 5px 8px;
+      text-align: left;
+      font-weight: 600;
+    }
+    .diff-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--slate-700);
+    }
+    .diff-table tr:nth-child(even) { background: var(--slate-50); }
+    .diff-table .tag-highlight {
+      color: var(--emerald-600);
+      font-weight: 700;
+    }
+    .diff-table .tag-cross {
+      color: var(--crimson-600);
+      font-weight: 600;
+    }
+
+    /* Commercial Pricing & Onboarding */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .price-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      background: #FFFFFF;
+      text-align: center;
+      position: relative;
+    }
+    .price-card.featured {
+      border: 2px solid var(--gold-500);
+      background: var(--gold-50);
+    }
+    .price-card .badge-rec {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold-500);
+      color: #FFFFFF;
+      font-size: 8.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+    }
+    .price-tier {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--navy-900);
+      text-transform: uppercase;
+    }
+    .price-amt {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--navy-900);
+      margin: 4px 0;
+    }
+    .price-amt small { font-size: 10px; color: var(--slate-600); font-weight: 400; }
+    .price-desc { font-size: 9.5px; color: var(--slate-600); }
+
+    /* Footer */
+    .footer {
+      border-top: 1.5px solid var(--navy-900);
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9.5px;
+      color: var(--slate-600);
+    }
+    .footer strong { color: var(--navy-900); }
+    .contact-cta {
+      display: flex;
+      gap: 14px;
+      font-weight: 600;
+      color: var(--navy-800);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sheet">
+    
+    <!-- Top Header -->
+    <div>
+      <div class="header">
+        <div>
+          <div class="brand-title">
+            PrathamOne EduOS
+            <span class="brand-badge">Enterprise 1.0</span>
+          </div>
+          <div class="tagline">Coaching Management. Simplified.</div>
+        </div>
+        <div class="edition-tag">
+          <strong>Coaching Institute Edition</strong>
+          Pan-India Test Prep & Tuition Operating System
+        </div>
+      </div>
+
+      <!-- Hero Banner -->
+      <div class="hero-banner">
+        <div class="hero-text">
+          <h1>The Operating System Built Specifically for Indian Coaching Academies</h1>
+          <p>Ditch messy Excel sheets and restrictive mobile apps. Manage your entire lead-to-enrolment pipeline, fee installments, QR attendance, NEET/JEE exams, and teacher hourly payroll in one unified platform.</p>
+        </div>
+        <div class="hero-stat">
+          <div class="stat-num">94.2%</div>
+          <div class="stat-lbl">Completeness Rating</div>
+        </div>
+      </div>
+
+      <!-- Problem vs Solution -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title pain">❌ Operational Failure Points in Coaching</div>
+          <ul class="bullet-list">
+            <li><strong>Revenue Leakage:</strong> Manual discount promises, forgotten installments, untracked post-dated cheques (PDCs).</li>
+            <li><strong>Accidental Data Loss:</strong> Front-desk staff modifying or deleting records in Excel or unlocked software.</li>
+            <li><strong>Faculty Disputes:</strong> Monthly arguments over hourly/session lectures and compensation deductions.</li>
+            <li><strong>Parent App Fatigue:</strong> Parents refuse to install or log in to separate coaching mobile apps.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title solution">✅ The PrathamOne EduOS Solution</div>
+          <ul class="bullet-list">
+            <li><strong>Zero-Leakage Fee Desk:</strong> Banking-grade minor-unit allocation, split heads, and instant WhatsApp PDF receipts.</li>
+            <li><strong>Rule 010 View-First Governance:</strong> All screens read-only by default. Scoped Edit Mode required for mutations.</li>
+            <li><strong>Automated Faculty Payroll:</strong> Hourly, per-lecture, and per-student billing vouchers with timetable links.</li>
+            <li><strong>WhatsApp-First Parent Delivery:</strong> Fee receipts, attendance alerts, and exam ranks sent directly to WhatsApp.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 20-in-1 Modules Matrix -->
+      <div class="section-head">
+        The 20-in-1 Coaching Architecture
+        <span>Full Domain Coverage • Zero Vendor Lock-in</span>
+      </div>
+      <div class="modules-matrix">
+        <div class="mod-pill"><strong>1. Dashboard</strong><span>Real-time revenue & attendance</span></div>
+        <div class="mod-pill"><strong>2. Student Directory</strong><span>360° dossier & DPDP privacy</span></div>
+        <div class="mod-pill"><strong>3. Admissions CRM</strong><span>Lead pipeline & demo tracking</span></div>
+        <div class="mod-pill"><strong>4. Fees & Billing</strong><span>Installments, PDCs & Daybook</span></div>
+        <div class="mod-pill"><strong>5. Concessions</strong><span>Merit/sibling waiver audit</span></div>
+        <div class="mod-pill"><strong>6. Scholarships</strong><span>Entrance exam waiver tiers</span></div>
+        <div class="mod-pill"><strong>7. QR Attendance</strong><span>60+ scans/min kiosk terminal</span></div>
+        <div class="mod-pill"><strong>8. Timetable</strong><span>Clash-free batch & room grids</span></div>
+        <div class="mod-pill"><strong>9. Exam Engine</strong><span>NEET/JEE (+4, -1) ranking</span></div>
+        <div class="mod-pill"><strong>10. Results & Reports</strong><span>Aesthetic student report cards</span></div>
+        <div class="mod-pill"><strong>11. Staff Management</strong><span>HR directory, rosters, leaves</span></div>
+        <div class="mod-pill"><strong>12. Teacher Payroll</strong><span>Hourly & per-session vouchers</span></div>
+        <div class="mod-pill"><strong>13. Communication</strong><span>WhatsApp & DLT SMS alerts</span></div>
+        <div class="mod-pill"><strong>14. Reports Hub</strong><span>40+ operational audit grids</span></div>
+        <div class="mod-pill"><strong>15. Content Repository</strong><span>Chapter notes, DPPs, videos</span></div>
+        <div class="mod-pill"><strong>16. Homework Studio</strong><span>Digital assignments & checking</span></div>
+        <div class="mod-pill"><strong>17. EduBoard Canvas</strong><span>Smart classroom whiteboard</span></div>
+        <div class="mod-pill"><strong>18. Forms & Printing</strong><span>ID cards, hall tickets, receipts</span></div>
+        <div class="mod-pill"><strong>19. Import/Export</strong><span>Copy-paste Excel data loader</span></div>
+        <div class="mod-pill"><strong>20. Training Sandbox</strong><span>Safe staff practice tenant</span></div>
+      </div>
+
+      <!-- Competitive Comparison -->
+      <div class="section-head">
+        Market Comparison
+        <span>Why Institute Directors Choose PrathamOne</span>
+      </div>
+      <table class="diff-table">
+        <thead>
+          <tr>
+            <th>Feature Dimension</th>
+            <th>PrathamOne EduOS</th>
+            <th>Classplus</th>
+            <th>Teachmint</th>
+            <th>Legacy Excel</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Data Ownership</strong></td>
+            <td class="tag-highlight">100% On-Premise / Institute VPS</td>
+            <td class="tag-cross">Vendor Cloud Lock-in</td>
+            <td class="tag-cross">Vendor Cloud Lock-in</td>
+            <td>Local File (Unsecured)</td>
+          </tr>
+          <tr>
+            <td><strong>View-First Protection (Rule 010)</strong></td>
+            <td class="tag-highlight">Active Lock on All Screens</td>
+            <td class="tag-cross">None</td>
+            <td class="tag-cross">None</td>
+            <td class="tag-cross">High Risk of Corruption</td>
+          </tr>
+          <tr>
+            <td><strong>Faculty Hourly Payroll</strong></td>
+            <td class="tag-highlight">Built-in (Per-hour, Per-session)</td>
+            <td class="tag-cross">Absent</td>
+            <td class="tag-cross">Absent</td>
+            <td class="tag-cross">Manual Calculation</td>
+          </tr>
+          <tr>
+            <td><strong>EduBoard Smart Classroom</strong></td>
+            <td class="tag-highlight">Integrated Canvas & Recording</td>
+            <td class="tag-cross">Requires 3rd Party</td>
+            <td>Basic Whiteboard</td>
+            <td class="tag-cross">None</td>
+          </tr>
+          <tr>
+            <td><strong>Parent Delivery Model</strong></td>
+            <td class="tag-highlight">WhatsApp-First (No App Needed)</td>
+            <td class="tag-cross">Forces App Install</td>
+            <td class="tag-cross">Forces App Install</td>
+            <td class="tag-cross">Manual Phone Calls</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Commercial Tiers & 48-Hour Onboarding -->
+      <div class="section-head">
+        Transparent Commercial Tiers
+        <span>Go Live in Under 48 Hours with Zero Disruption</span>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-tier">Professional Tier</div>
+          <div class="price-amt">₹36,000 <small>/ year</small></div>
+          <div class="price-desc">For Single-Branch (100–350 Students)<br>Admissions, Fees, QR Attendance, WhatsApp</div>
+        </div>
+        <div class="price-card featured">
+          <div class="badge-rec">Most Popular</div>
+          <div class="price-tier">Enterprise Cloud</div>
+          <div class="price-amt">₹72,000 <small>/ year</small></div>
+          <div class="price-desc">For Growing Institutes (350–1,200 Students)<br>Full 20 Modules + Teacher Payroll + EduBoard</div>
+        </div>
+        <div class="price-card">
+          <div class="price-tier">Sovereign Edition</div>
+          <div class="price-amt">₹1,80,000 <small>one-time</small></div>
+          <div class="price-desc">For Multi-Branch Chains (1,200+ Students)<br>Air-Gapped On-Premise Docker + Hardware Lock</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Footer -->
+    <div class="footer">
+      <div>
+        <strong>PrathamOne EduOS 1.0.0</strong> • Product Architect: Jawahar R. Mallah • Smritisys & AITDL Networks<br>
+        Showcase Institution: Prashant Academy (Founder & Dean: Prashant Tejam)
+      </div>
+      <div class="contact-cta">
+        <span>📧 contact@smritisys.com</span>
+        <span>🌐 https://smritisys.com</span>
+        <span>📱 48-Hour Onboarding Hotline</span>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -11,12 +11,13 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Windows Desktop & System Tray Launcher: manages local PostgreSQL service,
 #  */
 
 import ctypes
+import json
 import os
 import signal
 import socket
@@ -70,21 +71,38 @@ class PrathamOneManager:
         self.backend_proc = None
         self.pg_managed = False
 
+        # SSL Configuration detection (installed or dev mode)
+        cert_candidates = [
+            self.root_dir / "assets" / "prathamone_ssl_cert.pem",
+            self.root_dir / "installer" / "assets" / "prathamone_ssl_cert.pem",
+        ]
+        key_candidates = [
+            self.root_dir / "assets" / "prathamone_ssl_key.pem",
+            self.root_dir / "installer" / "assets" / "prathamone_ssl_key.pem",
+        ]
+        self.cert_file = next((c for c in cert_candidates if c.exists()), None)
+        self.key_file = next((k for k in key_candidates if k.exists()), None)
+        self.use_ssl = bool(self.cert_file and self.key_file)
+
     def is_port_in_use(self, port: int) -> bool:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             return s.connect_ex(("127.0.0.1", port)) == 0
 
     def is_our_service_active(self, port: int) -> bool:
         """Check if an existing instance of PrathamOne EduOS is already running on this port."""
-        try:
-            url = f"http://127.0.0.1:{port}/health"
-            req = urllib.request.Request(url, headers={"User-Agent": "PrathamOneLauncher"})
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
-                if resp.status == 200:
-                    content = resp.read().decode("utf-8")
-                    return "healthy" in content
-        except Exception:
-            pass
+        import ssl
+        ctx = ssl._create_unverified_context()
+        schemes = ["https", "http"] if self.use_ssl else ["http", "https"]
+        for scheme in schemes:
+            try:
+                url = f"{scheme}://127.0.0.1:{port}/health"
+                req = urllib.request.Request(url, headers={"User-Agent": "PrathamOneLauncher"})
+                with urllib.request.urlopen(req, timeout=1.5, context=ctx) as resp:
+                    if resp.status == 200:
+                        content = resp.read().decode("utf-8")
+                        return "healthy" in content
+            except Exception:
+                pass
         return False
 
     def clean_stale_pid_file(self):
@@ -287,6 +305,12 @@ class PrathamOneManager:
             "--log-level",
             "info",
         ]
+        if self.use_ssl:
+            cmd.extend([
+                "--ssl-certfile", str(self.cert_file),
+                "--ssl-keyfile", str(self.key_file),
+            ])
+
         flags = 0x08000000 if sys.platform == "win32" else 0
         self.backend_proc = subprocess.Popen(
             cmd,
@@ -310,12 +334,16 @@ class PrathamOneManager:
 
     def wait_for_health(self, timeout: int = 30) -> bool:
         """Poll backend healthcheck until ready."""
-        url = f"http://127.0.0.1:{self.port}/health"
-        print("[LAUNCHER] Waiting for service initialization...", end="", flush=True)
+        import ssl
+        ctx = ssl._create_unverified_context()
+        scheme = "https" if self.use_ssl else "http"
+        url = f"{scheme}://127.0.0.1:{self.port}/health"
+        print(f"[LAUNCHER] Waiting for service initialization ({scheme})...", end="", flush=True)
         start = time.time()
         while time.time() - start < timeout:
             try:
-                with urllib.request.urlopen(url, timeout=1.5) as response:
+                req = urllib.request.Request(url, headers={"User-Agent": "PrathamOneLauncher"})
+                with urllib.request.urlopen(req, timeout=1.5, context=ctx) as response:
                     if response.status == 200:
                         print(" [HEALTHY]")
                         return True
@@ -326,27 +354,215 @@ class PrathamOneManager:
         print(" [TIMEOUT]")
         return False
 
+    def get_institute_slug(self) -> str:
+        """Determine custom institute slug (e.g., 'prashantacademy') without spaces."""
+        slug = "prashantacademy"
+        env_file = self.root_dir / ".env"
+        if env_file.exists():
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                if line.startswith("INSTITUTE_SLUG="):
+                    val = line.split("=", 1)[1].strip().strip("'\"")
+                    if val:
+                        return "".join(c.lower() for c in val if c.isalnum())
+                elif line.startswith("INSTITUTE_NAME="):
+                    val = line.split("=", 1)[1].strip().strip("'\"")
+                    cleaned = "".join(c.lower() for c in val if c.isalnum())
+                    if cleaned and cleaned not in ("youracademyname", "institute"):
+                        slug = cleaned
+        cfg_file = self.root_dir / "setup_config.json"
+        if cfg_file.exists():
+            try:
+                data = json.loads(cfg_file.read_text(encoding="utf-8"))
+                val = data.get("institute_name", "")
+                cleaned = "".join(c.lower() for c in val if c.isalnum())
+                if cleaned and cleaned not in ("youracademyname", "institute"):
+                    slug = cleaned
+            except Exception:
+                pass
+        return slug
+
+    def get_launch_mode(self) -> str:
+        """
+        Determine launch presentation mode: 'browser' (default) vs 'app' / 'pwa'.
+        Priority order:
+        1. Explicit CLI argument (--app / --pwa vs --browser)
+        2. Persistent config file (launcher_config.json)
+        3. Environment variable (LAUNCH_MODE or DESKTOP_LAUNCH_MODE in .env)
+        4. Default: 'browser' (standard web browser with address bar, tabs & bookmarks)
+        """
+        # 1. CLI flag
+        if "--app" in sys.argv or "--pwa" in sys.argv:
+            return "app"
+        if "--browser" in sys.argv or "--web" in sys.argv:
+            return "browser"
+
+        # 2. launcher_config.json
+        cfg_candidates = [
+            self.root_dir / "launcher_config.json",
+            self.root_dir / "data" / "launcher_config.json",
+        ]
+        for cfg in cfg_candidates:
+            if cfg.is_file():
+                try:
+                    data = json.loads(cfg.read_text(encoding="utf-8"))
+                    mode = str(data.get("launch_mode", "")).strip().lower()
+                    if mode in ("app", "pwa", "standalone"):
+                        return "app"
+                    elif mode in ("browser", "web"):
+                        return "browser"
+                except Exception:
+                    pass
+
+        # 3. Environment variable (.env or os.environ)
+        env_mode = os.environ.get("LAUNCH_MODE") or os.environ.get("DESKTOP_LAUNCH_MODE")
+        if not env_mode:
+            env_file = self.root_dir / ".env"
+            if env_file.exists():
+                for line in env_file.read_text(encoding="utf-8").splitlines():
+                    if line.startswith("LAUNCH_MODE=") or line.startswith("DESKTOP_LAUNCH_MODE="):
+                        env_mode = line.split("=", 1)[1].strip().strip("'\"").lower()
+                        break
+        if env_mode in ("app", "pwa", "standalone"):
+            return "app"
+
+        # 4. Default is standard browser
+        return "browser"
+
     def open_browser(self):
-        """Open default web browser to the application."""
-        app_url = f"http://localhost:{self.port}/"
-        print(f"[LAUNCHER] Opening web interface: {app_url}")
+        """Open web interface in standard browser (default) or standalone Desktop App window based on settings."""
+        slug = self.get_institute_slug()
+
+        # Check which local host resolves (classes name, prathamone, or localhost)
+        host = "localhost"
+        for candidate in [slug, "classesname", "prathamone"]:
+            try:
+                socket.gethostbyname(candidate)
+                host = candidate
+                break
+            except Exception:
+                pass
+
+        scheme = "https" if self.use_ssl else "http"
+        app_url = f"{scheme}://{host}:{self.port}/"
+        mode = self.get_launch_mode()
+
+        if mode == "app":
+            # Check for Google Chrome or Microsoft Edge to launch in clean App Mode (no URL bar)
+            app_mode_browsers = [
+                Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Google/Chrome/Application/chrome.exe",
+                Path(os.environ.get("ProgramFiles(x86)", "C:/Program Files (x86)")) / "Google/Chrome/Application/chrome.exe",
+                Path(os.environ.get("LOCALAPPDATA", "")) / "Google/Chrome/Application/chrome.exe",
+                Path(os.environ.get("ProgramFiles(x86)", "C:/Program Files (x86)")) / "Microsoft/Edge/Application/msedge.exe",
+                Path(os.environ.get("ProgramFiles", "C:/Program Files")) / "Microsoft/Edge/Application/msedge.exe",
+            ]
+
+            launched = False
+            flags = 0x08000000 if sys.platform == "win32" else 0
+            for b in app_mode_browsers:
+                if b.is_file():
+                    try:
+                        subprocess.Popen([str(b), f"--app={app_url}"], creationflags=flags)
+                        launched = True
+                        print(f"[LAUNCHER] Launched standalone Desktop App window via {b.name} ({app_url})")
+                        break
+                    except Exception as e:
+                        print(f"[LAUNCHER WARN] App mode launch note: {e}")
+
+            if launched:
+                return
+
+        # Default Presentation: Standard Browser with tabs, URL bar & padlock
+        print(f"[LAUNCHER] Opening web interface in standard browser: {app_url}")
         webbrowser.open(app_url)
 
     def print_banner(self):
         local_ip = get_local_ip()
+        slug = self.get_institute_slug()
+        scheme = "https" if self.use_ssl else "http"
+        mode = self.get_launch_mode()
         print("\n======================================================================")
         print("         PRATHAMONE EduOS — COACHING INSTITUTE MANAGEMENT SYSTEM       ")
         print("======================================================================")
-        print(f"  Local Access:      http://localhost:{self.port}/")
-        print(f"  Network (LAN) URL: http://{local_ip}:{self.port}/")
-        print(f"  System Health:     http://localhost:{self.port}/health")
-        print("----------------------------------------------------------------------")
-        print("  Other computers at the institute can connect via the Network URL.")
+        print(f"  Launch Presentation Mode:    {'Standard Browser (Default)' if mode == 'browser' else 'Dedicated Desktop Window (PWA Mode)'}")
+        print("  --------------------------------------------------------------------")
+        print("  ALL 3 DOMAIN COMBINATIONS (WITH PORT & WITHOUT PORT):")
+        print(f"  1. Classes Name (Without Space):")
+        print(f"     - With Port:              {scheme}://{slug}:{self.port}/")
+        print(f"     - Without Port:           {scheme}://{slug}/")
+        print(f"  2. Generic Classes Alias:")
+        print(f"     - With Port:              {scheme}://classesname:{self.port}/")
+        print(f"     - Without Port:           {scheme}://classesname/")
+        print(f"  3. PrathamOne Brand Domain:")
+        print(f"     - With Port:              {scheme}://prathamone:{self.port}/")
+        print(f"     - Without Port:           {scheme}://prathamone/")
+        print(f"  4. Standard Localhost:")
+        print(f"     - With Port:              {scheme}://localhost:{self.port}/")
+        print(f"     - Without Port:           {scheme}://localhost/")
+        print(f"  5. Institute Wi-Fi / LAN:    {scheme}://{local_ip}:{self.port}/")
+        print(f"  6. Healthcheck Status:       {scheme}://localhost:{self.port}/health")
+        print("  --------------------------------------------------------------------")
+
+        # Check if local hosts entries are active
+        try:
+            socket.gethostbyname("classesname")
+        except socket.gaierror:
+            print("  [NOTE] Domain aliases (classesname / prathamone) are not active in Windows hosts.")
+            print("         Run 'scripts\\configure_local_domains.bat' (as Administrator) to enable them.")
+            print("  --------------------------------------------------------------------")
+
+        print(f"  Other computers on institute Wi-Fi can open: {scheme}://{slug}:{self.port}/")
         print("  Press Ctrl+C to stop services and exit.")
         print("======================================================================\n")
 
+    def verify_code_integrity(self) -> bool:
+        """
+        Cryptographic Code Integrity Verification.
+        Guarantees that core security bytecode (.pyc) has not been patched or hex-edited.
+        """
+        manifest_file = self.backend_dir / "app" / ".code_integrity.manifest"
+        if not manifest_file.exists():
+            return True
+
+        import hashlib
+        salt = b"PRATHAMONE_EDUOS_INTEGRITY_SALT_2026"
+        try:
+            manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+            critical_modules = [
+                "app/core/hardware.pyc",
+                "app/api/v1/endpoints/license.pyc",
+                "app/services/license_service.pyc",
+            ]
+            for rel in critical_modules:
+                expected_hash = manifest.get(rel)
+                if expected_hash:
+                    file_path = self.backend_dir / rel
+                    if not file_path.exists():
+                        show_native_message(
+                            "PrathamOne EduOS — Integrity Alert",
+                            f"Missing critical security module '{rel}'.\nStartup halted.",
+                            is_error=True,
+                        )
+                        return False
+                    current_hash = hashlib.sha256(file_path.read_bytes() + salt).hexdigest()
+                    if current_hash != expected_hash:
+                        show_native_message(
+                            "PrathamOne EduOS — Tamper Detection Alert",
+                            f"Security Violation: Core binary '{rel}' has been altered or tampered with.\nPrathamOne EduOS cannot run with modified security binaries.",
+                            is_error=True,
+                        )
+                        return False
+            return True
+        except Exception as e:
+            print(f"[LAUNCHER WARN] Integrity verification note: {e}")
+            return True
+
     def run(self):
         """Run complete startup sequence."""
+        # 0. Anti-Tampering Integrity Check
+        if not self.verify_code_integrity():
+            print("[LAUNCHER FATAL] Code integrity verification failed. Aborting.")
+            sys.exit(1)
+
         # 1. Quick check if already running
         if self.is_our_service_active(self.port):
             print(f"[LAUNCHER] PrathamOne EduOS is already active on port {self.port}!")

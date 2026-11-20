@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-21
  *
  * @description Vitest test suite verifying Fees & Payments overview KPIs, charts, filters, and receipt modals.
  */
@@ -198,7 +198,7 @@ describe('Fees & Payments Module Specifications', () => {
             student_id: 1,
             student_name: 'Shreshta',
             admission_number: 'PA-2026-001',
-            phone: '9876543210',
+            phone: '8779123007',
             board_name: 'ICSE',
             standard_name: 'Class X',
             batch_name: 'Batch A',

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-16
+ * @updated     2026-11-21
  *
  * @description Vitest test suite validating student lifecycle workflows, withdrawal analytics calculations, and status transitions.
  */
@@ -63,7 +63,7 @@ describe('Student Lifecycle & Withdrawal Analytics Specification', () => {
       student_id: 101,
       admission_number: 'ADM-2026-101',
       student_name: 'Aarav Sharma',
-      phone: '9876543210',
+      phone: '8779123007',
       academic_year: '2026-2027',
       standard_name: 'Class 10',
       division_name: 'Division A',

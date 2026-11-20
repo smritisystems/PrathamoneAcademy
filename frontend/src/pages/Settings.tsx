@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Comprehensive Institute Settings & Configuration Workspace for branding, defaults, lookups, and governance.
  */
@@ -25,7 +25,8 @@ import {
   Shield, Link2, Database, Save, RotateCcw, Search, Eye, Upload,
   Check, AlertCircle, Info, Plus, Edit, Trash2, CheckCircle2, ChevronRight,
   X, ExternalLink, RefreshCw, Lock, Bell, HelpCircle, FileText, MapPin,
-  GitFork, ShieldCheck, Download, KeyRound, Sparkles, Compass
+  GitFork, ShieldCheck, Download, KeyRound, Sparkles, Compass,
+  Monitor, Globe, AppWindow
 } from 'lucide-react'
 import NavigationSettingsPanel from '../components/settings/NavigationSettingsPanel'
 import DeviceBindingSettingsPanel from '../components/settings/DeviceBindingSettingsPanel'
@@ -2784,6 +2785,120 @@ export default function Settings() {
                               className="w-full px-3 py-1.5 text-xs bg-gray-50 border border-gray-300 rounded-lg text-gray-700"
                             />
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Desktop Launch Mode Setting */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                              <Monitor className="w-4 h-4 text-primary-600" />
+                              <span>Desktop Launch Presentation Mode</span>
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Configure how PrathamOne EduOS opens when launched from desktop shortcuts or system tray.
+                            </p>
+                          </div>
+                          <span className="text-[11px] font-medium text-primary-700 bg-primary-50 border border-primary-200 px-2.5 py-0.5 rounded-full">
+                            {(allSettings.system?.desktop_launch_mode || 'browser') === 'browser' ? 'Default Browser Tab' : 'App Window'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          <label
+                            onClick={() => isEditMode && handleSettingChange('system', 'desktop_launch_mode', 'browser')}
+                            className={`p-3.5 border rounded-xl transition-all ${
+                              (allSettings.system?.desktop_launch_mode || 'browser') === 'browser'
+                                ? 'border-primary-600 bg-primary-50/50 shadow-2xs'
+                                : 'border-gray-200 hover:border-gray-300'
+                            } ${isEditMode ? 'cursor-pointer' : 'cursor-default opacity-85'}`}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                <Globe className="w-3.5 h-3.5 text-primary-600" />
+                                Standard Browser Tab
+                              </span>
+                              <input
+                                type="radio"
+                                name="desktopLaunchMode"
+                                value="browser"
+                                checked={(allSettings.system?.desktop_launch_mode || 'browser') === 'browser'}
+                                disabled={!isEditMode}
+                                onChange={() => handleSettingChange('system', 'desktop_launch_mode', 'browser')}
+                                className="text-primary-600 focus:ring-primary-500"
+                              />
+                            </div>
+                            <span className="text-[11px] text-gray-500 leading-relaxed">
+                              Opens as a standard tab in your default browser (Chrome, Edge, Firefox) with address bar, tabs, extensions, and the 🔒 SSL padlock.
+                            </span>
+                          </label>
+
+                          <label
+                            onClick={() => isEditMode && handleSettingChange('system', 'desktop_launch_mode', 'app')}
+                            className={`p-3.5 border rounded-xl transition-all ${
+                              allSettings.system?.desktop_launch_mode === 'app'
+                                ? 'border-primary-600 bg-primary-50/50 shadow-2xs'
+                                : 'border-gray-200 hover:border-gray-300'
+                            } ${isEditMode ? 'cursor-pointer' : 'cursor-default opacity-85'}`}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                                <AppWindow className="w-3.5 h-3.5 text-primary-600" />
+                                Dedicated Desktop Window (PWA Mode)
+                              </span>
+                              <input
+                                type="radio"
+                                name="desktopLaunchMode"
+                                value="app"
+                                checked={allSettings.system?.desktop_launch_mode === 'app'}
+                                disabled={!isEditMode}
+                                onChange={() => handleSettingChange('system', 'desktop_launch_mode', 'app')}
+                                className="text-primary-600 focus:ring-primary-500"
+                              />
+                            </div>
+                            <span className="text-[11px] text-gray-500 leading-relaxed">
+                              Opens in a clean, standalone desktop window with the browser URL bar, navigation buttons, and bookmarks hidden.
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Local SSL & LAN Device Certificate Export */}
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                              <ShieldCheck className="w-4 h-4 text-primary-600" />
+                              <span>Local SSL &amp; Staff Device LAN Trust</span>
+                            </h3>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Export this institute's unique Root CA certificate and 1-click helper script to trust HTTPS on staff laptops, tablets, or receptionist PCs connected over Wi-Fi / LAN.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-3.5 bg-blue-50/70 border border-blue-100 rounded-lg text-xs text-blue-900 leading-relaxed">
+                          <strong>Note for Main Host PC:</strong> The primary computer where PrathamOne EduOS was installed already trusts this certificate automatically. Use these exports only when other computers on the institute local network need to access PrathamOne over HTTPS with green lock trust.
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 pt-1">
+                          <a
+                            href="/api/v1/settings/download-ca-certificate"
+                            download="Smritisys_AITDL_Local_CA.cer"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-300 hover:border-primary-500 hover:text-primary-700 text-xs font-semibold text-gray-700 rounded-lg shadow-2xs transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5 text-primary-600" />
+                            Download Root CA Certificate (.cer)
+                          </a>
+                          <a
+                            href="/api/v1/settings/download-ca-installer-script"
+                            download="Install-PrathamOne-SSL.bat"
+                            className="inline-flex items-center gap-2 px-3.5 py-2 bg-primary-900 hover:bg-primary-950 text-xs font-semibold text-white rounded-lg shadow-2xs transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Download 1-Click Trust Script (.bat)
+                          </a>
                         </div>
                       </div>
                     </div>

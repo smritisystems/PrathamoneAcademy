@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-19
+#  * @updated     2026-11-21
 #  *
 #  * @description API endpoints for user authentication, password verification, and JWT session issuance.
 #  */
@@ -31,9 +31,11 @@ from app.core.deps import (
     REFRESH_COOKIE_NAME,
     get_user_permissions,
     oauth2_scheme,
+    get_current_active_user,
 )
 from app.core.security import (
     verify_password,
+    get_password_hash,
     create_access_token,
     create_refresh_token,
     decode_token,
@@ -46,6 +48,11 @@ router = APIRouter()
 
 class RefreshRequest(BaseModel):
     refresh_token: Optional[str] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
 
 
 def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
@@ -153,6 +160,12 @@ async def login(
     )
     await db.commit()
 
+    is_default_password = (
+        verify_password("admin123", user.hashed_password)
+        or verify_password("PrathamOne2026!Admin", user.hashed_password)
+        or verify_password("account123", user.hashed_password)
+    )
+
     access_token = create_access_token(data={"sub": str(user.id)})
     refresh_token = create_refresh_token(data={"sub": str(user.id)})
     _set_auth_cookies(response, access_token, refresh_token)
@@ -169,6 +182,7 @@ async def login(
             "last_name": user.last_name,
             "role": user.role,
             "institution_id": user.institution_id,
+            "must_change_password": is_default_password,
             "permissions": [f"{r}:{a}" for r, a in await get_user_permissions(db, user)],
         },
     }
@@ -233,3 +247,39 @@ async def logout(
     await db.commit()
     _clear_auth_cookies(response)
     return {"message": "Logged out successfully"}
+
+
+@router.post("/change-password")
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Allows authenticated users to change their password securely.
+    Enforces minimum 14 characters and prevents reuse of known default seed passwords.
+    """
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+
+    new_pwd = data.new_password.strip()
+    if len(new_pwd) < 14:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 14 characters in length.",
+        )
+
+    disallowed = {"admin123", "account123", "PrathamOne2026!Admin", "password123"}
+    if new_pwd in disallowed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot choose a known default or insecure password.",
+        )
+
+    current_user.hashed_password = get_password_hash(new_pwd)
+    await db.commit()
+    return {"message": "Password updated successfully. You may continue."}
+

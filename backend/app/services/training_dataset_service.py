@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Service managing the Central Training Dataset (CRM-STAFF-TRAINING-V1), isolated demo tenant seeding, and dependency-aware training reset engine with strict production safety locks.
 #  */
@@ -440,7 +440,7 @@ async def seed_training_dataset(
         # Stage 1: new_enquiry (4 leads)
         {
             "num": "DEMO-LD-0001", "first": "Aarav", "last": "Sharma", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "aarav.sharma@gmail.com",
+            "phone": "+91 8779 123 007", "email": "aarav.sharma@example.com",
             "std": standards["Std. 10"], "board": boards["CBSE"], "course": "Std. 10 CBSE — JEE Foundation",
             "stage": "new_enquiry", "priority": "hot", "source": "Website",
             "g_name": "Sunil Sharma", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -448,7 +448,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0002", "first": "Riya", "last": "Patil", "gender": "female",
-            "phone": "+91 8779 123 007", "email": "riya.patil@outlook.com",
+            "phone": "+91 8779 123 007", "email": "riya.patil@example.com",
             "std": standards["Std. 9"], "board": boards["STATE"], "course": "Std. 9 State Board — Maths & Science",
             "stage": "new_enquiry", "priority": "warm", "source": "Walk-in",
             "g_name": "Deepak Patil", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -456,7 +456,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0003", "first": "Rohan", "last": "Kulkarni", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "rohan.kulkarni@yahoo.com",
+            "phone": "+91 8779 123 007", "email": "rohan.kulkarni@example.com",
             "std": standards["Std. 8"], "board": boards["ICSE"], "course": "Std. 8 ICSE — Foundation Master",
             "stage": "new_enquiry", "priority": "hot", "source": "Website",
             "g_name": "Meera Kulkarni", "g_phone": "+91 8779 123 007", "g_rel": "Mother",
@@ -464,7 +464,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0004", "first": "Aniket", "last": "Joshi", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "aniket.joshi@gmail.com",
+            "phone": "+91 8779 123 007", "email": "aniket.joshi@example.com",
             "std": standards["Std. 11 Science"], "board": boards["STATE"], "course": "Std. 11 Science — MHT-CET Crash",
             "stage": "new_enquiry", "priority": "warm", "source": "Social Media",
             "g_name": "Prakash Joshi", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -474,7 +474,7 @@ async def seed_training_dataset(
         # Stage 2: contacted (4 leads)
         {
             "num": "DEMO-LD-0005", "first": "Vedant", "last": "Gokhale", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "vedant.gokhale@gmail.com",
+            "phone": "+91 8779 123 007", "email": "vedant.gokhale@example.com",
             "std": standards["Std. 11 Commerce"], "board": boards["CBSE"], "course": "Std. 11 Commerce — CA Foundation",
             "stage": "contacted", "priority": "warm", "source": "Referral",
             "g_name": "Nitin Gokhale", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -482,7 +482,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0006", "first": "Ira", "last": "Deshmukh", "gender": "female",
-            "phone": "+91 8779 123 007", "email": "ira.deshmukh@gmail.com",
+            "phone": "+91 8779 123 007", "email": "ira.deshmukh@example.com",
             "std": standards["Std. 8"], "board": boards["CBSE"], "course": "Std. 8 CBSE — Maths Booster",
             "stage": "contacted", "priority": "hot", "source": "Walk-in",
             "g_name": "Smita Deshmukh", "g_phone": "+91 8779 123 007", "g_rel": "Mother",
@@ -490,7 +490,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0007", "first": "Tanvi", "last": "Shah", "gender": "female",
-            "phone": "+91 8779 123 007", "email": "tanvi.shah@gmail.com",
+            "phone": "+91 8779 123 007", "email": "tanvi.shah@example.com",
             "std": standards["Std. 10"], "board": boards["ICSE"], "course": "Std. 10 ICSE — Board Prep",
             "stage": "contacted", "priority": "hot", "source": "WhatsApp",
             "g_name": "Bhavin Shah", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -498,7 +498,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0008", "first": "Aditya", "last": "Verma", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "aditya.verma@gmail.com",
+            "phone": "+91 8779 123 007", "email": "aditya.verma@example.com",
             "std": standards["Std. 9"], "board": boards["CBSE"], "course": "Std. 9 CBSE — Science Olympiad",
             "stage": "contacted", "priority": "warm", "source": "Phone Enquiry",
             "g_name": "Kavita Verma", "g_phone": "+91 8779 123 007", "g_rel": "Mother",
@@ -508,7 +508,7 @@ async def seed_training_dataset(
         # Stage 3: counselling_demo (3 leads)
         {
             "num": "DEMO-LD-0009", "first": "Kavya", "last": "Mehta", "gender": "female",
-            "phone": "+91 8779 123 007", "email": "kavya.mehta@gmail.com",
+            "phone": "+91 8779 123 007", "email": "kavya.mehta@example.com",
             "std": standards["Std. 10"], "board": boards["CBSE"], "course": "Std. 10 Science — JEE / NEET Track",
             "stage": "counselling_demo", "priority": "hot", "source": "WhatsApp",
             "g_name": "Rajiv Mehta", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -516,7 +516,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0010", "first": "Arjun", "last": "Naik", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "arjun.naik@gmail.com",
+            "phone": "+91 8779 123 007", "email": "arjun.naik@example.com",
             "std": standards["Std. 11 Science"], "board": boards["STATE"], "course": "Std. 11 Science — NEET Target",
             "stage": "counselling_demo", "priority": "hot", "source": "Walk-in",
             "g_name": "Manohar Naik", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -524,7 +524,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0011", "first": "Ananya", "last": "Sen", "gender": "female",
-            "phone": "+91 8779 123 007", "email": "ananya.sen@gmail.com",
+            "phone": "+91 8779 123 007", "email": "ananya.sen@example.com",
             "std": standards["Std. 10"], "board": boards["ICSE"], "course": "Std. 10 ICSE — Full Course",
             "stage": "counselling_demo", "priority": "warm", "source": "Website",
             "g_name": "Debashis Sen", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -534,7 +534,7 @@ async def seed_training_dataset(
         # Stage 4: interested (3 leads)
         {
             "num": "DEMO-LD-0012", "first": "Saanvi", "last": "Kulkarni", "gender": "female",
-            "phone": "+91 8779 123 007", "email": "saanvi.kulkarni@gmail.com",
+            "phone": "+91 8779 123 007", "email": "saanvi.kulkarni@example.com",
             "std": standards["Std. 9"], "board": boards["CBSE"], "course": "Std. 9 CBSE — Comprehensive",
             "stage": "interested", "priority": "hot", "source": "Website",
             "g_name": "Sachin Kulkarni", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -542,7 +542,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0013", "first": "Parth", "last": "More", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "parth.more@gmail.com",
+            "phone": "+91 8779 123 007", "email": "parth.more@example.com",
             "std": standards["Std. 10"], "board": boards["STATE"], "course": "Std. 10 State Board — Board Master",
             "stage": "interested", "priority": "hot", "source": "Referral",
             "g_name": "Ashok More", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -550,7 +550,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0014", "first": "Ishaan", "last": "Gupta", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "ishaan.gupta@gmail.com",
+            "phone": "+91 8779 123 007", "email": "ishaan.gupta@example.com",
             "std": standards["Std. 11 Commerce"], "board": boards["CBSE"], "course": "Std. 11 Commerce — Accounts & Eco",
             "stage": "interested", "priority": "warm", "source": "Phone Enquiry",
             "g_name": "Ramesh Gupta", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -560,7 +560,7 @@ async def seed_training_dataset(
         # Stage 5: admission_pending (2 leads)
         {
             "num": "DEMO-LD-0015", "first": "Mihir", "last": "Joshi", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "mihir.joshi@gmail.com",
+            "phone": "+91 8779 123 007", "email": "mihir.joshi@example.com",
             "std": standards["Std. 8"], "board": boards["CBSE"], "course": "Std. 8 CBSE — Foundation Batch",
             "stage": "admission_pending", "priority": "hot", "source": "Website",
             "g_name": "Anil Joshi", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -568,7 +568,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0016", "first": "Diya", "last": "Sutar", "gender": "female",
-            "phone": "+91 8779 123 007", "email": "diya.sutar@gmail.com",
+            "phone": "+91 8779 123 007", "email": "diya.sutar@example.com",
             "std": standards["Std. 9"], "board": boards["ICSE"], "course": "Std. 9 ICSE — Complete Package",
             "stage": "admission_pending", "priority": "hot", "source": "Walk-in",
             "g_name": "Santosh Sutar", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -598,7 +598,7 @@ async def seed_training_dataset(
         # Stage 7: lost (2 leads)
         {
             "num": "DEMO-LD-0019", "first": "Sameer", "last": "Khan", "gender": "male",
-            "phone": "+91 8779 123 007", "email": "sameer.khan@gmail.com",
+            "phone": "+91 8779 123 007", "email": "sameer.khan@example.com",
             "std": standards["Std. 10"], "board": boards["CBSE"], "course": "Std. 10 CBSE — Board Prep",
             "stage": "lost", "priority": "cold", "source": "Website",
             "g_name": "Farooq Khan", "g_phone": "+91 8779 123 007", "g_rel": "Father",
@@ -608,7 +608,7 @@ async def seed_training_dataset(
         },
         {
             "num": "DEMO-LD-0020", "first": "Priya", "last": "Nair", "gender": "female",
-            "phone": "+91 8779 123 007", "email": "priya.nair@gmail.com",
+            "phone": "+91 8779 123 007", "email": "priya.nair@example.com",
             "std": standards["Std. 9"], "board": boards["STATE"], "course": "Std. 9 State Board",
             "stage": "lost", "priority": "cold", "source": "Walk-in",
             "g_name": "Gopalan Nair", "g_phone": "+91 8779 123 007", "g_rel": "Father",

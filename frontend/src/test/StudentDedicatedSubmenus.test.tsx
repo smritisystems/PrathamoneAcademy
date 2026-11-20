@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-16
+ * @updated     2026-11-21
  *
  * @description Vitest test suite validating dedicated functional workspaces for Students & Admissions Centre across all 8 submenus, URL synchronization, and Rule 010 View-First governance.
  */
@@ -49,7 +49,7 @@ vi.mock('../api/endpoints', () => ({
             admission_number: 'PA-2026-001',
             gender: 'male',
             date_of_birth: '2010-05-15',
-            phone: '9876543210',
+            phone: '8779123007',
             city: 'Mumbai',
             is_active: true,
             standard_id: 1,

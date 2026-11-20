@@ -51,7 +51,7 @@ Creates student and linked guardian record.
   "guardian": {
     "full_name": "Suresh Gupta",
     "relationship": "Father",
-    "phone": "9876543210"
+    "phone": "8779123007"
   },
   "standard_id": 10,
   "division_id": 1

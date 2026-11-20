@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Focused signature validation and license-mode tests.
 #  */
@@ -360,7 +360,7 @@ def test_activation_registration_requires_contact_and_institution_details():
         institution_name="Prashant Academy",
         contact_name="Jawahar Mallah",
         contact_email="contact@example.test",
-        phone="+91-9876543210",
+        phone="+91-8779-123-007",
     )
     request = OfflineActivationRequest(serial_number="SMR-LIC-0123456789ABCDEF0123", registration=registration)
     assert request.registration.contact_email == "contact@example.test"
@@ -757,7 +757,7 @@ async def test_batch_activation_forwards_registration_and_never_persists_activat
         institution_name="Prashant Academy",
         contact_name="Jawahar Mallah",
         contact_email="contact@example.test",
-        phone="+91-9876543210",
+        phone="+91-8779-123-007",
     )
     response = await license_endpoint.activate_license(
         body=LicenseActivationRequest(
@@ -798,7 +798,7 @@ async def test_offline_request_and_import_are_bound_to_the_pending_installation(
         institution_name="Prashant Academy",
         contact_name="Jawahar Mallah",
         contact_email="contact@example.test",
-        phone="+91-9876543210",
+        phone="+91-8779-123-007",
         address="12 Academy Road",
     )
     async def identity(*args):

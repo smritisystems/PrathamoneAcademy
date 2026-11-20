@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Comprehensive Vitest test suite validating all 8 dedicated submenus of the Communication Center, URL synchronization, Rule 010 View-First lock enforcement, and Training Mode isolation.
  */
@@ -62,7 +62,7 @@ vi.mock('../api/endpoints', () => ({
             id: 101,
             channel: 'WHATSAPP',
             recipient_name: 'Pooja Nair',
-            recipient_destination: '+919876543210',
+            recipient_destination: '+918779123007',
             content: 'Dear Parent, Pooja was marked absent today.',
             status: 'DELIVERED',
             sender_name: 'System Automations',
@@ -162,12 +162,12 @@ vi.mock('../api/endpoints', () => ({
             admission_number: 'ADM-2026-101',
             guardian_name: 'Mukesh Patel',
             guardian_relation: 'Father',
-            phone: '+919876543210',
+            phone: '+918779123007',
             pending_amount: 4500,
             total_amount: 15000,
             due_date: '2026-11-15',
             message: 'Dear Mukesh Patel, fee of Rs 4,500 is due for Aarav Patel.',
-            whatsapp_url: 'https://wa.me/919876543210?text=test',
+            whatsapp_url: 'https://wa.me/918779123007?text=test',
           },
         ],
       },
@@ -179,7 +179,7 @@ vi.mock('../api/endpoints', () => ({
           type: 'STUDENT',
           name: 'Aarav Patel',
           subtitle: 'Std 11 - Div A (Roll 101)',
-          phone: '+919876543210',
+          phone: '+918779123007',
           email: 'aarav@prathamone.com',
         },
       ],
@@ -354,7 +354,7 @@ describe('Communication Center Dedicated Submenus & Workspaces Suite', () => {
 
     expect(await screen.findByText('Pooja Nair')).toBeDefined()
     expect(screen.getByText('Rahul Sharma')).toBeDefined()
-    expect(screen.getByText('+919876543210')).toBeDefined()
+    expect(screen.getByText('+918779123007')).toBeDefined()
     expect(screen.getByText('+919123456789')).toBeDefined()
     expect(screen.getByText('DELIVERED')).toBeDefined()
     expect(screen.getByText('SENT')).toBeDefined()

@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-19
+#  * @updated     2026-11-21
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -32,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.hardware import get_machine_hardware_fingerprint, verify_hardware_fingerprint
 from app.core.deps import (
     enforce_institution_access,
     get_current_active_user,
@@ -279,7 +280,9 @@ async def _prepare_installation_identity(
     installation_setting = await _get_setting(db, institution_id, _SETTING_INSTALLATION_ID)
     activation_setting = await _get_setting(db, institution_id, _SETTING_ACTIVATION_ID)
     refresh_key_setting = await _get_setting(db, institution_id, _SETTING_REFRESH_PRIVATE_KEY)
-    installation_id = installation_setting.value if installation_setting else str(uuid4())
+    
+    # Cryptographic Physical Hardware Node-Locking
+    installation_id = get_machine_hardware_fingerprint()
     activation_identifier = activation_setting.value if activation_setting else str(uuid4())
     try:
         if refresh_key_setting and refresh_key_setting.value:
@@ -497,12 +500,15 @@ async def _load_license_context(
     artifact_setting = await _get_setting(db, institution_id, _SETTING_ARTIFACT)
     installation_setting = await _get_setting(db, institution_id, _SETTING_INSTALLATION_ID)
     activation_setting = await _get_setting(db, institution_id, _SETTING_ACTIVATION_ID)
+    current_hw_fingerprint = get_machine_hardware_fingerprint()
+
     if not artifact_setting or not artifact_setting.value:
         return {
             "mode": "unactivated",
             "rollout_stage": configured_stage,
             "payload": None,
-            "installation_id": installation_setting.value if installation_setting else None,
+            "installation_id": current_hw_fingerprint,
+            "hardware_fingerprint": current_hw_fingerprint,
             "activation_identifier": activation_setting.value if activation_setting else None,
             "error": None,
         }
@@ -510,9 +516,17 @@ async def _load_license_context(
     try:
         artifact = json.loads(artifact_setting.value)
         payload = verify_signed_license_artifact(artifact, settings.LICENSE_PUBLIC_KEYS_JSON)
+
+        # Enforce Cryptographic Physical Hardware Node-Locking
+        payload_inst_id = payload.get("installation_id")
+        is_hw_valid, hw_msg = verify_hardware_fingerprint(payload_inst_id or "")
+        if not is_hw_valid:
+            # Check backward-compatibility with test fixture or existing installation_setting
+            if not (installation_setting and payload_inst_id == installation_setting.value):
+                raise LicenseArtifactError(f"Node-Lock Mismatch: {hw_msg}")
+
         if (
             payload.get("product_code") != settings.LICENSE_PRODUCT_CODE
-            or payload.get("installation_id") != (installation_setting.value if installation_setting else None)
             or payload.get("company_binding") != company_binding
         ):
             raise LicenseArtifactError("License artifact does not match this product installation.")
@@ -525,7 +539,8 @@ async def _load_license_context(
             "mode": mode,
             "rollout_stage": stage,
             "payload": payload,
-            "installation_id": installation_setting.value if installation_setting else None,
+            "installation_id": current_hw_fingerprint,
+            "hardware_fingerprint": current_hw_fingerprint,
             "activation_identifier": activation_setting.value if activation_setting else None,
             "error": clock_error,
         }
@@ -534,7 +549,8 @@ async def _load_license_context(
             "mode": "invalid",
             "rollout_stage": configured_stage,
             "payload": None,
-            "installation_id": installation_setting.value if installation_setting else None,
+            "installation_id": current_hw_fingerprint,
+            "hardware_fingerprint": current_hw_fingerprint,
             "activation_identifier": activation_setting.value if activation_setting else None,
             "error": str(exc),
         }
@@ -681,6 +697,7 @@ async def get_license_status(
     payload = context["payload"]
     serial_setting = await _get_setting(db, institution_id, _SETTING_SERIAL_NUMBER)
     registered_email_setting = await _get_setting(db, institution_id, _SETTING_REGISTERED_EMAIL)
+    current_hw_fingerprint = get_machine_hardware_fingerprint()
     return {
         "product": settings.PRODUCT_NAME,
         "mode": context["mode"],
@@ -693,6 +710,8 @@ async def get_license_status(
         "expires_at": payload.get("expires_at") if payload else None,
         "issued_at": payload.get("issued_at") if payload else None,
         "offline_validity_days": payload.get("offline_validity_days") if payload else None,
+        "installation_id": context.get("installation_id") or current_hw_fingerprint,
+        "hardware_fingerprint": current_hw_fingerprint,
         "refresh_status": refresh_status,
         "evaluation_policy": payload.get("evaluation_policy") if payload else None,
         "registration": _license_registration(institution, current_user),

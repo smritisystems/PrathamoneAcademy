@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Centralized Communication Center workspace comprising 8 dedicated submenus, multichannel broadcasts, WhatsApp direct launcher, template authoring, delivery tracking, gateway diagnostics, and Rule 010 View-First governance.
  */
@@ -192,10 +192,10 @@ function CommunicationContent() {
 
   // ─── Settings State ───────────────────────────────────────────────────────
   const [dltSenderId, setDltSenderId] = useState<string>('PRASHT')
-  const [dltEntityId, setDltEntityId] = useState<string>('1201159876543210987')
+  const [dltEntityId, setDltEntityId] = useState<string>('1201158779123007987')
   const [dltTelemarketerId, setDltTelemarketerId] = useState<string>('1102233445566')
-  const [waPhoneNumberId, setWaPhoneNumberId] = useState<string>('109876543210987')
-  const [waBusinessAccountId, setWaBusinessAccountId] = useState<string>('209876543210987')
+  const [waPhoneNumberId, setWaPhoneNumberId] = useState<string>('108779123007987')
+  const [waBusinessAccountId, setWaBusinessAccountId] = useState<string>('208779123007987')
   const [waWebhookToken, setWaWebhookToken] = useState<string>('prathamone_wa_webhook_token_2026')
   const [smtpHost, setSmtpHost] = useState<string>('smtp.mailgun.org')
   const [smtpPort, setSmtpPort] = useState<number>(587)
@@ -1417,7 +1417,7 @@ function CommunicationContent() {
                             type="tel"
                             value={waDirectPhone}
                             onChange={(e) => setWaDirectPhone(e.target.value.replace(/\D/g, ''))}
-                            placeholder="9876543210"
+                            placeholder="8779123007"
                             maxLength={10}
                             className="w-full pl-12 pr-4 py-2 text-xs font-mono border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
                           />

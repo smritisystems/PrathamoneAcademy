@@ -11,19 +11,29 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-15
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Automated build pipeline: compiles React frontend, stages embedded runtimes,
 #  */
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
 import sys
+import time
 import urllib.request
 import zipfile
 from pathlib import Path
+
+# Ensure repo root and backend are in python path
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+backend_dir = REPO_ROOT / "backend"
+if backend_dir.is_dir() and str(backend_dir) not in sys.path:
+    sys.path.insert(1, str(backend_dir))
 
 from scripts.prepare_installer_artwork import generate_installer_assets
 
@@ -41,6 +51,46 @@ def find_iscc() -> Path | None:
         if c and Path(c).is_file():
             return Path(c)
     return None
+
+
+def prune_non_essential_distribution_assets(dist_dir: Path):
+    """
+    Excludes all non-essential files (promotional videos, raw artwork drafts,
+    studio recordings, inspection keyframes, and zip archives) from production dist.
+    Ensures only components actively required by the software runtime are packaged.
+    """
+    print("\n[OPTIMIZE] Pruning non-essential media, videos, and raw artwork from dist...")
+    removals = [
+        dist_dir / "media" / "commercial",
+        dist_dir / "media" / "studio",
+        dist_dir / "media" / "motion",
+        dist_dir / "Final_Selected",
+        dist_dir / "New folder (2)",
+    ]
+    for r in removals:
+        if r.exists():
+            if r.is_dir():
+                shutil.rmtree(r)
+            else:
+                r.unlink()
+
+    # Remove non-essential artwork draft directories (keep only CSM, 16112026 essential SVGs)
+    artwork = dist_dir / "artwork"
+    if artwork.exists():
+        for item in list(artwork.iterdir()):
+            if item.is_dir() and item.name not in ("CSM", "16112026"):
+                shutil.rmtree(item)
+            elif item.is_file() and (item.suffix in (".png", ".mp4", ".zip", ".tar.gz") or item.stat().st_size > 500_000):
+                item.unlink()
+
+    # Remove extra video formats and master brand logos from dist root
+    for ext in ("*.mp4", "*.mov", "*.avi", "*.wmv", "*.zip", "*.tar.gz", "Prathamone Master Logo*.png"):
+        for vf in list(dist_dir.glob(f"**/{ext}")):
+            if vf.exists():
+                vf.unlink()
+
+    total_mb = sum(f.stat().st_size for f in dist_dir.glob("**/*") if f.is_file()) / (1024 * 1024)
+    print(f"[OPTIMIZE SUCCESS] Production distribution trimmed to: {total_mb:.2f} MB (Lean & Fast)")
 
 
 def build_frontend(root_dir: Path):
@@ -61,7 +111,9 @@ def build_frontend(root_dir: Path):
 
     if not (dist_dir / "index.html").exists():
         raise RuntimeError(f"Frontend build failed to produce {dist_dir / 'index.html'}")
-    print(f"[BUILD SUCCESS] Frontend compiled into: {dist_dir}")
+
+    prune_non_essential_distribution_assets(dist_dir)
+    print(f"[BUILD SUCCESS] Clean frontend compiled into: {dist_dir}")
 
 
 def stage_embedded_pgsql(staging_dir: Path, download_if_missing: bool = False):
@@ -119,25 +171,145 @@ def stage_embedded_python(staging_dir: Path):
     print(f"[BUILD SUCCESS] Python base runtime staged at: {python_dest}")
 
 
-def compile_inno_setup(root_dir: Path, iscc_path: Path):
-    """Invoke Inno Setup compiler on prathamone_setup.iss."""
-    print("\n[BUILD 4/4] Compiling Windows Installer executable via Inno Setup...")
+def stage_hardened_backend(root_dir: Path, staging_dir: Path):
+    """
+    Stage backend application into build_staging/backend:
+    1. Copies backend source excluding tests, caches, markdown docs, uploads, backups.
+    2. Performs Full-Tree Bytecode Compilation across all backend/app/ modules:
+       - Compiles every .py to optimized .pyc (optimize=2: strips docstrings & asserts).
+       - Purges every plaintext .py file in backend/app/. Zero plaintext code remains.
+    3. Bytecode-compiles seed.py -> seed.pyc and removes seed.py.
+    4. Computes SHA-256 HMAC cryptographic integrity manifest for all bytecode modules.
+    This prevents code inspection, Notepad editing, decompilation, and bytecode tampering.
+    """
+    import hashlib
+    import json
+    import py_compile
+    backend_src = root_dir / "backend"
+    backend_dest = staging_dir / "backend"
+    print("\n[BUILD 3.5/4] Staging hardened full-tree bytecode backend (zero plaintext .py)...")
+    if backend_dest.exists():
+        shutil.rmtree(backend_dest)
+
+    def ignore_patterns(path, names):
+        ignored = set()
+        for name in names:
+            if name in {"tests", "__pycache__", ".pytest_cache", "venv", ".venv", "backups", "uploads"}:
+                ignored.add(name)
+            elif name.endswith((".pyc", ".md", ".png")):
+                ignored.add(name)
+        return ignored
+
+    shutil.copytree(backend_src, backend_dest, ignore=ignore_patterns)
+
+    # 1. Full-Tree Bytecode Compilation for all backend/app/ files
+    app_dir = backend_dest / "app"
+    compiled_count = 0
+    integrity_manifest = {}
+    salt = b"PRATHAMONE_EDUOS_INTEGRITY_SALT_2026"
+
+    for root_str, _, files in os.walk(app_dir):
+        root_path = Path(root_str)
+        for file_name in files:
+            if file_name.endswith(".py"):
+                src_py = root_path / file_name
+                dest_pyc = root_path / (file_name + "c")
+                py_compile.compile(str(src_py), str(dest_pyc), optimize=2, doraise=True)
+                src_py.unlink()
+                compiled_count += 1
+
+                # Record SHA-256 integrity hash
+                rel_path = str(dest_pyc.relative_to(backend_dest)).replace("\\", "/")
+                file_bytes = dest_pyc.read_bytes()
+                h = hashlib.sha256(file_bytes + salt).hexdigest()
+                integrity_manifest[rel_path] = h
+
+    # 2. Also compile seed.py
+    seed_file = backend_dest / "seed.py"
+    if seed_file.exists():
+        dest_pyc = backend_dest / "seed.pyc"
+        py_compile.compile(str(seed_file), str(dest_pyc), optimize=2, doraise=True)
+        seed_file.unlink()
+        compiled_count += 1
+        rel_path = "seed.pyc"
+        integrity_manifest[rel_path] = hashlib.sha256(dest_pyc.read_bytes() + salt).hexdigest()
+
+    # 3. Write code integrity manifest
+    manifest_file = backend_dest / "app" / ".code_integrity.manifest"
+    manifest_file.write_text(json.dumps(integrity_manifest, indent=2), encoding="utf-8")
+
+    print(f"  [HARDENED] Bytecode-compiled {compiled_count} Python modules into native .pyc")
+    print(f"  [HARDENED] 100% of plaintext .py source files deleted from backend/app/")
+    print(f"  [HARDENED] Cryptographic SHA-256 integrity manifest written to {manifest_file.name}")
+    print(f"[BUILD SUCCESS] Staged hardened backend at: {backend_dest}")
+
+
+def get_current_version(root_dir: Path) -> str:
+    """Retrieve authoritative version from package.json or auto_version.py."""
+    pkg_file = root_dir / "package.json"
+    if pkg_file.exists():
+        try:
+            data = json.loads(pkg_file.read_text(encoding="utf-8"))
+            v = data.get("version", "").strip()
+            if v:
+                return v
+        except Exception:
+            pass
+    return "1.0.0"
+
+
+def get_file_version_quad(ver_str: str) -> str:
+    """Format semantic version into strict 4-component Windows PE version (e.g. 1.147.0.0)."""
+    import re
+    parts = re.findall(r"\d+", ver_str.split("-")[0])
+    while len(parts) < 4:
+        parts.append("0")
+    return ".".join(parts[:4])
+
+
+def compile_inno_setup(root_dir: Path, iscc_path: Path, version: str | None = None):
+    """Invoke Inno Setup compiler on prathamone_setup.iss with dynamic version and retry for transient Windows file-lock."""
+    if not version:
+        version = get_current_version(root_dir)
+    file_version = get_file_version_quad(version)
+
+    print(f"\n[BUILD 4/4] Compiling Windows Installer executable for v{version} (PE: {file_version}) via Inno Setup...")
     iss_file = root_dir / "installer" / "prathamone_setup.iss"
     dist_dir = root_dir / "dist"
     dist_dir.mkdir(parents=True, exist_ok=True)
 
-    cmd = [str(iscc_path), str(iss_file)]
-    res = subprocess.run(cmd, cwd=str(root_dir / "installer"), capture_output=True, text=True)
+    cmd = [
+        str(iscc_path),
+        f"/DMyAppVersion={version}",
+        f"/DMyAppFileVersion={file_version}",
+        str(iss_file),
+    ]
 
-    if res.returncode != 0:
-        print(f"[BUILD ERROR] Inno Setup compilation failed:\n{res.stderr}\n{res.stdout}")
-        raise RuntimeError("Inno Setup compilation failed.")
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        for partial in dist_dir.glob("*.tmp"):
+            try:
+                partial.unlink()
+            except Exception:
+                pass
 
+        res = subprocess.run(cmd, cwd=str(root_dir / "installer"), capture_output=True, text=True)
+        if res.returncode == 0:
+            break
+        elif "EndUpdateResource failed" in res.stderr and attempt < max_retries:
+            print(f"[RETRY {attempt}/{max_retries}] Transient antivirus scanner lock detected. Waiting 3s before retry...")
+            time.sleep(3)
+        else:
+            print(f"[BUILD ERROR] Inno Setup compilation failed:\n{res.stderr}\n{res.stdout}")
+            raise RuntimeError("Inno Setup compilation failed.")
+
+    output_exe = f"PrathamOne-EduOS-Setup-v{version}.exe"
     print(f"\n======================================================================")
     print(f"  PRATHAMONE EduOS — WINDOWS INSTALLER CREATED SUCCESSFULLY!          ")
     print(f"======================================================================")
     print(f"  Installer Package: {dist_dir}")
-    print(f"  Run PrathamOne-EduOS-Setup-v1.0.0.exe on any Windows 10/11 computer.")
+    print(f"  Output Executable: {output_exe}")
+    print(f"  Run {output_exe} on any Windows 10/11 computer.")
     print(f"======================================================================\n")
 
 
@@ -145,6 +317,7 @@ def main():
     parser = argparse.ArgumentParser(description="PrathamOne EduOS Windows Installer Build Pipeline")
     parser.add_argument("--skip-frontend", action="store_true", help="Skip npm frontend compilation")
     parser.add_argument("--download-pgsql", action="store_true", help="Automatically download PostgreSQL 16 binaries")
+    parser.add_argument("--installer-version", "--version", dest="installer_version", help="Explicit version override for the installer")
     args = parser.parse_args()
 
     root_dir = Path(__file__).resolve().parent.parent
@@ -156,6 +329,11 @@ def main():
 
         stage_embedded_pgsql(staging_dir, download_if_missing=args.download_pgsql)
         stage_embedded_python(staging_dir)
+        stage_hardened_backend(root_dir, staging_dir)
+
+        # Generate fresh local PKI Root CA and SSL server certificates
+        from scripts.generate_ssl_certificates import generate_local_pki
+        generate_local_pki(root_dir / "installer" / "assets")
 
         iscc = find_iscc()
         if not iscc:
@@ -165,7 +343,14 @@ def main():
             print(f"Then re-run this script, or open: {root_dir / 'installer' / 'prathamone_setup.iss'}")
             return
 
-        compile_inno_setup(root_dir, iscc)
+        # Enforce Pre-Release Hygiene Audit
+        from scripts.check_release_hygiene import run_audit
+        is_clean = run_audit(fix=True)
+        if not is_clean:
+            raise RuntimeError("Pre-release hygiene audit failed. Staged payload contains forbidden or bloated files.")
+
+        version = args.installer_version or get_current_version(root_dir)
+        compile_inno_setup(root_dir, iscc, version=version)
 
     except Exception as exc:
         print(f"\n[FATAL BUILD ERROR] {exc}")

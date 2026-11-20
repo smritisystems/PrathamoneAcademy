@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-06
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Unit test suite validating CodeX bijective digit mapping, encoding, decoding, security PIN, and disabled default policy.
 #  */
@@ -96,7 +96,7 @@ def test_numeric_encoding_and_reversibility():
     decoded_zero, _ = decode_coded_value(encoded_zero, digit_map, prefix="CX-")
     assert decoded_zero == 0.0
 
-    large_val = 9876543210
+    large_val = 8779123007
     encoded_large = encode_numeric_value(large_val, digit_map, prefix="")
     assert encoded_large == "RTBXPKMZAQ"
     decoded_large, _ = decode_coded_value(encoded_large, digit_map, prefix="")

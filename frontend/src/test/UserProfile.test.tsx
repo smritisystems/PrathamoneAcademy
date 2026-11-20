@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Vitest test suite verifying user profile details rendering, role badges, and security reset modals.
  */
@@ -42,7 +42,7 @@ describe('Dedicated User Profile Workspace Specification', () => {
       id: 10,
       username: 'aarav.sharma',
       email: 'aarav.sharma@prathamone.com',
-      phone: '9876543210',
+      phone: '8779123007',
       first_name: 'Aarav',
       last_name: 'Sharma',
       full_name: 'Aarav Sharma',
@@ -74,7 +74,7 @@ describe('Dedicated User Profile Workspace Specification', () => {
       date_of_birth: '2008-05-15',
       gender: 'male',
       blood_group: 'B+',
-      phone: '9876543210',
+      phone: '8779123007',
       email: 'aarav.sharma@prathamone.com',
       is_active: true,
       current_enrollment: {

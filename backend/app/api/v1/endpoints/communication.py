@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description REST API router for Communication Center, message templates, universal document sharing, delivery tracking, and automated event notifications.
 #  */
@@ -39,6 +39,7 @@ from app.models.standard import Standard
 from app.models.payment import PaymentReceipt, Payment
 from app.models.communication import MessageTemplate, CommunicationLog, SharedDocumentToken
 from app.models.portal import Announcement
+from app.models.settings import InstitutionSetting
 from app.services.communication import (
     resolve_placeholders,
     generate_whatsapp_web_url,
@@ -822,6 +823,155 @@ async def run_diagnostics_test(
         "destination": dest,
         "dispatch_status": log_status,
         "reference_id": resp_id,
+    }
+
+
+# ─── 7. Self-Service WhatsApp Gateway BSP Endpoints ─────────────────────────
+
+class WhatsAppGatewayConfig(BaseModel):
+    provider: str = "wa_web"  # "meta_cloud", "wati", "aisensy", "gupshup", "interakt", "wa_web"
+    sender_phone: Optional[str] = None
+    api_key: Optional[str] = None
+    api_endpoint: Optional[str] = None
+    phone_number_id: Optional[str] = None
+    waba_id: Optional[str] = None
+    app_name: Optional[str] = None
+    is_active: bool = True
+
+
+class WhatsAppTestRequest(BaseModel):
+    destination_phone: str
+    sample_message: Optional[str] = "Hello from PrathamOne EduOS! Your WhatsApp Gateway is connected successfully."
+
+
+@router.get("/gateways/whatsapp")
+async def get_whatsapp_gateway_config(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "principal", "sysadmin")),
+):
+    """
+    Returns the active WhatsApp BSP configuration and providers catalog.
+    Supports Meta Cloud API, Wati, AiSensy, Gupshup, Interakt, and wa.me direct links.
+    """
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    stmt = select(InstitutionSetting).where(
+        and_(
+            InstitutionSetting.institution_id == inst_id,
+            InstitutionSetting.category == "communication",
+            InstitutionSetting.key == "whatsapp_gateway_config",
+        )
+    )
+    setting = (await db.execute(stmt)).scalar_one_or_none()
+    config = json.loads(setting.value) if setting and setting.value else {
+        "provider": "wa_web",
+        "sender_phone": "+91 98200 99999",
+        "is_active": True,
+    }
+
+    providers_catalog = [
+        {"id": "meta_cloud", "name": "Meta WhatsApp Cloud API (Official Graph API)", "auth_fields": ["phone_number_id", "api_key", "waba_id"], "badge": "Official Direct"},
+        {"id": "wati", "name": "WATI (Clare.ai WhatsApp Gateway)", "auth_fields": ["api_endpoint", "api_key"], "badge": "Popular in India"},
+        {"id": "aisensy", "name": "AiSensy (Smart WhatsApp Marketing)", "auth_fields": ["api_key"], "badge": "Popular in India"},
+        {"id": "gupshup", "name": "Gupshup Enterprise Messaging", "auth_fields": ["app_name", "api_key"], "badge": "Enterprise Tier"},
+        {"id": "interakt", "name": "Interakt (Jio Haptik WhatsApp Suite)", "auth_fields": ["api_key"], "badge": "Popular in India"},
+        {"id": "wa_web", "name": "WhatsApp Direct Web Link (wa.me - Zero Setup)", "auth_fields": [], "badge": "Zero Cost / Default"},
+    ]
+
+    return {
+        "status": "ready",
+        "active_config": config,
+        "providers_catalog": providers_catalog,
+    }
+
+
+@router.post("/gateways/whatsapp")
+async def save_whatsapp_gateway_config(
+    payload: WhatsAppGatewayConfig,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "principal", "sysadmin")),
+):
+    """
+    Saves institute WhatsApp provider credentials and active configuration.
+    """
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    stmt = select(InstitutionSetting).where(
+        and_(
+            InstitutionSetting.institution_id == inst_id,
+            InstitutionSetting.category == "communication",
+            InstitutionSetting.key == "whatsapp_gateway_config",
+        )
+    )
+    setting = (await db.execute(stmt)).scalar_one_or_none()
+    val_json = json.dumps(payload.dict())
+    if setting:
+        setting.value = val_json
+    else:
+        setting = InstitutionSetting(
+            institution_id=inst_id,
+            category="communication",
+            key="whatsapp_gateway_config",
+            value=val_json,
+            data_type="json",
+            is_public=False,
+            description="Active WhatsApp BSP Provider Configuration",
+        )
+        db.add(setting)
+
+    await db.commit()
+    return {
+        "status": "success",
+        "message": "WhatsApp Gateway configuration saved successfully.",
+        "config": payload.dict(),
+    }
+
+
+@router.post("/gateways/whatsapp/test")
+async def test_whatsapp_gateway_dispatch(
+    payload: WhatsAppTestRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "principal", "sysadmin")),
+):
+    """
+    Sends a test verification ping to the destination phone number and returns dispatch confirmation.
+    If Meta Cloud API or WATI credentials are saved, it executes live HTTP dispatch.
+    """
+    clean_dest = re.sub(r"[^\d]", "", payload.destination_phone or "")
+    if len(clean_dest) < 10:
+        raise HTTPException(status_code=400, detail="Invalid Indian mobile number. Must contain at least 10 digits.")
+    if len(clean_dest) == 10:
+        clean_dest = f"91{clean_dest}"
+
+    inst_id = getattr(current_user, "institution_id", 1) or 1
+    stmt = select(InstitutionSetting).where(
+        and_(
+            InstitutionSetting.institution_id == inst_id,
+            InstitutionSetting.category == "communication",
+            InstitutionSetting.key == "whatsapp_gateway_config",
+        )
+    )
+    setting = (await db.execute(stmt)).scalar_one_or_none()
+    config = json.loads(setting.value) if setting and setting.value else {"provider": "wa_web"}
+
+    sample_msg = payload.sample_message or "Hello from PrathamOne EduOS! Your WhatsApp Gateway is connected successfully."
+    success, status_code, msg_id = await ChannelAdapter.dispatch_whatsapp(
+        phone=clean_dest,
+        message=sample_msg,
+        config=config,
+    )
+
+    wa_link = generate_whatsapp_web_url(clean_dest, sample_msg)
+
+    if not success and status_code == "FAILED":
+        raise HTTPException(status_code=502, detail=f"WhatsApp Gateway Dispatch Failed: {msg_id}")
+
+    return {
+        "status": "success",
+        "message": f"WhatsApp test dispatch processed via {config.get('provider', 'wa_web')}.",
+        "reference_id": msg_id,
+        "destination": f"+{clean_dest}",
+        "browser_deep_link": wa_link,
+        "provider": config.get("provider", "wa_web"),
+        "dispatch_mode": "cloud_api_live" if config.get("provider") in ("meta_cloud", "wati", "aisensy") else "instant_verified",
     }
 
 

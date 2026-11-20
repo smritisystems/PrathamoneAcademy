@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Service for parsing, validating, duplicate-checking, and importing batch data from spreadsheets.
 #  */
@@ -57,7 +57,7 @@ ENTITY_CONFIGS: Dict[str, Dict[str, Any]] = {
             {"key": "date_of_birth", "label": "Date of Birth", "required": True, "type": "date", "sample": "2009-05-15", "desc": "YYYY-MM-DD"},
             {"key": "gender", "label": "Gender", "required": True, "type": "str", "sample": "male", "desc": "male / female / other"},
             {"key": "blood_group", "label": "Blood Group", "required": False, "type": "str", "sample": "O+", "desc": "e.g. A+, B+, O+"},
-            {"key": "phone", "label": "Phone Number", "required": False, "type": "str", "sample": "9876543210", "desc": "10-digit mobile"},
+            {"key": "phone", "label": "Phone Number", "required": False, "type": "str", "sample": "8779123007", "desc": "10-digit mobile"},
             {"key": "email", "label": "Email Address", "required": False, "type": "email", "sample": "aarav.sharma@prathamone.com", "desc": "Valid email address"},
             {"key": "address", "label": "Address", "required": False, "type": "str", "sample": "123 MG Road", "desc": "Residential address"},
             {"key": "city", "label": "City", "required": False, "type": "str", "sample": "Mumbai", "desc": "City name"},

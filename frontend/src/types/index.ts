@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Master TypeScript declarations and interfaces for models, API responses, filters, and state.
  */
@@ -57,6 +57,8 @@ export interface LicenseStatusResponse {
   offline_validity_days: number | null
   registration: LicenseRegistration | null
   refresh_status: 'not_activated' | 'manual_required' | 'up_to_date' | 'retry_scheduled' | 'unavailable' | 'refreshed'
+  installation_id?: string | null
+  hardware_fingerprint?: string | null
   evaluation_policy: Record<string, unknown> | null
   error: string | null
 }

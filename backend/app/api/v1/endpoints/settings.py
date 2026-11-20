@@ -11,17 +11,19 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-19
+#  * @updated     2026-11-21
 #  *
 #  * @description API endpoints for institute settings workspace, profile branding, general lookups, and audit history.
 #  */
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, desc, update, delete
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime
+from pathlib import Path
 import json
 
 from app.core.database import get_db
@@ -50,7 +52,7 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "city": "Palghar",
         "state": "Maharashtra",
         "pincode": "401202",
-        "phone": "+91 98765 43210",
+        "phone": "+91 8779 123 007",
         "email": "info@prathamoneacademy.in",
         "website": "https://prathamone.com",
     },
@@ -156,6 +158,7 @@ DEFAULT_SETTINGS: Dict[str, Dict[str, Any]] = {
         "maintenance_mode": False,
         "enable_student_portal": True,
         "enable_pwa_offline": True,
+        "desktop_launch_mode": "browser",
         "session_timeout_minutes": 120,
     },
     "permissions": {
@@ -305,7 +308,7 @@ async def get_institute_profile(
         "city": inst.city or "Palghar",
         "state": inst.state or "Maharashtra",
         "pincode": inst.pincode or "401202",
-        "phone": inst.phone or "+91 98765 43210",
+        "phone": inst.phone or "+91 8779 123 007",
         "email": inst.email or "info@prathamoneacademy.in",
         "website": inst.website or "https://prathamone.com",
         "logo_url": inst.logo_url or "/logo.svg",
@@ -521,7 +524,95 @@ async def update_settings_batch(
             db.add(audit)
 
     await db.commit()
+
+    if category == "system" and "desktop_launch_mode" in payload.settings:
+        try:
+            from pathlib import Path
+            mode = str(payload.settings["desktop_launch_mode"]).lower()
+            if mode in ("app", "pwa", "standalone"):
+                mode = "app"
+            else:
+                mode = "browser"
+            repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+            for dest in [repo_root / "launcher_config.json", repo_root / "data" / "launcher_config.json"]:
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_text(json.dumps({"launch_mode": mode}, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
     return {"status": "success", "message": f"{category.capitalize()} settings saved successfully"}
+
+
+@router.get("/download-ca-certificate")
+async def download_ca_certificate():
+    """
+    Download the locally generated Smritisys & AITDL Local Root CA certificate (.cer).
+    Used by institute staff devices connecting over LAN to trust the institute's HTTPS server.
+    """
+    file_path = Path(__file__).resolve()
+    repo_root = file_path.parents[5] if len(file_path.parents) > 5 else file_path.parents[4]
+    candidates = [
+        repo_root / "assets" / "Smritisys_AITDL_Local_CA.cer",
+        repo_root / "installer" / "assets" / "Smritisys_AITDL_Local_CA.cer",
+        repo_root / "Smritisys_AITDL_Local_CA.cer",
+        Path("C:/Program Files/PrathamOne EduOS/assets/Smritisys_AITDL_Local_CA.cer"),
+    ]
+    for c in candidates:
+        if c.is_file():
+            return FileResponse(
+                path=str(c),
+                media_type="application/x-x509-ca-cert",
+                filename="Smritisys_AITDL_Local_CA.cer",
+            )
+    raise HTTPException(status_code=404, detail="Local Root CA certificate has not been generated yet on this machine.")
+
+
+@router.get("/download-ca-installer-script")
+async def download_ca_installer_script():
+    """
+    Download the 1-click Windows batch script (.bat) that installs the Local Root CA
+    into the Windows Trusted Root Store on staff PCs.
+    """
+    script_content = (
+        "@echo off\r\n"
+        "chcp 65001 >nul\r\n"
+        "title PrathamOne EduOS - Install Institute Local SSL Certificate\r\n"
+        "echo =========================================================================\r\n"
+        "echo   PRATHAMONE EduOS - STAFF DEVICE LOCAL SSL CERTIFICATE INSTALLER\r\n"
+        "echo =========================================================================\r\n"
+        "echo.\r\n"
+        "net session >nul 2>&1\r\n"
+        "if %errorLevel% neq 0 (\r\n"
+        "    echo Requesting Administrator privileges...\r\n"
+        "    powershell -Command \"Start-Process '%~f0' -Verb RunAs\"\r\n"
+        "    exit /b\r\n"
+        ")\r\n"
+        "cd /d \"%~dp0\"\r\n"
+        "if not exist \"Smritisys_AITDL_Local_CA.cer\" (\r\n"
+        "    echo [ERROR] 'Smritisys_AITDL_Local_CA.cer' was not found in this folder.\r\n"
+        "    echo Please download 'Smritisys_AITDL_Local_CA.cer' into the same folder as this script and run it again.\r\n"
+        "    echo.\r\n"
+        "    pause\r\n"
+        "    exit /b 1\r\n"
+        ")\r\n"
+        "echo Installing Smritisys & AITDL Local Root CA into Windows Trusted Root Store...\r\n"
+        "certutil.exe -addstore -f \"ROOT\" \"Smritisys_AITDL_Local_CA.cer\"\r\n"
+        "if %errorLevel% equ 0 (\r\n"
+        "    echo.\r\n"
+        "    echo [SUCCESS] Local Root CA successfully added to Windows Trusted Root Store!\r\n"
+        "    echo Staff browsers (Chrome, Edge, Firefox) on this PC will now trust your institute's server.\r\n"
+        ") else (\r\n"
+        "    echo.\r\n"
+        "    echo [WARNING] certutil exited with code %errorLevel%. Please check administrative permissions.\r\n"
+        ")\r\n"
+        "echo.\r\n"
+        "pause\r\n"
+    )
+    return PlainTextResponse(
+        content=script_content,
+        media_type="application/x-bat",
+        headers={"Content-Disposition": 'attachment; filename="Install-PrathamOne-SSL.bat"'},
+    )
 
 
 @router.get("/lookups")

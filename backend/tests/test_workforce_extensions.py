@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Pytest test suite for Workforce Extensions: Delete Protection, Multiple Bank Accounts, Key Contacts, Dual Addresses, and Employee Dossier.
 #  */
@@ -321,7 +321,7 @@ async def test_employee_dossier_form_generation(
         state="Maharashtra",
         pincode="400076",
         bank_name="ICICI Bank",
-        bank_account_number="987654321012",
+        bank_account_number="877912300712",
         bank_ifsc="ICIC0000987",
         emergency_contact_name="Sangeeta Sethi",
         emergency_contact_phone="+91 98111 22334",

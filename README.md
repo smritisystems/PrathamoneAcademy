@@ -18,8 +18,8 @@ api_routes: []
 related_modules: ["01_ARCHITECTURE", "12_RBAC_SECURITY"]
 ---
 
-# PrathamOne Academy — Coaching Institute Management System
-**Enterprise Edition · Client Deployment: Prashant Academy**
+# PrathamOne EduOS — Coaching Institute Management System
+**Enterprise Edition · Coaching Institute Edition**
 
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose%20v2-blue.svg)](https://docs.docker.com/compose/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg)](https://fastapi.tiangolo.com/)
@@ -96,7 +96,7 @@ The commands above are Bash examples; on Windows, use `install.ps1` or clear the
 | **Backend REST API** | [http://localhost:8000](http://localhost:8000) | FastAPI Core API Engine |
 | **Interactive API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Swagger OpenAPI Specification |
 | **Administrator Account** | `admin` | Password is chosen securely during initial setup |
-| **PostgreSQL Database** | `localhost:5432` | User: `postgres`, password configured uniquely in `.env`, DB: `prashant_academy` |
+| **PostgreSQL Database** | `localhost:5432` | User: `postgres`, password configured uniquely in `.env`, DB: `prashant_academy` (or configured institute database) |
 
 ---
 

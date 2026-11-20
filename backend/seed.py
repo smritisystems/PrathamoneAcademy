@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.2.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Comprehensive master database seeder initializing administrator security credentials, all Indian educational boards (CBSE, ICSE, MSBSHSE, GSEB, State Boards, Competitive Streams), instruction mediums, canonical subjects catalogue (SSOT), curriculum applicability mappings, standards 1-12, and batches.
 #  */
@@ -199,7 +199,7 @@ async def seed(bootstrap_only: bool = False):
         institute_name = os.getenv("INSTITUTE_NAME", "Your Academy Name").strip()
         institute_branch = os.getenv("INSTITUTE_BRANCH", "Main Campus").strip()
         institute_address = os.getenv("INSTITUTE_ADDRESS", "Campus Address, Education Hub").strip()
-        institute_phone = os.getenv("INSTITUTE_PHONE", "+91-9876543210").strip()
+        institute_phone = os.getenv("INSTITUTE_PHONE", "+91 8779 123 007").strip()
         institute_logo_url = os.getenv("INSTITUTE_LOGO_URL", "/media/logo/prathamone-symbol-icon.svg").strip()
         
         # Derive monogram / short name

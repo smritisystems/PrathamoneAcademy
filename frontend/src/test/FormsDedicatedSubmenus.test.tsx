@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-09
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Comprehensive Vitest test suite validating all 8 dedicated submenus of Print Forms Studio & KYC, URL synchronization, Rule 010 View-First lock enforcement, and Training Mode isolation.
  */
@@ -109,7 +109,7 @@ vi.mock('../api/endpoints', () => ({
           dob: '2009-05-15',
           gender: 'Male',
           guardian_name: 'Mukesh Patel',
-          guardian_phone: '+919876543210',
+          guardian_phone: '+918779123007',
         },
         active_sections: ['demographics', 'guardians', 'medical'],
         generated_at: '09/11/2026, 10:00:00 AM',

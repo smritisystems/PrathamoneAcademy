@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Vitest test suite for Communication Center workspace, covering compose & send, templates catalogue, delivery logs, diagnostics, and automated outbound triggers.
  */
@@ -95,7 +95,7 @@ describe('Communication Center Workspace', () => {
       recipient_type: 'PARENT',
       recipient_id: 20,
       recipient_name: 'Puneeta Kulkarni',
-      recipient_destination: '+919876543210',
+      recipient_destination: '+918779123007',
       subject: null,
       message_body: 'Dear Parent, payment of Rs. 7000 received.',
       status: 'SENT',
@@ -137,7 +137,7 @@ describe('Communication Center Workspace', () => {
       type: 'STUDENT',
       name: 'Puneeta Kulkarni',
       subtitle: 'Class VIII - Batch A (Roll #12)',
-      phone: '+919876543210',
+      phone: '+918779123007',
       email: 'puneeta@prathamone.com',
     },
   ]
@@ -273,7 +273,7 @@ describe('Communication Center Workspace', () => {
     await waitFor(() => {
       expect(screen.getByText('Puneeta Kulkarni')).toBeDefined()
       expect(screen.getByText('SENT')).toBeDefined()
-      expect(screen.getByText('+919876543210')).toBeDefined()
+      expect(screen.getByText('+918779123007')).toBeDefined()
     })
   })
 

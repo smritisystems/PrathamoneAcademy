@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Service layer for PrathamOne EduOS Help & About Centre: seeding, unified search, contextual routing, support ticketing, CMS governance, product/company info, and restricted system health telemetry.
 #  */
@@ -1279,7 +1279,7 @@ async def get_product_and_version_info(
                 "product_website": "https://prathamone.com",
                 "support_phones": ["9323 023 007", "9324 117 007"],
                 "support_email": "support@prathamone.com",
-                "general_email": "prathamone@outlook.com",
+                "general_email": "contact@prathamone.com",
                 "copyright_notice": "Copyright © 2026 SmritiSys. All rights reserved.",
                 "product_portfolio": [
                     {

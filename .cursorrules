@@ -1,0 +1,27 @@
+# PRATHAMONE EduOS — CURSOR AGENT GOVERNANCE DIRECTIVE
+# Product: PrathamOne EduOS (Coaching Institute Edition v1.0.0)
+# Architect: Jawahar R. Mallah | Smritisys & AITDL Networks
+
+# 1. CORE BRANDING & IDENTITY
+- Product Name: PrathamOne EduOS
+- Baseline Version: 1.0.0
+- Organization: Smritisys & AITDL Networks
+- Client: Prashant Academy Coaching Institute
+
+# 2. MANDATORY NON-NEGOTIABLE SSOT & RELEASE RULES
+- RULE 001: Single Source of Truth (SSOT). Never maintain duplicate master copies.
+- RULE 002: Mandatory reuse before creation.
+- RULE 010: View Mode is default everywhere. Scoped Edit Mode required for mutations.
+- RULE 011: Deduplication of canonical masters.
+- RULE 012: Automated Release Hygiene. Production builds (`dist/`, installer, Docker) must ONLY contain whitelisted runtime files as defined in `installer/release_whitelist.json`.
+  * NEVER bundle test files, raw artwork drafts, promotional videos (.mp4), markdown tutorials, cache files (.pytest_cache, __pycache__), or local .env secrets.
+  * ALWAYS verify releases using: `python scripts/check_release_hygiene.py`.
+
+# 3. CODE ATTRIBUTION
+- Preserve corporate attribution headers on all .py, .ts, .tsx, .js, .css files:
+  Author: Jawahar R. Mallah | Organization: Smritisys & AITDL Networks.
+- Check headers using: `python scripts/manage_headers.py check`.
+
+# 4. DOCUMENTATION
+- Save reports in `docs/<MODULE>/YYYY-MM-DD_MODULE_TYPE_DESCRIPTION_V1.md`.
+- Run: `python tools/docs_manager.py reindex && python tools/docs_manager.py validate`.

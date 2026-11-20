@@ -11,7 +11,7 @@
 #  *
 #  * @version     2.0.0
 #  * @created     2026-11-09
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description High-fidelity PDF generation engine and bulk export service for fee receipts strictly matching executive UI card layout with vector donut charts, metadata pills, and historical payment registers.
 #  */
@@ -356,8 +356,8 @@ class ReceiptPdfService:
         inst_city = str(inst.get("city") or "").strip() or "Mumbai"
         inst_state = str(inst.get("state") or "").strip() or "Maharashtra"
         inst_pincode = str(inst.get("pincode") or "").strip() or "400095"
-        inst_phone = str(inst.get("phone") or "").strip() or "+91-7021789907"
-        inst_email = str(inst.get("email") or "").strip() or "tejam.prashnat@gmail.com"
+        inst_phone = str(inst.get("phone") or "").strip() or "+91 8779 123 007"
+        inst_email = str(inst.get("email") or "").strip() or "contact@prathamone.com"
 
         # Check settings for logo, tagline, sovereign trim, and verification seal visibility
         show_logo = inst.get("print_receipt_logo", True)

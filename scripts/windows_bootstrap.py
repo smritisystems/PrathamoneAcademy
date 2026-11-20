@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.2.0
 #  * @created     2026-11-14
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Automated post-install bootstrap utility initializing local databases, executing Alembic migrations, seeding Indian educational boards, mediums, canonical subjects, and setting initial administrator credentials from installer configuration.
 #  */
@@ -67,6 +67,10 @@ def ensure_env_file(root_dir: Path, db_port: int, db_password: str, institute_na
             else:
                 lines.append(line)
         content = "\n".join(lines) + "\n"
+
+    slug = "".join(c.lower() for c in institute_name if c.isalnum()) or "prashantacademy"
+    if "INSTITUTE_NAME=" not in content:
+        content += f"\nINSTITUTE_NAME=\"{institute_name}\"\nINSTITUTE_SLUG=\"{slug}\"\n"
 
     env_path.write_text(content, encoding="utf-8")
     try:
@@ -160,7 +164,7 @@ def run_seed_bootstrap(
     institute_name: str = "Your Academy Name",
     branch_name: str = "Main Campus",
     address: str = "Campus Address, Education Hub",
-    phone: str = "+91-9876543210",
+    phone: str = "+91-8779-123-007",
     logo_url: str = "/media/logo/prathamone-symbol-icon.svg",
     boards: str = "MSBSHSE,CBSE,ICSE,GSEB,COMPETITIVE",
     mediums: str = "English,Semi-English,Hindi,Marathi,Gujarati",
@@ -185,6 +189,8 @@ def run_seed_bootstrap(
 
     seed_script = root_dir / "backend" / "seed.py"
     if not seed_script.exists():
+        seed_script = root_dir / "backend" / "seed.pyc"
+    if not seed_script.exists():
         seed_script = root_dir / "seed.py"
 
     cmd = [sys.executable, str(seed_script), "--bootstrap-only"]
@@ -195,6 +201,43 @@ def run_seed_bootstrap(
         raise RuntimeError("Initial master database seeding failed.")
     print(f"[BOOTSTRAP] {result.stdout.strip()}")
     print("[BOOTSTRAP] Administrator credentials and canonical masters seeded successfully.")
+
+
+async def save_license_credentials(db_url: str, serial_number: str, activation_key: str):
+    """Save installer-provided license serial number and activation key into InstitutionSetting."""
+    if not serial_number and not activation_key:
+        print("[BOOTSTRAP] No license credentials entered during setup. Initialized in Evaluation Mode.")
+        return
+
+    clean_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = None
+    try:
+        conn = await asyncpg.connect(clean_url)
+        inst_row = await conn.fetchrow("SELECT id FROM institutions ORDER BY id ASC LIMIT 1")
+        inst_id = inst_row["id"] if inst_row else 1
+
+        if serial_number:
+            await conn.execute("""
+                INSERT INTO institution_settings (institution_id, category, key, value, data_type, is_secret, is_public, description, created_at, updated_at)
+                VALUES ($1, 'licensing', 'license.serial_number', $2, 'string', false, false, 'Serial number captured during setup', NOW(), NOW())
+                ON CONFLICT (institution_id, key)
+                DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+            """, inst_id, serial_number)
+            print(f"[BOOTSTRAP] Successfully registered license serial number: {serial_number}")
+
+        if activation_key:
+            await conn.execute("""
+                INSERT INTO institution_settings (institution_id, category, key, value, data_type, is_secret, is_public, description, created_at, updated_at)
+                VALUES ($1, 'licensing', 'license.activation_identifier', $2, 'string', false, false, 'Activation key captured during setup', NOW(), NOW())
+                ON CONFLICT (institution_id, key)
+                DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+            """, inst_id, activation_key)
+            print("[BOOTSTRAP] Successfully registered license activation key.")
+    except Exception as exc:
+        print(f"[BOOTSTRAP WARN] Failed to save license keys during bootstrap: {exc}")
+    finally:
+        if conn:
+            await conn.close()
 
 
 def main():
@@ -226,7 +269,7 @@ def main():
     institute_name = raw_inst_name.strip() if raw_inst_name.strip() and raw_inst_name.strip() != "Prashant Academy Coaching Institute" else "Your Academy Name"
     branch_name = setup_config.get("branch_name", "Main Campus").strip() or "Main Campus"
     address = setup_config.get("address", "Campus Address, Education Hub").strip() or "Campus Address, Education Hub"
-    phone = setup_config.get("phone", "+91-9876543210").strip() or "+91-9876543210"
+    phone = setup_config.get("phone", "+91-8779-123-007").strip() or "+91-8779-123-007"
     
     # Handle optional logo image provided during installation
     raw_logo_path = setup_config.get("logo_path", "").strip()
@@ -273,6 +316,27 @@ def main():
             mediums=mediums,
             accountant_password=args.accountant_password,
         )
+
+        serial_number = setup_config.get("serial_number", "").strip()
+        activation_key = setup_config.get("activation_key", "").strip()
+        asyncio.run(save_license_credentials(db_url, serial_number, activation_key))
+
+        # Ensure SSL certificate contains the institute slug
+        try:
+            slug = "".join(c.lower() for c in institute_name if c.isalnum())
+            if slug:
+                assets_dir = root_dir / "assets"
+                if not assets_dir.exists():
+                    assets_dir = root_dir / "installer" / "assets"
+                if assets_dir.exists():
+                    try:
+                        from scripts.generate_ssl_certificates import generate_local_pki
+                    except ImportError:
+                        from generate_ssl_certificates import generate_local_pki
+                    generate_local_pki(assets_dir, extra_slugs=[slug])
+                    print(f"[BOOTSTRAP] Verified local SSL certificates with SAN for '{slug}'.")
+        except Exception as ssl_err:
+            print(f"[BOOTSTRAP NOTE] Dynamic SSL certificate note: {ssl_err}")
 
         # Remove sensitive plain setup_config.json after successful bootstrapping
         if config_file.exists():

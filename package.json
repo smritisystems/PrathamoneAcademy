@@ -1,6 +1,6 @@
 {
   "name": "prashant-academy-workspace",
-  "version": "1.146.1",
+  "version": "1.147.0",
   "private": true,
   "description": "Prashant Academy Coaching Institute Management System - Monorepo Workspace",
   "scripts": {
@@ -11,7 +11,10 @@
     "version:bump": "python scripts/auto_version.py --bump",
     "test:frontend": "npm --prefix frontend test",
     "test:backend": "docker exec prashant_academy_backend pytest",
-    "build:frontend": "npm --prefix frontend run build"
+    "build:frontend": "npm --prefix frontend run build",
+    "check-release": "python scripts/check_release_hygiene.py",
+    "check-release:fix": "python scripts/check_release_hygiene.py --fix",
+    "build:installer": "npm run check-release && python scripts/build_windows_installer.py"
   },
   "author": "Jawahar R. Mallah",
   "organization": "Smritisys & AITDL Networks",

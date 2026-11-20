@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-19
+#  * @updated     2026-11-21
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
@@ -43,11 +43,11 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "COACHING MANAGEMENT. SIMPLIFIED."
-    VERSION: str = "1.146.1"
-    BUILD_NUMBER: str = "2026.11.19-REV-264-v1.146.1-1E9528D5"
+    VERSION: str = "1.147.0"
+    BUILD_NUMBER: str = "2026.11.20-REV-265-v1.147.0-79268158"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
-    BUILD_DATE: str = "2026-11-19"
+    BUILD_DATE: str = "2026-11-20"
     AUTHOR: str = "Jawahar R Mallah"
     ORGANIZATION: str = "Smritisys & AITDL Networks"
     LICENSE_AUTHORITY_URL: str = "https://smritisys.com"
@@ -71,28 +71,120 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: Any = [
         "http://localhost:5173",
         "http://localhost:3000",
+        "http://localhost:2026",
+        "https://localhost:2026",
         "http://localhost:80",
+        "https://localhost:443",
         "http://localhost",
+        "https://localhost",
+        "http://127.0.0.1:2026",
+        "https://127.0.0.1:2026",
+        "http://127.0.0.1",
+        "https://127.0.0.1",
+        "http://prathamone:2026",
+        "https://prathamone:2026",
+        "http://prathamone",
+        "https://prathamone",
+        "http://prathamone.local:2026",
+        "https://prathamone.local:2026",
+        "http://prathamone.local",
+        "https://prathamone.local",
+        "http://classesname:2026",
+        "https://classesname:2026",
+        "http://classesname",
+        "https://classesname",
+        "http://classesname.local:2026",
+        "https://classesname.local:2026",
+        "http://classesname.local",
+        "https://classesname.local",
+        "http://aditiacademy:2026",
+        "https://aditiacademy:2026",
+        "http://aditiacademy",
+        "https://aditiacademy",
+        "http://aditiacademy.local:2026",
+        "https://aditiacademy.local:2026",
+        "http://aditiacademy.local",
+        "https://aditiacademy.local",
+        "http://prashantacademy:2026",
+        "https://prashantacademy:2026",
+        "http://prashantacademy",
+        "https://prashantacademy",
+        "http://prashantacademy.local:2026",
+        "https://prashantacademy.local:2026",
+        "http://prashantacademy.local",
+        "https://prashantacademy.local",
     ]
 
     @property
     def cors_origins(self) -> List[str]:
         v = self.ALLOWED_ORIGINS
+        origins: List[str] = []
         if isinstance(v, str):
             v = v.strip()
             if v.startswith("[") and v.endswith("]"):
                 try:
-                    return json.loads(v)
+                    origins = json.loads(v)
                 except Exception:
                     pass
-            return [i.strip() for i in v.split(",") if i.strip()]
+            else:
+                origins = [i.strip() for i in v.split(",") if i.strip()]
         elif isinstance(v, list):
-            return [str(i) for i in v]
-        # Never silently allow wildcard origins — raise instead
-        raise ValueError(
-            "ALLOWED_ORIGINS is misconfigured. "
-            "Set it to a JSON list or comma-separated string of origins."
-        )
+            origins = [str(i) for i in v]
+        else:
+            raise ValueError(
+                "ALLOWED_ORIGINS is misconfigured. "
+                "Set it to a JSON list or comma-separated string of origins."
+            )
+
+        canonical = [
+            "http://localhost:2026",
+            "https://localhost:2026",
+            "http://localhost:80",
+            "https://localhost:443",
+            "http://localhost",
+            "https://localhost",
+            "http://127.0.0.1:2026",
+            "https://127.0.0.1:2026",
+            "http://127.0.0.1",
+            "https://127.0.0.1",
+            "http://prathamone:2026",
+            "https://prathamone:2026",
+            "http://prathamone",
+            "https://prathamone",
+            "http://prathamone.local:2026",
+            "https://prathamone.local:2026",
+            "http://prathamone.local",
+            "https://prathamone.local",
+            "http://classesname:2026",
+            "https://classesname:2026",
+            "http://classesname",
+            "https://classesname",
+            "http://classesname.local:2026",
+            "https://classesname.local:2026",
+            "http://classesname.local",
+            "https://classesname.local",
+            "http://aditiacademy:2026",
+            "https://aditiacademy:2026",
+            "http://aditiacademy",
+            "https://aditiacademy",
+            "http://aditiacademy.local:2026",
+            "https://aditiacademy.local:2026",
+            "http://aditiacademy.local",
+            "https://aditiacademy.local",
+            "http://prashantacademy:2026",
+            "https://prashantacademy:2026",
+            "http://prashantacademy",
+            "https://prashantacademy",
+            "http://prashantacademy.local:2026",
+            "https://prashantacademy.local:2026",
+            "http://prashantacademy.local",
+            "https://prashantacademy.local",
+        ]
+        merged = list(origins)
+        for c in canonical:
+            if c not in merged:
+                merged.append(c)
+        return merged
 
     def validate_security(self) -> None:
         """Fail fast in production when insecure defaults are detected."""

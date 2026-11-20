@@ -17,6 +17,7 @@ When acting as an AI assistant, pair programmer, or autonomous agent on this rep
 4. **Attribution:** Preserve Jawahar R Mallah / AITDL corporate headers across all modified files.
 5. **View-First Governance:** View Mode is the default everywhere. Explicit Edit Mode activation is required for any creation, update, or deletion. Navigation and logout automatically reset state.
 6. **Data Deduplication Governance (Rule 011):** Reuse canonical masters across standards; never duplicate records by grade. Historical financial and academic snapshots must remain immutable. See [docs/25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md](file:///f:/PrashantAcademy/docs/25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md).
+7. **Automated Release Hygiene (Rule 012):** Production payloads (`dist/`, installer, docker) must strictly exclude development documentation, raw artwork, video clips, tests, and secrets as defined in `installer/release_whitelist.json`. Validate using `python scripts/check_release_hygiene.py`.
 
 ---
 

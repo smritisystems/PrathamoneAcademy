@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Comprehensive test suite for Teacher Profile & Employee Dossier: 13-tab payload, multi-address management, multi-bank accounts, assignment disambiguation, and emergency/nominee contacts.
 #  */
@@ -83,7 +83,7 @@ async def test_employee_dossier_13_tab_payload_retrieval(
         last_name="Kulkarni",
         role="teacher",
         staff_code="TCH-DOS-01",
-        phone="9876543210",
+        phone="8779123007",
         is_active=True,
     )
     db.add(teacher)

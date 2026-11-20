@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Backend security test suite for staff mutation endpoints (addresses, bank accounts, key contacts) verifying Rule 010, authentication (401), role authorization (403), and audit log creation.
 #  */
@@ -136,7 +136,7 @@ async def test_staff_mutation_unauthorized_role_returns_403(client, db, test_ins
         # Bank add
         r = await client.post(
             f"/api/v1/staff/{teacher.id}/bank-accounts",
-            json={"account_holder_name": "Test", "bank_name": "SBI", "account_number": "98765432101", "ifsc_code": "SBIN0001234"},
+            json={"account_holder_name": "Test", "bank_name": "SBI", "account_number": "87791230071", "ifsc_code": "SBIN0001234"},
             headers=headers,
         )
         assert r.status_code == 403, f"Expected 403 for bank add, got {r.status_code}"
@@ -317,7 +317,7 @@ async def test_staff_bank_account_mutation_authorized_admin_and_audit_log(client
     bank2_payload = {
         "account_holder_name": "Ramesh Kulkarni",
         "bank_name": "HDFC Bank",
-        "account_number": "987654321098",
+        "account_number": "877912300798",
         "ifsc_code": "HDFC0005678",
         "branch_name": "Shivaji Nagar",
         "account_type": "salary",

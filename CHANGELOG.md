@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.147.0] - 2026-11-20
+### Added
+- **Dynamic Versioning & Hardened Windows Installer Pipeline**:
+  - Dynamically builds `PrathamOne-EduOS-Setup-v{VERSION}.exe` based on the authoritative repository semantic version and Git revision count.
+  - Zero private-key exposure: TLS certificates and keys are securely generated machine-locally upon installation rather than bundled into distributed binaries.
+  - Full-tree bytecode compilation (`.pyc`, `optimize=2`) and SHA-256 HMAC integrity manifest protection.
+- **Configurable Application Presentation Mode**:
+  - Added user toggle under `Settings -> System Parameters` to select between **Standard Web Browser (Default)** with address bar/tabs and **Dedicated Desktop Window (PWA Mode)**.
+  - Desktop launcher (`windows_launcher.py`) respects `launcher_config.json`, `.env`, and CLI flags (`--browser` vs `--app`).
+- **EduBoard Lecture Recording & Media Studio**:
+  - Native in-app lecture recording with audio capture, keyframe inspection, and synchronized presentation publishing.
+- **Enterprise Security & Compliance**:
+  - Full DPDP Act 2023 privacy notice integration, device verification binding, and bytecode integrity verification (`.code_integrity.manifest`).
+
 ## [1.88.0] - 2026-11-12
 ### Added
 - **PrathamOne EduBoard — Interactive Teaching & Digital Classroom Engine, Collapsible Workspace, Immersive Full-Screen Greenboard & Detached Pop-Out Live Sync**:

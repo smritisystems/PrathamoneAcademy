@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-14
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Institution-scoped activation and refresh of signed software licenses.
  */
@@ -346,6 +346,24 @@ export default function LicenseActivationPanel({ institutionId, editScope }: Lic
               <p className="mt-1 text-xs text-slate-500">
                 Signed snapshot issued: {licenseStatus.issued_at || 'Unknown'}
               </p>
+            )}
+            {licenseStatus?.hardware_fingerprint && (
+              <div className="mt-3 flex items-center justify-between p-3 rounded-xl border border-indigo-200 bg-indigo-50/50 text-xs">
+                <div>
+                  <span className="font-semibold text-indigo-900 block">Server Physical Hardware ID (Node-Lock):</span>
+                  <span className="font-mono font-bold text-indigo-950">{licenseStatus.hardware_fingerprint}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(licenseStatus.hardware_fingerprint || '')
+                    toast.success('Hardware ID copied to clipboard!')
+                  }}
+                  className="px-2.5 py-1 bg-white border border-indigo-300 rounded-lg text-indigo-700 font-semibold text-xs hover:bg-indigo-50 shadow-2xs"
+                >
+                  Copy Hardware ID
+                </button>
+              </div>
             )}
             {['unavailable', 'retry_scheduled'].includes(licenseStatus?.refresh_status || '') && (
               <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">

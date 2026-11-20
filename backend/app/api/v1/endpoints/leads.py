@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-07
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
@@ -2395,78 +2395,78 @@ async def seed_initial_leads_if_empty(db: AsyncSession, institution_id: Optional
     demo_leads = [
         # New Enquiry
         {
-            "num": "LD-0286", "fn": "Aarav", "ln": "Sharma", "phone": "+91 8779 123 007", "email": "aarav.sharma@gmail.com",
+            "num": "LD-0286", "fn": "Aarav", "ln": "Sharma", "phone": "+91 8779 123 007", "email": "aarav.sharma@example.com",
             "course": "JEE Foundation", "stage": "new_enquiry", "priority": "hot", "src": "Website",
             "std": std_map.get(10), "board": board_map.get("CBSE"), "follow_up": now + timedelta(hours=2),
             "school": "St. Xavier High School", "parent": "Sunil Sharma", "p_phone": "+91 8779 123 007", "notes": "Interested in 2-year integrated JEE Foundation coaching."
         },
         {
-            "num": "LD-0285", "fn": "Riya", "ln": "Patil", "phone": "+91 8779 123 007", "email": "riya.patil@outlook.com",
+            "num": "LD-0285", "fn": "Riya", "ln": "Patil", "phone": "+91 8779 123 007", "email": "riya.patil@example.com",
             "course": "Maths + Science", "stage": "new_enquiry", "priority": "warm", "src": "Walk-in",
             "std": std_map.get(9), "board": board_map.get("SSC"), "follow_up": now + timedelta(hours=3),
             "school": "Vidya Bhavan", "parent": "Sanjay Patil", "p_phone": "+91 8779 123 007", "notes": "Parents visited institute, requested fee breakdown."
         },
         # Contacted
         {
-            "num": "LD-0284", "fn": "Vedant", "ln": "Gokhale", "phone": "+91 8779 123 007", "email": "vedant.g@gmail.com",
+            "num": "LD-0284", "fn": "Vedant", "ln": "Gokhale", "phone": "+91 8779 123 007", "email": "vedant.g@example.com",
             "course": "CA Foundation", "stage": "contacted", "priority": "hot", "src": "Referral",
             "std": std_map.get(11), "board": board_map.get("HSC"), "follow_up": now + timedelta(days=1),
             "school": "D.G. Ruparel College", "parent": "Anand Gokhale", "p_phone": "+91 8779 123 007", "notes": "Called yesterday. Student interested in weekend CA foundation batch."
         },
         {
-            "num": "LD-0283", "fn": "Ira", "ln": "Deshmukh", "phone": "+91 8779 123 007", "email": "ira.deshmukh@gmail.com",
+            "num": "LD-0283", "fn": "Ira", "ln": "Deshmukh", "phone": "+91 8779 123 007", "email": "ira.deshmukh@example.com",
             "course": "All Subjects", "stage": "contacted", "priority": "warm", "src": "Phone Enquiry",
             "std": std_map.get(8), "board": board_map.get("CBSE"), "follow_up": now - timedelta(hours=5),
             "school": "Delhi Public School", "parent": "Meena Deshmukh", "p_phone": "+91 8779 123 007", "notes": "Contacted via phone. Follow-up overdue for counselling slot."
         },
         # Counselling / Demo
         {
-            "num": "LD-0282", "fn": "Kavya", "ln": "Mehta", "phone": "+91 8779 123 007", "email": "kavya.m@gmail.com",
+            "num": "LD-0282", "fn": "Kavya", "ln": "Mehta", "phone": "+91 8779 123 007", "email": "kavya.m@example.com",
             "course": "JEE / NEET", "stage": "counselling_demo", "priority": "hot", "src": "WhatsApp",
             "std": std_map.get(10), "board": board_map.get("CBSE"), "follow_up": now + timedelta(days=2),
             "school": "Podar International", "parent": "Rajesh Mehta", "p_phone": "+91 8779 123 007", "notes": "Trial Physics demo class scheduled."
         },
         {
-            "num": "LD-0281", "fn": "Arjun", "ln": "Naik", "phone": "+91 8779 123 007", "email": "arjun.naik@gmail.com",
+            "num": "LD-0281", "fn": "Arjun", "ln": "Naik", "phone": "+91 8779 123 007", "email": "arjun.naik@example.com",
             "course": "Science Stream", "stage": "counselling_demo", "priority": "warm", "src": "Social Media",
             "std": std_map.get(11), "board": board_map.get("HSC"), "follow_up": now + timedelta(days=2),
             "school": "Kirti College", "parent": "Vikas Naik", "p_phone": "+91 8779 123 007", "notes": "Counselling scheduled with Academic Director."
         },
         # Interested
         {
-            "num": "LD-0280", "fn": "Saanvi", "ln": "Kulkarni", "phone": "+91 8779 123 007", "email": "saanvi.k@gmail.com",
+            "num": "LD-0280", "fn": "Saanvi", "ln": "Kulkarni", "phone": "+91 8779 123 007", "email": "saanvi.k@example.com",
             "course": "Class 9 Foundation", "stage": "interested", "priority": "hot", "src": "Website",
             "std": std_map.get(9), "board": board_map.get("CBSE"), "follow_up": now + timedelta(days=1),
             "school": "Ryan International", "parent": "Pradeep Kulkarni", "p_phone": "+91 8779 123 007", "notes": "Attended Maths demo. Very satisfied, discussing fee payment plan."
         },
         {
-            "num": "LD-0279", "fn": "Parth", "ln": "More", "phone": "+91 8779 123 007", "email": "parth.more@gmail.com",
+            "num": "LD-0279", "fn": "Parth", "ln": "More", "phone": "+91 8779 123 007", "email": "parth.more@example.com",
             "course": "Board Exam Prep", "stage": "interested", "priority": "warm", "src": "Referral",
             "std": std_map.get(10), "board": board_map.get("SSC"), "follow_up": now + timedelta(days=3),
             "school": "Balmohan Vidyamandir", "parent": "Ganesh More", "p_phone": "+91 8779 123 007", "notes": "Interested in test series and weekend crash course."
         },
         # Admission Pending
         {
-            "num": "LD-0278", "fn": "Mihir", "ln": "Joshi", "phone": "+91 8779 123 007", "email": "mihir.joshi@gmail.com",
+            "num": "LD-0278", "fn": "Mihir", "ln": "Joshi", "phone": "+91 8779 123 007", "email": "mihir.joshi@example.com",
             "course": "Foundation Batch", "stage": "admission_pending", "priority": "hot", "src": "Website",
             "std": std_map.get(8), "board": board_map.get("CBSE"), "follow_up": now + timedelta(hours=4),
             "school": "Army Public School", "parent": "Col. Ashok Joshi", "p_phone": "+91 8779 123 007", "notes": "Token amount discussed. Awaiting registration form submission."
         },
         {
-            "num": "LD-0277", "fn": "Diya", "ln": "Sutar", "phone": "+91 8779 123 007", "email": "diya.sutar@gmail.com",
+            "num": "LD-0277", "fn": "Diya", "ln": "Sutar", "phone": "+91 8779 123 007", "email": "diya.sutar@example.com",
             "course": "ICSE Science & Maths", "stage": "admission_pending", "priority": "hot", "src": "Walk-in",
             "std": std_map.get(9), "board": board_map.get("ICSE"), "follow_up": now + timedelta(days=1),
             "school": "Bombay Scottish", "parent": "Nitin Sutar", "p_phone": "+91 8779 123 007", "notes": "Admission confirmed verbally. Documents pending."
         },
         # Converted
         {
-            "num": "LD-0276", "fn": "Advait", "ln": "Pendse", "phone": "+91 8779 123 007", "email": "advait.pendse@gmail.com",
+            "num": "LD-0276", "fn": "Advait", "ln": "Pendse", "phone": "+91 8779 123 007", "email": "advait.pendse@example.com",
             "course": "CBSE Class 10 Comprehensive", "stage": "converted", "priority": "warm", "src": "Website",
             "std": std_map.get(10), "board": board_map.get("CBSE"), "follow_up": None,
             "school": "St. Anne High School", "parent": "Makarand Pendse", "p_phone": "+91 8779 123 007", "notes": "Admitted on 24 Oct 2026."
         },
         {
-            "num": "LD-0275", "fn": "Neha", "ln": "Karnik", "phone": "+91 8779 123 007", "email": "neha.karnik@gmail.com",
+            "num": "LD-0275", "fn": "Neha", "ln": "Karnik", "phone": "+91 8779 123 007", "email": "neha.karnik@example.com",
             "course": "Class 11 Science & JEE", "stage": "converted", "priority": "warm", "src": "Referral",
             "std": std_map.get(11), "board": board_map.get("HSC"), "follow_up": None,
             "school": "Sathaye College", "parent": "Dr. Karnik", "p_phone": "+91 8779 123 007", "notes": "Admitted on 22 Oct 2026."

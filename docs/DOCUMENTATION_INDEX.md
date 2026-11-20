@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-19 23:45:13<br>
-**Total Indexed Items:** 660<br>
+**Last Reindexed:** 2026-11-21 03:12:51<br>
+**Total Indexed Items:** 714<br>
 
 ---
 
@@ -14,8 +14,8 @@
 
 | Module # | Module Directory | Registered Documents | Description |
 |---|---|---|---|
-| `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **18** | Product Overview & Vision |
-| `01` | [01_ARCHITECTURE](#01_architecture) | **18** | System Architecture & Workflows |
+| `00` | [00_PRODUCT_OVERVIEW](#00_product_overview) | **22** | Product Overview & Vision |
+| `01` | [01_ARCHITECTURE](#01_architecture) | **19** | System Architecture & Workflows |
 | `02` | [02_INSTALLATION_DEPLOYMENT](#02_installation_deployment) | **11** | Installation & Deployment |
 | `03` | [03_ACADEMIC_MANAGEMENT](#03_academic_management) | **30** | Academic Structure & Courses |
 | `04` | [04_STUDENT_MANAGEMENT](#04_student_management) | **21** | Student Directory & Admissions |
@@ -26,22 +26,22 @@
 | `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **51** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **3** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **14** | Reports, Analytics & Data Grids |
-| `12` | [12_RBAC_SECURITY](#12_rbac_security) | **15** | RBAC, Security & Permissions |
+| `12` | [12_RBAC_SECURITY](#12_rbac_security) | **16** | RBAC, Security & Permissions |
 | `13` | [13_SYSADMIN_SETTINGS](#13_sysadmin_settings) | **20** | Sysadmin Center & System Settings |
 | `14` | [14_PRINTING_DOCUMENTS](#14_printing_documents) | **14** | Document Generation & Print Engine |
-| `15` | [15_INTEGRATIONS](#15_integrations) | **10** | Integrations, Messaging & Importers |
+| `15` | [15_INTEGRATIONS](#15_integrations) | **11** | Integrations, Messaging & Importers |
 | `16` | [16_DATABASE_API](#16_database_api) | **8** | Database Schema & REST API Standards |
 | `17` | [17_UI_UX_DESIGN](#17_ui_ux_design) | **40** | UI/UX Design, Components & Footer |
 | `18` | [18_TESTING_QA](#18_testing_qa) | **14** | Testing, Verification & Quality Assurance |
-| `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **14** | Releases, Versioning & Changelogs |
-| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **70** | Forensic Audits & Data Health |
+| `19` | [19_RELEASES_CHANGELOG](#19_releases_changelog) | **16** | Releases, Versioning & Changelogs |
+| `20` | [20_AUDITS_COMPLIANCE](#20_audits_compliance) | **73** | Forensic Audits & Data Health |
 | `21` | [21_TROUBLESHOOTING](#21_troubleshooting) | **6** | Troubleshooting, Runbooks & Recovery |
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **14** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
-| `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **8** | Business Rules & SSOT Policy |
+| `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **9** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
-| `assets` | [assets/screenshots](#asset-galleries) | **222** | Verification UI captures, diagrams, attachments |
+| `assets` | [assets/screenshots](#asset-galleries) | **263** | Verification UI captures, diagrams, attachments |
 
 ---
 
@@ -65,9 +65,13 @@
 | **PrathamOne EduOS — Cinematic Television Advertisement Studio V2 Master Production Report** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_CINEMATIC-COMMERCIAL-STUDIO-V2-MASTER_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 07_ATTENDANCE, 09_FEES_PAYMENTS |
 | **PrathamOne EduOS — Cinematic Television Advertisement Studio V3: Realistic Teacher Intro & Official Artwork Showcase** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_TEACHER-INTRO-AND-OFFICIAL-ARTWORK-COMMERCIAL_V3.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_TEACHER-INTRO-AND-OFFICIAL-ARTWORK-COMMERCIAL_V3.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 07_ATTENDANCE, 09_FEES_PAYMENTS |
 | **PrathamOne EduOS — Coaching Institute Pitch Deck & Presentation Specification** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_COACHING-PITCH-DECK-PRESENTATION_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_COACHING-PITCH-DECK-PRESENTATION_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
+| **PrathamOne EduOS — Commercial Executive Brief & Institutional One-Pager** | `REPORT` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_PRODUCT-OVERVIEW_BROCHURE_COMMERCIAL-EXECUTIVE-ONE-PAGER_V1.md](00_PRODUCT_OVERVIEW/2026-11-20_PRODUCT-OVERVIEW_BROCHURE_COMMERCIAL-EXECUTIVE-ONE-PAGER_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 20_AUDITS_COMPLIANCE |
+| **PrathamOne EduOS — Commercial Go-To-Market Playbook & 48-Hour Institute Onboarding Blueprint** | `PLAN` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_PRODUCT-OVERVIEW_IMPLEMENTATION-PLAN_COMMERCIAL-GTM-AND-INSTITUTE-ONBOARDING-PLAYBOOK_V1.md](00_PRODUCT_OVERVIEW/2026-11-20_PRODUCT-OVERVIEW_IMPLEMENTATION-PLAN_COMMERCIAL-GTM-AND-INSTITUTE-ONBOARDING-PLAYBOOK_V1.md) | 00_PRODUCT_OVERVIEW, 02_INSTALLATION_DEPLOYMENT, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 20_AUDITS_COMPLIANCE, 22_USER_MANUALS |
 | **PrathamOne EduOS — Commercial Short Preview Production Report: Institute Intro & Indian Academic Director Showcase** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_REPORT_INSTITUTE-COMMERCIAL-SHORT-PREVIEW_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_REPORT_INSTITUTE-COMMERCIAL-SHORT-PREVIEW_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
 | **PrathamOne EduOS — Documentation Governance & Naming Rules** | `DOCUMENT` | `1.0` | 2026-11-16 | `Approved` | [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) | - |
 | **PrathamOne EduOS — Google Flow & Veo 2 Scene Builder Prompt Pack and Commercial Studio Ingestion** | `SPECIFICATION` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_PRODUCT-OVERVIEW_SPECIFICATION_GOOGLE-FLOW-VEO-PROMPT-PACK_V1.md](00_PRODUCT_OVERVIEW/2026-11-19_PRODUCT-OVERVIEW_SPECIFICATION_GOOGLE-FLOW-VEO-PROMPT-PACK_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE |
+| **PrathamOne EduOS — One-Click Showcase Demo Dataset Engine Guide** | `GUIDE` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_PRODUCT-OVERVIEW_GUIDE_ONE-CLICK-SHOWCASE-DEMO-DATASET-ENGINE_V1.md](00_PRODUCT_OVERVIEW/2026-11-20_PRODUCT-OVERVIEW_GUIDE_ONE-CLICK-SHOWCASE-DEMO-DATASET-ENGINE_V1.md) | 00_PRODUCT_OVERVIEW, 04_STUDENT_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 09_FEES_PAYMENTS |
+| **PrathamOne EduOS — Prospective Coaching Institute 20-Minute Live Demo Runbook** | `GUIDE` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_PRODUCT-OVERVIEW_GUIDE_PROSPECTIVE-INSTITUTE-DEMO-RUNBOOK_V1.md](00_PRODUCT_OVERVIEW/2026-11-20_PRODUCT-OVERVIEW_GUIDE_PROSPECTIVE-INSTITUTE-DEMO-RUNBOOK_V1.md) | 00_PRODUCT_OVERVIEW, 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 17_UI_UX_DESIGN, 20_AUDITS_COMPLIANCE |
 | **Strategic Product Roadmap — Prashant Academy** | `SPECIFICATION` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md](00_PRODUCT_OVERVIEW/2026-11-04_PRODUCT_OVERVIEW_SPECIFICATION_PRODUCT-ROADMAP_V1.md) | - |
 
 
@@ -76,6 +80,7 @@
 | Document Title | Type | Version | Date | Status | Relative Document Link | Related Modules |
 |---|---|---|---|---|---|---|
 | **Architectural Feasibility & Engineering Report: Native In-App Lecture Recording vs OBS Studio Integration** | `REPORT` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_ARCHITECTURE_FEASIBILITY-REPORT_NATIVE-IN-APP-RECORDING-AND-OBS-STREAMING_V1.md](01_ARCHITECTURE/2026-11-19_ARCHITECTURE_FEASIBILITY-REPORT_NATIVE-IN-APP-RECORDING-AND-OBS-STREAMING_V1.md) | 03_ACADEMIC_MANAGEMENT, 14_PRINTING_DOCUMENTS, 16_DATABASE_API |
+| **Dean Prashant Tejam Neural Voice Cloning Architecture & Multi-Topic Generation Pipeline** | `GUIDE` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_ARCHITECTURE_GUIDE_DEAN-PRASHANT-VOICE-CLONING-PIPELINE_V1.md](01_ARCHITECTURE/2026-11-20_ARCHITECTURE_GUIDE_DEAN-PRASHANT-VOICE-CLONING-PIPELINE_V1.md) | 00_PRODUCT_OVERVIEW, 03_ACADEMIC_MANAGEMENT, 20_AUDITS_COMPLIANCE |
 | **Detailed Workflow Specifications** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_ARCHITECTURE_SPECIFICATION_WORKFLOW-SPECIFICATIONS_V1.md](01_ARCHITECTURE/2026-11-03_ARCHITECTURE_SPECIFICATION_WORKFLOW-SPECIFICATIONS_V1.md) | - |
 | **Global Branding & Appearance Architecture Specification** | `SPECIFICATION` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md](01_ARCHITECTURE/2026-11-08_ARCHITECTURE_SPECIFICATION_GLOBAL-BRANDING-ARCHITECTURE_V1.md) | 01_ARCHITECTURE, 13_SYSADMIN_SETTINGS, 17_UI_UX_DESIGN |
 | **Global Data Inventory — Complete Software & Schema Census** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md](01_ARCHITECTURE/2026-11-09_ARCHITECTURE_REPORT_GLOBAL-DATA-INVENTORY_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
@@ -321,6 +326,7 @@
 | **Global View-First & Explicit Edit Mode Governance Architecture & Implementation Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md](12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_GLOBAL-VIEW-FIRST-AND-EXPLICIT-EDIT-MODE-GOVERNANCE_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 09_FEES_PAYMENTS, 13_SYSADMIN_SETTINGS |
 | **Optional Device-Wise Security Binding Architectural Specification** | `SPECIFICATION` | `1.0` | 2026-11-19 | `Approved` | [2026-11-19_RBAC-SECURITY_SPECIFICATION_OPTIONAL-DEVICE-BINDING-ARCHITECTURE_V1.md](12_RBAC_SECURITY/2026-11-19_RBAC-SECURITY_SPECIFICATION_OPTIONAL-DEVICE-BINDING-ARCHITECTURE_V1.md) | 13_SYSADMIN_SETTINGS, 16_DATABASE_API, 25_BUSINESS_REQUIREMENTS |
 | **PrathamOne EduBoard — RBAC Permission & Isolation Matrix** | `SECURITY` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_RBAC-SECURITY_PERMISSION-MATRIX_EDUBOARD-PERMISSION-MATRIX_V1.md](12_RBAC_SECURITY/2026-11-12_RBAC-SECURITY_PERMISSION-MATRIX_EDUBOARD-PERMISSION-MATRIX_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 12_RBAC_SECURITY |
+| **PrathamOne EduOS — Commercial EXE Copy-Protection, Anti-Piracy & Binary Hardening Directive** | `ANALYSIS-REPORT` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_RBAC-SECURITY_ARCHITECTURAL-ANALYSIS_EXE-COPY-PROTECTION-AND-ANTI-PIRACY-SHIELD_V1.md](12_RBAC_SECURITY/2026-11-20_RBAC-SECURITY_ARCHITECTURAL-ANALYSIS_EXE-COPY-PROTECTION-AND-ANTI-PIRACY-SHIELD_V1.md) | 02_INSTALLATION_DEPLOYMENT, 13_SYSADMIN_SETTINGS, 20_AUDITS_COMPLIANCE |
 | **RBAC Correction: CRM Permissions and Student Admission Separation Audit & Implementation Report** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md](12_RBAC_SECURITY/2026-11-08_RBAC-SECURITY_REPORT_CRM-PERMISSIONS-ADMISSION-SEPARATION_V1.md) | 04_STUDENT_MANAGEMENT, 12_RBAC_SECURITY, 09_FEES_PAYMENTS |
 | **Role and Permission Matrix** | `SPECIFICATION` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md](12_RBAC_SECURITY/2026-11-03_RBAC_SECURITY_SPECIFICATION_ROLE-PERMISSION-MATRIX_V1.md) | - |
 | **Rule 010 Global View-First Enforcement — Complete Software-Wide Coverage Implementation Report** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_RULE-010-COMPLETE-SOFTWARE-WIDE-COVERAGE_V1.md](12_RBAC_SECURITY/2026-11-07_RBAC-SECURITY_IMPLEMENTATION-REPORT_RULE-010-COMPLETE-SOFTWARE-WIDE-COVERAGE_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 14_PRINTING_DOCUMENTS, 15_INTEGRATIONS |
@@ -389,6 +395,7 @@
 | **Notice Board Manager & Circulars Register Implementation Report** | `REPORT` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_NOTICE-BOARD-MANAGER-AND-CIRCULARS_V1.md](15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_NOTICE-BOARD-MANAGER-AND-CIRCULARS_V1.md) | 04_STUDENT_MANAGEMENT, 03_ACADEMIC_MANAGEMENT, 17_UI_UX_DESIGN |
 | **Prashant Academy — Data Reset & Authoritative Excel Import Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md](15_INTEGRATIONS/2026-11-04_INTEGRATIONS_IMPLEMENTATION-REPORT_PADATA-IMPORT-RECONCILIATION-REPORT_V1.md) | - |
 | **PrathamOne EduOS — Full Hybrid Real-Time Chat & Academic Doubt Resolution Engine Implementation Report** | `REPORT` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_FULL-HYBRID-CHAT-AND-DOUBT-RESOLUTION_V1.md](15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_FULL-HYBRID-CHAT-AND-DOUBT-RESOLUTION_V1.md) | 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 15_INTEGRATIONS |
+| **PrathamOne EduOS — Plug-and-Play WhatsApp & Omnichannel Communication Gateway Manual** | `GUIDE` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_INTEGRATIONS_USER-MANUAL_PLUG-AND-PLAY-WHATSAPP-AND-OMNICHANNEL-GATEWAYS_V1.md](15_INTEGRATIONS/2026-11-20_INTEGRATIONS_USER-MANUAL_PLUG-AND-PLAY-WHATSAPP-AND-OMNICHANNEL-GATEWAYS_V1.md) | 13_SYSADMIN_SETTINGS, 15_INTEGRATIONS, 09_FEES_PAYMENTS, 07_ATTENDANCE |
 | **Real-Time WhatsApp & SMS Automation Engine Implementation Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md](15_INTEGRATIONS/2026-11-06_INTEGRATIONS_IMPLEMENTATION-REPORT_WHATSAPP-SMS-AUTOMATION-ENGINE_V1.md) | 07_ATTENDANCE, 09_FEES_PAYMENTS, 12_RBAC_SECURITY |
 | **Smart @ Entity Mention Picker & Role-Governed Record Access Engine** | `REPORT` | `1.0` | 2026-11-16 | `Approved` | [2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_SMART-MENTION-ENTITY-PICKER-AND-RECORD-ACCESS_V1.md](15_INTEGRATIONS/2026-11-16_INTEGRATIONS_IMPLEMENTATION-REPORT_SMART-MENTION-ENTITY-PICKER-AND-RECORD-ACCESS_V1.md) | 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 03_ACADEMIC_MANAGEMENT, 12_RBAC_SECURITY |
 
@@ -481,6 +488,7 @@
 | **Automated Revision-Based Version Progression Engine Implementation Report** | `REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md](19_RELEASES_CHANGELOG/2026-11-06_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-BY-REVISION_V1.md) | 13_SYSADMIN_SETTINGS, 01_ARCHITECTURE |
 | **One-Click Automated Update & Zero-Data-Loss Rollback Engine — Enterprise Specification** | `RESEARCH` | `1.0` | 2026-11-18 | `Approved` | [2026-11-18_RELEASES_SPECIFICATION_ONE-CLICK-AUTOMATED-UPDATE-AND-ROLLBACK-ENGINE_V1.md](19_RELEASES_CHANGELOG/2026-11-18_RELEASES_SPECIFICATION_ONE-CLICK-AUTOMATED-UPDATE-AND-ROLLBACK-ENGINE_V1.md) | 01_ARCHITECTURE, 13_SYSADMIN_SETTINGS, 19_RELEASES_CHANGELOG |
 | **PrathamOne Academy — Enterprise Release & Change Management System Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_ENTERPRISE-RELEASE-AND-CHANGE-MANAGEMENT-REPORT_V1.md](19_RELEASES_CHANGELOG/2026-11-05_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_ENTERPRISE-RELEASE-AND-CHANGE-MANAGEMENT-REPORT_V1.md) | - |
+| **PrathamOne EduOS Desktop App Mode and Local Trusted SSL Architecture** | `SPECIFICATION` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_RELEASES_SPECIFICATION_DESKTOP-APP-MODE-AND-LOCAL-SSL-HTTPS-ARCHITECTURE_V1.md](19_RELEASES_CHANGELOG/2026-11-20_RELEASES_SPECIFICATION_DESKTOP-APP-MODE-AND-LOCAL-SSL-HTTPS-ARCHITECTURE_V1.md) | 01_ARCHITECTURE, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
 | **Release & Change Management Runtime Synchronization Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md](19_RELEASES_CHANGELOG/2026-11-10_RELEASES_IMPLEMENTATION-REPORT_AUTOMATED-VERSIONING-AND-RUNTIME-SYNC_V1.md) | 01_ARCHITECTURE, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
 | **Release Notes v1.76.0 — Homework Management & Universal Report Intelligence** | `CHANGELOG` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md](19_RELEASES_CHANGELOG/2026-11-11_RELEASES_CHANGELOG_RELEASE-NOTES-V1-76-0_V1.md) | 03_ACADEMIC_MANAGEMENT, 11_REPORTS_EXPORTS, 19_RELEASES_CHANGELOG |
 | **Release Notes v1.87.0 — Homework & Assignment Management Enhancement** | `CHANGELOG` | `1.0` | 2026-11-12 | `Approved` | [2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md](19_RELEASES_CHANGELOG/2026-11-12_RELEASES_CHANGELOG_RELEASE-NOTES-V1-87-0_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 11_REPORTS_EXPORTS, 19_RELEASES_CHANGELOG |
@@ -491,6 +499,7 @@
 | **Signed License Control Plane — Release Notes** | `RELEASE-NOTES` | `1.2` | 2026-11-14 | `Draft` | [2026-11-14_RELEASES_CHANGELOG_RELEASE-NOTES_SIGNED-LICENSE-CONTROL-PLANE_V1.md](19_RELEASES_CHANGELOG/2026-11-14_RELEASES_CHANGELOG_RELEASE-NOTES_SIGNED-LICENSE-CONTROL-PLANE_V1.md) | 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS, 16_DATABASE_API |
 | **Source Code Attribution, Header, and Versioning Policy** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RELEASES_CHANGELOG_POLICY-FRAMEWORK_CODE-ATTRIBUTION-POLICY_V1.md](19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_POLICY-FRAMEWORK_CODE-ATTRIBUTION-POLICY_V1.md) | - |
 | **Source-Code Attribution, Header, and Versioning System Implementation Report** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md](19_RELEASES_CHANGELOG/2026-11-04_RELEASES_CHANGELOG_IMPLEMENTATION-REPORT_CODE-ATTRIBUTION-AND-VERSIONING-REPORT_V1.md) | - |
+| **Windows Desktop & Server EXE Version Update Distribution & Zero-Data-Loss Architecture** | `GUIDE` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_RELEASES_GUIDE_WINDOWS-EXE-UPDATE-DISTRIBUTION-AND-ZERO-DATA-LOSS_V1.md](19_RELEASES_CHANGELOG/2026-11-20_RELEASES_GUIDE_WINDOWS-EXE-UPDATE-DISTRIBUTION-AND-ZERO-DATA-LOSS_V1.md) | 13_SYSADMIN_SETTINGS, 19_RELEASES_CHANGELOG, 22_USER_MANUALS |
 
 
 ### <a id="20_audits_compliance"></a>20_AUDITS_COMPLIANCE — Forensic Audits & Data Health
@@ -505,6 +514,7 @@
 | **Employee Dossier Print Forensic Audit — 14-Point Investigation & Architectural Blueprint** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EMPLOYEE-DOSSIER-PRINT-AUDIT_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 14_PRINTING_DOCUMENTS |
 | **Existing Functionality Audit & Reuse Gap Analysis — Workforce Management & Operations** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EXISTING-FUNCTIONALITY-AND-REUSE-ANALYSIS_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_EXISTING-FUNCTIONALITY-AND-REUSE-ANALYSIS_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 12_RBAC_SECURITY, 14_PRINTING_DOCUMENTS |
 | **FULL SYSTEM AUDIT REPORT — PrathamOne Academy** | `IMPLEMENTATION-REPORT` | `1.0` | 2026-11-05 | `Approved` | [2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-SYSTEM-AUDIT-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-05_AUDITS_COMPLIANCE_IMPLEMENTATION-REPORT_FULL-SYSTEM-AUDIT-REPORT_V1.md) | - |
+| **Forensic Acoustic Comparison: Dean Prashant Tejam Real Voice vs Synthesized Neural TTS** | `REPORT` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_AUDITS-COMPLIANCE_AUDIT-REPORT_REAL-VS-SYNTHETIC-VOICE-COMPARISON_V1.md](20_AUDITS_COMPLIANCE/2026-11-20_AUDITS-COMPLIANCE_AUDIT-REPORT_REAL-VS-SYNTHETIC-VOICE-COMPARISON_V1.md) | 00_PRODUCT_OVERVIEW, 03_ACADEMIC_MANAGEMENT |
 | **Full UI Functional Audit — Interactive Elements, Placeholders, and Action Integrity** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FULL-UI-FUNCTIONAL-AUDIT_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 14_PRINTING_DOCUMENTS, 17_UI_UX_DESIGN |
 | **Functional Remediation Roadmap — Phased Action Plan for UI Integrity and Feature Completion** | `REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FUNCTIONAL-REMEDIATION-ROADMAP_V1.md) | 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 14_PRINTING_DOCUMENTS, 16_DATABASE_API |
 | **Global Branding Security, Tenant Isolation and Coverage Forensic Audit** | `REPORT` | `1.0` | 2026-11-08 | `Approved` | [2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-08_AUDITS-COMPLIANCE_REPORT_GLOBAL-BRANDING-FINAL-SECURITY-AND-COVERAGE-AUDIT_V1.md) | 17_UI_UX_DESIGN, 13_SYSADMIN_SETTINGS, 14_PRINTING_DOCUMENTS |
@@ -529,6 +539,7 @@
 | **PrathamOne EduOS — Complete Application Module & Functional Inventory** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_MODULE-INVENTORY_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_MODULE-INVENTORY_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 06_TEACHER_PAYROLL, 09_FEES_PAYMENTS |
 | **PrathamOne EduOS — Dashboard & Executive Analytics Reconciliation Report** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_DASHBOARD-RECONCILIATION-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_DASHBOARD-RECONCILIATION-REPORT_V1.md) | 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 11_REPORTS_EXPORTS, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Database Schema, Referential Integrity & Data Audit** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md) | 16_DATABASE_API, 01_ARCHITECTURE, 25_BUSINESS_REQUIREMENTS |
+| **PrathamOne EduOS — Deep Audit, Completeness Analysis, Indian Market Rating & Commercial Valuation** | `REPORT` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_AUDITS-COMPLIANCE_AUDIT-REPORT_PRATHAMONE-EDUOS-COMPLETENESS-INDIAN-MARKET-RATING-AND-VALUATION_V1.md](20_AUDITS_COMPLIANCE/2026-11-20_AUDITS-COMPLIANCE_AUDIT-REPORT_PRATHAMONE-EDUOS-COMPLETENESS-INDIAN-MARKET-RATING-AND-VALUATION_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 09_FEES_PAYMENTS, 06_TEACHER_PAYROLL, 12_RBAC_SECURITY, 16_DATABASE_API, 20_AUDITS_COMPLIANCE, 25_BUSINESS_REQUIREMENTS |
 | **PrathamOne EduOS — End-to-End Business Workflow Validation Report** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_END-TO-END-WORKFLOW-VALIDATION_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS |
 | **PrathamOne EduOS — Financial Integrity, Ledger Reconciliation & Numbering Audit** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FINANCIAL-INTEGRITY-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_FINANCIAL-INTEGRITY-AUDIT_V1.md) | 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 16_DATABASE_API, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Frontend Architecture, UI/UX & Component Audit** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_FRONTEND-AUDIT-REPORT_V1.md) | 17_UI_UX_DESIGN, 18_TESTING_QA, 13_SYSADMIN_SETTINGS |
@@ -553,6 +564,7 @@
 | **PrathamOne EduOS — Master Remediation Roadmap & Architectural Prioritization** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MASTER-REMEDIATION-ROADMAP_V1.md) | 01_ARCHITECTURE, 18_TESTING_QA, 16_DATABASE_API |
 | **PrathamOne EduOS — Module Validation & Operational Readiness Matrix** | `AUDIT-REPORT` | `1.0` | 2026-11-07 | `Approved` | [2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md](20_AUDITS_COMPLIANCE/2026-11-07_AUDITS_COMPLIANCE_AUDIT-REPORT_MODULE-VALIDATION-MATRIX_V1.md) | 03_ACADEMIC_MANAGEMENT, 04_STUDENT_MANAGEMENT, 05_TEACHER_MANAGEMENT, 06_TEACHER_PAYROLL, 07_ATTENDANCE, 08_EXAMINATION, 09_FEES_PAYMENTS, 12_RBAC_SECURITY, 13_SYSADMIN_SETTINGS |
 | **PrathamOne EduOS — Official Documents, Printing Engine & Data Export Audit** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRINT-EXPORT-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRINT-EXPORT-AUDIT_V1.md) | 11_REPORTS_EXPORTS, 14_PRINTING_DOCUMENTS, 20_AUDITS_COMPLIANCE |
+| **PrathamOne EduOS — P0 Security Hardening & First-Run Password Remediation Report** | `REPORT` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_AUDITS-COMPLIANCE_REMEDIATION-REPORT_P0-FIRST-RUN-PASSWORD-AND-SECRET-HARDENING_V1.md](20_AUDITS_COMPLIANCE/2026-11-20_AUDITS-COMPLIANCE_REMEDIATION-REPORT_P0-FIRST-RUN-PASSWORD-AND-SECRET-HARDENING_V1.md) | 12_RBAC_SECURITY, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — PostgreSQL 16 Database Schema & Referential Integrity Audit** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_DATABASE-SCHEMA-AUDIT_V1.md) | 01_ARCHITECTURE, 16_DATABASE_API, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Production Readiness & Institutional Deployment Sign-Off** | `REPORT` | `1.0` | 2026-11-10 | `Approved` | [2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md](20_AUDITS_COMPLIANCE/2026-11-10_AUDITS-COMPLIANCE_AUDIT-REPORT_PRODUCTION-READINESS-REPORT_V1.md) | 00_PRODUCT_OVERVIEW, 01_ARCHITECTURE, 02_INSTALLATION_DEPLOYMENT, 20_AUDITS_COMPLIANCE |
 | **PrathamOne EduOS — Repository Documentation Audit & Baseline Inventory** | `AUDIT-REPORT` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md](20_AUDITS_COMPLIANCE/2026-11-06_AUDITS_COMPLIANCE_AUDIT-REPORT_DOCUMENTATION-AUDIT-INVENTORY_V1.md) | - |
@@ -623,6 +635,7 @@
 | **Governance Policy Decision Register** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md) | - |
 | **Master Business Rules Inventory** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_CORE-BUSINESS-RULES_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_CORE-BUSINESS-RULES_V1.md) | - |
 | **Policy Decision Register (PDR)** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_POLICY-DECISION-REGISTER_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_POLICY-DECISION-REGISTER_V1.md) | - |
+| **PrathamOne EduOS — Commercial Pilot Agreement, Master Service Agreement (MSA) & SLA Contract Pack** | `SPECIFICATION` | `1.0` | 2026-11-20 | `Approved` | [2026-11-20_BUSINESS-REQUIREMENTS_CONTRACT_COMMERCIAL-PILOT-AND-MSA-AGREEMENT-PACK_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-20_BUSINESS-REQUIREMENTS_CONTRACT_COMMERCIAL-PILOT-AND-MSA-AGREEMENT-PACK_V1.md) | 00_PRODUCT_OVERVIEW, 02_INSTALLATION_DEPLOYMENT, 12_RBAC_SECURITY, 20_AUDITS_COMPLIANCE, 25_BUSINESS_REQUIREMENTS |
 | **Technical Implementation Plan** | `IMPLEMENTATION-PLAN` | `1.0` | 2026-11-04 | `Approved` | [2026-11-04_BUSINESS_REQUIREMENTS_IMPLEMENTATION-PLAN_ORIGINAL-IMPLEMENTATION-PLAN_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-04_BUSINESS_REQUIREMENTS_IMPLEMENTATION-PLAN_ORIGINAL-IMPLEMENTATION-PLAN_V1.md) | - |
 
 
@@ -650,27 +663,39 @@
 | Asset Filename | Subdirectory | Size | Relative Link |
 |---|---|---|---|
 | `01_ch01_corridor_walk_chyron_8.0s.jpg` | `assets/commercial/inspection_frames` | 264.7 KB | [01_ch01_corridor_walk_chyron_8.0s.jpg](assets/commercial/inspection_frames/01_ch01_corridor_walk_chyron_8.0s.jpg) |
+| `01_eduboard_workspace_ready.png` | `assets/commercial/recording_screenshots` | 589.2 KB | [01_eduboard_workspace_ready.png](assets/commercial/recording_screenshots/01_eduboard_workspace_ready.png) |
+| `01_intro_lecture_title.jpg` | `assets/commercial/recording_inspection_frames` | 101.8 KB | [01_intro_lecture_title.jpg](assets/commercial/recording_inspection_frames/01_intro_lecture_title.jpg) |
 | `01_login_screen.png` | `assets/screenshots` | 1185.9 KB | [01_login_screen.png](assets/screenshots/01_login_screen.png) |
 | `02_ch02_smartboard_presentation_26.0s.jpg` | `assets/commercial/inspection_frames` | 267.6 KB | [02_ch02_smartboard_presentation_26.0s.jpg](assets/commercial/inspection_frames/02_ch02_smartboard_presentation_26.0s.jpg) |
 | `02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg` | `assets/commercial/inspection_frames` | 260.2 KB | [02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg](assets/commercial/inspection_frames/02_ch03_executive_dashboard_kpis_00m40s_40.0s.jpg) |
 | `02_dashboard_overview.png` | `assets/screenshots` | 377.9 KB | [02_dashboard_overview.png](assets/screenshots/02_dashboard_overview.png) |
+| `02_eduboard_recording_modal_active.png` | `assets/commercial/recording_screenshots` | 488.2 KB | [02_eduboard_recording_modal_active.png](assets/commercial/recording_screenshots/02_eduboard_recording_modal_active.png) |
+| `02_vector_axes_trajectory.jpg` | `assets/commercial/recording_inspection_frames` | 124.8 KB | [02_vector_axes_trajectory.jpg](assets/commercial/recording_inspection_frames/02_vector_axes_trajectory.jpg) |
 | `03_academic_workspace.png` | `assets/screenshots` | 345.5 KB | [03_academic_workspace.png](assets/screenshots/03_academic_workspace.png) |
 | `03_ch03_executive_dashboard_pip_45.0s.jpg` | `assets/commercial/inspection_frames` | 309.6 KB | [03_ch03_executive_dashboard_pip_45.0s.jpg](assets/commercial/inspection_frames/03_ch03_executive_dashboard_pip_45.0s.jpg) |
 | `03_ch04_student_directory_search_01m05s_65.0s.jpg` | `assets/commercial/inspection_frames` | 270.5 KB | [03_ch04_student_directory_search_01m05s_65.0s.jpg](assets/commercial/inspection_frames/03_ch04_student_directory_search_01m05s_65.0s.jpg) |
+| `03_eduboard_recording_active_canvas.png` | `assets/commercial/recording_screenshots` | 589.0 KB | [03_eduboard_recording_active_canvas.png](assets/commercial/recording_screenshots/03_eduboard_recording_active_canvas.png) |
+| `03_kinematic_derivations.jpg` | `assets/commercial/recording_inspection_frames` | 174.8 KB | [03_kinematic_derivations.jpg](assets/commercial/recording_inspection_frames/03_kinematic_derivations.jpg) |
 | `03b_ch04_student_search_active_72.0s.jpg` | `assets/commercial/inspection_frames` | 138.3 KB | [03b_ch04_student_search_active_72.0s.jpg](assets/commercial/inspection_frames/03b_ch04_student_search_active_72.0s.jpg) |
 | `03c_ch04_student_search_aarav_filtered_68.0s.jpg` | `assets/commercial/inspection_frames` | 159.8 KB | [03c_ch04_student_search_aarav_filtered_68.0s.jpg](assets/commercial/inspection_frames/03c_ch04_student_search_aarav_filtered_68.0s.jpg) |
 | `04_ch04_student_search_view_lock_70.0s.jpg` | `assets/commercial/inspection_frames` | 236.2 KB | [04_ch04_student_search_view_lock_70.0s.jpg](assets/commercial/inspection_frames/04_ch04_student_search_view_lock_70.0s.jpg) |
 | `04_ch05_fee_collection_analytics_01m30s_90.0s.jpg` | `assets/commercial/inspection_frames` | 278.6 KB | [04_ch05_fee_collection_analytics_01m30s_90.0s.jpg](assets/commercial/inspection_frames/04_ch05_fee_collection_analytics_01m30s_90.0s.jpg) |
 | `04_courses_management.png` | `assets/screenshots` | 393.0 KB | [04_courses_management.png](assets/screenshots/04_courses_management.png) |
+| `04_eduboard_recording_completed_publish.png` | `assets/commercial/recording_screenshots` | 452.6 KB | [04_eduboard_recording_completed_publish.png](assets/commercial/recording_screenshots/04_eduboard_recording_completed_publish.png) |
+| `04_fluorescent_highlighter_applied.jpg` | `assets/commercial/recording_inspection_frames` | 186.7 KB | [04_fluorescent_highlighter_applied.jpg](assets/commercial/recording_inspection_frames/04_fluorescent_highlighter_applied.jpg) |
 | `05_ch05_fee_collection_pip_92.0s.jpg` | `assets/commercial/inspection_frames` | 301.2 KB | [05_ch05_fee_collection_pip_92.0s.jpg](assets/commercial/inspection_frames/05_ch05_fee_collection_pip_92.0s.jpg) |
 | `05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg` | `assets/commercial/inspection_frames` | 256.0 KB | [05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg](assets/commercial/inspection_frames/05_ch06_fresh_eduboard_greenboard_01m48s_108.0s.jpg) |
+| `05_courses_recorded_lecture_portal.png` | `assets/commercial/recording_screenshots` | 270.6 KB | [05_courses_recorded_lecture_portal.png](assets/commercial/recording_screenshots/05_courses_recorded_lecture_portal.png) |
 | `05_subjects_management.png` | `assets/screenshots` | 221.2 KB | [05_subjects_management.png](assets/screenshots/05_subjects_management.png) |
 | `06_ch06_eduboard_greenboard_115.0s.jpg` | `assets/commercial/inspection_frames` | 316.2 KB | [06_ch06_eduboard_greenboard_115.0s.jpg](assets/commercial/inspection_frames/06_ch06_eduboard_greenboard_115.0s.jpg) |
 | `06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg` | `assets/commercial/inspection_frames` | 234.9 KB | [06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg](assets/commercial/inspection_frames/06_ch07_attendance_qr_terminal_02m08s_128.0s.jpg) |
+| `06_eduboard_edit_mode_highlighter_clean.jpg` | `assets/commercial/recording_screenshots` | 89.5 KB | [06_eduboard_edit_mode_highlighter_clean.jpg](assets/commercial/recording_screenshots/06_eduboard_edit_mode_highlighter_clean.jpg) |
 | `06_students_directory.png` | `assets/screenshots` | 374.7 KB | [06_students_directory.png](assets/screenshots/06_students_directory.png) |
 | `07_ch07_attendance_terminal_135.0s.jpg` | `assets/commercial/inspection_frames` | 279.5 KB | [07_ch07_attendance_terminal_135.0s.jpg](assets/commercial/inspection_frames/07_ch07_attendance_terminal_135.0s.jpg) |
+| `07_eduboard_crystal_clear_canvas.png` | `assets/commercial/recording_screenshots` | 191.9 KB | [07_eduboard_crystal_clear_canvas.png](assets/commercial/recording_screenshots/07_eduboard_crystal_clear_canvas.png) |
 | `07_student_admission_form.png` | `assets/screenshots` | 279.8 KB | [07_student_admission_form.png](assets/screenshots/07_student_admission_form.png) |
 | `08_ch08_brand_climax_closing_card_160.0s.jpg` | `assets/commercial/inspection_frames` | 249.5 KB | [08_ch08_brand_climax_closing_card_160.0s.jpg](assets/commercial/inspection_frames/08_ch08_brand_climax_closing_card_160.0s.jpg) |
+| `08_eduboard_crystal_clear_edit_mode.png` | `assets/commercial/recording_screenshots` | 265.4 KB | [08_eduboard_crystal_clear_edit_mode.png](assets/commercial/recording_screenshots/08_eduboard_crystal_clear_edit_mode.png) |
 | `08_student_detail_profile.png` | `assets/screenshots` | 331.5 KB | [08_student_detail_profile.png](assets/screenshots/08_student_detail_profile.png) |
 | `09_student_edit_modal.png` | `assets/screenshots` | 394.0 KB | [09_student_edit_modal.png](assets/screenshots/09_student_edit_modal.png) |
 | `10_student_exit_modal.png` | `assets/screenshots` | 365.5 KB | [10_student_exit_modal.png](assets/screenshots/10_student_exit_modal.png) |
@@ -696,15 +721,33 @@
 | `25_branding_settings_preview.png` | `assets/screenshots` | 478.4 KB | [25_branding_settings_preview.png](assets/screenshots/25_branding_settings_preview.png) |
 | `26_communication_center.png` | `assets/screenshots` | 338.5 KB | [26_communication_center.png](assets/screenshots/26_communication_center.png) |
 | `27_releases_and_version_audit.png` | `assets/screenshots` | 517.1 KB | [27_releases_and_version_audit.png](assets/screenshots/27_releases_and_version_audit.png) |
+| `PrashantAcademy_ICSE_Class10_Physics_Moment_Lecture_1080p.mp4` | `assets/commercial` | 5398.2 KB | [PrashantAcademy_ICSE_Class10_Physics_Moment_Lecture_1080p.mp4](assets/commercial/PrashantAcademy_ICSE_Class10_Physics_Moment_Lecture_1080p.mp4) |
+| `PrashantAcademy_ICSE_Class9_Mean_Lecture_1080p.mp4` | `assets/commercial` | 4148.2 KB | [PrashantAcademy_ICSE_Class9_Mean_Lecture_1080p.mp4](assets/commercial/PrashantAcademy_ICSE_Class9_Mean_Lecture_1080p.mp4) |
+| `PrashantAcademy_ICSE_Class9_Mean_Original_Lecture_1080p.mp4` | `assets/commercial` | 4272.2 KB | [PrashantAcademy_ICSE_Class9_Mean_Original_Lecture_1080p.mp4](assets/commercial/PrashantAcademy_ICSE_Class9_Mean_Original_Lecture_1080p.mp4) |
+| `PrathamOne_EduBoard_1Min_Physics_Lecture_1080p.mp4` | `assets/commercial` | 3544.1 KB | [PrathamOne_EduBoard_1Min_Physics_Lecture_1080p.mp4](assets/commercial/PrathamOne_EduBoard_1Min_Physics_Lecture_1080p.mp4) |
 | `PrathamOne_EduOS_20_Module_Guide.pdf` | `assets/commercial` | 3320.7 KB | [PrathamOne_EduOS_20_Module_Guide.pdf](assets/commercial/PrathamOne_EduOS_20_Module_Guide.pdf) |
 | `PrathamOne_EduOS_20_Module_Guide.pptx` | `assets/commercial` | 5742.0 KB | [PrathamOne_EduOS_20_Module_Guide.pptx](assets/commercial/PrathamOne_EduOS_20_Module_Guide.pptx) |
 | `PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf` | `assets/commercial` | 912.8 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.pdf) |
 | `PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx` | `assets/commercial` | 4426.5 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.ppsx) |
 | `PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx` | `assets/commercial` | 3794.7 KB | [PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx](assets/commercial/PrathamOne_EduOS_20_Modules_Executive_Presentation.pptx) |
+| `PrathamOne_EduOS_Commercial_One_Pager.html` | `assets/commercial` | 16.7 KB | [PrathamOne_EduOS_Commercial_One_Pager.html](assets/commercial/PrathamOne_EduOS_Commercial_One_Pager.html) |
+| `PrathamOne_EduOS_Commercial_One_Pager.png` | `assets/commercial` | 293.6 KB | [PrathamOne_EduOS_Commercial_One_Pager.png](assets/commercial/PrathamOne_EduOS_Commercial_One_Pager.png) |
 | `PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf` | `assets/commercial` | 231.5 KB | [PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf](assets/commercial/PrathamOne_EduOS_Institute_Operations_and_Data_Control.pdf) |
 | `PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx` | `assets/commercial` | 340.6 KB | [PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx](assets/commercial/PrathamOne_EduOS_Institute_Operations_and_Data_Control.pptx) |
-| `PrathamOne_EduOS_Pitch_Deck.pdf` | `assets/commercial` | 786.1 KB | [PrathamOne_EduOS_Pitch_Deck.pdf](assets/commercial/PrathamOne_EduOS_Pitch_Deck.pdf) |
+| `PrathamOne_EduOS_Pitch_Deck.pdf` | `assets/commercial` | 802.8 KB | [PrathamOne_EduOS_Pitch_Deck.pdf](assets/commercial/PrathamOne_EduOS_Pitch_Deck.pdf) |
 | `PrathamOne_EduOS_Pitch_Deck.pptx` | `assets/commercial` | 3725.2 KB | [PrathamOne_EduOS_Pitch_Deck.pptx](assets/commercial/PrathamOne_EduOS_Pitch_Deck.pptx) |
+| `Slide1.JPG` | `assets/commercial/pitch_deck_slides` | 146.6 KB | [Slide1.JPG](assets/commercial/pitch_deck_slides/Slide1.JPG) |
+| `Slide10.JPG` | `assets/commercial/pitch_deck_slides` | 103.2 KB | [Slide10.JPG](assets/commercial/pitch_deck_slides/Slide10.JPG) |
+| `Slide11.JPG` | `assets/commercial/pitch_deck_slides` | 100.4 KB | [Slide11.JPG](assets/commercial/pitch_deck_slides/Slide11.JPG) |
+| `Slide12.JPG` | `assets/commercial/pitch_deck_slides` | 134.7 KB | [Slide12.JPG](assets/commercial/pitch_deck_slides/Slide12.JPG) |
+| `Slide2.JPG` | `assets/commercial/pitch_deck_slides` | 122.0 KB | [Slide2.JPG](assets/commercial/pitch_deck_slides/Slide2.JPG) |
+| `Slide3.JPG` | `assets/commercial/pitch_deck_slides` | 113.5 KB | [Slide3.JPG](assets/commercial/pitch_deck_slides/Slide3.JPG) |
+| `Slide4.JPG` | `assets/commercial/pitch_deck_slides` | 130.1 KB | [Slide4.JPG](assets/commercial/pitch_deck_slides/Slide4.JPG) |
+| `Slide5.JPG` | `assets/commercial/pitch_deck_slides` | 131.0 KB | [Slide5.JPG](assets/commercial/pitch_deck_slides/Slide5.JPG) |
+| `Slide6.JPG` | `assets/commercial/pitch_deck_slides` | 134.2 KB | [Slide6.JPG](assets/commercial/pitch_deck_slides/Slide6.JPG) |
+| `Slide7.JPG` | `assets/commercial/pitch_deck_slides` | 130.5 KB | [Slide7.JPG](assets/commercial/pitch_deck_slides/Slide7.JPG) |
+| `Slide8.JPG` | `assets/commercial/pitch_deck_slides` | 129.9 KB | [Slide8.JPG](assets/commercial/pitch_deck_slides/Slide8.JPG) |
+| `Slide9.JPG` | `assets/commercial/pitch_deck_slides` | 112.3 KB | [Slide9.JPG](assets/commercial/pitch_deck_slides/Slide9.JPG) |
 | `actual_values_accountant_dashboard.png` | `assets/screenshots` | 376.4 KB | [actual_values_accountant_dashboard.png](assets/screenshots/actual_values_accountant_dashboard.png) |
 | `actual_values_admin_dashboard.png` | `assets/screenshots` | 377.1 KB | [actual_values_admin_dashboard.png](assets/screenshots/actual_values_admin_dashboard.png) |
 | `actual_values_fees_ledger.png` | `assets/screenshots` | 429.1 KB | [actual_values_fees_ledger.png](assets/screenshots/actual_values_fees_ledger.png) |
@@ -774,6 +817,7 @@
 | `homework.png` | `assets/commercial/module_screenshots` | 250.2 KB | [homework.png](assets/commercial/module_screenshots/homework.png) |
 | `import_export.jpg` | `assets/commercial/module_screenshots` | 243.2 KB | [import_export.jpg](assets/commercial/module_screenshots/import_export.jpg) |
 | `import_export.png` | `assets/commercial/module_screenshots` | 288.3 KB | [import_export.png](assets/commercial/module_screenshots/import_export.png) |
+| `live_app_login.png` | `assets/commercial` | 817.2 KB | [live_app_login.png](assets/commercial/live_app_login.png) |
 | `modern_dashboard_step1_overview.png` | `assets` | 242.4 KB | [modern_dashboard_step1_overview.png](assets/modern_dashboard_step1_overview.png) |
 | `modern_dashboard_step2_stream_donut.png` | `assets` | 207.0 KB | [modern_dashboard_step2_stream_donut.png](assets/modern_dashboard_step2_stream_donut.png) |
 | `modern_dashboard_step3_mobile.png` | `assets` | 87.3 KB | [modern_dashboard_step3_mobile.png](assets/modern_dashboard_step3_mobile.png) |
@@ -788,6 +832,12 @@
 | `nav_mode_2_hybrid.png` | `assets/screenshots` | 419.0 KB | [nav_mode_2_hybrid.png](assets/screenshots/nav_mode_2_hybrid.png) |
 | `nav_mode_3_my_menu_only.png` | `assets/screenshots` | 419.6 KB | [nav_mode_3_my_menu_only.png](assets/screenshots/nav_mode_3_my_menu_only.png) |
 | `payroll_login_check.png` | `assets/screenshots` | 611.7 KB | [payroll_login_check.png](assets/screenshots/payroll_login_check.png) |
+| `physics_keyframe_10s.jpg` | `assets/commercial` | 129.3 KB | [physics_keyframe_10s.jpg](assets/commercial/physics_keyframe_10s.jpg) |
+| `physics_keyframe_30s.jpg` | `assets/commercial` | 180.2 KB | [physics_keyframe_30s.jpg](assets/commercial/physics_keyframe_30s.jpg) |
+| `physics_keyframe_55s.jpg` | `assets/commercial` | 224.7 KB | [physics_keyframe_55s.jpg](assets/commercial/physics_keyframe_55s.jpg) |
+| `physics_keyframe_75s.jpg` | `assets/commercial` | 248.2 KB | [physics_keyframe_75s.jpg](assets/commercial/physics_keyframe_75s.jpg) |
+| `physics_keyframe_92s.jpg` | `assets/commercial` | 308.4 KB | [physics_keyframe_92s.jpg](assets/commercial/physics_keyframe_92s.jpg) |
+| `physics_keyframe_98s.jpg` | `assets/commercial` | 334.5 KB | [physics_keyframe_98s.jpg](assets/commercial/physics_keyframe_98s.jpg) |
 | `planning_drag_step1_view_mode.png` | `assets` | 211.8 KB | [planning_drag_step1_view_mode.png](assets/planning_drag_step1_view_mode.png) |
 | `planning_drag_step2_edit_mode_week.png` | `assets` | 214.2 KB | [planning_drag_step2_edit_mode_week.png](assets/planning_drag_step2_edit_mode_week.png) |
 | `planning_drag_step3_duration_resized.png` | `assets` | 224.0 KB | [planning_drag_step3_duration_resized.png](assets/planning_drag_step3_duration_resized.png) |
@@ -802,6 +852,10 @@
 | `planning_reschedule_step6_mobile_detail.png` | `assets` | 53.3 KB | [planning_reschedule_step6_mobile_detail.png](assets/planning_reschedule_step6_mobile_detail.png) |
 | `prashant-academy-logo.png` | `assets/branding` | 14.7 KB | [prashant-academy-logo.png](assets/branding/prashant-academy-logo.png) |
 | `prashant-academy-logo.svg` | `assets/branding` | 3.7 KB | [prashant-academy-logo.svg](assets/branding/prashant-academy-logo.svg) |
+| `prashant_01_intro_nomenclature.jpg` | `assets/commercial/recording_inspection_frames` | 124.5 KB | [prashant_01_intro_nomenclature.jpg](assets/commercial/recording_inspection_frames/prashant_01_intro_nomenclature.jpg) |
+| `prashant_02_observations_sum.jpg` | `assets/commercial/recording_inspection_frames` | 179.1 KB | [prashant_02_observations_sum.jpg](assets/commercial/recording_inspection_frames/prashant_02_observations_sum.jpg) |
+| `prashant_03_shift_property_rule.jpg` | `assets/commercial/recording_inspection_frames` | 262.3 KB | [prashant_03_shift_property_rule.jpg](assets/commercial/recording_inspection_frames/prashant_03_shift_property_rule.jpg) |
+| `prashant_04_highlighter_catchphrase.jpg` | `assets/commercial/recording_inspection_frames` | 274.0 KB | [prashant_04_highlighter_catchphrase.jpg](assets/commercial/recording_inspection_frames/prashant_04_highlighter_catchphrase.jpg) |
 | `prathamone-app-icon-192.png` | `assets/branding` | 59.4 KB | [prathamone-app-icon-192.png](assets/branding/prathamone-app-icon-192.png) |
 | `prathamone-app-icon-512.png` | `assets/branding` | 309.3 KB | [prathamone-app-icon-512.png](assets/branding/prathamone-app-icon-512.png) |
 | `prathamone-eduos-horizontal-dark.png` | `assets/branding` | 894.1 KB | [prathamone-eduos-horizontal-dark.png](assets/branding/prathamone-eduos-horizontal-dark.png) |

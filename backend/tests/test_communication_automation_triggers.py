@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-13
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Pytest test suite validating automated communication dispatch triggers for Fee Receipts, Homework Assignments, and Examination Schedules.
 #  */
@@ -86,7 +86,7 @@ async def test_communication_automation_triggers_lifecycle(
         date_of_birth=date(2010, 5, 15),
         gender="male",
         admission_date=date(2026, 4, 1),
-        phone="9876543210",
+        phone="8779123007",
         is_active=True,
     )
     db.add(student)
@@ -97,7 +97,7 @@ async def test_communication_automation_triggers_lifecycle(
         first_name="Vikram",
         last_name="Sharma",
         relation="Father",
-        phone="9876543210",
+        phone="8779123007",
         is_primary=True,
     )
     db.add(guardian)
@@ -150,7 +150,7 @@ async def test_communication_automation_triggers_lifecycle(
     assert rcpt_body["status"] == "success"
     assert "RCP-COMM" in rcpt_body["receipt"]["receipt_number"]
     assert "https://wa.me/" in rcpt_body["receipt"]["whatsapp_url"]
-    assert "9876543210" in rcpt_body["receipt"]["phone"]
+    assert "8779123007" in rcpt_body["receipt"]["phone"]
 
     # 5. Test Homework Notification Trigger
     hw = HomeworkAssignment(

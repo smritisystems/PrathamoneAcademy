@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Integration tests for Canonical Two-Row Global Print Footer Standard and Universal Print Engine Governance.
  */
@@ -181,7 +181,7 @@ describe('Global Print Footer & Governance Engine (RULE 010 & Global Print Stand
             institution={{
               name: 'Prashant Academy Coaching Institute',
               code: 'PA-HQ',
-              phone: '+91-9876543210',
+              phone: '+91-8779-123-007',
               address: 'Malad West',
             }}
           />
@@ -196,7 +196,7 @@ describe('Global Print Footer & Governance Engine (RULE 010 & Global Print Stand
       // Institution Branding Header
       expect(screen.getByText(/Prashant Academy Coaching Institute/i)).toBeDefined()
       expect(screen.getByText(/CODE: PA-HQ/i)).toBeDefined()
-      expect(screen.getByText(/Ph: \+91-9876543210/i)).toBeDefined()
+      expect(screen.getByText(/Ph: \+91-8779-123-007/i)).toBeDefined()
 
       // Software Branding Footer
       const row2 = screen.getByTestId('print-footer-row-2')

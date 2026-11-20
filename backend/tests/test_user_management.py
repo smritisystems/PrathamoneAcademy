@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Pytest suite testing user account management, role assignments, and permission boundaries.
 #  */
@@ -165,7 +165,7 @@ async def test_user_crud_actions_and_audit_logging(client: AsyncClient, auth_hea
         "email": f"{new_username}@test.com",
         "first_name": "Sanjay",
         "last_name": "Joshi",
-        "phone": "9876543210",
+        "phone": "8779123007",
         "role": "counselor",
         "staff_code": "STF-JOSHI",
         "designation": "Career Counselor",

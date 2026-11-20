@@ -2,12 +2,11 @@
 **Product:** PrathamOne EduOS  
 **Edition:** Coaching Institute Edition  
 **Baseline Version:** 1.0.0  
-**Current Release:** v1.76.0  
-**Build Identifier:** `2026.11.10-REV-137-v1.76.0-C31CC0B`  
+**Current Release:** v1.147.0  
+**Build Identifier:** `2026.11.20-REV-265-v1.147.0-79268158`  
 **Target Environment:** Production  
 **Product Architect:** Jawahar R. Mallah  
 **Organization:** Smritisys & AITDL Networks  
-**Client Deployment:** Prashant Academy Coaching Institute  
 
 ---
 
@@ -19,7 +18,37 @@ This document records the official release history, version milestones, architec
 
 ---
 
-## 🚀 CURRENT PRODUCTION RELEASE: v1.76.0
+## 🚀 CURRENT PRODUCTION RELEASE: v1.147.0
+**Release Date:** 2026-11-20  
+**Build Identifier:** `2026.11.20-REV-265-v1.147.0-79268158`  
+**Status:** General Availability (GA) — Production Ready  
+**Git Tag:** `v1.147.0`  
+
+### Major Capabilities Delivered in v1.147.0
+
+#### 1. Dynamic Release & Hardened Single-File Windows Installer
+- **Single-File Setup Executable:** Packaged into `PrathamOne-EduOS-Setup-v1.147.0.exe` with embedded portable PostgreSQL 16, hardened Python 3.11 runtime, and pre-compiled React SPA.
+- **Zero-Key Security Architecture:** Private keys and certificates are generated locally on the target machine during installation. No private keys (`.key` or `.pem`) are bundled into distributed binaries.
+- **Full-Tree Bytecode Hardening:** 100% of application source code compiled to native Python bytecode (`.pyc` with `optimize=2`), stripping comments and asserts. Protected by SHA-256 HMAC code integrity manifest.
+
+#### 2. Configurable Application Presentation Mode
+- **Standard Web Browser (Default):** Launches seamlessly in your default web browser (Chrome, Edge, Firefox, Brave) with full tabs, address bar, extensions, and SSL padlock.
+- **Dedicated Desktop Window (PWA Mode):** Option to launch in a borderless, chromeless desktop window with custom branding and hidden browser controls.
+- **User-Controlled Preference:** Managed via `Settings -> System Parameters` in Edit Mode with instant synchronization to launcher settings.
+
+#### 3. EduBoard Interactive Classroom & In-App Recording
+- **Digital Whiteboard & Greenboard:** Multi-surface drawing engine with chalk styling, shape tools, and pressure sensitivity.
+- **Lecture Session Recording:** Native in-app recording with audio capture, slide keyframes, and synchronized presentation publishing.
+
+#### 4. DPDP Act 2023 Compliance & Device Binding
+- **Privacy Disclosure Badges:** Transparent runtime system notices detailing hardware context, architecture, and memory footprint in compliance with India's DPDP Act 2023.
+- **Opt-in Device Fingerprinting:** Multi-device verification preventing unauthorized account sharing across unverified computers.
+
+---
+
+## 📜 HISTORICAL VERSION TIMELINE & RELEASE ARCHIVE
+
+### v1.76.0 — Universal Report Calculation Engine
 **Release Date:** 2026-11-10 / 2026-11-11  
 **Build Identifier:** `2026.11.10-REV-137-v1.76.0-C31CC0B`  
 **Status:** General Availability (GA) — Production Ready  

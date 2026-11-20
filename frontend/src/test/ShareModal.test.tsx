@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-05
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Vitest tests for the Universal ShareModal component covering WhatsApp, Email, SMS, expiring links, PIN protection, and printing.
  */
@@ -36,7 +36,7 @@ describe('ShareModal Component', () => {
     recordId: 101,
     title: 'Receipt #RCP-2026-001',
     recipientName: 'Puneeta Kulkarni',
-    recipientPhone: '+919876543210',
+    recipientPhone: '+918779123007',
     recipientEmail: 'puneeta@prathamone.com',
     defaultMessage: 'Your fee payment receipt of Rs. 7,000 has been generated.',
   }
@@ -59,7 +59,7 @@ describe('ShareModal Component', () => {
     expect(screen.getByText('Share Document & Send')).toBeDefined()
     expect(screen.getByText('Receipt #RCP-2026-001')).toBeDefined()
     expect(screen.getByDisplayValue('Puneeta Kulkarni')).toBeDefined()
-    expect(screen.getByDisplayValue('+919876543210')).toBeDefined()
+    expect(screen.getByDisplayValue('+918779123007')).toBeDefined()
     await waitFor(() => {
       expect(communicationApi.shareDocument).toHaveBeenCalled()
     })

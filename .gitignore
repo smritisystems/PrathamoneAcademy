@@ -1,4 +1,50 @@
-# Python
+# ==============================================================================
+# PRATHAMONE EduOS — AUTHORITATIVE REPOSITORY GITIGNORE
+# Project: PrathamOne EduOS (Coaching Institute Edition)
+# Architect: Jawahar R. Mallah | Smritisys & AITDL Networks
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. OS Metadata & System Caches
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+[Tt]humbs.db
+[Tt]humbs.db:encryptable
+desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# ------------------------------------------------------------------------------
+# 2. IDE, Editor & Developer Tooling
+# ------------------------------------------------------------------------------
+.vscode/
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+*.bak
+*.tmp
+*.orig
+*.patch
+*.rej
+*.suo
+*.user
+*.userosv
+*.sln.docstates
+
+# ------------------------------------------------------------------------------
+# 3. Python Runtime, Bytecode & Packaging
+# ------------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
 *$py.class
@@ -9,7 +55,6 @@ venv/
 ENV/
 .venv/
 build/
-build_staging/
 develop-eggs/
 dist/
 downloads/
@@ -24,8 +69,41 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Database / Local Storage
+# ------------------------------------------------------------------------------
+# 4. Testing, Profiling & Coverage Caches
+# ------------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.vitest_cache/
+reports/
+*.cover
+*.py,cover
+.hypothesis/
+test-results/
+
+# ------------------------------------------------------------------------------
+# 5. Node, Vite & Frontend Build Outputs
+# ------------------------------------------------------------------------------
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.svelte-kit/
+.npm
+.yarn/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ------------------------------------------------------------------------------
+# 6. Database, Local State & Uploads
+# ------------------------------------------------------------------------------
 *.sqlite3
 *.db
 *.sql
@@ -33,48 +111,58 @@ wheels/
 pgdata/
 backups/
 backend/uploads/eduboard/10/
+backend/uploads/temp/
 
-# Node / Frontend
-node_modules/
-frontend/dist/
-frontend/dist-ssr/
-*.local
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Environment & Secrets
+# ------------------------------------------------------------------------------
+# 7. Environment, Secrets & Cryptographic Keys
+# ------------------------------------------------------------------------------
 .env
-.env.production
+.env.*
+!.env.example
 *.pem
 *.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.id_rsa
+*.id_ed25519
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-
-# Testing / Coverage
-.pytest_cache/
-.coverage
-htmlcov/
-.vitest_cache/
+# ------------------------------------------------------------------------------
+# 8. Scratch Files & Working Artifacts
+# ------------------------------------------------------------------------------
 scratch/
 scratch_frames/
+temp_inspect/
+temp_test/
+*.stackdump
+build_staging/
+installer/build_staging/
+launcher_config.json
 
-# Commercial Video Production (Heavy binary media & recordings)
+# ------------------------------------------------------------------------------
+# 9. Heavy Media, Raw Video Recordings & Promotional Binaries
+# (Prevents non-essential video / presentation binaries from entering git/releases)
+# ------------------------------------------------------------------------------
 *.mp4
 *.webm
+*.mov
+*.avi
+*.wmv
+*.mkv
 *.wav
+*.flac
+*.mp3
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.psd
+*.ai
 assets/audio/
 assets/presenter/
 data/commercial/
 data/temp_commercial_recordings/
-temp_inspect/
-
+frontend/public/media/commercial/*.mp4
+frontend/public/media/studio/*.mp4
+frontend/public/media/motion/*.mp4

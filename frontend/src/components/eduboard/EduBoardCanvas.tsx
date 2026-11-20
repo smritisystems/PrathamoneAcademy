@@ -11,7 +11,7 @@
  *
  * @version     1.1.0
  * @created     2026-11-12
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Interactive Konva + React-Konva + PDF.js multi-mode classroom canvas supporting Classic Greenboard/Blackboard chalk rendering, Digital Whiteboard, Grid/Ruled surfaces, non-destructive PDF annotations, Fit-to-Screen, keyboard shortcuts, and collapsible/dockable/floating toolbar integration.
  */
@@ -1084,10 +1084,12 @@ export default function EduBoardCanvas({
           touchAction: 'none',
           background:
             activeBackground === 'greenboard'
-              ? 'radial-gradient(circle at 50% 42%, #155e42 0%, #0f4c35 65%, #093524 100%)'
+              ? '#0f4c35'
               : activeBackground === 'blackboard'
-                ? 'radial-gradient(circle at 50% 42%, #1c2230 0%, #131720 75%, #0b0e14 100%)'
-                : undefined,
+                ? '#131720'
+                : activeBackground === 'pdf_slide'
+                  ? '#f1f5f9'
+                  : '#ffffff',
         }}
       >
         {bgLoading && (

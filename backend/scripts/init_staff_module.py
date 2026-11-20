@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Database migration and seeder initializing Teacher & Staff Management tables, profiles, assignments, attendance, leaves, and documents.
 #  */
@@ -183,7 +183,7 @@ async def initialize_staff_module():
                 "emg_rel": "Father",
                 "pan": "PQRST3456U",
                 "bank": "Kotak Mahindra Bank",
-                "acc": "98765432101",
+                "acc": "87791230071",
                 "ifsc": "KKBK0000678",
             },
             "amit.patil": {

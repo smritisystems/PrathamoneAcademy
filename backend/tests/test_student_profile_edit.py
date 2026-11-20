@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Pytest suite verifying administrative editing across all student master profile fields.
 #  */
@@ -103,7 +103,7 @@ async def edit_profile_seed(db, test_institution, test_academic_year):
         religion="Hindu",
         caste="General",
         aadhar_number="123456789012",
-        phone="9876543210",
+        phone="8779123007",
         email=f"rohan_{suffix}@prathamone.com",
         address="123 MG Road",
         city="Pune",
@@ -256,7 +256,7 @@ async def test_admin_can_update_master_profile_fields(client, auth_headers, edit
         "city": "Pune",
         "state": "Maharashtra",
         "pincode": "411004",
-        "aadhar_number": "987654321098",
+        "aadhar_number": "877912300798",
         "nationality": "Indian",
         "religion": "Hindu",
         "caste": "OBC",
