@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Master View-First & Explicit Edit Mode banner and toggle component enforcing global read-only default and explicit modification authorization.
  */
@@ -110,7 +110,8 @@ export default function EditModeBar({
         <div className="no-print print:hidden flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
             <Eye className="w-3.5 h-3.5 text-slate-500" />
-            <span>View Mode (Locked)</span>
+            <span>View Mode Active</span>
+            <span className="hidden md:inline text-slate-400">• Read-Only Safety Lock</span>
           </span>
           {canActivateEdit() ? (
             <button
@@ -141,29 +142,24 @@ export default function EditModeBar({
     }
 
     return (
-      <div className="no-print print:hidden bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-2xs mb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-slate-200/70 flex items-center justify-center text-slate-600">
-            <Eye className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                View Mode Active
-              </span>
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400" />
-              <span className="text-xs text-slate-500">Read-Only Safety Lock</span>
-            </div>
-            <p className="text-xs text-slate-600">
-              {title ? `${title} is protected.` : 'This record is protected from accidental modifications.'}{' '}
-              All mutation controls are disabled until Edit Mode is explicitly enabled.
-            </p>
-          </div>
+      <div className="no-print print:hidden bg-slate-50/90 border border-slate-200/80 rounded-lg px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs mb-2 transition-all">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-200/70 text-slate-700">
+            <Eye className="w-3.5 h-3.5 text-slate-500" />
+            <span>View Mode Active</span>
+          </span>
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400" />
+          <span className="text-xs text-slate-500 font-medium">Read-Only Safety Lock</span>
+          {title && (
+            <span className="hidden md:inline text-xs text-slate-400">
+              — {title} is protected from accidental modifications.
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
           {permissionError && (
-            <span className="text-xs text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200 font-medium">
+            <span className="text-xs text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-md border border-rose-200 font-medium">
               {permissionError}
             </span>
           )}
@@ -172,13 +168,13 @@ export default function EditModeBar({
             <button
               type="button"
               onClick={handleEnable}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-2xs transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-2xs transition-all active:scale-95"
             >
               <Unlock className="w-3.5 h-3.5" />
               <span>Enable Edit Mode</span>
             </button>
           ) : (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-200/80 text-slate-500 cursor-not-allowed">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-200/80 text-slate-500 cursor-not-allowed">
               <Lock className="w-3.5 h-3.5" />
               <span>Editing Restricted</span>
             </div>
@@ -191,56 +187,84 @@ export default function EditModeBar({
   // ─────────────────────────────────────────────────────────────────────────
   // EDIT MODE ACTIVE RENDERING (EXPLICIT MUTATION STATE)
   // ─────────────────────────────────────────────────────────────────────────
-  return (
-    <div className="no-print print:hidden bg-amber-500/10 border-2 border-amber-500/80 rounded-xl p-3 md:px-4 md:py-3 shadow-sm mb-4 transition-all">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Status & Warning Notice */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center animate-pulse">
-            <ShieldAlert className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-amber-900 bg-amber-200 px-2 py-0.5 rounded">
-                Edit Mode Active
-              </span>
-              {isDirty && (
-                <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
-                  Unsaved Changes Pending
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-amber-900 mt-0.5 font-medium">
-              Modifications are unlocked for {title || 'this section'}. Save your work or cancel to return to View Mode.
-            </p>
-          </div>
-        </div>
-
-        {/* Action Controls: Save, Cancel/Exit, Custom Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {children}
-
-          {onSave && (
-            <button
-              type="button"
-              onClick={() => onSave()}
-              disabled={saveLoading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all disabled:opacity-50"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{saveLoading ? 'Saving Changes...' : 'Save & Exit'}</span>
-            </button>
-          )}
-
+  if (compact) {
+    return (
+      <div className="no-print print:hidden inline-flex items-center gap-2 flex-wrap">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+          <ShieldAlert className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+          <span>Edit Mode Active</span>
+        </span>
+        {isDirty && (
+          <span className="text-[11px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+            Unsaved Changes
+          </span>
+        )}
+        {children}
+        {onSave && (
           <button
             type="button"
-            onClick={handleDisableRequest}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition-colors shadow-2xs"
+            onClick={() => onSave()}
+            disabled={saveLoading}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all disabled:opacity-50"
           >
-            <X className="w-3.5 h-3.5 text-slate-500" />
-            <span>Cancel Edit Mode</span>
+            <Save className="w-3.5 h-3.5" />
+            <span>{saveLoading ? 'Saving...' : 'Save & Exit'}</span>
           </button>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={handleDisableRequest}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition-colors shadow-2xs"
+        >
+          <X className="w-3.5 h-3.5 text-slate-500" />
+          <span>Cancel Edit Mode</span>
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="no-print print:hidden bg-amber-500/10 border border-amber-500/60 rounded-lg px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 shadow-2xs mb-2 transition-all">
+      <div className="flex items-center gap-2">
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider text-amber-950 bg-amber-200/80">
+          <ShieldAlert className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+          <span>Edit Mode Active</span>
+        </span>
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
+        <span className="hidden sm:inline text-xs font-medium text-amber-900">
+          Modifications unlocked for {title || 'workspace'}
+        </span>
+        {isDirty && (
+          <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+            Unsaved Changes Pending
+          </span>
+        )}
+      </div>
+
+      {/* Action Controls: Save, Cancel/Exit, Custom Actions */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {children}
+
+        {onSave && (
+          <button
+            type="button"
+            onClick={() => onSave()}
+            disabled={saveLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all disabled:opacity-50"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>{saveLoading ? 'Saving Changes...' : 'Save & Exit'}</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={handleDisableRequest}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition-colors shadow-2xs"
+        >
+          <X className="w-3.5 h-3.5 text-slate-500" />
+          <span>Cancel Edit Mode</span>
+        </button>
       </div>
 
       {/* Discard Changes Warning Dialog Modal if user attempts to exit with pending edits */}

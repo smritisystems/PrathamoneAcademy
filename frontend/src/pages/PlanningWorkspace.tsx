@@ -1614,7 +1614,13 @@ export default function PlanningWorkspace() {
           <h1 className="mt-1 text-2xl font-bold text-slate-900">Tasks & Planning Center</h1>
           <p className="mt-1 text-sm text-slate-500">Universal institutional task management, Kanban board, calendar deadlines, and cross-module activity tracking.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <EditModeBar
+            scope={editScope}
+            title="Tasks & Planning Center"
+            requiredPermission="planning:create,planning:edit,planning:edit_any,planning:complete,planning:cancel,planning:delete"
+            compact
+          />
           <button
             type="button"
             onClick={() => syncAllMutation.mutate()}
@@ -1636,12 +1642,6 @@ export default function PlanningWorkspace() {
           </button>
         </div>
       </div>
-
-      <EditModeBar
-        scope={editScope}
-        title="Tasks & Planning Center"
-        requiredPermission="planning:create,planning:edit,planning:edit_any,planning:complete,planning:cancel,planning:delete"
-      />
 
       {taskSummary && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
