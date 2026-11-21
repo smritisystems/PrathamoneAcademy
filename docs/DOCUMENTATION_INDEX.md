@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-21 17:14:02<br>
-**Total Indexed Items:** 721<br>
+**Last Reindexed:** 2026-11-21 18:27:48<br>
+**Total Indexed Items:** 722<br>
 
 ---
 
@@ -39,7 +39,7 @@
 | `22` | [22_USER_MANUALS](#22_user_manuals) | **14** | User Manuals & Operating Guides |
 | `23` | [23_DEVELOPMENT_GUIDES](#23_development_guides) | **0** | Developer Manuals & Coding Standards |
 | `24` | [24_AI_AGENT_KNOWLEDGE](#24_ai_agent_knowledge) | **1** | AI Agent Governance & Prompts |
-| `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **9** | Business Rules & SSOT Policy |
+| `25` | [25_BUSINESS_REQUIREMENTS](#25_business_requirements) | **10** | Business Rules & SSOT Policy |
 | `26` | [26_ARCHIVED](#26_archived) | **13** | Archived & Superseded Documents |
 | `assets` | [assets/screenshots](#asset-galleries) | **263** | Verification UI captures, diagrams, attachments |
 
@@ -638,6 +638,7 @@
 | **Coaching Business Rules** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_COACHING-BUSINESS-RULES_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_COACHING-BUSINESS-RULES_V1.md) | - |
 | **Global Data Governance Final Report — Comprehensive Audit Synthesis & Stage 2 Remediation Blueprint** | `REPORT` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-09_BUSINESS-REQUIREMENTS_REPORT_GLOBAL-DATA-GOVERNANCE-FINAL-REPORT_V1.md) | 25_BUSINESS_REQUIREMENTS, 01_ARCHITECTURE, 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 16_DATABASE_API |
 | **Global Policy: Data Deduplication, Canonical Master Reuse & Frontend-Backend Mapping Governance** | `POLICY` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-09_GLOBAL_POLICY_DATA-DEDUPLICATION-AND-MAPPING-GOVERNANCE_V1.md) | 25_BUSINESS_REQUIREMENTS, 01_ARCHITECTURE, 16_DATABASE_API |
+| **Global Policy: Non-Destructive In-Place Upgrades & Desktop Installer Governance** | `GOVERNANCE` | `1.0` | 2026-11-21 | `Approved` | [2026-11-21_GLOBAL_POLICY_IN-PLACE-UPGRADES-AND-DESKTOP-INSTALLER-GOVERNANCE_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-21_GLOBAL_POLICY_IN-PLACE-UPGRADES-AND-DESKTOP-INSTALLER-GOVERNANCE_V1.md) | 02_INSTALLATION_DEPLOYMENT, 13_SYSADMIN_SETTINGS, 16_DATABASE_API |
 | **Global Single Source of Truth (SSOT) & Anti-Duplication Governance Framework** | `POLICY` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-06_GLOBAL_POLICY_SINGLE-SOURCE-OF-TRUTH-GOVERNANCE_V1.md) | 01_ARCHITECTURE, 12_RBAC_SECURITY, 16_DATABASE_API, 24_AI_AGENT_KNOWLEDGE |
 | **Governance Policy Decision Register** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_GOVERNANCE-DECISION-REGISTER_V1.md) | - |
 | **Master Business Rules Inventory** | `POLICY-FRAMEWORK` | `1.0` | 2026-11-03 | `Approved` | [2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_CORE-BUSINESS-RULES_V1.md](25_BUSINESS_REQUIREMENTS/2026-11-03_BUSINESS_REQUIREMENTS_POLICY-FRAMEWORK_CORE-BUSINESS-RULES_V1.md) | - |

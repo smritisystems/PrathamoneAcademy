@@ -273,6 +273,61 @@ begin
   end;
 end;
 
+function GetExistingInstallDir: String;
+var
+  RegPath: String;
+begin
+  Result := '';
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{C47F8932-B8E2-4C10-9118-E86940A39BF1}_is1', 'InstallLocation', RegPath) then
+  begin
+    if (RegPath <> '') and DirExists(RegPath) then
+      Result := RegPath;
+  end;
+  if (Result = '') and RegQueryStringValue(HKCU, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{C47F8932-B8E2-4C10-9118-E86940A39BF1}_is1', 'InstallLocation', RegPath) then
+  begin
+    if (RegPath <> '') and DirExists(RegPath) then
+      Result := RegPath;
+  end;
+end;
+
+function IsUpgradeMode: Boolean;
+var
+  ExistingDir: String;
+begin
+  ExistingDir := GetExistingInstallDir;
+  Result := (ExistingDir <> '') or
+            FileExists(ExpandConstant('{app}\data\PG_VERSION')) or
+            FileExists(ExpandConstant('{app}\setup_config.json')) or
+            FileExists('D:\' + '{#MyAppDirName}\data\PG_VERSION') or
+            FileExists('C:\' + '{#MyAppDirName}\data\PG_VERSION');
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if IsUpgradeMode then
+  begin
+    // Skip all initial onboarding wizard pages during in-place upgrade (Rule 013)
+    if (PageID = LicensePage.ID) or
+       (PageID = ConfigPage.ID) or
+       (PageID = LogoPage.ID) or
+       (PageID = AcademicPage.ID) or
+       (PageID = MediumPage.ID) then
+    begin
+      Result := True;
+    end;
+  end;
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if IsUpgradeMode and (CurPageID = wpReady) then
+  begin
+    WizardForm.PageNameLabel.Caption := 'Ready to Upgrade';
+    WizardForm.PageDescriptionLabel.Caption := 'Setup is ready to upgrade PrathamOne EduOS to version ' + '{#MyAppVersion}' + '. All student data, attendance, and fee ledgers will be safely preserved.';
+  end;
+end;
+
 function GetSmartInstallDir(AppName: String): String;
 var
   SysDrive: String;
@@ -280,7 +335,15 @@ var
   DriveLetter: String;
   DrivePath: String;
   BestDrive: String;
+  ExistingDir: String;
 begin
+  ExistingDir := GetExistingInstallDir;
+  if ExistingDir <> '' then
+  begin
+    Result := ExistingDir;
+    Exit;
+  end;
+
   SysDrive := Copy(ExpandConstant('{sd}'), 1, 1);
   BestDrive := '';
 
@@ -327,6 +390,8 @@ begin
     DeleteFile(ExpandConstant('{autopf}\{#MyAppDirName}\data\postmaster.pid'));
   if FileExists('D:\' + '{#MyAppDirName}\data\postmaster.pid') then
     DeleteFile('D:\' + '{#MyAppDirName}\data\postmaster.pid');
+  if (GetExistingInstallDir <> '') and FileExists(GetExistingInstallDir + '\data\postmaster.pid') then
+    DeleteFile(GetExistingInstallDir + '\data\postmaster.pid');
 end;
 
 function HasPythonExe: Boolean;
@@ -476,52 +541,77 @@ var
   SelectedBoards: String;
   SelectedMediums: String;
   EscapedLogoPath: String;
+  BackupDir: String;
+  BackupTarget: String;
+  DataDir: String;
+  ResultCode: Integer;
 begin
+  // 1. Rule 013: Pre-upgrade automatic safety snapshot before copying new binaries
+  if (CurStep = ssInstall) and IsUpgradeMode then
+  begin
+    DataDir := ExpandConstant('{app}\data');
+    if not DirExists(DataDir) then
+      DataDir := GetExistingInstallDir + '\data';
+
+    if DirExists(DataDir) then
+    begin
+      BackupDir := ExpandConstant('{app}\backups');
+      ForceDirectories(BackupDir);
+      BackupTarget := BackupDir + '\pre_upgrade_snapshot_v' + '{#MyAppVersion}' + '_' + GetDateTimeString('yyyymmdd_hhnnss', #0, #0);
+      Exec('robocopy.exe', '"' + DataDir + '" "' + BackupTarget + '" /E /R:1 /W:1 /NP /NFL /NDL /NJH /NJS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    end;
+  end;
+
+  // 2. Post-installation configuration
   if CurStep = ssPostInstall then
   begin
-    SelectedBoards := '';
-    if AcademicPage.Values[0] then SelectedBoards := SelectedBoards + 'MSBSHSE,';
-    if AcademicPage.Values[1] then SelectedBoards := SelectedBoards + 'CBSE,';
-    if AcademicPage.Values[2] then SelectedBoards := SelectedBoards + 'ICSE,';
-    if AcademicPage.Values[3] then SelectedBoards := SelectedBoards + 'GSEB,';
-    if AcademicPage.Values[4] then SelectedBoards := SelectedBoards + 'COMPETITIVE,';
-    if AcademicPage.Values[5] then SelectedBoards := SelectedBoards + 'ALL_STATE,';
-    if Length(SelectedBoards) > 0 then
-      SetLength(SelectedBoards, Length(SelectedBoards) - 1)
-    else
-      SelectedBoards := 'MSBSHSE,CBSE,ICSE,GSEB,COMPETITIVE';
+    // Rule 013: ONLY generate setup_config.json on FRESH install to prevent overwriting existing institutional profile & credentials!
+    if not IsUpgradeMode then
+    begin
+      SelectedBoards := '';
+      if AcademicPage.Values[0] then SelectedBoards := SelectedBoards + 'MSBSHSE,';
+      if AcademicPage.Values[1] then SelectedBoards := SelectedBoards + 'CBSE,';
+      if AcademicPage.Values[2] then SelectedBoards := SelectedBoards + 'ICSE,';
+      if AcademicPage.Values[3] then SelectedBoards := SelectedBoards + 'GSEB,';
+      if AcademicPage.Values[4] then SelectedBoards := SelectedBoards + 'COMPETITIVE,';
+      if AcademicPage.Values[5] then SelectedBoards := SelectedBoards + 'ALL_STATE,';
+      if Length(SelectedBoards) > 0 then
+        SetLength(SelectedBoards, Length(SelectedBoards) - 1)
+      else
+        SelectedBoards := 'MSBSHSE,CBSE,ICSE,GSEB,COMPETITIVE';
 
-    SelectedMediums := '';
-    if MediumPage.Values[0] then SelectedMediums := SelectedMediums + 'English,';
-    if MediumPage.Values[1] then SelectedMediums := SelectedMediums + 'Semi-English,';
-    if MediumPage.Values[2] then SelectedMediums := SelectedMediums + 'Hindi,';
-    if MediumPage.Values[3] then SelectedMediums := SelectedMediums + 'Marathi,';
-    if MediumPage.Values[4] then SelectedMediums := SelectedMediums + 'Gujarati,';
-    if Length(SelectedMediums) > 0 then
-      SetLength(SelectedMediums, Length(SelectedMediums) - 1)
-    else
-      SelectedMediums := 'English,Semi-English,Hindi,Marathi,Gujarati';
+      SelectedMediums := '';
+      if MediumPage.Values[0] then SelectedMediums := SelectedMediums + 'English,';
+      if MediumPage.Values[1] then SelectedMediums := SelectedMediums + 'Semi-English,';
+      if MediumPage.Values[2] then SelectedMediums := SelectedMediums + 'Hindi,';
+      if MediumPage.Values[3] then SelectedMediums := SelectedMediums + 'Marathi,';
+      if MediumPage.Values[4] then SelectedMediums := SelectedMediums + 'Gujarati,';
+      if Length(SelectedMediums) > 0 then
+        SetLength(SelectedMediums, Length(SelectedMediums) - 1)
+      else
+        SelectedMediums := 'English,Semi-English,Hindi,Marathi,Gujarati';
 
-    EscapedLogoPath := LogoPage.Values[0];
-    StringChangeEx(EscapedLogoPath, '\', '\\', True);
+      EscapedLogoPath := LogoPage.Values[0];
+      StringChangeEx(EscapedLogoPath, '\', '\\', True);
 
-    JsonContent := '{' + #13#10 +
-      '  "serial_number": "' + LicensePage.Values[0] + '",' + #13#10 +
-      '  "activation_key": "' + LicensePage.Values[1] + '",' + #13#10 +
-      '  "institute_name": "' + ConfigPage.Values[0] + '",' + #13#10 +
-      '  "branch_name": "' + ConfigPage.Values[1] + '",' + #13#10 +
-      '  "address": "' + ConfigPage.Values[2] + '",' + #13#10 +
-      '  "phone": "' + ConfigPage.Values[3] + '",' + #13#10 +
-      '  "logo_path": "' + EscapedLogoPath + '",' + #13#10 +
-      '  "admin_username": "admin",' + #13#10 +
-      '  "admin_password": "' + AdminPasswordValue + '",' + #13#10 +
-      '  "boards": "' + SelectedBoards + '",' + #13#10 +
-      '  "mediums": "' + SelectedMediums + '",' + #13#10 +
-      '  "port": 2026' + #13#10 +
-      '}';
+      JsonContent := '{' + #13#10 +
+        '  "serial_number": "' + LicensePage.Values[0] + '",' + #13#10 +
+        '  "activation_key": "' + LicensePage.Values[1] + '",' + #13#10 +
+        '  "institute_name": "' + ConfigPage.Values[0] + '",' + #13#10 +
+        '  "branch_name": "' + ConfigPage.Values[1] + '",' + #13#10 +
+        '  "address": "' + ConfigPage.Values[2] + '",' + #13#10 +
+        '  "phone": "' + ConfigPage.Values[3] + '",' + #13#10 +
+        '  "logo_path": "' + EscapedLogoPath + '",' + #13#10 +
+        '  "admin_username": "admin",' + #13#10 +
+        '  "admin_password": "' + AdminPasswordValue + '",' + #13#10 +
+        '  "boards": "' + SelectedBoards + '",' + #13#10 +
+        '  "mediums": "' + SelectedMediums + '",' + #13#10 +
+        '  "port": 2026' + #13#10 +
+        '}';
 
-    SaveStringToFile(ExpandConstant('{app}\setup_config.json'), JsonContent, False);
-    UpdateHostsFile(SanitizeSlug(ConfigPage.Values[0]));
+      SaveStringToFile(ExpandConstant('{app}\setup_config.json'), JsonContent, False);
+      UpdateHostsFile(SanitizeSlug(ConfigPage.Values[0]));
+    end;
   end;
 end;
 
