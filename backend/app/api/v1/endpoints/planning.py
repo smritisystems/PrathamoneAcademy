@@ -58,8 +58,12 @@ from app.models.user import AuditLog, User
 from app.services.auto_task_service import (
     get_task_metrics_summary,
     sync_all_automated_tasks,
+    sync_crm_lead_followup_tasks,
+    sync_exam_marks_submission_tasks,
+    sync_faculty_session_verification_tasks,
     sync_homework_checking_tasks,
     sync_overdue_fee_tasks,
+    sync_student_birthday_milestone_tasks,
     sync_student_truancy_tasks,
     sync_timetable_substitution_tasks,
 )
@@ -1150,6 +1154,100 @@ async def sync_truancy_tasks(
     return result
 
 
+@router.post("/tasks/sync-crm")
+async def sync_crm_tasks(
+    institution_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Scans active CRM leads where follow-up is overdue or inquiry requires counselor outreach.
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_crm_lead_followup_tasks(
+        db,
+        institution_id=effective_inst_id,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/tasks/sync-exams")
+async def sync_exam_tasks(
+    institution_id: Optional[int] = Query(None),
+    academic_year_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Scans concluded examinations where student marks have not been submitted to the marks register.
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_exam_marks_submission_tasks(
+        db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/tasks/sync-sessions")
+async def sync_session_tasks(
+    institution_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Scans past teaching sessions in draft/submitted status requiring approval before payroll cutoff.
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_faculty_session_verification_tasks(
+        db,
+        institution_id=effective_inst_id,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/tasks/sync-birthdays")
+async def sync_birthday_tasks(
+    institution_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Scans enrolled students celebrating birthdays today for front-desk community outreach.
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_student_birthday_milestone_tasks(
+        db,
+        institution_id=effective_inst_id,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
 @router.post("/tasks/sync-all")
 async def sync_all_tasks(
     institution_id: Optional[int] = Query(None),
@@ -1158,7 +1256,7 @@ async def sync_all_tasks(
     current_user: User = Depends(get_current_active_user),
 ):
     """
-    Master sync: Runs all 4 operational scanners in one call (Fees, Homework, Timetable, Truancy).
+    Master sync: Runs all 8 operational scanners across Fees, CRM, Homework, Timetable, Truancy, Exams, Sessions, and Birthdays.
     """
     await require_planning_permission(db, current_user, "create")
     effective_inst_id = institution_id or current_user.institution_id

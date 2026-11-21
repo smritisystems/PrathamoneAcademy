@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description API endpoints for exam creation, marks entry, grading formulas, and report card generation.
 #  */
@@ -360,6 +360,11 @@ async def save_examination_marks(
     try:
         entries_dicts = [e.model_dump() for e in data.entries]
         res = await save_exam_marks_bulk(db, exam_id, entries_dicts)
+        try:
+            from app.services.auto_task_service import resolve_automated_tasks
+            await resolve_automated_tasks(db, source_type="examination", source_record_id=exam_id)
+        except Exception as auto_err:
+            logger.warning("Auto-task resolution for examination %s failed: %s", exam_id, auto_err)
         return res
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

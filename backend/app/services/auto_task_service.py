@@ -16,7 +16,9 @@
 #  * @description Cross-module automated task creation and resolution engine with idempotency, anti-spam governance, and institutional triggers across Fees, CRM, Homework, Timetable, and Truancy.
 #  */
 
+import asyncio
 import json
+import logging
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
@@ -25,16 +27,22 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.attendance import Attendance
+from app.models.crm import Lead
 from app.models.division import Division
+from app.models.exam import Examination, ExamMark
 from app.models.fee import FeeInvoice
 from app.models.homework import HomeworkAssignment, StudentHomeworkRecord
+from app.models.institution import Institution
 from app.models.planning import Activity, ActivityAssignee, ActivityReference
 from app.models.portal import TimetableEntry
 from app.models.staff import StaffAttendance, StaffLeave
 from app.models.standard import Standard
 from app.models.student import Student
 from app.models.subject import Subject
+from app.models.teacher_payroll import TeachingSession
 from app.models.user import AuditLog, User
+
+logger = logging.getLogger(__name__)
 
 
 async def create_automated_task(
@@ -562,7 +570,264 @@ async def sync_student_truancy_tasks(
     }
 
 
-# ─── 5. MASTER ORCHESTRATOR: UNIFIED TASK SYNCHRONIZATION ───────────────────
+# ─── 5. CRM & ADMISSIONS SLA SCANNER ─────────────────────────────────────────
+async def sync_crm_lead_followup_tasks(
+    db: AsyncSession,
+    institution_id: int,
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Scans active CRM inquiries where next_follow_up_at has passed or new inquiries
+    lack counselor outreach. Generates admissions tasks linked to the lead.
+    """
+    now_utc = datetime.now(timezone.utc)
+    today = date.today()
+
+    stmt = select(Lead).where(
+        Lead.institution_id == institution_id,
+        Lead.stage.not_in(["converted", "lost", "junk"]),
+        or_(
+            Lead.next_follow_up_at <= now_utc,
+            and_(Lead.stage == "new_enquiry", Lead.enquiry_date < today),
+        ),
+    )
+    res = await db.execute(stmt)
+    overdue_leads = res.scalars().all()
+
+    created_count = 0
+    existing_count = 0
+
+    for lead in overdue_leads:
+        lead_name = f"{lead.first_name} {lead.last_name}".strip()
+        priority = "urgent" if lead.priority == "hot" else "high"
+        title = f"Admissions SLA: Follow-up {lead_name} ({lead.lead_number})"
+        desc = (
+            f"Inquiry #{lead.lead_number} ({lead_name}) is awaiting counselor contact. "
+            f"Interested Course: {lead.interested_course or 'General'}. "
+            f"Phone: {lead.phone or lead.guardian_phone or 'No phone'}. "
+            f"Stage: {lead.stage}."
+        )
+        assignee_ids = [lead.assigned_to_id] if lead.assigned_to_id else None
+
+        _, is_new = await create_automated_task(
+            db=db,
+            institution_id=institution_id,
+            title=title,
+            description=desc,
+            due_at=lead.next_follow_up_at or (now_utc + timedelta(hours=4)),
+            source_type="lead",
+            source_record_id=lead.id,
+            priority=priority,
+            category="admissions",
+            assignee_user_ids=assignee_ids,
+            created_by_id=created_by_id,
+        )
+        if is_new:
+            created_count += 1
+        else:
+            existing_count += 1
+
+    return {
+        "overdue_leads_detected": len(overdue_leads),
+        "tasks_created": created_count,
+        "tasks_already_active": existing_count,
+    }
+
+
+# ─── 6. EXAM MARKSHEET SUBMISSION SLA SCANNER ───────────────────────────────
+async def sync_exam_marks_submission_tasks(
+    db: AsyncSession,
+    institution_id: int,
+    academic_year_id: Optional[int] = None,
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Scans completed examinations past end_date where student marks have not been submitted.
+    Generates academic tasks assigned to faculty/coordinators.
+    """
+    today = date.today()
+    cutoff_date = today - timedelta(days=2)
+
+    stmt = (
+        select(Examination, Standard.name.label("standard_name"))
+        .join(Standard, Standard.id == Examination.standard_id)
+        .where(
+            Standard.institution_id == institution_id,
+            Examination.is_active == True,
+            Examination.end_date != None,
+            Examination.end_date <= cutoff_date,
+        )
+    )
+    if academic_year_id:
+        stmt = stmt.where(Examination.academic_year_id == academic_year_id)
+
+    res = await db.execute(stmt)
+    exams = res.all()
+
+    created_count = 0
+    existing_count = 0
+
+    for exam, std_name in exams:
+        # Check count of marks submitted
+        mark_count = (
+            await db.execute(
+                select(func.count(ExamMark.id)).where(ExamMark.examination_id == exam.id)
+            )
+        ).scalar() or 0
+
+        # If 0 marks or missing submission, create task
+        if mark_count == 0:
+            title = f"Exam Marks Due: {exam.name} ({std_name})"
+            desc = (
+                f"Examination '{exam.name}' ({exam.exam_type}) concluded on {exam.end_date}. "
+                f"Student marks have not been entered into the marks register. "
+                f"Submit scores to enable report card generation."
+            )
+            _, is_new = await create_automated_task(
+                db=db,
+                institution_id=institution_id,
+                title=title,
+                description=desc,
+                due_at=datetime.combine(cutoff_date + timedelta(days=2), time(18, 0, tzinfo=timezone.utc)),
+                source_type="examination",
+                source_record_id=exam.id,
+                priority="high",
+                category="examination",
+                created_by_id=created_by_id,
+            )
+            if is_new:
+                created_count += 1
+            else:
+                existing_count += 1
+
+    return {
+        "pending_exams_detected": len(exams),
+        "tasks_created": created_count,
+        "tasks_already_active": existing_count,
+    }
+
+
+# ─── 7. FACULTY SESSION VERIFICATION & PAYROLL CUTOFF SCANNER ────────────────
+async def sync_faculty_session_verification_tasks(
+    db: AsyncSession,
+    institution_id: int,
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Scans past teaching sessions that remain in 'draft' or 'submitted' status requiring sign-off.
+    Ensures timely hourly/per-lecture verification prior to monthly payroll cutoff.
+    """
+    today = date.today()
+
+    stmt = (
+        select(TeachingSession, User.first_name, User.last_name, Subject.name.label("subject_name"))
+        .join(User, User.id == TeachingSession.teacher_user_id)
+        .join(Subject, Subject.id == TeachingSession.subject_id)
+        .where(
+            TeachingSession.institution_id == institution_id,
+            TeachingSession.approval_status.in_(["submitted", "draft"]),
+            TeachingSession.session_date < today,
+        )
+    )
+    res = await db.execute(stmt)
+    pending_sessions = res.all()
+
+    created_count = 0
+    existing_count = 0
+
+    for session, t_first, t_last, subj_name in pending_sessions:
+        t_name = f"{t_first} {t_last}".strip()
+        title = f"Verify Session: {session.session_code} - {t_name} ({subj_name})"
+        desc = (
+            f"Teaching session #{session.session_code} on {session.session_date} "
+            f"({session.calculated_duration_hours} hrs, ₹{session.calculated_amount}) by faculty {t_name} "
+            f"requires administrative approval before payroll generation."
+        )
+        source_rec_id = session.timetable_entry_id if session.timetable_entry_id else session.division_id
+
+        _, is_new = await create_automated_task(
+            db=db,
+            institution_id=institution_id,
+            title=title,
+            description=desc,
+            due_at=datetime.combine(session.session_date + timedelta(days=2), time(17, 0, tzinfo=timezone.utc)),
+            source_type="timetable_entry",
+            source_record_id=source_rec_id,
+            priority="normal",
+            category="academic",
+            created_by_id=created_by_id,
+        )
+        if is_new:
+            created_count += 1
+        else:
+            existing_count += 1
+
+    return {
+        "pending_sessions_detected": len(pending_sessions),
+        "tasks_created": created_count,
+        "tasks_already_active": existing_count,
+    }
+
+
+# ─── 8. STUDENT BIRTHDAY & MILESTONE OUTREACH SCANNER ────────────────────────
+async def sync_student_birthday_milestone_tasks(
+    db: AsyncSession,
+    institution_id: int,
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Identifies enrolled students celebrating birthdays today.
+    Generates front-desk outreach tasks to foster student connection and community.
+    """
+    today = date.today()
+
+    stmt = select(Student).where(
+        Student.institution_id == institution_id,
+        Student.is_active == True,
+        Student.date_of_birth != None,
+        func.extract("month", Student.date_of_birth) == today.month,
+        func.extract("day", Student.date_of_birth) == today.day,
+    )
+    res = await db.execute(stmt)
+    birthday_students = res.scalars().all()
+
+    created_count = 0
+    existing_count = 0
+
+    for student in birthday_students:
+        student_name = f"{student.first_name} {student.last_name}".strip()
+        age_turning = today.year - student.date_of_birth.year
+        title = f"Birthday Greeting: {student_name} (Adm: {student.admission_number})"
+        desc = (
+            f"Student {student_name} turns {age_turning} today! "
+            f"Contact Number: {student.phone or 'No phone'}. "
+            f"Send institute WhatsApp birthday greeting or deliver greeting card."
+        )
+        _, is_new = await create_automated_task(
+            db=db,
+            institution_id=institution_id,
+            title=title,
+            description=desc,
+            due_at=datetime.combine(today, time(12, 0, tzinfo=timezone.utc)),
+            source_type="student",
+            source_record_id=student.id,
+            priority="normal",
+            category="administrative",
+            created_by_id=created_by_id,
+        )
+        if is_new:
+            created_count += 1
+        else:
+            existing_count += 1
+
+    return {
+        "birthdays_today_detected": len(birthday_students),
+        "tasks_created": created_count,
+        "tasks_already_active": existing_count,
+    }
+
+
+# ─── 9. MASTER ORCHESTRATOR: UNIFIED TASK SYNCHRONIZATION ───────────────────
 async def sync_all_automated_tasks(
     db: AsyncSession,
     institution_id: int,
@@ -570,15 +835,22 @@ async def sync_all_automated_tasks(
     created_by_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
-    Master orchestrator: Executes all operational task scanners in a single unified run.
+    Master orchestrator: Executes all 8 operational task scanners in a single unified run.
     Combines:
     1. Overdue Fee Invoices
-    2. Pending Homework Evaluations
-    3. Timetable Substitutions & Unassigned Slots
-    4. Chronic Student Truancy Outreach
+    2. CRM & Admissions SLAs
+    3. Pending Homework Evaluations
+    4. Timetable Substitutions & Unassigned Slots
+    5. Chronic Student Truancy Outreach
+    6. Exam Marksheet Submission SLAs
+    7. Teaching Session Verifications & Payroll Cutoffs
+    8. Student Birthday & Community Milestones
     """
     fees_res = await sync_overdue_fee_tasks(
         db, institution_id, academic_year_id=academic_year_id, created_by_id=created_by_id
+    )
+    crm_res = await sync_crm_lead_followup_tasks(
+        db, institution_id, created_by_id=created_by_id
     )
     homework_res = await sync_homework_checking_tasks(
         db, institution_id, academic_year_id=academic_year_id, created_by_id=created_by_id
@@ -589,28 +861,86 @@ async def sync_all_automated_tasks(
     truancy_res = await sync_student_truancy_tasks(
         db, institution_id, consecutive_days=2, created_by_id=created_by_id
     )
+    exam_res = await sync_exam_marks_submission_tasks(
+        db, institution_id, academic_year_id=academic_year_id, created_by_id=created_by_id
+    )
+    session_res = await sync_faculty_session_verification_tasks(
+        db, institution_id, created_by_id=created_by_id
+    )
+    birthday_res = await sync_student_birthday_milestone_tasks(
+        db, institution_id, created_by_id=created_by_id
+    )
 
     total_created = (
         fees_res["tasks_created"]
+        + crm_res["tasks_created"]
         + homework_res["tasks_created"]
         + timetable_res["tasks_created"]
         + truancy_res["tasks_created"]
+        + exam_res["tasks_created"]
+        + session_res["tasks_created"]
+        + birthday_res["tasks_created"]
     )
     total_active = (
         fees_res["tasks_already_active"]
+        + crm_res["tasks_already_active"]
         + homework_res["tasks_already_active"]
         + timetable_res["tasks_already_active"]
         + truancy_res["tasks_already_active"]
+        + exam_res["tasks_already_active"]
+        + session_res["tasks_already_active"]
+        + birthday_res["tasks_already_active"]
     )
 
     return {
         "total_created": total_created,
         "total_already_active": total_active,
         "fees": fees_res,
+        "crm": crm_res,
         "homework": homework_res,
         "timetable": timetable_res,
         "truancy": truancy_res,
+        "exam_marks": exam_res,
+        "sessions": session_res,
+        "birthdays": birthday_res,
     }
+
+
+# ─── 10. AUTONOMOUS BACKGROUND SYNC DAEMON ──────────────────────────────────
+async def run_daily_autonomous_sync_daemon():
+    """
+    Autonomous background worker that scans and pre-populates operational tasks
+    across all active institutions daily at 06:30 AM (and upon startup).
+    """
+    logger.info("[AUTONOMOUS SYNC] Daemon initialized. Will execute daily task synchronization.")
+    # Initial sleep on startup so container and db migrations are settled
+    await asyncio.sleep(20)
+
+    while True:
+        try:
+            from app.core.database import async_session_maker
+            async with async_session_maker() as db:
+                institutions = (
+                    await db.execute(select(Institution.id).where(Institution.is_active == True))
+                ).scalars().all()
+
+                for inst_id in institutions:
+                    try:
+                        res = await sync_all_automated_tasks(db, institution_id=inst_id)
+                        logger.info(
+                            "[AUTONOMOUS SYNC] Inst %s synced: %d created, %d active.",
+                            inst_id,
+                            res["total_created"],
+                            res["total_already_active"],
+                        )
+                    except Exception as inst_err:
+                        logger.error("[AUTONOMOUS SYNC] Failed for institution %s: %s", inst_id, inst_err)
+
+        except Exception as e:
+            logger.error("[AUTONOMOUS SYNC] Daemon cycle encountered error: %s", e)
+
+        # Sleep for next 6-hour cycle
+        await asyncio.sleep(21600)
 
 
 # ─── 6. HIGH-LEVEL KPI METRICS ──────────────────────────────────────────────

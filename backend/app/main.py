@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-17
+#  * @updated     2026-11-21
 #  *
 #  * @description FastAPI application entry point, CORS middleware, exception handlers, and v1 router mounting.
 #  */
@@ -69,6 +69,14 @@ async def on_startup():
                         pass
         except Exception:
             pass
+
+    # Launch autonomous operational task sync daemon
+    import asyncio
+    try:
+        from app.services.auto_task_service import run_daily_autonomous_sync_daemon
+        asyncio.create_task(run_daily_autonomous_sync_daemon())
+    except Exception as daemon_err:
+        pass
 
 
 # ------------------------------------------------------------------------------

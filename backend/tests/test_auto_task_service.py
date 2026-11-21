@@ -207,26 +207,48 @@ async def test_api_planning_tasks_sync_overdue_endpoint(client: AsyncClient, aut
 
 @pytest.mark.asyncio
 async def test_sync_all_automated_tasks_orchestrator(db: AsyncSession, test_institution, admin_user):
-    """Verifies master orchestrator executing all 4 scanners."""
+    """Verifies master orchestrator executing all 8 scanners across operational domains."""
     inst_id = test_institution.id
     res = await sync_all_automated_tasks(db, institution_id=inst_id, created_by_id=admin_user.id)
     assert "total_created" in res
     assert "total_already_active" in res
     assert "fees" in res
+    assert "crm" in res
     assert "homework" in res
     assert "timetable" in res
     assert "truancy" in res
+    assert "exam_marks" in res
+    assert "sessions" in res
+    assert "birthdays" in res
 
 
 @pytest.mark.asyncio
 async def test_api_planning_tasks_sync_all_endpoint(client: AsyncClient, auth_headers, test_institution):
-    """Tests POST /api/v1/planning/tasks/sync-all."""
+    """Tests POST /api/v1/planning/tasks/sync-all returning all 8 operational domains."""
     res = await client.post("/api/v1/planning/tasks/sync-all", headers=auth_headers)
     assert res.status_code == 200
     data = res.json()
     assert "total_created" in data
     assert "total_already_active" in data
     assert "fees" in data
+    assert "crm" in data
     assert "homework" in data
     assert "timetable" in data
     assert "truancy" in data
+    assert "exam_marks" in data
+    assert "sessions" in data
+    assert "birthdays" in data
+
+
+@pytest.mark.asyncio
+async def test_api_planning_tasks_sync_crm_and_birthdays_endpoints(client: AsyncClient, auth_headers):
+    """Tests granular POST endpoints for CRM and student birthdays."""
+    res_crm = await client.post("/api/v1/planning/tasks/sync-crm", headers=auth_headers)
+    assert res_crm.status_code == 200
+    data_crm = res_crm.json()
+    assert "overdue_leads_detected" in data_crm
+
+    res_bd = await client.post("/api/v1/planning/tasks/sync-birthdays", headers=auth_headers)
+    assert res_bd.status_code == 200
+    data_bd = res_bd.json()
+    assert "birthdays_today_detected" in data_bd
