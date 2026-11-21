@@ -30,7 +30,11 @@ from app.services.auto_task_service import (
     create_automated_task,
     get_task_metrics_summary,
     resolve_automated_tasks,
+    sync_all_automated_tasks,
+    sync_homework_checking_tasks,
     sync_overdue_fee_tasks,
+    sync_student_truancy_tasks,
+    sync_timetable_substitution_tasks,
 )
 
 
@@ -199,3 +203,30 @@ async def test_api_planning_tasks_sync_overdue_endpoint(client: AsyncClient, aut
     assert "overdue_invoices_scanned" in data
     assert "tasks_created" in data
     assert "tasks_already_active" in data
+
+
+@pytest.mark.asyncio
+async def test_sync_all_automated_tasks_orchestrator(db: AsyncSession, test_institution, admin_user):
+    """Verifies master orchestrator executing all 4 scanners."""
+    inst_id = test_institution.id
+    res = await sync_all_automated_tasks(db, institution_id=inst_id, created_by_id=admin_user.id)
+    assert "total_created" in res
+    assert "total_already_active" in res
+    assert "fees" in res
+    assert "homework" in res
+    assert "timetable" in res
+    assert "truancy" in res
+
+
+@pytest.mark.asyncio
+async def test_api_planning_tasks_sync_all_endpoint(client: AsyncClient, auth_headers, test_institution):
+    """Tests POST /api/v1/planning/tasks/sync-all."""
+    res = await client.post("/api/v1/planning/tasks/sync-all", headers=auth_headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert "total_created" in data
+    assert "total_already_active" in data
+    assert "fees" in data
+    assert "homework" in data
+    assert "timetable" in data
+    assert "truancy" in data

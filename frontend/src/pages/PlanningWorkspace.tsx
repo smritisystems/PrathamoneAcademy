@@ -632,17 +632,19 @@ export default function PlanningWorkspace() {
     enabled: !!selectedInstitutionId,
   })
 
-  const syncOverdueMutation = useMutation({
+  const syncAllMutation = useMutation({
     mutationFn: async () => {
-      const res = await planningApi.syncOverdueFeeTasks(selectedInstitutionId || undefined, selectedAcademicYearId || undefined)
+      const res = await planningApi.syncAllTasks(selectedInstitutionId || undefined, selectedAcademicYearId || undefined)
       return res.data
     },
     onSuccess: (data) => {
-      toast.success(`Task Sync: ${data.tasks_created} new task(s) created, ${data.tasks_already_active} active.`)
+      toast.success(
+        `Operational Sync: ${data.total_created} new task(s) created, ${data.total_already_active} active across Fees, Homework, Timetable & Truancy.`
+      )
       refresh()
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.detail || 'Failed to sync overdue tasks.')
+      toast.error(err?.response?.data?.detail || 'Failed to sync institutional tasks.')
     },
   })
 
@@ -1615,13 +1617,13 @@ export default function PlanningWorkspace() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => syncOverdueMutation.mutate()}
-            disabled={!isEditMode || syncOverdueMutation.isPending}
+            onClick={() => syncAllMutation.mutate()}
+            disabled={!isEditMode || syncAllMutation.isPending}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            title={!isEditMode ? 'Enable Edit Mode to sync automated tasks' : 'Scan and generate automated tasks for overdue fees'}
+            title={!isEditMode ? 'Enable Edit Mode to sync automated tasks' : 'Scan and generate automated tasks across Fees, Homework, Timetable, and Truancy'}
           >
-            <RefreshCw className={`h-4 w-4 ${syncOverdueMutation.isPending ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
-            <span className="hidden sm:inline">Sync Overdue Tasks</span>
+            <RefreshCw className={`h-4 w-4 ${syncAllMutation.isPending ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
+            <span className="hidden sm:inline">Sync All Tasks</span>
           </button>
           <button
             type="button"

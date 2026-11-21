@@ -2986,6 +2986,18 @@ export const planningApi = {
     }>('/planning/tasks/sync-fee-overdue', null, {
       params: { institution_id: institutionId, academic_year_id: academicYearId },
     }),
+
+  syncAllTasks: (institutionId?: number, academicYearId?: number) =>
+    apiClient.post<{
+      total_created: number
+      total_already_active: number
+      fees: { overdue_invoices_scanned: number; tasks_created: number; tasks_already_active: number }
+      homework: { assignments_scanned: number; tasks_created: number; tasks_already_active: number }
+      timetable: { unassigned_slots_scanned: number; unavailable_teachers_count: number; tasks_created: number; tasks_already_active: number }
+      truancy: { chronic_absentees_detected: number; tasks_created: number; tasks_already_active: number }
+    }>('/planning/tasks/sync-all', null, {
+      params: { institution_id: institutionId, academic_year_id: academicYearId },
+    }),
 }
 
 export const reportIntelligenceApi = {

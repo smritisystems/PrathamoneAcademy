@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-04
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description API endpoints for class timetable scheduling, room allocation, and collision detection.
 #  */
@@ -696,6 +696,18 @@ async def update_timetable_entry(
     for k, v in update_dict.items():
         if hasattr(entry, k) and v is not None:
             setattr(entry, k, v)
+
+    # ─── UNIVERSAL TASK ENGINE: AUTO-RESOLVE TIMETABLE ALLOCATION TASKS ───────
+    if entry.teacher_id is not None and std:
+        from app.services.auto_task_service import resolve_automated_tasks
+        await resolve_automated_tasks(
+            db=db,
+            institution_id=std.institution_id,
+            source_type="timetable_entry",
+            source_record_id=entry.id,
+            resolution_status="completed",
+            actor_id=current_user.id,
+        )
 
     await db.commit()
     await db.refresh(entry)

@@ -57,7 +57,11 @@ from app.models.staff import StaffProfile
 from app.models.user import AuditLog, User
 from app.services.auto_task_service import (
     get_task_metrics_summary,
+    sync_all_automated_tasks,
+    sync_homework_checking_tasks,
     sync_overdue_fee_tasks,
+    sync_student_truancy_tasks,
+    sync_timetable_substitution_tasks,
 )
 from app.services.planning_service import (
     ACTIVITY_TYPES,
@@ -1062,6 +1066,106 @@ async def sync_fee_overdue_tasks(
         raise HTTPException(status_code=400, detail="Institution context required.")
     effective_inst_id = effective_inst_id or 1
     result = await sync_overdue_fee_tasks(
+        db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/tasks/sync-homework")
+async def sync_homework_tasks(
+    institution_id: Optional[int] = Query(None),
+    academic_year_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Scans for overdue homework assignments with pending evaluations and generates grading tasks.
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_homework_checking_tasks(
+        db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/tasks/sync-substitutions")
+async def sync_substitution_tasks(
+    institution_id: Optional[int] = Query(None),
+    target_date: Optional[date] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Scans timetable entries for unassigned slots and absent teacher slots on target_date.
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_timetable_substitution_tasks(
+        db,
+        institution_id=effective_inst_id,
+        target_date=target_date,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/tasks/sync-truancy")
+async def sync_truancy_tasks(
+    institution_id: Optional[int] = Query(None),
+    consecutive_days: int = Query(2, ge=2, le=10),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Scans attendance registers for students with consecutive absences and spawns parental outreach tasks.
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_student_truancy_tasks(
+        db,
+        institution_id=effective_inst_id,
+        consecutive_days=consecutive_days,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/tasks/sync-all")
+async def sync_all_tasks(
+    institution_id: Optional[int] = Query(None),
+    academic_year_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Master sync: Runs all 4 operational scanners in one call (Fees, Homework, Timetable, Truancy).
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_all_automated_tasks(
         db,
         institution_id=effective_inst_id,
         academic_year_id=academic_year_id,

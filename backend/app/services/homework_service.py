@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.1.0
 #  * @created     2026-11-11
-#  * @updated     2026-11-16
+#  * @updated     2026-11-21
 #  *
 #  * @description Domain service implementing core business logic for Homework & Assignment management, teacher scope authorization, recipient snapshots, late-joiner handling, secure files, submission versioning, evaluation history, notifications, and analytics.
 #  */
@@ -1441,6 +1441,26 @@ class HomeworkService:
                 message=f"Your submission for '{assignment.title}' ({assignment.assignment_code}) has been reviewed and feedback is available.",
                 dedup_suffix=now.strftime("%Y%m%d%H%M"),
                 sender_user=reviewer_user,
+            )
+
+        # ─── UNIVERSAL TASK ENGINE: AUTO-RESOLVE HOMEWORK TASKS ON FULL GRADING ──
+        remaining_pending = (
+            await db.execute(
+                select(func.count(StudentHomeworkRecord.id)).where(
+                    StudentHomeworkRecord.assignment_id == assignment_id,
+                    StudentHomeworkRecord.review_status == "pending",
+                )
+            )
+        ).scalar() or 0
+        if remaining_pending == 0:
+            from app.services.auto_task_service import resolve_automated_tasks
+            await resolve_automated_tasks(
+                db=db,
+                institution_id=assignment.institution_id,
+                source_type="homework_assignment",
+                source_record_id=assignment.id,
+                resolution_status="completed",
+                actor_id=reviewer_user_id,
             )
 
         await db.commit()

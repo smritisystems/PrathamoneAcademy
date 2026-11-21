@@ -13,7 +13,7 @@
 #  * @created     2026-11-21
 #  * @updated     2026-11-21
 #  *
-#  * @description Cross-module automated task creation and resolution engine with idempotency and anti-spam governance.
+#  * @description Cross-module automated task creation and resolution engine with idempotency, anti-spam governance, and institutional triggers across Fees, CRM, Homework, Timetable, and Truancy.
 #  */
 
 import json
@@ -21,12 +21,19 @@ from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.attendance import Attendance
+from app.models.division import Division
 from app.models.fee import FeeInvoice
+from app.models.homework import HomeworkAssignment, StudentHomeworkRecord
 from app.models.planning import Activity, ActivityAssignee, ActivityReference
+from app.models.portal import TimetableEntry
+from app.models.staff import StaffAttendance, StaffLeave
+from app.models.standard import Standard
 from app.models.student import Student
+from app.models.subject import Subject
 from app.models.user import AuditLog, User
 
 
@@ -68,7 +75,6 @@ async def create_automated_task(
         existing_res = await db.execute(existing_stmt)
         existing_activity = existing_res.scalars().first()
         if existing_activity:
-            # Task already active; update due_at if earlier or higher priority
             changed = False
             if due_at and (not existing_activity.due_at or due_at < existing_activity.due_at):
                 existing_activity.due_at = due_at
@@ -196,6 +202,7 @@ async def resolve_automated_tasks(
     return resolved_count
 
 
+# ─── 1. FEE DEFAULTER SCANNER ───────────────────────────────────────────────
 async def sync_overdue_fee_tasks(
     db: AsyncSession,
     institution_id: int,
@@ -268,6 +275,345 @@ async def sync_overdue_fee_tasks(
     }
 
 
+# ─── 2. HOMEWORK CHECKING & GRADING SCANNER ─────────────────────────────────
+async def sync_homework_checking_tasks(
+    db: AsyncSession,
+    institution_id: int,
+    academic_year_id: Optional[int] = None,
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Scans for published homework assignments whose due date has passed
+    and which have pending/unchecked student submissions.
+    Generates evaluation tasks assigned to the responsible teacher.
+    """
+    today = date.today()
+    stmt = (
+        select(HomeworkAssignment, Subject.name.label("subject_name"), Division.name.label("division_name"))
+        .join(Subject, Subject.id == HomeworkAssignment.subject_id)
+        .outerjoin(Division, Division.id == HomeworkAssignment.division_id)
+        .where(
+            HomeworkAssignment.institution_id == institution_id,
+            HomeworkAssignment.status.in_(["published", "closed"]),
+            HomeworkAssignment.due_date < today,
+        )
+    )
+    if academic_year_id:
+        stmt = stmt.where(HomeworkAssignment.academic_year_id == academic_year_id)
+
+    res = await db.execute(stmt)
+    assignments = res.all()
+
+    created_count = 0
+    existing_count = 0
+
+    for hw, subj_name, div_name in assignments:
+        pending_recs = (
+            await db.execute(
+                select(func.count(StudentHomeworkRecord.id)).where(
+                    StudentHomeworkRecord.assignment_id == hw.id,
+                    StudentHomeworkRecord.review_status == "pending",
+                )
+            )
+        ).scalar() or 0
+
+        if pending_recs > 0:
+            due_dt = datetime.combine(hw.due_date + timedelta(days=1), time(18, 0, tzinfo=timezone.utc))
+            days_overdue = (today - hw.due_date).days
+            priority = "urgent" if days_overdue >= 3 else "high"
+
+            div_label = div_name or "All Batches"
+            title = f"Grade Homework: {hw.title} ({div_label} · {subj_name})"
+            desc = (
+                f"Assignment '{hw.title}' (Code: {hw.assignment_code}) has {pending_recs} pending submissions "
+                f"awaiting teacher review. Due date was {hw.due_date} ({days_overdue} days ago)."
+            )
+
+            _, is_new = await create_automated_task(
+                db=db,
+                institution_id=institution_id,
+                title=title,
+                description=desc,
+                due_at=due_dt,
+                source_type="homework_assignment",
+                source_record_id=hw.id,
+                priority=priority,
+                category="academic",
+                assignee_user_ids=[hw.teacher_user_id] if hw.teacher_user_id else None,
+                created_by_id=created_by_id,
+            )
+            if is_new:
+                created_count += 1
+            else:
+                existing_count += 1
+
+    return {
+        "assignments_scanned": len(assignments),
+        "tasks_created": created_count,
+        "tasks_already_active": existing_count,
+    }
+
+
+# ─── 3. TIMETABLE SUBSTITUTION & UNASSIGNED SLOTS SCANNER ───────────────────
+async def sync_timetable_substitution_tasks(
+    db: AsyncSession,
+    institution_id: int,
+    target_date: Optional[date] = None,
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Scans timetable entries for:
+    1. Unassigned slots (teacher_id IS NULL)
+    2. Scheduled slots where assigned teacher is absent / on leave for target_date.
+    Generates high-priority substitute allocation tasks.
+    """
+    check_date = target_date or date.today()
+    day_name = check_date.strftime("%A")
+
+    # 1. Query unassigned timetable slots for this institution
+    unassigned_stmt = (
+        select(TimetableEntry, Subject.name.label("subject_name"), Division.name.label("division_name"))
+        .join(Division, Division.id == TimetableEntry.division_id)
+        .join(Standard, Standard.id == Division.standard_id)
+        .join(Subject, Subject.id == TimetableEntry.subject_id)
+        .where(
+            Standard.institution_id == institution_id,
+            TimetableEntry.is_active == True,
+            TimetableEntry.teacher_id == None,
+        )
+    )
+    unassigned_res = await db.execute(unassigned_stmt)
+    unassigned_slots = unassigned_res.all()
+
+    created_count = 0
+    existing_count = 0
+
+    for slot, subj_name, div_name in unassigned_slots:
+        title = f"Assign Faculty: {subj_name} ({div_name}) on {slot.day_of_week}s"
+        desc = (
+            f"Timetable entry #{slot.id} ({div_name} - {subj_name}) on {slot.day_of_week} "
+            f"from {slot.start_time} to {slot.end_time} in {slot.room_number or 'Classroom'} has no assigned teacher."
+        )
+        _, is_new = await create_automated_task(
+            db=db,
+            institution_id=institution_id,
+            title=title,
+            description=desc,
+            due_at=datetime.now(timezone.utc) + timedelta(days=2),
+            source_type="timetable_entry",
+            source_record_id=slot.id,
+            priority="high",
+            category="academic",
+            created_by_id=created_by_id,
+        )
+        if is_new:
+            created_count += 1
+        else:
+            existing_count += 1
+
+    # 2. Check teachers marked absent on target_date
+    absent_teacher_ids = (
+        await db.execute(
+            select(StaffAttendance.user_id)
+            .join(User, User.id == StaffAttendance.user_id)
+            .where(
+                User.institution_id == institution_id,
+                StaffAttendance.date == check_date,
+                StaffAttendance.status.in_(["absent", "on_leave"]),
+            )
+        )
+    ).scalars().all()
+
+    on_leave_teacher_ids = (
+        await db.execute(
+            select(StaffLeave.user_id)
+            .join(User, User.id == StaffLeave.user_id)
+            .where(
+                User.institution_id == institution_id,
+                StaffLeave.status == "approved",
+                StaffLeave.start_date <= check_date,
+                StaffLeave.end_date >= check_date,
+            )
+        )
+    ).scalars().all()
+
+    unavailable_teacher_ids = set(absent_teacher_ids) | set(on_leave_teacher_ids)
+
+    if unavailable_teacher_ids:
+        sub_stmt = (
+            select(
+                TimetableEntry,
+                Subject.name.label("subject_name"),
+                Division.name.label("division_name"),
+                User.first_name.label("teacher_first"),
+                User.last_name.label("teacher_last"),
+            )
+            .join(Division, Division.id == TimetableEntry.division_id)
+            .join(Standard, Standard.id == Division.standard_id)
+            .join(Subject, Subject.id == TimetableEntry.subject_id)
+            .join(User, User.id == TimetableEntry.teacher_id)
+            .where(
+                Standard.institution_id == institution_id,
+                TimetableEntry.is_active == True,
+                TimetableEntry.day_of_week == day_name,
+                TimetableEntry.teacher_id.in_(unavailable_teacher_ids),
+            )
+        )
+        sub_slots = (await db.execute(sub_stmt)).all()
+        for slot, subj_name, div_name, t_first, t_last in sub_slots:
+            t_name = f"{t_first} {t_last}".strip()
+            title = f"Urgent Substitute Needed: {subj_name} ({div_name}) at {slot.start_time}"
+            desc = (
+                f"Faculty {t_name} is marked absent/on leave on {check_date}. "
+                f"Classroom slot {slot.start_time} - {slot.end_time} in {slot.room_number or 'Classroom'} "
+                f"for {div_name} requires an emergency substitute."
+            )
+            _, is_new = await create_automated_task(
+                db=db,
+                institution_id=institution_id,
+                title=title,
+                description=desc,
+                due_at=datetime.combine(check_date, time(8, 0, tzinfo=timezone.utc)),
+                source_type="timetable_entry",
+                source_record_id=slot.id,
+                priority="urgent",
+                category="academic",
+                created_by_id=created_by_id,
+            )
+            if is_new:
+                created_count += 1
+            else:
+                existing_count += 1
+
+    return {
+        "date_checked": str(check_date),
+        "unassigned_slots_scanned": len(unassigned_slots),
+        "unavailable_teachers_count": len(unavailable_teacher_ids),
+        "tasks_created": created_count,
+        "tasks_already_active": existing_count,
+    }
+
+
+# ─── 4. STUDENT CHRONIC TRUANCY OUTREACH SCANNER ────────────────────────────
+async def sync_student_truancy_tasks(
+    db: AsyncSession,
+    institution_id: int,
+    consecutive_days: int = 2,
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Scans attendance registers for students marked absent on consecutive recent dates.
+    Generates parental outreach tasks to prevent dropout and course derailment.
+    """
+    today = date.today()
+    check_window_start = today - timedelta(days=7)
+
+    stmt = (
+        select(Attendance.student_id, func.count(Attendance.id).label("absent_count"), Student)
+        .join(Student, Student.id == Attendance.student_id)
+        .where(
+            Student.institution_id == institution_id,
+            Student.is_active == True,
+            Attendance.date >= check_window_start,
+            Attendance.date <= today,
+            Attendance.status == "absent",
+        )
+        .group_by(Attendance.student_id, Student.id)
+        .having(func.count(Attendance.id) >= consecutive_days)
+    )
+
+    res = await db.execute(stmt)
+    chronic_absentees = res.all()
+
+    created_count = 0
+    existing_count = 0
+
+    for student_id, absent_count, student in chronic_absentees:
+        student_name = f"{student.first_name} {student.last_name}".strip()
+        title = f"Absence Outreach: {student_name} ({absent_count} days absent)"
+        desc = (
+            f"Student {student_name} (Adm: {student.admission_number}) has recorded {absent_count} absences "
+            f"in the past week. Contact: {student.phone or 'No phone'}. "
+            f"Contact guardian to verify welfare and prevent learning loss."
+        )
+        priority = "urgent" if absent_count >= 3 else "high"
+
+        _, is_new = await create_automated_task(
+            db=db,
+            institution_id=institution_id,
+            title=title,
+            description=desc,
+            due_at=datetime.now(timezone.utc) + timedelta(days=1),
+            source_type="attendance",
+            source_record_id=student.id,
+            priority=priority,
+            category="attendance",
+            created_by_id=created_by_id,
+        )
+        if is_new:
+            created_count += 1
+        else:
+            existing_count += 1
+
+    return {
+        "chronic_absentees_detected": len(chronic_absentees),
+        "tasks_created": created_count,
+        "tasks_already_active": existing_count,
+    }
+
+
+# ─── 5. MASTER ORCHESTRATOR: UNIFIED TASK SYNCHRONIZATION ───────────────────
+async def sync_all_automated_tasks(
+    db: AsyncSession,
+    institution_id: int,
+    academic_year_id: Optional[int] = None,
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Master orchestrator: Executes all operational task scanners in a single unified run.
+    Combines:
+    1. Overdue Fee Invoices
+    2. Pending Homework Evaluations
+    3. Timetable Substitutions & Unassigned Slots
+    4. Chronic Student Truancy Outreach
+    """
+    fees_res = await sync_overdue_fee_tasks(
+        db, institution_id, academic_year_id=academic_year_id, created_by_id=created_by_id
+    )
+    homework_res = await sync_homework_checking_tasks(
+        db, institution_id, academic_year_id=academic_year_id, created_by_id=created_by_id
+    )
+    timetable_res = await sync_timetable_substitution_tasks(
+        db, institution_id, created_by_id=created_by_id
+    )
+    truancy_res = await sync_student_truancy_tasks(
+        db, institution_id, consecutive_days=2, created_by_id=created_by_id
+    )
+
+    total_created = (
+        fees_res["tasks_created"]
+        + homework_res["tasks_created"]
+        + timetable_res["tasks_created"]
+        + truancy_res["tasks_created"]
+    )
+    total_active = (
+        fees_res["tasks_already_active"]
+        + homework_res["tasks_already_active"]
+        + timetable_res["tasks_already_active"]
+        + truancy_res["tasks_already_active"]
+    )
+
+    return {
+        "total_created": total_created,
+        "total_already_active": total_active,
+        "fees": fees_res,
+        "homework": homework_res,
+        "timetable": timetable_res,
+        "truancy": truancy_res,
+    }
+
+
+# ─── 6. HIGH-LEVEL KPI METRICS ──────────────────────────────────────────────
 async def get_task_metrics_summary(
     db: AsyncSession,
     institution_id: int,
