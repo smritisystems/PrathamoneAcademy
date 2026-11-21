@@ -266,8 +266,8 @@ async def export_fee_collection(
         writer.writerows(export_rows)
         output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
         return Response(
-            content=output.getvalue(),
-            media_type="text/csv",
+            content=output.getvalue().encode("utf-8-sig"),
+            media_type="text/csv; charset=utf-8",
             headers={
                 "Content-Disposition": "attachment; filename=fee_collection.csv"
             },
@@ -687,8 +687,8 @@ async def export_academic_report(
 
     output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
     return Response(
-        content=output.getvalue(),
-        media_type="text/csv",
+        content=output.getvalue().encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
@@ -1048,8 +1048,8 @@ async def export_student_withdrawals_report(
     output.write("\nPrathamOne Coaching Institutes Enterprise Suite · prathamone.com\n")
 
     return Response(
-        content=output.getvalue(),
-        media_type="text/csv",
+        content=output.getvalue().encode("utf-8-sig"),
+        media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": "attachment; filename=student_withdrawals_report.csv"},
     )
 

@@ -1,7 +1,7 @@
 /**
  * @file        BatchMonthlyFeeMatrix.tsx
  * @project     PrathamOne Academy Coaching Institute Management System
- * @module      src.components.fees
+ * @module      frontend.src.components.fees
  *
  * @author      Jawahar R. Mallah
  * @organization Smritisys & AITDL Networks
@@ -13,28 +13,8 @@
  * @created     2026-11-21
  * @updated     2026-11-21
  *
- * @description Source component for Batchmonthlyfeematrix in the src.components.fees module.
+ * @description 2D Cross-Tabulation Batch Monthly Fee Collection Matrix (Executive Daybook Grid)
  */
-
-// /**
-//  * @file        BatchMonthlyFeeMatrix.tsx
-//  * @project     PrathamOne EduOS Coaching Institute Management System
-//  * @module      frontend.src.components.fees
-//  *
-//  * @author      Jawahar R. Mallah
-//  * @organization Smritisys & AITDL Networks
-//  * @client      Prashant Academy Coaching Institute
-//  * @copyright   Copyright (c) 2026 PrathamOne EduOS
-//  * @license     Proprietary
-//  *
-//  * @version     1.0.0
-//  * @created     2026-11-21
-//  * @updated     2026-11-21
-//  *
-//  * @description 2D Cross-Tabulation Batch Monthly Fee Collection Matrix (Executive Daybook Grid)
-//  *              mirroring Google Sheets / Excel workflows with live ERP ledger sync, click-to-collect,
-//  *              instant standard/batch tab switching, and one-click spreadsheet export.
-//  */
 
 import React, { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -58,7 +38,9 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import writeXlsxFile, { type Row as ExcelRow } from 'write-excel-file/browser'
 import { feesApi } from '../../api/endpoints'
+import { downloadCsvRows, downloadBlob } from '../../utils/reportExport'
 import { BatchMonthlyMatrixResponse, BatchMatrixStudent } from '../../types'
 
 interface BatchMonthlyFeeMatrixProps {
@@ -107,7 +89,97 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
     )
   }, [data?.students, searchFilter])
 
-  // Export 2D Matrix to identical CSV / Excel spreadsheet format
+  // 1. Export 2D Matrix to Native Microsoft Excel (.xlsx) format with formatting
+  const handleExportXlsx = async () => {
+    if (!data || !data.students.length) {
+      toast.error('No matrix records available for export')
+      return
+    }
+
+    try {
+      const batchName = data.active_batch?.name || 'BATCH'
+      const headerRow: ExcelRow = [
+        { value: 'Academic Month', type: String, fontWeight: 'bold' as const },
+        ...data.students.map((s) => ({
+          value: `${s.short_name} (${s.admission_number})`,
+          type: String,
+          fontWeight: 'bold' as const,
+        })),
+      ]
+
+      const packageRow: ExcelRow = [
+        { value: 'Agreed Package (₹k)', type: String, fontWeight: 'bold' as const, textColor: '#DC2626' },
+        ...data.students.map((s) => ({
+          value: `${s.package_fee_k} (₹${Math.round(s.package_fee).toLocaleString('en-IN')})`,
+          type: String,
+          fontWeight: 'bold' as const,
+          textColor: '#DC2626',
+        })),
+      ]
+
+      const monthRows: ExcelRow[] = data.months.map((m) => [
+        { value: m.month_name, type: String, fontWeight: 'bold' as const },
+        ...data.students.map((s) => {
+          const cell = s.monthly_cells[m.key]
+          if (cell && cell.has_payment) {
+            return {
+              value: `${cell.date_text} | ${cell.amount_text}`,
+              type: String,
+              textColor: '#065F46',
+              backgroundColor: '#ECFDF5',
+            }
+          }
+          return {
+            value: cell?.status === 'overdue' ? 'Pending' : '—',
+            type: String,
+            textColor: cell?.status === 'overdue' ? '#E11D48' : '#94A3B8',
+          }
+        }),
+      ])
+
+      const totalPaidRow: ExcelRow = [
+        { value: 'Total Realized (₹)', type: String, fontWeight: 'bold' as const, textColor: '#047857' },
+        ...data.students.map((s) => ({
+          value: `₹${Math.round(s.total_paid).toLocaleString('en-IN')}`,
+          type: String,
+          fontWeight: 'bold' as const,
+          textColor: '#047857',
+        })),
+      ]
+
+      const balanceRow: ExcelRow = [
+        { value: 'Balance Due (₹)', type: String, fontWeight: 'bold' as const, textColor: '#B45309' },
+        ...data.students.map((s) => ({
+          value: `₹${Math.round(s.total_outstanding).toLocaleString('en-IN')}`,
+          type: String,
+          fontWeight: 'bold' as const,
+          textColor: '#B45309',
+        })),
+      ]
+
+      const sheetData: ExcelRow[] = [
+        headerRow,
+        packageRow,
+        ...monthRows,
+        totalPaidRow,
+        balanceRow,
+      ]
+
+      const xlsxBlob = await writeXlsxFile(sheetData, {
+        sheet: batchName.substring(0, 31),
+      }).toBlob()
+
+      downloadBlob(
+        xlsxBlob,
+        `FEE_REPORT_2026_${batchName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`
+      )
+      toast.success(`Exported ${batchName} Fee Matrix Excel (.xlsx) successfully!`)
+    } catch (err: any) {
+      toast.error('Failed to export Excel file: ' + (err.message || 'Unknown error'))
+    }
+  }
+
+  // 2. Export 2D Matrix to RFC-4180 CSV with UTF-8 BOM (\uFEFF) to guarantee zero Mojibake & zero column shifting
   const handleExportSpreadsheet = () => {
     if (!data || !data.students.length) {
       toast.error('No matrix records available for export')
@@ -123,7 +195,7 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
     // Row 2: Agreed Package Fee in Thousands (Matching Google Sheet Row 2)
     const packageRow = [
       'Agreed Package (₹k)',
-      ...data.students.map((s) => `${s.package_fee_k} (₹${s.package_fee.toLocaleString('en-IN')})`),
+      ...data.students.map((s) => `${s.package_fee_k} (₹${Math.round(s.package_fee).toLocaleString('en-IN')})`),
     ]
 
     // Monthly Rows
@@ -132,7 +204,7 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
       data.students.forEach((s) => {
         const cell = s.monthly_cells[m.key]
         if (cell && cell.has_payment) {
-          row.push(`"${cell.date_text} | ${cell.amount_text}"`)
+          row.push(`${cell.date_text} | ${cell.amount_text}`)
         } else {
           row.push(cell?.status === 'overdue' ? 'Pending' : '—')
         }
@@ -143,34 +215,26 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
     // Footer Rows: Total Paid & Balance
     const totalPaidRow = [
       'Total Realized (₹)',
-      ...data.students.map((s) => `₹${s.total_paid.toLocaleString('en-IN')}`),
+      ...data.students.map((s) => `₹${Math.round(s.total_paid).toLocaleString('en-IN')}`),
     ]
     const balanceRow = [
       'Balance Due (₹)',
-      ...data.students.map((s) => `₹${s.total_outstanding.toLocaleString('en-IN')}`),
+      ...data.students.map((s) => `₹${Math.round(s.total_outstanding).toLocaleString('en-IN')}`),
     ]
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [
-        headers.join(','),
-        packageRow.join(','),
-        ...monthRows.map((r) => r.join(',')),
-        totalPaidRow.join(','),
-        balanceRow.join(','),
-      ].join('\n')
+    const allRows = [
+      headers,
+      packageRow,
+      ...monthRows,
+      totalPaidRow,
+      balanceRow,
+    ]
 
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute(
-      'download',
-      `FEE_REPORT_2026_${batchName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`
+    downloadCsvRows(
+      `FEE_REPORT_2026_${batchName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`,
+      allRows
     )
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    toast.success(`Exported ${batchName} Fee Matrix spreadsheet successfully!`)
+    toast.success(`Exported ${batchName} Fee Matrix CSV successfully!`)
   }
 
   // Print single-page executive docket
@@ -210,12 +274,20 @@ export const BatchMonthlyFeeMatrix: React.FC<BatchMonthlyFeeMatrixProps> = ({
 
           <div className="flex items-center gap-2 self-start lg:self-auto flex-wrap">
             <button
+              onClick={handleExportXlsx}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300/80 hover:bg-emerald-100/80 transition-all shadow-2xs"
+              title="Download formatted Excel workbook with color-coded cells"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              Export Excel (.xlsx)
+            </button>
+            <button
               onClick={handleExportSpreadsheet}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-2xs"
-              title="Download CSV/Excel file formatted identically to Google Sheet"
+              title="Download UTF-8 BOM CSV compatible with all versions of Excel and Google Sheets"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
-              Export Spreadsheet (.csv)
+              Export CSV (.csv)
             </button>
             <button
               onClick={handlePrintDocket}

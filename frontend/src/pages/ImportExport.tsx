@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-21
  *
  * @description Data Import/Export workspace featuring Excel copy-paste spreadsheet grid and file upload.
  */
@@ -159,7 +159,11 @@ export default function ImportExportPage() {
     try {
       setLoading(true)
       const res = await importExportApi.downloadTemplate(selectedEntityKey, format)
-      const blob = new Blob([res.data], {
+      let templateData = res.data
+      if (format === 'csv' && typeof templateData === 'string' && !templateData.startsWith('\uFEFF')) {
+        templateData = '\uFEFF' + templateData
+      }
+      const blob = new Blob([templateData], {
         type: format === 'xlsx'
           ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           : 'text/csv;charset=utf-8;'
@@ -515,7 +519,11 @@ export default function ImportExportPage() {
       }
 
       const res = await importExportApi.exportData(params)
-      const blob = new Blob([res.data], {
+      let exportData = res.data
+      if (exportFormat === 'csv' && typeof exportData === 'string' && !exportData.startsWith('\uFEFF')) {
+        exportData = '\uFEFF' + exportData
+      }
+      const blob = new Blob([exportData], {
         type: exportFormat === 'xlsx'
           ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           : 'text/csv;charset=utf-8;'

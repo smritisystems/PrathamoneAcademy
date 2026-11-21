@@ -41,6 +41,7 @@ import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, C
 import Modal from '../components/Modal'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import { printTimetableDocketElement, getTimetableDocketPrintStyles } from '../utils/printTimetableDocket'
+import { downloadCsvRows, downloadTextCsv } from '../utils/reportExport'
 import toast from 'react-hot-toast'
 import type {
   Division, Board, Standard, BatchRosterStudent, AcademicTreeBoard,
@@ -1597,16 +1598,10 @@ export default function AcademicWorkspace() {
       })
     })
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `PrashantAcademy_Timetable_Schedule_${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    downloadCsvRows(
+      `PrashantAcademy_Timetable_Schedule_${new Date().toISOString().split('T')[0]}.csv`,
+      [headers, ...rows]
+    )
     toast.success('Timetable schedule exported to CSV for Excel!')
   }
 
@@ -1668,14 +1663,10 @@ export default function AcademicWorkspace() {
     setIsExportingReport(true)
     try {
       const res = await academicReportsApi.exportReport(activeReportType)
-      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `${activeReportType}_report_${new Date().toISOString().split('T')[0]}.csv`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
+      downloadTextCsv(
+        `${activeReportType}_report_${new Date().toISOString().split('T')[0]}.csv`,
+        res.data
+      )
       toast.success('Report exported to CSV successfully!')
     } catch {
       toast.error('Failed to export report')

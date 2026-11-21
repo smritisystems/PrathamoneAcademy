@@ -5,8 +5,8 @@
 **Version:** 1.0.0  
 **Organization:** Smritisys & AITDL Networks  
 **Product Architect:** Jawahar R Mallah  
-**Last Reindexed:** 2026-11-21 21:01:21<br>
-**Total Indexed Items:** 725<br>
+**Last Reindexed:** 2026-11-21 21:25:51<br>
+**Total Indexed Items:** 726<br>
 
 ---
 
@@ -23,7 +23,7 @@
 | `06` | [06_TEACHER_PAYROLL](#06_teacher_payroll) | **4** | Teacher Payroll & Payment Management |
 | `07` | [07_ATTENDANCE](#07_attendance) | **6** | Attendance Register & Tracking |
 | `08` | [08_EXAMINATION](#08_examination) | **8** | Examinations, Tests & Grading |
-| `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **52** | Fee Structures, Payments & Receipts |
+| `09` | [09_FEES_PAYMENTS](#09_fees_payments) | **53** | Fee Structures, Payments & Receipts |
 | `10` | [10_FINANCE_ACCOUNTING](#10_finance_accounting) | **3** | Finance, Accounting & Ledgers |
 | `11` | [11_REPORTS_EXPORTS](#11_reports_exports) | **16** | Reports, Analytics & Data Grids |
 | `12` | [12_RBAC_SECURITY](#12_rbac_security) | **16** | RBAC, Security & Permissions |
@@ -291,6 +291,7 @@
 | **PrathamOne Academy — Sysadmin Fees & Payments Permissions Audit** | `IMPLEMENTATION-PLAN` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_SYSADMIN-FEES-PERMISSIONS-AUDIT-AND-PLAN_V1.md](09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_IMPLEMENTATION-PLAN_SYSADMIN-FEES-PERMISSIONS-AUDIT-AND-PLAN_V1.md) | - |
 | **System-Wide Financial Data-Flow & Discrepancy Audit — Concessions, Waivers & Scholarships Governance** | `AUDIT` | `1.0` | 2026-11-11 | `Approved` | [2026-11-11_FEES-PAYMENTS_AUDIT-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-AUDIT_V1.md](09_FEES_PAYMENTS/2026-11-11_FEES-PAYMENTS_AUDIT-REPORT_CONCESSIONS-WAIVERS-SCHOLARSHIP-GOVERNANCE-AUDIT_V1.md) | 04_STUDENT_MANAGEMENT, 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 11_REPORTS_EXPORTS, 12_RBAC_SECURITY |
 | **Transaction Lifecycle and State Transition Matrix** | `MATRIX` | `1.0` | 2026-11-09 | `Approved` | [2026-11-09_FEES-PAYMENTS_SPECIFICATION_TRANSACTION-LIFECYCLE-STATE-TRANSITION-MATRIX_V1.md](09_FEES_PAYMENTS/2026-11-09_FEES-PAYMENTS_SPECIFICATION_TRANSACTION-LIFECYCLE-STATE-TRANSITION-MATRIX_V1.md) | 10_FINANCE_ACCOUNTING, 12_RBAC_SECURITY |
+| **Universal CSV and Excel Export Governance — UTF-8 BOM and RFC-4180 Hardening** | `REPORT` | `1.0` | 2026-11-21 | `Approved` | [2026-11-21_FEES-PAYMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-EXPORT-UTF8-BOM-GOVERNANCE_V1.md](09_FEES_PAYMENTS/2026-11-21_FEES-PAYMENTS_IMPLEMENTATION-REPORT_UNIVERSAL-EXPORT-UTF8-BOM-GOVERNANCE_V1.md) | 03_ACADEMIC_MANAGEMENT, 09_FEES_PAYMENTS, 10_FINANCE_ACCOUNTING, 11_REPORTS_EXPORTS, 15_INTEGRATIONS |
 | **Visual Step-by-Step Guide: Editing Fees & Payments in PrathamOne Academy** | `USER-MANUAL` | `1.0` | 2026-11-06 | `Approved` | [2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md](09_FEES_PAYMENTS/2026-11-06_FEES_PAYMENTS_USER-MANUAL_VISUAL-GUIDE-EDITING-FEES-AND-PAYMENTS_V1.md) | - |
 
 

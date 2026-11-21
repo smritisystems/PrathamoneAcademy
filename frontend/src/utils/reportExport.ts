@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-16
+ * @updated     2026-11-21
  *
  * @description Universal client-side export utility supporting Excel (.xlsx), CSV (.csv), and JSON (.json) with formula injection protection.
  */
@@ -61,22 +61,58 @@ export function getRawCellValue<T>(row: T, col: ExportColumn<T>): any {
 }
 
 /**
- * Escapes values for CSV export and neutralizes spreadsheet formula injection risks.
+ * Escapes values for CSV export, neutralizes spreadsheet formula injection risks,
+ * and ensures cells containing commas, quotes, newlines, or currency symbols stay in a single column.
  */
-function sanitizeCsvValue(val: any): string {
-  if (val === null || val === undefined) return ''
-  let str = String(val)
+export function sanitizeCsvValue(val: any): string {
+  if (val === null || val === undefined) return '""'
+  let str = String(val).trim()
 
   // Neutralize formula injection characters
   if (/^[=+\-@\t\r]/.test(str)) {
     str = `'${str}`
   }
 
-  // Quote if contains commas, quotes, or newlines
-  if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
-    return `"${str.replace(/"/g, '""')}"`
+  // If already enclosed in quotes, unwrap first so we can cleanly escape
+  if (str.startsWith('"') && str.endsWith('"') && str.length >= 2) {
+    str = str.slice(1, -1).replace(/""/g, '"')
   }
-  return str
+
+  // Always securely quote the cell to prevent column splitting
+  return `"${str.replace(/"/g, '""')}"`
+}
+
+/**
+ * Universal CSV Row Exporter:
+ * - Prepends UTF-8 BOM (\uFEFF) to guarantee Microsoft Excel and Google Sheets render Indian Rupee (\u20B9), dashes (\u2014), and international text correctly without Mojibake
+ * - Strict RFC-4180 cell quoting & sanitization: strings containing commas, quotes, or newlines are securely enclosed in quotes so numbers like Rs. 95,000 NEVER split across columns
+ * - Neutralizes formula injection risks (=, +, -, @)
+ */
+export function downloadCsvRows(
+  filename: string,
+  rows: (string | number | boolean | null | undefined)[][]
+): void {
+  const safeFilename = filename.endsWith('.csv') ? filename : `${filename}.csv`
+
+  const csvContent =
+    '\uFEFF' +
+    rows
+      .map((row) => row.map((cell) => sanitizeCsvValue(cell)).join(','))
+      .join('\r\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  downloadBlob(blob, safeFilename)
+}
+
+/**
+ * Downloads a raw CSV text string guaranteeing UTF-8 BOM (\uFEFF) is prepended.
+ * Useful for responses from server-side report export endpoints.
+ */
+export function downloadTextCsv(filename: string, rawCsvContent: string): void {
+  const safeFilename = filename.endsWith('.csv') ? filename : `${filename}.csv`
+  const contentWithBom = rawCsvContent.startsWith('\uFEFF') ? rawCsvContent : '\uFEFF' + rawCsvContent
+  const blob = new Blob([contentWithBom], { type: 'text/csv;charset=utf-8;' })
+  downloadBlob(blob, safeFilename)
 }
 
 /**

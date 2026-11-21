@@ -53,6 +53,7 @@ import PaymentReceiptView from '../components/PaymentReceiptView'
 import { StatusBadge, InvoiceStatusBadge } from '../components/Badge'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import { printReceiptElement } from '../utils/printReceipt'
+import { downloadCsvRows } from '../utils/reportExport'
 import { useBranding } from '../config/branding'
 import { PrintBrandingFooter } from '../components/PrintDocumentBranding'
 import type {
@@ -1429,29 +1430,20 @@ function FeesContent() {
       'Status', 'Payments Count', 'Last Payment Date',
     ]
     const rows = registerEntries.map((e) => [
-      `"${e.admission_number}"`,
-      `"${e.student_name}"`,
-      `"${e.phone || ''}"`,
-      `"${e.board_name}"`,
-      `"${e.standard_name}"`,
-      `"${e.batch_name}"`,
+      e.admission_number,
+      e.student_name,
+      e.phone || '',
+      e.board_name,
+      e.standard_name,
+      e.batch_name,
       e.net_amount,
       e.paid_amount,
       e.outstanding_amount,
-      `"${e.status}"`,
+      e.status,
       e.payment_count,
-      `"${e.last_payment_date || 'N/A'}"`,
+      e.last_payment_date || 'N/A',
     ])
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `fee_register_${new Date().toISOString().split('T')[0]}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    downloadCsvRows(`fee_register_${new Date().toISOString().split('T')[0]}.csv`, [headers, ...rows])
     toast.success('Fee Register exported successfully')
   }
 
@@ -2576,16 +2568,7 @@ function FeesContent() {
       return
     }
 
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', filename)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    downloadCsvRows(filename, [headers, ...rows])
     toast.success('Report exported to CSV successfully')
   }
 

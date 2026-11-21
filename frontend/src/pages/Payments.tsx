@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
@@ -35,6 +35,7 @@ import { Lock } from 'lucide-react'
 import CascadingFilters, { FilterState } from '../components/CascadingFilters'
 import Modal from '../components/Modal'
 import type { Payment, PaymentTransactionItem, PaymentAuditLog } from '../types'
+import { downloadCsvRows } from '../utils/reportExport'
 import toast from 'react-hot-toast'
 
 const fmt = (n: number | string | undefined | null) =>
@@ -544,29 +545,20 @@ export default function Payments() {
       'Batch', 'Amount (INR)', 'Payment Date', 'Method', 'Reference', 'Status', 'Edits',
     ]
     const rows = payments.map((p) => [
-      `"${p.receipt_number || 'PENDING'}"`,
-      `"${p.admission_number}"`,
-      `"${p.student_name}"`,
-      `"${p.board_name}"`,
-      `"${p.standard_name}"`,
-      `"${p.batch_name}"`,
+      p.receipt_number || 'PENDING',
+      p.admission_number,
+      p.student_name,
+      p.board_name,
+      p.standard_name,
+      p.batch_name,
       p.amount,
-      `"${p.payment_date}"`,
-      `"${p.payment_method}"`,
-      `"${p.transaction_reference || 'N/A'}"`,
-      `"${p.status}"`,
+      p.payment_date,
+      p.payment_method,
+      p.transaction_reference || 'N/A',
+      p.status,
       p.edit_count || 0,
     ])
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `payments_ledger_${new Date().toISOString().split('T')[0]}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    downloadCsvRows(`payments_ledger_${new Date().toISOString().split('T')[0]}.csv`, [headers, ...rows])
     toast.success('Payments Ledger exported successfully')
   }
 

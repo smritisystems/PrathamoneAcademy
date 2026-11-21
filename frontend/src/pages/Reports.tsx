@@ -1127,7 +1127,11 @@ function ReportsWorkspace() {
         funding_source: concessionFundingFilter !== 'all' ? concessionFundingFilter : undefined,
         search: concessionStudentSearch.trim() || undefined,
       })
-      const blob = new Blob([res.data], {
+      let exportData = res.data
+      if (format === 'csv' && typeof exportData === 'string' && !exportData.startsWith('\uFEFF')) {
+        exportData = '\uFEFF' + exportData
+      }
+      const blob = new Blob([exportData], {
         type:
           format === 'csv'
             ? 'text/csv;charset=utf-8;'

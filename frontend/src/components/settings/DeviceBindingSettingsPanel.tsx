@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-19
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Settings panel for optional device-wise security binding, policy configuration, safe disablement, and hardware inventory.
  */
@@ -49,6 +49,7 @@ import {
   Users,
 } from 'lucide-react'
 import { deviceBindingApi } from '../../api/endpoints'
+import { downloadCsvRows } from '../../utils/reportExport'
 import type {
   DeviceBindingPolicyMode,
   DeviceVerificationMethod,
@@ -584,22 +585,13 @@ export default function DeviceBindingSettingsPanel({
       inc.created_at || '',
       (inc.severity || '').toUpperCase(),
       inc.action,
-      `"${(inc.user_name || '').replace(/"/g, '""')}"`,
+      inc.user_name || '',
       inc.user_email || '',
       inc.ip_address || '',
-      `"${(inc.user_agent || '').replace(/"/g, '""')}"`,
-      `"${(inc.details || '').replace(/"/g, '""')}"`,
+      inc.user_agent || '',
+      inc.details || '',
     ])
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `security_incidents_audit_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    downloadCsvRows(`security_incidents_audit_${new Date().toISOString().slice(0, 10)}.csv`, [headers, ...rows])
   }
 
   const getDeviceIcon = (type: string) => {

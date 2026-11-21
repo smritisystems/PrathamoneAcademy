@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-08
- * @updated     2026-11-16
+ * @updated     2026-11-21
  *
  * @description Master Lead & Enquiry Register workspace featuring multi-tier filters, search, quick presets, batch re-assignment, Excel export, and slide-over dossier inspection.
  */
@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { leadsApi, standardsApi, boardsApi, usersApi, academicYearsApi } from '../../api/endpoints'
+import { downloadCsvRows } from '../../utils/reportExport'
 import type { LeadItem, LeadDossierResponse, Standard, Board, User, AcademicYear } from '../../types'
 import { useAuthStore, hasPermission } from '../../store/authStore'
 import { useEditModeStore } from '../../store/editModeStore'
@@ -144,24 +145,20 @@ export default function LeadRegisterPage() {
     const headers = ['Lead Number', 'Name', 'Phone', 'Email', 'Standard', 'Source', 'Priority', 'Stage', 'Counsellor', 'Enquiry Date']
     const rows = leadsData.items.map((l) => [
       l.lead_number,
-      `"${l.full_name}"`,
+      l.full_name,
       l.phone || '',
       l.email || '',
-      `"${l.class_display || ''}"`,
+      l.class_display || '',
       l.source,
       l.priority,
       l.stage,
-      `"${l.assigned_to_name || ''}"`,
+      l.assigned_to_name || '',
       l.enquiry_date || '',
     ])
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', `Leads_Register_${new Date().toISOString().split('T')[0]}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    downloadCsvRows(
+      `Leads_Register_${new Date().toISOString().split('T')[0]}.csv`,
+      [headers, ...rows]
+    )
     toast.success('Leads Register exported to CSV.')
   }
 

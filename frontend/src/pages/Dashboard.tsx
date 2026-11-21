@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-21
  *
  * @description Executive management & financial analytics dashboard featuring collection trends and 8 multi-tab workspaces: Overview, Fee Collection, Outstanding Analysis, Student Analysis, Admissions & CRM, Academic Analysis, Transactions & Reconciliation, and Operations.
  */
@@ -30,7 +30,7 @@ import {
   FileSpreadsheet, Sparkles, Building2, School, BarChart3, PieChart as PieChartIcon
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { downloadBlob } from '../utils/reportExport'
+import { downloadBlob, downloadCsvRows } from '../utils/reportExport'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -485,25 +485,23 @@ export default function DashboardPage() {
     ]
 
     const rows = drilldownData.records.map((r) => [
-      `"${r.student_name}"`,
-      `"${r.admission_number}"`,
-      `"${r.phone}"`,
-      `"${r.class_name}"`,
-      `"${r.batch_name}"`,
-      `"${r.invoice_number}"`,
-      `"${r.due_date || 'N/A'}"`,
+      r.student_name,
+      r.admission_number,
+      r.phone,
+      r.class_name,
+      r.batch_name,
+      r.invoice_number,
+      r.due_date || 'N/A',
       r.days_overdue,
-      `"${r.student_status}"`,
+      r.student_status,
       r.total_obligation,
       r.paid_amount,
       r.outstanding_amount,
     ])
 
-    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    downloadBlob(
-      blob,
-      `Outstanding_Drilldown_${drilldownStatus}_${new Date().toISOString().slice(0, 10)}.csv`
+    downloadCsvRows(
+      `Outstanding_Drilldown_${drilldownStatus}_${new Date().toISOString().slice(0, 10)}.csv`,
+      [headers, ...rows]
     )
   }
 
