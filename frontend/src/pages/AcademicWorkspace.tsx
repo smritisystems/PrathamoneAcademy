@@ -974,9 +974,9 @@ export default function AcademicWorkspace() {
       const matchStandard = selectedTreeStandardId ? b.standard_id === selectedTreeStandardId : true
       const matchSearch = searchQuery.trim()
         ? b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          b.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          b.room_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          b.class_teacher_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        b.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.room_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.class_teacher_name?.toLowerCase().includes(searchQuery.toLowerCase())
         : true
       return matchBoard && matchStandard && matchSearch
     })
@@ -1895,11 +1895,10 @@ export default function AcademicWorkspace() {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
-                isActive
-                  ? 'bg-primary-600 text-white shadow-sm shadow-primary-500/20'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${isActive
+                ? 'bg-primary-600 text-white shadow-sm shadow-primary-500/20'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
             >
               <Icon className="w-4 h-4" />
               {tab.label}
@@ -2180,19 +2179,17 @@ export default function AcademicWorkspace() {
                                     setSelectedTreeBoardId(boardNode.board_id)
                                     setSelectedTreeStandardId(cls.standard_id)
                                   }}
-                                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                    isClassSelected
-                                      ? 'bg-primary-600 text-white shadow-sm shadow-primary-500/20'
-                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                                  }`}
+                                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${isClassSelected
+                                    ? 'bg-primary-600 text-white shadow-sm shadow-primary-500/20'
+                                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                    }`}
                                 >
                                   <span>{cls.standard_name}</span>
                                   <span
-                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                      isClassSelected
-                                        ? 'bg-white/20 text-white'
-                                        : 'bg-gray-200/80 text-gray-700'
-                                    }`}
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isClassSelected
+                                      ? 'bg-white/20 text-white'
+                                      : 'bg-gray-200/80 text-gray-700'
+                                      }`}
                                   >
                                     {cls.batch_count}
                                   </span>
@@ -2251,22 +2248,20 @@ export default function AcademicWorkspace() {
                     <div className="bg-gray-100 p-1 rounded-xl flex items-center gap-1">
                       <button
                         onClick={() => setViewMode('grid')}
-                        className={`p-1.5 rounded-lg transition-all ${
-                          viewMode === 'grid'
-                            ? 'bg-primary-600 text-white shadow-sm'
-                            : 'text-gray-500 hover:text-gray-900'
-                        }`}
+                        className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid'
+                          ? 'bg-primary-600 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-900'
+                          }`}
                         title="Grid View"
                       >
                         <Grid className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setViewMode('list')}
-                        className={`p-1.5 rounded-lg transition-all ${
-                          viewMode === 'list'
-                            ? 'bg-primary-600 text-white shadow-sm'
-                            : 'text-gray-500 hover:text-gray-900'
-                        }`}
+                        className={`p-1.5 rounded-lg transition-all ${viewMode === 'list'
+                          ? 'bg-primary-600 text-white shadow-sm'
+                          : 'text-gray-500 hover:text-gray-900'
+                          }`}
                         title="List View"
                       >
                         <List className="w-4 h-4" />
@@ -2290,11 +2285,10 @@ export default function AcademicWorkspace() {
                     <button
                       key={subTab.id}
                       onClick={() => setWorkspaceSubTab(subTab.id as any)}
-                      className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
-                        workspaceSubTab === subTab.id
-                          ? 'border-primary-600 text-primary-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-900'
-                      }`}
+                      className={`pb-3 px-3 text-xs sm:text-sm font-bold border-b-2 transition-all whitespace-nowrap ${workspaceSubTab === subTab.id
+                        ? 'border-primary-600 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-900'
+                        }`}
                     >
                       {subTab.label}
                     </button>
@@ -2339,13 +2333,12 @@ export default function AcademicWorkspace() {
                                           {batch.name}
                                         </h3>
                                         <span
-                                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full capitalize ${
-                                            isActive
-                                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                              : isPlanned
+                                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full capitalize ${isActive
+                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                            : isPlanned
                                               ? 'bg-primary-50 text-primary-700 border border-blue-200'
                                               : 'bg-gray-100 text-gray-600'
-                                          }`}
+                                            }`}
                                         >
                                           {batch.status || 'Active'}
                                         </span>
@@ -2478,11 +2471,10 @@ export default function AcademicWorkspace() {
                                 </td>
                                 <td className="py-3 px-3">
                                   <span
-                                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
-                                      b.status === 'active'
-                                        ? 'bg-emerald-50 text-emerald-700'
-                                        : 'bg-primary-50 text-primary-700'
-                                    }`}
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${b.status === 'active'
+                                      ? 'bg-emerald-50 text-emerald-700'
+                                      : 'bg-primary-50 text-primary-700'
+                                      }`}
                                   >
                                     {b.status}
                                   </span>
@@ -2784,11 +2776,10 @@ export default function AcademicWorkspace() {
                       <p className="text-xs text-gray-500 mt-1">{b.description || 'Standard examination curriculum'}</p>
                     </div>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        b.is_active
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${b.is_active
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-gray-100 text-gray-500'
+                        }`}
                     >
                       {b.is_active ? 'Active' : 'Inactive'}
                     </span>
@@ -2953,9 +2944,8 @@ export default function AcademicWorkspace() {
                         <td className="py-3 px-4 font-semibold text-emerald-700">{sub.passing_marks}</td>
                         <td className="py-3 px-4">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              sub.is_core ? 'bg-primary-50 text-primary-700' : 'bg-purple-50 text-purple-700'
-                            }`}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${sub.is_core ? 'bg-primary-50 text-primary-700' : 'bg-purple-50 text-purple-700'
+                              }`}
                           >
                             {sub.is_core ? 'Core' : 'Elective'}
                           </span>
@@ -3009,18 +2999,16 @@ export default function AcademicWorkspace() {
               <div className="bg-gray-100 p-1 rounded-xl flex items-center gap-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'grid' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
-                  }`}
+                  className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                    }`}
                   title="Grid View"
                 >
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'list' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
-                  }`}
+                  className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                    }`}
                   title="List View"
                 >
                   <List className="w-4 h-4" />
@@ -3048,11 +3036,10 @@ export default function AcademicWorkspace() {
                         <div className="flex items-center gap-2">
                           <h3 className="font-bold text-sm text-gray-900">{batch.name}</h3>
                           <span
-                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full capitalize ${
-                              batch.status === 'active'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-primary-50 text-primary-700'
-                            }`}
+                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full capitalize ${batch.status === 'active'
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-primary-50 text-primary-700'
+                              }`}
                           >
                             {batch.status}
                           </span>
@@ -3218,10 +3205,10 @@ export default function AcademicWorkspace() {
         const streamPatternLabel = isMWFPattern
           ? 'MWF Alternate-Day Stream Active (Mon, Wed, Fri)'
           : daysWithSessions.length === 6
-          ? 'Daily Intensive Stream (Mon-Sat)'
-          : daysWithSessions.length > 0
-          ? `${daysWithSessions.join(', ')} Cohort Schedule`
-          : 'Flexible Academic Schedule'
+            ? 'Daily Intensive Stream (Mon-Sat)'
+            : daysWithSessions.length > 0
+              ? `${daysWithSessions.join(', ')} Cohort Schedule`
+              : 'Flexible Academic Schedule'
 
         const activeBatchObj = batches.find((b) => String(b.id) === String(timetableBatchFilter))
         const activeStdObj = standards.find((s) => String(s.id) === String(selectedStandardId))
@@ -3229,8 +3216,8 @@ export default function AcademicWorkspace() {
           timetableBatchFilter !== 'all' && activeBatchObj
             ? `Batch: ${activeBatchObj.name}`
             : selectedStandardId !== 'all' && activeStdObj
-            ? `Standard: ${activeStdObj.name}`
-            : 'Entire Institute Master'
+              ? `Standard: ${activeStdObj.name}`
+              : 'Entire Institute Master'
 
         const totalHours = timetableMatrixData?.summary?.total_hours || 0
         const activeDaysCount = daysWithSessions.length || 1
@@ -3260,11 +3247,10 @@ export default function AcademicWorkspace() {
                     <MapPin className="w-3.5 h-3.5 text-slate-500" />
                     Scope: {scopeLabel}
                   </span>
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${
-                    isMWFPattern 
-                      ? 'bg-amber-50 text-amber-800 border border-amber-200' 
-                      : 'bg-indigo-50 text-indigo-800 border border-indigo-200'
-                  }`}>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold ${isMWFPattern
+                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                    : 'bg-indigo-50 text-indigo-800 border border-indigo-200'
+                    }`}>
                     <Zap className="w-3.5 h-3.5 text-amber-600" />
                     {streamPatternLabel}
                   </span>
@@ -3281,27 +3267,24 @@ export default function AcademicWorkspace() {
                   <button
                     type="button"
                     onClick={() => setTimetableLayoutView('matrix')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                      timetableLayoutView === 'matrix' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${timetableLayoutView === 'matrix' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
+                      }`}
                   >
                     <Grid className="w-3.5 h-3.5" /> Weekly Grid
                   </button>
                   <button
                     type="button"
                     onClick={() => setTimetableLayoutView('daily')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                      timetableLayoutView === 'daily' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${timetableLayoutView === 'daily' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
+                      }`}
                   >
                     <LayoutGrid className="w-3.5 h-3.5" /> Day Cards
                   </button>
                   <button
                     type="button"
                     onClick={() => setTimetableLayoutView('faculty')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                      timetableLayoutView === 'faculty' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${timetableLayoutView === 'faculty' ? 'bg-white text-primary-700 shadow-sm font-bold' : 'text-gray-600 hover:text-gray-900'
+                      }`}
                   >
                     <UserCheck className="w-3.5 h-3.5" /> Faculty
                   </button>
@@ -3566,13 +3549,13 @@ export default function AcademicWorkspace() {
                         {(timetableMatrixData?.slots && timetableMatrixData.slots.length > 0
                           ? timetableMatrixData.slots
                           : [
-                              { start_time: '08:30', end_time: '09:15', slot_key: '08:30-09:15' },
-                              { start_time: '09:15', end_time: '10:00', slot_key: '09:15-10:00' },
-                              { start_time: '10:15', end_time: '11:00', slot_key: '10:15-11:00' },
-                              { start_time: '11:00', end_time: '11:45', slot_key: '11:00-11:45' },
-                              { start_time: '12:00', end_time: '12:45', slot_key: '12:00-12:45' },
-                              { start_time: '12:45', end_time: '13:30', slot_key: '12:45-13:30' },
-                            ]
+                            { start_time: '08:30', end_time: '09:15', slot_key: '08:30-09:15' },
+                            { start_time: '09:15', end_time: '10:00', slot_key: '09:15-10:00' },
+                            { start_time: '10:15', end_time: '11:00', slot_key: '10:15-11:00' },
+                            { start_time: '11:00', end_time: '11:45', slot_key: '11:00-11:45' },
+                            { start_time: '12:00', end_time: '12:45', slot_key: '12:00-12:45' },
+                            { start_time: '12:45', end_time: '13:30', slot_key: '12:45-13:30' },
+                          ]
                         ).map((slot, sIdx) => (
                           <th key={slot.slot_key} className="py-3 px-3 text-center border-r border-gray-200 min-w-[150px]">
                             <span className="block text-[11px] font-bold text-gray-900">Period {sIdx + 1}</span>
@@ -3588,24 +3571,22 @@ export default function AcademicWorkspace() {
                         const daySlots = timetableMatrixData?.slots && timetableMatrixData.slots.length > 0
                           ? timetableMatrixData.slots
                           : [
-                              { start_time: '08:30', end_time: '09:15', slot_key: '08:30-09:15' },
-                              { start_time: '09:15', end_time: '10:00', slot_key: '09:15-10:00' },
-                              { start_time: '10:15', end_time: '11:00', slot_key: '10:15-11:00' },
-                              { start_time: '11:00', end_time: '11:45', slot_key: '11:00-11:45' },
-                              { start_time: '12:00', end_time: '12:45', slot_key: '12:00-12:45' },
-                              { start_time: '12:45', end_time: '13:30', slot_key: '12:45-13:30' },
-                            ]
+                            { start_time: '08:30', end_time: '09:15', slot_key: '08:30-09:15' },
+                            { start_time: '09:15', end_time: '10:00', slot_key: '09:15-10:00' },
+                            { start_time: '10:15', end_time: '11:00', slot_key: '10:15-11:00' },
+                            { start_time: '11:00', end_time: '11:45', slot_key: '11:00-11:45' },
+                            { start_time: '12:00', end_time: '12:45', slot_key: '12:00-12:45' },
+                            { start_time: '12:45', end_time: '13:30', slot_key: '12:45-13:30' },
+                          ]
                         const daySessionsCount = Object.keys(timetableMatrixData?.matrix?.[day] || {}).length
                         return (
                           <tr key={day} className="hover:bg-gray-50/50 transition">
-                            <td className={`py-3 px-3 font-extrabold border-r border-gray-200 ${
-                              daySessionsCount === 0 ? 'bg-gray-50/30 text-gray-400' : 'bg-gray-50/60 text-gray-900'
-                            }`}>
+                            <td className={`py-3 px-3 font-extrabold border-r border-gray-200 ${daySessionsCount === 0 ? 'bg-gray-50/30 text-gray-400' : 'bg-gray-50/60 text-gray-900'
+                              }`}>
                               <div className="flex items-center justify-between">
                                 <span>{day}</span>
-                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
-                                  daySessionsCount > 0 ? 'bg-primary-100 text-primary-800' : 'bg-gray-200 text-gray-500'
-                                }`}>
+                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${daySessionsCount > 0 ? 'bg-primary-100 text-primary-800' : 'bg-gray-200 text-gray-500'
+                                  }`}>
                                   {daySessionsCount}
                                 </span>
                               </div>
@@ -3664,9 +3645,8 @@ export default function AcademicWorkspace() {
                                       )
                                     })()
                                   ) : (
-                                    <div className={`h-20 rounded-xl border ${
-                                      daySessionsCount === 0 ? 'border-dashed border-gray-100 bg-gray-50/20' : 'border-dashed border-gray-200'
-                                    } flex flex-col items-center justify-center p-2 text-center text-gray-400 group hover:border-primary-300 transition`}>
+                                    <div className={`h-20 rounded-xl border ${daySessionsCount === 0 ? 'border-dashed border-gray-100 bg-gray-50/20' : 'border-dashed border-gray-200'
+                                      } flex flex-col items-center justify-center p-2 text-center text-gray-400 group hover:border-primary-300 transition`}>
                                       {isEditMode ? (
                                         <button
                                           type="button"
@@ -3977,13 +3957,12 @@ export default function AcademicWorkspace() {
                         <td className="py-3 px-4 text-gray-500">{enr.enrollment_date || '—'}</td>
                         <td className="py-3 px-4">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                              enr.status === 'active'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : enr.status === 'transferred'
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${enr.status === 'active'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : enr.status === 'transferred'
                                 ? 'bg-amber-50 text-amber-700 border border-amber-200'
                                 : 'bg-gray-100 text-gray-500'
-                            }`}
+                              }`}
                           >
                             {enr.status}
                           </span>
@@ -4030,25 +4009,22 @@ export default function AcademicWorkspace() {
               <div className="flex rounded-xl bg-gray-100 p-1">
                 <button
                   onClick={() => setActiveReportType('batch-capacity')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    activeReportType === 'batch-capacity' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeReportType === 'batch-capacity' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
+                    }`}
                 >
                   Batch Capacity
                 </button>
                 <button
                   onClick={() => setActiveReportType('distribution')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    activeReportType === 'distribution' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeReportType === 'distribution' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
+                    }`}
                 >
                   Board Distribution
                 </button>
                 <button
                   onClick={() => setActiveReportType('faculty-load')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    activeReportType === 'faculty-load' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeReportType === 'faculty-load' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600'
+                    }`}
                 >
                   Faculty Load
                 </button>
@@ -4733,11 +4709,10 @@ export default function AcademicWorkspace() {
               <button
                 type="button"
                 onClick={() => setSubjectModalMode('select')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
-                  subjectModalMode === 'select'
-                    ? 'bg-white text-primary-700 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`flex-1 py-1.5 px-2.5 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${subjectModalMode === 'select'
+                  ? 'bg-white text-primary-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <LinkIcon className="w-3.5 h-3.5" />
                 <span>Select Existing Subject</span>
@@ -4745,11 +4720,10 @@ export default function AcademicWorkspace() {
               <button
                 type="button"
                 onClick={() => switchToCreateNewSubject(subjectForm.name || canonicalSearchQuery)}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${
-                  subjectModalMode === 'create'
-                    ? 'bg-white text-primary-700 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`flex-1 py-1.5 px-2.5 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 ${subjectModalMode === 'create'
+                  ? 'bg-white text-primary-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Create New Subject</span>
@@ -5110,8 +5084,8 @@ export default function AcademicWorkspace() {
               {showEditSubjectModal
                 ? updateSubjectMutation.isPending ? 'Saving...' : 'Save Subject'
                 : subjectModalMode === 'select'
-                ? mapExistingSubjectMutation.isPending ? 'Mapping...' : 'Map Existing Subject'
-                : createSubjectMutation.isPending ? 'Creating...' : 'Create & Add Subject'}
+                  ? mapExistingSubjectMutation.isPending ? 'Mapping...' : 'Map Existing Subject'
+                  : createSubjectMutation.isPending ? 'Creating...' : 'Create & Add Subject'}
             </button>
           </div>
         </form>
@@ -5495,36 +5469,40 @@ export default function AcademicWorkspace() {
           {timetableDocketData && (
             <div
               id="printable-timetable-docket"
-              className="bg-white p-6 sm:p-8 border-2 border-slate-900 rounded-3xl shadow-xl text-slate-800 space-y-6 relative overflow-hidden"
+              className="bg-white p-3.5 sm:p-5 border-2 border-slate-900 rounded-2xl shadow-xl text-slate-900 space-y-2.5 print:space-y-1.5 relative overflow-hidden"
             >
               {/* Top Luxury Gradient Accent Bar */}
-              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-500 via-indigo-700 to-amber-500"></div>
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-indigo-700 to-amber-500"></div>
 
               {/* Institution Header */}
-              <div className="border-b-2 border-slate-900 pb-5 pt-2 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-slate-950 via-indigo-950 to-slate-900 text-white p-2 flex items-center justify-center shadow-md overflow-hidden flex-shrink-0 border-2 border-amber-400/50">
+              <div className="border-b-2 border-slate-900 pb-2.5 pt-1 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-950 text-white p-1 flex items-center justify-center shadow-xs overflow-hidden flex-shrink-0 border border-amber-400/60"
+                    style={{ width: '44px', height: '44px', minWidth: '44px', minHeight: '44px', maxWidth: '44px', maxHeight: '44px' }}
+                  >
                     {timetableDocketData.institution.logo_url ? (
                       <img
                         src={timetableDocketData.institution.logo_url}
                         alt="Logo"
-                        className="w-full h-full object-contain [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                        className="docket-logo-img object-contain"
+                        style={{ width: '40px', height: '40px', maxWidth: '40px', maxHeight: '40px', objectFit: 'contain' }}
                       />
                     ) : (
-                      <School className="w-8 h-8 text-amber-300" />
+                      <School className="w-6 h-6 text-amber-300" />
                     )}
                   </div>
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-950 uppercase tracking-tight">
+                    <h2 className="text-lg sm:text-xl font-black text-slate-950 uppercase tracking-tight leading-tight">
                       {timetableDocketData.institution.name || 'Prashant Academy Coaching Institute'}
                     </h2>
-                    <p className="text-xs font-bold text-indigo-700 italic">
+                    <p className="text-[10.5px] font-bold text-indigo-900 italic leading-snug">
                       {timetableDocketData.institution.tagline || 'Empowering Young Minds • Inspiring Excellence • Shaping Futures'}
                     </p>
-                    <p className="text-[11px] text-slate-600 mt-1 font-medium">
+                    <p className="text-[9.5px] text-slate-600 mt-0.5 font-medium leading-tight">
                       {timetableDocketData.institution.address || 'Ghatkopar East, Mumbai 400077'} • Tel: {timetableDocketData.institution.phone || '+91 98200 00000'} • Email: {timetableDocketData.institution.email || 'contact@prashantacademy.in'}
                     </p>
-                    <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider mt-0.5">
+                    <p className="text-[8.5px] text-amber-900 font-bold uppercase tracking-wider mt-0.5">
                       Autonomous Senior Secondary &amp; Competitive Coaching Wing • Reg. No: MAH/MUM/EDU/2026/0491
                     </p>
                   </div>
@@ -5532,95 +5510,95 @@ export default function AcademicWorkspace() {
 
                 <div className="text-right flex-shrink-0">
                   <div className="inline-flex flex-col items-end">
-                    <span className="px-3.5 py-1 rounded-full text-[11px] font-black bg-indigo-950 text-amber-300 border border-amber-400/50 uppercase tracking-wider shadow-2xs">
+                    <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-950 text-amber-300 border border-amber-400/50 uppercase tracking-wider shadow-2xs">
                       Official Timetable Docket
                     </span>
-                    <span className="text-[11px] font-mono font-bold text-slate-700 mt-1.5 block">
+                    <span className="text-[9.5px] font-mono font-bold text-slate-800 mt-1 block">
                       AY: {timetableDocketData.academic_year || '2026-27'} (Current)
                     </span>
-                    <span className="text-[10px] text-slate-500 font-mono block">
+                    <span className="text-[8.5px] text-slate-500 font-mono block">
                       Docket ID: DOC-PA-TT-{timetableDocketData.summary?.total_sessions || 38}-AY26
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 mt-1">
-                      <ShieldCheck className="w-3 h-3 text-emerald-600" /> Authorized &amp; Sealed
+                    <span className="inline-flex items-center gap-1 text-[8.5px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-300 mt-0.5">
+                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-600" /> Authorized &amp; Sealed
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Docket Metadata Telemetry Banner */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div className="bg-slate-50 p-2 sm:p-2.5 rounded-xl border border-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div>
-                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Cohort / Scope</span>
-                  <span className="font-extrabold text-sm text-slate-900 block mt-0.5">
+                  <span className="text-slate-500 font-bold block text-[8.5px] uppercase tracking-wider">Cohort / Scope</span>
+                  <span className="font-extrabold text-xs sm:text-sm text-slate-950 block mt-0.2">
                     {timetableDocketData.scope?.name || 'All Batches & Streams'} ({timetableDocketData.scope?.code || 'INST'})
                   </span>
-                  <span className="text-[10px] text-slate-500 font-medium">Multi-Stream Master Schedule</span>
+                  <span className="text-[8.5px] text-slate-500 font-medium">Multi-Stream Master Schedule</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Instruction Load</span>
-                  <span className="font-extrabold text-sm text-indigo-700 block mt-0.5">
+                  <span className="text-slate-500 font-bold block text-[8.5px] uppercase tracking-wider">Instruction Load</span>
+                  <span className="font-extrabold text-xs sm:text-sm text-indigo-900 block mt-0.2">
                     {timetableDocketData.summary?.total_sessions} Weekly Periods
                   </span>
-                  <span className="text-[10px] text-slate-500 font-medium">
+                  <span className="text-[8.5px] text-slate-500 font-medium">
                     {timetableDocketData.summary?.total_hours} Instruction Hours / Week
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Faculty Assigned</span>
-                  <span className="font-extrabold text-sm text-emerald-700 block mt-0.5">
+                  <span className="text-slate-500 font-bold block text-[8.5px] uppercase tracking-wider">Faculty Assigned</span>
+                  <span className="font-extrabold text-xs sm:text-sm text-emerald-800 block mt-0.2">
                     {timetableDocketData.summary?.unique_teachers} Senior Instructors
                   </span>
-                  <span className="text-[10px] text-slate-500 font-medium">100% Workload Verified</span>
+                  <span className="text-[8.5px] text-slate-500 font-medium">100% Workload Verified</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Facility Utilization</span>
-                  <span className="font-extrabold text-sm text-purple-700 block mt-0.5">
+                  <span className="text-slate-500 font-bold block text-[8.5px] uppercase tracking-wider">Facility Utilization</span>
+                  <span className="font-extrabold text-xs sm:text-sm text-purple-900 block mt-0.2">
                     {timetableDocketData.summary?.rooms_used || 5} Active Classrooms
                   </span>
-                  <span className="text-[10px] text-slate-500 font-medium">83% Classroom Occupancy</span>
+                  <span className="text-[8.5px] text-slate-500 font-medium">83% Classroom Occupancy</span>
                 </div>
               </div>
 
               {/* Weekly Timetable Grid Table (Landscape High-Density) */}
-              <div className="overflow-x-auto border-2 border-slate-300 rounded-2xl shadow-xs">
+              <div className="overflow-x-auto border-2 border-slate-900 rounded-xl shadow-xs">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-900 text-white uppercase text-[10px] tracking-wider font-extrabold">
-                      <th className="py-3 px-3.5 w-32 border-r border-slate-800 bg-slate-950 text-amber-300">
+                    <tr className="bg-slate-900 text-white uppercase text-[9px] tracking-wider font-extrabold">
+                      <th className="py-2 px-2.5 w-28 border-r border-slate-700 bg-slate-950 text-amber-300">
                         Day / Slot
                       </th>
                       {timetableDocketData.slots.map((s, idx) => (
                         <th
                           key={s.slot_key}
-                          className="py-2.5 px-2 text-center border-r border-slate-800 min-w-[140px]"
+                          className="py-1.5 px-1.5 text-center border-r border-slate-700 min-w-[125px]"
                         >
-                          <div className="font-bold text-[11px] text-white">Period {idx + 1}</div>
-                          <div className="text-[10px] font-mono font-medium text-amber-200/90 mt-0.5">
+                          <div className="font-bold text-[10px] text-white">Period {idx + 1}</div>
+                          <div className="text-[8.5px] font-mono font-medium text-amber-200/90 mt-0.5">
                             {s.start_time} - {s.end_time}
                           </div>
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 text-xs">
+                  <tbody className="divide-y divide-slate-300 text-xs">
                     {timetableDocketData.days.map((d) => {
                       const daySessionsCount = Object.keys(timetableDocketData.matrix?.[d] || {}).length
                       return (
                         <tr key={d} className="hover:bg-slate-50/60 transition-colors">
-                          <td className={`py-3 px-3.5 font-extrabold border-r border-slate-200 ${
-                            daySessionsCount === 0 ? 'bg-slate-50/40 text-slate-400' : 'bg-slate-100/70 text-slate-900'
+                          <td className={`py-2 px-2.5 font-extrabold border-r border-slate-300 ${
+                            daySessionsCount === 0 ? 'bg-slate-50 text-slate-400' : 'bg-slate-100 text-slate-950'
                           }`}>
                             <div className="flex items-center justify-between">
-                              <span className="text-xs">{d}</span>
-                              <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
-                                daySessionsCount > 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-500'
+                              <span className="text-[10px] font-black">{d}</span>
+                              <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded-full ${
+                                daySessionsCount > 0 ? 'bg-indigo-100 text-indigo-900' : 'bg-slate-200 text-slate-600'
                               }`}>
                                 {daySessionsCount}
                               </span>
                             </div>
                             {daySessionsCount === 0 && (
-                              <span className="block text-[8px] font-semibold text-slate-400 uppercase mt-0.5">
+                              <span className="block text-[7px] font-semibold text-slate-400 uppercase mt-0.5">
                                 Non-MWF Stream
                               </span>
                             )}
@@ -5630,39 +5608,39 @@ export default function AcademicWorkspace() {
                             if (sess) {
                               const theme = getSubjectTheme(sess.subject_name)
                               return (
-                                <td key={slot.slot_key} className="p-2 border-r border-slate-200 align-top">
-                                  <div className={`p-2 rounded-xl border border-l-4 ${theme.border} ${theme.bg} space-y-1 shadow-2xs`}>
+                                <td key={slot.slot_key} className="p-1 border-r border-slate-300 align-top">
+                                  <div className={`p-1.5 rounded-lg border border-l-4 ${theme.border} ${theme.bg} space-y-0.5 shadow-2xs`}>
                                     <div className="flex items-center justify-between">
-                                      <p className={`font-black text-[11px] truncate ${theme.text}`}>
+                                      <p className={`font-black text-[9.5px] truncate ${theme.text}`}>
                                         {sess.subject_name}
                                       </p>
-                                      <span className={`text-[8px] font-extrabold px-1 rounded ${theme.badge}`}>
+                                      <span className={`text-[7px] font-extrabold px-1 rounded ${theme.badge}`}>
                                         {sess.subject_code}
                                       </span>
                                     </div>
-                                    <p className="text-[10px] font-bold text-slate-700 truncate">
+                                    <p className="text-[8.5px] font-bold text-slate-800 truncate">
                                       {sess.division_name}
                                     </p>
-                                    <p className="text-[10px] text-slate-600 truncate flex items-center gap-1 font-medium">
-                                      <User className="w-2.5 h-2.5 text-slate-400" />
+                                    <p className="text-[8px] text-slate-700 truncate flex items-center gap-1 font-medium">
+                                      <User className="w-2 h-2 text-slate-500" />
                                       {sess.teacher_name || 'Assigned Faculty'}
                                     </p>
-                                    <div className="flex items-center justify-between text-[9px] text-slate-600 pt-1 border-t border-black/5">
-                                      <span className="font-extrabold text-slate-900 bg-white px-1.5 py-0.2 rounded border border-slate-200 shadow-2xs">
+                                    <div className="flex items-center justify-between text-[7.5px] text-slate-600 pt-0.5 border-t border-black/5">
+                                      <span className="font-extrabold text-slate-950 bg-white px-1 py-0.2 rounded border border-slate-300 shadow-2xs">
                                         {sess.room_number || 'Room 101'}
                                       </span>
-                                      <span className="text-slate-400 font-mono">{slot.start_time}</span>
+                                      <span className="text-slate-500 font-mono">{slot.start_time}</span>
                                     </div>
                                   </div>
                                 </td>
                               )
                             }
                             return (
-                              <td key={slot.slot_key} className="p-2 border-r border-slate-200 align-top">
-                                <div className={`h-16 rounded-xl border ${
-                                  daySessionsCount === 0 ? 'border-dashed border-slate-200/60 bg-slate-50/20' : 'border-dashed border-slate-200'
-                                } flex items-center justify-center p-2 text-center`}>
-                                  <span className="text-[10px] text-slate-300 italic font-medium">
+                              <td key={slot.slot_key} className="p-1 border-r border-slate-300 align-top">
+                                <div className={`h-11 rounded-lg border ${
+                                  daySessionsCount === 0 ? 'border-dashed border-slate-200/80 bg-slate-50/30' : 'border-dashed border-slate-200'
+                                } flex items-center justify-center p-1 text-center`}>
+                                  <span className="text-[8px] text-slate-400 italic font-medium">
                                     {daySessionsCount === 0 ? 'TTS Slot' : 'Available'}
                                   </span>
                                 </div>
@@ -5677,38 +5655,38 @@ export default function AcademicWorkspace() {
               </div>
 
               {/* Signatures & Seal Block */}
-              <div className="pt-6 border-t-2 border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs text-center items-end">
-                <div className="space-y-1">
-                  <div className="w-36 mx-auto border-b-2 border-slate-400 pb-8"></div>
-                  <p className="font-bold text-slate-900">{timetableDocketData.signatures.prepared_by}</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Academic In-Charge / Scheduler</p>
+              <div className="pt-2 sm:pt-3 border-t-2 border-slate-300 grid grid-cols-4 gap-2 text-xs text-center items-end">
+                <div className="space-y-0.5">
+                  <div className="w-28 mx-auto border-b-2 border-slate-500 pb-3"></div>
+                  <p className="font-bold text-[9.5px] text-slate-950">{timetableDocketData.signatures.prepared_by}</p>
+                  <p className="text-[8px] text-slate-600 font-medium">Academic In-Charge / Scheduler</p>
                 </div>
-                <div className="space-y-1">
-                  <div className="w-36 mx-auto border-b-2 border-slate-400 pb-8"></div>
-                  <p className="font-bold text-slate-900">{timetableDocketData.signatures.verified_by}</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Head of Department (Curriculum)</p>
+                <div className="space-y-0.5">
+                  <div className="w-28 mx-auto border-b-2 border-slate-500 pb-3"></div>
+                  <p className="font-bold text-[9.5px] text-slate-950">{timetableDocketData.signatures.verified_by}</p>
+                  <p className="text-[8px] text-slate-600 font-medium">Head of Department (Curriculum)</p>
                 </div>
                 {/* Official Embossed Seal / Stamp Box */}
                 <div className="flex flex-col items-center justify-center">
-                  <div className="w-24 h-24 rounded-full border-2 border-dashed border-indigo-400/80 bg-indigo-50/40 flex flex-col items-center justify-center p-2 shadow-2xs">
-                    <span className="text-[8px] font-black uppercase text-indigo-900 tracking-wider">PRASHANT ACADEMY</span>
-                    <span className="text-[12px] my-0.5">★ ★ ★</span>
-                    <span className="text-[7px] font-bold text-indigo-700 uppercase">OFFICIAL SEAL</span>
+                  <div className="w-14 h-14 rounded-full border-2 border-dashed border-indigo-700/80 bg-indigo-50/50 flex flex-col items-center justify-center p-1 shadow-2xs">
+                    <span className="text-[6.5px] font-black uppercase text-indigo-950 tracking-wider">PRASHANT ACADEMY</span>
+                    <span className="text-[9px] my-0.2 leading-none text-amber-600">★ ★ ★</span>
+                    <span className="text-[5.5px] font-bold text-indigo-700 uppercase">OFFICIAL SEAL</span>
                   </div>
-                  <p className="text-[9px] text-slate-400 font-mono mt-1">Authorized Seal</p>
+                  <p className="text-[7.5px] text-slate-500 font-mono mt-0.5">Authorized Seal</p>
                 </div>
-                <div className="space-y-1">
-                  <div className="w-36 mx-auto border-b-2 border-slate-400 pb-8"></div>
-                  <p className="font-bold text-slate-900">{timetableDocketData.signatures.approved_by}</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Principal / Managing Director</p>
+                <div className="space-y-0.5">
+                  <div className="w-28 mx-auto border-b-2 border-slate-500 pb-3"></div>
+                  <p className="font-bold text-[9.5px] text-slate-950">{timetableDocketData.signatures.approved_by}</p>
+                  <p className="text-[8px] text-slate-600 font-medium">Principal / Managing Director</p>
                 </div>
               </div>
 
               {/* Security & System Footer */}
-              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
-                <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Certified institutional record generated via PrathamOne EduOS (Coaching Institute Edition).</span>
+              <div className="pt-1.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-1 text-[8px] text-slate-500">
+                <div className="flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                  <span>Certified institutional record generated via PrathamOne EduOS (Coaching Institute Edition) • Guaranteed Single Sheet Docket.</span>
                 </div>
                 <span className="font-mono">Generated: {new Date(timetableDocketData.generated_at).toLocaleString()}</span>
               </div>
@@ -6017,13 +5995,12 @@ export default function AcademicWorkspace() {
                       <td className="py-2 px-3 font-semibold text-emerald-700">₹{s.total_paid.toLocaleString()}</td>
                       <td className="py-2 px-3">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            s.fee_status === 'Paid'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : s.fee_status === 'Partially Paid'
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.fee_status === 'Paid'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : s.fee_status === 'Partially Paid'
                               ? 'bg-amber-50 text-amber-700 border border-amber-200'
                               : 'bg-red-50 text-red-700 border border-red-200'
-                          }`}
+                            }`}
                         >
                           {s.fee_status}
                         </span>
@@ -6107,10 +6084,10 @@ export default function AcademicWorkspace() {
           deleteModalState.targetType === 'batch'
             ? 'Academic Batch'
             : deleteModalState.targetType === 'subject'
-            ? 'Subject'
-            : deleteModalState.targetType === 'session'
-            ? 'Timetable Session'
-            : 'Record'
+              ? 'Subject'
+              : deleteModalState.targetType === 'session'
+                ? 'Timetable Session'
+                : 'Record'
         }
         entityName={deleteModalState.name}
         entityId={deleteModalState.id ?? undefined}

@@ -52,7 +52,7 @@ export default function Modal({ open, isOpen, onClose, title, children, size = '
     ).filter((element) => element.getAttribute('aria-hidden') !== 'true')
 
     const initialFocus = focusables().find((element) => element.hasAttribute('autofocus')) || focusables()[0]
-    ;(initialFocus || dialogRef.current)?.focus()
+      ; (initialFocus || dialogRef.current)?.focus()
 
     const handler = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
