@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-16
+ * @updated     2026-11-21
  *
  * @description Centralized Reporting & Analytics Centre uniting module-wise reports across Students, Academics, Fees, Workforce Payroll, Examinations, and System Audit.
  */
@@ -40,6 +40,8 @@ import { InvoiceStatusBadge } from '../components/Badge'
 import { useBranding } from '../config/branding'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
 import ReportIntelligenceBanner from '../components/reports/ReportIntelligenceBanner'
+import FlexibleFilterBuilder, { FilterRule, FieldDefinition } from '../components/reports/FlexibleFilterBuilder'
+import FlexibleStudentCharts from '../components/reports/FlexibleStudentCharts'
 import { ConcessionTraceModal, ContextualHelpButton } from '../components/common'
 import {
   Users,
@@ -61,6 +63,7 @@ import {
   ArrowUpRight,
   Presentation,
   BookOpen,
+  SlidersHorizontal,
 } from 'lucide-react'
 import {
   BarChart,
@@ -163,6 +166,15 @@ const REPORT_CATALOG: ReportMeta[] = [
     description: 'Student enrollment distribution and intake capacity categorized across state and national educational boards.',
     badge: 'Demographics',
     icon: BarChart3,
+  },
+  {
+    id: 'flexible-student-matrix',
+    name: 'Universal Student & Academic 360° Matrix',
+    category: 'academics',
+    categoryLabel: 'Academics & Batches',
+    description: 'Dynamic multidimensional register: Board-wise, Standard-wise, Batch-wise student demographics, attendance telemetry, fee collections, and academic performance with condition filters and live charts.',
+    badge: 'Flexible 360°',
+    icon: SlidersHorizontal,
   },
   {
     id: 'curriculum-matrix',
@@ -668,6 +680,7 @@ function ReportsWorkspace() {
   })
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0])
   const [defaultersOnly, setDefaultersOnly] = useState<boolean>(false)
+  const [flexibleRules, setFlexibleRules] = useState<FilterRule[]>([])
 
   // Toggle Pinned
   const togglePin = (reportId: string, e: React.MouseEvent) => {
@@ -757,6 +770,56 @@ function ReportsWorkspace() {
   }, [examinations, selectedExamId])
 
   // ── Category Report Queries ────────────────────────────────────────────────
+
+  // 0. Universal Flexible Student & Academic 360 Matrix
+  const { data: flexibleMatrixData = [], isLoading: loadingFlexibleMatrix, refetch: refetchFlexibleMatrix } = useQuery({
+    queryKey: ['report-flexible-matrix', selectedAcademicYearId, selectedBoardId, selectedStandardId, selectedDivisionId, reportStatusFilter],
+    queryFn: () =>
+      reportsApi.flexibleStudentMatrix({
+        academic_year_id: selectedAcademicYearId || undefined,
+        board_id: selectedBoardId || undefined,
+        standard_id: selectedStandardId || undefined,
+        division_id: selectedDivisionId || undefined,
+        status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
+      }).then((r) => r.data),
+    enabled: activeReportId === 'flexible-student-matrix',
+  })
+
+  // Dynamic filter evaluation for flexible matrix
+  const filteredFlexibleData = useMemo(() => {
+    if (!flexibleMatrixData || flexibleMatrixData.length === 0) return []
+    if (flexibleRules.length === 0) return flexibleMatrixData
+
+    return flexibleMatrixData.filter((row: any) => {
+      return flexibleRules.every((rule) => {
+        const rawVal = row[rule.fieldId]
+        const targetVal = rule.value
+
+        if (rule.operator === 'equals') {
+          return String(rawVal ?? '').toLowerCase() === String(targetVal ?? '').toLowerCase()
+        }
+        if (rule.operator === 'not_equals') {
+          return String(rawVal ?? '').toLowerCase() !== String(targetVal ?? '').toLowerCase()
+        }
+        if (rule.operator === 'contains') {
+          return String(rawVal ?? '').toLowerCase().includes(String(targetVal ?? '').toLowerCase())
+        }
+        if (rule.operator === 'greater_than') {
+          return Number(rawVal ?? 0) > Number(targetVal)
+        }
+        if (rule.operator === 'greater_equal') {
+          return Number(rawVal ?? 0) >= Number(targetVal)
+        }
+        if (rule.operator === 'less_than') {
+          return Number(rawVal ?? 0) < Number(targetVal)
+        }
+        if (rule.operator === 'less_equal') {
+          return Number(rawVal ?? 0) <= Number(targetVal)
+        }
+        return true
+      })
+    })
+  }, [flexibleMatrixData, flexibleRules])
 
   // 1. Students: Master Directory
   const { data: studentMasterData = [], isLoading: loadingMaster, refetch: refetchMaster } = useQuery({
@@ -1111,10 +1174,53 @@ function ReportsWorkspace() {
     else if (activeReportId === 'homework-register') refetchHomeworkRegister()
     else if (activeReportId === 'eduboard-summary') refetchEduBoardSummary()
     else if (activeReportId === 'crm-enquiries') refetchCrmReports()
+    else if (activeReportId === 'flexible-student-matrix') refetchFlexibleMatrix()
     toast.success('Report data refreshed')
   }
 
   // ── Column Configurations ──────────────────────────────────────────────────
+
+  // 0. Flexible Matrix Field Definitions for Dynamic Condition Filter
+  const flexibleFieldDefinitions = useMemo<FieldDefinition[]>(() => [
+    { id: 'board_name', label: 'Board', type: 'text' },
+    { id: 'standard_name', label: 'Standard / Grade', type: 'text' },
+    { id: 'division_name', label: 'Batch / Division', type: 'text' },
+    { id: 'student_name', label: 'Student Name', type: 'text' },
+    { id: 'admission_number', label: 'Admission #', type: 'text' },
+    { id: 'roll_number', label: 'Roll Number', type: 'text' },
+    { id: 'gender', label: 'Gender', type: 'select', options: [{ label: 'Male', value: 'male' }, { label: 'Female', value: 'female' }, { label: 'Other', value: 'other' }] },
+    { id: 'guardian_name', label: 'Guardian Name', type: 'text' },
+    { id: 'guardian_phone', label: 'Guardian Phone', type: 'text' },
+    { id: 'city', label: 'City', type: 'text' },
+    { id: 'attendance_percentage', label: 'Attendance %', type: 'percentage' },
+    { id: 'attendance_status', label: 'Attendance Compliance', type: 'select', options: [{ label: 'Good', value: 'Good' }, { label: 'Average', value: 'Average' }, { label: 'Defaulter (<75%)', value: 'Defaulter (<75%)' }] },
+    { id: 'total_fees', label: 'Total Invoiced (₹)', type: 'currency' },
+    { id: 'paid_fees', label: 'Paid Fees (₹)', type: 'currency' },
+    { id: 'balance_fees', label: 'Outstanding Balance (₹)', type: 'currency' },
+    { id: 'payment_status', label: 'Fee Payment Status', type: 'select', options: [{ label: 'Paid', value: 'Paid' }, { label: 'Partial', value: 'Partial' }, { label: 'Defaulter', value: 'Defaulter' }, { label: 'No Fees', value: 'No Fees' }] },
+    { id: 'exam_percentage', label: 'Exam Marks %', type: 'percentage' },
+    { id: 'performance_grade', label: 'Performance Grade', type: 'text' },
+  ], [])
+
+  // 0. Flexible Matrix Grid Columns
+  const flexibleMatrixColumns = useMemo<ColumnConfig<any>[]>(() => [
+    { id: 'admission_number', header: 'Admission #', accessorKey: 'admission_number', type: 'text', width: 130, sortable: true, filterable: true, render: (val) => <span className="font-mono font-bold text-primary-700">{val}</span> },
+    { id: 'student_name', header: 'Student Name', accessorKey: 'student_name', type: 'text', width: 190, sortable: true, filterable: true, render: (val) => <span className="font-semibold text-slate-900">{val}</span> },
+    { id: 'board_name', header: 'Board', accessorKey: 'board_name', type: 'text', width: 120, sortable: true, filterable: true, render: (val) => <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{val}</span> },
+    { id: 'standard_name', header: 'Standard / Grade', accessorKey: 'standard_name', type: 'text', width: 140, sortable: true, filterable: true },
+    { id: 'division_name', header: 'Batch / Division', accessorKey: 'division_name', type: 'text', width: 160, sortable: true, filterable: true, render: (val, r) => <span className="font-semibold text-slate-800">{val} {r.batch_code ? `[${r.batch_code}]` : ''}</span> },
+    { id: 'roll_number', header: 'Roll #', accessorKey: 'roll_number', type: 'text', width: 90, sortable: true, align: 'center' },
+    { id: 'guardian_name', header: 'Guardian Name', accessorKey: 'guardian_name', type: 'text', width: 150, sortable: true },
+    { id: 'guardian_phone', header: 'Guardian Contact', accessorKey: 'guardian_phone', type: 'text', width: 140, render: (val) => <span className="font-mono">{val}</span> },
+    { id: 'attendance_percentage', header: 'Attd %', accessorKey: 'attendance_percentage', type: 'number', width: 120, align: 'right', sortable: true, render: (val) => <span className={`font-mono font-bold ${val < 75 ? 'text-rose-600' : val >= 85 ? 'text-emerald-700' : 'text-amber-600'}`}>{val}%</span> },
+    { id: 'attendance_status', header: 'Attd Health', accessorKey: 'attendance_status', type: 'text', width: 140, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold ${val === 'Defaulter (<75%)' ? 'bg-rose-100 text-rose-800' : val === 'Good' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>{val}</span> },
+    { id: 'total_fees', header: 'Total Fees (₹)', accessorKey: 'total_fees', type: 'currency', width: 140, align: 'right', sortable: true, render: (val) => <span className="font-medium text-slate-900">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+    { id: 'paid_fees', header: 'Paid (₹)', accessorKey: 'paid_fees', type: 'currency', width: 140, align: 'right', sortable: true, render: (val) => <span className="font-bold text-emerald-700">₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+    { id: 'balance_fees', header: 'Balance Dues (₹)', accessorKey: 'balance_fees', type: 'currency', width: 150, align: 'right', sortable: true, render: (val) => <span className={`font-bold ${val > 0 ? 'text-rose-600' : 'text-slate-400'}`}>₹{Number(val || 0).toLocaleString('en-IN')}</span> },
+    { id: 'payment_status', header: 'Fee Status', accessorKey: 'payment_status', type: 'text', width: 120, render: (val) => <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${val === 'Paid' ? 'bg-emerald-100 text-emerald-800' : val === 'Defaulter' ? 'bg-rose-100 text-rose-800' : val === 'Partial' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>{val}</span> },
+    { id: 'exam_percentage', header: 'Exam Marks %', accessorKey: 'exam_percentage', type: 'number', width: 130, align: 'right', sortable: true, render: (val) => <span className="font-mono font-bold text-indigo-700">{val}%</span> },
+    { id: 'performance_grade', header: 'Grade', accessorKey: 'performance_grade', type: 'text', width: 100, align: 'center', sortable: true, render: (val) => <span className="px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700">{val}</span> },
+  ], [])
 
   // 1. Student Master Directory Columns
   const studentMasterColumns = useMemo<ColumnConfig<any>[]>(() => [
@@ -1584,6 +1690,50 @@ function ReportsWorkspace() {
               status: reportStatusFilter !== 'default' ? reportStatusFilter : undefined,
             }}
           />
+
+          {/* 0. Universal Flexible Student & Academic 360 Matrix */}
+          {activeReportId === 'flexible-student-matrix' && (
+            <div className="space-y-4">
+              <FlexibleFilterBuilder
+                fields={flexibleFieldDefinitions}
+                rules={flexibleRules}
+                onAddRule={(newRule) => setFlexibleRules((prev) => [...prev, newRule])}
+                onRemoveRule={(id) => setFlexibleRules((prev) => prev.filter((r) => r.id !== id))}
+                onClearAll={() => setFlexibleRules([])}
+                dataCount={filteredFlexibleData.length}
+                totalCount={flexibleMatrixData.length}
+              />
+
+              <FlexibleStudentCharts data={filteredFlexibleData} />
+
+              <ExcelReportGrid
+                title="Universal Student & Academic 360° Matrix"
+                subtitle="Multi-dimensional operational register: Board, Standard, and Batch distribution with attendance telemetry, financial realization, and academic merit"
+                columns={flexibleMatrixColumns}
+                data={filteredFlexibleData}
+                loading={loadingFlexibleMatrix}
+                exportFilename="student_academic_360_matrix"
+                sheetName="Student Matrix"
+                showSummaryRow={true}
+                summaryCalculations={{
+                  admission_number: (rows) => <span className="font-extrabold text-slate-900">Total: {rows.length}</span>,
+                  attendance_percentage: (rows) => {
+                    const withSessions = rows.filter((r) => Number(r.total_sessions || 0) > 0)
+                    const avg = withSessions.length > 0 ? (withSessions.reduce((acc, r) => acc + Number(r.attendance_percentage || 0), 0) / withSessions.length).toFixed(1) : '0.0'
+                    return <span className="font-extrabold text-primary-700">{avg}% avg</span>
+                  },
+                  total_fees: (rows) => <span className="font-extrabold text-slate-900">₹{rows.reduce((acc, r) => acc + Number(r.total_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                  paid_fees: (rows) => <span className="font-extrabold text-emerald-800">₹{rows.reduce((acc, r) => acc + Number(r.paid_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                  balance_fees: (rows) => <span className="font-extrabold text-rose-700">₹{rows.reduce((acc, r) => acc + Number(r.balance_fees || 0), 0).toLocaleString('en-IN')}</span>,
+                  exam_percentage: (rows) => {
+                    const withExams = rows.filter((r) => Number(r.exam_percentage || 0) > 0)
+                    const avg = withExams.length > 0 ? (withExams.reduce((acc, r) => acc + Number(r.exam_percentage || 0), 0) / withExams.length).toFixed(1) : '0.0'
+                    return <span className="font-extrabold text-indigo-700">{avg}% avg</span>
+                  },
+                }}
+              />
+            </div>
+          )}
 
           {/* 1. Student Master Directory */}
           {activeReportId === 'student-master' && (

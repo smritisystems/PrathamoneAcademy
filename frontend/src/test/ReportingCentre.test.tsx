@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-07
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Comprehensive unit and integration test suite validating Central Reporting & Analytics Centre, 6-category navigation, search filter, favorite pins, and ExcelReportGrid rendering.
  */
@@ -153,7 +153,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
     )
 
     expect(screen.getByText('Reporting & Analytics Centre')).toBeDefined()
-    expect(screen.getByText(/49 Enterprise Reports/i)).toBeDefined()
+    expect(screen.getByText(/\d+ Enterprise Reports/i)).toBeDefined()
     expect(screen.getByTestId('pratham-software-footer-logo')).toBeDefined()
 
     // 7 Canonical category switcher tabs
@@ -227,7 +227,7 @@ describe('Central Reporting & Analytics Centre Suite', () => {
       </QueryClientProvider>
     )
 
-    const searchInput = screen.getByPlaceholderText(/Search all 49 reports.../i)
+    const searchInput = screen.getByPlaceholderText(/Search all \d+ reports\.\.\./i)
     fireEvent.change(searchInput, { target: { value: 'Defaulters' } })
 
     // Matching overlay should show matching count

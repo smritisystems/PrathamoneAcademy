@@ -80,7 +80,8 @@ pip-delete-this-directory.txt
 .coverage.*
 htmlcov/
 .vitest_cache/
-reports/
+/reports/
+!frontend/src/components/reports/
 *.cover
 *.py,cover
 .hypothesis/

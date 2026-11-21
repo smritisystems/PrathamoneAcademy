@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description API endpoints for academic, attendance, faculty load, and fee collection reporting.
 #  */
@@ -93,7 +93,7 @@ def apply_report_environment_filter(query, model, data_env: str):
     return query
 from app.models.payment import Payment, PaymentReceipt, Refund
 from app.models.fee import FeeInvoice, FeeInstallment
-from app.models.student import Student
+from app.models.student import Student, Guardian
 from app.models.division import Division
 from app.models.standard import Standard
 from app.models.board import Board
@@ -137,6 +137,7 @@ async def fee_collection_report(
             ),
         )
         .join(FeeInvoice, Student.id == FeeInvoice.student_id)
+        .where(FeeInvoice.status != "cancelled")
         .group_by(
             Student.id,
             Student.admission_number,
@@ -336,7 +337,7 @@ async def outstanding_report(
 
     query = select(FeeInvoice, Student).join(
         Student, FeeInvoice.student_id == Student.id
-    ).where(FeeInvoice.outstanding_amount > 0)
+    ).where(FeeInvoice.outstanding_amount > 0, FeeInvoice.status != "cancelled")
     
     if academic_year_id:
         query = query.where(FeeInvoice.academic_year_id == academic_year_id)
@@ -412,7 +413,10 @@ async def payments_summary(
             func.coalesce(func.sum(Payment.amount), 0).label("total"),
         )
         .join(Student, Payment.student_id == Student.id)
-        .where(Payment.status.in_(["completed", "posted"]))
+        .where(
+            Payment.status.in_(["completed", "posted"]),
+            Payment.reversed_at.is_(None),
+        )
     )
 
     if not is_sysadmin(current_user) and getattr(current_user, "institution_id", None):
@@ -760,6 +764,7 @@ async def student_withdrawals_report(
         ).where(
             FeeInvoice.student_id == std.id,
             FeeInvoice.academic_year_id == enr.academic_year_id,
+            FeeInvoice.status != "cancelled",
         )
         inv_res = (await db.execute(inv_stmt)).one()
         invoiced_amount = float(inv_res.invoiced or 0)
@@ -806,6 +811,7 @@ async def student_withdrawals_report(
                 FeeInvoice.student_id == std.id,
                 FeeInvoice.academic_year_id == enr.academic_year_id,
                 FeeInvoice.due_date <= effective_exit,
+                FeeInvoice.status != "cancelled",
             )
         )
         due_invoice_count = (await db.execute(due_invoice_stmt)).scalar() or 0
@@ -876,7 +882,7 @@ async def withdrawal_analytics_report(
     )
 
     # Total enrolled count across selected scope
-    enr_count_stmt = select(func.count(StudentEnrollment.id)).join(
+    enr_count_stmt = select(func.count(func.distinct(StudentEnrollment.student_id))).join(
         Student, StudentEnrollment.student_id == Student.id
     )
     if effective_inst_id:
@@ -1077,7 +1083,7 @@ async def student_master_directory_report(
             & (
                 (StudentEnrollment.academic_year_id == academic_year_id)
                 if academic_year_id
-                else (StudentEnrollment.status == "enrolled")
+                else (StudentEnrollment.status.in_(["enrolled", "active"]))
             ),
         )
         .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
@@ -1137,6 +1143,224 @@ async def student_master_directory_report(
     ]
 
 
+@router.get("/students/flexible-matrix")
+async def student_flexible_matrix_report(
+    academic_year_id: Optional[int] = None,
+    board_id: Optional[int] = None,
+    standard_id: Optional[int] = None,
+    division_id: Optional[int] = None,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    data_env: str = Depends(get_data_environment),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(*REPORT_STAFF_ROLES)),
+):
+    """
+    Universal Multi-Dimensional Student Intelligence & Academic Matrix Report.
+    Provides flexible aggregation across Boards, Standards/Grades, and Batches/Divisions,
+    with student demographics, guardian contacts, attendance telemetry, fee balances,
+    and exam performance grades.
+    """
+    inst_id = await resolve_report_institution_id(db, current_user, data_env)
+    query = (
+        select(Student, StudentEnrollment, Standard, Division, Board)
+        .outerjoin(
+            StudentEnrollment,
+            (Student.id == StudentEnrollment.student_id)
+            & (
+                (StudentEnrollment.academic_year_id == academic_year_id)
+                if academic_year_id
+                else (StudentEnrollment.status.in_(["enrolled", "active"]))
+            ),
+        )
+        .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
+        .outerjoin(Division, StudentEnrollment.division_id == Division.id)
+        .outerjoin(Board, Division.board_id == Board.id)
+        .where(Student.institution_id == inst_id)
+    )
+
+    if board_id:
+        query = query.where(Board.id == board_id)
+    if standard_id:
+        query = query.where(Standard.id == standard_id)
+    if division_id:
+        query = query.where(Division.id == division_id)
+    if status and status != "all":
+        query = query.where(StudentEnrollment.status == status)
+    if search:
+        s_term = f"%{search}%"
+        query = query.where(
+            or_(
+                Student.first_name.ilike(s_term),
+                Student.last_name.ilike(s_term),
+                Student.admission_number.ilike(s_term),
+                Student.phone.ilike(s_term),
+            )
+        )
+
+    query = apply_report_environment_filter(query, Student, data_env)
+    res = await db.execute(query.order_by(Student.admission_number))
+    rows = res.all()
+
+    student_ids = [s.id for s, _, _, _, _ in rows]
+
+    # 1. Fetch Primary Guardians
+    guardian_map: Dict[int, Guardian] = {}
+    if student_ids:
+        g_res = await db.execute(
+            select(Guardian)
+            .where(Guardian.student_id.in_(student_ids))
+            .order_by(Guardian.is_primary.desc())
+        )
+        for g in g_res.scalars().all():
+            if g.student_id not in guardian_map:
+                guardian_map[g.student_id] = g
+
+    # 2. Fetch Fee Summaries (excluding cancelled invoices)
+    fee_map: Dict[int, Any] = {}
+    if student_ids:
+        fee_conditions = [
+            FeeInvoice.student_id.in_(student_ids),
+            FeeInvoice.status != "cancelled",
+        ]
+        if academic_year_id:
+            fee_conditions.append(FeeInvoice.academic_year_id == academic_year_id)
+
+        fee_res = await db.execute(
+            select(
+                FeeInvoice.student_id,
+                func.coalesce(func.sum(FeeInvoice.net_amount), 0).label("total_fees"),
+                func.coalesce(func.sum(FeeInvoice.paid_amount), 0).label("paid_fees"),
+                func.coalesce(func.sum(FeeInvoice.outstanding_amount), 0).label("balance_fees"),
+            )
+            .where(and_(*fee_conditions))
+            .group_by(FeeInvoice.student_id)
+        )
+        fee_map = {row.student_id: row for row in fee_res.all()}
+
+    # 3. Fetch Attendance Summaries
+    att_map: Dict[int, Any] = {}
+    if student_ids:
+        att_res = await db.execute(
+            select(
+                Attendance.student_id,
+                func.count(Attendance.id).label("total_days"),
+                func.count(func.nullif(Attendance.status.notin_(["present", "late"]), True)).label("present_days"),
+                func.count(func.nullif(Attendance.status != "absent", True)).label("absent_days"),
+            )
+            .where(Attendance.student_id.in_(student_ids))
+            .group_by(Attendance.student_id)
+        )
+        att_map = {row.student_id: row for row in att_res.all()}
+
+    # 4. Fetch Exam Summaries
+    exam_map: Dict[int, Any] = {}
+    if student_ids:
+        exam_res = await db.execute(
+            select(
+                ExamMark.student_id,
+                func.coalesce(func.sum(ExamMark.marks_obtained), 0).label("total_obtained"),
+                func.coalesce(func.sum(ExamMark.max_marks), 0).label("total_max"),
+                func.count(ExamMark.id).label("exams_count"),
+            )
+            .where(ExamMark.student_id.in_(student_ids))
+            .group_by(ExamMark.student_id)
+        )
+        exam_map = {row.student_id: row for row in exam_res.all()}
+
+    output = []
+    for s, enr, std, div, brd in rows:
+        g = guardian_map.get(s.id)
+        f_info = fee_map.get(s.id)
+        a_info = att_map.get(s.id)
+        e_info = exam_map.get(s.id)
+
+        # Financial values
+        tot_fee = float(f_info.total_fees) if f_info else 0.0
+        pd_fee = float(f_info.paid_fees) if f_info else 0.0
+        bal_fee = float(f_info.balance_fees) if f_info else 0.0
+        if tot_fee == 0:
+            pay_status = "No Fees"
+        elif bal_fee <= 0:
+            pay_status = "Paid"
+        elif pd_fee > 0:
+            pay_status = "Partial"
+        else:
+            pay_status = "Defaulter"
+
+        # Attendance values
+        tot_days = a_info.total_days if a_info else 0
+        pres_days = a_info.present_days if a_info else 0
+        ab_days = a_info.absent_days if a_info else 0
+        att_pct = round((pres_days / tot_days) * 100, 1) if tot_days > 0 else 0.0
+        if tot_days == 0:
+            att_status = "No Records"
+        elif att_pct < 75.0:
+            att_status = "Defaulter (<75%)"
+        elif att_pct >= 85.0:
+            att_status = "Good"
+        else:
+            att_status = "Average"
+
+        # Exam values
+        obtained = float(e_info.total_obtained) if e_info else 0.0
+        max_m = float(e_info.total_max) if e_info else 0.0
+        exam_pct = round((obtained / max_m) * 100, 1) if max_m > 0 else 0.0
+        if max_m == 0:
+            perf_grade = "N/A"
+        elif exam_pct >= 90:
+            perf_grade = "A+"
+        elif exam_pct >= 80:
+            perf_grade = "A"
+        elif exam_pct >= 70:
+            perf_grade = "B"
+        elif exam_pct >= 60:
+            perf_grade = "C"
+        elif exam_pct >= 40:
+            perf_grade = "Pass"
+        else:
+            perf_grade = "Needs Attention"
+
+        output.append({
+            "id": s.id,
+            "admission_number": s.admission_number,
+            "student_name": f"{s.first_name} {s.last_name}",
+            "first_name": s.first_name,
+            "last_name": s.last_name,
+            "gender": s.gender or "N/A",
+            "date_of_birth": s.date_of_birth.isoformat() if s.date_of_birth else None,
+            "phone": s.phone or "N/A",
+            "email": s.email or "N/A",
+            "city": s.city or "Mumbai",
+            "guardian_name": f"{g.first_name} {g.last_name}" if g else "N/A",
+            "guardian_phone": g.phone if g else (s.phone or "N/A"),
+            "guardian_relation": g.relation if g else "Guardian",
+            "board_id": brd.id if brd else None,
+            "board_name": brd.name if brd else "N/A",
+            "board_code": brd.code if brd else "N/A",
+            "standard_id": std.id if std else None,
+            "standard_name": std.name if std else "Unassigned",
+            "division_id": div.id if div else None,
+            "division_name": div.name if div else "Unassigned",
+            "batch_code": div.code if div else None,
+            "roll_number": enr.roll_number if enr and enr.roll_number else "N/A",
+            "enrollment_status": enr.status if enr else ("active" if s.is_active else "inactive"),
+            "total_sessions": tot_days,
+            "present_days": pres_days,
+            "absent_days": ab_days,
+            "attendance_percentage": att_pct,
+            "attendance_status": att_status,
+            "total_fees": tot_fee,
+            "paid_fees": pd_fee,
+            "balance_fees": bal_fee,
+            "payment_status": pay_status,
+            "exam_percentage": exam_pct,
+            "performance_grade": perf_grade,
+        })
+
+    return output
+
+
 @router.get("/attendance/summary")
 async def student_attendance_summary_report(
     academic_year_id: Optional[int] = None,
@@ -1160,7 +1384,10 @@ async def student_attendance_summary_report(
         .join(StudentEnrollment, Student.id == StudentEnrollment.student_id)
         .join(Standard, StudentEnrollment.standard_id == Standard.id)
         .join(Division, StudentEnrollment.division_id == Division.id)
-        .where(Student.institution_id == inst_id)
+        .where(
+            Student.institution_id == inst_id,
+            StudentEnrollment.status.in_(["enrolled", "active"]),
+        )
     )
     if academic_year_id:
         enr_query = enr_query.where(StudentEnrollment.academic_year_id == academic_year_id)
@@ -1173,6 +1400,13 @@ async def student_attendance_summary_report(
     student_records = students_res.all()
 
     att_conditions = [Student.institution_id == inst_id]
+    if academic_year_id:
+        ay_obj = await db.get(AcademicYear, academic_year_id)
+        if ay_obj:
+            if ay_obj.start_date and not start_date:
+                att_conditions.append(Attendance.date >= ay_obj.start_date)
+            if ay_obj.end_date and not end_date:
+                att_conditions.append(Attendance.date <= ay_obj.end_date)
     if start_date:
         att_conditions.append(Attendance.date >= start_date)
     if end_date:
@@ -1200,7 +1434,7 @@ async def student_attendance_summary_report(
         pres = att.present_days if att else 0
         ab = att.absent_days if att else 0
         lt = att.late_days if att else 0
-        pct = round((pres / tot) * 100, 1) if tot > 0 else 100.0
+        pct = round((pres / tot) * 100, 1) if tot > 0 else 0.0
         is_def = tot > 0 and pct < 75.0
 
         if defaulters_only and not is_def:
@@ -1218,7 +1452,7 @@ async def student_attendance_summary_report(
             "late_days": lt,
             "attendance_percentage": pct,
             "is_defaulter": is_def,
-            "status": "Defaulter (<75%)" if is_def else ("Good" if pct >= 85.0 else "Average"),
+            "status": "No Records" if tot == 0 else ("Defaulter (<75%)" if is_def else ("Good" if pct >= 85.0 else "Average")),
         })
 
     return output
@@ -1398,11 +1632,13 @@ async def exam_consolidated_merit_report(
                 "has_failed_subject": False,
             }
         sm = student_marks_map[s.id]
-        obt = m.marks_obtained or Decimal("0.00")
+        is_abs = getattr(m, "is_absent", False)
+        obt = Decimal("0.00") if is_abs else (m.marks_obtained or Decimal("0.00"))
+        sub_max = Decimal(str(m.max_marks)) if getattr(m, "max_marks", None) else Decimal(str(exam.max_marks))
         sm["marks_obtained"] += obt
-        sm["max_marks"] += Decimal(str(exam.max_marks))
+        sm["max_marks"] += sub_max
         sm["subject_count"] += 1
-        if obt < Decimal(str(exam.passing_marks)):
+        if is_abs or (obt < Decimal(str(exam.passing_marks))):
             sm["has_failed_subject"] = True
 
     results = []
@@ -1440,8 +1676,11 @@ async def exam_consolidated_merit_report(
         })
 
     results.sort(key=lambda x: x["percentage"], reverse=True)
-    for idx, r in enumerate(results, 1):
-        r["rank"] = idx
+    current_rank = 1
+    for idx, r in enumerate(results):
+        if idx > 0 and r["percentage"] < results[idx - 1]["percentage"]:
+            current_rank = idx + 1
+        r["rank"] = current_rank
 
     return results
 
@@ -1474,7 +1713,7 @@ async def fee_defaulters_aging_report(
             & (
                 (StudentEnrollment.academic_year_id == academic_year_id)
                 if academic_year_id
-                else (StudentEnrollment.status == "enrolled")
+                else (StudentEnrollment.status.in_(["enrolled", "active"]))
             ),
         )
         .outerjoin(Standard, StudentEnrollment.standard_id == Standard.id)
@@ -1613,6 +1852,7 @@ async def daily_payment_collection_report(
         .where(
             Student.institution_id == inst_id,
             Payment.status.in_(["completed", "posted"]),
+            Payment.reversed_at.is_(None),
             Payment.payment_date >= s_date,
             Payment.payment_date <= e_date,
         )

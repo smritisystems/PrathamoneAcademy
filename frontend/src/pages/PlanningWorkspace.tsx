@@ -17,16 +17,31 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft, ArrowRight, CalendarDays, Clock3, GripVertical, KanbanSquare,
-  Link2, X,
-  ListTodo, Plus, RefreshCw, Rows3, Search, Timer,
-  ArrowLeft, ArrowRight, Building2, CalendarClock, CalendarDays, Clock3,
-  CreditCard, ExternalLink, FileText, GraduationCap, GripVertical, KanbanSquare,
-  Link2, ListTodo, PhoneCall, Plus, RefreshCw, Rows3, Search, Timer, UserCheck, X,
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  CalendarClock,
+  CalendarDays,
+  Clock3,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  GraduationCap,
+  GripVertical,
+  KanbanSquare,
+  Link2,
+  ListTodo,
+  PhoneCall,
+  Plus,
+  RefreshCw,
+  Rows3,
+  Search,
+  Timer,
+  UserCheck,
+  X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -699,8 +714,7 @@ export default function PlanningWorkspace() {
     const normalized = search.trim().toLowerCase()
     return !normalized || `${item.title} ${item.description || ''} ${item.assignees.map((a) => a.name).join(' ')}`
       .toLowerCase().includes(normalized)
-  }), [items, search, statusFilter, typeFilter])
-}), [items, search, statusFilter, typeFilter, scopeFilter, user?.id])
+  }), [items, search, statusFilter, typeFilter, scopeFilter, user?.id])
 
 const itemsByDateKey = useMemo(() => {
   const map = new Map<string, PlanningItem[]>()

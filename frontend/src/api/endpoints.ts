@@ -1053,6 +1053,14 @@ export const reportsApi = {
     status?: string
     search?: string
   }) => apiClient.get<any[]>('/reports/students/master-directory', { params }),
+  flexibleStudentMatrix: (params?: {
+    academic_year_id?: number | string
+    board_id?: number | string
+    standard_id?: number | string
+    division_id?: number | string
+    status?: string
+    search?: string
+  }) => apiClient.get<any[]>('/reports/students/flexible-matrix', { params }),
   attendanceSummary: (params?: {
     academic_year_id?: number | string
     standard_id?: number | string
