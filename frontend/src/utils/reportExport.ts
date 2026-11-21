@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-04
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Universal client-side export utility supporting Excel (.xlsx), CSV (.csv), and JSON (.json) with formula injection protection.
  */
@@ -193,11 +193,11 @@ export function exportToExcel<T>({
   const notesRows: ExcelRow[] =
     calculationNotes && calculationNotes.length > 0
       ? [
-          [],
-          [{ value: '--- CALCULATION PROVENANCE & INSTITUTIONAL BENCHMARKS ---', type: String, fontWeight: 'bold' }],
-          ...calculationNotes.map((n): ExcelRow => [{ value: sanitizeExcelText(n), type: String }]),
-          [],
-        ]
+        [],
+        [{ value: '--- CALCULATION PROVENANCE & INSTITUTIONAL BENCHMARKS ---', type: String, fontWeight: 'bold' }],
+        ...calculationNotes.map((n): ExcelRow => [{ value: sanitizeExcelText(n), type: String }]),
+        [],
+      ]
       : []
 
   const sheetData: ExcelRow[] = [

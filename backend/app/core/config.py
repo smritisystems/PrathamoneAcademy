@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-03
-#  * @updated     2026-11-21
+#  * @updated     2026-11-22
 #  *
 #  * @description Global application settings, environment variables, security secrets, and CORS policies.
 #  */
@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     PRODUCT_DESCRIPTION: str = "PrathamOne EduOS — Education Operating System"
     EDITION: str = "Coaching Institute Edition"
     TAGLINE: str = "COACHING MANAGEMENT. SIMPLIFIED."
-    VERSION: str = "1.158.0"
-    BUILD_NUMBER: str = "2026.11.21-REV-280-v1.158.0-EC80CC91"
+    VERSION: str = "1.158.1"
+    BUILD_NUMBER: str = "2026.11.21-REV-281-v1.158.1-7FBF3EA9"
     RELEASE_CHANNEL: str = "Release Candidate"
     RELEASE_STATUS: str = "Minor Release Candidate"
     BUILD_DATE: str = "2026-11-21"

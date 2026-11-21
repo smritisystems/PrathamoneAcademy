@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-16
+ * @updated     2026-11-22
  *
  * @description Displays verified license grace and Evaluation Mode status in the application shell.
  */
@@ -51,7 +51,7 @@ export default function LicenseModeBanner() {
     ? 'border-rose-300 bg-rose-50 text-rose-900'
     : 'border-amber-300 bg-amber-50 text-amber-900'
   const message = refreshUnavailable
-    ? 'License authority is unreachable. The verified snapshot remains usable for up to 7 days after its issue time.'
+    ? `License authority is unreachable. The verified snapshot remains usable for up to ${data.offline_validity_days || 14} days after its issue time.`
     : data.mode === 'grace'
     ? 'License grace period is active. Renew or activate before the grace period ends.'
     : data.mode === 'invalid'

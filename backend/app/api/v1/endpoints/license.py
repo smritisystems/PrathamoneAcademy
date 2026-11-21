@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-21
+#  * @updated     2026-11-22
 #  *
 #  * @description License activation, signed snapshot storage, status, and API enforcement.
 #  */
@@ -507,7 +507,7 @@ async def _load_license_context(
             "mode": "unactivated",
             "rollout_stage": configured_stage,
             "payload": None,
-            "installation_id": current_hw_fingerprint,
+            "installation_id": installation_setting.value if installation_setting else current_hw_fingerprint,
             "hardware_fingerprint": current_hw_fingerprint,
             "activation_identifier": activation_setting.value if activation_setting else None,
             "error": None,
@@ -539,7 +539,7 @@ async def _load_license_context(
             "mode": mode,
             "rollout_stage": stage,
             "payload": payload,
-            "installation_id": current_hw_fingerprint,
+            "installation_id": payload_inst_id or (installation_setting.value if installation_setting else current_hw_fingerprint),
             "hardware_fingerprint": current_hw_fingerprint,
             "activation_identifier": activation_setting.value if activation_setting else None,
             "error": clock_error,
@@ -549,7 +549,7 @@ async def _load_license_context(
             "mode": "invalid",
             "rollout_stage": configured_stage,
             "payload": None,
-            "installation_id": current_hw_fingerprint,
+            "installation_id": installation_setting.value if installation_setting else current_hw_fingerprint,
             "hardware_fingerprint": current_hw_fingerprint,
             "activation_identifier": activation_setting.value if activation_setting else None,
             "error": str(exc),

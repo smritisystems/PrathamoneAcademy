@@ -11,7 +11,7 @@
  *
  * @version     2.0.0
  * @created     2026-11-03
- * @updated     2026-11-21
+ * @updated     2026-11-22
  *
  * @description Standalone payment transactions ledger, ERP payment workflow lifecycle, receipt supersession, audited corrections, and refund management.
  */
@@ -879,17 +879,16 @@ export default function Payments() {
                       <td className="py-3.5 px-4 text-center">
                         <div className="inline-flex items-center gap-1">
                           <span
-                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${
-                              isPosted
+                            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${isPosted
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : isApproved
-                                ? 'bg-purple-100 text-purple-800'
-                                : isSubmitted
-                                ? 'bg-primary-100 text-primary-800'
-                                : isDraft
-                                ? 'bg-slate-100 text-slate-700'
-                                : 'bg-red-100 text-red-800'
-                            }`}
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : isSubmitted
+                                    ? 'bg-primary-100 text-primary-800'
+                                    : isDraft
+                                      ? 'bg-slate-100 text-slate-700'
+                                      : 'bg-red-100 text-red-800'
+                              }`}
                           >
                             {isPosted ? 'Posted' : p.status}
                           </span>
@@ -1182,22 +1181,21 @@ export default function Payments() {
                     <td className="py-2 px-3 text-gray-600">
                       {rf.allocations?.length
                         ? rf.allocations.map((allocation: { invoice_id: number; amount: number }) => (
-                            <span key={allocation.invoice_id} className="block">
-                              Invoice #{allocation.invoice_id}: {fmt(allocation.amount)}
-                            </span>
-                          ))
+                          <span key={allocation.invoice_id} className="block">
+                            Invoice #{allocation.invoice_id}: {fmt(allocation.amount)}
+                          </span>
+                        ))
                         : <span className="text-amber-700">Legacy allocation unavailable</span>}
                     </td>
                     <td className="py-2 px-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        rf.status === 'completed'
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${rf.status === 'completed'
                           ? 'bg-emerald-100 text-emerald-700'
                           : rf.status === 'approved'
-                          ? 'bg-blue-100 text-blue-700'
-                          : rf.status === 'rejected'
-                          ? 'bg-rose-100 text-rose-700'
-                          : 'bg-amber-100 text-amber-700'
-                      }`}>
+                            ? 'bg-blue-100 text-blue-700'
+                            : rf.status === 'rejected'
+                              ? 'bg-rose-100 text-rose-700'
+                              : 'bg-amber-100 text-amber-700'
+                        }`}>
                         {rf.status}
                       </span>
                     </td>
