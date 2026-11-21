@@ -30,7 +30,7 @@ import type {
   StudentPortalDashboard, StudentAdminProfile, TimetableSlot, StudyMaterialItem, StudyMaterialStats,
   StudentDocumentItem, TestResultItem, UpcomingTestItem,
   FeeOverviewData, FeeRegisterEntry, PaymentReceiptListItem, PaymentTransactionItem,
-  FormerStudentRecoveryResponse,
+  FormerStudentRecoveryResponse, BatchMonthlyMatrixResponse,
   AcademicOverviewResponse, BatchRosterResponse,
   SupportedEntity, ImportPreviewResponse, ImportExecuteResult, ImportHistoryItem,
   ImportHistoryDetail, ExportFilterParams,
@@ -584,6 +584,12 @@ export const feesApi = {
     student_status?: string
     search?: string
   }) => apiClient.get<FeeRegisterEntry[]>('/fees/register', { params }),
+
+  getBatchMonthlyMatrix: (params?: {
+    academic_year_id?: number | string
+    division_id?: number | string
+    standard_id?: number | string
+  }) => apiClient.get<BatchMonthlyMatrixResponse>('/fees/batch-monthly-matrix', { params }),
 
   getFormerStudentsRecovery: (params?: {
     academic_year_id?: number | string

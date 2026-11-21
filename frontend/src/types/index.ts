@@ -652,6 +652,74 @@ export interface FeeRegisterEntry {
   installments: FeeRegisterInstallment[]
 }
 
+export interface BatchMatrixMonth {
+  key: string
+  month_name: string
+  year: number
+  academic_order: number
+}
+
+export interface BatchMatrixPaymentItem {
+  id: number
+  amount: number
+  payment_date: string
+  payment_method: string
+  receipt_number: string
+  notes?: string
+}
+
+export interface BatchMatrixCell {
+  status: 'paid' | 'partial' | 'overdue' | 'upcoming'
+  has_payment: boolean
+  payments: BatchMatrixPaymentItem[]
+  total_amount: number
+  date_text: string
+  amount_text: string
+}
+
+export interface BatchMatrixStudent {
+  student_id: number
+  admission_number: string
+  roll_number: string
+  first_name: string
+  last_name: string
+  short_name: string
+  full_name: string
+  invoice_id: number | null
+  invoice_number: string
+  package_fee: number
+  package_fee_k: number
+  total_paid: number
+  total_outstanding: number
+  recovery_pct: number
+  monthly_cells: Record<string, BatchMatrixCell>
+}
+
+export interface BatchMatrixBatchTab {
+  id: number
+  name: string
+  tab_label: string
+  standard_id: number
+  standard_name: string
+  board_name: string
+  student_count: number
+}
+
+export interface BatchMonthlyMatrixResponse {
+  available_batches: BatchMatrixBatchTab[]
+  active_batch: BatchMatrixBatchTab | null
+  academic_year: { id: number; name: string }
+  months: BatchMatrixMonth[]
+  students: BatchMatrixStudent[]
+  summary: {
+    total_students: number
+    total_package_value: number
+    total_collected: number
+    total_outstanding: number
+    recovery_rate: number
+  }
+}
+
 export interface FormerStudentRecoveryRecord {
   student_id: number
   admission_number: string

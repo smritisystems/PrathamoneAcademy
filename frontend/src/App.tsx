@@ -251,6 +251,7 @@ export default function App() {
           <Route element={<RoleOutlet roles={['admin', 'principal', 'accountant', 'staff']} />}>
             <Route path="fees" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
             <Route path="fees/overview" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
+            <Route path="fees/matrix" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
             <Route path="fees/structures" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
             <Route path="fees/invoicing" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />
             <Route path="fees/collection" element={<Suspense fallback={<PageLoader />}><FeesPage /></Suspense>} />

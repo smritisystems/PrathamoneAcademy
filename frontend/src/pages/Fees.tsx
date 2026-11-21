@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Flagship Fees & Payments workspace featuring overview analytics, fee register, payments, and receipts.
  */
@@ -27,8 +27,10 @@ import {
   ChevronRight, ChevronDown, Coins, Bell, Percent, Award, Trash2,
   ExternalLink, Filter, Home, Receipt, BarChart3, Zap, GraduationCap, Sliders,
   Edit3, Lock, QrCode, Send, Smartphone, Share2, CheckCheck, BadgePercent,
-  Copy, ArrowUpRight, Check, Sparkles, CheckSquare, Square, Power, SlidersHorizontal
+  Copy, ArrowUpRight, Check, Sparkles, CheckSquare, Square, Power, SlidersHorizontal,
+  Grid3X3
 } from 'lucide-react'
+import { BatchMonthlyFeeMatrix } from '../components/fees/BatchMonthlyFeeMatrix'
 import { shareOrDownloadReceiptPdf, triggerBlobDownload, sanitizeReceiptFilename, ShareNotification } from '../utils/receiptShare'
 import { useEnvironmentStore } from '../store/environmentStore'
 import {
@@ -64,6 +66,7 @@ import toast from 'react-hot-toast'
 export type TabKey =
   | 'overview'
   | 'structures'
+  | 'matrix'
   | 'invoicing'
   | 'collection'
   | 'defaulters'
@@ -80,6 +83,7 @@ export type TabKey =
 
 export const FEES_TABS: { id: TabKey; label: string; icon: React.ElementType; route: string }[] = [
   { id: 'overview', label: 'Overview', icon: Home, route: '/fees/overview' },
+  { id: 'matrix', label: 'Batch Fee Matrix', icon: Grid3X3, route: '/fees/matrix' },
   { id: 'structures', label: 'Fee Structures', icon: Layers, route: '/fees/structures' },
   { id: 'invoicing', label: 'Fee Invoicing', icon: FileSpreadsheet, route: '/fees/invoicing' },
   { id: 'collection', label: 'Collection Desk', icon: CreditCard, route: '/fees/collection' },
@@ -1009,6 +1013,7 @@ function FeesContent() {
   // Derive active tab from URL pathname or search params
   const getTabFromLocation = (): TabKey => {
     const path = location.pathname.toLowerCase()
+    if (path.includes('/fees/matrix')) return 'matrix'
     if (path.includes('/fees/structures') || path.includes('/fees/plans')) return 'structures'
     if (path.includes('/fees/invoicing') || path.includes('/fees/register')) return 'invoicing'
     if (path.includes('/fees/collection') || path.includes('/fees/collect')) return 'collection'
@@ -1021,10 +1026,11 @@ function FeesContent() {
 
     const tabParam = searchParams.get('tab') as TabKey
     if (tabParam) {
+      if (tabParam === 'matrix') return 'matrix'
       if (tabParam === 'plans' || tabParam === 'settings') return 'structures'
       if (tabParam === 'register') return 'invoicing'
       if (tabParam === 'collect') return 'collection'
-      if (['overview', 'structures', 'invoicing', 'collection', 'defaulters', 'concessions', 'online-gateway', 'reports'].includes(tabParam)) {
+      if (['overview', 'matrix', 'structures', 'invoicing', 'collection', 'defaulters', 'concessions', 'online-gateway', 'reports'].includes(tabParam)) {
         return tabParam
       }
     }
@@ -2692,6 +2698,15 @@ function FeesContent() {
       onAction: () => setTab('collection'),
       requiresEditMode: false,
     },
+    matrix: {
+      title: 'Batch Monthly Fee Collection Matrix',
+      subtitle: '2D cross-tabulation daybook tracking individual student package fees vs monthly receipts',
+      icon: Grid3X3,
+      actionLabel: 'Record Payment',
+      actionIcon: CreditCard,
+      onAction: () => setTab('collection'),
+      requiresEditMode: false,
+    },
     structures: {
       title: 'Fee Structures & Schedules',
       subtitle: 'Standard-wise fee templates, component categories, installment schedules, and late fees',
@@ -4154,6 +4169,19 @@ function FeesContent() {
             </div>
           ) : null}
         </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* TAB: BATCH MONTHLY FEE COLLECTION MATRIX                                   */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {activeTab === 'matrix' && (
+        <BatchMonthlyFeeMatrix
+          academicYearId={selectedAcademicYearId ?? undefined}
+          onNavigateToCollection={(studentId) => {
+            setTab('collection')
+            setSelectedCollectStudentId(studentId)
+          }}
+        />
       )}
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
