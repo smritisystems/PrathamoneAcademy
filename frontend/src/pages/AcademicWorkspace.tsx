@@ -40,6 +40,7 @@ import { useEnvironmentStore } from '../store/environmentStore'
 import { EditModeBar, DeleteConfirmationModal, LockedButton, LockedIconButton, ContextualHelpButton, BatchCapacityBulletMeter } from '../components/common'
 import Modal from '../components/Modal'
 import ExcelReportGrid, { ColumnConfig } from '../components/reports/ExcelReportGrid'
+import { printTimetableDocketElement, getTimetableDocketPrintStyles } from '../utils/printTimetableDocket'
 import toast from 'react-hot-toast'
 import type {
   Division, Board, Standard, BatchRosterStudent, AcademicTreeBoard,
@@ -1454,6 +1455,17 @@ export default function AcademicWorkspace() {
     }
   }
 
+  const getSubjectColorStyles = (subjectName?: string) => {
+    const s = (subjectName || '').toLowerCase()
+    if (s.includes('math')) return { border: '#4338ca', bg: '#f5f7ff', text: '#1e1b4b', badgeBg: '#e0e7ff', badgeText: '#312e81' }
+    if (s.includes('sci') || s.includes('bio')) return { border: '#059669', bg: '#f0fdf4', text: '#022c22', badgeBg: '#d1fae5', badgeText: '#064e3b' }
+    if (s.includes('phys')) return { border: '#7c3aed', bg: '#faf5ff', text: '#2e1065', badgeBg: '#ede9fe', badgeText: '#4c1d95' }
+    if (s.includes('chem')) return { border: '#d97706', bg: '#fffbeb', text: '#451a03', badgeBg: '#fef3c7', badgeText: '#78350f' }
+    if (s.includes('eng') || s.includes('hindi') || s.includes('lang') || s.includes('lit')) return { border: '#e11d48', bg: '#fff1f2', text: '#4c0519', badgeBg: '#ffe4e6', badgeText: '#881337' }
+    if (s.includes('soc') || s.includes('hist') || s.includes('geo') || s.includes('sst')) return { border: '#ea580c', bg: '#fff7ed', text: '#431407', badgeBg: '#ffedd5', badgeText: '#7c2d12' }
+    return { border: '#0284c7', bg: '#f0f9ff', text: '#082f49', badgeBg: '#e0f2fe', badgeText: '#0c4a6e' }
+  }
+
   const handleShareWhatsAppSchedule = (selectedDay?: string) => {
     const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     const todayName = daysOfWeek[new Date().getDay()]
@@ -1490,16 +1502,27 @@ export default function AcademicWorkspace() {
       return
     }
 
+    const cloned = docketEl.cloneNode(true) as HTMLElement
+    cloned.querySelectorAll('.no-print, button, [role="button"]').forEach((el) => el.parentNode?.removeChild(el))
+
+    // Ensure all images are explicitly bounded
+    cloned.querySelectorAll('img').forEach((img) => {
+      img.style.width = '34px'
+      img.style.height = '34px'
+      img.style.maxWidth = '34px'
+      img.style.maxHeight = '34px'
+      img.style.objectFit = 'contain'
+    })
+
     const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Official Academic Timetable Docket — Prashant Academy Coaching Institute</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @page { size: A4 landscape; margin: 8mm; }
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #f8fafc; padding: 16px; }
+    ${getTimetableDocketPrintStyles()}
+    body { background: #f1f5f9; padding: 12px; }
     @media print {
       body { background: white; padding: 0; }
       .no-print { display: none !important; }
@@ -1507,19 +1530,17 @@ export default function AcademicWorkspace() {
   </style>
 </head>
 <body>
-  <div class="max-w-7xl mx-auto mb-4 no-print flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-    <div class="flex items-center gap-2">
-      <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-      <span class="text-sm font-bold text-slate-800">PrathamOne EduOS — Official Timetable Docket (Ready to Print / PDF)</span>
+  <div style="max-width: 285mm; margin: 0 auto 12px; padding: 8px 16px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;" class="no-print">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+      <span style="font-size: 13px; font-weight: 800; color: #0b1e36;">PrathamOne EduOS — Official Timetable Docket (Ready to Print / PDF — 1 Sheet Fit)</span>
     </div>
-    <div class="flex items-center gap-3">
-      <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer">
-        🖨️ Print or Save as PDF (A4 Landscape)
-      </button>
-    </div>
+    <button onclick="window.print()" style="padding: 6px 14px; background: #0b1e36; color: #ffffff; border: 1px solid #d4af37; border-radius: 6px; font-size: 12px; font-weight: 800; cursor: pointer;">
+      🖨️ Print or Save as PDF (A4 Landscape)
+    </button>
   </div>
-  <div class="max-w-7xl mx-auto">
-    ${docketEl.outerHTML}
+  <div id="print-root">
+    ${cloned.outerHTML}
   </div>
 </body>
 </html>`
@@ -1533,7 +1554,7 @@ export default function AcademicWorkspace() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    toast.success('Official Timetable Docket downloaded! Open file to print or save as PDF.', { duration: 4000 })
+    toast.success('Official Timetable Docket downloaded! Ready to print in 1-sheet Landscape.', { duration: 4000 })
   }
 
   const handleExportTimetableCsv = () => {
@@ -5467,180 +5488,140 @@ export default function AcademicWorkspace() {
       >
         <div className="space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar p-1">
           {timetableDocketData && (
-            <div
-              id="printable-timetable-docket"
-              className="bg-white p-3.5 sm:p-5 border-2 border-slate-900 rounded-2xl shadow-xl text-slate-900 space-y-2.5 print:space-y-1.5 relative overflow-hidden"
-            >
-              {/* Top Luxury Gradient Accent Bar */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-indigo-700 to-amber-500"></div>
+            <div id="printable-timetable-docket" className="tt-cert-frame">
+              {/* Top Gold Foil Bar */}
+              <div className="tt-gold-bar"></div>
 
               {/* Institution Header */}
-              <div className="border-b-2 border-slate-900 pb-2.5 pt-1 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-950 text-white p-1 flex items-center justify-center shadow-xs overflow-hidden flex-shrink-0 border border-amber-400/60"
-                    style={{ width: '44px', height: '44px', minWidth: '44px', minHeight: '44px', maxWidth: '44px', maxHeight: '44px' }}
-                  >
+              <div className="tt-header">
+                <div className="tt-header-left">
+                  <div className="tt-logo-box">
                     {timetableDocketData.institution.logo_url ? (
                       <img
                         src={timetableDocketData.institution.logo_url}
                         alt="Logo"
-                        className="docket-logo-img object-contain"
-                        style={{ width: '40px', height: '40px', maxWidth: '40px', maxHeight: '40px', objectFit: 'contain' }}
+                        className="tt-logo-img"
                       />
                     ) : (
-                      <School className="w-6 h-6 text-amber-300" />
+                      <School className="w-5 h-5 text-amber-300" />
                     )}
                   </div>
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-black text-slate-950 uppercase tracking-tight leading-tight">
+                  <div className="tt-brand-info">
+                    <h2 className="tt-inst-title">
                       {timetableDocketData.institution.name || 'Prashant Academy Coaching Institute'}
                     </h2>
-                    <p className="text-[10.5px] font-bold text-indigo-900 italic leading-snug">
-                      {timetableDocketData.institution.tagline || 'Empowering Young Minds • Inspiring Excellence • Shaping Futures'}
+                    <p className="tt-inst-tagline">
+                      {timetableDocketData.institution.tagline || 'Learn • Practice • Achieve'}
                     </p>
-                    <p className="text-[9.5px] text-slate-600 mt-0.5 font-medium leading-tight">
-                      {timetableDocketData.institution.address || 'Ghatkopar East, Mumbai 400077'} • Tel: {timetableDocketData.institution.phone || '+91 98200 00000'} • Email: {timetableDocketData.institution.email || 'contact@prashantacademy.in'}
+                    <p className="tt-inst-contact">
+                      📍 {timetableDocketData.institution.address || 'Ghatkopar East, Mumbai 400077'} • 📞 {timetableDocketData.institution.phone || '+91 98200 00000'} • ✉️ {timetableDocketData.institution.email || 'contact@prashantacademy.in'}
                     </p>
-                    <p className="text-[8.5px] text-amber-900 font-bold uppercase tracking-wider mt-0.5">
+                    <p className="tt-inst-reg">
                       Autonomous Senior Secondary &amp; Competitive Coaching Wing • Reg. No: MAH/MUM/EDU/2026/0491
                     </p>
                   </div>
                 </div>
 
-                <div className="text-right flex-shrink-0">
-                  <div className="inline-flex flex-col items-end">
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-950 text-amber-300 border border-amber-400/50 uppercase tracking-wider shadow-2xs">
-                      Official Timetable Docket
-                    </span>
-                    <span className="text-[9.5px] font-mono font-bold text-slate-800 mt-1 block">
-                      AY: {timetableDocketData.academic_year || '2026-27'} (Current)
-                    </span>
-                    <span className="text-[8.5px] text-slate-500 font-mono block">
-                      Docket ID: DOC-PA-TT-{timetableDocketData.summary?.total_sessions || 38}-AY26
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[8.5px] font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-300 mt-0.5">
-                      <ShieldCheck className="w-2.5 h-2.5 text-emerald-600" /> Authorized &amp; Sealed
-                    </span>
-                  </div>
+                <div className="tt-header-right">
+                  <span className="tt-ribbon-badge">Official Timetable Docket</span>
+                  <span className="tt-ay-badge">AY: {timetableDocketData.academic_year || '2026-27'} (Current)</span>
+                  <span className="tt-docket-badge">Docket ID: DOC-PA-TT-{timetableDocketData.summary?.total_sessions || 38}-AY26</span>
+                  <span className="tt-verified-badge">
+                    <ShieldCheck className="w-2.5 h-2.5 inline mr-1 text-emerald-600" /> Authorized &amp; Sealed
+                  </span>
                 </div>
               </div>
 
               {/* Docket Metadata Telemetry Banner */}
-              <div className="bg-slate-50 p-2 sm:p-2.5 rounded-xl border border-slate-300 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <div>
-                  <span className="text-slate-500 font-bold block text-[8.5px] uppercase tracking-wider">Cohort / Scope</span>
-                  <span className="font-extrabold text-xs sm:text-sm text-slate-950 block mt-0.2">
-                    {timetableDocketData.scope?.name || 'All Batches & Streams'} ({timetableDocketData.scope?.code || 'INST'})
-                  </span>
-                  <span className="text-[8.5px] text-slate-500 font-medium">Multi-Stream Master Schedule</span>
+              <div className="tt-kpi-bar">
+                <div className="tt-kpi-box">
+                  <span className="tt-kpi-lbl">Cohort / Scope</span>
+                  <span className="tt-kpi-val">{timetableDocketData.scope?.name || 'All Batches & Streams'} ({timetableDocketData.scope?.code || 'INST'})</span>
+                  <span className="tt-kpi-sub">Multi-Stream Master Schedule</span>
                 </div>
-                <div>
-                  <span className="text-slate-500 font-bold block text-[8.5px] uppercase tracking-wider">Instruction Load</span>
-                  <span className="font-extrabold text-xs sm:text-sm text-indigo-900 block mt-0.2">
-                    {timetableDocketData.summary?.total_sessions} Weekly Periods
-                  </span>
-                  <span className="text-[8.5px] text-slate-500 font-medium">
-                    {timetableDocketData.summary?.total_hours} Instruction Hours / Week
-                  </span>
+                <div className="tt-kpi-box">
+                  <span className="tt-kpi-lbl">Instruction Load</span>
+                  <span className="tt-kpi-val">{timetableDocketData.summary?.total_sessions} Weekly Periods</span>
+                  <span className="tt-kpi-sub">{timetableDocketData.summary?.total_hours} Instruction Hours / Week</span>
                 </div>
-                <div>
-                  <span className="text-slate-500 font-bold block text-[8.5px] uppercase tracking-wider">Faculty Assigned</span>
-                  <span className="font-extrabold text-xs sm:text-sm text-emerald-800 block mt-0.2">
-                    {timetableDocketData.summary?.unique_teachers} Senior Instructors
-                  </span>
-                  <span className="text-[8.5px] text-slate-500 font-medium">100% Workload Verified</span>
+                <div className="tt-kpi-box">
+                  <span className="tt-kpi-lbl">Faculty Assigned</span>
+                  <span className="tt-kpi-val">{timetableDocketData.summary?.unique_teachers} Senior Instructors</span>
+                  <span className="tt-kpi-sub">100% Workload Verified</span>
                 </div>
-                <div>
-                  <span className="text-slate-500 font-bold block text-[8.5px] uppercase tracking-wider">Facility Utilization</span>
-                  <span className="font-extrabold text-xs sm:text-sm text-purple-900 block mt-0.2">
-                    {timetableDocketData.summary?.rooms_used || 5} Active Classrooms
-                  </span>
-                  <span className="text-[8.5px] text-slate-500 font-medium">83% Classroom Occupancy</span>
+                <div className="tt-kpi-box">
+                  <span className="tt-kpi-lbl">Facility Utilization</span>
+                  <span className="tt-kpi-val">{timetableDocketData.summary?.rooms_used || 5} Active Classrooms</span>
+                  <span className="tt-kpi-sub">83% Classroom Occupancy</span>
                 </div>
               </div>
 
               {/* Weekly Timetable Grid Table (Landscape High-Density) */}
-              <div className="overflow-x-auto border-2 border-slate-900 rounded-xl shadow-xs">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="tt-table-wrap">
+                <table className="tt-table">
                   <thead>
-                    <tr className="bg-slate-900 text-white uppercase text-[9px] tracking-wider font-extrabold">
-                      <th className="py-2 px-2.5 w-28 border-r border-slate-700 bg-slate-950 text-amber-300">
-                        Day / Slot
-                      </th>
+                    <tr>
+                      <th className="tt-th-day">DAY / PERIOD</th>
                       {timetableDocketData.slots.map((s, idx) => (
-                        <th
-                          key={s.slot_key}
-                          className="py-1.5 px-1.5 text-center border-r border-slate-700 min-w-[125px]"
-                        >
-                          <div className="font-bold text-[10px] text-white">Period {idx + 1}</div>
-                          <div className="text-[8.5px] font-mono font-medium text-amber-200/90 mt-0.5">
-                            {s.start_time} - {s.end_time}
-                          </div>
+                        <th key={s.slot_key} className="tt-th-period">
+                          <div className="tt-th-period-title">Period {idx + 1}</div>
+                          <div className="tt-th-period-time">{s.start_time} - {s.end_time}</div>
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-300 text-xs">
+                  <tbody>
                     {timetableDocketData.days.map((d) => {
                       const daySessionsCount = Object.keys(timetableDocketData.matrix?.[d] || {}).length
                       return (
-                        <tr key={d} className="hover:bg-slate-50/60 transition-colors">
-                          <td className={`py-2 px-2.5 font-extrabold border-r border-slate-300 ${
-                            daySessionsCount === 0 ? 'bg-slate-50 text-slate-400' : 'bg-slate-100 text-slate-950'
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-black">{d}</span>
-                              <span className={`text-[8px] font-bold px-1.5 py-0.2 rounded-full ${
-                                daySessionsCount > 0 ? 'bg-indigo-100 text-indigo-900' : 'bg-slate-200 text-slate-600'
-                              }`}>
-                                {daySessionsCount}
-                              </span>
+                        <tr key={d} className="tt-row">
+                          <td className="tt-td-day">
+                            <div className="tt-day-content">
+                              <span className="tt-day-title">{d}</span>
+                              <span className="tt-day-count">{daySessionsCount}</span>
                             </div>
                             {daySessionsCount === 0 && (
-                              <span className="block text-[7px] font-semibold text-slate-400 uppercase mt-0.5">
-                                Non-MWF Stream
-                              </span>
+                              <div className="tt-day-stream">Non-MWF Stream</div>
                             )}
                           </td>
                           {timetableDocketData.slots.map((slot) => {
                             const sess = timetableDocketData.matrix?.[d]?.[slot.slot_key]
                             if (sess) {
-                              const theme = getSubjectTheme(sess.subject_name)
+                              const colorStyle = getSubjectColorStyles(sess.subject_name)
                               return (
-                                <td key={slot.slot_key} className="p-1 border-r border-slate-300 align-top">
-                                  <div className={`p-1.5 rounded-lg border border-l-4 ${theme.border} ${theme.bg} space-y-0.5 shadow-2xs`}>
-                                    <div className="flex items-center justify-between">
-                                      <p className={`font-black text-[9.5px] truncate ${theme.text}`}>
+                                <td key={slot.slot_key} className="tt-td-cell">
+                                  <div
+                                    className="tt-card"
+                                    style={{
+                                      borderLeft: `3.5px solid ${colorStyle.border}`,
+                                      backgroundColor: colorStyle.bg,
+                                    }}
+                                  >
+                                    <div className="tt-card-header">
+                                      <p className="tt-card-subname" style={{ color: colorStyle.text }}>
                                         {sess.subject_name}
                                       </p>
-                                      <span className={`text-[7px] font-extrabold px-1 rounded ${theme.badge}`}>
+                                      <span
+                                        className="tt-card-code"
+                                        style={{ backgroundColor: colorStyle.badgeBg, color: colorStyle.badgeText }}
+                                      >
                                         {sess.subject_code}
                                       </span>
                                     </div>
-                                    <p className="text-[8.5px] font-bold text-slate-800 truncate">
-                                      {sess.division_name}
-                                    </p>
-                                    <p className="text-[8px] text-slate-700 truncate flex items-center gap-1 font-medium">
-                                      <User className="w-2 h-2 text-slate-500" />
-                                      {sess.teacher_name || 'Assigned Faculty'}
-                                    </p>
-                                    <div className="flex items-center justify-between text-[7.5px] text-slate-600 pt-0.5 border-t border-black/5">
-                                      <span className="font-extrabold text-slate-950 bg-white px-1 py-0.2 rounded border border-slate-300 shadow-2xs">
-                                        {sess.room_number || 'Room 101'}
-                                      </span>
-                                      <span className="text-slate-500 font-mono">{slot.start_time}</span>
+                                    <p className="tt-card-div">{sess.division_name}</p>
+                                    <p className="tt-card-teacher">👨‍🏫 {sess.teacher_name || 'Assigned Faculty'}</p>
+                                    <div className="tt-card-footer">
+                                      <span className="tt-card-room">{sess.room_number || 'Room 101'}</span>
+                                      <span className="tt-card-time">{slot.start_time}</span>
                                     </div>
                                   </div>
                                 </td>
                               )
                             }
                             return (
-                              <td key={slot.slot_key} className="p-1 border-r border-slate-300 align-top">
-                                <div className={`h-11 rounded-lg border ${
-                                  daySessionsCount === 0 ? 'border-dashed border-slate-200/80 bg-slate-50/30' : 'border-dashed border-slate-200'
-                                } flex items-center justify-center p-1 text-center`}>
-                                  <span className="text-[8px] text-slate-400 italic font-medium">
+                              <td key={slot.slot_key} className="tt-td-cell">
+                                <div className="tt-empty-card">
+                                  <span className="tt-empty-text">
                                     {daySessionsCount === 0 ? 'TTS Slot' : 'Available'}
                                   </span>
                                 </div>
@@ -5655,40 +5636,40 @@ export default function AcademicWorkspace() {
               </div>
 
               {/* Signatures & Seal Block */}
-              <div className="pt-2 sm:pt-3 border-t-2 border-slate-300 grid grid-cols-4 gap-2 text-xs text-center items-end">
-                <div className="space-y-0.5">
-                  <div className="w-28 mx-auto border-b-2 border-slate-500 pb-3"></div>
-                  <p className="font-bold text-[9.5px] text-slate-950">{timetableDocketData.signatures.prepared_by}</p>
-                  <p className="text-[8px] text-slate-600 font-medium">Academic In-Charge / Scheduler</p>
+              <div className="tt-signatures">
+                <div className="tt-sig-col">
+                  <div className="tt-sig-line"></div>
+                  <p className="tt-sig-name">{timetableDocketData.signatures.prepared_by}</p>
+                  <p className="tt-sig-role">Academic In-Charge / Scheduler</p>
                 </div>
-                <div className="space-y-0.5">
-                  <div className="w-28 mx-auto border-b-2 border-slate-500 pb-3"></div>
-                  <p className="font-bold text-[9.5px] text-slate-950">{timetableDocketData.signatures.verified_by}</p>
-                  <p className="text-[8px] text-slate-600 font-medium">Head of Department (Curriculum)</p>
+                <div className="tt-sig-col">
+                  <div className="tt-sig-line"></div>
+                  <p className="tt-sig-name">{timetableDocketData.signatures.verified_by}</p>
+                  <p className="tt-sig-role">Head of Department (Curriculum)</p>
                 </div>
                 {/* Official Embossed Seal / Stamp Box */}
-                <div className="flex flex-col items-center justify-center">
-                  <div className="w-14 h-14 rounded-full border-2 border-dashed border-indigo-700/80 bg-indigo-50/50 flex flex-col items-center justify-center p-1 shadow-2xs">
-                    <span className="text-[6.5px] font-black uppercase text-indigo-950 tracking-wider">PRASHANT ACADEMY</span>
-                    <span className="text-[9px] my-0.2 leading-none text-amber-600">★ ★ ★</span>
-                    <span className="text-[5.5px] font-bold text-indigo-700 uppercase">OFFICIAL SEAL</span>
+                <div className="tt-seal-col">
+                  <div className="tt-seal-circle">
+                    <span className="tt-seal-top">PRASHANT ACADEMY</span>
+                    <span className="tt-seal-stars">★ ★ ★</span>
+                    <span className="tt-seal-bot">OFFICIAL SEAL</span>
                   </div>
-                  <p className="text-[7.5px] text-slate-500 font-mono mt-0.5">Authorized Seal</p>
+                  <p className="tt-seal-sub">Authorized Stamp</p>
                 </div>
-                <div className="space-y-0.5">
-                  <div className="w-28 mx-auto border-b-2 border-slate-500 pb-3"></div>
-                  <p className="font-bold text-[9.5px] text-slate-950">{timetableDocketData.signatures.approved_by}</p>
-                  <p className="text-[8px] text-slate-600 font-medium">Principal / Managing Director</p>
+                <div className="tt-sig-col">
+                  <div className="tt-sig-line"></div>
+                  <p className="tt-sig-name">{timetableDocketData.signatures.approved_by}</p>
+                  <p className="tt-sig-role">Principal / Managing Director</p>
                 </div>
               </div>
 
               {/* Security & System Footer */}
-              <div className="pt-1.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-1 text-[8px] text-slate-500">
-                <div className="flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
+              <div className="tt-footer">
+                <div className="tt-footer-left">
+                  <ShieldCheck className="w-2.5 h-2.5 inline mr-1 text-emerald-600" />
                   <span>Certified institutional record generated via PrathamOne EduOS (Coaching Institute Edition) • Guaranteed Single Sheet Docket.</span>
                 </div>
-                <span className="font-mono">Generated: {new Date(timetableDocketData.generated_at).toLocaleString()}</span>
+                <span className="tt-footer-right">Generated: {new Date(timetableDocketData.generated_at).toLocaleString()}</span>
               </div>
             </div>
           )}

@@ -25,126 +25,481 @@ export interface PrintTimetableDocketOptions {
 }
 
 /**
- * Generates the complete, self-contained standalone CSS styles for the Timetable Docket
- * ensuring high-contrast certificate-grade sharpness even if "Background graphics" is unchecked.
+ * Returns complete, self-contained, high-contrast certificate-grade CSS styles.
+ * 100% immune to external stylesheet delays and guaranteed to fit on 1 A4 Landscape sheet.
  */
 export function getTimetableDocketPrintStyles(): string {
   return `
     @page {
-      size: A4 landscape !important;
-      margin: 4mm 5mm !important;
+      size: landscape !important;
+      margin: 4mm 6mm !important;
     }
     * {
       box-sizing: border-box !important;
+      margin: 0;
+      padding: 0;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
     html, body {
-      width: 287mm !important;
-      height: 202mm !important;
-      max-height: 202mm !important;
-      margin: 0 !important;
+      width: 285mm !important;
+      height: 200mm !important;
+      max-height: 200mm !important;
+      margin: 0 auto !important;
       padding: 0 !important;
       background: #ffffff !important;
-      color: #0f172a !important;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      color: #0b1e36 !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
       -webkit-font-smoothing: antialiased !important;
       overflow: hidden !important;
     }
     #print-root {
-      width: 100% !important;
-      max-width: 287mm !important;
-      height: 100% !important;
-      max-height: 202mm !important;
+      width: 285mm !important;
+      max-width: 285mm !important;
+      height: 198mm !important;
+      max-height: 198mm !important;
       margin: 0 auto !important;
       padding: 0 !important;
       overflow: hidden !important;
     }
-    #printable-timetable-docket {
+    /* Master Certificate Frame */
+    .tt-cert-frame {
       width: 100% !important;
-      max-width: 287mm !important;
-      max-height: 200mm !important;
-      margin: 0 auto !important;
-      padding: 3.5mm 5mm !important;
-      border: 2px solid #0f172a !important;
-      border-radius: 6px !important;
+      max-width: 285mm !important;
+      height: 195mm !important;
+      max-height: 195mm !important;
       background: #ffffff !important;
+      border: 2.5px solid #0b1e36 !important;
+      outline: 1.5px solid #d4af37 !important;
+      outline-offset: -3.5px !important;
+      border-radius: 4px !important;
+      padding: 3.5mm 5mm !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
       overflow: hidden !important;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
-      page-break-after: avoid !important;
-      break-after: avoid !important;
       box-sizing: border-box !important;
+      position: relative !important;
     }
-    /* Enforce strict image bounding so high-resolution logos never blow up */
-    img, .docket-logo-img, img.docket-logo-img {
-      width: 42px !important;
-      height: 42px !important;
-      max-width: 42px !important;
-      max-height: 42px !important;
-      min-width: 42px !important;
-      min-height: 42px !important;
+    /* Top Gold Foil Bar */
+    .tt-gold-bar {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      height: 3px !important;
+      background: linear-gradient(90deg, #b45309, #f59e0b, #d4af37, #f59e0b, #b45309) !important;
+    }
+    /* Header Section */
+    .tt-header {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      border-bottom: 1.5px solid #0b1e36 !important;
+      padding-bottom: 1.5mm !important;
+      margin-top: 1mm !important;
+    }
+    .tt-header-left {
+      display: flex !important;
+      align-items: center !important;
+      gap: 3.5mm !important;
+    }
+    .tt-logo-box {
+      width: 38px !important;
+      height: 38px !important;
+      min-width: 38px !important;
+      min-height: 38px !important;
+      max-width: 38px !important;
+      max-height: 38px !important;
+      border: 1.5px solid #d4af37 !important;
+      border-radius: 4px !important;
+      background: #0b1e36 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+      padding: 1.5px !important;
+    }
+    .tt-logo-img {
+      width: 34px !important;
+      height: 34px !important;
+      max-width: 34px !important;
+      max-height: 34px !important;
       object-fit: contain !important;
       display: block !important;
     }
-    /* Fixed layout table for pixel-perfect 1-page fit */
-    table {
+    .tt-brand-info {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.5px !important;
+    }
+    .tt-inst-title {
+      font-size: 15px !important;
+      font-weight: 900 !important;
+      color: #0b1e36 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      line-height: 1.1 !important;
+    }
+    .tt-inst-tagline {
+      font-size: 8.5px !important;
+      font-weight: 700 !important;
+      color: #b45309 !important;
+      font-style: italic !important;
+      letter-spacing: 0.5px !important;
+    }
+    .tt-inst-contact {
+      font-size: 7.5px !important;
+      font-weight: 500 !important;
+      color: #475569 !important;
+      margin-top: 0.5px !important;
+    }
+    .tt-inst-reg {
+      font-size: 7px !important;
+      font-weight: 700 !important;
+      color: #64748b !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.3px !important;
+    }
+    /* Header Right Badge */
+    .tt-header-right {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-end !important;
+      gap: 1.5px !important;
+    }
+    .tt-ribbon-badge {
+      background: #0b1e36 !important;
+      color: #fef3c7 !important;
+      border: 1px solid #d4af37 !important;
+      font-size: 8px !important;
+      font-weight: 900 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.8px !important;
+      padding: 1.5px 6px !important;
+      border-radius: 2px !important;
+    }
+    .tt-ay-badge {
+      font-size: 8.5px !important;
+      font-family: monospace !important;
+      font-weight: 800 !important;
+      color: #0b1e36 !important;
+    }
+    .tt-docket-badge {
+      font-size: 7.5px !important;
+      font-family: monospace !important;
+      color: #64748b !important;
+    }
+    .tt-verified-badge {
+      background: #ecfdf5 !important;
+      color: #065f46 !important;
+      border: 0.5px solid #a7f3d0 !important;
+      font-size: 7px !important;
+      font-weight: 800 !important;
+      padding: 0.5px 5px !important;
+      border-radius: 2px !important;
+    }
+    /* Telemetry Strip */
+    .tt-kpi-bar {
+      display: flex !important;
+      gap: 2.5mm !important;
+      margin: 1.5mm 0 !important;
+    }
+    .tt-kpi-box {
+      flex: 1 1 0% !important;
+      background: #f8fafc !important;
+      border: 1px solid #cbd5e1 !important;
+      border-left: 2.5px solid #0b1e36 !important;
+      border-radius: 3px !important;
+      padding: 1.5px 5px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+    }
+    .tt-kpi-lbl {
+      font-size: 6.5px !important;
+      font-weight: 800 !important;
+      text-transform: uppercase !important;
+      color: #64748b !important;
+      letter-spacing: 0.3px !important;
+    }
+    .tt-kpi-val {
+      font-size: 9.5px !important;
+      font-weight: 900 !important;
+      color: #0b1e36 !important;
+      line-height: 1.15 !important;
+    }
+    .tt-kpi-sub {
+      font-size: 6.5px !important;
+      color: #64748b !important;
+      font-weight: 500 !important;
+    }
+    /* Master Grid Table */
+    .tt-table-wrap {
+      width: 100% !important;
+      border: 1.5px solid #0b1e36 !important;
+      border-radius: 3px !important;
+      overflow: hidden !important;
+    }
+    .tt-table {
       width: 100% !important;
       border-collapse: collapse !important;
       table-layout: fixed !important;
-      border: 1.5px solid #0f172a !important;
     }
-    th, td {
-      border: 1px solid #334155 !important;
-      padding: 2px 2.5px !important;
-      vertical-align: top !important;
-      box-sizing: border-box !important;
-    }
-    th {
-      background-color: #f1f5f9 !important;
-      color: #0f172a !important;
-      font-weight: 800 !important;
+    .tt-th-day {
+      width: 65px !important;
+      background: #0b1e36 !important;
+      color: #fef3c7 !important;
+      font-size: 8px !important;
+      font-weight: 900 !important;
       text-align: center !important;
-      border-bottom: 2px solid #0f172a !important;
+      padding: 2px 3px !important;
+      border-right: 1px solid #1e3a5f !important;
+      border-bottom: 1.5px solid #d4af37 !important;
+      letter-spacing: 0.5px !important;
     }
-    tr {
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
+    .tt-th-period {
+      background: #0b1e36 !important;
+      color: #ffffff !important;
+      text-align: center !important;
+      padding: 2px 2px !important;
+      border-right: 1px solid #1e3a5f !important;
+      border-bottom: 1.5px solid #d4af37 !important;
     }
-    /* High contrast text guarantees readability even if background colors are stripped */
-    .docket-dark-text {
-      color: #0f172a !important;
+    .tt-th-period-title {
+      font-size: 8.5px !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
     }
-    .docket-sub-text {
+    .tt-th-period-time {
+      font-size: 7px !important;
+      font-family: monospace !important;
+      color: #fde68a !important;
+      font-weight: 600 !important;
+      margin-top: 0.5px !important;
+    }
+    /* Table Rows */
+    .tt-row {
+      border-bottom: 1px solid #cbd5e1 !important;
+      height: 15.5mm !important;
+      max-height: 15.5mm !important;
+    }
+    .tt-td-day {
+      background: #f1f5f9 !important;
+      border-right: 1px solid #cbd5e1 !important;
+      padding: 2px 4px !important;
+      vertical-align: middle !important;
+    }
+    .tt-day-content {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+    }
+    .tt-day-title {
+      font-size: 9px !important;
+      font-weight: 900 !important;
+      color: #0b1e36 !important;
+    }
+    .tt-day-count {
+      font-size: 7px !important;
+      font-weight: 800 !important;
+      padding: 0.5px 3.5px !important;
+      border-radius: 8px !important;
+      background: #dbeafe !important;
+      color: #1e40af !important;
+      border: 0.5px solid #93c5fd !important;
+    }
+    .tt-day-stream {
+      font-size: 6.5px !important;
+      font-weight: 700 !important;
+      color: #94a3b8 !important;
+      text-transform: uppercase !important;
+      margin-top: 1px !important;
+    }
+    .tt-td-cell {
+      padding: 1.5px 2px !important;
+      border-right: 1px solid #e2e8f0 !important;
+      vertical-align: top !important;
+      height: 15.5mm !important;
+    }
+    /* Session Card */
+    .tt-card {
+      height: 100% !important;
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-radius: 2.5px !important;
+      padding: 1.5px 3px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      box-shadow: 0 0.5px 1px rgba(0,0,0,0.04) !important;
+    }
+    .tt-card-header {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 2px !important;
+    }
+    .tt-card-subname {
+      font-size: 8.5px !important;
+      font-weight: 900 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      max-width: 75px !important;
+    }
+    .tt-card-code {
+      font-size: 6.5px !important;
+      font-weight: 800 !important;
+      padding: 0.5px 2.5px !important;
+      border-radius: 2px !important;
+      border: 0.5px solid #cbd5e1 !important;
+      white-space: nowrap !important;
+    }
+    .tt-card-div {
+      font-size: 7.5px !important;
+      font-weight: 800 !important;
+      color: #1e3a8a !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    .tt-card-teacher {
+      font-size: 7px !important;
+      font-weight: 600 !important;
       color: #334155 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
     }
-    .docket-muted-text {
+    .tt-card-footer {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      border-top: 0.5px solid #f1f5f9 !important;
+      padding-top: 1px !important;
+    }
+    .tt-card-room {
+      font-size: 6.5px !important;
+      font-weight: 800 !important;
+      background: #f8fafc !important;
+      color: #0b1e36 !important;
+      border: 0.5px solid #cbd5e1 !important;
+      padding: 0.5px 2.5px !important;
+      border-radius: 2px !important;
+    }
+    .tt-card-time {
+      font-size: 6.5px !important;
+      font-family: monospace !important;
+      color: #64748b !important;
+      font-weight: 600 !important;
+    }
+    /* Empty Card */
+    .tt-empty-card {
+      height: 100% !important;
+      border: 0.5px dashed #cbd5e1 !important;
+      background: #fafafa !important;
+      border-radius: 2.5px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .tt-empty-text {
+      font-size: 7px !important;
+      font-style: italic !important;
+      color: #94a3b8 !important;
+    }
+    /* Signatures */
+    .tt-signatures {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-end !important;
+      border-top: 1.5px solid #cbd5e1 !important;
+      padding-top: 2mm !important;
+      margin-top: 1mm !important;
+    }
+    .tt-sig-col {
+      width: 22% !important;
+      text-align: center !important;
+    }
+    .tt-sig-line {
+      width: 75% !important;
+      height: 7mm !important;
+      border-bottom: 1px solid #0b1e36 !important;
+      margin: 0 auto 1.5px !important;
+    }
+    .tt-sig-name {
+      font-size: 8px !important;
+      font-weight: 800 !important;
+      color: #0b1e36 !important;
+    }
+    .tt-sig-role {
+      font-size: 6.5px !important;
+      color: #64748b !important;
+      font-weight: 600 !important;
+    }
+    /* Official Stamp */
+    .tt-seal-col {
+      width: 22% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+    }
+    .tt-seal-circle {
+      width: 38px !important;
+      height: 38px !important;
+      border: 1.5px dashed #0b1e36 !important;
+      border-radius: 50% !important;
+      background: #f8fafc !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 1px !important;
+    }
+    .tt-seal-top {
+      font-size: 5px !important;
+      font-weight: 900 !important;
+      color: #0b1e36 !important;
+      text-transform: uppercase !important;
+    }
+    .tt-seal-stars {
+      font-size: 6.5px !important;
+      color: #d4af37 !important;
+      line-height: 1 !important;
+      margin: 0.5px 0 !important;
+    }
+    .tt-seal-bot {
+      font-size: 4.5px !important;
+      font-weight: 800 !important;
+      color: #0b1e36 !important;
+      text-transform: uppercase !important;
+    }
+    .tt-seal-sub {
+      font-size: 6px !important;
+      font-family: monospace !important;
+      color: #64748b !important;
+      margin-top: 1px !important;
+    }
+    /* Footer */
+    .tt-footer {
+      border-top: 0.5px solid #e2e8f0 !important;
+      padding-top: 1mm !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      font-size: 6.5px !important;
       color: #64748b !important;
     }
-    .docket-border-box {
-      border: 1px solid #0f172a !important;
+    .tt-footer-left {
+      display: flex !important;
+      align-items: center !important;
+      gap: 3px !important;
     }
-    @media print {
-      @page {
-        size: A4 landscape !important;
-        margin: 4mm 5mm !important;
-      }
-      html, body {
-        width: 287mm !important;
-        height: 202mm !important;
-        max-height: 202mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: hidden !important;
-        background: #ffffff !important;
-      }
-      #printable-timetable-docket {
-        border: 2px solid #0f172a !important;
-        max-height: 200mm !important;
-        overflow: hidden !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
+    .tt-footer-right {
+      font-family: monospace !important;
     }
     .no-print, .print-hidden, button, [role="button"] {
       display: none !important;
@@ -220,20 +575,12 @@ export function printTimetableDocketElement(
 
     // Ensure all images in cloned docket have strict inline constraints
     clonedDocket.querySelectorAll('img').forEach((img) => {
-      img.style.width = '42px'
-      img.style.height = '42px'
-      img.style.maxWidth = '42px'
-      img.style.maxHeight = '42px'
+      img.style.width = '34px'
+      img.style.height = '34px'
+      img.style.maxWidth = '34px'
+      img.style.maxHeight = '34px'
       img.style.objectFit = 'contain'
     })
-
-    // Collect parent stylesheets from document.head to preserve Tailwind styling
-    const parentStyles = Array.from(document.head.querySelectorAll('link[rel="stylesheet"], style'))
-      .map((el) => el.outerHTML)
-      .join('\n')
-
-    const safeOrigin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
-    const baseTag = safeOrigin ? `<base href="${escapeHtml(safeOrigin)}/" />` : ''
 
     iframeDoc.open()
     iframeDoc.write(`
@@ -241,9 +588,7 @@ export function printTimetableDocketElement(
       <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        ${baseTag}
         <title>${escapeHtml(title)}</title>
-        ${parentStyles}
         <style>
           ${getTimetableDocketPrintStyles()}
         </style>
@@ -257,7 +602,7 @@ export function printTimetableDocketElement(
     `)
     iframeDoc.close()
 
-    // Trigger print safely after stylesheets, fonts, and images have loaded
+    // Trigger print safely after stylesheets and images have loaded
     const triggerIframePrint = () => {
       try {
         iframe.contentWindow?.focus()
@@ -283,7 +628,7 @@ export function printTimetableDocketElement(
     const totalImages = images.length
 
     if (totalImages === 0) {
-      setTimeout(triggerIframePrint, 150)
+      setTimeout(triggerIframePrint, 250)
     } else {
       const checkAndPrint = () => {
         loadedCount++
@@ -303,9 +648,9 @@ export function printTimetableDocketElement(
       }
 
       if (loadedCount >= totalImages) {
-        setTimeout(triggerIframePrint, 150)
+        setTimeout(triggerIframePrint, 250)
       } else {
-        setTimeout(triggerIframePrint, 600)
+        setTimeout(triggerIframePrint, 800)
       }
     }
 
