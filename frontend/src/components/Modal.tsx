@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-17
+ * @updated     2026-11-21
  *
  * @description Accessible modal dialog component with backdrop blur, focus trap, and keyboard dismissal.
  */
@@ -25,7 +25,7 @@ export interface ModalProps {
   onClose: () => void
   title: string
   children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full'
 }
 
 export default function Modal({ open, isOpen, onClose, title, children, size = 'md' }: ModalProps) {
@@ -93,6 +93,9 @@ export default function Modal({ open, isOpen, onClose, title, children, size = '
     xl: 'max-w-2xl',
     '2xl': 'max-w-3xl',
     '3xl': 'max-w-5xl',
+    '4xl': 'max-w-6xl',
+    '5xl': 'max-w-7xl',
+    full: 'max-w-[96vw]',
   }
 
   return (

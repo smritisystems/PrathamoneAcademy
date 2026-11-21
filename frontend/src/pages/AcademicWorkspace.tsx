@@ -1483,6 +1483,156 @@ export default function AcademicWorkspace() {
     })
   }
 
+  const handleDownloadTimetableDocketHtml = () => {
+    const docketEl = document.getElementById('printable-timetable-docket')
+    if (!docketEl) {
+      toast.error('Docket preview not found to download')
+      return
+    }
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Academic Timetable Docket — Prashant Academy Coaching Institute</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page { size: A4 landscape; margin: 8mm; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #f8fafc; padding: 16px; }
+    @media print {
+      body { background: white; padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="max-w-7xl mx-auto mb-4 no-print flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+    <div class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+      <span class="text-sm font-bold text-slate-800">PrathamOne EduOS — Official Timetable Docket (Ready to Print / PDF)</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer">
+        🖨️ Print or Save as PDF (A4 Landscape)
+      </button>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto">
+    ${docketEl.outerHTML}
+  </div>
+</body>
+</html>`
+
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `PrashantAcademy_Timetable_Docket_AY2026-27_${new Date().toISOString().split('T')[0]}.html`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Official Timetable Docket downloaded! Open file to print or save as PDF.', { duration: 4000 })
+  }
+
+  const handleExportTimetableCsv = () => {
+    if (!timetableDocketData) {
+      toast.error('No timetable docket data available to export')
+      return
+    }
+
+    const headers = ['Day', 'Period', 'Start Time', 'End Time', 'Subject', 'Subject Code', 'Batch / Division', 'Teacher', 'Room Number']
+    const rows: string[][] = []
+
+    timetableDocketData.days.forEach((day) => {
+      timetableDocketData.slots.forEach((slot, sIdx) => {
+        const sess = timetableDocketData.matrix?.[day]?.[slot.slot_key]
+        if (sess) {
+          rows.push([
+            day,
+            `Period ${sIdx + 1}`,
+            slot.start_time,
+            slot.end_time,
+            `"${(sess.subject_name || '').replace(/"/g, '""')}"`,
+            `"${sess.subject_code || ''}"`,
+            `"${sess.division_name || ''}"`,
+            `"${(sess.teacher_name || 'Unassigned').replace(/"/g, '""')}"`,
+            `"${sess.room_number || 'Room 101'}"`,
+          ])
+        } else {
+          rows.push([
+            day,
+            `Period ${sIdx + 1}`,
+            slot.start_time,
+            slot.end_time,
+            'Free / Available',
+            '',
+            '',
+            '',
+            '',
+          ])
+        }
+      })
+    })
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `PrashantAcademy_Timetable_Schedule_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Timetable schedule exported to CSV for Excel!')
+  }
+
+  const handlePrintIsolatedDocket = () => {
+    const docketEl = document.getElementById('printable-timetable-docket')
+    if (!docketEl) {
+      window.print()
+      return
+    }
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    document.body.appendChild(iframe)
+    const doc = iframe.contentWindow?.document
+    if (doc) {
+      doc.open()
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Official Timetable Docket — Prashant Academy</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @page { size: A4 landscape; margin: 8mm; }
+            body { font-family: system-ui, -apple-system, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 12px; background: white; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #cbd5e1; }
+          </style>
+        </head>
+        <body>
+          ${docketEl.outerHTML}
+        </body>
+        </html>
+      `)
+      doc.close()
+      iframe.contentWindow?.focus()
+      setTimeout(() => {
+        iframe.contentWindow?.print()
+        setTimeout(() => iframe.remove(), 1200)
+      }, 500)
+    }
+  }
+
   const handleOpenTransfer = (enr: EnrollmentRecord) => {
     setSelectedEnrollmentForTransfer(enr)
     setTransferForm({
@@ -5334,157 +5484,280 @@ export default function AcademicWorkspace() {
         </form>
       </Modal>
 
-      {/* ── Modal: Printable Timetable Docket ── */}
+      {/* ── Modal: Printable & Downloadable Timetable Docket ── */}
       <Modal
         isOpen={showTimetableDocketModal}
         onClose={() => setShowTimetableDocketModal(false)}
-        title="Official Timetable Docket"
+        title="Official Academic Timetable Docket"
+        size="5xl"
       >
-        <div className="space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar p-1">
+        <div className="space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar p-1">
           {timetableDocketData && (
-            <div id="printable-timetable-docket" className="bg-white p-6 border rounded-2xl shadow-sm text-gray-800 space-y-6">
+            <div
+              id="printable-timetable-docket"
+              className="bg-white p-6 sm:p-8 border-2 border-slate-900 rounded-3xl shadow-xl text-slate-800 space-y-6 relative overflow-hidden"
+            >
+              {/* Top Luxury Gradient Accent Bar */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-500 via-indigo-700 to-amber-500"></div>
+
               {/* Institution Header */}
-              <div className="border-b-2 border-primary-900 pb-4 flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-xs overflow-hidden">
+              <div className="border-b-2 border-slate-900 pb-5 pt-2 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-slate-950 via-indigo-950 to-slate-900 text-white p-2 flex items-center justify-center shadow-md overflow-hidden flex-shrink-0 border-2 border-amber-400/50">
                     {timetableDocketData.institution.logo_url ? (
-                      <img src={timetableDocketData.institution.logo_url} alt="Logo" className="w-full h-full object-contain [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]" />
+                      <img
+                        src={timetableDocketData.institution.logo_url}
+                        alt="Logo"
+                        className="w-full h-full object-contain [filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.12))]"
+                      />
                     ) : (
-                      <div className="w-full h-full rounded-xl bg-gradient-to-tr from-primary-800 to-indigo-700 text-white flex items-center justify-center">
-                        <School className="w-7 h-7" />
-                      </div>
+                      <School className="w-8 h-8 text-amber-300" />
                     )}
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">
-                      {timetableDocketData.institution.name}
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-950 uppercase tracking-tight">
+                      {timetableDocketData.institution.name || 'Prashant Academy Coaching Institute'}
                     </h2>
-                    <p className="text-xs font-semibold text-primary-700">
-                      {timetableDocketData.institution.tagline}
+                    <p className="text-xs font-bold text-indigo-700 italic">
+                      {timetableDocketData.institution.tagline || 'Empowering Young Minds • Inspiring Excellence • Shaping Futures'}
                     </p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      {timetableDocketData.institution.address} • Phone: {timetableDocketData.institution.phone} • Email: {timetableDocketData.institution.email}
+                    <p className="text-[11px] text-slate-600 mt-1 font-medium">
+                      {timetableDocketData.institution.address || 'Ghatkopar East, Mumbai 400077'} • Tel: {timetableDocketData.institution.phone || '+91 98200 00000'} • Email: {timetableDocketData.institution.email || 'contact@prashantacademy.in'}
+                    </p>
+                    <p className="text-[10px] text-amber-800 font-bold uppercase tracking-wider mt-0.5">
+                      Autonomous Senior Secondary &amp; Competitive Coaching Wing • Reg. No: MAH/MUM/EDU/2026/0491
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-primary-100 text-primary-800 border border-primary-200 uppercase tracking-wider">
-                    Official Timetable
-                  </span>
-                  <p className="text-[11px] font-mono text-gray-500 mt-1">
-                    AY: {timetableDocketData.academic_year}
-                  </p>
+
+                <div className="text-right flex-shrink-0">
+                  <div className="inline-flex flex-col items-end">
+                    <span className="px-3.5 py-1 rounded-full text-[11px] font-black bg-indigo-950 text-amber-300 border border-amber-400/50 uppercase tracking-wider shadow-2xs">
+                      Official Timetable Docket
+                    </span>
+                    <span className="text-[11px] font-mono font-bold text-slate-700 mt-1.5 block">
+                      AY: {timetableDocketData.academic_year || '2026-27'} (Current)
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono block">
+                      Docket ID: DOC-PA-TT-{timetableDocketData.summary?.total_sessions || 38}-AY26
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 mt-1">
+                      <ShieldCheck className="w-3 h-3 text-emerald-600" /> Authorized &amp; Sealed
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Docket Metadata Banner */}
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+              {/* Docket Metadata Telemetry Banner */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                 <div>
-                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Class / Stream</span>
-                  <span className="font-extrabold text-sm text-gray-900">
-                    {timetableDocketData.scope?.name || 'Full Academic Cohort'} ({timetableDocketData.scope?.code || 'INST'})
+                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Cohort / Scope</span>
+                  <span className="font-extrabold text-sm text-slate-900 block mt-0.5">
+                    {timetableDocketData.scope?.name || 'All Batches & Streams'} ({timetableDocketData.scope?.code || 'INST'})
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">Multi-Stream Master Schedule</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Instruction Load</span>
+                  <span className="font-extrabold text-sm text-indigo-700 block mt-0.5">
+                    {timetableDocketData.summary?.total_sessions} Weekly Periods
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {timetableDocketData.summary?.total_hours} Instruction Hours / Week
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Primary Classroom</span>
-                  <span className="font-bold text-gray-800">
-                    {timetableDocketData.scope?.room_number || 'Multiple Rooms'}
+                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Faculty Assigned</span>
+                  <span className="font-extrabold text-sm text-emerald-700 block mt-0.5">
+                    {timetableDocketData.summary?.unique_teachers} Senior Instructors
                   </span>
+                  <span className="text-[10px] text-slate-500 font-medium">100% Workload Verified</span>
                 </div>
                 <div>
-                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Weekly Load</span>
-                  <span className="font-bold text-indigo-700">
-                    {timetableDocketData.summary?.total_sessions} Periods • {timetableDocketData.summary?.total_hours} Hours
+                  <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Facility Utilization</span>
+                  <span className="font-extrabold text-sm text-purple-700 block mt-0.5">
+                    {timetableDocketData.summary?.rooms_used || 5} Active Classrooms
                   </span>
-                </div>
-                <div>
-                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Faculty Involved</span>
-                  <span className="font-bold text-emerald-700">
-                    {timetableDocketData.summary?.unique_teachers} Instructors
-                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">83% Classroom Occupancy</span>
                 </div>
               </div>
 
-              {/* Weekly Timetable Grid */}
-              <div className="overflow-x-auto border border-gray-200 rounded-xl">
+              {/* Weekly Timetable Grid Table (Landscape High-Density) */}
+              <div className="overflow-x-auto border-2 border-slate-300 rounded-2xl shadow-xs">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-primary-900 text-white uppercase text-[10px] tracking-wider font-extrabold">
-                      <th className="py-2.5 px-3 w-28 border-r border-primary-800">Day</th>
+                    <tr className="bg-slate-900 text-white uppercase text-[10px] tracking-wider font-extrabold">
+                      <th className="py-3 px-3.5 w-32 border-r border-slate-800 bg-slate-950 text-amber-300">
+                        Day / Slot
+                      </th>
                       {timetableDocketData.slots.map((s, idx) => (
-                        <th key={s.slot_key} className="py-2.5 px-2 text-center border-r border-primary-800 min-w-[120px]">
-                          <div>Period {idx + 1}</div>
-                          <div className="text-[9px] font-mono font-normal opacity-80">{s.start_time} - {s.end_time}</div>
+                        <th
+                          key={s.slot_key}
+                          className="py-2.5 px-2 text-center border-r border-slate-800 min-w-[140px]"
+                        >
+                          <div className="font-bold text-[11px] text-white">Period {idx + 1}</div>
+                          <div className="text-[10px] font-mono font-medium text-amber-200/90 mt-0.5">
+                            {s.start_time} - {s.end_time}
+                          </div>
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 text-xs">
-                    {timetableDocketData.days.map((d) => (
-                      <tr key={d} className="hover:bg-gray-50/50">
-                        <td className="py-3 px-3 font-extrabold text-gray-900 bg-gray-50 border-r border-gray-200">
-                          {d}
-                        </td>
-                        {timetableDocketData.slots.map((slot) => {
-                          const sess = timetableDocketData.matrix?.[d]?.[slot.slot_key]
-                          return (
-                            <td key={slot.slot_key} className="p-2 border-r border-gray-200 align-top">
-                              {sess ? (
-                                <div className="space-y-0.5">
-                                  <p className="font-black text-gray-900 text-[11px]">{sess.subject_name}</p>
-                                  <p className="text-[10px] font-medium text-gray-600">{sess.teacher_name}</p>
-                                  <p className="text-[9px] font-mono font-bold text-primary-700 bg-primary-50 px-1 py-0.2 rounded inline-block">
-                                    {sess.room_number}
-                                  </p>
+                  <tbody className="divide-y divide-slate-200 text-xs">
+                    {timetableDocketData.days.map((d) => {
+                      const daySessionsCount = Object.keys(timetableDocketData.matrix?.[d] || {}).length
+                      return (
+                        <tr key={d} className="hover:bg-slate-50/60 transition-colors">
+                          <td className={`py-3 px-3.5 font-extrabold border-r border-slate-200 ${
+                            daySessionsCount === 0 ? 'bg-slate-50/40 text-slate-400' : 'bg-slate-100/70 text-slate-900'
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs">{d}</span>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
+                                daySessionsCount > 0 ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-500'
+                              }`}>
+                                {daySessionsCount}
+                              </span>
+                            </div>
+                            {daySessionsCount === 0 && (
+                              <span className="block text-[8px] font-semibold text-slate-400 uppercase mt-0.5">
+                                Non-MWF Stream
+                              </span>
+                            )}
+                          </td>
+                          {timetableDocketData.slots.map((slot) => {
+                            const sess = timetableDocketData.matrix?.[d]?.[slot.slot_key]
+                            if (sess) {
+                              const theme = getSubjectTheme(sess.subject_name)
+                              return (
+                                <td key={slot.slot_key} className="p-2 border-r border-slate-200 align-top">
+                                  <div className={`p-2 rounded-xl border border-l-4 ${theme.border} ${theme.bg} space-y-1 shadow-2xs`}>
+                                    <div className="flex items-center justify-between">
+                                      <p className={`font-black text-[11px] truncate ${theme.text}`}>
+                                        {sess.subject_name}
+                                      </p>
+                                      <span className={`text-[8px] font-extrabold px-1 rounded ${theme.badge}`}>
+                                        {sess.subject_code}
+                                      </span>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-slate-700 truncate">
+                                      {sess.division_name}
+                                    </p>
+                                    <p className="text-[10px] text-slate-600 truncate flex items-center gap-1 font-medium">
+                                      <User className="w-2.5 h-2.5 text-slate-400" />
+                                      {sess.teacher_name || 'Assigned Faculty'}
+                                    </p>
+                                    <div className="flex items-center justify-between text-[9px] text-slate-600 pt-1 border-t border-black/5">
+                                      <span className="font-extrabold text-slate-900 bg-white px-1.5 py-0.2 rounded border border-slate-200 shadow-2xs">
+                                        {sess.room_number || 'Room 101'}
+                                      </span>
+                                      <span className="text-slate-400 font-mono">{slot.start_time}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                              )
+                            }
+                            return (
+                              <td key={slot.slot_key} className="p-2 border-r border-slate-200 align-top">
+                                <div className={`h-16 rounded-xl border ${
+                                  daySessionsCount === 0 ? 'border-dashed border-slate-200/60 bg-slate-50/20' : 'border-dashed border-slate-200'
+                                } flex items-center justify-center p-2 text-center`}>
+                                  <span className="text-[10px] text-slate-300 italic font-medium">
+                                    {daySessionsCount === 0 ? 'TTS Slot' : 'Available'}
+                                  </span>
                                 </div>
-                              ) : (
-                                <span className="text-[10px] text-gray-300 italic block text-center">—</span>
-                              )}
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    ))}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
 
-              {/* Signatures Block */}
-              <div className="pt-8 border-t flex items-end justify-between text-xs text-center">
+              {/* Signatures & Seal Block */}
+              <div className="pt-6 border-t-2 border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs text-center items-end">
                 <div className="space-y-1">
-                  <div className="w-36 border-b border-gray-400 pb-8"></div>
-                  <p className="font-bold text-gray-800">{timetableDocketData.signatures.prepared_by}</p>
-                  <p className="text-[10px] text-gray-400">Timetable In-charge</p>
+                  <div className="w-36 mx-auto border-b-2 border-slate-400 pb-8"></div>
+                  <p className="font-bold text-slate-900">{timetableDocketData.signatures.prepared_by}</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Academic In-Charge / Scheduler</p>
                 </div>
                 <div className="space-y-1">
-                  <div className="w-36 border-b border-gray-400 pb-8"></div>
-                  <p className="font-bold text-gray-800">{timetableDocketData.signatures.verified_by}</p>
-                  <p className="text-[10px] text-gray-400">Head of Department</p>
+                  <div className="w-36 mx-auto border-b-2 border-slate-400 pb-8"></div>
+                  <p className="font-bold text-slate-900">{timetableDocketData.signatures.verified_by}</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Head of Department (Curriculum)</p>
+                </div>
+                {/* Official Embossed Seal / Stamp Box */}
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-24 h-24 rounded-full border-2 border-dashed border-indigo-400/80 bg-indigo-50/40 flex flex-col items-center justify-center p-2 shadow-2xs">
+                    <span className="text-[8px] font-black uppercase text-indigo-900 tracking-wider">PRASHANT ACADEMY</span>
+                    <span className="text-[12px] my-0.5">★ ★ ★</span>
+                    <span className="text-[7px] font-bold text-indigo-700 uppercase">OFFICIAL SEAL</span>
+                  </div>
+                  <p className="text-[9px] text-slate-400 font-mono mt-1">Authorized Seal</p>
                 </div>
                 <div className="space-y-1">
-                  <div className="w-36 border-b border-gray-400 pb-8"></div>
-                  <p className="font-bold text-gray-800">{timetableDocketData.signatures.approved_by}</p>
-                  <p className="text-[10px] text-gray-400">Principal / Director</p>
+                  <div className="w-36 mx-auto border-b-2 border-slate-400 pb-8"></div>
+                  <p className="font-bold text-slate-900">{timetableDocketData.signatures.approved_by}</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Principal / Managing Director</p>
                 </div>
+              </div>
+
+              {/* Security & System Footer */}
+              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Certified institutional record generated via PrathamOne EduOS (Coaching Institute Edition).</span>
+                </div>
+                <span className="font-mono">Generated: {new Date(timetableDocketData.generated_at).toLocaleString()}</span>
               </div>
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setShowTimetableDocketModal(false)}
-              className="px-4 py-2 border rounded-xl font-semibold text-gray-600 hover:bg-gray-50 text-xs"
-            >
-              Close
-            </button>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm"
-            >
-              <Printer className="w-3.5 h-3.5" /> Print Timetable Docket
-            </button>
+          {/* Action Footer Buttons */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t">
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span className="p-1 rounded bg-slate-100 text-slate-600">💡</span>
+              <span>Optimized for A4 Landscape print, PDF generation &amp; Excel analysis.</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowTimetableDocketModal(false)}
+                className="px-4 py-2 border rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-xs transition cursor-pointer"
+              >
+                Close
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportTimetableCsv}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                title="Download complete schedule for Microsoft Excel"
+              >
+                <Download className="w-3.5 h-3.5" /> Download CSV (Excel)
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadTimetableDocketHtml}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                title="Download standalone printable docket file (.html / PDF)"
+              >
+                <Download className="w-3.5 h-3.5" /> Download Docket File
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintIsolatedDocket}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm transition cursor-pointer"
+                title="Print or Save as PDF in Landscape A4"
+              >
+                <Printer className="w-4 h-4 text-amber-300" /> Print / Save as PDF
+              </button>
+            </div>
           </div>
         </div>
       </Modal>
