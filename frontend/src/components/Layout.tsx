@@ -31,6 +31,7 @@ import { useNavigationTracker } from '../hooks/useNavigationTracker'
 import GlobalNavigationSearch from './navigation/GlobalNavigationSearch'
 import MenuCustomizerModal from './navigation/MenuCustomizerModal'
 import InitialLaunchActivationModal from './InitialLaunchActivationModal'
+import ForcePasswordChangeModal from './ForcePasswordChangeModal'
 import { useEditModeStore } from '../store/editModeStore'
 import { institutionsApi, academicYearsApi, licenseApi } from '../api/endpoints'
 import { usePWA } from '../hooks/usePWA'
@@ -451,6 +452,9 @@ export default function Layout() {
         licenseStatus={licenseStatus}
         institutionId={selectedInstitutionId ?? undefined}
       />
+
+      {/* Mandatory First-Run Master Password Change Modal */}
+      <ForcePasswordChangeModal isOpen={Boolean(user?.must_change_password)} />
     </div>
   )
 }

@@ -163,6 +163,7 @@ async def login(
     is_default_password = (
         verify_password("admin123", user.hashed_password)
         or verify_password("PrathamOne2026!Admin", user.hashed_password)
+        or verify_password("Admin@2026!", user.hashed_password)
         or verify_password("account123", user.hashed_password)
     )
 
@@ -272,7 +273,7 @@ async def change_password(
             detail="New password must be at least 14 characters in length.",
         )
 
-    disallowed = {"admin123", "account123", "PrathamOne2026!Admin", "password123"}
+    disallowed = {"admin123", "account123", "PrathamOne2026!Admin", "Admin@2026!", "password123"}
     if new_pwd in disallowed:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

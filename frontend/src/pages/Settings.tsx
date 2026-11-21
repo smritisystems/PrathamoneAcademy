@@ -2995,6 +2995,28 @@ export default function Settings() {
                             Real-time biometric attendance integration for students and teaching faculty.
                           </p>
                         </div>
+
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-2xs space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                              <MessageSquare className="w-4 h-4 text-emerald-600" />
+                              <span>WhatsApp Business Cloud API</span>
+                            </h4>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                              Meta Cloud &amp; Webhooks
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Automated parent alerts for fee receipts, instant absent SMS/WhatsApp, and exam scorecards.
+                          </p>
+                          <Link
+                            to="/communication/settings"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-900 pt-1"
+                          >
+                            <span>Open WhatsApp &amp; DLT Gateway Settings</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   )}

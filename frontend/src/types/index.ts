@@ -28,6 +28,7 @@ export interface User {
   institution_id?: number
   is_active?: boolean
   permissions?: string[]
+  must_change_password?: boolean
 }
 
 export interface LicenseRegistration {

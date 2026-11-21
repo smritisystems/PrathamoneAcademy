@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Centralized API client functions mapping all backend endpoints for academic, fees, and students.
  */
@@ -123,6 +123,11 @@ export const authApi = {
     })
   },
   logout: () => apiClient.post<{ message: string }>('/auth/logout'),
+  changePassword: (current_password: string, new_password: string) =>
+    apiClient.post<{ message: string }>('/auth/change-password', {
+      current_password,
+      new_password,
+    }),
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
