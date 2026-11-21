@@ -2967,6 +2967,25 @@ export const planningApi = {
 
   downloadAttachment: (id: number | string) =>
     apiClient.get(`/planning/attachments/${id}/download`, { responseType: 'blob' }),
+
+  getTasksSummary: (institutionId?: number) =>
+    apiClient.get<{
+      total_tasks: number
+      todo: number
+      in_progress: number
+      completed: number
+      urgent: number
+      overdue: number
+    }>('/planning/tasks/summary', { params: { institution_id: institutionId } }),
+
+  syncOverdueFeeTasks: (institutionId?: number, academicYearId?: number) =>
+    apiClient.post<{
+      overdue_invoices_scanned: number
+      tasks_created: number
+      tasks_already_active: number
+    }>('/planning/tasks/sync-fee-overdue', null, {
+      params: { institution_id: institutionId, academic_year_id: academicYearId },
+    }),
 }
 
 export const reportIntelligenceApi = {

@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-10
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Canonical Module Registry (SSOT) defining all application workspaces, icons, routes, and permissions.
  */
@@ -240,14 +240,19 @@ export const CANONICAL_MODULE_REGISTRY: ModuleDefinition[] = [
   },
   {
     id: 'planning',
-    label: 'Planning & Activities',
+    label: 'Tasks & Planning Center',
     category: 'operations',
     defaultPath: '/planning',
     icon: CalendarDays,
     iconName: 'CalendarDays',
-    description: 'One activity system for calendar, Kanban, agenda, and timeline views.',
+    description: 'Universal task management, Kanban board, calendar deadlines, and institutional activity tracking.',
     requiredPermission: 'planning:view',
-    subItems: [],
+    subItems: [
+      { id: 'planning_kanban', label: 'Tasks Kanban Board', to: '/planning?view=kanban' },
+      { id: 'planning_calendar', label: 'Deadlines & Calendar', to: '/planning?view=calendar' },
+      { id: 'planning_agenda', label: 'Daily Agenda', to: '/planning?view=agenda' },
+      { id: 'planning_timeline', label: 'Workload & Timeline', to: '/planning?view=timeline' },
+    ],
   },
   {
     id: 'homework',

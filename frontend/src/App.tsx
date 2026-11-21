@@ -11,7 +11,7 @@
  *
  * @version     1.0.0
  * @created     2026-11-03
- * @updated     2026-11-19
+ * @updated     2026-11-21
  *
  * @description Root React application component defining client-side routing, route guards, and suspense fallbacks.
  */
@@ -357,7 +357,12 @@ export default function App() {
           <Route path="examinations/report-cards" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           <Route path="examinations/papers" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
           <Route path="examinations/settings" element={<Suspense fallback={<PageLoader />}><ExaminationsPage /></Suspense>} />
-          {/* Homework & Assignment Dedicated Workspaces */}
+          {/* Universal Task Management & Planning Center */}
+          <Route path="tasks" element={<Navigate to="/planning?view=kanban" replace />} />
+          <Route path="tasks/kanban" element={<Navigate to="/planning?view=kanban" replace />} />
+          <Route path="tasks/calendar" element={<Navigate to="/planning?view=calendar" replace />} />
+          <Route path="tasks/agenda" element={<Navigate to="/planning?view=agenda" replace />} />
+          <Route path="tasks/timeline" element={<Navigate to="/planning?view=timeline" replace />} />
           <Route path="planning" element={<Suspense fallback={<PageLoader />}><PlanningWorkspacePage /></Suspense>} />
           <Route path="homework" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />
           <Route path="homework/overview" element={<Suspense fallback={<PageLoader />}><HomeworkWorkspacePage /></Suspense>} />

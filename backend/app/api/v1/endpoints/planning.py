@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-16
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Institution-scoped planning activity APIs, safe attachments, recurrence exceptions, and audit history.
 #  */
@@ -55,6 +55,10 @@ from app.models.planning import (
 )
 from app.models.staff import StaffProfile
 from app.models.user import AuditLog, User
+from app.services.auto_task_service import (
+    get_task_metrics_summary,
+    sync_overdue_fee_tasks,
+)
 from app.services.planning_service import (
     ACTIVITY_TYPES,
     PRIORITIES,
@@ -1022,3 +1026,46 @@ async def download_activity_attachment(
         media_type=attachment.mime_type,
         filename=attachment.original_filename,
     )
+
+
+@router.get("/tasks/summary")
+async def get_tasks_summary(
+    institution_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Returns aggregated task metrics (total, todo, in_progress, completed, urgent, overdue).
+    """
+    await require_planning_permission(db, current_user, "view")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    return await get_task_metrics_summary(db, effective_inst_id, current_user.id)
+
+
+@router.post("/tasks/sync-fee-overdue")
+async def sync_fee_overdue_tasks(
+    institution_id: Optional[int] = Query(None),
+    academic_year_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Scans for overdue fee invoices and generates/updates automated collection tasks.
+    Idempotent and anti-spam protected.
+    """
+    await require_planning_permission(db, current_user, "create")
+    effective_inst_id = institution_id or current_user.institution_id
+    if effective_inst_id is None and not is_sysadmin(current_user):
+        raise HTTPException(status_code=400, detail="Institution context required.")
+    effective_inst_id = effective_inst_id or 1
+    result = await sync_overdue_fee_tasks(
+        db,
+        institution_id=effective_inst_id,
+        academic_year_id=academic_year_id,
+        created_by_id=current_user.id,
+    )
+    await db.commit()
+    return result

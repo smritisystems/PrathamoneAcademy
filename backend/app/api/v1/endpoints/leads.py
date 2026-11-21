@@ -16,7 +16,7 @@
 #  * @description REST API router for Lead Management & CRM: Enquiries, Kanban Pipeline, Follow-ups, Demo Classes, and Lead-to-Admission Conversion.
 #  */
 
-from datetime import datetime, date, timezone, timedelta
+from datetime import datetime, date, time, timezone, timedelta
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
@@ -56,6 +56,10 @@ from app.services.fee_invoice_service import (
     issue_fee_invoice,
 )
 from app.services.concession_service import ConcessionWorkflowService
+from app.services.auto_task_service import (
+    create_automated_task,
+    resolve_automated_tasks,
+)
 
 router = APIRouter()
 
@@ -1723,6 +1727,18 @@ async def update_lead_stage(
             details=json.dumps({"from_stage": old_stage, "to_stage": target_stage, "reason": data.lost_reason}),
         )
     )
+
+    # ─── UNIVERSAL TASK ENGINE: AUTO-RESOLVE TASKS ON TERMINAL STAGES ─────────
+    if target_stage in ("converted", "lost", "archived"):
+        await resolve_automated_tasks(
+            db=db,
+            institution_id=effective_inst_id,
+            source_type="lead",
+            source_record_id=lead.id,
+            resolution_status="completed" if target_stage == "converted" else "cancelled",
+            actor_id=current_user.id,
+        )
+
     await db.commit()
     await db.refresh(lead)
 
@@ -1781,6 +1797,29 @@ async def add_lead_follow_up(
             details=json.dumps({"type": data.follow_up_type, "outcome": data.outcome, "next_follow_up": str(next_follow)}),
         )
     )
+
+    # ─── UNIVERSAL TASK ENGINE: CREATE AUTOMATED TASK ON NEXT FOLLOW-UP ───────
+    if next_follow:
+        due_dt = (
+            next_follow
+            if isinstance(next_follow, datetime)
+            else datetime.combine(next_follow, time(10, 0, tzinfo=timezone.utc))
+        )
+        if due_dt.tzinfo is None:
+            due_dt = due_dt.replace(tzinfo=timezone.utc)
+        await create_automated_task(
+            db=db,
+            institution_id=effective_inst_id,
+            title=f"Lead Follow-up: {lead.student_name or lead.contact_person or 'Student'}",
+            description=f"Scheduled follow-up for lead #{lead.id}. Outcome of last interaction: {data.outcome or 'N/A'}. Remarks: {remarks_text}",
+            due_at=due_dt,
+            source_type="lead",
+            source_record_id=lead.id,
+            priority="high" if (lead.priority or "").lower() in ("high", "urgent", "hot") else "normal",
+            assignee_user_ids=[lead.assigned_to_id] if lead.assigned_to_id else [current_user.id],
+            created_by_id=current_user.id,
+        )
+
     await db.commit()
     await db.refresh(log)
 
@@ -2256,6 +2295,17 @@ async def convert_lead_to_admission(
             }),
         )
     )
+
+    # ─── UNIVERSAL TASK ENGINE: AUTO-RESOLVE LEAD TASKS ON CONVERSION ────────
+    await resolve_automated_tasks(
+        db=db,
+        institution_id=effective_inst_id,
+        source_type="lead",
+        source_record_id=lead.id,
+        resolution_status="completed",
+        actor_id=current_user.id,
+    )
+
     await db.commit()
 
     # If an admission-time concession / promotional offer / scholarship was nominated, submit through canonical approval workflow

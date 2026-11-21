@@ -11,7 +11,7 @@
 #  *
 #  * @version     1.0.0
 #  * @created     2026-11-05
-#  * @updated     2026-11-18
+#  * @updated     2026-11-21
 #  *
 #  * @description Service managing payment lifecycle states, ERP approval rules, audited modifications, receipt versioning, and refunds.
 #  */
@@ -37,6 +37,7 @@ from app.models.student import Student
 from app.models.settings import InstitutionSetting
 from app.models.user import User, AuditLog
 from app.services.sequence import generate_next_receipt_number
+from app.services.auto_task_service import resolve_automated_tasks
 
 
 DEFAULT_WORKFLOW_SETTINGS = {
@@ -585,6 +586,15 @@ async def execute_payment_posting(
         )
         if invoice.outstanding_amount == Decimal("0.00"):
             invoice.status = "paid"
+            # Auto-resolve fee collection tasks to eliminate ghost tasks
+            await resolve_automated_tasks(
+                db=db,
+                institution_id=effective_institution_id,
+                source_type="fee_invoice",
+                source_record_id=invoice.id,
+                resolution_status="completed",
+                actor_id=current_user_id,
+            )
         elif invoice.paid_amount > Decimal("0.00"):
             invoice.status = "partial"
 

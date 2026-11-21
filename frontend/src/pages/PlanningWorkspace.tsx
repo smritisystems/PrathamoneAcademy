@@ -11,12 +11,13 @@
  *
  * @version     1.0.0
  * @created     2026-11-16
- * @updated     2026-11-18
+ * @updated     2026-11-21
  *
  * @description Unified, responsive planning workspace with calendar, Kanban, agenda, and timeline views.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft, ArrowRight, CalendarDays, Clock3, GripVertical, KanbanSquare,
@@ -362,12 +363,36 @@ export default function PlanningWorkspace() {
   const queryClient = useQueryClient()
   const { selectedInstitutionId, selectedAcademicYearId, user } = useAuthStore()
   const isEditMode = useEditModeStore((state) => !!state.scopes[editScope])
+  const [searchParams, setSearchParams] = useSearchParams()
+  const viewParam = searchParams.get('view') as PlanningView | null
+  const isValidView = (v: string | null): v is PlanningView =>
+    v !== null && ['calendar', 'week', 'day', 'kanban', 'agenda', 'timeline'].includes(v)
+
   const [view, setView] = useState<PlanningView>(() => {
+    if (isValidView(viewParam)) {
+      return viewParam
+    }
     if (typeof window !== 'undefined' && window.matchMedia?.('(min-width: 768px)').matches) {
       return 'calendar'
     }
     return 'agenda'
   })
+
+  // Synchronize view state if URL query param changes
+  useEffect(() => {
+    if (isValidView(viewParam) && viewParam !== view) {
+      setView(viewParam)
+    }
+  }, [viewParam])
+
+  const handleSelectView = (newView: PlanningView) => {
+    setView(newView)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('view', newView)
+      return next
+    }, { replace: true })
+  }
   const [focusDate, setFocusDate] = useState(() =>
     parsePlanningDateKey(planningDateKey(new Date(), 'Asia/Kolkata')),
   )
@@ -395,10 +420,14 @@ export default function PlanningWorkspace() {
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)')
-    const updateView = () => setView((current) => current === 'agenda' && media.matches ? 'calendar' : current)
+    const updateView = () => {
+      if (!isValidView(viewParam)) {
+        setView((current) => current === 'agenda' && media.matches ? 'calendar' : current)
+      }
+    }
     media.addEventListener('change', updateView)
     return () => media.removeEventListener('change', updateView)
-  }, [])
+  }, [viewParam])
 
   const { startDate, endDate, calendarDays } = useMemo(() => {
     if (view === 'day') {
@@ -589,7 +618,34 @@ export default function PlanningWorkspace() {
     return map
   }, [filteredItems, timeZone])
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['planning-activities'] })
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['planning-activities'] })
+    queryClient.invalidateQueries({ queryKey: ['planning-task-summary'] })
+  }
+
+  const { data: taskSummary } = useQuery({
+    queryKey: ['planning-task-summary', selectedInstitutionId],
+    queryFn: async () => {
+      const res = await planningApi.getTasksSummary(selectedInstitutionId || undefined)
+      return res.data
+    },
+    enabled: !!selectedInstitutionId,
+  })
+
+  const syncOverdueMutation = useMutation({
+    mutationFn: async () => {
+      const res = await planningApi.syncOverdueFeeTasks(selectedInstitutionId || undefined, selectedAcademicYearId || undefined)
+      return res.data
+    },
+    onSuccess: (data) => {
+      toast.success(`Task Sync: ${data.tasks_created} new task(s) created, ${data.tasks_already_active} active.`)
+      refresh()
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.detail || 'Failed to sync overdue tasks.')
+    },
+  })
+
   const createMutation = useMutation({
     mutationFn: (payload: PlanningPayload) => planningApi.createActivity(payload),
     onSuccess: () => {
@@ -1211,7 +1267,7 @@ export default function PlanningWorkspace() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => { setFocusDate(day); setView('day') }}
+                    onClick={() => { setFocusDate(day); handleSelectView('day') }}
                     className={`text-sm font-bold ${isToday ? 'text-indigo-600' : 'text-slate-800'} hover:underline`}
                   >
                     {calendarDateLabel(day, { month: 'short', day: 'numeric' })}
@@ -1553,25 +1609,66 @@ export default function PlanningWorkspace() {
             <CalendarDays className="h-4 w-4" />
             <span className="font-semibold">PrathamOne EduOS</span>
           </div>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">Planning & Activities</h1>
-          <p className="mt-1 text-sm text-slate-500">One governed activity system across calendar, work queues, and schedules.</p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">Tasks & Planning Center</h1>
+          <p className="mt-1 text-sm text-slate-500">Universal institutional task management, Kanban board, calendar deadlines, and cross-module activity tracking.</p>
         </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          disabled={!isEditMode}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-          title={!isEditMode ? 'Enable Edit Mode to create an activity' : undefined}
-        >
-          <Plus className="h-4 w-4" /> New activity
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => syncOverdueMutation.mutate()}
+            disabled={!isEditMode || syncOverdueMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            title={!isEditMode ? 'Enable Edit Mode to sync automated tasks' : 'Scan and generate automated tasks for overdue fees'}
+          >
+            <RefreshCw className={`h-4 w-4 ${syncOverdueMutation.isPending ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
+            <span className="hidden sm:inline">Sync Overdue Tasks</span>
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            disabled={!isEditMode}
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            title={!isEditMode ? 'Enable Edit Mode to create an activity' : undefined}
+          >
+            <Plus className="h-4 w-4" /> New activity
+          </button>
+        </div>
       </div>
 
       <EditModeBar
         scope={editScope}
-        title="Planning & Activities"
+        title="Tasks & Planning Center"
         requiredPermission="planning:create,planning:edit,planning:edit_any,planning:complete,planning:cancel,planning:delete"
       />
+
+      {taskSummary && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="text-xs font-medium text-slate-500">Total Tasks</div>
+            <div className="mt-1 text-xl font-bold text-slate-800">{taskSummary.total_tasks}</div>
+          </div>
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 shadow-sm">
+            <div className="text-xs font-medium text-blue-600">To Do</div>
+            <div className="mt-1 text-xl font-bold text-blue-800">{taskSummary.todo}</div>
+          </div>
+          <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-3 shadow-sm">
+            <div className="text-xs font-medium text-amber-600">In Progress</div>
+            <div className="mt-1 text-xl font-bold text-amber-800">{taskSummary.in_progress}</div>
+          </div>
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 shadow-sm">
+            <div className="text-xs font-medium text-emerald-600">Completed</div>
+            <div className="mt-1 text-xl font-bold text-emerald-800">{taskSummary.completed}</div>
+          </div>
+          <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-3 shadow-sm">
+            <div className="text-xs font-medium text-rose-600">Urgent</div>
+            <div className="mt-1 text-xl font-bold text-rose-800">{taskSummary.urgent}</div>
+          </div>
+          <div className="rounded-xl border border-orange-100 bg-orange-50/50 p-3 shadow-sm">
+            <div className="text-xs font-medium text-orange-600">Overdue</div>
+            <div className="mt-1 text-xl font-bold text-orange-800">{taskSummary.overdue}</div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
@@ -1580,7 +1677,7 @@ export default function PlanningWorkspace() {
               <button
                 type="button"
                 key={value}
-                onClick={() => setView(value)}
+                onClick={() => handleSelectView(value)}
                 aria-label={label}
                 aria-pressed={view === value}
                 className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold ${
